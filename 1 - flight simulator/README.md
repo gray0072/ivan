@@ -1,29 +1,31 @@
-# Аэропилот
+# Aeropilot
 
-Небольшая аркадная игра-симулятор самолёта в браузере: вид от первого лица из кабины пилота, полёт между аэропортами, посадка и стрельба по воздушным шарикам.
+*[Читать на русском](README_RU.md)*
 
-![Скриншот](screenshot.png)
+A small arcade flight-sim game in the browser: first-person cockpit view, flying between airports, landing, and shooting down balloons.
 
-## Как запустить
+![Screenshot](screenshot.png)
 
-Открыть файл [index.html](index.html) в браузере — сборка и сервер не нужны.
+## How to run
 
-## Управление
+Open [index.html](index.html) in a browser — no build step, no server required.
 
-- **← →** — поворот самолёта (плавный, с креном)
-- **↑ ↓** — набор высоты / снижение
-- **Ctrl** (зажать) — стрельба спаренным пулемётом по прицелу в центре экрана
-- Мышь в управлении не участвует — только клавиатура
+## Controls
 
-## Игровой процесс
+- **← →** — turn the aircraft (smooth, with visual bank)
+- **↑ ↓** — climb / descend
+- **Ctrl** (hold) — fire a twin-gun at the crosshair in the center of the screen
+- Mouse is not used — keyboard only
 
-- В кабине — приборная панель: указатель скорости, авиагоризонт (наклоняется вместе с креном и тангажом) и высотомер.
-- Внизу экрана — подсказка-компас с направлением и расстоянием до текущего аэропорта назначения.
-- Нужно долететь до отмеченного аэропорта, снизить высоту почти до нуля точно над полосой и выровнять курс вдоль неё — успешная посадка даёт +50 очков, после чего выдаётся новая цель.
-- Если высота падает до нуля не над полосой — авария и перезапуск.
-- По пути можно отстреливать воздушные шарики (+10 очков за каждый), под звуковые эффекты выстрелов.
-- Ландшафт под самолётом плавно меняется по цвету и текстуре в разных районах карты (луга, лес, поля, болота).
+## Gameplay
 
-## Технологии
+- The cockpit has an instrument panel: airspeed gauge, artificial horizon (mirrors bank and pitch), and altimeter.
+- A compass hint at the bottom of the screen shows the direction and distance to the current target airport.
+- Fly to the highlighted airport, descend to near-zero altitude exactly over the runway, and align your heading with it — a successful landing scores +50 points and a new target is assigned.
+- If altitude reaches zero anywhere off the runway, it's a crash and the game restarts.
+- Shoot down balloons along the way (+10 points each), with gunfire sound effects.
+- The terrain beneath the aircraft smoothly shifts in color and texture across different regions of the map (meadows, forest, fields, wetlands).
 
-Один HTML-файл: canvas 2D, ванильный JavaScript (без фреймворков и сборки), звук — Web Audio API.
+## Tech stack
+
+A single HTML file: Canvas 2D, vanilla JavaScript (no frameworks, no build step), sound via the Web Audio API.

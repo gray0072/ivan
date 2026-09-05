@@ -53,13 +53,16 @@ Pushing to `main` is the entire deploy process.
 ```
 /
 ├── index.html                    # root gallery page
-├── README.md
+├── README.md / README_RU.md
 ├── SPEC.md
+├── AGENTS.md                      # instructions for AI coding agents
+├── CLAUDE.md                      # -> points to AGENTS.md
 ├── 1 - flight simulator/
 │   ├── index.html                # the game
-│   ├── README.md                  # project docs (Russian)
+│   ├── README.md                  # project docs (English)
+│   ├── README_RU.md                # project docs (Russian)
 │   └── screenshot.png
-└── ... (more projects over time)
+└── ... (more projects over time, same layout)
 ```
 
 ## Roadmap

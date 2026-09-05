@@ -13,7 +13,7 @@ Authoritative developer/AI working spec for this repository. Not end-user docume
 
 ## Overview
 
-A growing gallery of small, self-contained browser games and experiments. Each project lives in its own numbered folder with its own `index.html` and `README.md`. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each.
+A growing gallery of small, self-contained browser games and experiments. Each project lives in its own numbered folder with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, and a `screenshot.png`. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each.
 
 ## Projects
 
@@ -35,13 +35,17 @@ First-person arcade flight game.
 /
 ├── index.html              # root gallery page, links to every project
 ├── README.md                # repo documentation (English)
+├── README_RU.md              # repo documentation (Russian)
 ├── SPEC.md                  # this file
+├── AGENTS.md                 # instructions for AI coding agents working in this repo
+├── CLAUDE.md                 # Claude Code entry point, points to AGENTS.md
 ├── LICENSE                  # MIT
 ├── 1 - flight simulator/
 │   ├── index.html           # the game itself, fully self-contained
-│   ├── README.md             # project documentation (Russian, player-facing)
+│   ├── README.md             # project documentation (English, player-facing)
+│   ├── README_RU.md           # project documentation (Russian, player-facing)
 │   └── screenshot.png        # preview image used by the gallery and both READMEs
-└── ... (future numbered project folders)
+└── ... (future numbered project folders, same layout)
 ```
 
 ## GitHub Pages deployment
@@ -54,9 +58,10 @@ First-person arcade flight game.
 ## Adding a new project
 
 1. Create a new numbered folder at the root, e.g. `2 - <name>/`.
-2. Put a self-contained `index.html` inside it (plus any assets it needs) and a `README.md` written for players, in whichever language fits the project.
-3. Add a `screenshot.png` (or similar) preview image.
-4. Add a card for it to the root `index.html` gallery and a row to the table in the root `README.md`.
+2. Put a self-contained `index.html` inside it (plus any assets it needs).
+3. Add a `README.md` (English) and a `README_RU.md` (Russian), each written for players and linking to the other (same pattern as this repo's root READMEs).
+4. Add a `screenshot.png` (or similar) preview image.
+5. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md`.
 
 ## Backlog
 
