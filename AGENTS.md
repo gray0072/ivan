@@ -11,6 +11,11 @@ A gallery of small, self-contained browser games and experiments, deployed as a 
 - **No build step.** Don't introduce a bundler, framework, or `package.json` unless the user explicitly asks for one for a specific new project. Everything must keep working by opening `index.html` directly or serving the folder as static files.
 - **Self-contained projects.** Each project folder should not depend on files outside itself (aside from the shared conventions below). It must work if copied out of the repo on its own.
 - **Relative links only.** Every link (gallery card → project, project → screenshot, README image, etc.) must use a relative path, since the site is served from a subpath (`https://gray0072.github.io/ivan/`), not the domain root.
+- **Mobile adaptation is required.** Every project must work on a phone/tablet, not just desktop with mouse/keyboard:
+  - The canvas/layout must be responsive (resize to `window.innerWidth`/`innerHeight`, no fixed pixel dimensions).
+  - Replace or supplement desktop-only input with touch equivalents: keyboard steering → device tilt (`deviceorientation`, calibrated against a baseline captured at game start, not absolute angles); mouse clicks / held keys for firing or actions → tap and tap-and-hold on the canvas.
+  - On iOS, motion sensor access needs `DeviceOrientationEvent.requestPermission()` called from inside a user-gesture handler (e.g. the "Start" button) — request it there, and keep desktop controls fully working when permission is denied or the API doesn't exist.
+  - Mention the touch/tilt controls in both `README.md` and `README_RU.md` for the project, and in its in-game instructions.
 
 ## Project folder layout
 

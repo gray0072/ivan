@@ -17,6 +17,8 @@ Open [index.html](index.html) in a browser — no build step, no server required
 - **Ctrl** (hold) — fire a twin-gun at the crosshair in the center of the screen
 - Mouse is not used — keyboard only
 
+**On phone/tablet:** tilt the device left/right and forward/back to steer instead of the arrow keys, tap and hold the screen to fire instead of Ctrl. On iOS you'll get a one-time motion-sensor permission prompt when you tap "Start".
+
 ## Gameplay
 
 - The cockpit has an instrument panel: airspeed gauge, artificial horizon (mirrors bank and pitch), and altimeter.

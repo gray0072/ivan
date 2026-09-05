@@ -134,6 +134,7 @@
   <p>Вид от первого лица из кабины пилота. Управление стрелочками: ← → — поворот самолёта, ↑ ↓ — набор высоты или снижение.</p>
   <p>Зажимай Ctrl, чтобы стрелять из прицела в центре экрана и сбивать воздушные шарики — за каждый сбитый шар получаешь очки.</p>
   <p>Долети до отмеченного аэропорта (смотри на подсказку внизу), снизь высоту и заходи на посадку вдоль полосы — успешная посадка тоже приносит очки. Не разбейся о землю мимо полосы!</p>
+  <p>На телефоне и планшете: наклоняй устройство влево/вправо и вперёд/назад вместо стрелок, тапай по экрану вместо Ctrl.</p>
   <button class="btn" id="startBtn">Начать полёт</button>
 </div>
 
@@ -269,7 +270,49 @@
 
   let shootCooldown = 0;
 
-  document.getElementById('startBtn').addEventListener('click', startGame);
+  // ---------- Touch input (mobile: tilt to steer, tap to shoot) ----------
+  let touchFiring = false;
+  canvas.addEventListener('touchstart', (e) => { touchFiring = true; e.preventDefault(); }, { passive: false });
+  window.addEventListener('touchend', () => { touchFiring = false; });
+  window.addEventListener('touchcancel', () => { touchFiring = false; });
+
+  const TILT_MAX_DEG = 25;
+  let tiltEnabled = false;
+  let tiltTurn = 0, tiltClimb = 0;
+  let tiltBaseGamma = null, tiltBaseBeta = null;
+
+  function onDeviceOrientation(e) {
+    if (e.gamma === null || e.beta === null) return;
+    if (tiltBaseGamma === null) { tiltBaseGamma = e.gamma; tiltBaseBeta = e.beta; }
+    tiltTurn = clamp((e.gamma - tiltBaseGamma) / TILT_MAX_DEG, -1, 1);
+    tiltClimb = clamp((e.beta - tiltBaseBeta) / TILT_MAX_DEG, -1, 1);
+  }
+
+  function enableTilt() {
+    if (tiltEnabled) return;
+    tiltEnabled = true;
+    window.addEventListener('deviceorientation', onDeviceOrientation);
+  }
+
+  async function setupTilt() {
+    tiltBaseGamma = null;
+    tiltBaseBeta = null;
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === 'granted') enableTilt();
+      } catch (err) { /* denied or unsupported, keyboard still works */ }
+    } else if (window.DeviceOrientationEvent) {
+      enableTilt();
+    }
+  }
+
+  async function beginFlight() {
+    await setupTilt();
+    startGame();
+  }
+
+  document.getElementById('startBtn').addEventListener('click', beginFlight);
 
   function pickNewTarget() {
     let candidates = airports.filter(a => a !== targetAirport);
@@ -308,7 +351,7 @@
       '<button class="btn" id="startBtn2">Играть снова</button>';
     document.getElementById('startBtn2').addEventListener('click', () => {
       ov.style.display = 'none';
-      startGame();
+      beginFlight();
     });
   }
 
@@ -428,8 +471,8 @@
     lerpColor(curGroundBottom, targetRegion.bottom, clamp(dt * 0.6, 0, 1));
 
     if (plane.state === 'flying') {
-      const turnTarget = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
-      const climbFrac = (keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0);
+      const turnTarget = clamp((keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0) + tiltTurn, -1, 1);
+      const climbFrac = clamp((keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0) + tiltClimb, -1, 1);
 
       plane.turnInput += (turnTarget - plane.turnInput) * clamp(dt * TURN_EASE, 0, 1);
       plane.heading += plane.turnInput * TURN_RATE_MAX * dt;
@@ -438,7 +481,7 @@
       plane.bankVisual += (-plane.turnInput * BANK_MAX - plane.bankVisual) * clamp(dt * 6, 0, 1);
       plane.pitchVisual += (climbFrac - plane.pitchVisual) * clamp(dt * 4, 0, 1);
 
-      if (keys['Control'] && shootCooldown <= 0) shoot();
+      if ((keys['Control'] || touchFiring) && shootCooldown <= 0) shoot();
 
       plane.x += Math.cos(plane.heading) * plane.speed * dt;
       plane.y += Math.sin(plane.heading) * plane.speed * dt;
