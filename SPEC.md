@@ -29,6 +29,22 @@ First-person arcade flight game.
 - Terrain color/texture varies by world region and blends smoothly while flying
 - Cockpit framing (canopy pillars, windshield header) fixed on screen; clouds stay level and do not rotate with aircraft bank
 
+### 2 - fish frenzy
+
+Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
+
+- Steering: arrow keys (left/right = turn, Ctrl or up = boost/dash that drains and regenerates a stamina meter)
+- Growth: eating plankton grows the player slightly; eating a smaller fish grows it more and scores points proportional to that fish's size
+- Eat/be-eaten rule: a fish can only eat another fish whose radius is smaller by at least 15% (`EAT_MARGIN`); near-equal sizes just bounce off each other with no effect
+- Readability: every fish on screen is outlined green (safely eatable), red (dangerous to the player) or neutral white (similar size), computed live each frame
+- NPC AI: each fish flees the nearest bigger threat in range, otherwise chases the nearest smaller prey in range, otherwise wanders; NPC sizes are spawned relative to the player's current size so difficulty scales with growth
+- Infinite world: no side or top boundary — entities are continuously spawned within a radius of the player and recycled once they drift far away, so exploration never hits a wall
+- The only boundary is the sea floor (a fixed world y). Depth (distance to the floor) drives difficulty and atmosphere: near the floor the water is dark, food is dense, and fish skew smallest; higher up the water lightens and fish skew larger and more dangerous. A HUD "depth" bar shows the player's position in that gradient
+- Jellyfish are a non-lethal hazard: touching one shrinks the player slightly and slows them briefly, rather than ending the game
+- A short spawn invulnerability window (with a visible glow) prevents unfair instant deaths right after (re)starting
+- Five size-based stages (fry → fish → big fish → shark → Sea King) drive the player's color and a camera that gradually zooms out as the player grows
+- Reaching the final stage shows a one-time celebration banner; play continues afterwards as an endless high-score chase
+
 ## Project structure
 
 ```
@@ -45,6 +61,11 @@ First-person arcade flight game.
 │   ├── README.md             # project documentation (English, player-facing)
 │   ├── README_RU.md           # project documentation (Russian, player-facing)
 │   └── screenshot.png        # preview image used by the gallery and both READMEs
+├── 2 - fish frenzy/
+│   ├── index.html
+│   ├── README.md
+│   ├── README_RU.md
+│   └── screenshot.png
 └── ... (future numbered project folders, same layout)
 ```
 

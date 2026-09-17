@@ -16,6 +16,7 @@ A gallery of small, self-contained browser games and experiments, deployed as a 
   - Replace or supplement desktop-only input with touch equivalents: keyboard steering → device tilt (`deviceorientation`, calibrated against a baseline captured at game start, not absolute angles); mouse clicks / held keys for firing or actions → tap and tap-and-hold on the canvas.
   - On iOS, motion sensor access needs `DeviceOrientationEvent.requestPermission()` called from inside a user-gesture handler (e.g. the "Start" button) — request it there, and keep desktop controls fully working when permission is denied or the API doesn't exist.
   - Mention the touch/tilt controls in both `README.md` and `README_RU.md` for the project, and in its in-game instructions.
+- **Start/restart buttons must work everywhere.** Any overlay button (e.g. "Начать", "Играть снова") must stay tappable on Android/iOS (plain `<button>` elements already are — don't intercept touch events on top of them) and must also be triggerable by **Space** or **Enter** on desktop, via a global `keydown` listener that clicks whichever button is currently visible in the overlay.
 
 ## Project folder layout
 
