@@ -8,6 +8,7 @@ A gallery of small, self-contained browser games and experiments, deployed as a 
 
 ## Ground rules
 
+- **English is the primary language.** All in-game text (titles, HUD labels, instructions, buttons, messages) and code comments must be written in English. `README.md` is English; `README_RU.md` is a Russian translation for players, but the games themselves are English-only.
 - **No build step.** Don't introduce a bundler, framework, or `package.json` unless the user explicitly asks for one for a specific new project. Everything must keep working by opening `index.html` directly or serving the folder as static files.
 - **Self-contained projects.** Each project folder should not depend on files outside itself (aside from the shared conventions below). It must work if copied out of the repo on its own.
 - **Relative links only.** Every link (gallery card → project, project → screenshot, README image, etc.) must use a relative path, since the site is served from a subpath (`https://gray0072.github.io/ivan/`), not the domain root.
@@ -16,7 +17,9 @@ A gallery of small, self-contained browser games and experiments, deployed as a 
   - Replace or supplement desktop-only input with touch equivalents: keyboard steering → device tilt (`deviceorientation`, calibrated against a baseline captured at game start, not absolute angles); mouse clicks / held keys for firing or actions → tap and tap-and-hold on the canvas.
   - On iOS, motion sensor access needs `DeviceOrientationEvent.requestPermission()` called from inside a user-gesture handler (e.g. the "Start" button) — request it there, and keep desktop controls fully working when permission is denied or the API doesn't exist.
   - Mention the touch/tilt controls in both `README.md` and `README_RU.md` for the project, and in its in-game instructions.
-- **Start/restart buttons must work everywhere.** Any overlay button (e.g. "Начать", "Играть снова") must stay tappable on Android/iOS (plain `<button>` elements already are — don't intercept touch events on top of them) and must also be triggerable by **Space** or **Enter** on desktop, via a global `keydown` listener that clicks whichever button is currently visible in the overlay.
+- **Start/restart buttons must work everywhere.** Any overlay button (e.g. "Start", "Play Again") must stay tappable on Android/iOS (plain `<button>` elements already are — don't intercept touch events on top of them) and must also be triggerable by **Space** or **Enter** on desktop, via a global `keydown` listener that clicks whichever button is currently visible in the overlay.
+- **JS and CSS live in separate files.** Don't inline `<script>`/`<style>` blocks in `index.html` — put CSS in a `styles.css` and JS in one or more `.js` files (split JS into multiple files by concern/module when it grows large enough to benefit from it; `index.html` just references them). This still satisfies "no build step" and "self-contained" — the extra files live in the same project folder and are plain `<link>`/`<script src>` references, no bundler involved.
+- **Version query strings on asset links.** Every `<link>`/`<script src>` referencing a local CSS/JS file must include a `?v=N` query string (e.g. `styles.css?v=2`), and that version must be bumped whenever the referenced file changes, so players don't need to clear their browser cache to see updates.
 
 ## Project folder layout
 
@@ -24,7 +27,9 @@ Every project lives in a numbered folder at the repo root, e.g. `2 - <name>/`, a
 
 ```
 2 - <name>/
-├── index.html        # the project itself, self-contained
+├── index.html        # markup only, links to the CSS/JS files below (versioned query strings)
+├── styles.css         # all CSS for the project
+├── game.js            # JS (split into multiple .js files as needed)
 ├── README.md          # player-facing docs, in English
 ├── README_RU.md        # player-facing docs, in Russian
 └── screenshot.png      # preview image, referenced by both READMEs and the root gallery

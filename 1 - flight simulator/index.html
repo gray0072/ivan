@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Аэропилот</title>
+<title>Aeropilot</title>
 <style>
   html, body {
     margin: 0;
@@ -116,26 +116,26 @@
 <canvas id="game"></canvas>
 
 <div id="hud">
-  <div class="score">Очки: <span id="score">0</span></div>
-  <div>Аэропорт назначения: <span id="targetName">-</span></div>
+  <div class="score">Score: <span id="score">0</span></div>
+  <div>Destination airport: <span id="targetName">-</span></div>
 </div>
 
 <div id="bars">
-  <div>Высота</div>
+  <div>Altitude</div>
   <div class="barBg"><div class="barFill" id="altBar" style="background:linear-gradient(90deg,#81c784,#4caf50)"></div></div>
-  <div>Скорость</div>
+  <div>Speed</div>
   <div class="barBg"><div class="barFill" id="spdBar"></div></div>
 </div>
 
 <div id="compass"></div>
 
 <div id="overlay">
-  <h1>✈ Аэропилот</h1>
-  <p>Вид от первого лица из кабины пилота. Управление стрелочками: ← → — поворот самолёта, ↑ ↓ — набор высоты или снижение.</p>
-  <p>Зажимай Ctrl, чтобы стрелять из прицела в центре экрана и сбивать воздушные шарики — за каждый сбитый шар получаешь очки.</p>
-  <p>Долети до отмеченного аэропорта (смотри на подсказку внизу), снизь высоту и заходи на посадку вдоль полосы — успешная посадка тоже приносит очки. Не разбейся о землю мимо полосы!</p>
-  <p>На телефоне и планшете: наклоняй устройство влево/вправо и вперёд/назад вместо стрелок, тапай по экрану вместо Ctrl.</p>
-  <button class="btn" id="startBtn">Начать полёт</button>
+  <h1>✈ Aeropilot</h1>
+  <p>First-person view from the pilot's cockpit. Controls: ← → — turn the plane, ↑ ↓ — climb or descend.</p>
+  <p>Hold Ctrl to fire from the crosshair at the center of the screen and pop the balloons — each one popped earns you points.</p>
+  <p>Fly to the highlighted airport (check the hint at the bottom), reduce altitude and line up with the runway — a successful landing also earns points. Don't crash into the ground short of the runway!</p>
+  <p>On phone and tablet: tilt the device left/right and forward/back instead of the arrow keys, tap the screen instead of Ctrl.</p>
+  <button class="btn" id="startBtn">Start Flight</button>
 </div>
 
 <script>
@@ -172,11 +172,11 @@
 
   // ---------- Terrain ----------
   const GROUND_PALETTE = [
-    { top: [74, 124, 60], bottom: [46, 90, 38] },    // луга
-    { top: [107, 143, 60], bottom: [70, 102, 31] },  // жёлто-зелёные поля
-    { top: [63, 107, 58], bottom: [35, 74, 31] },    // тёмный лес
-    { top: [138, 140, 74], bottom: [92, 94, 44] },   // сухие поля
-    { top: [90, 138, 122], bottom: [53, 97, 86] }    // болотистая местность
+    { top: [74, 124, 60], bottom: [46, 90, 38] },    // meadows
+    { top: [107, 143, 60], bottom: [70, 102, 31] },  // yellow-green fields
+    { top: [63, 107, 58], bottom: [35, 74, 31] },    // dark forest
+    { top: [138, 140, 74], bottom: [92, 94, 44] },   // dry fields
+    { top: [90, 138, 122], bottom: [53, 97, 86] }    // marshland
   ];
   const REGION_CELL = 1000;
   function regionColorAt(wx, wy) {
@@ -197,11 +197,11 @@
   const PATCH_RANGE = 1300;
 
   const airports = [
-    { name: 'Северный', x: 600, y: 500, heading: Math.PI * 0.5 },
-    { name: 'Южный', x: 3600, y: 2700, heading: Math.PI * 1.5 },
-    { name: 'Восточный', x: 3700, y: 700, heading: Math.PI },
-    { name: 'Западный', x: 500, y: 2600, heading: 0 },
-    { name: 'Центральный', x: 2100, y: 1600, heading: Math.PI * 0.25 }
+    { name: 'North', x: 600, y: 500, heading: Math.PI * 0.5 },
+    { name: 'South', x: 3600, y: 2700, heading: Math.PI * 1.5 },
+    { name: 'East', x: 3700, y: 700, heading: Math.PI },
+    { name: 'West', x: 500, y: 2600, heading: 0 },
+    { name: 'Central', x: 2100, y: 1600, heading: Math.PI * 0.25 }
   ];
   const RUNWAY_LEN = 460;
   const RUNWAY_WID = 90;
@@ -358,8 +358,8 @@
     ov.style.display = 'flex';
     ov.innerHTML =
       '<h1>💥 ' + reason + '</h1>' +
-      '<p>Твой результат: <b>' + score + '</b> очков</p>' +
-      '<button class="btn" id="startBtn2">Играть снова</button>';
+      '<p>Your result: <b>' + score + '</b> points</p>' +
+      '<button class="btn" id="startBtn2">Play Again</button>';
     document.getElementById('startBtn2').addEventListener('click', () => {
       ov.style.display = 'none';
       beginFlight();
@@ -510,7 +510,7 @@
         } else {
           plane.state = 'crashed';
           addShake(18, 0.6);
-          setTimeout(() => endGame('Авария!'), 700);
+          setTimeout(() => endGame('Crash!'), 700);
         }
       }
     } else if (plane.state === 'landed') {
@@ -874,7 +874,7 @@
     ctx.textAlign = 'center';
     ctx.shadowColor = 'rgba(0,0,0,0.8)';
     ctx.shadowBlur = 3;
-    ctx.fillText('АВИАГОРИЗОНТ', cx, cy + r + 20);
+    ctx.fillText('ATTITUDE', cx, cy + r + 20);
     ctx.shadowBlur = 0;
   }
 
@@ -919,9 +919,9 @@
 
     const gy = H - dashH * 0.55;
     const gr = clamp(dashH * 0.3, 32, 56);
-    drawGauge(W * 0.30, gy, gr, 'СКОРОСТЬ', clamp(plane.speed / 260, 0, 1), Math.round(plane.speed));
+    drawGauge(W * 0.30, gy, gr, 'SPEED', clamp(plane.speed / 260, 0, 1), Math.round(plane.speed));
     drawAttitudeGauge(W * 0.5, gy - gr * 0.1, gr * 1.15);
-    drawGauge(W * 0.70, gy, gr, 'ВЫСОТА', clamp(plane.altitude / 100, 0, 1), Math.round(plane.altitude));
+    drawGauge(W * 0.70, gy, gr, 'ALTITUDE', clamp(plane.altitude / 100, 0, 1), Math.round(plane.altitude));
 
     ctx.save();
     ctx.strokeStyle = 'rgba(255,255,255,0.85)';
@@ -944,7 +944,7 @@
       ctx.fillStyle = '#fff176';
       ctx.shadowColor = 'rgba(0,0,0,0.8)';
       ctx.shadowBlur = 8;
-      const msg = plane.state === 'landed' ? 'Посадка выполнена! +50' : 'Взлетаем к цели: ' + targetAirport.name;
+      const msg = plane.state === 'landed' ? 'Landed! +50' : 'Heading to target: ' + targetAirport.name;
       ctx.fillText(msg, W / 2, 90);
       ctx.restore();
     }
@@ -967,7 +967,7 @@
     else if (deg < -110) arrow = '↙';
     else if (deg < -70) arrow = '←';
     else if (deg < -20) arrow = '↖';
-    el.textContent = arrow + '  ' + targetAirport.name + '  (' + Math.round(dist) + ' м)  ·  высота ' + Math.round(plane.altitude) + '%';
+    el.textContent = arrow + '  ' + targetAirport.name + '  (' + Math.round(dist) + ' m)  ·  altitude ' + Math.round(plane.altitude) + '%';
   }
 
   function render() {

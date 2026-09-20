@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Рыбий Пир</title>
+<title>Fish Frenzy</title>
 <style>
   html, body {
     margin: 0;
@@ -119,29 +119,29 @@
 <canvas id="game"></canvas>
 
 <div id="hud">
-  <div class="score">Очки: <span id="score">0</span></div>
-  <div id="stageName">Малёк</div>
+  <div class="score">Score: <span id="score">0</span></div>
+  <div id="stageName">Fry</div>
 </div>
 
 <div id="bars">
-  <div>Рост до следующей стадии</div>
+  <div>Growth to next stage</div>
   <div class="barBg"><div class="barFill" id="growBar" style="background:linear-gradient(90deg,#81c784,#4caf50)"></div></div>
-  <div>Рывок</div>
+  <div>Dash</div>
   <div class="barBg"><div class="barFill" id="boostBar" style="background:linear-gradient(90deg,#4fc3f7,#29b6f6)"></div></div>
-  <div>Глубина</div>
+  <div>Depth</div>
   <div class="barBg"><div class="barFill" id="depthBar" style="background:linear-gradient(90deg,#4fc3f7,#01579b)"></div></div>
 </div>
 
 <div id="banner"></div>
 
 <div id="overlay">
-  <h1>🐟 Рыбий Пир</h1>
-  <p>Ты — маленькая рыбка в бескрайнем море. Ешь корм и рыб мельче себя, расти и поднимайся по пищевой цепи — но берегись тех, кто крупнее тебя!</p>
-  <p><b>← →</b> или наклон телефона — поворот. <b>Ctrl</b> (или ↑), тап-и-удержание на экране — рывок (тратит выносливость, помогает догнать добычу или удрать от хищника).</p>
-  <p>Море бескрайнее — границ нет, кроме дна. У дна темнее, корма больше, а рыбы — самые мелкие. Чем выше поднимаешься, тем светлее вода и тем крупнее (и опаснее) соперники.</p>
-  <p>Зелёная обводка — рыбу можно съесть. Красная обводка — она съест тебя. Медузы (розовые) не смертельны, но жалят и уменьшают тебя — обходи их.</p>
-  <p>Стань крупнейшим хищником моря — Морским Царём! (первые секунды после старта ты неуязвим — голубое свечение)</p>
-  <button class="btn" id="startBtn">Начать</button>
+  <h1>🐟 Fish Frenzy</h1>
+  <p>You're a small fish in a boundless sea. Eat plankton and fish smaller than you, grow and climb the food chain — but watch out for anything bigger than you!</p>
+  <p><b>← →</b> or phone tilt — turn. <b>Ctrl</b> (or ↑), tap-and-hold on screen — dash (uses stamina, helps you catch prey or escape a predator).</p>
+  <p>The sea is boundless — no edges except the sea floor. Near the bottom it's darker, food is plentier, and fish are smallest. The higher you go, the lighter the water and the bigger (and more dangerous) the competition.</p>
+  <p>Green outline — you can eat that fish. Red outline — it will eat you. Jellyfish (pink) aren't lethal but sting and shrink you — avoid them.</p>
+  <p>Become the sea's biggest predator — the Sea King! (you're invulnerable for the first few seconds after starting — blue glow)</p>
+  <button class="btn" id="startBtn">Start</button>
 </div>
 
 <script>
@@ -182,11 +182,11 @@
 
   // ---------- Stages (size tiers, shared by player and NPCs for readability) ----------
   const STAGES = [
-    { name: 'Малёк',        maxR: 25,       color: '#ffd54f' },
-    { name: 'Рыбка',        maxR: 45,       color: '#4fc3f7' },
-    { name: 'Крупная рыба', maxR: 75,       color: '#66bb6a' },
-    { name: 'Акула',        maxR: 120,      color: '#90a4ae' },
-    { name: 'Морской Царь', maxR: Infinity, color: '#ba68c8' }
+    { name: 'Fry',          maxR: 25,       color: '#ffd54f' },
+    { name: 'Small Fish',   maxR: 45,       color: '#4fc3f7' },
+    { name: 'Big Fish',     maxR: 75,       color: '#66bb6a' },
+    { name: 'Shark',        maxR: 120,      color: '#90a4ae' },
+    { name: 'Sea King',     maxR: Infinity, color: '#ba68c8' }
   ];
   function stageIndexForR(r) {
     for (let i = 0; i < STAGES.length; i++) if (r <= STAGES[i].maxR) return i;
@@ -471,8 +471,8 @@
     ov.style.display = 'flex';
     ov.innerHTML =
       '<h1>💀 ' + reason + '</h1>' +
-      '<p>Твой результат: <b>' + score + '</b> очков, стадия: <b>' + STAGES[stageIndexForR(player.r)].name + '</b></p>' +
-      '<button class="btn" id="startBtn2">Играть снова</button>';
+      '<p>Your result: <b>' + score + '</b> points, stage: <b>' + STAGES[stageIndexForR(player.r)].name + '</b></p>' +
+      '<button class="btn" id="startBtn2">Play Again</button>';
     document.getElementById('startBtn2').addEventListener('click', () => {
       ov.style.display = 'none';
       beginGame();
@@ -604,7 +604,7 @@
           if (player.invulnTimer > 0) continue;
           burst(player.x, player.y, '#ef5350', 24, 200);
           player.alive = false;
-          endGame('Тебя съели!');
+          endGame('You got eaten!');
           return;
         }
         // else: similar size, just bounce past each other, no effect
@@ -632,9 +632,9 @@
       playLevelUp();
       if (afterStage === STAGES.length - 1 && !reachedFinalStage) {
         reachedFinalStage = true;
-        showBanner('👑 Ты стал Морским Царём!');
+        showBanner('👑 You became the Sea King!');
       } else {
-        showBanner('Новая стадия: ' + STAGES[afterStage].name + '!');
+        showBanner('New stage: ' + STAGES[afterStage].name + '!');
       }
     }
 
@@ -650,7 +650,7 @@
 
     document.getElementById('score').textContent = score;
     const stage = STAGES[stageIndexForR(player.r)];
-    document.getElementById('stageName').textContent = stage.name + ' (р=' + Math.round(player.r) + ')';
+    document.getElementById('stageName').textContent = stage.name + ' (r=' + Math.round(player.r) + ')';
     const growFrac = stage.maxR === Infinity ? 1 : clamp((player.r - (STAGES[stageIndexForR(player.r) - 1] ? STAGES[stageIndexForR(player.r) - 1].maxR : 0)) / (stage.maxR - (STAGES[stageIndexForR(player.r) - 1] ? STAGES[stageIndexForR(player.r) - 1].maxR : 0)), 0, 1);
     document.getElementById('growBar').style.width = (growFrac * 100) + '%';
     document.getElementById('boostBar').style.width = (player.boost * 100) + '%';
