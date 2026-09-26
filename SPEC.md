@@ -34,6 +34,8 @@ First-person arcade flight game.
 Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 
 - Steering: arrow keys (left/right = turn, Ctrl or up = boost/dash that drains and regenerates a stamina meter)
+- Touch: on coarse-pointer devices the start button requests fullscreen; a floating joystick in the left third of the screen sets the swim direction (the fish turns toward it), any touch held on the right two-thirds boosts; multi-touch so both work together
+- Difficulty (picked on the start screen): Easy = food ×1.2, NPC speed ×0.9, boost capacity and regen ×1.5; Medium = baseline; Hard = food ×0.8, NPC speed ×1.1, boost capacity and regen ×0.75
 - Growth: eating plankton grows the player slightly; eating a smaller fish grows it more and scores points proportional to that fish's size
 - Eat/be-eaten rule: a fish can only eat another fish whose radius is smaller by at least 15% (`EAT_MARGIN`); near-equal sizes just bounce off each other with no effect
 - Readability: every fish on screen is outlined green (safely eatable), red (dangerous to the player) or neutral white (similar size), computed live each frame
@@ -62,7 +64,12 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 │   ├── README_RU.md           # project documentation (Russian, player-facing)
 │   └── screenshot.png        # preview image used by the gallery and both READMEs
 ├── 2 - fish frenzy/
-│   ├── index.html
+│   ├── index.html           # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── utils.js              # math helpers
+│   ├── audio.js              # Web Audio sound effects
+│   ├── input.js              # keyboard, touch joystick/boost zones, fullscreen
+│   ├── game.js               # world, difficulty, update and render loop
 │   ├── README.md
 │   ├── README_RU.md
 │   └── screenshot.png

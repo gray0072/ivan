@@ -1,0 +1,157 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background: #04283d;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  cursor: default;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas {
+  display: block;
+  touch-action: none;
+}
+#hud {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  font-size: 18px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+#hud .score {
+  font-size: 26px;
+  font-weight: bold;
+}
+#hud .difficulty {
+  font-size: 14px;
+  opacity: 0.8;
+}
+#bars {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  text-align: right;
+  font-size: 14px;
+  pointer-events: none;
+}
+.barBg {
+  width: 160px;
+  height: 14px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 7px;
+  overflow: hidden;
+  margin: 2px 0 10px auto;
+}
+.barFill {
+  height: 100%;
+  transition: width 0.1s linear;
+}
+#growBar { background: linear-gradient(90deg, #81c784, #4caf50); }
+#boostBar { background: linear-gradient(90deg, #4fc3f7, #29b6f6); }
+#depthBar { background: linear-gradient(90deg, #4fc3f7, #01579b); }
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#overlay > div {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#overlay > div[hidden] {
+  display: none;
+}
+#overlay h1 {
+  font-size: 40px;
+  margin: 0 0 10px;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+}
+#overlay p {
+  font-size: 17px;
+  max-width: 560px;
+  line-height: 1.6;
+  margin: 6px 0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+#overlay .choose {
+  margin-top: 16px;
+  font-weight: bold;
+}
+.btnRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+#overlay .btn {
+  padding: 14px 30px;
+  font-size: 20px;
+  background: #29b6f6;
+  border: none;
+  border-radius: 8px;
+  color: #06202b;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+#overlay .btn:hover {
+  background: #4fc3f7;
+}
+#overlay .btn.default {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+#overlay .btn.secondary {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+}
+#overlay .btn.secondary:hover {
+  background: rgba(255,255,255,0.3);
+}
+#banner {
+  position: fixed;
+  top: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff176;
+  font-size: 30px;
+  font-weight: bold;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+  pointer-events: none;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+@media (max-width: 600px), (max-height: 500px) {
+  #hud { font-size: 15px; }
+  #hud .score { font-size: 20px; }
+  #bars { font-size: 12px; }
+  .barBg { width: 110px; height: 11px; margin-bottom: 6px; }
+  #overlay h1 { font-size: 28px; }
+  #overlay p { font-size: 14px; line-height: 1.4; margin: 4px 0; }
+  #overlay .btn { padding: 10px 22px; font-size: 17px; }
+  #banner { font-size: 22px; top: 70px; }
+}

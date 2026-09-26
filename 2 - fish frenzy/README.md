@@ -16,12 +16,20 @@ Open [index.html](index.html) in a browser — no build step, no server required
 - **Ctrl** (or **↑**) — boost (dash), costs stamina that refills over time
 - Mouse is not used — keyboard only
 
-**On phone/tablet:** tilt the device left/right to steer instead of the arrow keys, tap and hold the screen to boost instead of Ctrl. On iOS you'll get a one-time motion-sensor permission prompt when you tap "Start".
+**On phone/tablet:** the game switches to fullscreen when you start (where the browser supports it; on iPhone, add the page to the home screen for a fullscreen view). Drag your thumb in the **left third** of the screen like a joystick — the fish turns toward the direction you push. Touch and hold anywhere on the **right side** to boost. Both work at the same time.
+
+## Difficulty
+
+Pick a difficulty on the start screen (Space/Enter picks Medium):
+
+- **Easy** — 20% more food, other fish swim 10% slower, 50% more boost stamina that also refills 50% faster.
+- **Medium** — the standard game.
+- **Hard** — 20% less food, other fish swim 10% faster, 25% less boost stamina that refills 25% slower.
 
 ## Gameplay
 
 - The sea is infinite — there's no wall to hit, except one: the **sea floor** below you.
-- Depth matters. Near the floor the water is dark, food is abundant, and the fish are the smallest around — a safe place to graze. The higher you swim toward the surface, the brighter the water gets and the bigger (and more dangerous) the rivals become. Watch the "Глубина" (depth) meter to see where you are.
+- Depth matters. Near the floor the water is dark, food is abundant, and the fish are the smallest around — a safe place to graze. The higher you swim toward the surface, the brighter the water gets and the bigger (and more dangerous) the rivals become. Watch the "Depth" meter to see where you are.
 - Every fish on screen is outlined by color: **green** means you can eat it, **red** means it can eat you, faint white means you're too evenly matched — you just bounce off each other.
 - Eating plankton always grows you a little. Eating a smaller fish grows you a lot more, and scores points based on its size.
 - You need to be noticeably bigger than a fish to eat it (and vice versa) — near-equal sizes don't trigger anything, so close calls aren't unfair.
@@ -33,4 +41,4 @@ Open [index.html](index.html) in a browser — no build step, no server required
 
 ## Tech stack
 
-A single HTML file: Canvas 2D, vanilla JavaScript (no frameworks, no build step), sound via the Web Audio API.
+Plain HTML + CSS + a few vanilla JavaScript files (`utils.js`, `audio.js`, `input.js`, `game.js`) — no frameworks, no build step. Canvas 2D for rendering, Web Audio API for sound.
