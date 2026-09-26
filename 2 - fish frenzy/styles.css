@@ -145,7 +145,102 @@ canvas {
   transition: opacity 0.3s;
 }
 
+/* ---------- Sea King dialog ---------- */
+.kingCard {
+  position: relative;
+  max-width: 460px;
+  padding: 28px 30px 26px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, #4a148c 0%, #1a237e 55%, #006064 100%);
+  border: 2px solid rgba(255, 213, 79, 0.7);
+  box-shadow: 0 0 40px rgba(255, 213, 79, 0.35), 0 12px 40px rgba(0,0,0,0.6);
+  animation: kingPop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+.crown {
+  font-size: 64px;
+  line-height: 1;
+  animation: crownBob 1.6s ease-in-out infinite;
+}
+#overlay .kingTitle {
+  margin: 8px 0 4px;
+  font-size: 34px;
+  background: linear-gradient(90deg, #fff59d, #ffd54f, #ffb300, #ffd54f, #fff59d);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  animation: shimmer 3s linear infinite;
+}
+#overlay .kingSub {
+  margin: 0 0 16px;
+  opacity: 0.85;
+}
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.statLabel {
+  font-size: 13px;
+  opacity: 0.75;
+}
+.stat b {
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+}
+.record {
+  margin-top: 16px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ffb300, #ffd54f);
+  color: #3e2723;
+  font-weight: bold;
+  font-size: 18px;
+  animation: recordPulse 1.2s ease-in-out infinite;
+}
+.record[hidden], .cheatNote[hidden] { display: none; }
+.cheatNote {
+  margin-top: 14px;
+  font-size: 14px;
+  color: #ffcc80;
+}
+.kingCard .btnRow { margin-top: 20px; }
+
+@keyframes kingPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes crownBob {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-8px) rotate(6deg); }
+}
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+@keyframes recordPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 213, 79, 0); }
+  50% { transform: scale(1.06); box-shadow: 0 0 22px rgba(255, 213, 79, 0.7); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kingCard, .crown, #overlay .kingTitle, .record { animation: none; }
+}
+
 @media (max-width: 600px), (max-height: 500px) {
+  .kingCard { padding: 18px 18px 16px; }
+  .crown { font-size: 44px; }
+  #overlay .kingTitle { font-size: 26px; }
+  .stat b { font-size: 20px; }
   #hud { font-size: 15px; }
   #hud .score { font-size: 20px; }
   #bars { font-size: 12px; }

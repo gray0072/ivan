@@ -56,6 +56,7 @@
     turnInput: 0,
     boost: 1,       // stamina 0..difficulty.boostMax
     boosting: false,
+    wagPhase: 0,
     stunTimer: 0,
     invulnTimer: 0,
     alive: true
@@ -84,7 +85,9 @@
 
   // ---------- Game state ----------
   let score = 0;
-  let gameState = 'start'; // start | playing | over
+  let gameState = 'start'; // start | playing | paused | over
+  let elapsed = 0;         // in-game seconds for the current run (pauses don't count)
+  let cheated = false;
   let reachedFinalStage = false;
   let lastStageIndex = 0;
 
@@ -139,6 +142,7 @@
       wanderTimer: rand(0.5, 2),
       mode: 'wander',
       stunTimer: 0,
+      wagPhase: rand(0, Math.PI * 2),
       hue: Math.random()
     });
   }
@@ -150,6 +154,44 @@
   const JELLY_STUN_TIME = 1.2;
   const JELLY_STUN_SLOW = 0.4;
   const JELLY_AVOID_DIST = 45;   // gap (edge to edge) at which fish start steering away
+  const JELLY_TENTACLE_HALF_W = 1.5;
+
+  // ---------- Hit shapes (match what drawFish / the jellyfish renderer actually draw) ----------
+  // Fish: circles along the body axis, [offset along heading, radius], both in units of r
+  const FISH_HIT = [[0.6, 0.33], [0.15, 0.45], [-0.45, 0.34], [-1.3, 0.28]];
+  function fishCircles(x, y, r, heading) {
+    const c = Math.cos(heading), s = Math.sin(heading);
+    return FISH_HIT.map(([o, cr]) => ({ x: x + c * o * r, y: y + s * o * r, r: cr * r }));
+  }
+  function circlesOverlap(a, b) {
+    for (const p of a) for (const q of b) if (dist(p.x, p.y, q.x, q.y) < p.r + q.r) return true;
+    return false;
+  }
+  function circlesHitPoint(circles, x, y, r) {
+    for (const p of circles) if (dist(p.x, p.y, x, y) < p.r + r) return true;
+    return false;
+  }
+  function jellyBobY(j) { return Math.sin(j.bob) * 3; }
+  function jellyTentacle(j, i) {
+    const x1 = j.x + i * 0.5 * j.r, y1 = j.y + jellyBobY(j);
+    return { x1, y1, x2: x1 + Math.sin(j.bob + i) * 0.2 * j.r, y2: y1 + 1.1 * j.r };
+  }
+  // Jellyfish = a half-disk bell (flat side down) plus three tentacle segments
+  function circleHitsJelly(cx, cy, cr, j) {
+    const px = cx - j.x, py = cy - (j.y + jellyBobY(j));
+    const bellDist = py <= 0 ? Math.hypot(px, py) - j.r : distToSegment(px, py, -j.r, 0, j.r, 0);
+    if (bellDist < cr) return true;
+    for (let i = -1; i <= 1; i++) {
+      const t = jellyTentacle(j, i);
+      if (distToSegment(cx, cy, t.x1, t.y1, t.x2, t.y2) < cr + JELLY_TENTACLE_HALF_W) return true;
+    }
+    return false;
+  }
+  function fishHitsJelly(circles, j) {
+    for (const c of circles) if (circleHitsJelly(c.x, c.y, c.r, j)) return true;
+    return false;
+  }
+
   function spawnJelly() {
     let x, y, tries = 0;
     const minDist = minSpawnDist();
@@ -196,20 +238,55 @@
 
   // ---------- Overlay / flow ----------
   const overlay = document.getElementById('overlay');
-  const menuPanel = document.getElementById('menu');
-  const gameOverPanel = document.getElementById('gameOver');
-
-  function showMenu() {
+  const panels = {
+    menu: document.getElementById('menu'),
+    gameOver: document.getElementById('gameOver'),
+    king: document.getElementById('kingPanel')
+  };
+  function showPanel(name) {
     overlay.style.display = 'flex';
-    menuPanel.hidden = false;
-    gameOverPanel.hidden = true;
+    for (const key in panels) panels[key].hidden = key !== name;
   }
 
   document.querySelectorAll('#menu .btn[data-difficulty]').forEach((btn) => {
     btn.addEventListener('click', () => startGame(btn.dataset.difficulty));
   });
   document.getElementById('againBtn').addEventListener('click', () => startGame(difficultyKey));
-  document.getElementById('menuBtn').addEventListener('click', showMenu);
+  document.getElementById('menuBtn').addEventListener('click', () => showPanel('menu'));
+  document.getElementById('restartBtn').addEventListener('click', () => startGame(difficultyKey));
+  document.getElementById('continueBtn').addEventListener('click', () => {
+    overlay.style.display = 'none';
+    resetTouches();
+    player.invulnTimer = Math.max(player.invulnTimer, 1.5);
+    gameState = 'playing';
+  });
+
+  // ---------- Sea King time records (per difficulty; runs with cheats never count) ----------
+  function bestKey(key) { return 'fishFrenzy.bestKingTime.' + key; }
+  function loadBest(key) {
+    try {
+      const v = parseFloat(localStorage.getItem(bestKey(key)));
+      return isFinite(v) ? v : null;
+    } catch (err) { return null; }
+  }
+  function saveBest(key, v) {
+    try { localStorage.setItem(bestKey(key), String(v)); } catch (err) { /* storage blocked */ }
+  }
+
+  function showKingDialog() {
+    gameState = 'paused';
+    resetTouches();
+    const prevBest = loadBest(difficultyKey);
+    const isRecord = !cheated && (prevBest === null || elapsed < prevBest);
+    if (isRecord) saveBest(difficultyKey, elapsed);
+    const best = isRecord ? elapsed : prevBest;
+    document.getElementById('kingTime').textContent = formatTime(elapsed);
+    document.getElementById('kingBest').textContent = best === null ? '—' : formatTime(best);
+    document.getElementById('kingDiff').textContent = difficulty.label;
+    document.getElementById('kingRecord').hidden = !isRecord;
+    document.getElementById('kingCheat').hidden = !cheated;
+    showPanel('king');
+  }
 
   function showBanner(text) {
     const el = document.getElementById('banner');
@@ -228,6 +305,8 @@
     document.getElementById('difficultyName').textContent = difficulty.label;
     overlay.style.display = 'none';
     gameState = 'playing';
+    elapsed = 0;
+    cheated = false;
     score = 0;
     reachedFinalStage = false;
     lastStageIndex = 0;
@@ -251,9 +330,7 @@
     document.getElementById('gameOverTitle').textContent = '💀 ' + reason;
     document.getElementById('gameOverText').textContent =
       'Your result: ' + score + ' points, stage: ' + STAGES[stageIndexForR(player.r)].name + ' (' + difficulty.label + ')';
-    overlay.style.display = 'flex';
-    menuPanel.hidden = true;
-    gameOverPanel.hidden = false;
+    showPanel('gameOver');
   }
 
   // ---------- Test cheat: digits 1-9 set the player's size (1-5 = each stage, 6-9 = bigger Sea King) ----------
@@ -262,10 +339,12 @@
     if (gameState !== 'playing' || e.repeat) return;
     const level = parseInt(e.key, 10);
     if (!(level >= 1 && level <= 9)) return;
+    cheated = true;
     player.r = CHEAT_RADII[level - 1];
-    lastStageIndex = stageIndexForR(player.r);
-    reachedFinalStage = lastStageIndex === STAGES.length - 1;
-    showBanner('Cheat: level ' + level + ' — ' + STAGES[lastStageIndex].name);
+    // Going down lets stage-ups fire again; going up is left to update(), so the Sea King dialog can be tested
+    const si = stageIndexForR(player.r);
+    if (si < lastStageIndex) lastStageIndex = si;
+    showBanner('Cheat: level ' + level + ' — ' + STAGES[si].name);
   });
 
   // ---------- NPC helpers ----------
@@ -336,6 +415,7 @@
     n.heading += clamp(angDiff(desiredHeading, n.heading), -turnRate * dt, turnRate * dt);
 
     if (n.stunTimer > 0) n.stunTimer -= dt;
+    n.wagPhase += dt * (n.stunTimer > 0 ? 3 : 7);
     const sp = npcSpeed(n.r) * speedMul * (n.stunTimer > 0 ? JELLY_STUN_SLOW : 1);
     n.x += Math.cos(n.heading) * sp * dt;
     n.y += Math.sin(n.heading) * sp * dt;
@@ -343,8 +423,9 @@
     if (n.y > FLOOR_Y) n.y = FLOOR_Y;
 
     if (n.stunTimer <= 0) {
+      const nc = fishCircles(n.x, n.y, n.r, n.heading);
       for (const j of jellies) {
-        if (dist(n.x, n.y, j.x, j.y) < n.r + j.r) {
+        if (fishHitsJelly(nc, j)) {
           n.r = Math.max(5, Math.sqrt(n.r * n.r * (1 - JELLY_SHRINK)));
           n.stunTimer = JELLY_STUN_TIME;
           burst(n.x, n.y, '#f06292', 10, 110);
@@ -359,6 +440,7 @@
   function update(dt) {
     if (gameState !== 'playing') return;
 
+    elapsed += dt;
     if (player.stunTimer > 0) player.stunTimer -= dt;
     if (player.invulnTimer > 0) player.invulnTimer -= dt;
 
@@ -374,6 +456,7 @@
 
     const wantsBoost = (keys['ArrowUp'] || keys['w'] || keys['Control'] || isTouchBoosting()) && player.boost > 0.05 && player.stunTimer <= 0;
     player.boosting = wantsBoost;
+    player.wagPhase += dt * (wantsBoost ? 14 : 7);
     if (wantsBoost) player.boost = clamp(player.boost - dt * BOOST_DRAIN, 0, difficulty.boostMax);
     else player.boost = clamp(player.boost + dt * BOOST_REGEN * difficulty.boostRegen, 0, difficulty.boostMax);
 
@@ -395,10 +478,11 @@
     while (jellies.length < JELLY_COUNT) spawnJelly();
 
     // Player eats food
+    let pc = fishCircles(player.x, player.y, player.r, player.heading);
     for (let i = foods.length - 1; i >= 0; i--) {
       const f = foods[i];
       f.bob += dt * 3;
-      if (dist(player.x, player.y, f.x, f.y) < player.r + f.r) {
+      if (circlesHitPoint(pc, f.x, f.y, f.r)) {
         growPlayer(f.r * f.r, 1.0);
         score += 1;
         burst(f.x, f.y, f.color, 6, 60);
@@ -408,10 +492,12 @@
     }
 
     // Player vs npc interactions
+    pc = fishCircles(player.x, player.y, player.r, player.heading);
     for (let i = npcs.length - 1; i >= 0; i--) {
       const n = npcs[i];
-      const d = dist(player.x, player.y, n.x, n.y);
-      if (d < player.r + n.r) {
+      // cheap bounding check before the exact shape test (tail reaches ~1.6r behind the center)
+      if (dist(player.x, player.y, n.x, n.y) > (player.r + n.r) * 1.7) continue;
+      if (circlesOverlap(pc, fishCircles(n.x, n.y, n.r, n.heading))) {
         if (player.r > n.r * EAT_MARGIN) {
           growPlayer(n.r * n.r, 0.55);
           score += Math.round(n.r);
@@ -430,12 +516,13 @@
     }
 
     // Player vs jellyfish (hazard, not lethal)
+    pc = fishCircles(player.x, player.y, player.r, player.heading);
     for (const j of jellies) {
       j.bob += dt * 2;
       j.x += Math.cos(j.heading) * 14 * dt;
       j.y += Math.sin(j.heading) * 14 * dt;
       if (j.y > FLOOR_Y) { j.y = FLOOR_Y; j.heading = -j.heading; }
-      if (player.stunTimer <= 0 && dist(player.x, player.y, j.x, j.y) < player.r + j.r) {
+      if (player.stunTimer <= 0 && fishHitsJelly(pc, j)) {
         growPlayer(-playerArea() * JELLY_SHRINK, 1);
         player.r = Math.max(BASE_R * 0.6, player.r);
         player.stunTimer = JELLY_STUN_TIME;
@@ -450,7 +537,7 @@
       playLevelUp();
       if (afterStage === STAGES.length - 1 && !reachedFinalStage) {
         reachedFinalStage = true;
-        showBanner('👑 You became the Sea King!');
+        showKingDialog();
       } else {
         showBanner('New stage: ' + STAGES[afterStage].name + '!');
       }
@@ -478,37 +565,99 @@
   }
 
   // ---------- Rendering ----------
-  function drawFish(sx, sy, r, heading, color, z, outline) {
+  // Body and tail as one closed outline; the tail tips swing around the tail joint by `wag` radians
+  function fishBodyPath(r, wag) {
+    const jx = -0.85 * r;
+    const cw = Math.cos(wag), sw = Math.sin(wag);
+    const tp = (x, y) => { const dx = x - jx; return [jx + dx * cw - y * sw, dx * sw + y * cw]; };
+    let a, b;
+    ctx.beginPath();
+    ctx.moveTo(r, 0.04 * r);
+    ctx.bezierCurveTo(0.85 * r, -0.55 * r, -0.35 * r, -0.62 * r, jx, -0.12 * r);
+    a = tp(-1.2 * r, -0.25 * r); b = tp(-1.8 * r, -0.7 * r);
+    ctx.quadraticCurveTo(a[0], a[1], b[0], b[1]);
+    a = tp(-1.55 * r, -0.2 * r); b = tp(-1.45 * r, 0);
+    ctx.quadraticCurveTo(a[0], a[1], b[0], b[1]);
+    a = tp(-1.55 * r, 0.2 * r); b = tp(-1.8 * r, 0.7 * r);
+    ctx.quadraticCurveTo(a[0], a[1], b[0], b[1]);
+    a = tp(-1.2 * r, 0.25 * r);
+    ctx.quadraticCurveTo(a[0], a[1], jx, 0.12 * r);
+    ctx.bezierCurveTo(-0.35 * r, 0.64 * r, 0.85 * r, 0.55 * r, r, 0.04 * r);
+    ctx.closePath();
+  }
+
+  function drawFish(sx, sy, r, heading, color, z, outline, wagPhase) {
+    const wag = Math.sin(wagPhase) * 0.22;
+    // Mirror vertically when swimming left so the belly stays down; squash near vertical for a rolling look
+    const roll = clamp(Math.cos(heading) * 3, -1, 1);
+    const flip = (roll < 0 ? -1 : 1) * Math.max(0.35, Math.abs(roll));
+    const finColor = shade(color, -0.3);
+
     ctx.save();
     ctx.translate(sx, sy);
     ctx.rotate(heading);
-    ctx.scale(z, z);
+    ctx.scale(z, z * flip);
 
-    // tail
-    ctx.fillStyle = color;
+    // dorsal and ventral fins, behind the body
+    ctx.fillStyle = finColor;
     ctx.beginPath();
-    ctx.moveTo(-r * 1.05, 0);
-    ctx.lineTo(-r * 1.9, -r * 0.7);
-    ctx.lineTo(-r * 1.6, 0);
-    ctx.lineTo(-r * 1.9, r * 0.7);
+    ctx.moveTo(0.3 * r, -0.4 * r);
+    ctx.quadraticCurveTo(-0.05 * r, -0.95 * r, -0.55 * r, -0.78 * r);
+    ctx.lineTo(-0.45 * r, -0.35 * r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-0.1 * r, 0.4 * r);
+    ctx.quadraticCurveTo(-0.3 * r, 0.75 * r, -0.52 * r, 0.62 * r);
+    ctx.lineTo(-0.45 * r, 0.35 * r);
     ctx.closePath();
     ctx.fill();
 
-    // body
-    ctx.beginPath();
-    ctx.ellipse(0, 0, r, r * 0.62, 0, 0, Math.PI * 2);
+    // body + tail: dark back, light belly
+    const g = ctx.createLinearGradient(0, -0.6 * r, 0, 0.6 * r);
+    g.addColorStop(0, shade(color, -0.35));
+    g.addColorStop(0.45, color);
+    g.addColorStop(1, shade(color, 0.55));
+    fishBodyPath(r, wag);
+    ctx.fillStyle = g;
     ctx.fill();
-
     if (outline) {
       ctx.strokeStyle = outline;
       ctx.lineWidth = clamp(2.5 / z, 1, 6);
       ctx.stroke();
     }
 
+    // gill line
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth = Math.max(0.8, r * 0.05);
+    ctx.beginPath();
+    ctx.arc(0.2 * r, 0, 0.32 * r, -0.95, 0.95);
+    ctx.stroke();
+
+    // pectoral fin, over the body
+    ctx.fillStyle = shade(color, 0.25);
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(0.3 * r, 0.12 * r);
+    ctx.quadraticCurveTo(0.05 * r, 0.5 * r, -0.2 * r, 0.4 * r);
+    ctx.lineTo(0.12 * r, 0.1 * r);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
     // eye
+    const eyeR = Math.max(1.2, r * 0.13);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(0.6 * r, -0.13 * r, eyeR, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = '#10202b';
     ctx.beginPath();
-    ctx.arc(r * 0.55, -r * 0.12, Math.max(1, r * 0.11), 0, Math.PI * 2);
+    ctx.arc(0.6 * r + eyeR * 0.25, -0.13 * r, eyeR * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.arc(0.6 * r + eyeR * 0.05, -0.13 * r - eyeR * 0.3, eyeR * 0.22, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -615,34 +764,38 @@
     }
 
     // jellyfish
+    // drawn from the same geometry circleHitsJelly() tests against
     for (const j of jellies) {
-      const p = worldToScreen(j.x, j.y);
+      const p = worldToScreen(j.x, j.y + jellyBobY(j));
       if (p.x < -60 || p.x > W + 60 || p.y < -60 || p.y > H + 60) continue;
-      const r = j.r * z;
       ctx.fillStyle = 'rgba(240,98,146,0.55)';
       ctx.beginPath();
-      ctx.arc(p.x, p.y - Math.sin(j.bob) * 3, r, Math.PI, 0);
+      ctx.arc(p.x, p.y, j.r * z, Math.PI, 0);
       ctx.fill();
       ctx.strokeStyle = 'rgba(240,98,146,0.8)';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = JELLY_TENTACLE_HALF_W * 2 * z;
+      ctx.lineCap = 'round';
       for (let i = -1; i <= 1; i++) {
+        const t = jellyTentacle(j, i);
+        const a = worldToScreen(t.x1, t.y1), b = worldToScreen(t.x2, t.y2);
         ctx.beginPath();
-        ctx.moveTo(p.x + i * r * 0.5, p.y);
-        ctx.lineTo(p.x + i * r * 0.5 + Math.sin(j.bob + i) * 5, p.y + r * 1.1);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
         ctx.stroke();
       }
+      ctx.lineCap = 'butt';
     }
 
     // npc fish, with danger/prey outline for readability
     for (const n of npcs) {
       const p = worldToScreen(n.x, n.y);
-      const rr = n.r * z;
-      if (p.x < -rr - 40 || p.x > W + rr + 40 || p.y < -rr - 40 || p.y > H + rr + 40) continue;
+      const rr = n.r * z * 2;
+      if (p.x < -rr || p.x > W + rr || p.y < -rr || p.y > H + rr) continue;
       const color = STAGES[stageIndexForR(n.r)].color;
       let outline = 'rgba(255,255,255,0.35)';
       if (player.r > n.r * EAT_MARGIN) outline = '#69f0ae';
       else if (n.r > player.r * EAT_MARGIN) outline = '#ff5252';
-      drawFish(p.x, p.y, n.r, n.heading, color, z, outline);
+      drawFish(p.x, p.y, n.r, n.heading, color, z, outline, n.wagPhase);
     }
 
     // player
@@ -657,7 +810,7 @@
       ctx.stroke();
       ctx.restore();
     }
-    drawFish(pp.x, pp.y, player.r, player.heading, stage.color, z, player.stunTimer > 0 ? '#f06292' : 'rgba(255,255,255,0.6)');
+    drawFish(pp.x, pp.y, player.r, player.heading, stage.color, z, player.stunTimer > 0 ? '#f06292' : 'rgba(255,255,255,0.6)', player.wagPhase);
 
     // particles
     for (const pt of particles) {

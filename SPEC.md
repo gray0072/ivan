@@ -34,7 +34,7 @@ First-person arcade flight game.
 Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 
 - Steering: arrow keys (left/right = turn, Ctrl or up = boost/dash that drains and regenerates a stamina meter)
-- Touch: on coarse-pointer devices the start button requests fullscreen; a floating joystick in the left third of the screen sets the swim direction (the fish turns toward it), any touch held on the right two-thirds boosts; multi-touch so both work together
+- Touch: on coarse-pointer devices the start button requests fullscreen; a floating joystick in the left half of the screen sets the swim direction (the fish turns toward it), any touch held in the right half boosts; multi-touch so both work together
 - Difficulty (picked on the start screen): Easy = food ×1.2, NPC speed ×0.9, boost capacity and regen ×1.5; Medium = baseline; Hard = food ×0.8, NPC speed ×1.1, boost capacity and regen ×0.75
 - Growth: eating plankton grows the player slightly; eating a smaller fish grows it more and scores points proportional to that fish's size
 - Eat/be-eaten rule: a fish can only eat another fish whose radius is smaller by at least 15% (`EAT_MARGIN`); near-equal sizes just bounce off each other with no effect
@@ -45,7 +45,9 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Jellyfish are a non-lethal hazard: touching one shrinks the player slightly and slows them briefly, rather than ending the game. NPC fish take the same sting (shrink + brief slowdown) and steer away from any jellyfish within a short edge-to-edge distance, with that avoidance overriding flee/chase
 - A short spawn invulnerability window (with a visible glow) prevents unfair instant deaths right after (re)starting
 - Five size-based stages (fry → fish → big fish → shark → Sea King) drive the player's color and a camera that gradually zooms out as the player grows
-- Reaching the final stage shows a one-time celebration banner; play continues afterwards as an endless high-score chase
+- Fish model: body and tail are one closed outline with an animated tail wag (faster while boosting), fins, gill line and a back-to-belly gradient; it's mirrored vertically when heading left so the belly stays down, and squashed near vertical headings for a rolling look
+- Collisions use shapes that match the drawing: fish = 4 circles along the body axis (tail included), jellyfish = half-disk bell + 3 tentacle segments; food, eating/being eaten and stings all test against these instead of a single center radius
+- Reaching the final stage pauses the game and shows a Sea King dialog with the run's in-game time and the best time per difficulty (localStorage), with a "New record!" badge when beaten. Runs where the test cheat was used are marked and never saved. Options: Continue (default, grants a short invulnerability) or Play Again
 - Test cheat: while playing, digit keys 1–9 set the player's radius (1–5 = one size inside each stage, 6–9 = progressively larger Sea King)
 
 ## Project structure

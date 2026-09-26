@@ -16,7 +16,7 @@ Open [index.html](index.html) in a browser — no build step, no server required
 - **Ctrl** (or **↑**) — boost (dash), costs stamina that refills over time
 - Mouse is not used — keyboard only
 
-**On phone/tablet:** the game switches to fullscreen when you start (where the browser supports it; on iPhone, add the page to the home screen for a fullscreen view). Drag your thumb in the **left third** of the screen like a joystick — the fish turns toward the direction you push. Touch and hold anywhere on the **right side** to boost. Both work at the same time.
+**On phone/tablet:** the game switches to fullscreen when you start (where the browser supports it; on iPhone, add the page to the home screen for a fullscreen view). Drag your thumb in the **left half** of the screen like a joystick — the fish turns toward the direction you push. Touch and hold anywhere in the **right half** to boost. Both work at the same time.
 
 ## Difficulty
 
@@ -36,7 +36,7 @@ Pick a difficulty on the start screen (Space/Enter picks Medium):
 - You're briefly invulnerable right after spawning (blue glow) so you have time to get your bearings before predators start hunting.
 - Jellyfish aren't lethal, but touching one stings you: you shrink a bit and slow down for a moment, so it's worth steering around them. Other fish get stung too and try to swim around jellyfish.
 - The bigger you get, the more the camera zooms out, and the sea around you spawns fish sized relative to you — there's always something to eat and something to fear.
-- Reach the final stage (Sea King) to become the sea's apex predator — the game keeps going afterwards so you can keep growing your score.
+- Reach the final stage (Sea King) to become the sea's apex predator. A celebration dialog shows how long it took and your best time for that difficulty (and congratulates you on a new record). From there you can continue playing to keep growing your score, or start over.
 - Get eaten by something bigger and it's game over — try to beat your score.
 
 ## Tech stack

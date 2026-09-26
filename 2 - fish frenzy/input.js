@@ -22,8 +22,8 @@ window.addEventListener('keydown', (e) => {
   if (btn) btn.click();
 });
 
-// ---------- Touch: floating joystick in the left third, hold anywhere else to dash ----------
-const STEER_ZONE_FRAC = 1 / 3;
+// ---------- Touch: floating joystick in the left half, hold in the right half to dash ----------
+const STEER_ZONE_FRAC = 1 / 2;
 const JOY_RADIUS = 60;
 const JOY_DEADZONE = 0.2;
 const joystick = { id: null, baseX: 0, baseY: 0, dx: 0, dy: 0 };
