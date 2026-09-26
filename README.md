@@ -11,7 +11,7 @@ A small, growing gallery of self-contained browser games and experiments. Every 
 | Project | Description | Link |
 |---|---|---|
 | 1 - flight simulator | First-person arcade flight game: steer with the arrow keys, fire a twin-gun with Ctrl to pop balloons for points, and land on the highlighted airport's runway. | [Play](https://gray0072.github.io/ivan/1%20-%20flight%20simulator/) · [Source](1%20-%20flight%20simulator/) |
-| 2 - fish frenzy | Eat-and-grow arcade game: steer a fish with the arrow keys, eat plankton and smaller fish, avoid bigger ones, and climb the food chain to become the Sea King. | [Play](https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/) · [Source](2%20-%20fish%20frenzy/) |
+| 2 - fish frenzy | Eat-and-grow arcade game: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish with your mouth, avoid bigger ones and jellyfish, and climb the food chain to the Sea King and the maximum size. Three difficulty levels and best-time records. | [Play](https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/) · [Source](2%20-%20fish%20frenzy/) |
 
 [![Flight simulator screenshot](1%20-%20flight%20simulator/screenshot.png)](1%20-%20flight%20simulator/)
 [![Fish frenzy screenshot](2%20-%20fish%20frenzy/screenshot.png)](2%20-%20fish%20frenzy/)
@@ -65,7 +65,8 @@ Pushing to `main` is the entire deploy process.
 │   ├── README_RU.md                # project docs (Russian)
 │   └── screenshot.png
 ├── 2 - fish frenzy/
-│   ├── index.html                # the game
+│   ├── index.html                # the game (markup)
+│   ├── styles.css, *.js           # styles and game code, split by concern
 │   ├── README.md                  # project docs (English)
 │   ├── README_RU.md                # project docs (Russian)
 │   └── screenshot.png

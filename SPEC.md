@@ -36,7 +36,8 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Steering: arrow keys (left/right = turn, Ctrl or up = boost/dash that drains and regenerates a stamina meter)
 - Touch: on coarse-pointer devices the start button requests fullscreen; a floating joystick in the left half of the screen sets the swim direction (the fish turns toward it), any touch held in the right half boosts; multi-touch so both work together
 - Difficulty (picked on the start screen): Easy = food ×1.2, NPC speed ×0.9, boost capacity and regen ×1.5; Medium = baseline; Hard = food ×0.8, NPC speed ×1.1, boost capacity and regen ×0.75
-- Growth: eating plankton grows the player slightly; eating a smaller fish grows it more and scores points proportional to that fish's size
+- Growth: eating plankton grows the player slightly; eating a smaller fish grows it more and scores points proportional to that fish's size. Each meal's area is queued and applied linearly over 5 seconds (`GROW_TIME`) instead of instantly
+- Eating is mouth-only: a mouth circle in front of the gill line (`MOUTH_HIT`) must overlap any hit circle of the smaller fish (or the food). This applies both ways, so the player is safe right behind a bigger fish's tail until it turns around
 - Eat/be-eaten rule: a fish can only eat another fish whose radius is smaller by at least 15% (`EAT_MARGIN`); near-equal sizes just bounce off each other with no effect
 - Readability: every fish on screen is outlined green (safely eatable), red (dangerous to the player) or neutral white (similar size), computed live each frame
 - NPC AI: each fish flees the nearest bigger threat in range, otherwise chases the nearest smaller prey in range, otherwise wanders; NPC sizes are spawned relative to the player's current size so difficulty scales with growth
@@ -45,10 +46,15 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Jellyfish are a non-lethal hazard: touching one shrinks the player slightly and slows them briefly, rather than ending the game. NPC fish take the same sting (shrink + brief slowdown) and steer away from any jellyfish within a short edge-to-edge distance, with that avoidance overriding flee/chase
 - A short spawn invulnerability window (with a visible glow) prevents unfair instant deaths right after (re)starting
 - Five size-based stages (fry → fish → big fish → shark → Sea King) drive the player's color and a camera that gradually zooms out as the player grows
-- Fish model: body and tail are one closed outline with an animated tail wag (faster while boosting), fins, gill line and a back-to-belly gradient; it's mirrored vertically when heading left so the belly stays down, and squashed near vertical headings for a rolling look
-- Collisions use shapes that match the drawing: fish = 4 circles along the body axis (tail included), jellyfish = half-disk bell + 3 tentacle segments; food, eating/being eaten and stings all test against these instead of a single center radius
+- Rendering is devicePixelRatio-aware (capped at 2.5) so it stays sharp on phones
+- Scenery (`scenery.js`, stateless): water gradient, surface light rays fading with depth, parallax motes, two parallax layers of far ridges, sand with ripples, and seaweed / rocks / starfish / shells generated per 64-unit floor cell from a deterministic hash; a vignette on top. Jellyfish come in several hues and glow more in dark water; boosting leaves a bubble trail
+- Fish model: rounded body with a blunt snout; body and tail are one closed outline with an animated tail wag (faster while boosting), fins, gill line and a back-to-belly gradient; it's mirrored vertically when heading left so the belly stays down, and squashed near vertical headings for a rolling look
+- Collisions use shapes that match the drawing: fish = 4 circles along the body axis (tail included), jellyfish = pulsing half-disk bell + 4 curved tentacles (each tested as two segments through the curve's midpoint), with the geometry cached once per frame and shared by collision and rendering; food, eating/being eaten and stings all test against these instead of a single center radius
 - Reaching the final stage pauses the game and shows a Sea King dialog with the run's in-game time and the best time per difficulty (localStorage), with a "New record!" badge when beaten. Runs where the test cheat was used are marked and never saved. Options: Continue (default, grants a short invulnerability) or Play Again
-- Test cheat: while playing, digit keys 1–9 set the player's radius (1–5 = one size inside each stage, 6–9 = progressively larger Sea King)
+- Test cheat: while playing, digit keys 1–9 set the player's radius (1–5 = one size inside each stage, 6–9 = progressively larger Sea King), 0 = max size
+- Size cap `MAX_R = 500` for the player (growth is clamped) and for every spawned NPC. Reaching it pauses the game and shows the "Maximum size reached!" variant of the milestone dialog with its own per-difficulty best time (`fishFrenzy.bestMaxTime.<difficulty>`), a fanfare and a fireworks show (`fireworks.js`, separate canvas above the overlay, runs until the dialog closes). Continue keeps playing at the cap; Play Again restarts. In the last stage the HUD growth bar tracks progress toward the cap
+- Sea King stage: jellyfish no longer sting the player; touching one with the mouth eats it (score + queued growth)
+- Crowd control: NPC count scales down with player size (`npcCount`, down to 60% of `NPC_COUNT`) and their spawn/cull radius scales up (`npcSpawnRadius`, up to 1.5×); surplus bots are retired off-screen, farthest first
 
 ## Project structure
 
@@ -72,6 +78,8 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 │   ├── utils.js              # math helpers
 │   ├── audio.js              # Web Audio sound effects
 │   ├── input.js              # keyboard, touch joystick/boost zones, fullscreen
+│   ├── scenery.js            # background: water, light rays, ridges, sand, seaweed, rocks
+│   ├── fireworks.js          # fireworks show for the max-size dialog
 │   ├── game.js               # world, difficulty, update and render loop
 │   ├── README.md
 │   ├── README_RU.md

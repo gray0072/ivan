@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Fish Frenzy</title>
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -19,7 +19,7 @@
 </div>
 
 <div id="bars">
-  <div>Growth to next stage</div>
+  <div id="growLabel">Growth to next stage</div>
   <div class="barBg"><div class="barFill" id="growBar"></div></div>
   <div>Dash</div>
   <div class="barBg"><div class="barFill" id="boostBar"></div></div>
@@ -36,8 +36,8 @@
     <p><b>← →</b> — turn. <b>Ctrl</b> (or ↑) — dash (uses stamina, helps you catch prey or escape a predator).</p>
     <p>On phone/tablet the game goes fullscreen: drag your thumb in the <b>left half</b> of the screen like a joystick to steer, touch and hold anywhere in the <b>right half</b> to dash.</p>
     <p>The sea is boundless — no edges except the sea floor. Near the bottom it's darker, food is plentier, and fish are smallest. The higher you go, the lighter the water and the bigger (and more dangerous) the competition.</p>
-    <p>Green outline — you can eat that fish. Red outline — it will eat you. Jellyfish (pink) aren't lethal but sting and shrink you — avoid them.</p>
-    <p>Become the sea's biggest predator — the Sea King! (you're invulnerable for the first few seconds after starting — blue glow)</p>
+    <p>Green outline — you can eat that fish. Red outline — it will eat you. Fish eat with their mouth only, so staying behind a predator's tail is safe until it turns around. Jellyfish aren't lethal but sting and shrink you — avoid them.</p>
+    <p>Become the sea's biggest predator — the Sea King — and then grow to the maximum size! (you're invulnerable for the first few seconds after starting — blue glow)</p>
     <p class="choose">Choose difficulty:</p>
     <div class="btnRow">
       <button class="btn" data-difficulty="easy">Easy</button>
@@ -55,9 +55,9 @@
   </div>
   <div id="kingPanel" hidden>
     <div class="kingCard">
-      <div class="crown">👑</div>
-      <h1 class="kingTitle">You are the Sea King!</h1>
-      <p class="kingSub">You climbed all the way to the top of the food chain.</p>
+      <div class="crown" id="kingIcon">👑</div>
+      <h1 class="kingTitle" id="kingTitle">You are the Sea King!</h1>
+      <p class="kingSub" id="kingSub"></p>
       <div class="stats">
         <div class="stat"><span class="statLabel">Your time</span><b id="kingTime"></b></div>
         <div class="stat"><span class="statLabel">Best (<span id="kingDiff"></span>)</span><b id="kingBest"></b></div>
@@ -72,9 +72,13 @@
   </div>
 </div>
 
+<canvas id="fx"></canvas>
+
 <script src="utils.js?v=2"></script>
-<script src="audio.js?v=1"></script>
+<script src="audio.js?v=2"></script>
 <script src="input.js?v=2"></script>
-<script src="game.js?v=4"></script>
+<script src="scenery.js?v=2"></script>
+<script src="fireworks.js?v=1"></script>
+<script src="game.js?v=7"></script>
 </body>
 </html>
