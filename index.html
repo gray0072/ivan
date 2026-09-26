@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Browser Games Gallery</title>
+<meta name="description" content="Tiny self-contained browser games in vanilla JavaScript. No install — just open and play.">
+<link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+<link rel="apple-touch-icon" href="assets/icon-512.png">
+<meta property="og:title" content="Browser Games Gallery">
+<meta property="og:description" content="Tiny self-contained browser games in vanilla JavaScript. No install — just open and play.">
+<meta property="og:image" content="https://gray0072.github.io/ivan/assets/social-preview.png">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -80,6 +87,16 @@
   .card .body {
     padding: 16px 18px 20px;
   }
+  .card h2 .icon {
+    width: 28px;
+    height: 28px;
+    aspect-ratio: auto;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    border-radius: 7px;
+    background: none;
+  }
   .card h2 {
     margin: 0 0 8px;
     font-size: 19px;
@@ -119,14 +136,14 @@
   <a class="card" href="1 - flight simulator/">
     <img src="1 - flight simulator/screenshot.png" alt="Flight simulator screenshot">
     <div class="body">
-      <h2>1 - flight simulator</h2>
+      <h2><img class="icon" src="1 - flight simulator/icon.svg" alt="">1 - flight simulator</h2>
       <p>First-person arcade flight game: steer with the arrow keys, fire a twin-gun with Ctrl to pop balloons for points, and land on the highlighted airport's runway.</p>
     </div>
   </a>
   <a class="card" href="2 - fish frenzy/">
     <img src="2 - fish frenzy/screenshot.png" alt="Fish frenzy screenshot">
     <div class="body">
-      <h2>2 - fish frenzy</h2>
+      <h2><img class="icon" src="2 - fish frenzy/icon.svg" alt="">2 - fish frenzy</h2>
       <p>Eat-and-grow arcade game: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish, avoid bigger ones and jellyfish, and climb the food chain to the Sea King. Three difficulty levels and best-time records.</p>
     </div>
   </a>

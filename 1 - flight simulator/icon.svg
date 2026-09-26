@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fb3ff"/>
+      <stop offset="0.62" stop-color="#9fdcff"/>
+      <stop offset="0.62" stop-color="#5caa4a"/>
+      <stop offset="1" stop-color="#3d7f34"/>
+    </linearGradient>
+    <linearGradient id="plane" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d5dee8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sky)"/>
+  <!-- clouds -->
+  <ellipse cx="116" cy="118" rx="62" ry="24" fill="#ffffff" opacity="0.85"/>
+  <ellipse cx="400" cy="84" rx="50" ry="19" fill="#ffffff" opacity="0.75"/>
+  <!-- runway -->
+  <path d="M226 317h60l70 195H156z" fill="#4a5059"/>
+  <path d="M252 340h8v26h-8zM251 392h10v34h-10zM249 454h14v44h-14z" fill="#ffffff"/>
+  <!-- plane, top view -->
+  <g transform="rotate(-18 256 230)">
+    <path fill="url(#plane)" d="M256 70c14 0 22 16 22 36v74l150 58v34l-150-26v70l44 32v26l-66-16-66 16v-26l44-32v-70l-150 26v-34l150-58v-74c0-20 8-36 22-36z"/>
+    <path fill="#1b4f8a" d="M246 98c0-9 4-16 10-16s10 7 10 16v22h-20z"/>
+  </g>
+</svg>

@@ -1,4 +1,4 @@
-# Аэропилот
+# <img src="icon.svg" alt="" width="48" height="48" align="center"> Аэропилот
 
 *[Read in English](README.md)*
 

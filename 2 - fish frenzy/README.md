@@ -1,4 +1,4 @@
-# Fish Frenzy
+# <img src="icon.svg" alt="" width="48" height="48" align="center"> Fish Frenzy
 
 *[Читать на русском](README_RU.md)*
 
@@ -23,12 +23,13 @@ Open [index.html](index.html) in a browser — no build step, no server required
 Pick a difficulty on the start screen (Space/Enter picks Medium):
 
 - **Easy** — 20% more food, other fish swim 10% slower, 50% more boost stamina that also refills 50% faster.
-- **Medium** — the standard game.
-- **Hard** — 20% less food, other fish swim 10% faster, 25% less boost stamina that refills 25% slower.
+- **Medium** — 10% more food, other fish swim 5% slower, 25% more boost stamina that also refills 25% faster.
+- **Hard** — the standard game.
 
 ## Gameplay
 
-- The sea is infinite — there's no wall to hit, except one: the **sea floor** below you.
+- The sea is endless to the left and right. Below you is the **sea floor**, above you is the **surface** with a tropical island, clouds and gulls on the horizon. The water is deep enough that a full-dash climb from the floor to the surface takes about 10 seconds for a fry and about 20 seconds for the biggest fish.
+- **Leaps.** Dash upward into the surface and your fish leaps out of the water: it flies along a real ballistic arc (you can't steer in the air) and lands back with a splash — spray, droplets, foam and bubbles. The steeper and faster you hit the surface, the higher the jump; big fish need a dash to break out, otherwise they just skim along the surface with their back out of the water. Other fish near the surface leap too — sometimes for fun, sometimes while chasing prey or escaping. Seagulls glide over the water at different heights… who knows what a good leap could do.
 - Depth matters. Near the floor the water is dark, food is abundant, and the fish are the smallest around — a safe place to graze. The higher you swim toward the surface, the brighter the water gets and the bigger (and more dangerous) the rivals become. Watch the "Depth" meter to see where you are.
 - Every fish on screen is outlined by color: **green** means you can eat it, **red** means it can eat you, faint white means you're too evenly matched — you just bounce off each other.
 - You eat with your **mouth** — the head in front of the gills has to reach the food or the fish. The same goes for predators: if you're right behind a big fish's tail, it can't eat you until it turns around.
@@ -39,7 +40,7 @@ Pick a difficulty on the start screen (Space/Enter picks Medium):
 - The bigger you get, the more the camera zooms out, and the sea around you spawns fish sized relative to you — there's always something to eat and something to fear.
 - Reach the final stage (Sea King) to become the sea's apex predator. A celebration dialog shows how long it took and your best time for that difficulty (and congratulates you on a new record). From there you can continue playing to keep growing your score, or start over. As the Sea King, jellyfish can't sting you anymore — you eat them instead.
 - The maximum size in the game is r = 500 (no fish is ever bigger). Reaching it sets off fireworks and shows your time and best time for that difficulty; you can keep playing (you won't grow any more) or start over.
-- The bigger you get, the fewer (and more spread out) the other fish are, so the sea doesn't turn into a traffic jam of giants.
+- The bigger you get, the fewer (and more spread out) the other fish are, so the sea doesn't turn into a traffic jam of giants. Most fish you meet are close to your own size — mostly smaller near the floor, mostly bigger in the shallows — with an occasional small fry mixed in.
 - Get eaten by something bigger and it's game over — try to beat your score.
 
 ## Tech stack

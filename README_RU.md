@@ -1,84 +1,95 @@
-*[Read in English](README.md)*
+<div align="center">
+
+<img src="assets/icon.svg" alt="Иконка галереи браузерных игр" width="120" height="120">
 
 # Галерея браузерных игр
 
-**Сайт: [gray0072.github.io/ivan](https://gray0072.github.io/ivan/)**
+**Маленькие самостоятельные браузерные игры на чистом JavaScript. Ничего не нужно устанавливать — просто открой и играй.**
 
-Небольшая и растущая галерея самостоятельных браузерных игр и экспериментов. Каждый проект — это одна статичная страница: без сборки, без фреймворков, просто открой и играй.
+[![Играть онлайн](https://img.shields.io/badge/▶_Играть_онлайн-gray0072.github.io%2Fivan-1b4f8a?style=for-the-badge)](https://gray0072.github.io/ivan/)
 
-## Проекты
+![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?logo=javascript&logoColor=000&style=flat-square)
+![HTML5 Canvas](https://img.shields.io/badge/HTML5_Canvas-E34F26?logo=html5&logoColor=fff&style=flat-square)
+![Web Audio](https://img.shields.io/badge/Web_Audio-3fa9f5?style=flat-square)
+![No build step](https://img.shields.io/badge/build-none-3ddc97?style=flat-square)
+![Mobile friendly](https://img.shields.io/badge/mobile-friendly-ffb627?style=flat-square)
+[![License: MIT](https://img.shields.io/badge/license-MIT-9fb0c3?style=flat-square)](LICENSE)
 
-| Проект | Описание | Ссылка |
-|---|---|---|
-| 1 - flight simulator | Аркадный симулятор самолёта от первого лица: управление стрелками, спаренная стрельба на Ctrl по воздушным шарикам, посадка на полосу отмеченного аэропорта. | [Играть](https://gray0072.github.io/ivan/1%20-%20flight%20simulator/) · [Исходники](1%20-%20flight%20simulator/) |
-| 2 - fish frenzy | Аркада «съешь и расти»: управляй рыбкой стрелками или сенсорным джойстиком, ешь ртом планктон и рыб мельче себя, избегай крупных рыб и медуз и поднимайся по пищевой цепи до Морского Царя и максимального размера. Три уровня сложности и рекорды времени. | [Играть](https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/) · [Исходники](2%20-%20fish%20frenzy/) |
+*[Read in English](README.md)*
 
-[![Скриншот симулятора самолёта](1%20-%20flight%20simulator/screenshot.png)](1%20-%20flight%20simulator/)
-[![Скриншот игры про рыб](2%20-%20fish%20frenzy/screenshot.png)](2%20-%20fish%20frenzy/)
+</div>
 
-## Как это работает
+---
 
-1. Открой [галерею](https://gray0072.github.io/ivan/) или посмотри папки в этом репозитории.
-2. Выбери карточку проекта.
-3. Играй прямо в браузере — ничего устанавливать не нужно.
+## 🎮 Игры
 
-## Технологии
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><img src="1%20-%20flight%20simulator/screenshot.png" alt="Скриншот симулятора самолёта"></a>
+      <h3><img src="1%20-%20flight%20simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
+      <p>Аркадный симулятор самолёта от первого лица: управление стрелками, спаренная стрельба на Ctrl по воздушным шарикам, посадка на полосу отмеченного аэропорта.</p>
+      <p><a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><b>▶ Играть</b></a> · <a href="1%20-%20flight%20simulator/">Исходники</a></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><img src="2%20-%20fish%20frenzy/screenshot.png" alt="Скриншот игры про рыб"></a>
+      <h3><img src="2%20-%20fish%20frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
+      <p>Аркада «съешь и расти»: управляй рыбкой стрелками или сенсорным джойстиком, ешь ртом планктон и рыб мельче себя, избегай крупных рыб и медуз и поднимайся по пищевой цепи до Морского Царя и максимального размера. Три уровня сложности и рекорды времени.</p>
+      <p><a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><b>▶ Играть</b></a> · <a href="2%20-%20fish%20frenzy/">Исходники</a></p>
+    </td>
+  </tr>
+</table>
 
-- HTML5 + CSS3
-- Vanilla JavaScript (без фреймворков и сборщиков)
-- Canvas 2D API для рендеринга
-- Web Audio API для звуковых эффектов
+## ✨ Особенности
 
-## Как запустить локально
+- **Без установки** — каждая игра запускается прямо в браузере, на компьютере и на телефоне.
+- **Сенсорное управление** — экранные джойстики, касание с удержанием и наклон устройства на телефонах и планшетах.
+- **Только веб-платформа** — Canvas 2D для графики, Web Audio для синтезированного звука. Без фреймворков и сборки ассетов.
+- **Самостоятельные проекты** — каждая игра живёт в своей папке и работает, даже если скопировать её из репозитория.
+
+## 🚀 Запуск локально
 
 ```bash
 git clone https://github.com/gray0072/ivan.git
 cd ivan
+npx serve .        # или просто открой любой index.html в браузере
 ```
 
-Дальше просто открой `index.html` любого проекта прямо в браузере, либо запусти локальный сервер:
+## 🌐 Деплой
 
-```bash
-npx serve .
-```
+Сборки нет. GitHub Pages отдаёт файлы прямо из корня ветки `main`
+(**Settings → Pages → Deploy from a branch → `main` / `(root)`**), так что пуш в `main` — это и есть весь деплой.
 
-## Сборка и деплой
-
-Сборки нет — всё это статичный HTML/CSS/JS. Деплой через GitHub Pages, отдающий файлы прямо из ветки `main`:
-
-**Settings → Pages → Deploy from a branch → `main` / `(root)`**
-
-Пуш в `main` — это и есть весь деплой.
-
-## Структура проекта
+## 📁 Структура проекта
 
 ```
 /
-├── index.html                    # корневая страница-галерея
+├── index.html                  # корневая страница-галерея
+├── assets/                     # иконка репозитория и картинка для соцсетей
 ├── README.md / README_RU.md
-├── SPEC.md
-├── AGENTS.md                      # инструкции для AI-агентов
-├── CLAUDE.md                      # -> ссылается на AGENTS.md
+├── SPEC.md                     # техническая спецификация
+├── AGENTS.md                   # инструкции для AI-агентов
+├── CLAUDE.md                   # -> ссылается на AGENTS.md
 ├── 1 - flight simulator/
-│   ├── index.html                # сама игра
-│   ├── README.md                  # описание проекта (на английском)
-│   ├── README_RU.md                # описание проекта (на русском)
+│   ├── index.html              # сама игра
+│   ├── README.md / README_RU.md
+│   ├── icon.svg
 │   └── screenshot.png
 ├── 2 - fish frenzy/
-│   ├── index.html                # сама игра (разметка)
-│   ├── styles.css, *.js           # стили и код игры, разбитый по файлам
-│   ├── README.md                  # описание проекта (на английском)
-│   ├── README_RU.md                # описание проекта (на русском)
+│   ├── index.html              # разметка
+│   ├── styles.css, *.js        # стили и код игры, разбитый по файлам
+│   ├── README.md / README_RU.md
+│   ├── icon.svg
 │   └── screenshot.png
-└── ... (со временем — новые проекты, та же структура)
+└── ...                         # со временем — новые игры, та же структура
 ```
 
-## Планы
+## 🗺️ Планы
 
-- [ ] Добавить больше мини-игр и экспериментов
+- [ ] Больше мини-игр и экспериментов
 - [ ] Поиск/фильтр на странице галереи
 - [ ] Переключатель светлой/тёмной темы на странице галереи
 
-## Лицензия
+## 📄 Лицензия
 
-MIT
+[MIT](LICENSE)

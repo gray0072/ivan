@@ -2,6 +2,12 @@
 
 function rand(a, b) { return a + Math.random() * (b - a); }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+// standard normal sample (Box-Muller)
+function randNormal() {
+  let u = 0;
+  while (u === 0) u = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+}
 function angDiff(a, b) {
   let d = (a - b) % (Math.PI * 2);
   if (d > Math.PI) d -= Math.PI * 2;

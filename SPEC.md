@@ -13,7 +13,7 @@ Authoritative developer/AI working spec for this repository. Not end-user docume
 
 ## Overview
 
-A growing gallery of small, self-contained browser games and experiments. Each project lives in its own numbered folder with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, and a `screenshot.png`. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each.
+A growing gallery of small, self-contained browser games and experiments. Each project lives in its own numbered folder with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, a Swedish `README_SV.md`, and a `screenshot.png` (always showing the English UI). Every game has three difficulty levels (Easy / Medium / Hard), chosen on the start screen and in the restart dialog. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each.
 
 ## Projects
 
@@ -35,20 +35,23 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 
 - Steering: arrow keys (left/right = turn, Ctrl or up = boost/dash that drains and regenerates a stamina meter)
 - Touch: on coarse-pointer devices the start button requests fullscreen; a floating joystick in the left half of the screen sets the swim direction (the fish turns toward it), any touch held in the right half boosts; multi-touch so both work together
-- Difficulty (picked on the start screen): Easy = food ×1.2, NPC speed ×0.9, boost capacity and regen ×1.5; Medium = baseline; Hard = food ×0.8, NPC speed ×1.1, boost capacity and regen ×0.75
+- Difficulty (picked on the start screen): Easy = food ×1.2, NPC speed ×0.9, boost capacity and regen ×1.5; Medium = food ×1.1, NPC speed ×0.95, boost capacity and regen ×1.25; Hard = baseline
 - Growth: eating plankton grows the player slightly; eating a smaller fish grows it more and scores points proportional to that fish's size. Each meal's area is queued and applied linearly over 5 seconds (`GROW_TIME`) instead of instantly
 - Eating is mouth-only: a mouth circle in front of the gill line (`MOUTH_HIT`) must overlap any hit circle of the smaller fish (or the food). This applies both ways, so the player is safe right behind a bigger fish's tail until it turns around
 - Eat/be-eaten rule: a fish can only eat another fish whose radius is smaller by at least 15% (`EAT_MARGIN`); near-equal sizes just bounce off each other with no effect
 - Readability: every fish on screen is outlined green (safely eatable), red (dangerous to the player) or neutral white (similar size), computed live each frame
-- NPC AI: each fish flees the nearest bigger threat in range, otherwise chases the nearest smaller prey in range, otherwise wanders; NPC sizes are spawned relative to the player's current size so difficulty scales with growth
-- Infinite world: no side or top boundary — entities are continuously spawned within a radius of the player and recycled once they drift far away, so exploration never hits a wall
-- The only boundary is the sea floor (a fixed world y). Depth (distance to the floor) drives difficulty and atmosphere: near the floor the water is dark, food is dense, and fish skew smallest; higher up the water lightens and fish skew larger and more dangerous. A HUD "depth" bar shows the player's position in that gradient
+- NPC AI: each fish flees the nearest bigger threat in range, otherwise chases the nearest smaller prey in range, otherwise wanders; NPC sizes are spawned relative to the player's current size so difficulty scales with growth: the size ratio is log-normal (σ = 0.25, with 20% of the mass moved from the ±1σ middle to the tails: 20% of samples are drawn only from |z| > 1) around a center that depends mostly on the player's depth (×0.8 near the floor … ×1.2 in the shallows), plus 10% small fry (×0.3–0.55), clamped to `MAX_R`; each NPC also gets a fixed ±3% speed variation
+- Spawning never pops into view: fish and jellyfish are placed in an area-uniform ring around the player whose inner radius is "screen half-diagonal / zoom + the object's full extent" (fish extent = 1.9r, so even a huge tail stays off-screen); points outside the water column are mirrored vertically. Cull distances are likewise kept above the off-screen distance
+- Infinite world sideways: no side boundary — entities are continuously spawned within a radius of the player and recycled once they drift far away, so exploration never hits a wall
+- Vertical bounds: the sea floor (`FLOOR_Y`) and the water surface (`SURFACE_Y = FLOOR_Y - WATER_DEPTH`, `WATER_DEPTH = 2600`). The depth is sized so a full-dash climb takes 10–20 s at every size (fry 150×1.7 u/s → 10.2 s; giants at the 77 u/s speed floor → 19.9 s) and the largest fish (r = 500, ~1050 tall, ~1400 long) still fits ~2.5 times. Depth drives difficulty and atmosphere: near the floor the water is dark, food is dense, and fish skew smallest; toward the surface the water lightens and fish skew larger and more dangerous. A HUD "depth" bar shows the player's position in the column. Food, jellyfish and spawns stay inside the column (spawn points outside it are mirrored vertically)
+- Leaps: when a fish's center crosses the surface going up it either skims (held at the surface) or launches, if its arc would lift it at least 0.3r. A dash (player boost, or NPC chase/flee/leap) guarantees an exit speed high enough to rise 1.3r on a steep exit; the launch angle is capped at ~69° so the fish arcs over instead of flipping. In the air only gravity acts (`450 × (r/14)^0.35`, so big fish don't hang for ages), the nose follows the velocity, and there's no steering. Exit and splashdown spawn a splash: ballistic droplets, a spray crown, foam on the waterline, entry bubbles and a filtered-noise sound. Wandering NPCs near the surface occasionally decide to leap (dash steeply up)
+- Seagulls (easter egg): 6 gulls fly over the water at 50–450 above the surface (skewed low), flapping and gliding, recycled horizontally around the player. The lowest height is set so a fry's full-dash leap reaches it (center apex 238² / 900 = 63 plus mouth and hit radius). A leaping player whose mouth touches a gull (and who is bigger than it) eats it: +25 score, growth, a burst of feathers that sway down and float on the water, a "Gull snack!" banner and a dead-gull sound (chomp, a "KYAAH!" squawk and a sagging strangled wail: vibrato sawtooth through a bandpass). Not mentioned in the player docs
 - Jellyfish are a non-lethal hazard: touching one shrinks the player slightly and slows them briefly, rather than ending the game. NPC fish take the same sting (shrink + brief slowdown) and steer away from any jellyfish within a short edge-to-edge distance, with that avoidance overriding flee/chase
 - A short spawn invulnerability window (with a visible glow) prevents unfair instant deaths right after (re)starting
 - Five size-based stages (fry → fish → big fish → shark → Sea King) drive the player's color and a camera that gradually zooms out as the player grows
 - Rendering is devicePixelRatio-aware (capped at 2.5) so it stays sharp on phones
-- Scenery (`scenery.js`, stateless): water gradient, surface light rays fading with depth, parallax motes, two parallax layers of far ridges, sand with ripples, and seaweed / rocks / starfish / shells generated per 64-unit floor cell from a deterministic hash; a vignette on top. Jellyfish come in several hues and glow more in dark water; boosting leaves a bubble trail
-- Fish model: rounded body with a blunt snout; body and tail are one closed outline with an animated tail wag (faster while boosting), fins, gill line and a back-to-belly gradient; it's mirrored vertically when heading left so the belly stays down, and squashed near vertical headings for a rolling look
+- Scenery (`scenery.js`, stateless): above the surface a sky with sun, drifting clouds, far hazy islands and nearer palm islands on parallax layers, and gulls; a swelling wavy surface with a bright waterline and translucent film drawn over the fish; water colored by true depth, sun rays on a slow parallax layer (hashed 170px cells: some empty for irregular gaps, each ray with its own width, slant, sway and a 4–12 s fade cycle, so rays slide past when swimming sideways and keep fading in/out; fade out with depth), parallax motes, two parallax layers of far ridges, sand with ripples, and seaweed / rocks / starfish / shells generated per 64-unit floor cell from a deterministic hash; a vignette on top. Jellyfish come in several hues and glow more in dark water; boosting leaves a bubble trail
+- Fish model: rounded body with a blunt snout; body and tail are one closed outline with an animated tail wag (faster while boosting), dorsal/ventral fins that ripple and a pectoral fin that flaps around its base (all driven by the same swim phase, slightly out of sync), gill line and a back-to-belly gradient; it's mirrored vertically when heading left so the belly stays down, and squashed near vertical headings for a rolling look
 - Collisions use shapes that match the drawing: fish = 4 circles along the body axis (tail included), jellyfish = pulsing half-disk bell + 4 curved tentacles (each tested as two segments through the curve's midpoint), with the geometry cached once per frame and shared by collision and rendering; food, eating/being eaten and stings all test against these instead of a single center radius
 - Reaching the final stage pauses the game and shows a Sea King dialog with the run's in-game time and the best time per difficulty (localStorage), with a "New record!" badge when beaten. Runs where the test cheat was used are marked and never saved. Options: Continue (default, grants a short invulnerability) or Play Again
 - Test cheat: while playing, digit keys 1–9 set the player's radius (1–5 = one size inside each stage, 6–9 = progressively larger Sea King), 0 = max size
@@ -63,15 +66,19 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 ├── index.html              # root gallery page, links to every project
 ├── README.md                # repo documentation (English)
 ├── README_RU.md              # repo documentation (Russian)
+├── README_SV.md              # repo documentation (Swedish)
 ├── SPEC.md                  # this file
 ├── AGENTS.md                 # instructions for AI coding agents working in this repo
 ├── CLAUDE.md                 # Claude Code entry point, points to AGENTS.md
 ├── LICENSE                  # MIT
+├── assets/                  # icon.svg (favicon + README logo), icon-512.png, social-preview.png (GitHub social preview, og:image)
 ├── 1 - flight simulator/
 │   ├── index.html           # the game itself, fully self-contained
 │   ├── README.md             # project documentation (English, player-facing)
 │   ├── README_RU.md           # project documentation (Russian, player-facing)
-│   └── screenshot.png        # preview image used by the gallery and both READMEs
+│   ├── README_SV.md           # project documentation (Swedish, player-facing)
+│   ├── icon.svg              # project icon (favicon, READMEs, gallery card)
+│   └── screenshot.png        # preview image (English UI) used by the gallery and all READMEs
 ├── 2 - fish frenzy/
 │   ├── index.html           # markup only, links versioned CSS/JS
 │   ├── styles.css
@@ -83,6 +90,8 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 │   ├── game.js               # world, difficulty, update and render loop
 │   ├── README.md
 │   ├── README_RU.md
+│   ├── README_SV.md
+│   ├── icon.svg
 │   └── screenshot.png
 └── ... (future numbered project folders, same layout)
 ```
@@ -98,9 +107,10 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 
 1. Create a new numbered folder at the root, e.g. `2 - <name>/`.
 2. Put a self-contained `index.html` inside it (plus any assets it needs).
-3. Add a `README.md` (English) and a `README_RU.md` (Russian), each written for players and linking to the other (same pattern as this repo's root READMEs).
-4. Add a `screenshot.png` (or similar) preview image.
-5. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md`.
+3. Add a `README.md` (English), a `README_RU.md` (Russian) and a `README_SV.md` (Swedish), each written for players and linking to the other two (same pattern as this repo's root READMEs).
+4. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog.
+5. Add a `screenshot.png` preview image showing the English UI.
+6. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md` / `README_SV.md`.
 
 ## Backlog
 

@@ -1,84 +1,95 @@
+<div align="center">
+
+<img src="assets/icon.svg" alt="Browser Games Gallery icon" width="120" height="120">
+
 # Browser Games Gallery
 
-**Live: [gray0072.github.io/ivan](https://gray0072.github.io/ivan/)**
+**Tiny self-contained browser games in vanilla JavaScript. No install — just open and play.**
+
+[![Play online](https://img.shields.io/badge/▶_Play_online-gray0072.github.io%2Fivan-1b4f8a?style=for-the-badge)](https://gray0072.github.io/ivan/)
+
+![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?logo=javascript&logoColor=000&style=flat-square)
+![HTML5 Canvas](https://img.shields.io/badge/HTML5_Canvas-E34F26?logo=html5&logoColor=fff&style=flat-square)
+![Web Audio](https://img.shields.io/badge/Web_Audio-3fa9f5?style=flat-square)
+![No build step](https://img.shields.io/badge/build-none-3ddc97?style=flat-square)
+![Mobile friendly](https://img.shields.io/badge/mobile-friendly-ffb627?style=flat-square)
+[![License: MIT](https://img.shields.io/badge/license-MIT-9fb0c3?style=flat-square)](LICENSE)
 
 *[Читать на русском](README_RU.md)*
 
-A small, growing gallery of self-contained browser games and experiments. Every project is a single static page — no build step, no framework, just open it and play.
+</div>
 
-## Projects
+---
 
-| Project | Description | Link |
-|---|---|---|
-| 1 - flight simulator | First-person arcade flight game: steer with the arrow keys, fire a twin-gun with Ctrl to pop balloons for points, and land on the highlighted airport's runway. | [Play](https://gray0072.github.io/ivan/1%20-%20flight%20simulator/) · [Source](1%20-%20flight%20simulator/) |
-| 2 - fish frenzy | Eat-and-grow arcade game: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish with your mouth, avoid bigger ones and jellyfish, and climb the food chain to the Sea King and the maximum size. Three difficulty levels and best-time records. | [Play](https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/) · [Source](2%20-%20fish%20frenzy/) |
+## 🎮 Games
 
-[![Flight simulator screenshot](1%20-%20flight%20simulator/screenshot.png)](1%20-%20flight%20simulator/)
-[![Fish frenzy screenshot](2%20-%20fish%20frenzy/screenshot.png)](2%20-%20fish%20frenzy/)
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><img src="1%20-%20flight%20simulator/screenshot.png" alt="Flight simulator screenshot"></a>
+      <h3><img src="1%20-%20flight%20simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
+      <p>First-person arcade flight game: steer with the arrow keys, fire a twin-gun with Ctrl to pop balloons for points, and land on the highlighted airport's runway.</p>
+      <p><a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><b>▶ Play</b></a> · <a href="1%20-%20flight%20simulator/">Source</a></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><img src="2%20-%20fish%20frenzy/screenshot.png" alt="Fish frenzy screenshot"></a>
+      <h3><img src="2%20-%20fish%20frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
+      <p>Eat-and-grow arcade game: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish with your mouth, avoid bigger ones and jellyfish, and climb the food chain to the Sea King and the maximum size. Three difficulty levels and best-time records.</p>
+      <p><a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><b>▶ Play</b></a> · <a href="2%20-%20fish%20frenzy/">Source</a></p>
+    </td>
+  </tr>
+</table>
 
-## How it works
+## ✨ Highlights
 
-1. Open the [live gallery](https://gray0072.github.io/ivan/) or browse the folders in this repo.
-2. Pick a project card.
-3. Play directly in the browser — nothing to install.
+- **Zero install** — every game runs straight in the browser, on desktop and mobile.
+- **Touch controls** — on-screen joysticks, tap-and-hold and device tilt on phones and tablets.
+- **Pure web platform** — Canvas 2D for graphics, Web Audio for synthesized sound. No frameworks, no asset pipeline.
+- **Self-contained** — each game lives in its own folder and still works when copied out of the repo.
 
-## Tech stack
-
-- HTML5 + CSS3
-- Vanilla JavaScript (no frameworks, no bundler)
-- Canvas 2D API for rendering
-- Web Audio API for sound effects
-
-## Getting started
+## 🚀 Run locally
 
 ```bash
 git clone https://github.com/gray0072/ivan.git
 cd ivan
+npx serve .        # or just open any index.html in a browser
 ```
 
-Then just open any project's `index.html` directly in a browser, or serve the folder locally if you prefer:
+## 🌐 Deploy
 
-```bash
-npx serve .
-```
+There is no build step. GitHub Pages serves the `main` branch root directly
+(**Settings → Pages → Deploy from a branch → `main` / `(root)`**), so pushing to `main` is the whole deploy.
 
-## Build & deploy
-
-There is no build step — every project is plain static HTML/CSS/JS. Deployment is GitHub Pages configured to serve directly from the `main` branch root:
-
-**Settings → Pages → Deploy from a branch → `main` / `(root)`**
-
-Pushing to `main` is the entire deploy process.
-
-## Project structure
+## 📁 Project structure
 
 ```
 /
-├── index.html                    # root gallery page
+├── index.html                  # root gallery page
+├── assets/                     # repo icon and social preview image
 ├── README.md / README_RU.md
-├── SPEC.md
-├── AGENTS.md                      # instructions for AI coding agents
-├── CLAUDE.md                      # -> points to AGENTS.md
+├── SPEC.md                     # technical spec
+├── AGENTS.md                   # instructions for AI coding agents
+├── CLAUDE.md                   # -> points to AGENTS.md
 ├── 1 - flight simulator/
-│   ├── index.html                # the game
-│   ├── README.md                  # project docs (English)
-│   ├── README_RU.md                # project docs (Russian)
+│   ├── index.html              # the game
+│   ├── README.md / README_RU.md
+│   ├── icon.svg
 │   └── screenshot.png
 ├── 2 - fish frenzy/
-│   ├── index.html                # the game (markup)
-│   ├── styles.css, *.js           # styles and game code, split by concern
-│   ├── README.md                  # project docs (English)
-│   ├── README_RU.md                # project docs (Russian)
+│   ├── index.html              # markup
+│   ├── styles.css, *.js        # styles and game code, split by concern
+│   ├── README.md / README_RU.md
+│   ├── icon.svg
 │   └── screenshot.png
-└── ... (more projects over time, same layout)
+└── ...                         # more games over time, same layout
 ```
 
-## Roadmap
+## 🗺️ Roadmap
 
-- [ ] Add more mini-games/experiments
+- [ ] More mini-games and experiments
 - [ ] Search/filter on the gallery page
 - [ ] Light/dark toggle on the gallery page
 
-## License
+## 📄 License
 
-MIT
+[MIT](LICENSE)
