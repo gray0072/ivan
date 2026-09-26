@@ -138,6 +138,7 @@
       wanderTarget: heading,
       wanderTimer: rand(0.5, 2),
       mode: 'wander',
+      stunTimer: 0,
       hue: Math.random()
     });
   }
@@ -145,6 +146,10 @@
   // ---------- Jellyfish (hazard, not lethal) ----------
   const jellies = [];
   const JELLY_COUNT = 7;
+  const JELLY_SHRINK = 0.1;      // fraction of area lost per sting
+  const JELLY_STUN_TIME = 1.2;
+  const JELLY_STUN_SLOW = 0.4;
+  const JELLY_AVOID_DIST = 45;   // gap (edge to edge) at which fish start steering away
   function spawnJelly() {
     let x, y, tries = 0;
     const minDist = minSpawnDist();
@@ -251,6 +256,18 @@
     gameOverPanel.hidden = false;
   }
 
+  // ---------- Test cheat: digits 1-9 set the player's size (1-5 = each stage, 6-9 = bigger Sea King) ----------
+  const CHEAT_RADII = [BASE_R, 30, 55, 95, 130, 180, 240, 320, 420];
+  window.addEventListener('keydown', (e) => {
+    if (gameState !== 'playing' || e.repeat) return;
+    const level = parseInt(e.key, 10);
+    if (!(level >= 1 && level <= 9)) return;
+    player.r = CHEAT_RADII[level - 1];
+    lastStageIndex = stageIndexForR(player.r);
+    reachedFinalStage = lastStageIndex === STAGES.length - 1;
+    showBanner('Cheat: level ' + level + ' — ' + STAGES[lastStageIndex].name);
+  });
+
   // ---------- NPC helpers ----------
   function npcSpeed(r) { return speedForR(r) * 0.9 * difficulty.npcSpeed; }
 
@@ -274,9 +291,20 @@
       consider(other.x, other.y, other.r);
     }
 
+    let jellyDx = 0, jellyDy = 0, jellyDist = Infinity;
+    for (const j of jellies) {
+      const d = dist(n.x, n.y, j.x, j.y) - j.r - n.r;
+      if (d < JELLY_AVOID_DIST && d < jellyDist) {
+        jellyDist = d; jellyDx = j.x - n.x; jellyDy = j.y - n.y;
+      }
+    }
+
     let desiredHeading;
     let speedMul = 1;
-    if (threatDist < Infinity) {
+    if (jellyDist < Infinity) {
+      n.mode = 'avoid';
+      desiredHeading = Math.atan2(-jellyDy, -jellyDx);
+    } else if (threatDist < Infinity) {
       n.mode = 'flee';
       desiredHeading = Math.atan2(-threatDy, -threatDx);
       speedMul = 1.15;
@@ -307,11 +335,23 @@
     const turnRate = turnRateForR(n.r);
     n.heading += clamp(angDiff(desiredHeading, n.heading), -turnRate * dt, turnRate * dt);
 
-    const sp = npcSpeed(n.r) * speedMul;
+    if (n.stunTimer > 0) n.stunTimer -= dt;
+    const sp = npcSpeed(n.r) * speedMul * (n.stunTimer > 0 ? JELLY_STUN_SLOW : 1);
     n.x += Math.cos(n.heading) * sp * dt;
     n.y += Math.sin(n.heading) * sp * dt;
 
     if (n.y > FLOOR_Y) n.y = FLOOR_Y;
+
+    if (n.stunTimer <= 0) {
+      for (const j of jellies) {
+        if (dist(n.x, n.y, j.x, j.y) < n.r + j.r) {
+          n.r = Math.max(5, Math.sqrt(n.r * n.r * (1 - JELLY_SHRINK)));
+          n.stunTimer = JELLY_STUN_TIME;
+          burst(n.x, n.y, '#f06292', 10, 110);
+          break;
+        }
+      }
+    }
   }
 
   // ---------- Update ----------
@@ -337,7 +377,7 @@
     if (wantsBoost) player.boost = clamp(player.boost - dt * BOOST_DRAIN, 0, difficulty.boostMax);
     else player.boost = clamp(player.boost + dt * BOOST_REGEN * difficulty.boostRegen, 0, difficulty.boostMax);
 
-    let sp = speedForR(player.r) * (player.boosting ? 1.7 : 1) * (player.stunTimer > 0 ? 0.4 : 1);
+    let sp = speedForR(player.r) * (player.boosting ? 1.7 : 1) * (player.stunTimer > 0 ? JELLY_STUN_SLOW : 1);
     player.x += Math.cos(player.heading) * sp * dt;
     player.y += Math.sin(player.heading) * sp * dt;
 
@@ -396,9 +436,9 @@
       j.y += Math.sin(j.heading) * 14 * dt;
       if (j.y > FLOOR_Y) { j.y = FLOOR_Y; j.heading = -j.heading; }
       if (player.stunTimer <= 0 && dist(player.x, player.y, j.x, j.y) < player.r + j.r) {
-        growPlayer(-playerArea() * 0.1, 1);
+        growPlayer(-playerArea() * JELLY_SHRINK, 1);
         player.r = Math.max(BASE_R * 0.6, player.r);
-        player.stunTimer = 1.2;
+        player.stunTimer = JELLY_STUN_TIME;
         burst(player.x, player.y, '#f06292', 16, 140);
         playSting();
       }

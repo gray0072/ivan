@@ -42,10 +42,11 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - NPC AI: each fish flees the nearest bigger threat in range, otherwise chases the nearest smaller prey in range, otherwise wanders; NPC sizes are spawned relative to the player's current size so difficulty scales with growth
 - Infinite world: no side or top boundary — entities are continuously spawned within a radius of the player and recycled once they drift far away, so exploration never hits a wall
 - The only boundary is the sea floor (a fixed world y). Depth (distance to the floor) drives difficulty and atmosphere: near the floor the water is dark, food is dense, and fish skew smallest; higher up the water lightens and fish skew larger and more dangerous. A HUD "depth" bar shows the player's position in that gradient
-- Jellyfish are a non-lethal hazard: touching one shrinks the player slightly and slows them briefly, rather than ending the game
+- Jellyfish are a non-lethal hazard: touching one shrinks the player slightly and slows them briefly, rather than ending the game. NPC fish take the same sting (shrink + brief slowdown) and steer away from any jellyfish within a short edge-to-edge distance, with that avoidance overriding flee/chase
 - A short spawn invulnerability window (with a visible glow) prevents unfair instant deaths right after (re)starting
 - Five size-based stages (fry → fish → big fish → shark → Sea King) drive the player's color and a camera that gradually zooms out as the player grows
 - Reaching the final stage shows a one-time celebration banner; play continues afterwards as an endless high-score chase
+- Test cheat: while playing, digit keys 1–9 set the player's radius (1–5 = one size inside each stage, 6–9 = progressively larger Sea King)
 
 ## Project structure
 

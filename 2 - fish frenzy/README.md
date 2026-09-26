@@ -34,7 +34,7 @@ Pick a difficulty on the start screen (Space/Enter picks Medium):
 - Eating plankton always grows you a little. Eating a smaller fish grows you a lot more, and scores points based on its size.
 - You need to be noticeably bigger than a fish to eat it (and vice versa) — near-equal sizes don't trigger anything, so close calls aren't unfair.
 - You're briefly invulnerable right after spawning (blue glow) so you have time to get your bearings before predators start hunting.
-- Jellyfish aren't lethal, but touching one stings you: you shrink a bit and slow down for a moment, so it's worth steering around them.
+- Jellyfish aren't lethal, but touching one stings you: you shrink a bit and slow down for a moment, so it's worth steering around them. Other fish get stung too and try to swim around jellyfish.
 - The bigger you get, the more the camera zooms out, and the sea around you spawns fish sized relative to you — there's always something to eat and something to fear.
 - Reach the final stage (Sea King) to become the sea's apex predator — the game keeps going afterwards so you can keep growing your score.
 - Get eaten by something bigger and it's game over — try to beat your score.
