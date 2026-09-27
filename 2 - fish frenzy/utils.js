@@ -34,12 +34,12 @@ function formatTime(s) {
   return m + ':' + (s % 60).toFixed(1).padStart(4, '0');
 }
 // Canvas backing-store scale: the device's pixel density (capped), then lowered further on huge screens so the
-// canvas never holds more than MAX_RENDER_PIXELS (≈ 2560×1440); the browser upscales the rest
+// canvas never holds more than maxPixels (by default ≈ 2560×1440); the browser upscales the rest
 const MAX_DPR = 2.5;
 const MAX_RENDER_PIXELS = 2560 * 1440;
-function canvasScale(w, h) {
+function canvasScale(w, h, maxPixels = MAX_RENDER_PIXELS) {
   const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-  return Math.min(dpr, Math.sqrt(MAX_RENDER_PIXELS / Math.max(1, w * h)));
+  return Math.min(dpr, Math.sqrt(maxPixels / Math.max(1, w * h)));
 }
 // Frame limiter for requestAnimationFrame loops: on 120/144 Hz monitors it skips frames to hold ~MAX_FPS,
 // on 60 Hz ones every frame passes (the 2 ms slack absorbs timer jitter)

@@ -28,6 +28,13 @@ Pick a difficulty on the start screen (Space/Enter picks Medium):
 
 On every level the other fish notice you with a human-like delay, and they turn smoothly rather than twitching toward their target.
 
+## Graphics
+
+The start screen also has a **Graphics** switch (remembered between visits):
+
+- **High** — full quality: sun rays, vignette and glowing plankton, rendered at up to 2560×1440.
+- **Low** — for weaker laptops and phones: no sun rays, vignette or plankton glow, rendered at up to 1600×900 and scaled to the screen.
+
 ## Gameplay
 
 - The sea is endless to the left and right. Below you is the **sea floor**, above you is the **surface** with a tropical island, clouds and gulls on the horizon. The water is deep enough that a full-dash climb from the floor to the surface takes about 10 seconds for a fry and about 20 seconds for the biggest fish.

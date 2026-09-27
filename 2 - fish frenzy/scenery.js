@@ -363,18 +363,51 @@ function drawPalmIsland(ctx, cx, sy, k, seed, t) {
 // irregular gaps, and even when standing still they drift and breathe in and out at different rhythms.
 const RAY_CELL = 170;
 const RAY_PARALLAX = 0.35;
+// Each ray is a pre-rendered sprite (three nested trapezoids added together: bright core, soft edges, fading
+// downward), stretched and sheared into place with one drawImage. A few sprites cover the range of bottom spreads.
+const RAY_SPREADS = [2, 2.8, 3.7, 4.5];  // bottom width in units of the top width
+const RAY_SPRITE_TOP = 48;               // sprite pixels across the top edge
+const RAY_SPRITE_LEN = 256;              // sprite pixels top to bottom
+let raySprites = null;
+function makeRaySprite(spread) {
+  const cv = document.createElement('canvas');
+  cv.width = Math.ceil(RAY_SPRITE_TOP * spread);
+  cv.height = RAY_SPRITE_LEN;
+  const c = cv.getContext('2d');
+  const mid = cv.width / 2;
+  c.globalCompositeOperation = 'lighter';
+  for (let layer = 0; layer < 3; layer++) {
+    const k = 1 - layer * 0.33;
+    const tw = RAY_SPRITE_TOP * k, bw = RAY_SPRITE_TOP * spread * k;
+    const g = c.createLinearGradient(0, 0, 0, RAY_SPRITE_LEN);
+    g.addColorStop(0, 'rgba(255,255,240,0.333)');
+    g.addColorStop(0.6, 'rgba(255,255,240,0.125)');
+    g.addColorStop(1, 'rgba(255,255,240,0)');
+    c.fillStyle = g;
+    c.beginPath();
+    c.moveTo(mid - tw / 2, 0);
+    c.lineTo(mid + tw / 2, 0);
+    c.lineTo(mid + bw / 2, RAY_SPRITE_LEN);
+    c.lineTo(mid - bw / 2, RAY_SPRITE_LEN);
+    c.closePath();
+    c.fill();
+  }
+  return cv;
+}
 function drawSunRays(ctx, cam, y0) {
   const { W, H, df, t } = cam;
   const strength = 1 - df;
-  if (strength < 0.03) return;
+  if (strength < 0.03 || !cam.gfx.sunRays) return;
 
   const shift = cam.x * RAY_PARALLAX;
   const sunSlant = 0.3 + Math.sin(t * 0.05) * 0.05;  // the whole sun direction drifts very slowly
   const i0 = Math.floor((shift - W / 2 - H * 0.7 - 250) / RAY_CELL);
   const i1 = Math.floor((shift + W / 2 + 100) / RAY_CELL);
 
+  if (!raySprites) raySprites = RAY_SPREADS.map(makeRaySprite);
   ctx.save();
   ctx.translate(0, y0);
+  const base = ctx.getTransform();
   ctx.globalCompositeOperation = 'lighter';
   for (let i = i0; i <= i1; i++) {
     if (hash1(i * 3.17 + 0.5) > 0.65) continue;  // empty cell: a gap between rays
@@ -386,30 +419,19 @@ function drawSunRays(ctx, cam, y0) {
 
     const x = (i + hash1(i * 7.3)) * RAY_CELL - shift + W / 2;
     const topW = 18 + hash1(i * 1.9) * 70;
-    const spread = 2 + hash1(i * 5.1) * 2.5;
+    const si = Math.min(RAY_SPREADS.length - 1, Math.floor(hash1(i * 5.1) * RAY_SPREADS.length));
+    const spread = RAY_SPREADS[si];
     const slant = sunSlant + (hash1(i * 2.3) - 0.5) * 0.12;
     const len = H * (0.75 + hash1(i * 9.7) * 0.5);
     const sway = Math.sin(t * (0.15 + hash1(i * 3.9) * 0.2) + i) * 18;
 
-    // three nested layers give the ray a bright core and soft edges
-    for (let layer = 0; layer < 3; layer++) {
-      const k = 1 - layer * 0.33;
-      const tw = topW * k, bw = topW * spread * k;
-      const cx = x + topW / 2 + sway * 0.3;
-      const bx = x + topW / 2 + sway + slant * len;
-      const g = ctx.createLinearGradient(0, 0, 0, len);
-      g.addColorStop(0, `rgba(255,255,240,${alpha / 3})`);
-      g.addColorStop(0.6, `rgba(255,255,240,${alpha / 8})`);
-      g.addColorStop(1, 'rgba(255,255,240,0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.moveTo(cx - tw / 2, 0);
-      ctx.lineTo(cx + tw / 2, 0);
-      ctx.lineTo(bx + bw / 2, len);
-      ctx.lineTo(bx - bw / 2, len);
-      ctx.closePath();
-      ctx.fill();
-    }
+    // top edge centered at cx, bottom edge centered at bx: a shear maps the upright sprite onto that slant
+    const cx = x + topW / 2 + sway * 0.3;
+    const bx = x + topW / 2 + sway + slant * len;
+    ctx.setTransform(base);
+    ctx.transform(1, 0, (bx - cx) / len, 1, cx, 0);
+    ctx.globalAlpha = alpha;
+    ctx.drawImage(raySprites[si], -topW * spread / 2, 0, topW * spread, len);
   }
   ctx.restore();
 }
@@ -608,11 +630,26 @@ function drawSeabed(ctx, cam) {
   }
 }
 
+// The vignette is a full-screen radial gradient, so it's rendered once per screen size into a small canvas
+// (it's smooth, a quarter of the resolution is plenty) and stretched over the screen; depth only sets its opacity
+const VIGNETTE_RES = 0.25;
+let vignette = null;
 function drawVignette(ctx, cam) {
   const { W, H, df } = cam;
-  const g = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.6);
-  g.addColorStop(0, 'rgba(0,0,0,0)');
-  g.addColorStop(1, `rgba(0,10,20,${0.3 + 0.2 * df})`);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
+  if (!vignette || vignette.W !== W || vignette.H !== H) {
+    const cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.round(W * VIGNETTE_RES));
+    cv.height = Math.max(1, Math.round(H * VIGNETTE_RES));
+    const c = cv.getContext('2d');
+    c.scale(VIGNETTE_RES, VIGNETTE_RES);
+    const g = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.35, W / 2, H / 2, Math.hypot(W, H) * 0.6);
+    g.addColorStop(0, 'rgba(0,10,20,0)');
+    g.addColorStop(1, 'rgba(0,10,20,1)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, W, H);
+    vignette = { W, H, cv };
+  }
+  ctx.globalAlpha = 0.3 + 0.2 * df;
+  ctx.drawImage(vignette.cv, 0, 0, W, H);
+  ctx.globalAlpha = 1;
 }
