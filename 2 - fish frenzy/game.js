@@ -54,9 +54,9 @@
   function growFish(e, area) { e.r = Math.min(MAX_R, Math.sqrt(Math.max(0, e.r * e.r + area))); }
   function growPlayer(area, eff) { growFish(player, area * eff); }
   // Meals (player's and NPCs') grow the fish gradually over GROW_TIME
-  // Every meal also plays the bite animation
-  function queueGrowth(area, e = player, isFood = false) {
-    e.growQueue.push({ area, left: GROW_TIME });
+  // Every meal also plays the bite animation; `isFish` marks an eaten fish (speeds up the player's boost regen)
+  function queueGrowth(area, e = player, isFood = false, isFish = false) {
+    e.growQueue.push({ area, left: GROW_TIME, isFish });
     // sharks and bigger just swallow plankton, no visible bite
     if (!isFood || stageIndexForR(e.r) < NO_FOOD_CHOMP_STAGE) e.chompT = CHOMP_TIME;
   }
@@ -77,16 +77,16 @@
     }
   }
 
-  // Power law through both ends: weight ∝ r^4.8 (10 g at BASE_R … 200 t at MAX_R)
-  const WEIGHT_EXP = Math.log(MAX_WEIGHT_G / BASE_WEIGHT_G) / Math.log(MAX_R / BASE_R);
-  function weightForR(r) { return BASE_WEIGHT_G * Math.pow(r / BASE_R, WEIGHT_EXP); }
+  // Power law through both ends: length ∝ r^1.85 (5 cm at BASE_R … 33 m at MAX_R), weight ∝ length³
+  const LENGTH_EXP = Math.log(MAX_LENGTH_CM / MIN_LENGTH_CM) / Math.log(MAX_R / BASE_R);
+  function lengthCmForR(r) { return MIN_LENGTH_CM * Math.pow(r / BASE_R, LENGTH_EXP); }
+  function weightForR(r) { return MAX_WEIGHT_G * Math.pow(lengthCmForR(r) / MAX_LENGTH_CM, 3); }
   function formatWeight(g) {
     const fmt = (v, unit) => (v < 10 ? v.toFixed(1) : Math.round(v)) + ' ' + unit;
-    if (g < 1000) return Math.round(g) + ' g';
+    if (g < 1000) return fmt(g, 'g');
     if (g < 1e6) return fmt(g / 1e3, 'kg');
     return fmt(g / 1e6, 't');
   }
-  function lengthCmForR(r) { return BASE_LENGTH_CM * Math.cbrt(weightForR(r) / BASE_WEIGHT_G); }
   function formatLength(cm) {
     if (cm < 100) return Math.round(cm) + ' cm';
     const m = cm / 100;
@@ -98,7 +98,12 @@
   function turnRateForR(r) { return clamp(2.6 - (r - BASE_R) * 0.011, 0.8, 2.6); }
 
   // ---------- Camera ----------
-  function currentZoom() { return clamp(1.15 - (player.r - BASE_R) / 220, 0.5, 1.15); }
+  // The view shrinks in proportion to the fish's length: unchanged for the fry, ÷MAX_ZOOM_DIVISOR at MAX_R
+  function lengthZoomFactor(r) {
+    const t = clamp((lengthCmForR(r) - MIN_LENGTH_CM) / (MAX_LENGTH_CM - MIN_LENGTH_CM), 0, 1);
+    return 1 / (1 + (MAX_ZOOM_DIVISOR - 1) * t);
+  }
+  function currentZoom() { return clamp(1.15 - (player.r - BASE_R) / 220, 0.5, 1.15) * lengthZoomFactor(player.r); }
   function worldToScreen(wx, wy) {
     const z = currentZoom();
     return { x: (wx - player.x) * z + W / 2, y: (wy - player.y) * z + H / 2, z };
@@ -862,7 +867,11 @@
     player.boosting = wantsBoost;
     player.wagPhase += dt * (player.air ? 4 : wantsBoost ? 14 : 7);
     if (wantsBoost) player.boost = clamp(player.boost - dt * BOOST_DRAIN, 0, difficulty.boostMax);
-    else player.boost = clamp(player.boost + dt * BOOST_REGEN * difficulty.boostRegen, 0, difficulty.boostMax);
+    else {
+      // growing into an eaten fish recharges the boost faster
+      const regenMul = player.growQueue.some((g) => g.isFish) ? FISH_MEAL_REGEN_MUL : 1;
+      player.boost = clamp(player.boost + dt * BOOST_REGEN * difficulty.boostRegen * regenMul, 0, difficulty.boostMax);
+    }
 
     if (player.air) {
       updateAirborne(player, dt);
@@ -981,7 +990,7 @@
       if (dist(player.x, player.y, n.x, n.y) > (player.r + n.r) * 1.7) continue;
       if (player.r > n.r * EAT_MARGIN) {
         if (circlesOverlap(pm, fishCircles(n.x, n.y, n.r, n.heading))) {
-          queueGrowth(n.r * n.r * 0.55);
+          queueGrowth(n.r * n.r * 0.55, player, false, true);
           burst(n.x, n.y, '#ff8a65', 14, 140);
           npcs.splice(i, 1);
           playEatBig();

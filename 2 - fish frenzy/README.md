@@ -13,7 +13,7 @@ Open [index.html](index.html) in a browser — no build step, no server required
 ## Controls
 
 - **← →** — turn
-- **Ctrl** (or **↑**) — boost (dash), costs stamina that refills over time
+- **Ctrl** (or **↑**) — boost (dash), costs stamina that refills over time — twice as fast while you're growing from a fish you just ate
 - Mouse is not used — keyboard only
 
 **On phone/tablet:** the game switches to fullscreen when you start (where the browser supports it; on iPhone, add the page to the home screen for a fullscreen view). Drag your thumb in the **left half** of the screen like a joystick — the fish turns toward the direction you push. Touch and hold anywhere in the **right half** to boost. Both work at the same time.
@@ -49,7 +49,7 @@ The start screen also has a **Graphics** switch (remembered between visits):
 - Jellyfish aren't lethal, but touching one stings you: you shrink a bit and slow down for a moment, so it's worth steering around them. Other fish get stung too and try to swim around jellyfish.
 - The bigger you get, the more the camera zooms out, and the sea around you spawns fish sized relative to you — there's always something to eat and something to fear.
 - Reach the final stage (Sea King) to become the sea's apex predator. A celebration dialog shows how long it took and your best time for that difficulty (and congratulates you on a new record). From there you can continue playing to keep growing, or start over. As the Sea King, jellyfish can't sting you anymore — you eat them instead.
-- The HUD shows your weight and length: a fry starts at 10 g and 10 cm, and every step up in size multiplies them, all the way to 200 t and 27 m — as big as the biggest blue whale. That's the maximum size in the game (no fish is ever bigger). Reaching it sets off fireworks and shows your time and best time for that difficulty; you can keep playing (you won't grow any more) or start over.
+- The HUD shows your weight and length: a fry starts at 5 cm and about 0.7 g (weight grows with the cube of length), and every step up in size multiplies them, all the way to 33 m and 200 t — as big as the biggest blue whale. That's the maximum size in the game (no fish is ever bigger). Reaching it sets off fireworks and shows your time and best time for that difficulty; you can keep playing (you won't grow any more) or start over.
 - The bigger you get, the fewer (and more spread out) the other fish are, so the sea doesn't turn into a traffic jam of giants. Most fish you meet are close to your own size — mostly smaller near the floor, mostly bigger in the shallows — with an occasional small fry mixed in. Real giants are rare, though: the bigger a fish would be, the less likely it is to show up, so as the Sea King you'll mostly meet sharks and smaller kings to eat, and only now and then a rival your size.
 - Other fish live by the same rules: bigger fish eat smaller ones they catch with their mouth, and any fish that bumps into food eats it and grows (they don't go looking for food, though).
 - Get eaten by something bigger and it's game over — try to grow bigger next time.

@@ -29,13 +29,13 @@ const MIN_LEAP = 0.3;          // exits that would rise less than this many radi
 const MAX_LEAP_ELEV = 1.2;     // launch angle cap (~69°), so the fish always arcs over instead of flipping
 
 // ---------- Stages (size tiers, shared by player and NPCs for readability) ----------
-// Upper bounds picked from plausible weights (see weightForR): fry up to ~100 g, small fish ~2 kg,
-// big fish ~50 kg, shark ~1.5 t (a large great white); the Sea King grows on to 200 t
+// Upper bounds in world radius (see lengthCmForR / weightForR for the weight and length shown in the HUD);
+// the Sea King grows on to 200 t, 33 m
 const STAGES = [
-  { name: 'Fry',          maxR: 24,       color: '#ffd54f' },  // ≤ 95 g, ≤ 21 cm
-  { name: 'Small Fish',   maxR: 45,       color: '#4fc3f7' },  // ≤ 1.9 kg, ≤ 58 cm
-  { name: 'Big Fish',     maxR: 89,       color: '#66bb6a' },  // ≤ 51 kg, ≤ 1.7 m
-  { name: 'Shark',        maxR: 180,      color: '#90a4ae' },  // ≤ 1.5 t, ≤ 5.3 m
+  { name: 'Fry',          maxR: 24,       color: '#ffd54f' },  // ≤ 9.5 g, ≤ 12 cm
+  { name: 'Small Fish',   maxR: 45,       color: '#4fc3f7' },  // ≤ 311 g, ≤ 38 cm
+  { name: 'Big Fish',     maxR: 89,       color: '#66bb6a' },  // ≤ 14 kg, ≤ 1.4 m
+  { name: 'Shark',        maxR: 180,      color: '#90a4ae' },  // ≤ 686 kg, ≤ 5 m
   { name: 'Sea King',     maxR: Infinity, color: '#ba68c8' }
 ];
 const EAT_MARGIN = 1.15; // must be this much bigger (in radius) to eat / be eaten
@@ -43,14 +43,17 @@ const EAT_MARGIN = 1.15; // must be this much bigger (in radius) to eat / be eat
 // ---------- Player ----------
 const BASE_R = 15;
 const MAX_R = 500;   // hard size cap for the player and every spawned fish
-// Weight shown in the HUD is a power of r (like mass ∝ length³, but steeper, so the 50× size range spans
-// 10 g → 200 t): a fry at BASE_R weighs 10 g, a fish at MAX_R as much as the biggest blue whale, 200 t
-const BASE_WEIGHT_G = 10;
+// Length shown in the HUD is a power of r through both ends: 5 cm for a fry at BASE_R … 33 m at MAX_R
+const MIN_LENGTH_CM = 5;
+const MAX_LENGTH_CM = 2900;
+// Weight is strictly ∝ length³, pinned at the top: 200 t at 33 m (so the 5 cm fry weighs ≈ 0.7 g)
 const MAX_WEIGHT_G = 200e6;
-// Length follows weight like a real body (∝ weight^⅓): 10 cm for the 10 g fry … 27 m for the 200 t giant
-const BASE_LENGTH_CM = 10;
+// The camera zooms out further as the fish grows: the zoom is divided by a factor that rises linearly
+// with the shown length, from 1 for the fry to this value for the 200 t giant
+const MAX_ZOOM_DIVISOR = 1.5;
 const BOOST_DRAIN = 0.6;
 const BOOST_REGEN = 0.25;
+const FISH_MEAL_REGEN_MUL = 2;  // boost regenerates this many times faster while a fish the player ate is still being grown into
 const SPAWN_GRACE = 2.5;
 const CHOMP_TIME = 0.28;  // seconds of the "om" bite animation on every meal: the mouth snaps open, then shut
 const NO_FOOD_CHOMP_STAGE = 3;  // from this stage (Shark) on, plankton is swallowed without the bite animation
