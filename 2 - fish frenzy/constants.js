@@ -49,9 +49,12 @@ const MIN_LENGTH_CM = 5;
 const MAX_LENGTH_CM = 2900;
 // Weight is strictly ∝ length³, pinned at the top: 200 t at 29 m (so the 5 cm fry weighs ≈ 1 g)
 const MAX_WEIGHT_G = 200e6;
-// The camera zooms out further as the fish grows: the zoom is divided by a factor that rises linearly
-// with the shown length, from 1 for the fry to this value for the 200 t giant
-const MAX_ZOOM_DIVISOR = 2;
+// The camera zooms out stage by stage, by the same step per stage (MAX_ZOOM_DIVISOR^(1/4) ≈ 1.5), from START_ZOOM
+// for a new fry to START_ZOOM / MAX_ZOOM_DIVISOR at the start of the Sea King stage, then stays there.
+// Each stage grows the radius ≈ 2.15×, so on screen the fish grows ≈ 1.44× per stage (17 px → 75 px radius
+// at the Sea King, 115 px at the max size on a 1× screen)
+const START_ZOOM = 1.15;
+const MAX_ZOOM_DIVISOR = 5;
 const BOOST_DRAIN = 0.6;
 const BOOST_REGEN = 0.25;
 const FISH_MEAL_REGEN_MUL = 2;  // boost regenerates this many times faster while a fish the player ate is still being grown into

@@ -98,12 +98,18 @@
   function turnRateForR(r) { return clamp(2.6 - (r - BASE_R) * 0.011, 0.8, 2.6); }
 
   // ---------- Camera ----------
-  // The view shrinks in proportion to the fish's length: unchanged for the fry, ÷MAX_ZOOM_DIVISOR at MAX_R
-  function lengthZoomFactor(r) {
-    const t = clamp((lengthCmForR(r) - MIN_LENGTH_CM) / (MAX_LENGTH_CM - MIN_LENGTH_CM), 0, 1);
-    return 1 / (1 + (MAX_ZOOM_DIVISOR - 1) * t);
+  // The view zooms out stage by stage: every stage divides the zoom by the same step,
+  // MAX_ZOOM_DIVISOR^(1 / (STAGES.length - 1)), spread geometrically over the stage's radius range, so the fish
+  // grows on screen only a little per stage. From the Sea King on the zoom stays at START_ZOOM / MAX_ZOOM_DIVISOR.
+  const ZOOM_STEP = Math.pow(MAX_ZOOM_DIVISOR, 1 / (STAGES.length - 1));
+  function zoomForR(r) {
+    const si = stageIndexForR(r);
+    if (si >= STAGES.length - 1) return START_ZOOM / MAX_ZOOM_DIVISOR;
+    const lo = si > 0 ? STAGES[si - 1].maxR : BASE_R, hi = STAGES[si].maxR;
+    const t = clamp(Math.log(r / lo) / Math.log(hi / lo), 0, 1);
+    return START_ZOOM / Math.pow(ZOOM_STEP, si + t);
   }
-  function currentZoom() { return clamp(1.15 - (player.r - BASE_R) / 220, 0.5, 1.15) * lengthZoomFactor(player.r); }
+  function currentZoom() { return zoomForR(player.r); }
   function worldToScreen(wx, wy) {
     const z = currentZoom();
     return { x: (wx - player.x) * z + W / 2, y: (wy - player.y) * z + H / 2, z };
