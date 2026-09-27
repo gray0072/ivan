@@ -1,25 +1,24 @@
 'use strict';
 
-// Demo mode pilot: steers the player like a bot (same reaction delay and aim error), but with a wider view,
+// Demo mode pilot: steers the player like a bot, but with no reaction delay or aim error, a wider view,
 // plankton hunting as a Fry, blended escapes, prey leading and a dash saved for hunting and escapes.
 // `w` gives access to the game's world state and the bot helpers shared with the NPCs (see game.js).
 function createDemoPilot(w) {
   const { player, npcs, foods, stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin,
-    nearestJelly, avoidEdges, botAimError } = w;
+    nearestJelly, avoidEdges } = w;
   const pilot = { dash: false, spending: false, reset, turnTarget: demoTurnTarget };
 
   function reset() {
     pilot.dash = pilot.spending = false;
-    player.thinkTimer = 0;
     player.seen = null;
-    player.aimErr = player.aimErrTarget = player.aimErrTimer = 0;
     player.wanderTarget = player.heading;
     player.wanderTimer = 0;
   }
 
-  // Looks around once per reaction interval and picks what to do: flee, chase a fish, or (as a Fry) grab plankton
+  // Looks around every frame (no reaction delay) and picks what to do: flee, chase a fish, or (as a Fry) grab plankton
   function demoThink() {
     const n = player;
+    const prev = n.seen && n.seen.mode === 'chase' ? n.seen.target : null;
     n.seen = null;
     // Flee from every threat in view at once, so escaping one predator doesn't mean swimming into another.
     // Closer ones weigh more; one showing its tail can't bite right now, so it weighs less.
@@ -40,14 +39,15 @@ function createDemoPilot(w) {
       n.seen = { mode: 'flee', heading: Math.atan2(fy, fx), dash: dangerDist < Infinity };
       return;
     }
-    // Chase the most rewarding fish in view: meal size over distance
+    // Chase the most rewarding fish in view: meal size over distance. The current target gets a bonus,
+    // so two similar fish don't make it flip back and forth every frame.
     const preyRange = (n.r * 7 + 70) * DEMO_VIEW_MUL;
     let best = null, bestScore = 0;
     for (const o of npcs) {
       if (n.r <= o.r * EAT_MARGIN) continue;
       const d = dist(n.x, n.y, o.x, o.y);
       if (d > preyRange) continue;
-      const score = o.r * o.r / (d + n.r * 2);
+      const score = o.r * o.r / (d + n.r * 2) * (o === prev ? DEMO_TARGET_STICKY : 1);
       if (score > bestScore) { bestScore = score; best = o; }
     }
     if (best) { n.seen = { mode: 'chase', target: best }; return; }
@@ -74,15 +74,7 @@ function createDemoPilot(w) {
   }
   // Called every frame: returns the turn input -1..1 and sets pilot.dash (whether to hold the dash)
   function demoTurnTarget(dt) {
-    const s0 = player.seen;
-    // a chosen target is tracked continuously; if it's gone (eaten by someone), look around again at once
-    const lost = s0 && s0.target && !(s0.mode === 'chase' ? npcs : foods).includes(s0.target);
-    player.thinkTimer -= dt;
-    if (player.thinkTimer <= 0 || lost) {
-      player.thinkTimer = w.difficulty.npcReaction * rand(1 - NPC_REACTION_SPREAD, 1 + NPC_REACTION_SPREAD);
-      demoThink();
-    }
-    botAimError(player, dt);
+    demoThink();
     const s = player.seen;
     const reserve = player.boost > w.difficulty.boostMax * DEMO_DASH_RESERVE;
     // Full stamina would just go to waste: spend it on hunting and feeding, down to the escape reserve
@@ -94,13 +86,13 @@ function createDemoPilot(w) {
     let want, cruising = stageIndexForR(player.r) <= GULL_PREY_STAGE;
     pilot.dash = false;
     if (s && s.mode === 'flee') {
-      want = s.heading + player.aimErr;
+      want = s.heading;
       pilot.dash = s.dash;
     } else if (jelly) {
       want = Math.atan2(-jelly.dy, -jelly.dx);
       cruising = true;
     } else if (s && s.mode === 'chase') {
-      want = interceptHeading(s.target) + player.aimErr;
+      want = interceptHeading(s.target);
       // dash in for the kill when it's close and ahead, keeping some stamina for an escape
       const d = dist(player.x, player.y, s.target.x, s.target.y);
       const ahead = Math.abs(angDiff(want, player.heading)) < 0.6;

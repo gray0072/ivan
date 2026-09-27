@@ -89,6 +89,7 @@ const DEMO_VIEW_MUL = 1.6;      // the demo fish notices threats, prey and jelly
 const DEMO_TAIL_THREAT = 0.35;  // weight of a predator showing its tail, vs 1 for one facing the demo fish
 const DEMO_FOOD_MAX_STAGE = -1; // the demo fish seeks out plankton up to this stage (0 = Fry, -1 = never: it ignores plankton)
 const DEMO_FOOD_RANGE = 450;    // how far the demo fry looks for plankton
+const DEMO_TARGET_STICKY = 1.3; // score bonus for the prey the demo fish is already chasing
 const DEMO_LEAD_MAX = 1.5;      // seconds: how far ahead the demo fish aims at moving prey
 const DEMO_DASH_RESERVE = 0.35; // share of max stamina kept for escapes: no hunting dashes below it
 

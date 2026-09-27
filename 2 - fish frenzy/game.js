@@ -679,7 +679,7 @@
   // Cruising bots stay this far below the surface (their back just under it); only leaps, chases and escapes break it
   function npcSurfaceMargin(r) { return r * 0.9 + 40; }
 
-  // ---------- Bot brain (shared by the NPCs and the demo-mode player) ----------
+  // ---------- Bot brain (NPCs; the demo pilot in demo.js reuses nearestJelly / avoidEdges) ----------
   // Look around for the nearest threat (bigger) and prey (smaller) among player + other npcs only once per
   // reaction interval, like a human reaction delay; in between the fish acts on what it saw last time
   function botThink(n, dt) {
@@ -697,7 +697,7 @@
           preyDist = d; preyDx = ox - n.x; preyDy = oy - n.y;
         }
       };
-      if (n !== player && player.alive && player.invulnTimer <= 0) consider(player.x, player.y, player.r);
+      if (player.alive && player.invulnTimer <= 0) consider(player.x, player.y, player.r);
       for (const other of npcs) {
         if (other === n) continue;
         consider(other.x, other.y, other.r);
@@ -706,10 +706,7 @@
       else if (preyDist < Infinity) n.seen = { mode: 'chase', heading: Math.atan2(preyDy, preyDx) };
       else n.seen = null;
     }
-    botAimError(n, dt);
-  }
-  // Imperfect flee / chase: the aim error drifts smoothly within ±npcAimError, so there's no jitter
-  function botAimError(n, dt) {
+    // Imperfect flee / chase: the aim error drifts smoothly within ±npcAimError, so there's no jitter
     n.aimErrTimer -= dt;
     if (n.aimErrTimer <= 0) {
       n.aimErrTimer = rand(NPC_AIM_ERR_HOLD[0], NPC_AIM_ERR_HOLD[1]);
@@ -749,7 +746,7 @@
   const demoPilot = createDemoPilot({
     player, npcs, foods,
     get difficulty() { return difficulty; },
-    stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin, nearestJelly, avoidEdges, botAimError
+    stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin, nearestJelly, avoidEdges
   });
 
   function updateNpc(n, dt) {
