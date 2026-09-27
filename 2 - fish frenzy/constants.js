@@ -87,7 +87,7 @@ const NPC_LEAP_CHANCE = 0.2;   // per second, while in that zone
 const DEMO_RESTART_DELAY = 2;   // seconds after the demo fish dies before the demo starts over
 const DEMO_VIEW_MUL = 1.6;      // the demo fish notices threats, prey and jellyfish this many times further than bots
 const DEMO_TAIL_THREAT = 0.35;  // weight of a predator showing its tail, vs 1 for one facing the demo fish
-const DEMO_FOOD_MAX_STAGE = 0;  // the demo fish seeks out plankton up to this stage (0 = Fry)
+const DEMO_FOOD_MAX_STAGE = -1; // the demo fish seeks out plankton up to this stage (0 = Fry, -1 = never: it ignores plankton)
 const DEMO_FOOD_RANGE = 450;    // how far the demo fry looks for plankton
 const DEMO_LEAD_MAX = 1.5;      // seconds: how far ahead the demo fish aims at moving prey
 const DEMO_DASH_RESERVE = 0.35; // share of max stamina kept for escapes: no hunting dashes below it
