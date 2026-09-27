@@ -12,9 +12,9 @@ const fireworks = (() => {
   const rockets = [], sparks = [];
 
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     W = window.innerWidth;
     H = window.innerHeight;
+    const dpr = canvasScale(W, H);
     cv.width = Math.round(W * dpr);
     cv.height = Math.round(H * dpr);
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -59,7 +59,9 @@ const fireworks = (() => {
     tone(rand(1800, 2400), 900, 0.25, 'square', 0.03);
   }
 
+  const frameDue = frameLimiter();
   function frame(now) {
+    if (!frameDue(now)) { requestAnimationFrame(frame); return; }
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 

@@ -4,11 +4,11 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   let W = 0, H = 0;
-  // Render at the device's pixel density (capped for performance); all drawing stays in CSS pixels
+  // Render at the device's pixel density (capped for performance, see canvasScale); all drawing stays in CSS pixels
   function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
     W = window.innerWidth;
     H = window.innerHeight;
+    const dpr = canvasScale(W, H);
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     canvas.style.width = W + 'px';
@@ -57,9 +57,10 @@
   function growPlayer(area, eff) { growFish(player, area * eff); }
   // Meals (player's and NPCs') grow the fish gradually over GROW_TIME
   // Every meal also plays the bite animation
-  function queueGrowth(area, e = player) {
+  function queueGrowth(area, e = player, isFood = false) {
     e.growQueue.push({ area, left: GROW_TIME });
-    e.chompT = CHOMP_TIME;
+    // sharks and bigger just swallow plankton, no visible bite
+    if (!isFood || stageIndexForR(e.r) < NO_FOOD_CHOMP_STAGE) e.chompT = CHOMP_TIME;
   }
   // 0 = closed .. 1 = wide open: opens fast, snaps shut
   function chompOpen(e) {
@@ -78,7 +79,7 @@
     }
   }
 
-  // Power law through both ends: weight ∝ r^4.3 (10 g at BASE_R … 200 t at MAX_R)
+  // Power law through both ends: weight ∝ r^4.8 (10 g at BASE_R … 200 t at MAX_R)
   const WEIGHT_EXP = Math.log(MAX_WEIGHT_G / BASE_WEIGHT_G) / Math.log(MAX_R / BASE_R);
   function weightForR(r) { return BASE_WEIGHT_G * Math.pow(r / BASE_R, WEIGHT_EXP); }
   function formatWeight(g) {
@@ -168,7 +169,9 @@
     let ratio;
     if (Math.random() < 0.1) ratio = rand(0.3, 0.55);  // occasional small fry for variety
     else ratio = lerp(1.2, 0.8, depthFrac(lerp(player.y, y, 0.25))) * Math.exp(heavyTailNormal() * 0.25);
-    return clamp(player.r * ratio, 5, MAX_R);
+    const r = clamp(player.r * ratio, 5, MAX_R);
+    if (r > GIANT_R && Math.random() > Math.pow(GIANT_R / r, GIANT_EXP)) return clamp(player.r * rand(0.3, 0.55), 5, MAX_R);
+    return r;
   }
   // A standard normal with 20% of the mass moved from the middle to the tails: 80% of samples are plain
   // normal, 20% are drawn only from |z| > 1. So the ±1σ band holds 0.8 × 68% = 55% instead of 68%,
@@ -801,7 +804,7 @@
         const f = foods[i];
         if (Math.abs(f.x - n.x) > reach || Math.abs(f.y - n.y) > reach) continue;
         if (circlesHitPoint(m, f.x, f.y, f.r * FOOD_AURA)) {
-          queueGrowth(f.r * f.r, n);
+          queueGrowth(f.r * f.r, n, true);
           if (onScreenX(f.x, 20)) burst(f.x, f.y, f.color, 4, 50);
           foods.splice(i, 1);
         }
@@ -955,7 +958,7 @@
       f.bob += dt * 3;
       // the mouth only has to reach the food's glow, not the tiny core
       if (circlesHitPoint(pm, f.x, f.y, f.r * FOOD_AURA)) {
-        queueGrowth(f.r * f.r);
+        queueGrowth(f.r * f.r, player, true);
         burst(f.x, f.y, f.color, 6, 60);
         foods.splice(i, 1);
         playEatSmall();
@@ -1565,12 +1568,14 @@
     ctx.lineCap = 'butt';
   }
 
+  const frameDue = frameLimiter();
   function loop(now) {
+    requestAnimationFrame(loop);
+    if (!frameDue(now)) return;
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     update(dt);
     render();
-    requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
 })();
