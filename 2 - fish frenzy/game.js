@@ -635,11 +635,7 @@
     player.invulnTimer = SPAWN_GRACE;
     player.alive = true;
     player.caught = false;
-    player.thinkTimer = 0;
-    player.seen = null;
-    player.aimErr = player.aimErrTarget = player.aimErrTimer = 0;
-    player.wanderTarget = player.heading;
-    player.wanderTimer = 0;
+    demoPilot.reset();
     particles.length = 0;
     bubbles.length = 0;
     drops.length = 0;
@@ -710,7 +706,10 @@
       else if (preyDist < Infinity) n.seen = { mode: 'chase', heading: Math.atan2(preyDy, preyDx) };
       else n.seen = null;
     }
-    // Imperfect flee / chase: the aim error drifts smoothly within ±npcAimError, so there's no jitter
+    botAimError(n, dt);
+  }
+  // Imperfect flee / chase: the aim error drifts smoothly within ±npcAimError, so there's no jitter
+  function botAimError(n, dt) {
     n.aimErrTimer -= dt;
     if (n.aimErrTimer <= 0) {
       n.aimErrTimer = rand(NPC_AIM_ERR_HOLD[0], NPC_AIM_ERR_HOLD[1]);
@@ -718,9 +717,9 @@
     }
     n.aimErr += (n.aimErrTarget - n.aimErr) * clamp(dt * NPC_AIM_ERR_EASE, 0, 1);
   }
-  // The closest jellyfish within JELLY_AVOID_DIST, as an offset { dx, dy } from the fish, or null
-  function nearestJelly(n) {
-    let best = null, bestDist = JELLY_AVOID_DIST;
+  // The closest jellyfish within `range` (edge to edge), as an offset { dx, dy } from the fish, or null
+  function nearestJelly(n, range = JELLY_AVOID_DIST) {
+    let best = null, bestDist = range;
     for (const j of jellies) {
       const d = dist(n.x, n.y, j.x, j.y) - j.r - n.r;
       if (d < bestDist) { bestDist = d; best = { dx: j.x - n.x, dy: j.y - n.y }; }
@@ -746,29 +745,12 @@
     }
     return heading;
   }
-  // Demo mode: the player is steered by the same brain as the bots; returns the turn input -1..1
-  function demoTurnTarget(dt) {
-    botThink(player, dt);
-    const jelly = stageIndexForR(player.r) >= JELLY_EATER_STAGE ? null : nearestJelly(player);
-    let want, cruising = false;
-    if (jelly) {
-      want = Math.atan2(-jelly.dy, -jelly.dx);
-      cruising = true;
-    } else if (player.seen) {
-      want = player.seen.heading + player.aimErr;
-    } else {
-      player.wanderTimer -= dt;
-      if (player.wanderTimer <= 0) {
-        player.wanderTarget = player.heading + rand(-1.4, 1.4);
-        player.wanderTimer = rand(1, 2.5);
-      }
-      want = player.wanderTarget;
-      cruising = true;
-    }
-    want = avoidEdges(player, want, cruising);
-    // same proportional turn as the bots (gain per radian, capped by the turn rate)
-    return clamp(angDiff(want, player.heading) * NPC_TURN_GAIN / turnRateForR(player.r), -1, 1);
-  }
+  // ---------- Demo pilot (demo.js): steers the player in demo mode ----------
+  const demoPilot = createDemoPilot({
+    player, npcs, foods,
+    get difficulty() { return difficulty; },
+    stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin, nearestJelly, avoidEdges, botAimError
+  });
 
   function updateNpc(n, dt) {
     if (n.stunTimer > 0) n.stunTimer -= dt;
@@ -937,12 +919,12 @@
       const want = Math.atan2(joystick.dy, joystick.dx);
       turnTarget += clamp(angDiff(want, player.heading) * 2.5, -1, 1);
     }
-    turnTarget = demo ? demoTurnTarget(dt) : clamp(turnTarget, -1, 1);
+    turnTarget = demo ? demoPilot.turnTarget(dt) : clamp(turnTarget, -1, 1);
     // no steering in the air: the leap follows its arc
     if (player.air) turnTarget = 0;
     player.turnInput += (turnTarget - player.turnInput) * clamp(dt * 5, 0, 1);
 
-    const boostHeld = demo || keys['ArrowUp'] || keys['w'] || keys['Control'] || isTouchBoosting();
+    const boostHeld = demo ? demoPilot.dash : keys['ArrowUp'] || keys['w'] || keys['Control'] || isTouchBoosting();
     const wantsBoost = !player.air && boostHeld && player.boost > 0.05 && player.stunTimer <= 0;
     player.boosting = wantsBoost;
     player.wagPhase += dt * (player.air ? 4 : wantsBoost ? 14 : 7);
