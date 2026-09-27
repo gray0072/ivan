@@ -97,6 +97,15 @@ const FISH_HIT = [[0.55, 0.4], [0.05, 0.56], [-0.45, 0.4], [-1.3, 0.28]];
 // The only part that can eat: the head in front of the gill line, [offset along heading, radius]
 const MOUTH_HIT = [0.72, 0.32];
 
+// ---------- Danger radar ----------
+// Fish big enough to eat the player, while still out of view, show up as a pulsing red glow at the screen edge
+// in their direction: bigger and closer = larger, brighter and faster-beating; a fish heading for you gets a double chevron
+const RADAR_RANGE = 1.2;        // how far beyond the screen edge threats are shown, in screen half-diagonals
+const RADAR_FULL_RATIO = 3;     // a threat this many times the player's radius (or more) gets the largest glow
+const RADAR_BEAT_MIN = 0.7;     // heartbeats per second of a threat at the edge of the range …
+const RADAR_BEAT_MAX = 2.6;     // … and of one just out of view
+const RADAR_HUNT_COS = 0.8;     // a chasing fish counts as heading for you within ~37° of the line to you
+
 // ---------- Splash sounds of other fish ----------
 const SPLASH_SIZE_EXP = 0.5;          // volume ∝ (their r / player's r) ^ this
 const SPLASH_SIZE_MUL = [0.3, 1.6];   // clamp for that size factor

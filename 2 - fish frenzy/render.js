@@ -31,6 +31,23 @@ function createRenderer(canvas) {
     if (W) resize(W, H);
   }
 
+  // Soft red blob for the danger radar, pre-rendered once and stretched along the screen edge
+  const RADAR_SPRITE = 128;
+  const radarGlow = document.createElement('canvas');
+  radarGlow.width = radarGlow.height = RADAR_SPRITE;
+  {
+    const c = radarGlow.getContext('2d');
+    const g = c.createRadialGradient(RADAR_SPRITE / 2, RADAR_SPRITE / 2, 0, RADAR_SPRITE / 2, RADAR_SPRITE / 2, RADAR_SPRITE / 2);
+    g.addColorStop(0, 'rgba(255,70,50,1)');
+    g.addColorStop(0.3, 'rgba(255,40,30,0.6)');
+    g.addColorStop(0.65, 'rgba(220,20,40,0.2)');
+    g.addColorStop(1, 'rgba(200,0,40,0)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, RADAR_SPRITE, RADAR_SPRITE);
+  }
+  const radarBeat = new WeakMap();  // npc -> heartbeat phase (integrated, so a changing rate never jumps)
+  let radarT = 0;
+
   // The current frame's state, unpacked so the drawing code below can use it by name
   let player, foods, npcs, jellies, birds, feathers, drops, foams, particles, bubbles, playing;
   let worldToScreen, currentZoom, depthFrac, stageIndexForR, chompOpen;
@@ -343,7 +360,86 @@ function createRenderer(canvas) {
     }
 
     if (gfx.vignette) drawVignette(ctx, cam);
+    if (playing && !player.caught) drawDangerRadar(z);
     drawTouchControls();
+  }
+
+  // Danger radar: every off-screen fish that could eat the player glows red at the screen edge in its direction,
+  // with a chevron pointing at it. Bigger and closer = larger, brighter and faster-beating; it fades out as the
+  // fish swims into view, where its red outline takes over.
+  function drawDangerRadar(z) {
+    const now = performance.now() / 1000;
+    const dt = clamp(now - radarT, 0, 0.1);
+    radarT = now;
+    const cx = W / 2, cy = H / 2;
+    const range = Math.hypot(W, H) / 2 * RADAR_RANGE;
+    const inset = 30 + Math.min(W, H) * 0.02;
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (const n of npcs) {
+      if (n.r <= player.r * EAT_MARGIN) continue;
+      const p = worldToScreen(n.x, n.y);
+      // how far the fish's body is outside the screen, in pixels
+      const out = Math.max(-p.x, p.x - W, -p.y, p.y - H) - n.r * z;
+      if (out <= 0 || out >= range) { radarBeat.delete(n); continue; }
+
+      const near = 1 - out / range;
+      const size = clamp((n.r / player.r - EAT_MARGIN) / (RADAR_FULL_RATIO - EAT_MARGIN), 0, 1);
+      const toPlayer = Math.atan2(player.y - n.y, player.x - n.x);
+      const hunting = n.mode === 'chase' && Math.cos(n.heading - toPlayer) > RADAR_HUNT_COS;
+      const fadeIn = clamp(out / 40, 0, 1);
+      const strength = fadeIn * Math.pow(near, 1.4) * (0.45 + 0.55 * size) * (hunting ? 1 : 0.75);
+      if (strength < 0.02) continue;
+
+      // heartbeat: a quick double-thump shape, faster when closer and when hunting
+      const rate = lerp(RADAR_BEAT_MIN, RADAR_BEAT_MAX, near) * (hunting ? 1.3 : 1);
+      const phase = ((radarBeat.get(n) ?? Math.random()) + dt * rate) % 1;
+      radarBeat.set(n, phase);
+      const beat = Math.max(Math.exp(-Math.pow((phase - 0.1) / 0.06, 2)), 0.6 * Math.exp(-Math.pow((phase - 0.32) / 0.06, 2)));
+
+      // where the line from the screen center to the fish crosses the screen border
+      const dx = p.x - cx, dy = p.y - cy;
+      const sx = Math.abs(dx) > 1e-6 ? (W / 2) / Math.abs(dx) : Infinity;
+      const sy = Math.abs(dy) > 1e-6 ? (H / 2) / Math.abs(dy) : Infinity;
+      const s = Math.min(sx, sy);
+      const ex = cx + dx * s, ey = cy + dy * s;
+      const onSide = sx < sy;  // left/right edge (else top/bottom)
+
+      // glow hugging the edge, stretched along it
+      const R = (70 + 150 * size) * (0.55 + 0.45 * near) * (1 + 0.12 * beat);
+      const along = R * 1.7, across = R;
+      // added as light, so it reads as a warm alarm glow on the blue water instead of a muddy stain
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = Math.min(1, strength * (0.75 + 0.35 * beat));
+      if (onSide) ctx.drawImage(radarGlow, ex - across, ey - along, across * 2, along * 2);
+      else ctx.drawImage(radarGlow, ex - along, ey - across, along * 2, across * 2);
+
+      // chevron just inside the edge, nudged toward the threat on each beat
+      const si = Math.min(sx === Infinity ? Infinity : (W / 2 - inset) / Math.abs(dx), sy === Infinity ? Infinity : (H / 2 - inset) / Math.abs(dy));
+      const a = Math.atan2(dy, dx);
+      ctx.globalCompositeOperation = 'source-over';
+      const cs = 9 + 9 * size;
+      ctx.save();
+      ctx.translate(cx + dx * si + Math.cos(a) * beat * 5, cy + dy * si + Math.sin(a) * beat * 5);
+      ctx.rotate(a);
+      const alpha = Math.min(1, 0.45 + strength * 1.4) * (0.8 + 0.2 * beat);
+      const chevrons = hunting ? [0, -cs * 0.8] : [0];
+      for (const [w, style] of [[cs * 0.3 + 4, `rgba(80,0,10,${alpha * 0.45})`], [cs * 0.3, `rgba(255,85,65,${alpha})`]]) {
+        ctx.lineWidth = w;
+        ctx.strokeStyle = style;
+        ctx.beginPath();
+        for (const off of chevrons) {
+          ctx.moveTo(off - cs * 0.6, -cs);
+          ctx.lineTo(off + cs * 0.4, 0);
+          ctx.lineTo(off - cs * 0.6, cs);
+        }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    ctx.restore();
   }
 
   // Side-view seagull: white body and head, grey wings with black tips, yellow beak
