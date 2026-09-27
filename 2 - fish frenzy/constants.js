@@ -18,8 +18,10 @@ const DIFFICULTIES = {
 const FLOOR_Y = 4000;          // world y of the sea floor; nothing can go below it
 const WATER_DEPTH = 3600;
 const SURFACE_Y = FLOOR_Y - WATER_DEPTH;  // world y of the (calm) water surface; fish leap above it
-const SPAWN_RADIUS = 1400;     // entities are kept populated within this radius of the player
-const CULL_DIST = 2000;        // entities farther than this are recycled back near the player
+// Spawn and cull distances follow the view: entities are kept populated within SPAWN_SCREENS × the visible
+// screen size (its larger side, in world units at the current zoom) and recycled beyond CULL_MUL × that
+const SPAWN_SCREENS = 1;
+const CULL_MUL = 1.3;
 const NPC_FLOOR_MARGIN = 60;   // bots start steering away from the floor this far above it
 
 // ---------- Leaps out of the water ----------
@@ -66,7 +68,8 @@ const GROW_TIME = 3;   // seconds over which each meal's growth is applied
 const CHEAT_RADII = [MAX_R, BASE_R, 45, 100, 220, 345, 380, 415, 450, 480];
 
 // ---------- Food ----------
-const FOOD_COUNT = 130;
+const FOOD_DENSITY = 130 / (2800 * 2600);  // plankton per world unit² of the spawn area (before the difficulty's food multiplier)
+const FOOD_MAX = 400;           // cap on the plankton count (before the difficulty multiplier) when zoomed far out
 const FOOD_R = 3.2;
 // Food is eaten on touching its glow; the renderer draws the glow at this radius
 const FOOD_AURA = 2.4;

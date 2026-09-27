@@ -136,10 +136,10 @@
     return { x: player.x + (Math.random() < 0.5 ? -1 : 1) * rand(minD, maxD), y: rand(top, FLOOR_Y) };
   }
 
-  // Big players see a wider area full of equally big fish, so thin the crowd out as the player grows:
-  // fewer bots, spread over a larger area
-  function npcSpawnRadius() { return SPAWN_RADIUS * clamp(player.r / 200, 1, 1.5); }
-  function npcCullDist() { return npcSpawnRadius() * (CULL_DIST / SPAWN_RADIUS); }
+  // Spawn / cull distances: the visible screen size (larger side) in world units, so they grow as the camera zooms out
+  function spawnRadius() { return SPAWN_SCREENS * Math.max(W, H) / currentZoom(); }
+  function cullDist() { return spawnRadius() * CULL_MUL; }
+  // Big players see a wider area full of equally big fish, so thin the crowd out as the player grows
   function npcCount() { return Math.round(NPC_COUNT * clamp(1.2 - player.r / 800, 0.6, 1)); }
 
   // ---------- Game state ----------
@@ -156,12 +156,17 @@
 
   // ---------- Food ----------
   const foods = [];
-  function foodCount() { return Math.round(FOOD_COUNT * difficulty.food); }
+  // The count follows the spawn box (clipped to the water column), so the density stays the same at any zoom
+  function foodCount() {
+    const R = spawnRadius();
+    return Math.round(Math.min(FOOD_DENSITY * 2 * R * Math.min(2 * R, WATER_DEPTH), FOOD_MAX) * difficulty.food);
+  }
   function spawnFood() {
+    const R = spawnRadius();
     let x, y, tries = 0;
     do {
-      x = player.x + rand(-SPAWN_RADIUS, SPAWN_RADIUS);
-      y = rand(Math.max(player.y - SPAWN_RADIUS, SURFACE_Y + 12), Math.min(player.y + SPAWN_RADIUS, FLOOR_Y));
+      x = player.x + rand(-R, R);
+      y = rand(Math.max(player.y - R, SURFACE_Y + 12), Math.min(player.y + R, FLOOR_Y));
       tries++;
       // bias food density toward the sea floor: reject shallow spawns more often
     } while (Math.random() > lerp(0.22, 1, depthFrac(y)) && tries < 6);
@@ -195,7 +200,7 @@
     return z;
   }
   function spawnNpc() {
-    const R = npcSpawnRadius();
+    const R = spawnRadius();
     // the size depends on depth, so probe a spot first, then push it out far enough that
     // even the tail of a huge fish can't pop into view
     const probe = spawnPointAround(offscreenDist(0), R, 0);
@@ -285,7 +290,7 @@
 
   function spawnJelly() {
     const minD = offscreenDist(26 * 2.5);
-    const { x, y } = spawnPointAround(minD, Math.max(SPAWN_RADIUS, minD), JELLY_SURFACE_MARGIN);
+    const { x, y } = spawnPointAround(minD, Math.max(spawnRadius(), minD), JELLY_SURFACE_MARGIN);
     const j = {
       x, y,
       r: rand(16, 26),
@@ -975,9 +980,9 @@
     // Recycle entities that drifted too far in this infinite world, and keep counts topped up nearby
     // Cull distances never drop below "fully off-screen + margin", or zoomed-out views on big screens
     // would see things vanish (and spawn/cull would fight each other)
-    const foodCull = Math.max(CULL_DIST, offscreenDist(10) + 300);
+    const foodCull = Math.max(cullDist(), offscreenDist(10) + 300);
     for (let i = foods.length - 1; i >= 0; i--) if (dist(player.x, player.y, foods[i].x, foods[i].y) > foodCull) foods.splice(i, 1);
-    const npcCull = npcCullDist();
+    const npcCull = cullDist();
     for (let i = npcs.length - 1; i >= 0; i--) {
       const n = npcs[i];
       if (dist(player.x, player.y, n.x, n.y) > Math.max(npcCull, offscreenDist(n.r * FISH_EXTENT) + 600)) npcs.splice(i, 1);
@@ -993,7 +998,7 @@
       if (far < 0) break;
       npcs.splice(far, 1);
     }
-    const jellyCull = Math.max(CULL_DIST, offscreenDist(26 * 2.5) + 600);
+    const jellyCull = Math.max(cullDist(), offscreenDist(26 * 2.5) + 600);
     for (let i = jellies.length - 1; i >= 0; i--) if (dist(player.x, player.y, jellies[i].x, jellies[i].y) > jellyCull) jellies.splice(i, 1);
     const fc = foodCount();
     while (foods.length < fc) spawnFood();

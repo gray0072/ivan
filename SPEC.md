@@ -61,7 +61,8 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Splash sounds: the player's own splashes play at full volume; other fish's splashes fade with distance from the player (1 / (1 + (d / half-screen)²)) and scale with their size relative to the player ((r / player r)^0.5, clamped 0.3–1.6); splashes quieter than 0.03 are skipped
 - Size cap `MAX_R = 500` for the player (growth is clamped) and for every spawned NPC. Reaching it pauses the game and shows the "Maximum size reached!" variant of the milestone dialog with its own per-difficulty best time (`fishFrenzy.bestMaxTime.<difficulty>`), a fanfare and a fireworks show (`fireworks.js`, separate canvas above the overlay, runs until the dialog closes). Continue keeps playing at the cap; Play Again restarts. In the last stage the HUD growth bar tracks progress toward the cap
 - Sea King stage: jellyfish no longer sting the player; touching one with the mouth eats it (queued growth)
-- Crowd control: NPC count scales down with player size (`npcCount`, down to 60% of `NPC_COUNT`) and their spawn/cull radius scales up (`npcSpawnRadius`, up to 1.5×); surplus bots are retired off-screen, farthest first
+- Spawn / cull distances follow the view (`spawnRadius` = `SPAWN_SCREENS` × the larger screen side / current zoom, `cullDist` = × `CULL_MUL` 1.3), for fish, jellyfish and plankton alike; the plankton count follows the spawn box clipped to the water column (`FOOD_DENSITY`, capped at `FOOD_MAX`) so its density doesn't depend on the zoom or the screen size
+- Crowd control: NPC count scales down with player size (`npcCount`, down to 60% of `NPC_COUNT`); surplus bots are retired off-screen, farthest first
 
 ## Project structure
 
