@@ -150,6 +150,11 @@ canvas {
   background: #29b6f6;
   color: #06202b;
 }
+.demoRow { margin-top: 14px; }
+#overlay .demoRow .btn {
+  padding: 8px 22px;
+  font-size: 16px;
+}
 #banner {
   position: fixed;
   top: 90px;

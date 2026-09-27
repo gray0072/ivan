@@ -143,6 +143,10 @@
   let reachedFinalStage = false;
   let reachedMaxSize = false;
   let lastStageIndex = 0;
+  // Demo mode: an Easy run steered by the bot brain with the dash held down; any key or tap returns to the menu
+  let demo = false;
+  let demoStartedAt = 0;
+  let demoRestartT = 0;
 
   // ---------- Food ----------
   const foods = [];
@@ -512,6 +516,21 @@
   }
   graphicsBtns.forEach((btn) => btn.addEventListener('click', () => setGraphics(btn.dataset.graphics)));
   setGraphics(graphicsKey);
+  document.getElementById('demoBtn').addEventListener('click', () => startGame('easy', true));
+  function exitDemo() {
+    demo = false;
+    clearTimeout(demoRestartT);
+    resetTouches();
+    gameState = 'start';
+    showPanel('menu');
+  }
+  // Keys pressed before the demo started (e.g. the Space that clicked the Demo button) don't count
+  window.addEventListener('keydown', (e) => {
+    if (demo && !e.repeat && e.timeStamp > demoStartedAt) exitDemo();
+  });
+  ['mousedown', 'touchstart'].forEach((type) => document.getElementById('game').addEventListener(type, () => {
+    if (demo) exitDemo();
+  }));
   document.getElementById('againBtn').addEventListener('click', () => startGame(difficultyKey));
   document.getElementById('menuBtn').addEventListener('click', () => showPanel('menu'));
   document.getElementById('restartBtn').addEventListener('click', () => {
@@ -555,6 +574,7 @@
 
   function showMilestoneDialog(kind) {
     const m = MILESTONES[kind];
+    if (demo) { showBanner(m.icon + ' ' + m.title); return; }
     gameState = 'paused';
     resetTouches();
     const storageKey = m.storage + difficultyKey;
@@ -586,17 +606,20 @@
     showBanner._t = setTimeout(() => { el.style.opacity = '0'; }, 2200);
   }
 
-  function startGame(key) {
+  function startGame(key, isDemo = false) {
     enterFullscreen();
     ensureAudio();
     resetTouches();
+    clearTimeout(demoRestartT);
+    demo = isDemo;
+    demoStartedAt = performance.now();
     difficultyKey = key;
     difficulty = DIFFICULTIES[key];
-    document.getElementById('difficultyName').textContent = difficulty.label;
+    document.getElementById('difficultyName').textContent = difficulty.label + (demo ? ' · Demo' : '');
     overlay.style.display = 'none';
     gameState = 'playing';
     elapsed = 0;
-    cheated = false;
+    cheated = demo;  // demo runs never set records
     reachedFinalStage = false;
     reachedMaxSize = false;
     lastStageIndex = 0;
@@ -612,18 +635,29 @@
     player.invulnTimer = SPAWN_GRACE;
     player.alive = true;
     player.caught = false;
+    player.thinkTimer = 0;
+    player.seen = null;
+    player.aimErr = player.aimErrTarget = player.aimErrTimer = 0;
+    player.wanderTarget = player.heading;
+    player.wanderTimer = 0;
     particles.length = 0;
     bubbles.length = 0;
     drops.length = 0;
     foams.length = 0;
     feathers.length = 0;
     resetWorld();
+    if (demo) showBanner('Demo — press any key or tap to exit');
   }
 
   function endGame(reason) {
     gameState = 'over';
     playGameOver();
     resetTouches();
+    if (demo) {
+      showBanner('💀 ' + reason);
+      demoRestartT = setTimeout(() => startGame('easy', true), DEMO_RESTART_DELAY * 1000);
+      return;
+    }
     document.getElementById('gameOverTitle').textContent = '💀 ' + reason;
     document.getElementById('gameOverText').textContent =
       'Your result: ' + sizeText(player.r) + ', stage: ' + STAGES[stageIndexForR(player.r)].name + ' (' + difficulty.label + ')';
@@ -649,6 +683,93 @@
   // Cruising bots stay this far below the surface (their back just under it); only leaps, chases and escapes break it
   function npcSurfaceMargin(r) { return r * 0.9 + 40; }
 
+  // ---------- Bot brain (shared by the NPCs and the demo-mode player) ----------
+  // Look around for the nearest threat (bigger) and prey (smaller) among player + other npcs only once per
+  // reaction interval, like a human reaction delay; in between the fish acts on what it saw last time
+  function botThink(n, dt) {
+    n.thinkTimer -= dt;
+    if (n.thinkTimer <= 0) {
+      n.thinkTimer = difficulty.npcReaction * rand(1 - NPC_REACTION_SPREAD, 1 + NPC_REACTION_SPREAD);
+      let threatDx = 0, threatDy = 0, threatDist = Infinity;
+      let preyDx = 0, preyDy = 0, preyDist = Infinity;
+      const consider = (ox, oy, or_) => {
+        const d = dist(n.x, n.y, ox, oy);
+        if (or_ > n.r * EAT_MARGIN && d < n.r * 9 + 90 && d < threatDist) {
+          threatDist = d; threatDx = ox - n.x; threatDy = oy - n.y;
+        }
+        if (n.r > or_ * EAT_MARGIN && d < n.r * 7 + 70 && d < preyDist) {
+          preyDist = d; preyDx = ox - n.x; preyDy = oy - n.y;
+        }
+      };
+      if (n !== player && player.alive && player.invulnTimer <= 0) consider(player.x, player.y, player.r);
+      for (const other of npcs) {
+        if (other === n) continue;
+        consider(other.x, other.y, other.r);
+      }
+      if (threatDist < Infinity) n.seen = { mode: 'flee', heading: Math.atan2(-threatDy, -threatDx) };
+      else if (preyDist < Infinity) n.seen = { mode: 'chase', heading: Math.atan2(preyDy, preyDx) };
+      else n.seen = null;
+    }
+    // Imperfect flee / chase: the aim error drifts smoothly within ±npcAimError, so there's no jitter
+    n.aimErrTimer -= dt;
+    if (n.aimErrTimer <= 0) {
+      n.aimErrTimer = rand(NPC_AIM_ERR_HOLD[0], NPC_AIM_ERR_HOLD[1]);
+      n.aimErrTarget = rand(-1, 1) * difficulty.npcAimError * Math.PI / 180;
+    }
+    n.aimErr += (n.aimErrTarget - n.aimErr) * clamp(dt * NPC_AIM_ERR_EASE, 0, 1);
+  }
+  // The closest jellyfish within JELLY_AVOID_DIST, as an offset { dx, dy } from the fish, or null
+  function nearestJelly(n) {
+    let best = null, bestDist = JELLY_AVOID_DIST;
+    for (const j of jellies) {
+      const d = dist(n.x, n.y, j.x, j.y) - j.r - n.r;
+      if (d < bestDist) { bestDist = d; best = { dx: j.x - n.x, dy: j.y - n.y }; }
+    }
+    return best;
+  }
+  // Never aim into the sea floor - bend the desired direction along/away from it instead,
+  // otherwise flee/chase would keep re-aiming down every frame and the fish would vibrate in place.
+  // Cruising fish bend away from the surface the same way.
+  function avoidEdges(n, heading, cruising) {
+    if (n.y > FLOOR_Y - NPC_FLOOR_MARGIN) {
+      const dx = Math.cos(heading);
+      let dy = Math.sin(heading);
+      if (dy > 0) dy = -dy;
+      heading = Math.atan2(dy, dx);
+    }
+    if (cruising && n.y < SURFACE_Y + npcSurfaceMargin(n.r)) {
+      const dx = Math.cos(heading);
+      let dy = Math.sin(heading);
+      if (dy < 0) dy = -dy;
+      heading = Math.atan2(dy, dx);
+      n.wanderTarget = heading;
+    }
+    return heading;
+  }
+  // Demo mode: the player is steered by the same brain as the bots; returns the turn input -1..1
+  function demoTurnTarget(dt) {
+    botThink(player, dt);
+    const jelly = stageIndexForR(player.r) >= JELLY_EATER_STAGE ? null : nearestJelly(player);
+    let want, cruising = false;
+    if (jelly) {
+      want = Math.atan2(-jelly.dy, -jelly.dx);
+      cruising = true;
+    } else if (player.seen) {
+      want = player.seen.heading + player.aimErr;
+    } else {
+      player.wanderTimer -= dt;
+      if (player.wanderTimer <= 0) {
+        player.wanderTarget = player.heading + rand(-1.4, 1.4);
+        player.wanderTimer = rand(1, 2.5);
+      }
+      want = player.wanderTarget;
+      cruising = true;
+    }
+    want = avoidEdges(player, want, cruising);
+    // same proportional turn as the bots (gain per radian, capped by the turn rate)
+    return clamp(angDiff(want, player.heading) * NPC_TURN_GAIN / turnRateForR(player.r), -1, 1);
+  }
+
   function updateNpc(n, dt) {
     if (n.stunTimer > 0) n.stunTimer -= dt;
     if (n.leapCooldown > 0) n.leapCooldown -= dt;
@@ -665,53 +786,15 @@
       return;
     }
 
-    // Look around for the nearest threat (bigger) and prey (smaller) among player + other npcs only once per
-    // reaction interval, like a human reaction delay; in between the fish acts on what it saw last time
-    n.thinkTimer -= dt;
-    if (n.thinkTimer <= 0) {
-      n.thinkTimer = difficulty.npcReaction * rand(1 - NPC_REACTION_SPREAD, 1 + NPC_REACTION_SPREAD);
-      let threatDx = 0, threatDy = 0, threatDist = Infinity;
-      let preyDx = 0, preyDy = 0, preyDist = Infinity;
-      const consider = (ox, oy, or_) => {
-        const d = dist(n.x, n.y, ox, oy);
-        if (or_ > n.r * EAT_MARGIN && d < n.r * 9 + 90 && d < threatDist) {
-          threatDist = d; threatDx = ox - n.x; threatDy = oy - n.y;
-        }
-        if (n.r > or_ * EAT_MARGIN && d < n.r * 7 + 70 && d < preyDist) {
-          preyDist = d; preyDx = ox - n.x; preyDy = oy - n.y;
-        }
-      };
-      if (player.alive && player.invulnTimer <= 0) consider(player.x, player.y, player.r);
-      for (const other of npcs) {
-        if (other === n) continue;
-        consider(other.x, other.y, other.r);
-      }
-      if (threatDist < Infinity) n.seen = { mode: 'flee', heading: Math.atan2(-threatDy, -threatDx) };
-      else if (preyDist < Infinity) n.seen = { mode: 'chase', heading: Math.atan2(preyDy, preyDx) };
-      else n.seen = null;
-    }
-    // Imperfect flee / chase: the aim error drifts smoothly within ±npcAimError, so there's no jitter
-    n.aimErrTimer -= dt;
-    if (n.aimErrTimer <= 0) {
-      n.aimErrTimer = rand(NPC_AIM_ERR_HOLD[0], NPC_AIM_ERR_HOLD[1]);
-      n.aimErrTarget = rand(-1, 1) * difficulty.npcAimError * Math.PI / 180;
-    }
-    n.aimErr += (n.aimErrTarget - n.aimErr) * clamp(dt * NPC_AIM_ERR_EASE, 0, 1);
-
+    botThink(n, dt);
     const eatsJelly = stageIndexForR(n.r) >= JELLY_EATER_STAGE;
-    let jellyDx = 0, jellyDy = 0, jellyDist = Infinity;
-    if (!eatsJelly) for (const j of jellies) {
-      const d = dist(n.x, n.y, j.x, j.y) - j.r - n.r;
-      if (d < JELLY_AVOID_DIST && d < jellyDist) {
-        jellyDist = d; jellyDx = j.x - n.x; jellyDy = j.y - n.y;
-      }
-    }
+    const jelly = eatsJelly ? null : nearestJelly(n);
 
     let desiredHeading;
     let speedMul = 1;
-    if (jellyDist < Infinity) {
+    if (jelly) {
       n.mode = 'avoid';
-      desiredHeading = Math.atan2(-jellyDy, -jellyDx);
+      desiredHeading = Math.atan2(-jelly.dy, -jelly.dx);
     } else if (n.seen) {
       n.mode = n.seen.mode;
       desiredHeading = n.seen.heading + n.aimErr;
@@ -738,22 +821,7 @@
       }
     }
 
-    // Never aim into the sea floor - bend the desired direction along/away from it instead,
-    // otherwise flee/chase would keep re-aiming down every frame and the fish would vibrate in place.
-    if (n.y > FLOOR_Y - NPC_FLOOR_MARGIN) {
-      const dx = Math.cos(desiredHeading);
-      let dy = Math.sin(desiredHeading);
-      if (dy > 0) dy = -dy;
-      desiredHeading = Math.atan2(dy, dx);
-    }
-    // Cruising fish bend away from the surface the same way
-    if ((n.mode === 'wander' || n.mode === 'avoid') && n.y < SURFACE_Y + npcSurfaceMargin(n.r)) {
-      const dx = Math.cos(desiredHeading);
-      let dy = Math.sin(desiredHeading);
-      if (dy < 0) dy = -dy;
-      desiredHeading = Math.atan2(dy, dx);
-      n.wanderTarget = desiredHeading;
-    }
+    desiredHeading = avoidEdges(n, desiredHeading, n.mode === 'wander' || n.mode === 'avoid');
 
     // Turn smoothly toward the desired heading: proportional to the error (eases in, no overshoot wobble),
     // capped by the size's turn rate
@@ -869,12 +937,13 @@
       const want = Math.atan2(joystick.dy, joystick.dx);
       turnTarget += clamp(angDiff(want, player.heading) * 2.5, -1, 1);
     }
-    turnTarget = clamp(turnTarget, -1, 1);
+    turnTarget = demo ? demoTurnTarget(dt) : clamp(turnTarget, -1, 1);
     // no steering in the air: the leap follows its arc
     if (player.air) turnTarget = 0;
     player.turnInput += (turnTarget - player.turnInput) * clamp(dt * 5, 0, 1);
 
-    const wantsBoost = !player.air && (keys['ArrowUp'] || keys['w'] || keys['Control'] || isTouchBoosting()) && player.boost > 0.05 && player.stunTimer <= 0;
+    const boostHeld = demo || keys['ArrowUp'] || keys['w'] || keys['Control'] || isTouchBoosting();
+    const wantsBoost = !player.air && boostHeld && player.boost > 0.05 && player.stunTimer <= 0;
     player.boosting = wantsBoost;
     player.wagPhase += dt * (player.air ? 4 : wantsBoost ? 14 : 7);
     if (wantsBoost) player.boost = clamp(player.boost - dt * BOOST_DRAIN, 0, difficulty.boostMax);

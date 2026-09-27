@@ -35,6 +35,10 @@ The start screen also has a **Graphics** switch (remembered between visits):
 - **High** — full quality: sun rays, vignette and glowing plankton, rendered at up to 2560×1440.
 - **Low** — for weaker laptops and phones: no sun rays, vignette or plankton glow, rendered at up to 1600×900 and scaled to the screen.
 
+## Demo
+
+The **Demo** button under the graphics switch starts an Easy run where the fish plays by itself: it is steered by the same AI as the other fish (flees bigger ones, chases smaller ones, avoids jellyfish, wanders otherwise) and dashes all the time. When it dies the demo starts over; press any key or tap the screen to go back to the menu. Demo runs never set records.
+
 ## Gameplay
 
 - The sea is endless to the left and right. Below you is the **sea floor**, above you is the **surface** with a tropical island, clouds and gulls on the horizon. The water is deep enough that a full-dash climb from the floor to the surface takes about 10 seconds for a fry and about 20 seconds for the biggest fish.

@@ -84,6 +84,7 @@ const NPC_AIM_ERR_EASE = 1.5;  // per second: how fast the aim error drifts towa
 const NPC_TURN_GAIN = 4;       // turn speed per radian of heading error, capped by the size's turn rate
 const NPC_LEAP_ZONE = 300;     // wandering bots within this distance (+ 1.5r) of the surface may decide to leap
 const NPC_LEAP_CHANCE = 0.2;   // per second, while in that zone
+const DEMO_RESTART_DELAY = 2;   // seconds after the demo fish dies before the demo starts over
 
 // ---------- Jellyfish (hazard, not lethal) ----------
 const JELLY_COUNT = 7;
