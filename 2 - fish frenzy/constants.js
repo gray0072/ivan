@@ -31,12 +31,12 @@ const MAX_LEAP_ELEV = 1.2;     // launch angle cap (~69°), so the fish always a
 // ---------- Stages (size tiers, shared by player and NPCs for readability) ----------
 // Upper bounds in world radius (see lengthCmForR / weightForR for the weight and length shown in the HUD),
 // spaced geometrically (each ≈ 2.2× the previous) so every stage takes a similar share of the growth;
-// the Sea King grows on to 200 t, 33 m
+// the Sea King grows on to 200 t, 29 m
 const STAGES = [
-  { name: 'Fry',          maxR: 32,       color: '#ffd54f' },  // ≤ 47 g, ≤ 20 cm
-  { name: 'Small Fish',   maxR: 70,       color: '#4fc3f7' },  // ≤ 3.6 kg, ≤ 87 cm
-  { name: 'Big Fish',     maxR: 151,      color: '#66bb6a' },  // ≤ 259 kg, ≤ 3.6 m
-  { name: 'Shark',        maxR: 327,      color: '#90a4ae' },  // ≤ 19 t, ≤ 15 m
+  { name: 'Fry',          maxR: 32,       color: '#ffd54f' },  // ≤ 63 g, ≤ 20 cm
+  { name: 'Small Fish',   maxR: 70,       color: '#4fc3f7' },  // ≤ 4.5 kg, ≤ 82 cm
+  { name: 'Big Fish',     maxR: 151,      color: '#66bb6a' },  // ≤ 295 kg, ≤ 3.3 m
+  { name: 'Shark',        maxR: 327,      color: '#90a4ae' },  // ≤ 20 t, ≤ 13 m
   { name: 'Sea King',     maxR: Infinity, color: '#ba68c8' }
 ];
 const EAT_MARGIN = 1.15; // must be this much bigger (in radius) to eat / be eaten
@@ -44,10 +44,10 @@ const EAT_MARGIN = 1.15; // must be this much bigger (in radius) to eat / be eat
 // ---------- Player ----------
 const BASE_R = 15;
 const MAX_R = 500;   // hard size cap for the player and every spawned fish
-// Length shown in the HUD is a power of r through both ends: 5 cm for a fry at BASE_R … 33 m at MAX_R
+// Length shown in the HUD is a power of r through both ends: 5 cm for a fry at BASE_R … 29 m at MAX_R
 const MIN_LENGTH_CM = 5;
-const MAX_LENGTH_CM = 3300;
-// Weight is strictly ∝ length³, pinned at the top: 200 t at 33 m (so the 5 cm fry weighs ≈ 0.7 g)
+const MAX_LENGTH_CM = 2900;
+// Weight is strictly ∝ length³, pinned at the top: 200 t at 29 m (so the 5 cm fry weighs ≈ 1 g)
 const MAX_WEIGHT_G = 200e6;
 // The camera zooms out further as the fish grows: the zoom is divided by a factor that rises linearly
 // with the shown length, from 1 for the fry to this value for the 200 t giant

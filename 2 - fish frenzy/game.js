@@ -77,7 +77,7 @@
     }
   }
 
-  // Power law through both ends: length ∝ r^1.85 (5 cm at BASE_R … 33 m at MAX_R), weight ∝ length³
+  // Power law through both ends: length ∝ r^1.81 (5 cm at BASE_R … 29 m at MAX_R), weight ∝ length³
   const LENGTH_EXP = Math.log(MAX_LENGTH_CM / MIN_LENGTH_CM) / Math.log(MAX_R / BASE_R);
   function lengthCmForR(r) { return MIN_LENGTH_CM * Math.pow(r / BASE_R, LENGTH_EXP); }
   function weightForR(r) { return MAX_WEIGHT_G * Math.pow(lengthCmForR(r) / MAX_LENGTH_CM, 3); }
