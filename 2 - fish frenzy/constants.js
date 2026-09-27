@@ -85,7 +85,16 @@ const NPC_TURN_GAIN = 4;       // turn speed per radian of heading error, capped
 const NPC_LEAP_ZONE = 300;     // wandering bots within this distance (+ 1.5r) of the surface may decide to leap
 const NPC_LEAP_CHANCE = 0.2;   // per second, while in that zone
 const DEMO_RESTART_DELAY = 2;   // seconds after the demo fish dies before the demo starts over
-const DEMO_VIEW_MUL = 1.6;      // the demo fish notices threats, prey and jellyfish this many times further than bots
+const DEMO_VIEW_MUL = 1.6;      // the demo fish notices prey and jellyfish this many times further than bots
+const DEMO_FLEE_BASE = 150;     // the demo fish flees a predator whose mouth is within this gap (px) ...
+const DEMO_FLEE_R = 4;          // ... plus this many of its own radii
+const DEMO_FLEE_DASH = 0.6;     // share of that flee gap within which it dashes away
+const DEMO_MAX_LEAPS = 2;       // leaps within DEMO_LEAP_WINDOW seconds before the demo fish dives deep
+const DEMO_LEAP_WINDOW = 8;
+const DEMO_MAX_SKIM = 1.5;      // seconds of skimming along the surface before it dives
+const DEMO_DIVE_TIME = 5;       // the dive lasts up to this long (seconds) ...
+const DEMO_DIVE_DEPTH = 350;    // ... or until the fish is this far (+ 2 radii) below the surface
+const DEMO_DIVE_ANGLE = 0.7;    // dive angle below horizontal (radians)
 const DEMO_TAIL_THREAT = 0.35;  // weight of a predator showing its tail, vs 1 for one facing the demo fish
 const DEMO_FOOD_MAX_STAGE = -1; // the demo fish seeks out plankton up to this stage (0 = Fry, -1 = never: it ignores plankton)
 const DEMO_FOOD_RANGE = 450;    // how far the demo fry looks for plankton

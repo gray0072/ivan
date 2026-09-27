@@ -37,7 +37,7 @@ The start screen also has a **Graphics** switch (remembered between visits):
 
 ## Demo
 
-The **Demo** button under the graphics switch starts an Easy run where the fish plays by itself: unlike the other fish it reacts instantly and aims precisely, sees further and plays smarter: it escapes all nearby predators at once (the ones facing it count the most), chases the tastiest fish in view and aims where the prey is heading, ignores plankton (it only eats what it bumps into), stays away from the surface and its gulls while it's a Fry, and steers clear of jellyfish. It dashes to escape or to catch prey, spends full stamina on hunting, and always keeps a reserve for a getaway. When it dies the demo starts over; press any key or tap the screen to go back to the menu. Demo runs never set records.
+The **Demo** button under the graphics switch starts an Easy run where the fish plays by itself: unlike the other fish it reacts instantly and aims precisely, sees further and plays smarter: it escapes all predators that come close at once (the ones facing it count the most) but ignores distant ones, chases the tastiest fish in view that isn't right next to a predator and aims where the prey is heading, ignores plankton (it only eats what it bumps into), stays away from the surface and its gulls while it's a Fry, steers clear of jellyfish, and after a couple of leaps out of the water dives back down for a while. It dashes to escape or to catch prey, spends full stamina on hunting, and always keeps a reserve for a getaway. When it dies the demo starts over; press any key or tap the screen to go back to the menu. Demo runs never set records.
 
 ## Gameplay
 

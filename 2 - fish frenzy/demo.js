@@ -6,10 +6,15 @@
 function createDemoPilot(w) {
   const { player, npcs, foods, stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin,
     nearestJelly, avoidEdges } = w;
-  const pilot = { dash: false, spending: false, reset, turnTarget: demoTurnTarget };
+  const pilot = {
+    dash: false, spending: false, reset, turnTarget: demoTurnTarget,
+    time: 0, leaps: [], wasAir: false, skimTime: 0, diveUntil: 0   // surface habit, see updateSurfaceHabit
+  };
 
   function reset() {
-    pilot.dash = pilot.spending = false;
+    pilot.dash = pilot.spending = pilot.wasAir = false;
+    pilot.leaps.length = 0;
+    pilot.skimTime = pilot.diveUntil = 0;
     player.seen = null;
     player.wanderTarget = player.heading;
     player.wanderTimer = 0;
@@ -20,23 +25,29 @@ function createDemoPilot(w) {
     const n = player;
     const prev = n.seen && n.seen.mode === 'chase' ? n.seen.target : null;
     n.seen = null;
-    // Flee from every threat in view at once, so escaping one predator doesn't mean swimming into another.
-    // Closer ones weigh more; one showing its tail can't bite right now, so it weighs less.
-    let fx = 0, fy = 0, dangerDist = Infinity;
+    // Flee from every threat close enough to matter at once, so escaping one predator doesn't mean swimming
+    // into another. Distance counts from the predator's mouth, so one showing its tail is further away than it
+    // looks; closer ones weigh more, and one facing away weighs less. Threats further off are ignored, so a
+    // hunt isn't abandoned because of a predator far away.
+    const fleeRange = n.r * DEMO_FLEE_R + DEMO_FLEE_BASE;
+    const threats = [];
+    let fx = 0, fy = 0, dash = false;
     for (const o of npcs) {
       if (o.r <= n.r * EAT_MARGIN) continue;
+      const gap = mouthGap(o, n.x, n.y, n.r);
+      if (gap > fleeRange * 2) continue;
+      threats.push(o);   // near enough to make prey around it off-limits
+      if (gap > fleeRange) continue;
       const dx = o.x - n.x, dy = o.y - n.y, d = Math.hypot(dx, dy) || 1;
-      const range = (n.r * 9 + 90) * DEMO_VIEW_MUL + o.r;  // a big fish is noticed further away
-      if (d > range) continue;
       const facing = (Math.cos(o.heading) * -dx + Math.sin(o.heading) * -dy) / d > 0 ? 1 : DEMO_TAIL_THREAT;
-      const weight = facing * (1 - d / range) * (1 - d / range) + 0.01;
+      const closeness = 1 - Math.max(gap, 0) / fleeRange;
+      const weight = facing * closeness * closeness + 0.01;
       fx -= dx / d * weight;
       fy -= dy / d * weight;
-      // the dash is spent only on predators within a bot's own (shorter) view
-      if (d - o.r < n.r * 9 + 90) dangerDist = Math.min(dangerDist, d);
+      if (gap < fleeRange * DEMO_FLEE_DASH) dash = true;
     }
     if (fx || fy) {
-      n.seen = { mode: 'flee', heading: Math.atan2(fy, fx), dash: dangerDist < Infinity };
+      n.seen = { mode: 'flee', heading: Math.atan2(fy, fx), dash };
       return;
     }
     // Chase the most rewarding fish in view: meal size over distance. The current target gets a bonus,
@@ -47,6 +58,8 @@ function createDemoPilot(w) {
       if (n.r <= o.r * EAT_MARGIN) continue;
       const d = dist(n.x, n.y, o.x, o.y);
       if (d > preyRange) continue;
+      // prey swimming right by a predator isn't worth the risk
+      if (threats.some((t) => mouthGap(t, o.x, o.y, n.r) < fleeRange)) continue;
       const score = o.r * o.r / (d + n.r * 2) * (o === prev ? DEMO_TARGET_STICKY : 1);
       if (score > bestScore) { bestScore = score; best = o; }
     }
@@ -65,6 +78,26 @@ function createDemoPilot(w) {
     }
     if (best) n.seen = { mode: 'food', target: best };
   }
+  // Gap between predator o's mouth and a fish of radius r at (x, y)
+  function mouthGap(o, x, y, r) {
+    const mx = o.x + Math.cos(o.heading) * MOUTH_HIT[0] * o.r, my = o.y + Math.sin(o.heading) * MOUTH_HIT[0] * o.r;
+    return dist(mx, my, x, y) - MOUTH_HIT[1] * o.r - r;
+  }
+  // Leaps and surface skims are counted; after a few in a row the fish dives deep for a while
+  function updateSurfaceHabit(dt) {
+    pilot.time += dt;
+    if (player.air && !pilot.wasAir) pilot.leaps.push(pilot.time);
+    pilot.wasAir = !!player.air;
+    while (pilot.leaps.length && pilot.time - pilot.leaps[0] > DEMO_LEAP_WINDOW) pilot.leaps.shift();
+    pilot.skimTime = !player.air && player.y < SURFACE_Y + player.r ? pilot.skimTime + dt : 0;
+    if (pilot.leaps.length >= DEMO_MAX_LEAPS || pilot.skimTime > DEMO_MAX_SKIM) {
+      pilot.diveUntil = pilot.time + DEMO_DIVE_TIME;
+      pilot.leaps.length = 0;
+      pilot.skimTime = 0;
+    }
+    if (player.y > SURFACE_Y + DEMO_DIVE_DEPTH + player.r * 2) pilot.diveUntil = 0;  // deep enough
+    return pilot.time < pilot.diveUntil;
+  }
   // Heading to where the prey will be when we get there, not where it is now
   function interceptHeading(o) {
     const d = dist(player.x, player.y, o.x, o.y);
@@ -75,6 +108,7 @@ function createDemoPilot(w) {
   // Called every frame: returns the turn input -1..1 and sets pilot.dash (whether to hold the dash)
   function demoTurnTarget(dt) {
     demoThink();
+    const diving = updateSurfaceHabit(dt);
     const s = player.seen;
     const reserve = player.boost > w.difficulty.boostMax * DEMO_DASH_RESERVE;
     // Full stamina would just go to waste: spend it on hunting and feeding, down to the escape reserve
@@ -108,6 +142,11 @@ function createDemoPilot(w) {
         player.wanderTimer = rand(1, 2.5);
       }
       want = player.wanderTarget;
+      cruising = true;
+    }
+    if (diving) {
+      // head down at an angle (a real escape still steers, but along the surface, not out of it)
+      if (!(s && s.mode === 'flee')) want = Math.atan2(Math.sin(DEMO_DIVE_ANGLE), Math.cos(player.heading) >= 0 ? 1 : -1);
       cruising = true;
     }
     want = avoidEdges(player, want, cruising);
