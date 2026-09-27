@@ -56,11 +56,12 @@ function createRenderer(canvas) {
       worldToScreen, currentZoom, depthFrac, stageIndexForR, chompOpen } = v);
   }
 
-  // Body and tail as one closed outline; the tail tips swing around the tail joint by `wag` radians
-  function fishBodyPath(r, wag) {
+  // Body and tail as one closed outline; the tail tips swing around the tail joint by `wag` radians, and tailK
+  // flattens the tail fin (seen edge-on when the fish shows its back)
+  function fishBodyPath(r, wag, tailK = 1) {
     const jx = -0.85 * r;
     const cw = Math.cos(wag), sw = Math.sin(wag);
-    const tp = (x, y) => { const dx = x - jx; return [jx + dx * cw - y * sw, dx * sw + y * cw]; };
+    const tp = (x, y) => { const dx = x - jx; y *= tailK; return [jx + dx * cw - y * sw, dx * sw + y * cw]; };
     let a, b;
     ctx.beginPath();
     ctx.moveTo(jx, -0.16 * r);
@@ -82,63 +83,123 @@ function createRenderer(canvas) {
 
   function drawFish(sx, sy, r, heading, color, z, outline, wagPhase, chomp = 0) {
     const wag = Math.sin(wagPhase) * 0.22;
-    // Mirror vertically when swimming left so the belly stays down; squash near vertical for a rolling look
-    const roll = clamp(Math.cos(heading) * 3, -1, 1);
-    const flip = (roll < 0 ? -1 : 1) * Math.max(0.72, Math.abs(roll));
+    // Near vertical the fish rolls about its long axis, turning its back to the viewer (the same whether it turns
+    // over the top or the bottom), and comes out mirrored so the belly stays down. rc/rs = cos/sin of the roll angle:
+    // a point at height y (back < 0) and lateral offset w (near flank > 0) shows up at y * rc + w * rs
+    const roll = clamp(Math.cos(heading) * 2.5, -1, 1);
+    const rc = Math.abs(roll), rs = Math.sqrt(1 - rc * rc);
+    const bodyK = Math.sqrt(rc * rc + 0.25 * rs * rs);  // apparent body height: full side view .. half (from above)
+    const farFront = clamp((0.4 - rc) / 0.3, 0, 1);     // far-flank eye/fin come out from behind the body
     const finColor = shade(color, -0.3);
 
     ctx.save();
     ctx.translate(sx, sy);
     ctx.rotate(heading);
-    ctx.scale(z, z * flip);
+    ctx.scale(z, roll < 0 ? -z : z);
 
-    // dorsal and ventral fins, behind the body
-    ctx.fillStyle = finColor;
-    ctx.beginPath();
-    // fins ripple with the swim stroke, lagging a little behind the tail
+    // dorsal fin: flat, in the fish's midplane; the fins ripple with the swim stroke, lagging a little behind the tail
     const dorsal = Math.sin(wagPhase - 0.8);
     const ventral = Math.sin(wagPhase - 1.6);
-    ctx.moveTo(0.3 * r, -0.5 * r);
-    ctx.quadraticCurveTo((-0.05 + dorsal * 0.06) * r, (-1.05 - dorsal * 0.05) * r, (-0.6 + dorsal * 0.1) * r, (-0.9 + Math.abs(dorsal) * 0.06) * r);
-    ctx.quadraticCurveTo(-0.5 * r, -0.65 * r, -0.5 * r, -0.4 * r);
-    ctx.closePath();
+    const dorsalPath = () => {
+      ctx.beginPath();
+      ctx.moveTo(0.3 * r, -0.5 * r * rc);
+      ctx.quadraticCurveTo((-0.05 + dorsal * 0.06) * r, (-1.05 - dorsal * 0.05) * r * rc, (-0.6 + dorsal * 0.1) * r, (-0.9 + Math.abs(dorsal) * 0.06) * r * rc);
+      ctx.quadraticCurveTo(-0.5 * r, -0.65 * r * rc, -0.5 * r, -0.4 * r * rc);
+      ctx.closePath();
+    };
+    // pectoral fin on the near (sgn = 1) or far (-1) flank: flaps around its base, rowing slightly out of phase with the tail
+    const pectoral = (sgn, alpha) => {
+      ctx.save();
+      ctx.translate(0.22 * r, (0.14 * rc + sgn * 0.32 * rs) * r);
+      ctx.scale(1, sgn);
+      ctx.rotate(Math.sin(wagPhase * 0.9 + 1.2) * 0.35);
+      ctx.fillStyle = shade(color, 0.25);
+      ctx.globalAlpha = 0.85 * alpha;
+      ctx.beginPath();
+      ctx.moveTo(0.06 * r, 0);
+      ctx.quadraticCurveTo(-0.2 * r, 0.46 * r, -0.47 * r, 0.32 * r);
+      ctx.quadraticCurveTo(-0.24 * r, 0.16 * r, -0.12 * r, -0.04 * r);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+    const eyeR = Math.max(1.2, r * 0.15);
+    const eye = (sgn, alpha) => {
+      const ex = 0.56 * r, ey = (-0.16 * rc + sgn * 0.3 * rs) * r;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#10202b';
+      ctx.beginPath();
+      ctx.arc(ex + eyeR * 0.25, ey, eyeR * 0.62, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.arc(ex + eyeR * 0.05, ey - eyeR * 0.3, eyeR * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    };
+
+    // behind the body: dorsal and ventral fins, the far pectoral fin and eye
+    ctx.fillStyle = finColor;
+    dorsalPath();
     ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(-0.05 * r, 0.52 * r);
-    ctx.quadraticCurveTo((-0.3 + ventral * 0.06) * r, (0.9 + ventral * 0.05) * r, (-0.55 + ventral * 0.1) * r, (0.78 - Math.abs(ventral) * 0.06) * r);
-    ctx.quadraticCurveTo(-0.5 * r, 0.6 * r, -0.48 * r, 0.42 * r);
+    ctx.moveTo(-0.05 * r, 0.52 * r * rc);
+    ctx.quadraticCurveTo((-0.3 + ventral * 0.06) * r, (0.9 + ventral * 0.05) * r * rc, (-0.55 + ventral * 0.1) * r, (0.78 - Math.abs(ventral) * 0.06) * r * rc);
+    ctx.quadraticCurveTo(-0.5 * r, 0.6 * r * rc, -0.48 * r, 0.42 * r * rc);
     ctx.closePath();
     ctx.fill();
+    if (rs > 0.2) {
+      pectoral(-1, 1);
+      eye(-1, 1);
+    }
 
-    // body + tail: dark back, light belly
+    // body + tail: dark back, light belly; as it rolls, the back (darkest along the ridge) takes over
+    ctx.save();
+    ctx.scale(1, bodyK);
+    fishBodyPath(r, wag, Math.max(rc, 0.1) / bodyK);
     const g = ctx.createLinearGradient(0, -0.7 * r, 0, 0.7 * r);
     g.addColorStop(0, shade(color, -0.35));
     g.addColorStop(0.45, color);
     g.addColorStop(1, shade(color, 0.55));
-    fishBodyPath(r, wag);
     ctx.fillStyle = g;
     ctx.fill();
+    if (rc < 0.99) {
+      const bg = ctx.createLinearGradient(0, -0.7 * r, 0, 0.7 * r);
+      bg.addColorStop(0, color);
+      bg.addColorStop(clamp(0.5 - 0.43 * rc / bodyK, 0, 1), shade(color, -0.45));
+      bg.addColorStop(1, color);
+      ctx.fillStyle = bg;
+      ctx.globalAlpha = 1 - rc;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
     if (outline) {
       ctx.strokeStyle = outline;
       ctx.lineWidth = clamp(2.5 / z, 1, 6) / 1.5;
       ctx.stroke();
     }
 
-    // soft gloss along the back
-    ctx.fillStyle = 'rgba(255,255,255,0.16)';
-    ctx.beginPath();
-    ctx.ellipse(0.05 * r, -0.36 * r, 0.5 * r, 0.12 * r, -0.08, 0, Math.PI * 2);
-    ctx.fill();
-
-    // gill line
+    // side-only details, fading out as the fish rolls: gill line and mouth
+    ctx.lineCap = 'round';
+    ctx.globalAlpha = rc;
     ctx.strokeStyle = 'rgba(0,0,0,0.22)';
     ctx.lineWidth = Math.max(0.8, r * 0.05);
-    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.arc(0.18 * r, 0, 0.42 * r, -0.85, 0.85);
     ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = Math.max(0.7, r * 0.04);
+    ctx.beginPath();
+    ctx.arc(0.8 * r, 0.1 * r, 0.12 * r, 0.3, 1.5);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.lineCap = 'butt';
 
-    // mouth; while biting, a dark wedge opens into the snout (clipped to the body outline)
+    // while biting, a dark wedge opens into the snout (clipped to the body outline)
     if (chomp > 0.02) {
       ctx.save();
       fishBodyPath(r, wag);
@@ -152,42 +213,35 @@ function createRenderer(canvas) {
       ctx.fill();
       ctx.restore();
     }
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-    ctx.lineWidth = Math.max(0.7, r * 0.04);
-    ctx.beginPath();
-    ctx.arc(0.8 * r, 0.1 * r, 0.12 * r, 0.3, 1.5);
-    ctx.stroke();
-    ctx.lineCap = 'butt';
-
-    // pectoral fin, over the body: flaps around its base, rowing slightly out of phase with the tail
-    ctx.save();
-    ctx.translate(0.22 * r, 0.14 * r);
-    ctx.rotate(Math.sin(wagPhase * 0.9 + 1.2) * 0.35);
-    ctx.fillStyle = shade(color, 0.25);
-    ctx.globalAlpha = 0.85;
-    ctx.beginPath();
-    ctx.moveTo(0.06 * r, 0);
-    ctx.quadraticCurveTo(-0.2 * r, 0.46 * r, -0.47 * r, 0.32 * r);
-    ctx.quadraticCurveTo(-0.24 * r, 0.16 * r, -0.12 * r, -0.04 * r);
-    ctx.closePath();
-    ctx.fill();
     ctx.restore();
 
-    // eye
-    const eyeR = Math.max(1.2, r * 0.15);
-    const ex = 0.56 * r, ey = -0.16 * r;
-    ctx.fillStyle = '#fff';
+    // soft gloss along the back
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
     ctx.beginPath();
-    ctx.arc(ex, ey, eyeR, 0, Math.PI * 2);
+    ctx.ellipse(0.05 * r, -0.36 * r * rc, 0.5 * r, 0.12 * r * bodyK, -0.08 * rc, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#10202b';
-    ctx.beginPath();
-    ctx.arc(ex + eyeR * 0.25, ey, eyeR * 0.62, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.beginPath();
-    ctx.arc(ex + eyeR * 0.05, ey - eyeR * 0.3, eyeR * 0.22, 0, Math.PI * 2);
-    ctx.fill();
+
+    // rolled toward the viewer, the dorsal fin runs along the back, over the body
+    const dorsalFront = clamp((0.7 - rc) / 0.4, 0, 1);
+    if (dorsalFront > 0) {
+      ctx.globalAlpha = dorsalFront;
+      ctx.fillStyle = ctx.strokeStyle = finColor;
+      ctx.lineWidth = r * 0.07;
+      ctx.lineJoin = 'round';
+      dorsalPath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.lineJoin = 'miter';
+      ctx.globalAlpha = 1;
+    }
+
+    // over the body: near pectoral fin and eye; near vertical the far ones come into view on the other flank
+    if (farFront > 0) {
+      pectoral(-1, farFront);
+      eye(-1, farFront);
+    }
+    pectoral(1, 1);
+    eye(1, 1);
 
     ctx.restore();
   }
