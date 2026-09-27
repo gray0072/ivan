@@ -93,6 +93,7 @@ const JELLY_STUN_SLOW = 0.4;
 const JELLY_AVOID_DIST = 45;   // gap (edge to edge) at which fish start steering away
 const JELLY_TENTACLE_HALF_W = 1.8;
 const JELLY_HUES = [330, 285, 205, 25, 170, 55];
+const JELLY_EATER_STAGE = 3;  // from this stage (Shark) on, jellyfish can't sting a fish and it eats them with its mouth
 const JELLY_SURFACE_MARGIN = 60; // jellyfish drift no closer to the surface than this
 
 // ---------- Hit shapes (match what drawFish / the jellyfish renderer actually draw) ----------

@@ -532,7 +532,7 @@
       storage: 'fishFrenzy.bestKingTime.',
       icon: '👑',
       title: 'You are the Sea King!',
-      sub: 'You climbed all the way to the top of the food chain. Jellyfish can\'t sting you anymore — eat them!',
+      sub: 'You climbed all the way to the top of the food chain. Now keep growing to the maximum size!',
       epic: false
     },
     max: {
@@ -698,8 +698,9 @@
     }
     n.aimErr += (n.aimErrTarget - n.aimErr) * clamp(dt * NPC_AIM_ERR_EASE, 0, 1);
 
+    const eatsJelly = stageIndexForR(n.r) >= JELLY_EATER_STAGE;
     let jellyDx = 0, jellyDy = 0, jellyDist = Infinity;
-    for (const j of jellies) {
+    if (!eatsJelly) for (const j of jellies) {
       const d = dist(n.x, n.y, j.x, j.y) - j.r - n.r;
       if (d < JELLY_AVOID_DIST && d < jellyDist) {
         jellyDist = d; jellyDx = j.x - n.x; jellyDy = j.y - n.y;
@@ -768,7 +769,7 @@
     // chases, escapes and leaps are fast enough to fly out; anything slower skims along the surface
     if (n.y < SURFACE_Y && trySurfaceLeap(n, sp, speedMul > 1.1 && n.stunTimer <= 0)) return;
 
-    if (n.stunTimer <= 0) {
+    if (n.stunTimer <= 0 && !eatsJelly) {
       const nc = fishCircles(n.x, n.y, n.r, n.heading);
       for (const j of jellies) {
         if (fishHitsJelly(nc, j)) {
@@ -819,6 +820,16 @@
           queueGrowth(f.r * f.r, n, true);
           if (onScreenX(f.x, 20)) burst(f.x, f.y, f.color, 4, 50);
           foods.splice(i, 1);
+        }
+      }
+      if (stageIndexForR(n.r) < JELLY_EATER_STAGE) continue;
+      for (let i = jellies.length - 1; i >= 0; i--) {
+        const j = jellies[i];
+        if (dist(n.x, n.y, j.x, j.y) > n.r * 2 + j.r * 2.5) continue;
+        if (fishHitsJelly(m, j)) {
+          queueGrowth(j.r * j.r * 0.3, n);
+          if (onScreenX(j.x, j.r * 3)) burst(j.x, j.baseY, `hsl(${j.hue},90%,72%)`, 12, 120);
+          jellies.splice(i, 1);
         }
       }
     }
@@ -1006,12 +1017,12 @@
       // similar sizes just pass each other with no effect
     }
 
-    // Player vs jellyfish: a hazard, until the Sea King can simply eat them (mouth only, no stings)
-    const isKing = stageIndexForR(player.r) === STAGES.length - 1;
+    // Player vs jellyfish: a hazard, until a Shark or bigger can simply eat them (mouth only, no stings)
+    const eatsJelly = stageIndexForR(player.r) >= JELLY_EATER_STAGE;
     pc = fishCircles(player.x, player.y, player.r, player.heading);
     for (let i = jellies.length - 1; i >= 0; i--) {
       const j = jellies[i];
-      if (isKing) {
+      if (eatsJelly) {
         if (fishHitsJelly(pm, j)) {
           queueGrowth(j.r * j.r * 0.3);
           burst(j.x, j.baseY, `hsl(${j.hue},90%,72%)`, 16, 140);
@@ -1035,7 +1046,8 @@
         reachedFinalStage = true;
         showMilestoneDialog('king');
       } else {
-        showBanner('New stage: ' + STAGES[afterStage].name + '!');
+        showBanner('New stage: ' + STAGES[afterStage].name + '!' +
+          (afterStage === JELLY_EATER_STAGE ? ' Jellyfish can\'t sting you anymore — eat them!' : ''));
       }
     }
     if (gameState === 'playing' && !reachedMaxSize && player.r >= MAX_R) {
