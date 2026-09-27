@@ -19,56 +19,24 @@
   resize();
 
   // ---------- Difficulty ----------
-  const DIFFICULTIES = {
-    easy:   { label: 'Easy',   food: 1.2, npcSpeed: 0.9,  boostMax: 1.5,  boostRegen: 1.5 },
-    medium: { label: 'Medium', food: 1.1, npcSpeed: 0.95, boostMax: 1.25, boostRegen: 1.25 },
-    hard:   { label: 'Hard',   food: 1.0, npcSpeed: 1.0,  boostMax: 1.0,  boostRegen: 1.0 }
-  };
   let difficultyKey = 'medium';
   let difficulty = DIFFICULTIES[difficultyKey];
 
-  // ---------- World (infinite in x; the sea floor below and the water surface above) ----------
-  // Water depth: a full-boost climb from floor to surface takes 2600 / (150 * 1.7) = 10.2 s for a fry and
-  // 2600 / (77 * 1.7) = 19.9 s for the slowest giants (speed floor 77, see speedForR). The biggest fish
-  // (r = 500) is ~1050 tall with fins and ~1400 long, so the column is still ~2.5 of them deep.
-  const FLOOR_Y = 3000;          // world y of the sea floor; nothing can go below it
-  const WATER_DEPTH = 2600;
-  const SURFACE_Y = FLOOR_Y - WATER_DEPTH;  // world y of the (calm) water surface; fish leap above it
-  const SPAWN_RADIUS = 1400;     // entities are kept populated within this radius of the player
-  const CULL_DIST = 2000;        // entities farther than this are recycled back near the player
-  const NPC_FLOOR_MARGIN = 60;   // bots start steering away from the floor this far above it
-
+  // ---------- World ----------
   // depthFrac: 1 = right at the sea floor (dark, small fish, lots of food), 0 = at the surface (light, big rivals)
   function depthFrac(y) { return clamp((y - SURFACE_Y) / WATER_DEPTH, 0, 1); }
 
   // ---------- Leaps out of the water ----------
   // Gravity grows slowly with size, so big fish don't hang in the air for ages (the path is still a true parabola)
-  const GRAVITY = 450;
-  const LEAP_HEIGHT = 1.3;       // a boosted, steep exit lifts the center at least this many radii
-  const MIN_LEAP = 0.3;          // exits that would rise less than this many radii just glide along the surface
-  const MAX_LEAP_ELEV = 1.2;     // launch angle cap (~69°), so the fish always arcs over instead of flipping
   function gravityForR(r) { return GRAVITY * Math.pow(r / BASE_R, 0.35); }
 
   // ---------- Stages (size tiers, shared by player and NPCs for readability) ----------
-  const STAGES = [
-    { name: 'Fry',          maxR: 25,       color: '#ffd54f' },
-    { name: 'Small Fish',   maxR: 45,       color: '#4fc3f7' },
-    { name: 'Big Fish',     maxR: 75,       color: '#66bb6a' },
-    { name: 'Shark',        maxR: 120,      color: '#90a4ae' },
-    { name: 'Sea King',     maxR: Infinity, color: '#ba68c8' }
-  ];
   function stageIndexForR(r) {
     for (let i = 0; i < STAGES.length; i++) if (r <= STAGES[i].maxR) return i;
     return STAGES.length - 1;
   }
 
-  const EAT_MARGIN = 1.15; // must be this much bigger (in radius) to eat / be eaten
-
   // ---------- Player ----------
-  const BASE_R = 14;
-  const MAX_R = 500;   // hard size cap for the player and every spawned fish
-  const BOOST_DRAIN = 0.6;
-  const BOOST_REGEN = 0.25;
   const player = {
     x: 0, y: FLOOR_Y - WATER_DEPTH / 2,
     air: null,      // { vx, vy, g } while flying above the surface
@@ -83,24 +51,49 @@
     alive: true,
     growQueue: []   // pending growth from meals, applied gradually over GROW_TIME
   };
-  const SPAWN_GRACE = 2.5;
-  const GROW_TIME = 5;
 
   function playerArea() { return player.r * player.r; }
-  function growPlayer(area, eff) {
-    const newArea = playerArea() + area * eff;
-    player.r = Math.min(MAX_R, Math.sqrt(Math.max(0, newArea)));
+  function growFish(e, area) { e.r = Math.min(MAX_R, Math.sqrt(Math.max(0, e.r * e.r + area))); }
+  function growPlayer(area, eff) { growFish(player, area * eff); }
+  // Meals (player's and NPCs') grow the fish gradually over GROW_TIME
+  // Every meal also plays the bite animation
+  function queueGrowth(area, e = player) {
+    e.growQueue.push({ area, left: GROW_TIME });
+    e.chompT = CHOMP_TIME;
   }
-  function queueGrowth(area) { player.growQueue.push({ area, left: GROW_TIME }); }
-  function applyQueuedGrowth(dt) {
-    const q = player.growQueue;
+  // 0 = closed .. 1 = wide open: opens fast, snaps shut
+  function chompOpen(e) {
+    if (!(e.chompT > 0)) return 0;
+    const t = 1 - e.chompT / CHOMP_TIME;
+    return t < 0.35 ? t / 0.35 : Math.pow(1 - (t - 0.35) / 0.65, 2);
+  }
+  function applyQueuedGrowth(dt, e = player) {
+    if (e.chompT > 0) e.chompT -= dt;
+    const q = e.growQueue;
     for (let i = q.length - 1; i >= 0; i--) {
       const step = Math.min(dt, q[i].left);
-      growPlayer(q[i].area * step / GROW_TIME, 1);
+      growFish(e, q[i].area * step / GROW_TIME);
       q[i].left -= step;
       if (q[i].left <= 0) q.splice(i, 1);
     }
   }
+
+  // Power law through both ends: weight ∝ r^4.3 (10 g at BASE_R … 200 t at MAX_R)
+  const WEIGHT_EXP = Math.log(MAX_WEIGHT_G / BASE_WEIGHT_G) / Math.log(MAX_R / BASE_R);
+  function weightForR(r) { return BASE_WEIGHT_G * Math.pow(r / BASE_R, WEIGHT_EXP); }
+  function formatWeight(g) {
+    const fmt = (v, unit) => (v < 10 ? v.toFixed(1) : Math.round(v)) + ' ' + unit;
+    if (g < 1000) return Math.round(g) + ' g';
+    if (g < 1e6) return fmt(g / 1e3, 'kg');
+    return fmt(g / 1e6, 't');
+  }
+  function lengthCmForR(r) { return BASE_LENGTH_CM * Math.cbrt(weightForR(r) / BASE_WEIGHT_G); }
+  function formatLength(cm) {
+    if (cm < 100) return Math.round(cm) + ' cm';
+    const m = cm / 100;
+    return (m < 10 ? m.toFixed(1) : Math.round(m)) + ' m';
+  }
+  function sizeText(r) { return formatWeight(weightForR(r)) + ' · ' + formatLength(lengthCmForR(r)); }
 
   function speedForR(r) { return clamp(150 - (r - BASE_R) * 0.35, 77, 150); }
   function turnRateForR(r) { return clamp(2.6 - (r - BASE_R) * 0.011, 0.8, 2.6); }
@@ -132,7 +125,6 @@
     }
     return { x: player.x + (Math.random() < 0.5 ? -1 : 1) * rand(minD, maxD), y: rand(top, FLOOR_Y) };
   }
-  const FISH_EXTENT = 1.9;  // tail tip reaches ~1.8r behind the center
 
   // Big players see a wider area full of equally big fish, so thin the crowd out as the player grows:
   // fewer bots, spread over a larger area
@@ -141,7 +133,6 @@
   function npcCount() { return Math.round(NPC_COUNT * clamp(1.2 - player.r / 800, 0.6, 1)); }
 
   // ---------- Game state ----------
-  let score = 0;
   let gameState = 'start'; // start | playing | paused | over
   let elapsed = 0;         // in-game seconds for the current run (pauses don't count)
   let cheated = false;
@@ -151,8 +142,6 @@
 
   // ---------- Food ----------
   const foods = [];
-  const FOOD_COUNT = 130;
-  const FOOD_R = 3.2;
   function foodCount() { return Math.round(FOOD_COUNT * difficulty.food); }
   function spawnFood() {
     let x, y, tries = 0;
@@ -172,8 +161,6 @@
 
   // ---------- NPC fish ----------
   const npcs = [];
-  const NPC_COUNT = 24;
-  const NPC_SPEED_SPREAD = 0.03; // per-fish speed varies by up to ±3%
   // Sizes cluster around the player's own size (log-normal ratio), so a big player meets big rivals
   // rather than swarms of tiny fish. Depth shifts the center: smaller near the floor, bigger in the shallows.
   // Spawns happen far away, so the depth used is mostly the player's (that's where the fish will be met).
@@ -186,7 +173,6 @@
   // A standard normal with 20% of the mass moved from the middle to the tails: 80% of samples are plain
   // normal, 20% are drawn only from |z| > 1. So the ±1σ band holds 0.8 × 68% = 55% instead of 68%,
   // and clearly smaller / clearly bigger fish show up more often.
-  const TAIL_SHARE = 0.2;
   function heavyTailNormal() {
     let z = randNormal();
     if (Math.random() < TAIL_SHARE) while (Math.abs(z) <= 1) z = randNormal();
@@ -215,30 +201,25 @@
       stunTimer: 0,
       wagPhase: rand(0, Math.PI * 2),
       hue: Math.random(),
+      growQueue: [],
+      thinkTimer: rand(0, difficulty.npcReaction),  // time until the next look around
+      seen: null,         // last noticed { mode: 'flee' | 'chase', heading }, kept until the next look
+      aimErr: 0,          // current deviation from the ideal flee / chase direction (radians)
+      aimErrTarget: 0,
+      aimErrTimer: 0,
       speedVar: rand(1 - NPC_SPEED_SPREAD, 1 + NPC_SPEED_SPREAD)  // each fish is a little faster or slower
     });
   }
 
   // ---------- Jellyfish (hazard, not lethal) ----------
   const jellies = [];
-  const JELLY_COUNT = 7;
-  const JELLY_SHRINK = 0.1;      // fraction of area lost per sting
-  const JELLY_STUN_TIME = 1.2;
-  const JELLY_STUN_SLOW = 0.4;
-  const JELLY_AVOID_DIST = 45;   // gap (edge to edge) at which fish start steering away
-  const JELLY_TENTACLE_HALF_W = 1.8;
-  const JELLY_HUES = [330, 285, 205, 25, 170, 55];
-  const JELLY_SURFACE_MARGIN = 60; // jellyfish drift no closer to the surface than this
 
   // ---------- Hit shapes (match what drawFish / the jellyfish renderer actually draw) ----------
   // Fish: circles along the body axis, [offset along heading, radius], both in units of r
-  const FISH_HIT = [[0.55, 0.4], [0.05, 0.56], [-0.45, 0.4], [-1.3, 0.28]];
   function fishCircles(x, y, r, heading) {
     const c = Math.cos(heading), s = Math.sin(heading);
     return FISH_HIT.map(([o, cr]) => ({ x: x + c * o * r, y: y + s * o * r, r: cr * r }));
   }
-  // The only part that can eat: the head in front of the gill line
-  const MOUTH_HIT = [0.72, 0.32];
   function mouthCircle(x, y, r, heading) {
     return { x: x + Math.cos(heading) * MOUTH_HIT[0] * r, y: y + Math.sin(heading) * MOUTH_HIT[0] * r, r: MOUTH_HIT[1] * r };
   }
@@ -301,17 +282,31 @@
     jellies.push(j);
   }
 
-  // ---------- Seagulls (fly over the water; a leaping fish can snatch one) ----------
-  // Lowest gulls are within a fry's reach: a fry's full-dash leap at the 69° launch cap has
-  // vy = 255 × sin(69°) = 238, so its center peaks 238² / (2 × 450) = 63 above the surface, and the mouth
-  // plus the gull's hit radius reach ~15 further. Bigger fish leap higher (≥ 1.13r) and reach the higher gulls.
+  // ---------- Seagulls (fly over the water; a leaping fish can snatch one, or get snatched) ----------
   const birds = [];
-  const BIRD_COUNT = 6;
-  const BIRD_MIN_H = 50;         // lowest cruising height (center above the surface)
-  const BIRD_MAX_H = 450;
-  const BIRD_HIT = 1.2;          // hit radius in units of the gull's r (body plus a bit of wing)
-  const BIRD_DRAW_SCALE = 1.3;   // drawn a bit larger than r, so the gulls read at a glance
-  const BIRD_RANGE = 2200;       // gulls are kept within this horizontal distance of the player
+  // The gull takes off up and away; with `carry` it holds that fish in its beak
+  function birdLeave(b, carry) {
+    b.leaving = true;
+    b.carry = carry;
+    if (Math.abs(b.vx) < 70) b.vx = Math.sign(b.vx || 1) * 70;
+  }
+  // A leaping fish `e` touching gull `b`: fry get snatched, small fish scare the gull off, bigger fish eat it.
+  // Returns 'caught' | 'scared' | 'eaten' | null
+  function fishMeetsGull(e, b) {
+    if (b.leaving) return null;
+    const stage = stageIndexForR(e.r);
+    const hitR = b.r * BIRD_HIT;
+    if (stage > GULL_SCARE_STAGE) {
+      return circlesHitPoint([mouthCircle(e.x, e.y, e.r, e.heading)], b.x, b.y, hitR) ? 'eaten' : null;
+    }
+    if (!circlesHitPoint(fishCircles(e.x, e.y, e.r, e.heading), b.x, b.y, hitR)) return null;
+    if (stage <= GULL_PREY_STAGE && !(e === player && player.invulnTimer > 0)) {
+      birdLeave(b, { r: e.r, color: STAGES[stage].color, wagPhase: e.wagPhase || 0 });
+      return 'caught';
+    }
+    birdLeave(b, null);
+    return 'scared';
+  }
   function birdCull() { return Math.max(BIRD_RANGE, offscreenDist(60) + 400); }
   function spawnBird(anywhere) {
     const minD = anywhere ? 0 : offscreenDist(60);
@@ -326,11 +321,22 @@
       vx: dir * rand(45, 85),
       flap: rand(0, Math.PI * 2),
       bob: rand(0, Math.PI * 2),
-      glide: 0
+      glide: 0,
+      leaving: false,   // flying away up and off: after a hit, or with a caught fish
+      carry: null       // { r, color, wagPhase } of a fish held in the beak
     });
     updateBird(birds[birds.length - 1], 0);
   }
   function updateBird(b, dt) {
+    if (b.leaving) {
+      b.x += b.vx * BIRD_LEAVE_SPEED * dt;
+      b.h += BIRD_LEAVE_CLIMB * dt;
+      b.y = SURFACE_Y - b.h;
+      b.flap += dt * 16;
+      b.glide = 0;
+      if (b.carry) b.carry.wagPhase += dt * 12;
+      return;
+    }
     b.x += b.vx * dt;
     b.bob += dt * 0.8;
     b.y = SURFACE_Y - b.h + Math.sin(b.bob) * 6;
@@ -344,8 +350,8 @@
 
   // Feathers from an eaten gull: they tumble and sway down, then float on the water and fade
   const feathers = [];
-  function featherBurst(x, y) {
-    for (let i = 0; i < 16; i++) {
+  function featherBurst(x, y, count = 16) {
+    for (let i = 0; i < count; i++) {
       const a = rand(0, Math.PI * 2), sp = rand(20, 110);
       feathers.push({
         x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 30,
@@ -397,7 +403,17 @@
   const drops = [];   // { x, y, vx, vy, r, g }
   const foams = [];   // { x, w, h (spray crown height), life, maxLife }
   function onScreenX(x, extent) { return Math.abs(x - player.x) < offscreenDist(extent); }
-  function splash(x, r, speed, entering) {
+  // Other fish's splashes fade with distance from the player (half a screen away = half volume) and are
+  // louder or quieter than the player's own depending on how big the fish is compared to the player
+  function splashVolume(e) {
+    if (e === player) return 1;
+    const ref = Math.min(W, H) / (2 * currentZoom());
+    const d = dist(e.x, e.y, player.x, player.y);
+    const sizeMul = clamp(Math.pow(e.r / player.r, SPLASH_SIZE_EXP), SPLASH_SIZE_MUL[0], SPLASH_SIZE_MUL[1]);
+    return sizeMul / (1 + (d / ref) * (d / ref));
+  }
+  function splash(e, speed, entering) {
+    const x = e.x, r = e.r;
     if (!onScreenX(x, r * 3 + 400)) return;
     const g = gravityForR(r);
     const count = Math.round(clamp(14 + r * 0.15, 14, 50) * (entering ? 1.4 : 1));
@@ -418,7 +434,7 @@
         spawnBubble(x + rand(-0.8, 0.8) * r, SURFACE_Y + rand(4, r * 1.2 + 10), rand(1.5, 3.5) + r * 0.05);
       }
     }
-    playSplash(clamp(r / 300, 0, 1), entering);
+    playSplash(clamp(r / 300, 0, 1), entering, splashVolume(e), e === player);
   }
 
   // Called when a fish's center crosses the surface going up. With enough upward speed it launches on a
@@ -436,7 +452,7 @@
     e.y = SURFACE_Y;
     e.air = { vx, vy, g, dripTimer: 0 };
     e.heading = Math.atan2(vy, vx);
-    splash(e.x, e.r, -vy, false);
+    splash(e, -vy, false);
     return true;
   }
   // Flight above the water: gravity only, the nose follows the velocity. Returns true on splashdown.
@@ -459,7 +475,7 @@
     }
     if (e.y >= SURFACE_Y && a.vy > 0) {
       e.y = SURFACE_Y + 1;
-      splash(e.x, e.r, a.vy, true);
+      splash(e, a.vy, true);
       e.air = null;
       return true;
     }
@@ -566,7 +582,6 @@
     gameState = 'playing';
     elapsed = 0;
     cheated = false;
-    score = 0;
     reachedFinalStage = false;
     reachedMaxSize = false;
     lastStageIndex = 0;
@@ -581,6 +596,7 @@
     player.stunTimer = 0;
     player.invulnTimer = SPAWN_GRACE;
     player.alive = true;
+    player.caught = false;
     particles.length = 0;
     bubbles.length = 0;
     drops.length = 0;
@@ -595,12 +611,11 @@
     resetTouches();
     document.getElementById('gameOverTitle').textContent = '💀 ' + reason;
     document.getElementById('gameOverText').textContent =
-      'Your result: ' + score + ' points, stage: ' + STAGES[stageIndexForR(player.r)].name + ' (' + difficulty.label + ')';
+      'Your result: ' + sizeText(player.r) + ', stage: ' + STAGES[stageIndexForR(player.r)].name + ' (' + difficulty.label + ')';
     showPanel('gameOver');
   }
 
   // ---------- Test cheat: digits set the player's size (1-5 = each stage, 6-9 = bigger Sea King, 0 = max size) ----------
-  const CHEAT_RADII = [MAX_R, BASE_R, 30, 55, 95, 130, 180, 240, 320, 420];
   window.addEventListener('keydown', (e) => {
     if (gameState !== 'playing' || e.repeat) return;
     const level = parseInt(e.key, 10);
@@ -618,8 +633,6 @@
   function npcSpeed(r) { return speedForR(r) * 0.9 * difficulty.npcSpeed; }
   // Cruising bots stay this far below the surface (their back just under it); only leaps, chases and escapes break it
   function npcSurfaceMargin(r) { return r * 0.9 + 40; }
-  const NPC_LEAP_ZONE = 300;     // wandering bots within this distance (+ 1.5r) of the surface may decide to leap
-  const NPC_LEAP_CHANCE = 0.2;   // per second, while in that zone
 
   function updateNpc(n, dt) {
     if (n.stunTimer > 0) n.stunTimer -= dt;
@@ -637,24 +650,38 @@
       return;
     }
 
-    // Find nearest threat (bigger) and nearest prey (smaller) among player + other npcs
-    let threatDx = 0, threatDy = 0, threatDist = Infinity;
-    let preyDx = 0, preyDy = 0, preyDist = Infinity;
-
-    function consider(ox, oy, or_) {
-      const d = dist(n.x, n.y, ox, oy);
-      if (or_ > n.r * EAT_MARGIN && d < n.r * 9 + 90 && d < threatDist) {
-        threatDist = d; threatDx = ox - n.x; threatDy = oy - n.y;
+    // Look around for the nearest threat (bigger) and prey (smaller) among player + other npcs only once per
+    // reaction interval, like a human reaction delay; in between the fish acts on what it saw last time
+    n.thinkTimer -= dt;
+    if (n.thinkTimer <= 0) {
+      n.thinkTimer = difficulty.npcReaction * rand(1 - NPC_REACTION_SPREAD, 1 + NPC_REACTION_SPREAD);
+      let threatDx = 0, threatDy = 0, threatDist = Infinity;
+      let preyDx = 0, preyDy = 0, preyDist = Infinity;
+      const consider = (ox, oy, or_) => {
+        const d = dist(n.x, n.y, ox, oy);
+        if (or_ > n.r * EAT_MARGIN && d < n.r * 9 + 90 && d < threatDist) {
+          threatDist = d; threatDx = ox - n.x; threatDy = oy - n.y;
+        }
+        if (n.r > or_ * EAT_MARGIN && d < n.r * 7 + 70 && d < preyDist) {
+          preyDist = d; preyDx = ox - n.x; preyDy = oy - n.y;
+        }
+      };
+      if (player.alive && player.invulnTimer <= 0) consider(player.x, player.y, player.r);
+      for (const other of npcs) {
+        if (other === n) continue;
+        consider(other.x, other.y, other.r);
       }
-      if (n.r > or_ * EAT_MARGIN && d < n.r * 7 + 70 && d < preyDist) {
-        preyDist = d; preyDx = ox - n.x; preyDy = oy - n.y;
-      }
+      if (threatDist < Infinity) n.seen = { mode: 'flee', heading: Math.atan2(-threatDy, -threatDx) };
+      else if (preyDist < Infinity) n.seen = { mode: 'chase', heading: Math.atan2(preyDy, preyDx) };
+      else n.seen = null;
     }
-    if (player.alive && player.invulnTimer <= 0) consider(player.x, player.y, player.r);
-    for (const other of npcs) {
-      if (other === n) continue;
-      consider(other.x, other.y, other.r);
+    // Imperfect flee / chase: the aim error drifts smoothly within ±npcAimError, so there's no jitter
+    n.aimErrTimer -= dt;
+    if (n.aimErrTimer <= 0) {
+      n.aimErrTimer = rand(NPC_AIM_ERR_HOLD[0], NPC_AIM_ERR_HOLD[1]);
+      n.aimErrTarget = rand(-1, 1) * difficulty.npcAimError * Math.PI / 180;
     }
+    n.aimErr += (n.aimErrTarget - n.aimErr) * clamp(dt * NPC_AIM_ERR_EASE, 0, 1);
 
     let jellyDx = 0, jellyDy = 0, jellyDist = Infinity;
     for (const j of jellies) {
@@ -669,14 +696,10 @@
     if (jellyDist < Infinity) {
       n.mode = 'avoid';
       desiredHeading = Math.atan2(-jellyDy, -jellyDx);
-    } else if (threatDist < Infinity) {
-      n.mode = 'flee';
-      desiredHeading = Math.atan2(-threatDy, -threatDx);
-      speedMul = 1.15;
-    } else if (preyDist < Infinity) {
-      n.mode = 'chase';
-      desiredHeading = Math.atan2(preyDy, preyDx);
-      speedMul = 1.2;
+    } else if (n.seen) {
+      n.mode = n.seen.mode;
+      desiredHeading = n.seen.heading + n.aimErr;
+      speedMul = n.mode === 'flee' ? 1.15 : 1.2;
     } else if (n.leapTimer > 0) {
       // a playful leap: dash steeply up at the surface
       n.mode = 'leap';
@@ -716,9 +739,10 @@
       n.wanderTarget = desiredHeading;
     }
 
-    // Turn smoothly toward the desired heading instead of snapping to it every frame
+    // Turn smoothly toward the desired heading: proportional to the error (eases in, no overshoot wobble),
+    // capped by the size's turn rate
     const turnRate = turnRateForR(n.r);
-    n.heading += clamp(angDiff(desiredHeading, n.heading), -turnRate * dt, turnRate * dt);
+    n.heading += clamp(angDiff(desiredHeading, n.heading) * NPC_TURN_GAIN, -turnRate, turnRate) * dt;
 
     n.wagPhase += dt * (n.stunTimer > 0 ? 3 : speedMul > 1.5 ? 14 : 7);
     const sp = npcSpeed(n.r) * n.speedVar * speedMul * (n.stunTimer > 0 ? JELLY_STUN_SLOW : 1);
@@ -742,9 +766,71 @@
     }
   }
 
+  // NPCs eat food they happen to touch (they never steer toward it) and smaller NPCs their mouth reaches,
+  // by the same rules as the player: mouth only, and noticeably bigger to eat a fish
+  function npcsEat(dt) {
+    for (let k = npcs.length - 1; k >= 0; k--) {
+      const n = npcs[k];
+      if (!n.air) continue;
+      for (let i = birds.length - 1; i >= 0; i--) {
+        const b = birds[i];
+        const hit = fishMeetsGull(n, b);
+        if (!hit) continue;
+        const onScreen = onScreenX(b.x, 60);
+        const vol = splashVolume(n);
+        if (hit === 'eaten') {
+          queueGrowth(b.r * b.r * 0.55, n);
+          if (onScreen) featherBurst(b.x, b.y);
+          birds.splice(i, 1);
+          if (onScreen) playDeadGull(vol);
+        } else if (hit === 'scared') {
+          if (onScreen) { featherBurst(b.x, b.y, 5); playGullScared(vol); }
+        } else {
+          if (onScreen) playGullCatch(vol);
+          npcs.splice(k, 1);
+          break;
+        }
+      }
+    }
+    for (const n of npcs) {
+      applyQueuedGrowth(dt, n);
+      if (n.air) continue;
+      const m = [mouthCircle(n.x, n.y, n.r, n.heading)];
+      const reach = n.r * (MOUTH_HIT[0] + MOUTH_HIT[1]) + FOOD_R * FOOD_AURA;
+      for (let i = foods.length - 1; i >= 0; i--) {
+        const f = foods[i];
+        if (Math.abs(f.x - n.x) > reach || Math.abs(f.y - n.y) > reach) continue;
+        if (circlesHitPoint(m, f.x, f.y, f.r * FOOD_AURA)) {
+          queueGrowth(f.r * f.r, n);
+          if (onScreenX(f.x, 20)) burst(f.x, f.y, f.color, 4, 50);
+          foods.splice(i, 1);
+        }
+      }
+    }
+    for (let a = npcs.length - 1; a >= 0; a--) {
+      const n = npcs[a];
+      if (!n || n.air) continue;
+      let m = null;
+      for (let b = npcs.length - 1; b >= 0; b--) {
+        const o = npcs[b];
+        if (o === n || o.air || n.r <= o.r * EAT_MARGIN) continue;
+        if (dist(n.x, n.y, o.x, o.y) > (n.r + o.r) * 1.7) continue;
+        m = m || [mouthCircle(n.x, n.y, n.r, n.heading)];
+        if (circlesOverlap(m, fishCircles(o.x, o.y, o.r, o.heading))) {
+          queueGrowth(o.r * o.r * 0.55, n);
+          if (onScreenX(o.x, o.r * 2)) burst(o.x, o.y, '#ff8a65', 10, 110);
+          npcs.splice(b, 1);
+          if (b < a) a--;
+        }
+      }
+    }
+  }
+
   // ---------- Update ----------
   let last = performance.now();
   function update(dt) {
+    // after a gull snatched the player, keep it flying off with the catch behind the game-over panel
+    if (gameState === 'over' && player.caught) for (const b of birds) if (b.leaving) updateBird(b, dt);
     if (gameState !== 'playing') return;
 
     elapsed += dt;
@@ -800,6 +886,7 @@
     }
 
     for (const n of npcs) updateNpc(n, dt);
+    npcsEat(dt);
 
     // Recycle entities that drifted too far in this infinite world, and keep counts topped up nearby
     // Cull distances never drop below "fully off-screen + margin", or zoomed-out views on big screens
@@ -829,7 +916,9 @@
     while (npcs.length < npcCount()) spawnNpc();
     while (jellies.length < JELLY_COUNT) spawnJelly();
     for (const b of birds) updateBird(b, dt);
-    for (let i = birds.length - 1; i >= 0; i--) if (Math.abs(birds[i].x - player.x) > birdCull()) birds.splice(i, 1);
+    for (let i = birds.length - 1; i >= 0; i--) {
+      if (Math.abs(birds[i].x - player.x) > birdCull() || birds[i].h > BIRD_LEAVE_H) birds.splice(i, 1);
+    }
     while (birds.length < BIRD_COUNT) spawnBird(false);
 
     applyQueuedGrowth(dt);
@@ -837,25 +926,36 @@
     // Player eats food (mouth only)
     const pm = [mouthCircle(player.x, player.y, player.r, player.heading)];
 
-    // Easter egg: snatch a gull out of the air mid-leap
+    // Leaping at gulls: a fry gets snatched, a small fish knocks the gull away, anything bigger eats it
     if (player.air) {
       for (let i = birds.length - 1; i >= 0; i--) {
         const b = birds[i];
-        if (player.r <= b.r * EAT_MARGIN || !circlesHitPoint(pm, b.x, b.y, b.r * BIRD_HIT)) continue;
-        queueGrowth(b.r * b.r * 0.55);
-        score += 25;
-        featherBurst(b.x, b.y);
-        birds.splice(i, 1);
-        playDeadGull();
-        showBanner('🐦 Gull snack! +25');
+        const hit = fishMeetsGull(player, b);
+        if (hit === 'eaten') {
+          queueGrowth(b.r * b.r * 0.55);
+          featherBurst(b.x, b.y);
+          birds.splice(i, 1);
+          playDeadGull();
+          showBanner('🐦 Gull snack!');
+        } else if (hit === 'scared') {
+          featherBurst(b.x, b.y, 5);
+          playGullScared();
+          showBanner('🐦 Shoo! The gull flew off');
+        } else if (hit === 'caught') {
+          player.alive = false;
+          player.caught = true;
+          playGullCatch();
+          endGame('A seagull got you!');
+          return;
+        }
       }
     }
     for (let i = foods.length - 1; i >= 0; i--) {
       const f = foods[i];
       f.bob += dt * 3;
-      if (circlesHitPoint(pm, f.x, f.y, f.r)) {
+      // the mouth only has to reach the food's glow, not the tiny core
+      if (circlesHitPoint(pm, f.x, f.y, f.r * FOOD_AURA)) {
         queueGrowth(f.r * f.r);
-        score += 1;
         burst(f.x, f.y, f.color, 6, 60);
         foods.splice(i, 1);
         playEatSmall();
@@ -872,7 +972,6 @@
       if (player.r > n.r * EAT_MARGIN) {
         if (circlesOverlap(pm, fishCircles(n.x, n.y, n.r, n.heading))) {
           queueGrowth(n.r * n.r * 0.55);
-          score += Math.round(n.r);
           burst(n.x, n.y, '#ff8a65', 14, 140);
           npcs.splice(i, 1);
           playEatBig();
@@ -896,7 +995,6 @@
       if (isKing) {
         if (fishHitsJelly(pm, j)) {
           queueGrowth(j.r * j.r * 0.3);
-          score += Math.round(j.r);
           burst(j.x, j.baseY, `hsl(${j.hue},90%,72%)`, 16, 140);
           jellies.splice(i, 1);
           playEatBig();
@@ -975,10 +1073,10 @@
       if (foams[i].life <= 0) foams.splice(i, 1);
     }
 
-    document.getElementById('score').textContent = score;
+    document.getElementById('sizeText').textContent = sizeText(player.r);
     const si = stageIndexForR(player.r);
     const stage = STAGES[si];
-    document.getElementById('stageName').textContent = stage.name + ' (r=' + Math.round(player.r) + ')';
+    document.getElementById('stageName').textContent = stage.name;
     const prevMax = si > 0 ? STAGES[si - 1].maxR : 0;
     // In the last stage the bar tracks progress toward the size cap instead
     const stageTop = stage.maxR === Infinity ? MAX_R : stage.maxR;
@@ -1015,7 +1113,7 @@
     ctx.closePath();
   }
 
-  function drawFish(sx, sy, r, heading, color, z, outline, wagPhase) {
+  function drawFish(sx, sy, r, heading, color, z, outline, wagPhase, chomp = 0) {
     const wag = Math.sin(wagPhase) * 0.22;
     // Mirror vertically when swimming left so the belly stays down; squash near vertical for a rolling look
     const roll = clamp(Math.cos(heading) * 3, -1, 1);
@@ -1055,7 +1153,7 @@
     ctx.fill();
     if (outline) {
       ctx.strokeStyle = outline;
-      ctx.lineWidth = clamp(2.5 / z, 1, 6);
+      ctx.lineWidth = clamp(2.5 / z, 1, 6) / 1.5;
       ctx.stroke();
     }
 
@@ -1073,7 +1171,20 @@
     ctx.arc(0.18 * r, 0, 0.42 * r, -0.85, 0.85);
     ctx.stroke();
 
-    // mouth
+    // mouth; while biting, a dark wedge opens into the snout (clipped to the body outline)
+    if (chomp > 0.02) {
+      ctx.save();
+      fishBodyPath(r, wag);
+      ctx.clip();
+      ctx.fillStyle = '#3b1219';
+      ctx.beginPath();
+      ctx.moveTo(0.6 * r, 0.1 * r);
+      ctx.lineTo(1.15 * r, (0.1 - 0.34 * chomp) * r);
+      ctx.lineTo(1.15 * r, (0.1 + 0.28 * chomp) * r);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
     ctx.strokeStyle = 'rgba(0,0,0,0.35)';
     ctx.lineWidth = Math.max(0.7, r * 0.04);
     ctx.beginPath();
@@ -1175,7 +1286,7 @@
       ctx.globalAlpha = 0.12 + 0.2 * df;
       ctx.fillStyle = f.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, r * 2.4, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, r * FOOD_AURA, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 1;
       ctx.beginPath();
@@ -1195,7 +1306,7 @@
       let outline = 'rgba(255,255,255,0.35)';
       if (player.r > n.r * EAT_MARGIN) outline = '#69f0ae';
       else if (n.r > player.r * EAT_MARGIN) outline = '#ff5252';
-      drawFish(p.x, p.y, n.r, n.heading, color, z, outline, n.wagPhase);
+      drawFish(p.x, p.y, n.r, n.heading, color, z, outline, n.wagPhase, chompOpen(n));
     }
 
     // player
@@ -1210,7 +1321,8 @@
       ctx.stroke();
       ctx.restore();
     }
-    drawFish(pp.x, pp.y, player.r, player.heading, stage.color, z, player.stunTimer > 0 ? '#f06292' : 'rgba(255,255,255,0.6)', player.wagPhase);
+    // a player snatched by a gull is drawn in its beak instead
+    if (!player.caught) drawFish(pp.x, pp.y, player.r, player.heading, stage.color, z, player.stunTimer > 0 ? '#f06292' : 'rgba(255,255,255,0.6)', player.wagPhase, chompOpen(player));
 
     // the surface film goes over the fish, so anything half out of the water reads as crossing it
     drawSurface(ctx, cam, foams);
@@ -1360,6 +1472,13 @@
 
     wing(u, '#b7c2cc');  // near wing, over the body
     ctx.restore();
+    // a caught fish dangles from the beak, head up, tail wriggling
+    if (b.carry) {
+      const dir = b.vx < 0 ? -1 : 1;
+      const fz = b.carry.r * z;
+      drawFish(p.x + dir * 1.6 * R, p.y - 0.3 * R + 0.72 * fz, b.carry.r, -Math.PI / 2 + dir * 0.25, b.carry.color, z,
+        'rgba(255,255,255,0.6)', b.carry.wagPhase);
+    }
   }
 
   function drawFeathers(z) {

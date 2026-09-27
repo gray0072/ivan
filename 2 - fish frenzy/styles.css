@@ -27,7 +27,7 @@ canvas {
   line-height: 1.5;
   pointer-events: none;
 }
-#hud .score {
+#hud .size {
   font-size: 26px;
   font-weight: bold;
 }
@@ -262,7 +262,7 @@ canvas {
   #overlay .kingTitle { font-size: 26px; }
   .stat b { font-size: 20px; }
   #hud { font-size: 15px; }
-  #hud .score { font-size: 20px; }
+  #hud .size { font-size: 20px; }
   #bars { font-size: 12px; }
   .barBg { width: 110px; height: 11px; margin-bottom: 6px; }
   #overlay h1 { font-size: 28px; }

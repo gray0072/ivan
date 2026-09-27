@@ -82,21 +82,41 @@ function gullVoice(t0, points, dur, vol, vibHz, vibDepth) {
   osc.start(t0); lfo.start(t0);
   osc.stop(t0 + dur + 0.05); lfo.stop(t0 + dur + 0.05);
 }
+// Gull sounds take a volume (1 = the player's own encounter; other fish pass less by distance and size)
 // Dead seagull: a chomp, a startled "KYAAH!", then a strangled, sagging "aaa-uhh..."
-function playDeadGull() {
-  if (!audioCtx) return;
+function playDeadGull(volume = 1) {
+  if (!audioCtx || volume < SPLASH_MIN_VOL) return;
   const t0 = audioCtx.currentTime;
-  tone(260, 80, 0.14, 'sine', 0.25);
-  gullVoice(t0 + 0.04, [[0, 950], [0.07, 1550], [0.26, 1150]], 0.28, 0.2, 38, 70);
-  gullVoice(t0 + 0.36, [[0, 900], [0.25, 620], [0.8, 170]], 0.85, 0.14, 13, 90);
+  tone(260, 80, 0.14, 'sine', 0.25 * volume);
+  gullVoice(t0 + 0.04, [[0, 950], [0.07, 1550], [0.26, 1150]], 0.28, 0.2 * volume, 38, 70);
+  gullVoice(t0 + 0.36, [[0, 900], [0.25, 620], [0.8, 170]], 0.85, 0.14 * volume, 13, 90);
+}
+// Knocked gull: a soft thump and an indignant "kek-kek!"
+function playGullScared(volume = 1) {
+  if (!audioCtx || volume < SPLASH_MIN_VOL) return;
+  const t0 = audioCtx.currentTime;
+  tone(180, 90, 0.1, 'sine', 0.2 * volume);
+  gullVoice(t0 + 0.05, [[0, 1100], [0.06, 1500], [0.12, 1250]], 0.13, 0.18 * volume, 30, 60);
+  gullVoice(t0 + 0.22, [[0, 1150], [0.06, 1550], [0.12, 1300]], 0.13, 0.16 * volume, 30, 60);
+}
+// Gull snatching a fish: a snap of the beak and a triumphant laughing "ha-ha-haaa"
+function playGullCatch(volume = 1) {
+  if (!audioCtx || volume < SPLASH_MIN_VOL) return;
+  const t0 = audioCtx.currentTime;
+  tone(900, 400, 0.06, 'square', 0.12 * volume);
+  gullVoice(t0 + 0.08, [[0, 1250], [0.1, 1400]], 0.12, 0.18 * volume, 25, 50);
+  gullVoice(t0 + 0.24, [[0, 1250], [0.1, 1400]], 0.12, 0.18 * volume, 25, 50);
+  gullVoice(t0 + 0.4, [[0, 1300], [0.15, 1500], [0.5, 1100]], 0.5, 0.17 * volume, 20, 70);
 }
 
-// Filtered noise burst; size 0..1 makes it longer and deeper, a splashdown is louder than a take-off
+// Filtered noise burst; size 0..1 makes it longer and deeper, a splashdown is louder than a take-off.
+// volume scales it (the player's own splash plays at 1; other fish pass a volume from distance and size)
 let lastSplashAt = 0;
-function playSplash(size, entering) {
-  if (!audioCtx) return;
+function playSplash(size, entering, volume = 1, own = true) {
+  if (!audioCtx || volume < SPLASH_MIN_VOL) return;
   const t0 = audioCtx.currentTime;
-  if (t0 - lastSplashAt < 0.08) return;  // several splashes in one moment would just clip
+  // several splashes in one moment would just clip; the player's own splash is always heard
+  if (!own && t0 - lastSplashAt < 0.08) return;
   lastSplashAt = t0;
   const dur = 0.25 + size * 0.45;
   const buf = audioCtx.createBuffer(1, Math.ceil(audioCtx.sampleRate * dur), audioCtx.sampleRate);
@@ -109,7 +129,7 @@ function playSplash(size, entering) {
   filter.frequency.setValueAtTime(2600 - size * 1600, t0);
   filter.frequency.exponentialRampToValueAtTime(300 - size * 150, t0 + dur);
   const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime((entering ? 0.22 : 0.12) * (0.7 + size * 0.5), t0);
+  gain.gain.setValueAtTime((entering ? 0.22 : 0.12) * (0.7 + size * 0.5) * volume, t0);
   src.connect(filter).connect(gain).connect(audioCtx.destination);
   src.start(t0);
 }

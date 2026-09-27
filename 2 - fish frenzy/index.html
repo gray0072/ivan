@@ -8,13 +8,13 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Fish Frenzy</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 <canvas id="game"></canvas>
 
 <div id="hud">
-  <div class="score">Score: <span id="score">0</span></div>
+  <div class="size" id="sizeText">10 g · 10 cm</div>
   <div id="stageName">Fry</div>
   <div class="difficulty" id="difficultyName"></div>
 </div>
@@ -36,9 +36,8 @@
     <p>You're a small fish in a boundless sea. Eat plankton and fish smaller than you, grow and climb the food chain — but watch out for anything bigger than you!</p>
     <p><b>← →</b> — turn. <b>Ctrl</b> (or ↑) — dash (uses stamina, helps you catch prey or escape a predator).</p>
     <p>On phone/tablet the game goes fullscreen: drag your thumb in the <b>left half</b> of the screen like a joystick to steer, touch and hold anywhere in the <b>right half</b> to dash.</p>
-    <p>The sea is endless to the sides, with the sea floor below and the surface above. Near the bottom it's darker, food is plentier, and fish are smallest. The higher you go, the lighter the water and the bigger (and more dangerous) the competition. Dash up at the surface to leap out of the water!</p>
     <p>Green outline — you can eat that fish. Red outline — it will eat you. Fish eat with their mouth only, so staying behind a predator's tail is safe until it turns around. Jellyfish aren't lethal but sting and shrink you — avoid them.</p>
-    <p>Become the sea's biggest predator — the Sea King — and then grow to the maximum size! (you're invulnerable for the first few seconds after starting — blue glow)</p>
+    <p>Become the sea's biggest predator — the Sea King — and then grow to the maximum size!</p>
     <p class="choose">Choose difficulty:</p>
     <div class="btnRow">
       <button class="btn" data-difficulty="easy">Easy</button>
@@ -76,10 +75,11 @@
 <canvas id="fx"></canvas>
 
 <script src="utils.js?v=3"></script>
-<script src="audio.js?v=4"></script>
+<script src="audio.js?v=6"></script>
 <script src="input.js?v=2"></script>
 <script src="scenery.js?v=4"></script>
 <script src="fireworks.js?v=1"></script>
-<script src="game.js?v=11"></script>
+<script src="constants.js?v=8"></script>
+<script src="game.js?v=22"></script>
 </body>
 </html>
