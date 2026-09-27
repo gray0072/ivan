@@ -29,13 +29,14 @@ const MIN_LEAP = 0.3;          // exits that would rise less than this many radi
 const MAX_LEAP_ELEV = 1.2;     // launch angle cap (~69°), so the fish always arcs over instead of flipping
 
 // ---------- Stages (size tiers, shared by player and NPCs for readability) ----------
-// Upper bounds in world radius (see lengthCmForR / weightForR for the weight and length shown in the HUD);
+// Upper bounds in world radius (see lengthCmForR / weightForR for the weight and length shown in the HUD),
+// spaced geometrically (each ≈ 2.2× the previous) so every stage takes a similar share of the growth;
 // the Sea King grows on to 200 t, 33 m
 const STAGES = [
-  { name: 'Fry',          maxR: 24,       color: '#ffd54f' },  // ≤ 9.5 g, ≤ 12 cm
-  { name: 'Small Fish',   maxR: 45,       color: '#4fc3f7' },  // ≤ 311 g, ≤ 38 cm
-  { name: 'Big Fish',     maxR: 89,       color: '#66bb6a' },  // ≤ 14 kg, ≤ 1.4 m
-  { name: 'Shark',        maxR: 180,      color: '#90a4ae' },  // ≤ 686 kg, ≤ 5 m
+  { name: 'Fry',          maxR: 32,       color: '#ffd54f' },  // ≤ 47 g, ≤ 20 cm
+  { name: 'Small Fish',   maxR: 70,       color: '#4fc3f7' },  // ≤ 3.6 kg, ≤ 87 cm
+  { name: 'Big Fish',     maxR: 151,      color: '#66bb6a' },  // ≤ 259 kg, ≤ 3.6 m
+  { name: 'Shark',        maxR: 327,      color: '#90a4ae' },  // ≤ 19 t, ≤ 15 m
   { name: 'Sea King',     maxR: Infinity, color: '#ba68c8' }
 ];
 const EAT_MARGIN = 1.15; // must be this much bigger (in radius) to eat / be eaten
@@ -45,7 +46,7 @@ const BASE_R = 15;
 const MAX_R = 500;   // hard size cap for the player and every spawned fish
 // Length shown in the HUD is a power of r through both ends: 5 cm for a fry at BASE_R … 33 m at MAX_R
 const MIN_LENGTH_CM = 5;
-const MAX_LENGTH_CM = 2900;
+const MAX_LENGTH_CM = 3300;
 // Weight is strictly ∝ length³, pinned at the top: 200 t at 33 m (so the 5 cm fry weighs ≈ 0.7 g)
 const MAX_WEIGHT_G = 200e6;
 // The camera zooms out further as the fish grows: the zoom is divided by a factor that rises linearly
@@ -59,7 +60,7 @@ const CHOMP_TIME = 0.28;  // seconds of the "om" bite animation on every meal: t
 const NO_FOOD_CHOMP_STAGE = 3;  // from this stage (Shark) on, plankton is swallowed without the bite animation
 const GROW_TIME = 3;   // seconds over which each meal's growth is applied
 // Test cheat: digits set the player's size (1-5 = each stage, 6-9 = bigger Sea King, 0 = max size)
-const CHEAT_RADII = [MAX_R, BASE_R, 35, 65, 130, 210, 270, 330, 400, 460];
+const CHEAT_RADII = [MAX_R, BASE_R, 45, 100, 220, 345, 380, 415, 450, 480];
 
 // ---------- Food ----------
 const FOOD_COUNT = 130;
@@ -74,8 +75,8 @@ const FISH_EXTENT = 1.9;  // tail tip reaches ~1.8r behind the center
 // Share of NPC size samples drawn only from the tails (|z| > 1), see heavyTailNormal
 const TAIL_SHARE = 0.2;
 // Giants are rare: a spawned fish bigger than GIANT_R is kept with probability (GIANT_R / r) ^ GIANT_EXP
-// (r = 250: 52%, r = 350: 26%, r = 500: 13%); otherwise it spawns as a small fish (×0.3–0.55 the player)
-const GIANT_R = 180;           // the Shark / Sea King boundary
+// (r = 250: 36%, r = 350: 19%, r = 500: 9%); otherwise it spawns as a small fish (×0.3–0.55 the player)
+const GIANT_R = 151;           // the Big Fish / Shark boundary
 const GIANT_EXP = 2;
 const NPC_REACTION_SPREAD = 0.2; // each look-around interval varies by up to ±20% of npcReaction
 const NPC_AIM_ERR_HOLD = [0.8, 1.6]; // seconds before an NPC picks a new aim error
