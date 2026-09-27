@@ -51,7 +51,7 @@ const MAX_LENGTH_CM = 3300;
 const MAX_WEIGHT_G = 200e6;
 // The camera zooms out further as the fish grows: the zoom is divided by a factor that rises linearly
 // with the shown length, from 1 for the fry to this value for the 200 t giant
-const MAX_ZOOM_DIVISOR = 1.5;
+const MAX_ZOOM_DIVISOR = 2;
 const BOOST_DRAIN = 0.6;
 const BOOST_REGEN = 0.25;
 const FISH_MEAL_REGEN_MUL = 2;  // boost regenerates this many times faster while a fish the player ate is still being grown into
