@@ -12,11 +12,11 @@ const DIFFICULTIES = {
 };
 
 // ---------- World (infinite in x; the sea floor below and the water surface above) ----------
-// Water depth: a full-boost climb from floor to surface takes 2600 / (150 * 1.7) = 10.2 s for a fry and
-// 2600 / (77 * 1.7) = 19.9 s for the slowest giants (speed floor 77, see speedForR). The biggest fish
-// (r = 500) is ~1050 tall with fins and ~1400 long, so the column is still ~2.5 of them deep.
-const FLOOR_Y = 3000;          // world y of the sea floor; nothing can go below it
-const WATER_DEPTH = 2600;
+// Water depth: a full-boost climb from floor to surface takes 3600 / (150 * 1.7) = 14.1 s for a fry and
+// 3600 / (77 * 1.7) = 27.5 s for the slowest giants (speed floor 77, see speedForR). The biggest fish
+// (r = 500) is ~1050 tall with fins and ~1400 long, so the column is still ~3.4 of them deep.
+const FLOOR_Y = 4000;          // world y of the sea floor; nothing can go below it
+const WATER_DEPTH = 3600;
 const SURFACE_Y = FLOOR_Y - WATER_DEPTH;  // world y of the (calm) water surface; fish leap above it
 const SPAWN_RADIUS = 1400;     // entities are kept populated within this radius of the player
 const CULL_DIST = 2000;        // entities farther than this are recycled back near the player
