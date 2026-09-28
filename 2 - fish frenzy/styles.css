@@ -45,6 +45,32 @@ canvas {
   font-size: 14px;
   pointer-events: none;
 }
+/* Sits under the bars, right-aligned; the only part of #bars that takes clicks */
+#pauseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 50%;
+  background: rgba(0,0,0,0.35);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+#pauseBtn svg {
+  display: block;
+  fill: #fff;
+}
+#pauseBtn:hover {
+  background: rgba(0,0,0,0.55);
+}
+#pauseBtn[hidden] {
+  display: none;
+}
 .barBg {
   width: 160px;
   height: 14px;

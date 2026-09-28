@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Fish Frenzy</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -26,6 +26,9 @@
   <div class="barBg"><div class="barFill" id="boostBar"></div></div>
   <div>Depth</div>
   <div class="barBg"><div class="barFill" id="depthBar"></div></div>
+  <button id="pauseBtn" aria-label="Pause" title="Pause (Esc)" hidden>
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="5" y="4" width="4.5" height="16" rx="1.5"/><rect x="14.5" y="4" width="4.5" height="16" rx="1.5"/></svg>
+  </button>
 </div>
 
 <div id="banner"></div>
@@ -34,7 +37,7 @@
   <div id="menu">
     <h1>🐟 Fish Frenzy</h1>
     <p>You're a small fish in a boundless sea. Eat plankton and fish smaller than you, grow and climb the food chain — but watch out for anything bigger than you!</p>
-    <p><b>← →</b> — turn. <b>Ctrl</b> (or ↑) — dash (uses stamina, helps you catch prey or escape a predator).</p>
+    <p><b>← →</b> — turn. <b>Ctrl</b> (or ↑) — dash (uses stamina, helps you catch prey or escape a predator). <b>Esc</b> — pause.</p>
     <p>On phone/tablet the game goes fullscreen: drag your thumb in the <b>left half</b> of the screen like a joystick to steer, touch and hold anywhere in the <b>right half</b> to dash.</p>
     <p>Green outline — you can eat that fish. Red outline — it will eat you. Fish eat with their mouth only, so staying behind a predator's tail is safe until it turns around. Jellyfish aren't lethal but sting and shrink you — avoid them, until you're a Shark: then you eat them.</p>
     <p>A pulsing red glow at the edge of the screen warns of a predator just out of view — the bigger and closer it is, the brighter and faster it beats; a double arrow means it's coming for you.</p>
@@ -60,6 +63,14 @@
     <div class="btnRow">
       <button class="btn default" id="againBtn">Play Again</button>
       <button class="btn secondary" id="menuBtn">Change Difficulty</button>
+    </div>
+  </div>
+  <div id="pausePanel" hidden>
+    <h1>⏸ Paused</h1>
+    <div class="btnRow">
+      <button class="btn default" id="resumeBtn">Continue</button>
+      <button class="btn secondary" id="pauseRestartBtn">Play Again</button>
+      <button class="btn secondary" id="pauseMenuBtn">Change Difficulty</button>
     </div>
   </div>
   <div id="kingPanel" hidden>
@@ -91,6 +102,6 @@
 <script src="constants.js?v=28"></script>
 <script src="render.js?v=4"></script>
 <script src="demo.js?v=3"></script>
-<script src="game.js?v=39"></script>
+<script src="game.js?v=40"></script>
 </body>
 </html>

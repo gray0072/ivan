@@ -14,6 +14,7 @@ Open [index.html](index.html) in a browser — no build step, no server required
 
 - **← →** — turn
 - **Ctrl** (or **↑**) — boost (dash), costs stamina that refills over time — twice as fast while you're growing from a fish you just ate
+- **Esc** (or **P**, or the pause button under the bars, top right) — pause: continue, play again or change the difficulty
 - Mouse is not used — keyboard only
 
 **On phone/tablet:** the game switches to fullscreen when you start (where the browser supports it; on iPhone, add the page to the home screen for a fullscreen view). Drag your thumb in the **left half** of the screen like a joystick — the fish turns toward the direction you push. Touch and hold anywhere in the **right half** to boost. Both work at the same time.

@@ -512,7 +512,8 @@
   const panels = {
     menu: document.getElementById('menu'),
     gameOver: document.getElementById('gameOver'),
-    king: document.getElementById('kingPanel')
+    king: document.getElementById('kingPanel'),
+    pause: document.getElementById('pausePanel')
   };
   function showPanel(name) {
     overlay.style.display = 'flex';
@@ -558,6 +559,32 @@
     resetTouches();
     player.invulnTimer = Math.max(player.invulnTimer, 1.5);
     gameState = 'playing';
+  });
+
+  // ---------- Pause (the button top right, or Esc / P) ----------
+  const pauseBtn = document.getElementById('pauseBtn');
+  function pauseGame() {
+    if (gameState !== 'playing' || demo) return;
+    gameState = 'paused';
+    resetTouches();
+    showPanel('pause');
+  }
+  function resumeGame() {
+    overlay.style.display = 'none';
+    resetTouches();
+    gameState = 'playing';
+  }
+  pauseBtn.addEventListener('click', () => { pauseBtn.blur(); pauseGame(); });
+  window.addEventListener('keydown', (e) => {
+    if ((e.key !== 'Escape' && e.key !== 'p' && e.key !== 'P') || e.repeat) return;
+    if (gameState === 'playing') pauseGame();
+    else if (!panels.pause.hidden && overlay.style.display !== 'none') resumeGame();
+  });
+  document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+  document.getElementById('pauseRestartBtn').addEventListener('click', () => startGame(difficultyKey));
+  document.getElementById('pauseMenuBtn').addEventListener('click', () => {
+    gameState = 'start';
+    showPanel('menu');
   });
 
   // ---------- Milestone time records (per milestone and difficulty; runs with cheats never count) ----------
@@ -1198,6 +1225,8 @@
     last = now;
     update(dt);
     renderer.render(view);
+    const hidePause = gameState !== 'playing' || demo;
+    if (pauseBtn.hidden !== hidePause) pauseBtn.hidden = hidePause;
   }
   requestAnimationFrame(loop);
 })();
