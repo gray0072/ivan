@@ -570,6 +570,7 @@
     showPanel('pause');
   }
   function resumeGame() {
+    enterFullscreen();
     overlay.style.display = 'none';
     resetTouches();
     gameState = 'playing';
@@ -580,6 +581,8 @@
     if (gameState === 'playing') pauseGame();
     else if (!panels.pause.hidden && overlay.style.display !== 'none') resumeGame();
   });
+  // Leaving the tab / switching apps pauses, so the game waits for you when you come back
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
   document.getElementById('resumeBtn').addEventListener('click', resumeGame);
   document.getElementById('pauseRestartBtn').addEventListener('click', () => startGame(difficultyKey));
   document.getElementById('pauseMenuBtn').addEventListener('click', () => {

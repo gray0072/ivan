@@ -93,3 +93,6 @@ function enterFullscreen() {
     if (p && p.catch) p.catch(() => {});
   } catch (err) { /* unsupported (e.g. iPhone Safari) - game still works windowed */ }
 }
+// Switching apps drops fullscreen, and the browser only allows it again from a user gesture:
+// the first tap after coming back (touchend counts as one) restores it
+window.addEventListener('touchend', enterFullscreen);
