@@ -91,6 +91,8 @@ function createRenderer(canvas) {
     const bodyK = Math.sqrt(rc * rc + 0.25 * rs * rs);  // apparent body height: full side view .. half (from above)
     const farFront = clamp((0.4 - rc) / 0.3, 0, 1);     // far-flank eye/fin come out from behind the body
     const finColor = shade(color, -0.3);
+    // big fish (sharks, whales) hold their pectoral fins out like steady wings instead of rowing: 0.35 rad for a fry … ~0.14 at the max size
+    const pectoralSwing = 0.35 * Math.pow(Math.max(r, BASE_R) / BASE_R, -0.26);
 
     ctx.save();
     ctx.translate(sx, sy);
@@ -112,7 +114,7 @@ function createRenderer(canvas) {
       ctx.save();
       ctx.translate(0.22 * r, (0.14 * rc + sgn * 0.32 * rs) * r);
       ctx.scale(1, sgn);
-      ctx.rotate(Math.sin(wagPhase * 0.9 + 1.2) * 0.35);
+      ctx.rotate(Math.sin(wagPhase * 0.9 + 1.2) * pectoralSwing);
       ctx.fillStyle = shade(color, 0.25);
       ctx.globalAlpha = 0.85 * alpha;
       ctx.beginPath();

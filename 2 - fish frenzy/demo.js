@@ -101,7 +101,7 @@ function createDemoPilot(w) {
   // Heading to where the prey will be when we get there, not where it is now
   function interceptHeading(o) {
     const d = dist(player.x, player.y, o.x, o.y);
-    const t = Math.min(d / (speedForR(player.r) * 1.7), DEMO_LEAD_MAX);
+    const t = Math.min(d / (speedForR(player.r) * BOOST_MUL), DEMO_LEAD_MAX);
     const osp = npcSpeed(o.r) * o.speedVar;
     return Math.atan2(o.y + Math.sin(o.heading) * osp * t - player.y, o.x + Math.cos(o.heading) * osp * t - player.x);
   }

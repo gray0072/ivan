@@ -145,9 +145,14 @@ canvas {
 #overlay .btn:hover {
   background: #4fc3f7;
 }
-#overlay .btn.default {
+#overlay .btn.default,
+#overlay .btn:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 2px;
+}
+/* once the arrows move the focus, only the focused button is ringed */
+#overlay > div:focus-within .btn.default:not(:focus-visible) {
+  outline: none;
 }
 #overlay .btn.secondary {
   background: rgba(255,255,255,0.18);

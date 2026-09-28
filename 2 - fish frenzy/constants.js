@@ -5,10 +5,15 @@
 // ---------- Difficulty ----------
 // npcAimError: max deviation (degrees) of a fleeing / chasing fish from the ideal direction
 // npcReaction: seconds between an NPC's looks around for threats and prey (a human-like reaction delay)
+// npcBoost: an NPC's dash stamina as a share of the player's boostMax; npcBoostRecharge: seconds after a dash
+// until the whole tank comes back at once
 const DIFFICULTIES = {
-  easy:   { label: 'Easy',   food: 2,   npcSpeed: 0.9,  boostMax: 1.5,  boostRegen: 1.5,  npcAimError: 20, npcReaction: 0.4 },
-  medium: { label: 'Medium', food: 1.5, npcSpeed: 0.95, boostMax: 1.25, boostRegen: 1.25, npcAimError: 10, npcReaction: 0.3 },
-  hard:   { label: 'Hard',   food: 1.0, npcSpeed: 1.0,  boostMax: 1.0,  boostRegen: 1.0,  npcAimError: 5,  npcReaction: 0.2 }
+  easy:   { label: 'Easy',   food: 2,   npcSpeed: 0.9,  boostMax: 1.5,  boostRegen: 1.5,  npcAimError: 20, npcReaction: 0.4,
+            npcBoost: 1 / 8,  npcBoostRecharge: 20 },
+  medium: { label: 'Medium', food: 1.5, npcSpeed: 0.95, boostMax: 1.25, boostRegen: 1.25, npcAimError: 10, npcReaction: 0.3,
+            npcBoost: 3 / 16, npcBoostRecharge: 15 },
+  hard:   { label: 'Hard',   food: 1.0, npcSpeed: 1.0,  boostMax: 1.0,  boostRegen: 1.0,  npcAimError: 5,  npcReaction: 0.2,
+            npcBoost: 1 / 4,  npcBoostRecharge: 10 }
 };
 
 // ---------- World (infinite in x; the sea floor below and the water surface above) ----------
@@ -22,6 +27,11 @@ const SURFACE_Y = FLOOR_Y - WATER_DEPTH;  // world y of the (calm) water surface
 // screen size (its larger side, in world units at the current zoom) and recycled beyond CULL_MUL × that
 const SPAWN_SCREENS = 1;
 const CULL_MUL = 1.3;
+// The populated area grows with the screen, so the fish, jellyfish and plankton-cap counts are tuned for a screen
+// whose larger side is REF_SCREEN_SIDE CSS px (a phone in landscape) and scaled by the populated area of the actual
+// screen (clipped to the water column), never below ×1 and at most ×SCREEN_MUL_MAX, so a big monitor is as crowded
+const REF_SCREEN_SIDE = 900;
+const SCREEN_MUL_MAX = 6;
 const NPC_FLOOR_MARGIN = 60;   // bots start steering away from the floor this far above it
 
 // ---------- Leaps out of the water ----------
@@ -64,7 +74,14 @@ const MAX_ZOOM_DIVISOR = 5;
 const SPEED_BASE = 150;
 const SPEED_EXP = 0.1;
 const BIGGER_SLOW_EXP = 0.25;
+const BOOST_MUL = 1.7;   // the player's dash speed multiplier
 const BOOST_DRAIN = 0.6;
+// Swim stroke (tail wag and fin ripple) rate, radians of wag phase per second at cruise, for a fry; faster swimming
+// beats faster (×2 at the player's full dash), and bigger fish beat slower: × (r / BASE_R) ^ -WAG_SIZE_EXP, like real
+// fish, whose tail-beat frequency falls with body length (a fry flicks several times a second, a whale takes ~4 s per
+// stroke): 3.6 s per stroke at the max size, 1.8 s dashing. Big fish also hold their pectoral fins steadier
+const WAG_RATE = 7;
+const WAG_SIZE_EXP = 0.4;
 const BOOST_REGEN = 0.25;
 const FISH_MEAL_REGEN_MUL = 2;  // boost regenerates this many times faster while a fish the player ate is still being grown into
 const SPAWN_GRACE = 2.5;
@@ -84,6 +101,9 @@ const FOOD_AURA = 2.4;
 // ---------- NPC fish ----------
 const NPC_COUNT = 24;
 const NPC_SPEED_SPREAD = 0.03; // per-fish speed varies by up to ±3%
+// NPC dash: only while fleeing or chasing, starting on a full tank and burning it all; it adds half of the player's
+// dash gain to the flee / chase speed. The tank refills all at once npcBoostRecharge seconds later, so dashes are rare bursts
+const NPC_BOOST_ADD = (BOOST_MUL - 1) / 2;
 const FISH_EXTENT = 1.9;  // tail tip reaches ~1.8r behind the center
 // Share of NPC size samples drawn only from the tails (|z| > 1), see heavyTailNormal
 const TAIL_SHARE = 0.2;

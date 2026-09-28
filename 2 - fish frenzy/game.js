@@ -100,6 +100,10 @@
     return r <= player.r ? own : own * Math.pow(player.r / r, BIGGER_SLOW_EXP);
   }
   function turnRateForR(r) { return clamp(2.6 - (r - BASE_R) * 0.011, 0.8, 2.6); }
+  // Wag phase speed for a fish of radius r swimming at speedMul × its cruise speed (×2 at the player's full dash)
+  function wagRate(r, speedMul) {
+    return WAG_RATE * (1 + (speedMul - 1) / (BOOST_MUL - 1)) * Math.pow(r / BASE_R, -WAG_SIZE_EXP);
+  }
 
   // ---------- Camera ----------
   // The view zooms out stage by stage: every stage divides the zoom by the same step,
@@ -143,8 +147,17 @@
   // Spawn / cull distances: the visible screen size (larger side) in world units, so they grow as the camera zooms out
   function spawnRadius() { return SPAWN_SCREENS * Math.max(W, H) / currentZoom(); }
   function cullDist() { return spawnRadius() * CULL_MUL; }
+  // How many times more area this screen populates than the reference phone screen (REF_SCREEN_SIDE) at the same zoom
+  function screenMul() {
+    const area = (side) => {
+      const R = SPAWN_SCREENS * side / currentZoom();
+      return 2 * R * Math.min(2 * R, WATER_DEPTH);
+    };
+    return clamp(area(Math.max(W, H)) / area(REF_SCREEN_SIDE), 1, SCREEN_MUL_MAX);
+  }
   // Big players see a wider area full of equally big fish, so thin the crowd out as the player grows
-  function npcCount() { return Math.round(NPC_COUNT * clamp(1.2 - player.r / 800, 0.6, 1)); }
+  function npcCount() { return Math.round(NPC_COUNT * clamp(1.2 - player.r / 800, 0.6, 1) * screenMul()); }
+  function jellyCount() { return Math.round(JELLY_COUNT * screenMul()); }
 
   // ---------- Game state ----------
   let gameState = 'start'; // start | playing | paused | over
@@ -163,7 +176,7 @@
   // The count follows the spawn box (clipped to the water column), so the density stays the same at any zoom
   function foodCount() {
     const R = spawnRadius();
-    return Math.round(Math.min(FOOD_DENSITY * 2 * R * Math.min(2 * R, WATER_DEPTH), FOOD_MAX) * difficulty.food);
+    return Math.round(Math.min(FOOD_DENSITY * 2 * R * Math.min(2 * R, WATER_DEPTH), FOOD_MAX * screenMul()) * difficulty.food);
   }
   function spawnFood() {
     const R = spawnRadius();
@@ -232,6 +245,9 @@
       aimErr: 0,          // current deviation from the ideal flee / chase direction (radians)
       aimErrTarget: 0,
       aimErrTimer: 0,
+      boost: npcBoostMax(),  // dash stamina, see NPC_BOOST_ADD
+      dashing: false,
+      boostCooldown: 0,      // seconds until the spent tank comes back full
       speedVar: rand(1 - NPC_SPEED_SPREAD, 1 + NPC_SPEED_SPREAD)  // each fish is a little faster or slower
     });
   }
@@ -395,7 +411,8 @@
     for (let i = 0; i < fc; i++) spawnFood();
     const nc = npcCount();
     for (let i = 0; i < nc; i++) spawnNpc();
-    for (let i = 0; i < JELLY_COUNT; i++) spawnJelly();
+    const jc = jellyCount();
+    for (let i = 0; i < jc; i++) spawnJelly();
     for (let i = 0; i < BIRD_COUNT; i++) spawnBird(true);
   }
 
@@ -519,6 +536,11 @@
     overlay.style.display = 'flex';
     for (const key in panels) panels[key].hidden = key !== name;
   }
+  // Also drops the focus an arrow-key menu left on a button, so Space during play can't press it
+  function hideOverlay() {
+    overlay.style.display = 'none';
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }
 
   document.querySelectorAll('#menu .btn[data-difficulty]').forEach((btn) => {
     btn.addEventListener('click', () => startGame(btn.dataset.difficulty));
@@ -553,9 +575,14 @@
     fireworks.stop();
     startGame(difficultyKey);
   });
+  document.getElementById('kingMenuBtn').addEventListener('click', () => {
+    fireworks.stop();
+    gameState = 'start';
+    showPanel('menu');
+  });
   document.getElementById('continueBtn').addEventListener('click', () => {
     fireworks.stop();
-    overlay.style.display = 'none';
+    hideOverlay();
     resetTouches();
     player.invulnTimer = Math.max(player.invulnTimer, 1.5);
     gameState = 'playing';
@@ -571,7 +598,7 @@
   }
   function resumeGame() {
     enterFullscreen();
-    overlay.style.display = 'none';
+    hideOverlay();
     resetTouches();
     gameState = 'playing';
   }
@@ -661,7 +688,7 @@
     difficultyKey = key;
     difficulty = DIFFICULTIES[key];
     document.getElementById('difficultyName').textContent = difficulty.label + (demo ? ' · Demo' : '');
-    overlay.style.display = 'none';
+    hideOverlay();
     gameState = 'playing';
     elapsed = 0;
     cheated = demo;  // demo runs never set records
@@ -721,6 +748,7 @@
 
   // ---------- NPC helpers ----------
   function npcSpeed(r) { return speedForR(r) * 0.9 * difficulty.npcSpeed; }
+  function npcBoostMax() { return difficulty.boostMax * difficulty.npcBoost; }
   // Cruising bots stay this far below the surface (their back just under it); only leaps, chases and escapes break it
   function npcSurfaceMargin(r) { return r * 0.9 + 40; }
 
@@ -799,7 +827,7 @@
     if (n.leapCooldown > 0) n.leapCooldown -= dt;
     if (n.leapTimer > 0) n.leapTimer -= dt;
     if (n.air) {
-      n.wagPhase += dt * 4;
+      n.wagPhase += dt * wagRate(n.r, 1) * 4 / WAG_RATE;
       if (updateAirborne(n, dt)) {
         // back in the water: level out on the same side and carry on
         n.mode = 'wander';
@@ -827,7 +855,7 @@
       // a playful leap: dash steeply up at the surface
       n.mode = 'leap';
       desiredHeading = Math.atan2(-Math.sin(MAX_LEAP_ELEV), n.leapDir * Math.cos(MAX_LEAP_ELEV));
-      speedMul = 1.7;
+      speedMul = BOOST_MUL;
     } else {
       n.mode = 'wander';
       n.wanderTimer -= dt;
@@ -839,10 +867,28 @@
       if (n.leapCooldown <= 0 && n.stunTimer <= 0 && n.y - SURFACE_Y < NPC_LEAP_ZONE + n.r * 1.5 &&
           Math.random() < NPC_LEAP_CHANCE * dt) {
         // enough time to reach the surface at dash speed, plus a little to line up
-        n.leapTimer = (n.y - SURFACE_Y) / (npcSpeed(n.r) * 1.7 * Math.sin(MAX_LEAP_ELEV)) + 2;
+        n.leapTimer = (n.y - SURFACE_Y) / (npcSpeed(n.r) * BOOST_MUL * Math.sin(MAX_LEAP_ELEV)) + 2;
         n.leapDir = Math.cos(n.heading) >= 0 ? 1 : -1;
         n.leapCooldown = rand(6, 15);
       }
+    }
+
+    // Dash away from a predator or after prey: start only on a full tank and burn it all (or until the chase ends);
+    // the tank then comes back full all at once after npcBoostRecharge, so the dashes stay rare, visible bursts
+    const hunted = n.mode === 'flee' || n.mode === 'chase';
+    if (n.dashing && (!hunted || n.stunTimer > 0 || n.boost <= 0)) {
+      n.dashing = false;
+      n.boost = 0;
+      n.boostCooldown = difficulty.npcBoostRecharge;
+    } else if (!n.dashing && hunted && n.stunTimer <= 0 && n.boostCooldown <= 0) {
+      n.dashing = true;
+      n.boost = npcBoostMax();
+    }
+    if (n.dashing) {
+      speedMul += NPC_BOOST_ADD;
+      n.boost -= dt * BOOST_DRAIN;
+    } else if (n.boostCooldown > 0) {
+      n.boostCooldown -= dt;
     }
 
     desiredHeading = avoidEdges(n, desiredHeading, n.mode === 'wander' || n.mode === 'avoid');
@@ -852,7 +898,7 @@
     const turnRate = turnRateForR(n.r);
     n.heading += clamp(angDiff(desiredHeading, n.heading) * NPC_TURN_GAIN, -turnRate, turnRate) * dt;
 
-    n.wagPhase += dt * (n.stunTimer > 0 ? 3 : speedMul > 1.5 ? 14 : 7);
+    n.wagPhase += dt * (n.stunTimer > 0 ? wagRate(n.r, 1) * 3 / WAG_RATE : wagRate(n.r, speedMul));
     const sp = npcSpeed(n.r) * n.speedVar * speedMul * (n.stunTimer > 0 ? JELLY_STUN_SLOW : 1);
     n.x += Math.cos(n.heading) * sp * dt;
     n.y += Math.sin(n.heading) * sp * dt;
@@ -969,7 +1015,7 @@
     const boostHeld = demo ? demoPilot.dash : keys['ArrowUp'] || keys['w'] || keys['Control'] || isTouchBoosting();
     const wantsBoost = !player.air && boostHeld && player.boost > 0.05 && player.stunTimer <= 0;
     player.boosting = wantsBoost;
-    player.wagPhase += dt * (player.air ? 4 : wantsBoost ? 14 : 7);
+    player.wagPhase += dt * (player.air ? wagRate(player.r, 1) * 4 / WAG_RATE : wagRate(player.r, wantsBoost ? BOOST_MUL : 1));
     if (wantsBoost) player.boost = clamp(player.boost - dt * BOOST_DRAIN, 0, difficulty.boostMax);
     else {
       // growing into an eaten fish recharges the boost faster
@@ -981,7 +1027,7 @@
       updateAirborne(player, dt);
     } else {
       player.heading += player.turnInput * turnRateForR(player.r) * dt;
-      const sp = speedForR(player.r) * (player.boosting ? 1.7 : 1) * (player.stunTimer > 0 ? JELLY_STUN_SLOW : 1);
+      const sp = speedForR(player.r) * (player.boosting ? BOOST_MUL : 1) * (player.stunTimer > 0 ? JELLY_STUN_SLOW : 1);
       player.x += Math.cos(player.heading) * sp * dt;
       player.y += Math.sin(player.heading) * sp * dt;
       player.y = Math.min(player.y, FLOOR_Y);
@@ -1037,7 +1083,8 @@
     const fc = foodCount();
     while (foods.length < fc) spawnFood();
     while (npcs.length < npcCount()) spawnNpc();
-    while (jellies.length < JELLY_COUNT) spawnJelly();
+    const jc = jellyCount();
+    while (jellies.length < jc) spawnJelly();
     for (const b of birds) updateBird(b, dt);
     for (let i = birds.length - 1; i >= 0; i--) {
       if (Math.abs(birds[i].x - player.x) > birdCull() || birds[i].h > BIRD_LEAVE_H) birds.splice(i, 1);

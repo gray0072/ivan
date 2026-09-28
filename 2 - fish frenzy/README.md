@@ -21,11 +21,11 @@ Open [index.html](index.html) in a browser — no build step, no server required
 
 ## Difficulty
 
-Pick a difficulty on the start screen (Space/Enter picks Medium):
+Pick a difficulty on the start screen (Space/Enter picks Medium; the arrow keys move between the buttons):
 
-- **Easy** — twice as much food, other fish swim 10% slower, 50% more boost stamina that also refills 50% faster. Fish flee and chase sloppily — up to 20° off the ideal direction — and react in about 0.3 s.
-- **Medium** — 50% more food, other fish swim 5% slower, 25% more boost stamina that also refills 25% faster. Fish aim up to 10° off and react in about 0.25 s.
-- **Hard** — the standard game. Fish aim up to 5° off and react in about 0.2 s.
+- **Easy** — twice as much food, other fish swim 10% slower, 50% more boost stamina that also refills 50% faster. Fish flee and chase sloppily — up to 20° off the ideal direction — and react in about 0.3 s. Their short dash has 1/8 of your stamina and comes back only 20 s after it is used.
+- **Medium** — 50% more food, other fish swim 5% slower, 25% more boost stamina that also refills 25% faster. Fish aim up to 10° off and react in about 0.25 s. Their dash has 3/16 of your stamina and comes back 15 s after it is used.
+- **Hard** — the standard game. Fish aim up to 5° off and react in about 0.2 s. Their dash has a quarter of your stamina and comes back 10 s after it is used.
 
 On every level the other fish notice you with a human-like delay, and they turn smoothly rather than twitching toward their target.
 
@@ -53,8 +53,8 @@ The **Demo** button under the graphics switch starts an Easy run where the fish 
 - You're briefly invulnerable right after spawning (blue glow) so you have time to get your bearings before predators start hunting.
 - Jellyfish aren't lethal, but touching one stings you: you shrink a bit and slow down for a moment, so it's worth steering around them. Other fish get stung too and try to swim around jellyfish. Sharks and bigger are immune: jellyfish can't sting them, and they eat jellyfish instead — that goes for you too once you become a Shark.
 - The bigger you get, the more the camera zooms out, and the sea around you spawns fish sized relative to you — there's always something to eat and something to fear.
-- Reach the final stage (Sea King) to become the sea's apex predator. A celebration dialog shows how long it took and your best time for that difficulty (and congratulates you on a new record). From there you can continue playing to keep growing, or start over.
-- The HUD shows your weight and length: a fry starts at 5 cm and about 1 g (weight grows with the cube of length), and every step up in size multiplies them, all the way to 29 m and 200 t — as big as the biggest blue whale. That's the maximum size in the game (no fish is ever bigger). Reaching it sets off fireworks and shows your time and best time for that difficulty; you can keep playing (you won't grow any more) or start over.
+- Reach the final stage (Sea King) to become the sea's apex predator. A celebration dialog shows how long it took and your best time for that difficulty (and congratulates you on a new record). From there you can continue playing to keep growing, start over, or go back to the menu to change the difficulty.
+- The HUD shows your weight and length: a fry starts at 5 cm and about 1 g (weight grows with the cube of length), and every step up in size multiplies them, all the way to 29 m and 200 t — as big as the biggest blue whale. That's the maximum size in the game (no fish is ever bigger). Reaching it sets off fireworks and shows your time and best time for that difficulty; you can keep playing (you won't grow any more), start over or change the difficulty.
 - The bigger you get, the fewer (and more spread out) the other fish are, so the sea doesn't turn into a traffic jam of giants. Most fish you meet are close to your own size — mostly smaller near the floor, mostly bigger in the shallows — with an occasional small fry mixed in. Real giants are rare, though: the bigger a fish would be, the less likely it is to show up, so as the Sea King you'll mostly meet sharks and smaller kings to eat, and only now and then a rival your size.
 - Other fish live by the same rules: bigger fish eat smaller ones they catch with their mouth, and any fish that bumps into food eats it and grows (they don't go looking for food, though).
 - Get eaten by something bigger and it's game over — try to grow bigger next time.
