@@ -109,8 +109,11 @@ function playGullCatch(volume = 1) {
   gullVoice(t0 + 0.4, [[0, 1300], [0.15, 1500], [0.5, 1100]], 0.5, 0.17 * volume, 20, 70);
 }
 
-// Filtered noise burst; size 0..1 makes it longer and deeper, a splashdown is louder than a take-off.
-// volume scales it (the player's own splash plays at 1; other fish pass a volume from distance and size)
+// A splash is three layers: a soft "whoosh" of noise through two stacked non-resonant low-passes (no hiss or ring,
+// the old single filter over white noise sounded like a metal sheet), a low "plop" of the air cavity (a sine gliding
+// down) and a few quiet bubble blips (short sines gliding up). size 0..1 makes it longer and deeper, a splashdown is
+// louder than a take-off. volume scales it (the player's own splash plays at 1; other fish pass a volume from distance
+// and size)
 let lastSplashAt = 0;
 function playSplash(size, entering, volume = 1, own = true) {
   if (!audioCtx || volume < SPLASH_MIN_VOL) return;
@@ -118,18 +121,64 @@ function playSplash(size, entering, volume = 1, own = true) {
   // several splashes in one moment would just clip; the player's own splash is always heard
   if (!own && t0 - lastSplashAt < 0.08) return;
   lastSplashAt = t0;
-  const dur = 0.25 + size * 0.45;
-  const buf = audioCtx.createBuffer(1, Math.ceil(audioCtx.sampleRate * dur), audioCtx.sampleRate);
+  const level = (entering ? 1 : 0.55) * (0.7 + size * 0.5) * volume;
+  const dur = 0.3 + size * 0.5;
+
+  // whoosh: noise with a soft 10 ms attack and a smooth tail
+  const sr = audioCtx.sampleRate;
+  const buf = audioCtx.createBuffer(1, Math.ceil(sr * dur), sr);
   const data = buf.getChannelData(0);
-  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2);
+  const attack = 0.01 * sr;
+  for (let i = 0; i < data.length; i++) {
+    const env = i < attack ? i / attack : Math.pow(1 - (i - attack) / (data.length - attack), 2.2);
+    data[i] = (Math.random() * 2 - 1) * env;
+  }
   const src = audioCtx.createBufferSource();
   src.buffer = buf;
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(2600 - size * 1600, t0);
-  filter.frequency.exponentialRampToValueAtTime(300 - size * 150, t0 + dur);
-  const gain = audioCtx.createGain();
-  gain.gain.setValueAtTime((entering ? 0.22 : 0.12) * (0.7 + size * 0.5) * volume, t0);
-  src.connect(filter).connect(gain).connect(audioCtx.destination);
+  const out = audioCtx.createGain();
+  out.gain.value = 0.34 * level;
+  let node = src;
+  for (let k = 0; k < 2; k++) {
+    const f = audioCtx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.Q.value = -3;  // dB: no resonant peak
+    f.frequency.setValueAtTime(1500 - size * 800, t0);
+    f.frequency.exponentialRampToValueAtTime(260 - size * 120, t0 + dur);
+    node = node.connect(f);
+  }
+  node.connect(out).connect(audioCtx.destination);
   src.start(t0);
+
+  // plop: the collapsing air cavity, deeper for bigger fish; the main body of a splashdown
+  const plopDur = 0.12 + size * 0.18;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = 'sine';
+  const f0 = (entering ? 260 : 340) * (1 - size * 0.6);
+  osc.frequency.setValueAtTime(f0, t0);
+  osc.frequency.exponentialRampToValueAtTime(f0 * 0.45, t0 + plopDur);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime((entering ? 0.3 : 0.15) * level, t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + plopDur);
+  osc.connect(g).connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0 + plopDur + 0.02);
+
+  // bubbles: a few quiet rising blips scattered over the tail
+  const blips = 2 + Math.round(size * 3 + Math.random() * 2);
+  for (let i = 0; i < blips; i++) {
+    const t = t0 + 0.04 + Math.random() * dur * 0.7;
+    const bf = (500 + Math.random() * 700) * (1 - size * 0.4);
+    const bo = audioCtx.createOscillator();
+    const bg = audioCtx.createGain();
+    bo.type = 'sine';
+    bo.frequency.setValueAtTime(bf, t);
+    bo.frequency.exponentialRampToValueAtTime(bf * 1.6, t + 0.05);
+    bg.gain.setValueAtTime(0.0001, t);
+    bg.gain.exponentialRampToValueAtTime(0.05 * level, t + 0.006);
+    bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    bo.connect(bg).connect(audioCtx.destination);
+    bo.start(t);
+    bo.stop(t + 0.08);
+  }
 }
