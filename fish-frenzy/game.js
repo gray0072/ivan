@@ -1276,8 +1276,31 @@
   const view = {
     player, foods, npcs, jellies, birds, feathers, drops, foams, particles, bubbles,
     worldToScreen, currentZoom, depthFrac, stageIndexForR, chompOpen,
-    get playing() { return gameState === 'playing'; }
+    get playing() { return gameState === 'playing'; },
+    get radar() { return radarOn; }
   };
+
+  // Radar on only while a predator could reach the player from the nearest screen edge faster than one can react
+  // and turn away (see RADAR_REACTION)
+  let radarOn = false;
+  function updateRadarNeed() {
+    const edge = Math.min(W, H) / 2 / currentZoom();
+    const closing = speedForR(player.r) + npcSpeed(player.r * EAT_MARGIN) * (1.2 + NPC_BOOST_ADD);
+    const need = RADAR_REACTION + Math.PI / 2 / turnRateForR(player.r);
+    const t = edge / closing;
+    radarOn = radarOn ? t < need * RADAR_HYSTERESIS : t < need;
+  }
+
+  // Frames drawn per second, counted over half-second windows, shown left of the pause button
+  const fpsEl = document.getElementById('fps');
+  let fpsFrames = 0, fpsFrom = performance.now();
+  function countFps(now) {
+    fpsFrames++;
+    if (now - fpsFrom < 500) return;
+    fpsEl.textContent = Math.round(fpsFrames * 1000 / (now - fpsFrom)) + ' FPS';
+    fpsFrames = 0;
+    fpsFrom = now;
+  }
 
   const frameDue = frameLimiter();
   function loop(now) {
@@ -1286,7 +1309,9 @@
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
     update(dt);
+    updateRadarNeed();
     renderer.render(view);
+    countFps(now);
     const hidePause = gameState !== 'playing' || demo;
     if (pauseBtn.hidden !== hidePause) pauseBtn.hidden = hidePause;
   }

@@ -19,11 +19,11 @@ A gallery of small, self-contained browser games and experiments, deployed as a 
     - **Left half = direction.** A floating joystick: it appears where the finger touches down and its offset from that point sets the direction/steering (replaces arrow keys / WASD).
     - **Right half = actions.** A plain tap or hold anywhere in the right half performs the main action (fire, boost, jump…). If there are extra actions, add a few large on-screen buttons in the upper part of the right half (e.g. a second weapon, pause).
     - Use multi-touch (track each `Touch.identifier`), so steering and actions work at the same time. Show the controls only on touch devices; keep keyboard/mouse fully working on desktop.
-    - Device tilt (`deviceorientation`) may be offered only as an optional extra, never as the only way to steer (on iOS it needs `DeviceOrientationEvent.requestPermission()` from a user gesture). `2 - fish frenzy/input.js` is the reference implementation of the split-screen scheme.
+    - Device tilt (`deviceorientation`) may be offered only as an optional extra, never as the only way to steer (on iOS it needs `DeviceOrientationEvent.requestPermission()` from a user gesture). `fish-frenzy/input.js` is the reference implementation of the split-screen scheme.
   - Mention the touch controls in all three READMEs (`README.md`, `README_RU.md`, `README_SV.md`) for the project, and in its in-game instructions.
 - **Every project has an icon.** Each project folder contains an `icon.svg` (square 512×512 viewBox, rounded-tile style with `rx="112"`, readable at 16–32 px, matching the game's theme). It is used as the page favicon (`<link rel="icon" type="image/svg+xml" href="icon.svg?v=N">`), next to the title in both project READMEs, on the project's card in the root gallery, and in the root README game table. The repo-level icon and social preview live in `assets/`.
 - **Three difficulty levels.** Every game offers exactly three difficulty levels — **Easy**, **Medium**, **Hard** — selectable on the start screen **and** in every restart / game-over / "Play Again" dialog (pre-selected to the current level, so restarting on the same level is one click/keypress). The choice is remembered in `localStorage` between visits. Describe what each level changes in the project's READMEs.
-- **Debug cheats.** Every game has simple, easy-to-understand cheats for testing, e.g. digit keys jumping straight to a level / stage / size (`2 - fish frenzy`: 1–5 = each stage, 6–9 = bigger, 0 = max size). Each cheat shows a short on-screen banner saying what it did. Once any cheat is used in a run, that run is marked as cheated and never updates best times / high scores / records in `localStorage`. Cheats are keyboard-only, aren't mentioned in the in-game instructions and must not trigger by accident during normal play.
+- **Debug cheats.** Every game has simple, easy-to-understand cheats for testing, e.g. digit keys jumping straight to a level / stage / size (`fish-frenzy`: 1–5 = each stage, 6–9 = bigger, 0 = max size). Each cheat shows a short on-screen banner saying what it did. Once any cheat is used in a run, that run is marked as cheated and never updates best times / high scores / records in `localStorage`. Cheats are keyboard-only, aren't mentioned in the in-game instructions and must not trigger by accident during normal play.
 - **Screenshots are in English.** Every `screenshot.png` (and any other preview image) must show the English UI — it's used by all three READMEs, including the Russian and Swedish ones.
 - **Start/restart buttons must work everywhere.** Any overlay button (e.g. "Start", "Play Again") must stay tappable on Android/iOS (plain `<button>` elements already are — don't intercept touch events on top of them) and must also be triggerable by **Space** or **Enter** on desktop, via a global `keydown` listener that clicks whichever button is currently visible in the overlay.
 - **JS and CSS live in separate files — always.** Never inline `<script>`/`<style>` blocks or `style=`/`onclick=` attributes in a project's `index.html` — put CSS in a `styles.css` and JS in one or more `.js` files (split JS into multiple files by concern/module when it grows large enough to benefit from it; `index.html` just references them). This still satisfies "no build step" and "self-contained" — the extra files live in the same project folder and are plain `<link>`/`<script src>` references, no bundler involved.
@@ -32,10 +32,14 @@ A gallery of small, self-contained browser games and experiments, deployed as a 
 
 ## Project folder layout
 
-Every project lives in a numbered folder at the repo root, e.g. `2 - <name>/`, and must contain:
+Every project lives in its own folder at the repo root.
+
+**Folder naming:** lowercase English words separated by hyphens (kebab-case) — no spaces, no number prefix, no other punctuation, e.g. `flight-simulator/`, `fish-frenzy/`. The folder name is part of the public URL (`https://gray0072.github.io/ivan/flight-simulator/`), so keep it short and don't rename it once published.
+
+Each project folder must contain:
 
 ```
-2 - <name>/
+<name>/
 ├── index.html        # markup only, links to the CSS/JS files below (versioned query strings)
 ├── styles.css         # all CSS for the project
 ├── constants.js       # game tuning constants (loaded before the game logic)
@@ -51,7 +55,7 @@ Every project lives in a numbered folder at the repo root, e.g. `2 - <name>/`, a
 
 ## When adding a new project
 
-1. Create the numbered folder and the files above (including `icon.svg`).
+1. Create the project folder and the files above (including `icon.svg`).
 2. Add a card to the root `index.html` gallery page (copy the existing `.card` block, update the image, icon, title, link, and description).
 3. Add a card (screenshot, icon, description, Play/Source links) to the games table in all three root READMEs (`README.md`, `README_RU.md`, `README_SV.md`).
 4. Update the `Projects` and `Project structure` sections of `SPEC.md`.

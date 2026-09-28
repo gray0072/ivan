@@ -49,10 +49,10 @@ function createRenderer(canvas) {
   let radarT = 0;
 
   // The current frame's state, unpacked so the drawing code below can use it by name
-  let player, foods, npcs, jellies, birds, feathers, drops, foams, particles, bubbles, playing;
+  let player, foods, npcs, jellies, birds, feathers, drops, foams, particles, bubbles, playing, radar;
   let worldToScreen, currentZoom, depthFrac, stageIndexForR, chompOpen;
   function bindView(v) {
-    ({ player, foods, npcs, jellies, birds, feathers, drops, foams, particles, bubbles, playing,
+    ({ player, foods, npcs, jellies, birds, feathers, drops, foams, particles, bubbles, playing, radar,
       worldToScreen, currentZoom, depthFrac, stageIndexForR, chompOpen } = v);
   }
 
@@ -418,7 +418,7 @@ function createRenderer(canvas) {
     }
 
     if (gfx.vignette) drawVignette(ctx, cam);
-    if (playing && !player.caught) drawDangerRadar(z);
+    if (playing && radar && !player.caught) drawDangerRadar(z);
     drawTouchControls();
   }
 

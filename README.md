@@ -26,16 +26,16 @@
 <table>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><img src="1%20-%20flight%20simulator/screenshot.png" alt="Flight simulator screenshot"></a>
-      <h3><img src="1%20-%20flight%20simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
+      <a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="flight-simulator/screenshot.png" alt="Flight simulator screenshot"></a>
+      <h3><img src="flight-simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
       <p>First-person arcade flight game: steer with the arrow keys, fire a twin-gun with Ctrl to pop balloons for points, and land on the highlighted airport's runway.</p>
-      <p><a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><b>▶ Play</b></a> · <a href="1%20-%20flight%20simulator/">Source</a></p>
+      <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Play</b></a> · <a href="flight-simulator/">Source</a></p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><img src="2%20-%20fish%20frenzy/screenshot.png" alt="Fish frenzy screenshot"></a>
-      <h3><img src="2%20-%20fish%20frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
+      <a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="fish-frenzy/screenshot.png" alt="Fish frenzy screenshot"></a>
+      <h3><img src="fish-frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
       <p>Eat-and-grow arcade game: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish with your mouth, avoid bigger ones and jellyfish, and climb the food chain to the Sea King and the maximum size. Three difficulty levels and best-time records.</p>
-      <p><a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><b>▶ Play</b></a> · <a href="2%20-%20fish%20frenzy/">Source</a></p>
+      <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Play</b></a> · <a href="fish-frenzy/">Source</a></p>
     </td>
   </tr>
 </table>
@@ -70,12 +70,12 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── SPEC.md                     # technical spec
 ├── AGENTS.md                   # instructions for AI coding agents
 ├── CLAUDE.md                   # -> points to AGENTS.md
-├── 1 - flight simulator/
+├── flight-simulator/
 │   ├── index.html              # the game
 │   ├── README.md / README_RU.md
 │   ├── icon.svg
 │   └── screenshot.png
-├── 2 - fish frenzy/
+├── fish-frenzy/
 │   ├── index.html              # markup
 │   ├── styles.css, *.js        # styles and game code, split by concern
 │   ├── README.md / README_RU.md

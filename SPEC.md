@@ -13,11 +13,11 @@ Authoritative developer/AI working spec for this repository. Not end-user docume
 
 ## Overview
 
-A growing gallery of small, self-contained browser games and experiments. Each project lives in its own numbered folder with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, a Swedish `README_SV.md`, and a `screenshot.png` (always showing the English UI). Every game has three difficulty levels (Easy / Medium / Hard), chosen on the start screen and in the restart dialog. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each.
+A growing gallery of small, self-contained browser games and experiments. Each project lives in its own folder (lowercase, hyphen-separated, e.g. `flight-simulator`) with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, a Swedish `README_SV.md`, and a `screenshot.png` (always showing the English UI). Every game has three difficulty levels (Easy / Medium / Hard), chosen on the start screen and in the restart dialog. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each.
 
 ## Projects
 
-### 1 - flight simulator
+### flight-simulator
 
 First-person arcade flight game.
 
@@ -29,7 +29,7 @@ First-person arcade flight game.
 - Terrain color/texture varies by world region and blends smoothly while flying
 - Cockpit framing (canopy pillars, windshield header) fixed on screen; clouds stay level and do not rotate with aircraft bank
 
-### 2 - fish frenzy
+### fish-frenzy
 
 Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 
@@ -39,7 +39,7 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Growth: eating plankton grows the player slightly; eating a smaller fish grows it more. There is no score; the HUD shows the player's weight and length, and the game-over text repeats them. Every meal plays a quick bite animation (`CHOMP_TIME`: a dark wedge opens in the snout and snaps shut), for the player and NPCs alike; from the Shark stage on (`NO_FOOD_CHOMP_STAGE`) plankton is swallowed without it. Each meal's area is queued and applied linearly over 3 seconds (`GROW_TIME`) instead of instantly
 - Eating is mouth-only: a mouth circle in front of the gill line (`MOUTH_HIT`) must overlap any hit circle of the smaller fish (or the food). This applies both ways, so the player is safe right behind a bigger fish's tail until it turns around
 - Eat/be-eaten rule: a fish can only eat another fish whose radius is smaller by at least 15% (`EAT_MARGIN`); near-equal sizes just bounce off each other with no effect
-- Readability: every fish on screen is outlined green (safely eatable), red (dangerous to the player) or neutral white (similar size), computed live each frame. Danger radar (`drawDangerRadar` in `render.js`, `RADAR_*` constants): every NPC that could eat the player whose body is off-screen but within `RADAR_RANGE` (1.2 screen half-diagonals) beyond the edge draws an additive red glow sprite stretched along the screen border where the line from the screen center to the fish crosses it, plus a chevron just inside pointing at it. Strength = fade-in (first 40 px off-screen) × closeness^1.4 × size factor (radius ratio from `EAT_MARGIN` up to `RADAR_FULL_RATIO` = 3) × 0.75 (1 when the fish is chasing and heading within ~37° of the player, which also doubles the chevron). The glow beats with a double-thump heartbeat whose rate goes from `RADAR_BEAT_MIN` to `RADAR_BEAT_MAX` with closeness (×1.3 when hunting); the phase is integrated per fish. Shown only while playing, on both graphics presets
+- Readability: every fish on screen is outlined green (safely eatable), red (dangerous to the player) or neutral white (similar size), computed live each frame. Danger radar (`drawDangerRadar` in `render.js`, `RADAR_*` constants), only while the screen is too small to react in time (`updateRadarNeed` in `game.js`): on when half the shorter screen side in world units, over the closing speed of the player cruising head-on into a predator chasing at full dash, is under `RADAR_REACTION` 0.5 s plus a quarter turn at the player's turn rate (off again only above ×`RADAR_HYSTERESIS` 1.15 of that) — a phone in landscape gets it at every stage, a 1920×1080 monitor never: every NPC that could eat the player whose body is off-screen but within `RADAR_RANGE` (1.2 screen half-diagonals) beyond the edge draws an additive red glow sprite stretched along the screen border where the line from the screen center to the fish crosses it, plus a chevron just inside pointing at it. Strength = fade-in (first 40 px off-screen) × closeness^1.4 × size factor (radius ratio from `EAT_MARGIN` up to `RADAR_FULL_RATIO` = 3) × 0.75 (1 when the fish is chasing and heading within ~37° of the player, which also doubles the chevron). The glow beats with a double-thump heartbeat whose rate goes from `RADAR_BEAT_MIN` to `RADAR_BEAT_MAX` with closeness (×1.3 when hunting); the phase is integrated per fish. Shown only while playing, on both graphics presets
 - Menus: arrow keys move the focus between the visible panel's buttons (spatially, to the nearest button in that direction, preferring the same row / column; with nothing focused the default button counts as focused, so the first arrow already moves away from it), Space/Enter press the focused button, or the default one when nothing is focused
 - Jellyfish avoidance (bots below `JELLY_EATER_STAGE` and the demo fish): a jellyfish counts as its bell plus a stalk `JELLY_TENTACLE_REACH` radii down through the tentacles; fish steer away within `JELLY_AVOID_DIST` (×`DEMO_VIEW_MUL` for the demo fish) plus their own turning radius (cruise speed / turn rate), so big, slow-turning fish start earlier; near the surface a jellyfish below is passed sideways, since the stay-under-the-surface rule would bend an upward escape back into it
 - NPC AI: each fish flees the nearest bigger threat in range, otherwise chases the nearest smaller prey in range, otherwise wanders. Threats and prey are re-scanned only every `npcReaction` s (±20%, a human-like reaction delay; the fish acts on the last seen direction in between); flee / chase directions carry an aim error that drifts smoothly within ±`npcAimError` (new target every 0.8–1.6 s, eased), and turning is proportional to the heading error (`NPC_TURN_GAIN`), capped by the size's turn rate, so there's no jitter; NPC sizes are spawned relative to the player's current size so difficulty scales with growth: the size ratio is log-normal (σ = 0.25, with 20% of the mass moved from the ±1σ middle to the tails: 20% of samples are drawn only from |z| > 1) around a center that depends mostly on the player's depth (×0.8 near the floor … ×1.2 in the shallows), plus 10% small fry (×0.3–0.55), clamped to `MAX_R`. Giants are thinned out: a spawn bigger than `GIANT_R` = 180 is kept with probability (180 / r)² (52% at r = 250, 26% at 350, 13% at 500), otherwise it becomes a small fish (×0.3–0.55 the player), so a Sea King meets ~2–4 fellow kings around instead of 10–18; each NPC also gets a fixed ±3% speed variation. NPCs dash only while fleeing or chasing: a dash starts on a full tank and burns it all at the player's drain rate (or stops when the flee / chase ends), adding half the player's dash gain (`NPC_BOOST_ADD` = +0.35 × cruise) to the flee / chase speed; the tank then comes back full all at once `npcBoostRecharge` s after the dash ends, so dashes are rare, visible bursts
@@ -56,6 +56,7 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Scenery (`scenery.js`, stateless): above the surface a sky with sun, drifting clouds, far hazy islands and nearer palm islands on parallax layers, and gulls; a swelling wavy surface with a bright waterline and translucent film drawn over the fish; water colored by true depth, sun rays on a slow parallax layer (hashed 170px cells: some empty for irregular gaps, each ray with its own width, slant, sway and a 4–12 s fade cycle, so rays slide past when swimming sideways and keep fading in/out; fade out with depth; each ray is one of four pre-rendered sprites, stretched and sheared into place with a single `drawImage`), parallax motes, two parallax layers of far ridges, sand with ripples, and seaweed / rocks / starfish / shells generated per 64-unit floor cell from a deterministic hash; a vignette on top (rendered once per screen size into a quarter-resolution canvas, depth only changes its opacity). Jellyfish come in several hues and glow more in dark water; boosting leaves a bubble trail
 - Fish model: rounded body with a blunt snout; body and tail are one closed outline with an animated tail wag (`wagRate`: `WAG_RATE` for a fry at cruise, ×2 at the player's full dash, and slower for bigger fish, × (r / 15)^-0.4, the way real tail-beat frequency falls with length: ~3.6 s per stroke at the max size), dorsal/ventral fins that ripple and a pectoral fin that flaps around its base, rooted just inside the flank and the eyes sunk in with a third of them sticking out when the fish shows its back (big fish hold it steadier: the swing shrinks from 0.35 rad for a fry to ~0.14 at the max size) (all driven by the same swim phase, slightly out of sync), gill line and a back-to-belly gradient; it's mirrored vertically when heading left so the belly stays down, and squashed near vertical headings for a rolling look
 - Collisions use shapes that match the drawing: fish = 4 circles along the body axis (tail included), jellyfish = pulsing half-disk bell + 4 curved tentacles (each tested as two segments through the curve's midpoint), with the geometry cached once per frame and shared by collision and rendering; food, eating/being eaten and stings all test against these instead of a single center radius
+- FPS counter (frames drawn per second, over half-second windows) left of the pause button
 - Pause: a round pause button under the bars in the top-right corner (hidden outside play and in the demo), or Esc / P, pauses the game and shows a Paused dialog: Continue (default; Esc / P also resume), Play Again, Change Difficulty (back to the start menu). Leaving the tab or switching apps pauses automatically; on phones the first tap after coming back restores fullscreen (browsers allow it only from a user gesture)
 - Reaching the final stage pauses the game and shows a Sea King dialog with the run's in-game time and the best time per difficulty (localStorage), with a "New record!" badge when beaten. Runs where the test cheat was used are marked and never saved. Options: Continue (default, grants a short invulnerability), Play Again or Change Difficulty (back to the start menu)
 - Test cheat: while playing, digit keys 1–9 set the player's radius (1–5 = one size inside each stage, 6–9 = progressively larger Sea King), 0 = max size
@@ -80,14 +81,14 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 ├── CLAUDE.md                 # Claude Code entry point, points to AGENTS.md
 ├── LICENSE                  # MIT
 ├── assets/                  # icon.svg (favicon + README logo), icon-512.png, social-preview.png (GitHub social preview, og:image)
-├── 1 - flight simulator/
+├── flight-simulator/
 │   ├── index.html           # the game itself, fully self-contained
 │   ├── README.md             # project documentation (English, player-facing)
 │   ├── README_RU.md           # project documentation (Russian, player-facing)
 │   ├── README_SV.md           # project documentation (Swedish, player-facing)
 │   ├── icon.svg              # project icon (favicon, READMEs, gallery card)
 │   └── screenshot.png        # preview image (English UI) used by the gallery and all READMEs
-├── 2 - fish frenzy/
+├── fish-frenzy/
 │   ├── index.html           # markup only, links versioned CSS/JS
 │   ├── styles.css
 │   ├── utils.js              # math helpers
@@ -104,7 +105,7 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 │   ├── README_SV.md
 │   ├── icon.svg
 │   └── screenshot.png
-└── ... (future numbered project folders, same layout)
+└── ... (future project folders, same layout)
 ```
 
 ## GitHub Pages deployment
@@ -116,7 +117,7 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 
 ## Adding a new project
 
-1. Create a new numbered folder at the root, e.g. `2 - <name>/`.
+1. Create a new folder at the root named in lowercase kebab-case, e.g. `<name>/` (`flight-simulator`).
 2. Put a self-contained `index.html` inside it (plus any assets it needs).
 3. Add a `README.md` (English), a `README_RU.md` (Russian) and a `README_SV.md` (Swedish), each written for players and linking to the other two (same pattern as this repo's root READMEs).
 4. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog.

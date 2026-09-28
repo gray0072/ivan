@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Fish Frenzy</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -26,9 +26,12 @@
   <div class="barBg"><div class="barFill" id="boostBar"></div></div>
   <div>Depth</div>
   <div class="barBg"><div class="barFill" id="depthBar"></div></div>
+  <div id="pauseRow">
+  <span id="fps"></span>
   <button id="pauseBtn" aria-label="Pause" title="Pause (Esc)" hidden>
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="5" y="4" width="4.5" height="16" rx="1.5"/><rect x="14.5" y="4" width="4.5" height="16" rx="1.5"/></svg>
   </button>
+  </div>
 </div>
 
 <div id="banner"></div>
@@ -100,9 +103,9 @@
 <script src="input.js?v=6"></script>
 <script src="scenery.js?v=6"></script>
 <script src="fireworks.js?v=2"></script>
-<script src="constants.js?v=33"></script>
-<script src="render.js?v=6"></script>
+<script src="constants.js?v=34"></script>
+<script src="render.js?v=7"></script>
 <script src="demo.js?v=5"></script>
-<script src="game.js?v=46"></script>
+<script src="game.js?v=47"></script>
 </body>
 </html>

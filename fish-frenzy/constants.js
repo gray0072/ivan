@@ -162,6 +162,13 @@ const MOUTH_HIT = [0.72, 0.32];
 // ---------- Danger radar ----------
 // Fish big enough to eat the player, while still out of view, show up as a pulsing red glow at the screen edge
 // in their direction: bigger and closer = larger, brighter and faster-beating; a fish heading for you gets a double chevron
+// The radar only shows when the screen is too small to see a predator coming in time: when the time it takes to
+// close in from the nearest screen edge (half the shorter side; the player swimming at it head-on at cruise, the
+// predator chasing at full dash) is under RADAR_REACTION (a human's notice-and-react time) plus the time to turn a
+// quarter turn away. With the numbers here a phone in landscape (~850×390) gets it at every stage, a 1920×1080
+// monitor at none, a 1366×650 laptop window only as a small Fry and briefly as a young Shark
+const RADAR_REACTION = 0.5;     // seconds
+const RADAR_HYSTERESIS = 1.15;  // once shown, it hides only at this many times the threshold (no flicker while growing)
 const RADAR_RANGE = 1.2;        // how far beyond the screen edge threats are shown, in screen half-diagonals
 const RADAR_FULL_RATIO = 3;     // a threat this many times the player's radius (or more) gets the largest glow
 const RADAR_BEAT_MIN = 0.7;     // heartbeats per second of a threat at the edge of the range …

@@ -26,16 +26,16 @@
 <table>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><img src="1%20-%20flight%20simulator/screenshot.png" alt="Скриншот симулятора самолёта"></a>
-      <h3><img src="1%20-%20flight%20simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
+      <a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="flight-simulator/screenshot.png" alt="Скриншот симулятора самолёта"></a>
+      <h3><img src="flight-simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
       <p>Аркадный симулятор самолёта от первого лица: управление стрелками, спаренная стрельба на Ctrl по воздушным шарикам, посадка на полосу отмеченного аэропорта.</p>
-      <p><a href="https://gray0072.github.io/ivan/1%20-%20flight%20simulator/"><b>▶ Играть</b></a> · <a href="1%20-%20flight%20simulator/">Исходники</a></p>
+      <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Играть</b></a> · <a href="flight-simulator/">Исходники</a></p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><img src="2%20-%20fish%20frenzy/screenshot.png" alt="Скриншот игры про рыб"></a>
-      <h3><img src="2%20-%20fish%20frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
+      <a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="fish-frenzy/screenshot.png" alt="Скриншот игры про рыб"></a>
+      <h3><img src="fish-frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
       <p>Аркада «съешь и расти»: управляй рыбкой стрелками или сенсорным джойстиком, ешь ртом планктон и рыб мельче себя, избегай крупных рыб и медуз и поднимайся по пищевой цепи до Морского Царя и максимального размера. Три уровня сложности и рекорды времени.</p>
-      <p><a href="https://gray0072.github.io/ivan/2%20-%20fish%20frenzy/"><b>▶ Играть</b></a> · <a href="2%20-%20fish%20frenzy/">Исходники</a></p>
+      <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Играть</b></a> · <a href="fish-frenzy/">Исходники</a></p>
     </td>
   </tr>
 </table>
@@ -70,12 +70,12 @@ npx serve .        # или просто открой любой index.html в �
 ├── SPEC.md                     # техническая спецификация
 ├── AGENTS.md                   # инструкции для AI-агентов
 ├── CLAUDE.md                   # -> ссылается на AGENTS.md
-├── 1 - flight simulator/
+├── flight-simulator/
 │   ├── index.html              # сама игра
 │   ├── README.md / README_RU.md
 │   ├── icon.svg
 │   └── screenshot.png
-├── 2 - fish frenzy/
+├── fish-frenzy/
 │   ├── index.html              # разметка
 │   ├── styles.css, *.js        # стили и код игры, разбитый по файлам
 │   ├── README.md / README_RU.md

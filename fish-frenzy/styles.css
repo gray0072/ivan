@@ -45,12 +45,23 @@ canvas {
   font-size: 14px;
   pointer-events: none;
 }
-/* Sits under the bars, right-aligned; the only part of #bars that takes clicks */
+/* Under the bars, right-aligned: the FPS counter, then the pause button (the only part of #bars that takes clicks) */
+#pauseRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+#fps {
+  font-size: 12px;
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
 #pauseBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 2px 0 0 auto;
   width: 44px;
   height: 44px;
   padding: 0;
