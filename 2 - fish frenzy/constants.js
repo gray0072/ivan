@@ -5,14 +5,15 @@
 // ---------- Difficulty ----------
 // npcAimError: max deviation (degrees) of a fleeing / chasing fish from the ideal direction
 // npcReaction: seconds between an NPC's looks around for threats and prey (a human-like reaction delay)
+// meal: share of an eaten fish's (or gull's) area r² the player grows by (bots always get NPC_MEAL)
 // npcBoost: an NPC's dash stamina as a share of the player's boostMax; npcBoostRecharge: seconds after a dash
 // until the whole tank comes back at once
 const DIFFICULTIES = {
-  easy:   { label: 'Easy',   food: 2,   npcSpeed: 0.9,  boostMax: 1.5,  boostRegen: 1.5,  npcAimError: 20, npcReaction: 0.4,
+  easy:   { label: 'Easy',   food: 2,   npcSpeed: 0.9,  boostMax: 1.5,  boostRegen: 1.5,  npcAimError: 20, npcReaction: 0.4, meal: 0.6,
             npcBoost: 1 / 8,  npcBoostRecharge: 20 },
-  medium: { label: 'Medium', food: 1.5, npcSpeed: 0.95, boostMax: 1.25, boostRegen: 1.25, npcAimError: 10, npcReaction: 0.3,
+  medium: { label: 'Medium', food: 1.5, npcSpeed: 0.95, boostMax: 1.25, boostRegen: 1.25, npcAimError: 10, npcReaction: 0.3, meal: 0.5,
             npcBoost: 3 / 16, npcBoostRecharge: 15 },
-  hard:   { label: 'Hard',   food: 1.0, npcSpeed: 1.0,  boostMax: 1.0,  boostRegen: 1.0,  npcAimError: 5,  npcReaction: 0.2,
+  hard:   { label: 'Hard',   food: 1.0, npcSpeed: 1.0,  boostMax: 1.0,  boostRegen: 1.0,  npcAimError: 5,  npcReaction: 0.2, meal: 0.4,
             npcBoost: 1 / 4,  npcBoostRecharge: 10 }
 };
 
@@ -100,6 +101,7 @@ const FOOD_AURA = 2.4;
 
 // ---------- NPC fish ----------
 const NPC_COUNT = 24;
+const NPC_MEAL = 0.55;         // share of an eaten fish's / gull's area r² a bot grows by
 const NPC_SPEED_SPREAD = 0.03; // per-fish speed varies by up to ±3%
 // NPC dash: only while fleeing or chasing, starting on a full tank and burning it all; it adds half of the player's
 // dash gain to the flee / chase speed. The tank refills all at once npcBoostRecharge seconds later, so dashes are rare bursts
@@ -132,6 +134,8 @@ const DEMO_TAIL_THREAT = 0.35;  // weight of a predator showing its tail, vs 1 f
 const DEMO_FOOD_MAX_STAGE = -1; // the demo fish seeks out plankton up to this stage (0 = Fry, -1 = never: it ignores plankton)
 const DEMO_FOOD_RANGE = 450;    // how far the demo fry looks for plankton
 const DEMO_TARGET_STICKY = 1.3; // score bonus for the prey the demo fish is already chasing
+const DEMO_CHASE_SPEED = 1.1;   // its average speed in a chase, × cruise (cruising in, dashing for the kill), for catchTime
+const DEMO_CATCH_OVERHEAD = 0.5; // seconds added to every catch estimate, so a fish right at the mouth doesn't score infinitely
 const DEMO_LEAD_MAX = 1.5;      // seconds: how far ahead the demo fish aims at moving prey
 const DEMO_DASH_RESERVE = 0.35; // share of max stamina kept for escapes: no hunting dashes below it
 
@@ -140,7 +144,10 @@ const JELLY_COUNT = 7;
 const JELLY_SHRINK = 0.1;      // fraction of area lost per sting
 const JELLY_STUN_TIME = 1.2;
 const JELLY_STUN_SLOW = 0.4;
-const JELLY_AVOID_DIST = 45;   // gap (edge to edge) at which fish start steering away
+// Gap (edge to edge) at which fish start steering away, plus the fish's own turning radius (speed / turn rate):
+// a big fish swims fast and turns slowly, so it has to start turning much earlier
+const JELLY_AVOID_DIST = 45;
+const JELLY_TENTACLE_REACH = 1.2;  // jellyfish count as a bell plus a hanging stalk this many radii long
 const JELLY_TENTACLE_HALF_W = 1.8;
 const JELLY_HUES = [330, 285, 205, 25, 170, 55];
 const JELLY_EATER_STAGE = 3;  // from this stage (Shark) on, jellyfish can't sting a fish and it eats them with its mouth

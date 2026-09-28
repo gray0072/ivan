@@ -5,7 +5,7 @@
 // `w` gives access to the game's world state and the bot helpers shared with the NPCs (see game.js).
 function createDemoPilot(w) {
   const { player, npcs, foods, stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin,
-    nearestJelly, avoidEdges } = w;
+    nearestJelly, jellyEscapeHeading, avoidEdges } = w;
   const pilot = {
     dash: false, spending: false, reset, turnTarget: demoTurnTarget,
     time: 0, leaps: [], wasAir: false, skimTime: 0, diveUntil: 0   // surface habit, see updateSurfaceHabit
@@ -50,9 +50,12 @@ function createDemoPilot(w) {
       n.seen = { mode: 'flee', heading: Math.atan2(fy, fx), dash };
       return;
     }
-    // Chase the most rewarding fish in view: meal size over distance. The current target gets a bonus,
-    // so two similar fish don't make it flip back and forth every frame.
+    // Chase the most efficient fish in view: meal size per second it takes to catch. Prey close to our own size
+    // swims almost as fast as we do and runs away once it notices us, so it takes ages to catch and a smaller fish
+    // nearby is often the better meal. The current target gets a bonus, so two similar fish don't make it flip
+    // back and forth every frame.
     const preyRange = (n.r * 7 + 70) * DEMO_VIEW_MUL;
+    const mySp = speedForR(n.r) * DEMO_CHASE_SPEED;
     let best = null, bestScore = 0;
     for (const o of npcs) {
       if (n.r <= o.r * EAT_MARGIN) continue;
@@ -60,7 +63,7 @@ function createDemoPilot(w) {
       if (d > preyRange) continue;
       // prey swimming right by a predator isn't worth the risk
       if (threats.some((t) => mouthGap(t, o.x, o.y, n.r) < fleeRange)) continue;
-      const score = o.r * o.r / (d + n.r * 2) * (o === prev ? DEMO_TARGET_STICKY : 1);
+      const score = o.r * o.r / catchTime(o, d, mySp) * (o === prev ? DEMO_TARGET_STICKY : 1);
       if (score > bestScore) { bestScore = score; best = o; }
     }
     if (best) { n.seen = { mode: 'chase', target: best }; return; }
@@ -77,6 +80,17 @@ function createDemoPilot(w) {
       if (cost < bestCost) { bestCost = cost; best = f; }
     }
     if (best) n.seen = { mode: 'food', target: best };
+  }
+  // Rough seconds to catch prey o at distance d: turning toward it, then closing the gap at our speed minus how fast
+  // it gets away (flee speed once it's close enough to notice us, else its current speed along the line)
+  function catchTime(o, d, mySp) {
+    const n = player;
+    const ux = (o.x - n.x) / (d || 1), uy = (o.y - n.y) / (d || 1);
+    const osp = npcSpeed(o.r) * o.speedVar;
+    const away = d < o.r * 9 + 90 ? osp * 1.15 : osp * (Math.cos(o.heading) * ux + Math.sin(o.heading) * uy);
+    const closing = Math.max(mySp - away, mySp * 0.1);
+    const turn = Math.abs(angDiff(Math.atan2(uy, ux), n.heading)) / turnRateForR(n.r);
+    return Math.max(d - n.r - o.r, 0) / closing + turn + DEMO_CATCH_OVERHEAD;
   }
   // Gap between predator o's mouth and a fish of radius r at (x, y)
   function mouthGap(o, x, y, r) {
@@ -114,7 +128,7 @@ function createDemoPilot(w) {
     // Full stamina would just go to waste: spend it on hunting and feeding, down to the escape reserve
     if (player.boost >= w.difficulty.boostMax * 0.98) pilot.spending = true;
     else if (!reserve) pilot.spending = false;
-    const jellyRange = JELLY_AVOID_DIST * DEMO_VIEW_MUL;
+    const jellyRange = JELLY_AVOID_DIST * DEMO_VIEW_MUL;  // plus the turning radius, see nearestJelly
     const jelly = stageIndexForR(player.r) >= JELLY_EATER_STAGE ? null : nearestJelly(player, jellyRange);
     // a Fry never leaves the water: that's where the gulls get it
     let want, cruising = stageIndexForR(player.r) <= GULL_PREY_STAGE;
@@ -123,7 +137,7 @@ function createDemoPilot(w) {
       want = s.heading;
       pilot.dash = s.dash;
     } else if (jelly) {
-      want = Math.atan2(-jelly.dy, -jelly.dx);
+      want = jellyEscapeHeading(player, jelly);
       cruising = true;
     } else if (s && s.mode === 'chase') {
       want = interceptHeading(s.target);

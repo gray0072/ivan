@@ -112,7 +112,8 @@ function createRenderer(canvas) {
     // pectoral fin on the near (sgn = 1) or far (-1) flank: flaps around its base, rowing slightly out of phase with the tail
     const pectoral = (sgn, alpha) => {
       ctx.save();
-      ctx.translate(0.22 * r, (0.14 * rc + sgn * 0.32 * rs) * r);
+      // seen from the back the flank is ~0.29r out here, so the root sits a little inside it, with no gap
+      ctx.translate(0.22 * r, (0.14 * rc + sgn * 0.24 * rs) * r);
       ctx.scale(1, sgn);
       ctx.rotate(Math.sin(wagPhase * 0.9 + 1.2) * pectoralSwing);
       ctx.fillStyle = shade(color, 0.25);
@@ -127,7 +128,8 @@ function createRenderer(canvas) {
     };
     const eyeR = Math.max(1.2, r * 0.15);
     const eye = (sgn, alpha) => {
-      const ex = 0.56 * r, ey = (-0.16 * rc + sgn * 0.3 * rs) * r;
+      // seen from the back the head is ~0.25r wide each way here: the eye sits sunk in, a third of it sticking out
+      const ex = 0.56 * r, ey = (-0.16 * rc + sgn * 0.2 * rs) * r;
       ctx.globalAlpha = alpha;
       ctx.fillStyle = '#fff';
       ctx.beginPath();

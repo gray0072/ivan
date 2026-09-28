@@ -23,9 +23,9 @@ Open [index.html](index.html) in a browser — no build step, no server required
 
 Pick a difficulty on the start screen (Space/Enter picks Medium; the arrow keys move between the buttons):
 
-- **Easy** — twice as much food, other fish swim 10% slower, 50% more boost stamina that also refills 50% faster. Fish flee and chase sloppily — up to 20° off the ideal direction — and react in about 0.3 s. Their short dash has 1/8 of your stamina and comes back only 20 s after it is used.
-- **Medium** — 50% more food, other fish swim 5% slower, 25% more boost stamina that also refills 25% faster. Fish aim up to 10° off and react in about 0.25 s. Their dash has 3/16 of your stamina and comes back 15 s after it is used.
-- **Hard** — the standard game. Fish aim up to 5° off and react in about 0.2 s. Their dash has a quarter of your stamina and comes back 10 s after it is used.
+- **Easy** — twice as much food, other fish swim 10% slower, 50% more boost stamina that also refills 50% faster. Fish flee and chase sloppily — up to 20° off the ideal direction — and react in about 0.3 s. Eaten fish give you 60% of their size. Their short dash has 1/8 of your stamina and comes back only 20 s after it is used.
+- **Medium** — 50% more food, other fish swim 5% slower, 25% more boost stamina that also refills 25% faster. Fish aim up to 10° off and react in about 0.25 s. Eaten fish give you 50% of their size. Their dash has 3/16 of your stamina and comes back 15 s after it is used.
+- **Hard** — the standard game. Fish aim up to 5° off and react in about 0.2 s. Eaten fish give you 40% of their size. Their dash has a quarter of your stamina and comes back 10 s after it is used.
 
 On every level the other fish notice you with a human-like delay, and they turn smoothly rather than twitching toward their target.
 

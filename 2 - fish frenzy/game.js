@@ -787,14 +787,26 @@
     }
     n.aimErr += (n.aimErrTarget - n.aimErr) * clamp(dt * NPC_AIM_ERR_EASE, 0, 1);
   }
-  // The closest jellyfish within `range` (edge to edge), as an offset { dx, dy } from the fish, or null
-  function nearestJelly(n, range = JELLY_AVOID_DIST) {
-    let best = null, bestDist = range;
+  // Distance a fish of radius r covers while turning around: its turning radius at cruise speed
+  function turnRadius(r) { return speedForR(r) / turnRateForR(r); }
+  // The closest jellyfish within `gap` (edge to edge) plus the fish's turning radius, as an offset { dx, dy }
+  // from the fish to the nearest point of its bell and tentacles, or null
+  function nearestJelly(n, gap = JELLY_AVOID_DIST) {
+    let best = null, bestDist = gap + turnRadius(n.r);
     for (const j of jellies) {
-      const d = dist(n.x, n.y, j.x, j.y) - j.r - n.r;
-      if (d < bestDist) { bestDist = d; best = { dx: j.x - n.x, dy: j.y - n.y }; }
+      // nearest point on the vertical stalk from the bell's center down through the tentacles
+      const py = clamp(n.y, j.y, j.y + j.r * JELLY_TENTACLE_REACH);
+      const d = dist(n.x, n.y, j.x, py) - j.r - n.r;
+      if (d < bestDist) { bestDist = d; best = { dx: j.x - n.x, dy: py - n.y }; }
     }
     return best;
+  }
+  // Heading away from a jellyfish. Near the surface an upward escape would be bent straight back down into it
+  // by the "stay under the surface" rule (avoidEdges), so there the fish slips past sideways instead
+  function jellyEscapeHeading(n, jelly) {
+    const away = Math.atan2(-jelly.dy, -jelly.dx);
+    if (jelly.dy > 0 && n.y < SURFACE_Y + npcSurfaceMargin(n.r) + n.r) return jelly.dx > 0 ? Math.PI : 0;
+    return away;
   }
   // Never aim into the sea floor - bend the desired direction along/away from it instead,
   // otherwise flee/chase would keep re-aiming down every frame and the fish would vibrate in place.
@@ -819,7 +831,7 @@
   const demoPilot = createDemoPilot({
     player, npcs, foods,
     get difficulty() { return difficulty; },
-    stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin, nearestJelly, avoidEdges
+    stageIndexForR, speedForR, turnRateForR, npcSpeed, npcSurfaceMargin, nearestJelly, jellyEscapeHeading, avoidEdges
   });
 
   function updateNpc(n, dt) {
@@ -846,7 +858,7 @@
     let speedMul = 1;
     if (jelly) {
       n.mode = 'avoid';
-      desiredHeading = Math.atan2(-jelly.dy, -jelly.dx);
+      desiredHeading = jellyEscapeHeading(n, jelly);
     } else if (n.seen) {
       n.mode = n.seen.mode;
       desiredHeading = n.seen.heading + n.aimErr;
@@ -933,7 +945,7 @@
         const onScreen = onScreenX(b.x, 60);
         const vol = splashVolume(n);
         if (hit === 'eaten') {
-          queueGrowth(b.r * b.r * 0.55, n);
+          queueGrowth(b.r * b.r * NPC_MEAL, n);
           if (onScreen) featherBurst(b.x, b.y);
           birds.splice(i, 1);
           if (onScreen) playDeadGull(vol);
@@ -981,7 +993,7 @@
         if (dist(n.x, n.y, o.x, o.y) > (n.r + o.r) * 1.7) continue;
         m = m || [mouthCircle(n.x, n.y, n.r, n.heading)];
         if (circlesOverlap(m, fishCircles(o.x, o.y, o.r, o.heading))) {
-          queueGrowth(o.r * o.r * 0.55, n);
+          queueGrowth(o.r * o.r * NPC_MEAL, n);
           if (onScreenX(o.x, o.r * 2)) burst(o.x, o.y, '#ff8a65', 10, 110);
           npcs.splice(b, 1);
           if (b < a) a--;
@@ -1102,7 +1114,7 @@
         const b = birds[i];
         const hit = fishMeetsGull(player, b);
         if (hit === 'eaten') {
-          queueGrowth(b.r * b.r * 0.55);
+          queueGrowth(b.r * b.r * difficulty.meal);
           featherBurst(b.x, b.y);
           birds.splice(i, 1);
           playDeadGull();
@@ -1141,7 +1153,7 @@
       if (dist(player.x, player.y, n.x, n.y) > (player.r + n.r) * 1.7) continue;
       if (player.r > n.r * EAT_MARGIN) {
         if (circlesOverlap(pm, fishCircles(n.x, n.y, n.r, n.heading))) {
-          queueGrowth(n.r * n.r * 0.55, player, false, true);
+          queueGrowth(n.r * n.r * difficulty.meal, player, false, true);
           burst(n.x, n.y, '#ff8a65', 14, 140);
           npcs.splice(i, 1);
           playEatBig();
