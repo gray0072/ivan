@@ -38,6 +38,15 @@
       <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Play</b></a> · <a href="fish-frenzy/">Source</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/fun-training/"><img src="fun-training/screenshot.png" alt="Fun Training screenshot"></a>
+      <h3><img src="fun-training/icon.svg" alt="" width="28" height="28" align="center"> Fun Training</h3>
+      <p>A training game for school kids: water a flower, stop zombies, lay rails for a train, keep a balloon in the air or a campfire burning by answering tasks in time.</p>
+      <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Play</b></a> · <a href="fun-training/">Source</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Highlights
@@ -78,6 +87,12 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── fish-frenzy/
 │   ├── index.html              # markup
 │   ├── styles.css, *.js        # styles and game code, split by concern
+│   ├── README.md / README_RU.md
+│   ├── icon.svg
+│   └── screenshot.png
+├── fun-training/
+│   ├── SPEC.md                 # spec of this game
+│   ├── index.html, styles.css, *.js
 │   ├── README.md / README_RU.md
 │   ├── icon.svg
 │   └── screenshot.png

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Fun Training</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+
+<!-- 1. Players -->
+<section id="screenPlayers" class="screen">
+  <h1 class="logo">✨ Fun Training</h1>
+  <p class="sub">Who's training today?</p>
+  <div id="playerList" class="playerGrid"></div>
+</section>
+
+<!-- 2. New player -->
+<section id="screenNew" class="screen" hidden>
+  <h1>New player</h1>
+  <label class="nameLabel">Name
+    <input id="nameInput" type="text" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Type a name" data-autofocus>
+  </label>
+  <p class="hint">Pick an avatar:</p>
+  <div id="avatarGrid" class="avatarGrid"></div>
+  <div class="btnRow">
+    <button class="btn default" id="createBtn">Create</button>
+    <button class="btn secondary" id="cancelNewBtn">Cancel</button>
+  </div>
+</section>
+
+<!-- 3. Home -->
+<section id="screenHome" class="screen" hidden>
+  <header class="topBar">
+    <div class="who"><span id="homeAvatar" class="bigAvatar"></span><span id="homeName"></span></div>
+    <div class="coins">🪙 <b id="homeCoins">0</b></div>
+    <div class="topBtns">
+      <button class="btn secondary" id="settingsBtn">⚙ Settings</button>
+      <button class="btn secondary" id="playersBtn">👥 Players</button>
+    </div>
+  </header>
+  <p id="trainingSummary" class="summary"></p>
+  <div id="processList" class="processList"></div>
+</section>
+
+<!-- 4. Settings -->
+<section id="screenSettings" class="screen" hidden>
+  <header class="setHead">
+    <h1>⚙ Settings <span id="setPlayer" class="muted"></span></h1>
+    <div class="tabs"><button class="tab on" id="tabMath">🔢 Math</button><span class="soon">More task types coming soon</span></div>
+  </header>
+  <div class="setBody">
+    <div class="setBlock">
+      <h3>Operations and number limits</h3>
+      <div id="opsRow" class="opsRow"></div>
+    </div>
+    <div class="setLine">
+      <div class="setBlock">
+        <h3>Numbers in a task</h3>
+        <div id="operandSeg" class="seg"></div>
+      </div>
+      <div class="setBlock" id="mixBlock">
+        <h3>Mix operations</h3>
+        <button id="mixBtn" class="switch" role="switch" aria-checked="false"><span class="knob"></span><span class="switchLabel">Off</span></button>
+        <span id="mixNote" class="note">Works with 3–4 numbers</span>
+      </div>
+    </div>
+    <div class="setBlock">
+      <h3>Speed <span id="speedHint" class="muted"></span></h3>
+      <div id="speedSeg" class="speedSeg"></div>
+    </div>
+    <div class="setLine">
+      <div class="setBlock">
+        <h3>Answers</h3>
+        <div id="answerSeg" class="seg"></div>
+      </div>
+      <div class="setBlock">
+        <h3>Tasks per lesson</h3>
+        <div id="lengthSeg" class="seg"></div>
+      </div>
+    </div>
+    <p class="example">Example: <b id="exampleText"></b></p>
+  </div>
+  <div class="btnRow">
+    <button class="btn default" id="settingsDone">Done</button>
+  </div>
+</section>
+
+<!-- 5. Lesson -->
+<section id="screenLesson" class="screen" hidden>
+  <div id="sceneWrap">
+    <canvas id="scene"></canvas>
+    <div id="readyNote">Get ready!</div>
+  </div>
+  <div id="taskPanel">
+    <div class="lsTop">
+      <span id="lsProc"></span>
+      <span id="lsStep" class="chip"></span>
+      <button id="pauseBtn" class="iconBtn" aria-label="Pause" title="Pause (Esc)">⏸</button>
+    </div>
+    <div class="lsBar"><div id="lsProgress"></div></div>
+    <div class="lsStats">
+      <span class="ok">✔ <b id="lsCount"></b></span>
+      <span id="lsMistakesBox" class="bad">✖ <b id="lsMistakes"></b></span>
+      <span id="lsBoss" class="boss" hidden></span>
+    </div>
+    <div id="taskCard">
+      <div id="taskText"></div>
+      <div class="ansLine">= <span id="answerBox">?</span></div>
+    </div>
+    <div id="wrongNote"></div>
+    <div id="choices" class="choices">
+      <button class="choice" data-autofocus><span class="key">1</span><span class="val"></span></button>
+      <button class="choice"><span class="key">2</span><span class="val"></span></button>
+      <button class="choice"><span class="key">3</span><span class="val"></span></button>
+      <button class="choice"><span class="key">4</span><span class="val"></span></button>
+    </div>
+    <div id="typeHint" class="typeHint">Type the answer, then press <b>Enter</b></div>
+  </div>
+</section>
+
+<!-- Dialogs -->
+<div id="overlay" hidden>
+  <div id="pausePanel" class="panel" hidden>
+    <h1>⏸ Paused</h1>
+    <div class="btnRow">
+      <button class="btn default" id="resumeBtn">Continue</button>
+      <button class="btn secondary" id="quitBtn">Quit lesson</button>
+    </div>
+  </div>
+  <div id="resultPanel" class="panel" hidden>
+    <div id="resIcon" class="resIcon"></div>
+    <h1 id="resTitle"></h1>
+    <p id="resText" class="resText"></p>
+    <div id="resCoins" class="resCoins"></div>
+    <div id="resStar" class="resStar" hidden></div>
+    <div id="resTrack" class="resTrack"></div>
+    <p id="resCheat" class="cheatNote" hidden>Cheats were used — this lesson doesn't count.</p>
+    <div class="btnRow">
+      <button class="btn default" id="resAgainBtn"></button>
+      <button class="btn secondary" id="resHomeBtn">Home</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="fx" hidden></canvas>
+<div id="banner"></div>
+
+<script src="constants.js?v=2"></script>
+<script src="storage.js?v=2"></script>
+<script src="tasks.js?v=1"></script>
+<script src="audio.js?v=2"></script>
+<script src="nav.js?v=2"></script>
+<script src="fx.js?v=2"></script>
+<script src="scene-flower.js?v=2"></script>
+<script src="scene-zombies.js?v=2"></script>
+<script src="scene-railway.js?v=1"></script>
+<script src="scene-balloon.js?v=1"></script>
+<script src="scene-campfire.js?v=1"></script>
+<script src="lesson.js?v=2"></script>
+<script src="app.js?v=2"></script>
+</body>
+</html>

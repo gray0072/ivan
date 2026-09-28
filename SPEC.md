@@ -69,6 +69,10 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Spawn / cull distances follow the view (`spawnRadius` = `SPAWN_SCREENS` × the larger screen side / current zoom, `cullDist` = × `CULL_MUL` 1.3), for fish, jellyfish and plankton alike; the plankton count follows the spawn box clipped to the water column (`FOOD_DENSITY`, capped at `FOOD_MAX`) so its density doesn't depend on the zoom or the screen size. The fish count (`NPC_COUNT`), the jellyfish count (`JELLY_COUNT`) and the plankton cap are tuned for a phone in landscape (larger side `REF_SCREEN_SIDE` = 900 CSS px) and multiplied by the populated area of the actual screen relative to that one at the same zoom (clipped to the water column; ×1 … ×`SCREEN_MUL_MAX` 6), so a big monitor is as crowded as a phone
 - Crowd control: NPC count scales down with player size (`npcCount`, down to 60% of `NPC_COUNT`); surplus bots are retired off-screen, farthest first
 
+### fun-training
+
+Training game for school kids: a process runs (a flower dries out, zombies approach a house, a train runs out of rails, a balloon sinks, a campfire burns down) and the player keeps it going by answering tasks in time. Players, per-process progress tracks with stars, boss steps and replays for more coins, per-task-type settings. TV-first for now. Full spec: [`fun-training/SPEC.md`](fun-training/SPEC.md) — it is the source of truth for this project.
+
 ## Project structure
 
 ```
@@ -104,6 +108,15 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 │   ├── README.md
 │   ├── README_RU.md
 │   ├── README_SV.md
+│   ├── icon.svg
+│   └── screenshot.png
+├── fun-training/
+│   ├── SPEC.md               # the game's own spec (screens, rules, files)
+│   ├── index.html            # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── *.js                  # constants, storage, tasks, audio, nav, fx, scenes, lesson, app
+│   ├── README.md
+│   ├── README_RU.md
 │   ├── icon.svg
 │   └── screenshot.png
 └── ... (future project folders, same layout)

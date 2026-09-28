@@ -38,6 +38,15 @@
       <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Играть</b></a> · <a href="fish-frenzy/">Исходники</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/fun-training/"><img src="fun-training/screenshot.png" alt="Скриншот Fun Training"></a>
+      <h3><img src="fun-training/icon.svg" alt="" width="28" height="28" align="center"> Fun Training</h3>
+      <p>Игра-тренажёр для школьников: поливай цветок, останавливай зомби, укладывай рельсы перед поездом, держи в воздухе воздушный шар или поддерживай костёр, успевая отвечать на задания.</p>
+      <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Играть</b></a> · <a href="fun-training/">Исходники</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Особенности
@@ -78,6 +87,12 @@ npx serve .        # или просто открой любой index.html в �
 ├── fish-frenzy/
 │   ├── index.html              # разметка
 │   ├── styles.css, *.js        # стили и код игры, разбитый по файлам
+│   ├── README.md / README_RU.md
+│   ├── icon.svg
+│   └── screenshot.png
+├── fun-training/
+│   ├── SPEC.md                 # спецификация этой игры
+│   ├── index.html, styles.css, *.js
 │   ├── README.md / README_RU.md
 │   ├── icon.svg
 │   └── screenshot.png
