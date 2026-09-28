@@ -12,11 +12,11 @@ const DIFFICULTIES = {
 };
 
 // ---------- World (infinite in x; the sea floor below and the water surface above) ----------
-// Water depth: a full-boost climb from floor to surface takes 3600 / (150 * 1.7) = 14.1 s for a fry and
-// 3600 / (77 * 1.7) = 27.5 s for the slowest giants (speed floor 77, see speedForR). The biggest fish
-// (r = 500) is ~1050 tall with fins and ~1400 long, so the column is still ~3.4 of them deep.
-const FLOOR_Y = 4000;          // world y of the sea floor; nothing can go below it
-const WATER_DEPTH = 3600;
+// Water depth: a full-boost climb from floor to surface takes 4600 / (150 * 1.7) = 18 s for a fry and
+// 4600 / (213 * 1.7) = 12.7 s for a max-size player (see speedForR). The biggest fish
+// (r = 500) is ~1050 tall with fins and ~1400 long, so the column is still ~4.4 of them deep.
+const FLOOR_Y = 5000;          // world y of the sea floor; nothing can go below it
+const WATER_DEPTH = 4600;
 const SURFACE_Y = FLOOR_Y - WATER_DEPTH;  // world y of the (calm) water surface; fish leap above it
 // Spawn and cull distances follow the view: entities are kept populated within SPAWN_SCREENS × the visible
 // screen size (its larger side, in world units at the current zoom) and recycled beyond CULL_MUL × that
@@ -57,6 +57,13 @@ const MAX_WEIGHT_G = 200e6;
 // at the Sea King, 115 px at the max size on a 1× screen)
 const START_ZOOM = 1.15;
 const MAX_ZOOM_DIVISOR = 5;
+// Cruise speed (world units/s) grows slowly with size: SPEED_BASE × (r / BASE_R) ^ SPEED_EXP, so a fry swims
+// ~3.6 body lengths/s and a 29 m giant ~0.15 (213 u/s, like a blue whale's ~5 m/s). That applies to the player
+// and to every fish up to the player's size; bigger fish are slower than the player instead, by
+// (player r / their r) ^ BIGGER_SLOW_EXP (×0.9 at 1.5×, ×0.76 at 3×), so a predator can't outswim you at cruise
+const SPEED_BASE = 150;
+const SPEED_EXP = 0.1;
+const BIGGER_SLOW_EXP = 0.25;
 const BOOST_DRAIN = 0.6;
 const BOOST_REGEN = 0.25;
 const FISH_MEAL_REGEN_MUL = 2;  // boost regenerates this many times faster while a fish the player ate is still being grown into

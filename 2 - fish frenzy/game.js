@@ -94,7 +94,11 @@
   }
   function sizeText(r) { return formatWeight(weightForR(r)) + ' · ' + formatLength(lengthCmForR(r)); }
 
-  function speedForR(r) { return clamp(150 - (r - BASE_R) * 0.35, 77, 150); }
+  // Relative to the player: fish up to the player's size follow the size curve, bigger ones slow down from the player's speed
+  function speedForR(r) {
+    const own = SPEED_BASE * Math.pow(Math.min(r, player.r) / BASE_R, SPEED_EXP);
+    return r <= player.r ? own : own * Math.pow(player.r / r, BIGGER_SLOW_EXP);
+  }
   function turnRateForR(r) { return clamp(2.6 - (r - BASE_R) * 0.011, 0.8, 2.6); }
 
   // ---------- Camera ----------
