@@ -275,7 +275,7 @@
   // Recomputed once per frame; both collision and rendering read these cached values
   function updateJellyGeometry(j) {
     j.bellR = j.r * (1 + 0.06 * Math.sin(j.bob * 2));
-    j.baseY = j.y + Math.sin(j.bob) * 3;
+    j.baseY = j.y + Math.sin(j.bob) * 3 * j.scale;
     for (let k = 0; k < 4; k++) {
       const t = j.tent[k];
       const u = (k - 1.5) / 1.5;
@@ -296,7 +296,7 @@
     const px = cx - j.x, py = cy - j.baseY;
     const bellDist = py <= 0 ? Math.hypot(px, py) - j.bellR : distToSegment(px, py, -j.bellR, 0, j.bellR, 0);
     if (bellDist < cr) return true;
-    const reach = cr + JELLY_TENTACLE_HALF_W;
+    const reach = cr + j.tentHalfW;
     for (const t of j.tent) {
       if (distToSegment(cx, cy, t.x0, t.y0, t.mx, t.my) < reach) return true;
       if (distToSegment(cx, cy, t.mx, t.my, t.x2, t.y2) < reach) return true;
@@ -308,12 +308,20 @@
     return false;
   }
 
+  // Share of area a sting takes: more from a bigger jellyfish
+  function jellyShrink(j) {
+    return JELLY_SHRINK + (JELLY_SHRINK_BIG - JELLY_SHRINK) * (j.scale - 1) / (JELLY_SCALE_MAX - 1);
+  }
   function spawnJelly() {
-    const minD = offscreenDist(26 * 2.5);
-    const { x, y } = spawnPointAround(minD, Math.max(spawnRadius(), minD), JELLY_SURFACE_MARGIN);
+    const scale = 1 + (JELLY_SCALE_MAX - 1) * Math.pow(Math.random(), JELLY_SCALE_EXP);
+    const r = rand(JELLY_R_MIN, JELLY_R_MAX) * scale;
+    const minD = offscreenDist(r * 2.5);
+    const { x, y } = spawnPointAround(minD, Math.max(spawnRadius(), minD), JELLY_SURFACE_MARGIN + r);
     const j = {
-      x, y,
-      r: rand(16, 26),
+      x, y, r, scale,
+      speed: JELLY_DRIFT / Math.sqrt(scale),
+      pulse: JELLY_PULSE / Math.sqrt(scale),
+      tentHalfW: JELLY_TENTACLE_HALF_W * Math.sqrt(scale),
       heading: rand(0, Math.PI * 2),
       bob: rand(0, Math.PI * 2),
       hue: JELLY_HUES[Math.floor(Math.random() * JELLY_HUES.length)],
@@ -535,6 +543,7 @@
   function showPanel(name) {
     overlay.style.display = 'flex';
     for (const key in panels) panels[key].hidden = key !== name;
+    if (name === 'menu') renderRecords();
   }
   // Also drops the focus an arrow-key menu left on a button, so Space during play can't press it
   function hideOverlay() {
@@ -592,6 +601,7 @@
   const pauseBtn = document.getElementById('pauseBtn');
   function pauseGame() {
     if (gameState !== 'playing' || demo) return;
+    saveBiggest();
     gameState = 'paused';
     resetTouches();
     showPanel('pause');
@@ -644,8 +654,79 @@
     try { localStorage.setItem(storageKey, String(v)); } catch (err) { /* storage blocked */ }
   }
 
+  // ---------- Biggest size reached (per difficulty), saved on death, milestones, pause and before a cheat ----------
+  const BIGGEST_KEY = 'fishFrenzy.biggestR.';
+  let runMaxR = BASE_R;  // the biggest radius of the current run (jellyfish can shrink you back)
+  function saveBiggest() {
+    if (cheated || runMaxR <= BASE_R) return;
+    const key = BIGGEST_KEY + difficultyKey;
+    const prev = loadBest(key);
+    if (prev === null || runMaxR > prev) saveBest(key, runMaxR);
+  }
+
+  // ---------- Start screen: a records table instead of the description, once anything is saved ----------
+  const aboutEl = document.getElementById('about');
+  const recordsEl = document.getElementById('records');
+  const recordsRow = document.getElementById('recordsRow');
+  const aboutToggle = document.getElementById('aboutToggle');
+  const clearBtn = document.getElementById('clearRecords');
+  let showAbout = false;
+  function renderRecords() {
+    const rows = Object.keys(DIFFICULTIES).map((key) => {
+      const king = loadBest(MILESTONES.king.storage + key);
+      const max = loadBest(MILESTONES.max.storage + key);
+      // Saves from before the size record existed: a milestone time still tells the least size reached
+      const r = Math.max(loadBest(BIGGEST_KEY + key) || 0, max !== null ? MAX_R : king !== null ? STAGES[STAGES.length - 2].maxR : 0);
+      return { label: DIFFICULTIES[key].label, r: r || null, king, max };
+    });
+    const any = rows.some((row) => row.r !== null || row.king !== null || row.max !== null);
+    recordsEl.querySelector('tbody').replaceChildren(...rows.map((row) => {
+      const tr = document.createElement('tr');
+      for (const text of [row.label, row.r === null ? '—' : sizeText(row.r),
+        row.king === null ? '—' : formatTime(row.king), row.max === null ? '—' : formatTime(row.max)]) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      }
+      return tr;
+    }));
+    recordsRow.hidden = !any;
+    recordsEl.hidden = !any || showAbout;
+    aboutEl.hidden = any && !showAbout;
+    aboutToggle.textContent = showAbout ? 'Show records' : 'Show description';
+  }
+  aboutToggle.addEventListener('click', () => {
+    showAbout = !showAbout;
+    renderRecords();
+  });
+  // Clearing takes a second press within a few seconds, so a stray tap can't wipe the records
+  let clearArmedT = 0;
+  function disarmClear() {
+    clearTimeout(clearArmedT);
+    clearArmedT = 0;
+    clearBtn.textContent = 'Clear records';
+  }
+  clearBtn.addEventListener('click', () => {
+    if (!clearArmedT) {
+      clearBtn.textContent = 'Press again to clear';
+      clearArmedT = setTimeout(disarmClear, 3000);
+      return;
+    }
+    disarmClear();
+    try {
+      for (const key in DIFFICULTIES) {
+        for (const prefix of [BIGGEST_KEY, MILESTONES.king.storage, MILESTONES.max.storage]) localStorage.removeItem(prefix + key);
+      }
+    } catch (err) { /* storage blocked */ }
+    showAbout = false;
+    renderRecords();
+    showBanner('Records cleared');
+  });
+  renderRecords();
+
   function showMilestoneDialog(kind) {
     const m = MILESTONES[kind];
+    saveBiggest();
     if (demo) { showBanner(m.icon + ' ' + m.title); return; }
     gameState = 'paused';
     resetTouches();
@@ -700,6 +781,7 @@
     player.air = null;
     player.heading = 0;
     player.r = BASE_R;
+    runMaxR = BASE_R;
     player.growQueue.length = 0;
     player.turnInput = 0;
     player.boost = difficulty.boostMax;
@@ -719,6 +801,7 @@
 
   function endGame(reason) {
     gameState = 'over';
+    saveBiggest();
     playGameOver();
     resetTouches();
     if (demo) {
@@ -737,6 +820,7 @@
     if (gameState !== 'playing' || e.repeat) return;
     const level = parseInt(e.key, 10);
     if (!(level >= 0 && level <= 9)) return;
+    saveBiggest();  // the size grown fairly before the cheat still counts
     cheated = true;
     player.r = CHEAT_RADII[level];
     player.growQueue.length = 0;
@@ -923,7 +1007,7 @@
       const nc = fishCircles(n.x, n.y, n.r, n.heading);
       for (const j of jellies) {
         if (fishHitsJelly(nc, j)) {
-          n.r = Math.max(5, Math.sqrt(n.r * n.r * (1 - JELLY_SHRINK)));
+          n.r = Math.max(5, Math.sqrt(n.r * n.r * (1 - jellyShrink(j))));
           n.stunTimer = JELLY_STUN_TIME;
           burst(n.x, n.y, `hsl(${j.hue},90%,72%)`, 10, 110);
           break;
@@ -1057,12 +1141,14 @@
       }
     }
 
+    // Bounce off the surface by the top of the bell and off the floor by the tentacle tips
     for (const j of jellies) {
-      j.bob += dt * 2;
-      j.x += Math.cos(j.heading) * 14 * dt;
-      j.y += Math.sin(j.heading) * 14 * dt;
-      if (j.y > FLOOR_Y) { j.y = FLOOR_Y; j.heading = -j.heading; }
-      if (j.y < SURFACE_Y + JELLY_SURFACE_MARGIN) { j.y = SURFACE_Y + JELLY_SURFACE_MARGIN; j.heading = -j.heading; }
+      j.bob += dt * j.pulse;
+      j.x += Math.cos(j.heading) * j.speed * dt;
+      j.y += Math.sin(j.heading) * j.speed * dt;
+      const low = FLOOR_Y - j.r * JELLY_TENTACLE_REACH, high = SURFACE_Y + JELLY_SURFACE_MARGIN + j.r;
+      if (j.y > low) { j.y = low; j.heading = -j.heading; }
+      if (j.y < high) { j.y = high; j.heading = -j.heading; }
       updateJellyGeometry(j);
     }
 
@@ -1090,8 +1176,10 @@
       if (far < 0) break;
       npcs.splice(far, 1);
     }
-    const jellyCull = Math.max(cullDist(), offscreenDist(26 * 2.5) + 600);
-    for (let i = jellies.length - 1; i >= 0; i--) if (dist(player.x, player.y, jellies[i].x, jellies[i].y) > jellyCull) jellies.splice(i, 1);
+    for (let i = jellies.length - 1; i >= 0; i--) {
+      const j = jellies[i];
+      if (dist(player.x, player.y, j.x, j.y) > Math.max(cullDist(), offscreenDist(j.r * 2.5) + 600)) jellies.splice(i, 1);
+    }
     const fc = foodCount();
     while (foods.length < fc) spawnFood();
     while (npcs.length < npcCount()) spawnNpc();
@@ -1182,7 +1270,7 @@
           playEatBig();
         }
       } else if (player.stunTimer <= 0 && fishHitsJelly(pc, j)) {
-        growPlayer(-playerArea() * JELLY_SHRINK, 1);
+        growPlayer(-playerArea() * jellyShrink(j), 1);
         player.r = Math.max(BASE_R * 0.6, player.r);
         player.stunTimer = JELLY_STUN_TIME;
         burst(player.x, player.y, `hsl(${j.hue},90%,72%)`, 16, 140);
@@ -1256,6 +1344,7 @@
       if (foams[i].life <= 0) foams.splice(i, 1);
     }
 
+    runMaxR = Math.max(runMaxR, player.r);
     document.getElementById('sizeText').textContent = sizeText(player.r);
     const si = stageIndexForR(player.r);
     const stage = STAGES[si];

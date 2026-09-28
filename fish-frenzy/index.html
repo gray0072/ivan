@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Fish Frenzy</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
-<link rel="stylesheet" href="styles.css?v=10">
+<link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -39,12 +39,25 @@
 <div id="overlay">
   <div id="menu">
     <h1>🐟 Fish Frenzy</h1>
-    <p>You're a small fish in a boundless sea. Eat plankton and fish smaller than you, grow and climb the food chain — but watch out for anything bigger than you!</p>
-    <p><b>← →</b> — turn. <b>Ctrl</b> (or ↑) — dash (uses stamina, helps you catch prey or escape a predator). <b>Esc</b> — pause.</p>
-    <p>On phone/tablet the game goes fullscreen: drag your thumb in the <b>left half</b> of the screen like a joystick to steer, touch and hold anywhere in the <b>right half</b> to dash.</p>
-    <p>Green outline — you can eat that fish. Red outline — it will eat you. Fish eat with their mouth only, so staying behind a predator's tail is safe until it turns around. Jellyfish aren't lethal but sting and shrink you — avoid them, until you're a Shark: then you eat them.</p>
-    <p>A pulsing red glow at the edge of the screen warns of a predator just out of view — the bigger and closer it is, the brighter and faster it beats; a double arrow means it's coming for you.</p>
-    <p>Become the sea's biggest predator — the Sea King — and then grow to the maximum size!</p>
+    <div id="about">
+      <p>You're a small fish in a boundless sea. Eat plankton and fish smaller than you, grow and climb the food chain — but watch out for anything bigger than you!</p>
+      <p><b>← →</b> — turn. <b>Ctrl</b> (or ↑) — dash (uses stamina, helps you catch prey or escape a predator). <b>Esc</b> — pause.</p>
+      <p>On phone/tablet the game goes fullscreen: drag your thumb in the <b>left half</b> of the screen like a joystick to steer, touch and hold anywhere in the <b>right half</b> to dash.</p>
+      <p>Green outline — you can eat that fish. Red outline — it will eat you. Fish eat with their mouth only, so staying behind a predator's tail is safe until it turns around. Jellyfish aren't lethal but sting and shrink you — avoid them, until you're a Shark: then you eat them.</p>
+      <p>A pulsing red glow at the edge of the screen warns of a predator just out of view — the bigger and closer it is, the brighter and faster it beats; a double arrow means it's coming for you.</p>
+      <p>Become the sea's biggest predator — the Sea King — and then grow to the maximum size!</p>
+    </div>
+    <div id="records" hidden>
+      <h2>🏆 Records</h2>
+      <table>
+        <thead><tr><th>Level</th><th>Biggest</th><th>👑 Sea King</th><th>🐋 Max size</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="btnRow recordsRow" id="recordsRow" hidden>
+      <button class="btn secondary" id="aboutToggle">Show description</button>
+      <button class="btn secondary" id="clearRecords">Clear records</button>
+    </div>
     <p class="choose">Choose difficulty:</p>
     <div class="btnRow">
       <button class="btn" data-difficulty="easy">Easy</button>
@@ -103,9 +116,9 @@
 <script src="input.js?v=6"></script>
 <script src="scenery.js?v=6"></script>
 <script src="fireworks.js?v=2"></script>
-<script src="constants.js?v=34"></script>
-<script src="render.js?v=7"></script>
+<script src="constants.js?v=35"></script>
+<script src="render.js?v=8"></script>
 <script src="demo.js?v=5"></script>
-<script src="game.js?v=47"></script>
+<script src="game.js?v=49"></script>
 </body>
 </html>

@@ -141,17 +141,27 @@ const DEMO_DASH_RESERVE = 0.35; // share of max stamina kept for escapes: no hun
 
 // ---------- Jellyfish (hazard, not lethal) ----------
 const JELLY_COUNT = 7;
-const JELLY_SHRINK = 0.1;      // fraction of area lost per sting
+const JELLY_R_MIN = 16;        // bell radius of a normal-size jellyfish, before JELLY_SCALE
+const JELLY_R_MAX = 26;
+// Some jellyfish are bigger: scale = 1 + (JELLY_SCALE_MAX - 1) × u^JELLY_SCALE_EXP (u uniform), so most stay near
+// normal size and about 1 in 5 is over 2× (up to r = 78, still half a young Shark, which eats them all)
+const JELLY_SCALE_MAX = 3;
+const JELLY_SCALE_EXP = 3;
+// Bigger ones drift and pulse slower (÷ √scale), so they're easier to read and steer around
+const JELLY_DRIFT = 14;        // world units/s at normal size
+const JELLY_PULSE = 2;         // bell pulse rate, rad/s at normal size
+const JELLY_SHRINK = 0.1;      // fraction of area lost per sting of a normal-size jellyfish…
+const JELLY_SHRINK_BIG = 0.2;  // …growing linearly to this at JELLY_SCALE_MAX
 const JELLY_STUN_TIME = 1.2;
 const JELLY_STUN_SLOW = 0.4;
 // Gap (edge to edge) at which fish start steering away, plus the fish's own turning radius (speed / turn rate):
 // a big fish swims fast and turns slowly, so it has to start turning much earlier
 const JELLY_AVOID_DIST = 45;
 const JELLY_TENTACLE_REACH = 1.2;  // jellyfish count as a bell plus a hanging stalk this many radii long
-const JELLY_TENTACLE_HALF_W = 1.8;
+const JELLY_TENTACLE_HALF_W = 1.8;  // at normal size; × √scale for bigger ones
 const JELLY_HUES = [330, 285, 205, 25, 170, 55];
 const JELLY_EATER_STAGE = 3;  // from this stage (Shark) on, jellyfish can't sting a fish and it eats them with its mouth
-const JELLY_SURFACE_MARGIN = 60; // jellyfish drift no closer to the surface than this
+const JELLY_SURFACE_MARGIN = 35; // the top of a bell drifts no closer to the surface than this
 
 // ---------- Hit shapes (match what drawFish / the jellyfish renderer actually draw) ----------
 // Fish: circles along the body axis, [offset along heading, radius], both in units of r

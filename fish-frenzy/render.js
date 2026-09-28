@@ -628,7 +628,7 @@ function createRenderer(canvas) {
 
     // tentacles, behind the bell
     ctx.strokeStyle = `hsla(${h},85%,78%,0.75)`;
-    ctx.lineWidth = JELLY_TENTACLE_HALF_W * 2 * z;
+    ctx.lineWidth = j.tentHalfW * 2 * z;
     ctx.lineCap = 'round';
     for (const t of j.tent) {
       const a = worldToScreen(t.x0, t.y0), c = worldToScreen(t.cx, t.cy), b = worldToScreen(t.x2, t.y2);
