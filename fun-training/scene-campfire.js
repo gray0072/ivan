@@ -200,8 +200,10 @@ function createCampfireScene(opts) {
   function drawEyes(ctx) {
     if (dawn > 0.8) return;
     ctx.save();
-    ctx.shadowColor = '#ffe066';
-    ctx.shadowBlur = 14;
+    if (Quality.glow()) {
+      ctx.shadowColor = '#ffe066';
+      ctx.shadowBlur = 14;
+    }
     ctx.fillStyle = `rgba(255,230,90,${1 - dawn})`;
     for (const w of wolves) {
       if (w.blink < 0) continue;

@@ -381,6 +381,7 @@
     showScreen('lesson');
     Lesson.start(current, proc, step, lessonEnded);
     Nav.setRoot($('taskPanel'));
+    Quality.reset();
   }
 
   function pause() {
@@ -393,6 +394,7 @@
     paused = false;
     hideOverlay();
     Nav.setRoot($('taskPanel'));
+    Quality.reset();
   }
 
   function quitLesson() {
@@ -518,6 +520,9 @@
     startLesson(proc, lastResult.won ? current.progress[proc.id] + 1 : lastResult.step);
   });
   [...$('choices').children].forEach(b => b.addEventListener('click', () => Lesson.choiceClick(b)));
+  $('numpad').querySelectorAll('button').forEach(b => b.addEventListener('click', () => Lesson.padClick(b)));
+  // Touch: no page scroll / pinch zoom over the scene.
+  ['touchstart', 'touchmove'].forEach(t => $('sceneWrap').addEventListener(t, e => e.preventDefault(), { passive: false }));
   $('nameInput').maxLength = NAME_MAX;
 
   Store.load();
@@ -526,13 +531,17 @@
   renderPlayers();
   showScreen('players');
 
+  Quality.onChange(() => { Lesson.resize(); Confetti.resize(); });
+
   let last = performance.now();
   function frame(now) {
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const raw = (now - last) / 1000;
+    const dt = Math.min(0.05, raw);
     last = now;
     if (screen === 'lesson') {
       if (!paused) Lesson.update(dt);
       Lesson.draw();
+      if (!overlayOpen()) Quality.frame(raw);
     }
     Confetti.update(dt);
     requestAnimationFrame(frame);

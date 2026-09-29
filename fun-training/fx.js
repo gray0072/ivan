@@ -1,5 +1,31 @@
 // Shared drawing helpers for the scenes, and confetti above the victory dialog.
 
+// ctx.roundRect is missing in older browsers (e.g. LG webOS TVs, Chromium < 99): without it every scene
+// throws on its first frame. Radii: a number or an array of 1–4 numbers, as in the standard.
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, radii = 0) {
+    const r = Array.isArray(radii) ? radii.map(Number) : [Number(radii)];
+    let [tl, tr, br, bl] = r.length === 1 ? [r[0], r[0], r[0], r[0]]
+      : r.length === 2 ? [r[0], r[1], r[0], r[1]]
+      : r.length === 3 ? [r[0], r[1], r[2], r[1]]
+      : r;
+    if (w < 0) { x += w; w = -w; [tl, tr, br, bl] = [tr, tl, bl, br]; }
+    if (h < 0) { y += h; h = -h; [tl, tr, br, bl] = [bl, br, tr, tl]; }
+    const k = Math.min(1, w / (tl + tr || 1), w / (bl + br || 1), h / (tl + bl || 1), h / (tr + br || 1));
+    tl *= k; tr *= k; br *= k; bl *= k;
+    this.moveTo(x + tl, y);
+    this.lineTo(x + w - tr, y);
+    this.arcTo(x + w, y, x + w, y + tr, tr);
+    this.lineTo(x + w, y + h - br);
+    this.arcTo(x + w, y + h, x + w - br, y + h, br);
+    this.lineTo(x + bl, y + h);
+    this.arcTo(x, y + h, x, y + h - bl, bl);
+    this.lineTo(x, y + tl);
+    this.arcTo(x, y, x + tl, y, tl);
+    this.closePath();
+  };
+}
+
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
@@ -60,9 +86,9 @@ const Confetti = (() => {
   }
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = window.innerWidth;
     h = window.innerHeight;
+    dpr = Quality.canvasScale(w, h);
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
   }
@@ -83,7 +109,7 @@ const Confetti = (() => {
   function start() {
     resize();
     parts = [];
-    spawn(160);
+    spawn(Math.round(160 * Quality.confetti()));
     spawnLeft = 3;
     running = true;
     canvas.hidden = false;
@@ -97,7 +123,7 @@ const Confetti = (() => {
 
   function update(dt) {
     if (!running) return;
-    if (spawnLeft > 0) { spawnLeft -= dt; spawn(Math.round(dt * 40)); }
+    if (spawnLeft > 0) { spawnLeft -= dt; spawn(Math.floor(dt * 40 * Quality.confetti() + Math.random())); }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     for (const p of parts) {

@@ -1,4 +1,5 @@
-/* Fun Training — TV-first layout, sized in rem that follows the screen. */
+/* Fun Training — TV / desktop / phone layout, sized in rem that follows the screen.
+   Kept to CSS that older TV browsers (LG webOS, Chromium 79+) understand; phone-only rules may use newer features. */
 
 :root {
   --bg1: #2b2170;
@@ -38,17 +39,18 @@ button {
   background: none;
 }
 
-button:focus { outline: none; }
-button:focus-visible, input:focus-visible {
+/* The ring shows for keyboard / remote focus; browsers without :focus-visible drop the second rule and always show it. */
+button:focus, input:focus {
   outline: 0.22rem solid var(--focus);
   outline-offset: 0.18rem;
 }
+button:focus:not(:focus-visible), input:focus:not(:focus-visible) { outline: none; }
 
 [hidden] { display: none !important; }
 
 .screen {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   padding: max(1.4rem, env(safe-area-inset-top)) max(2rem, env(safe-area-inset-right)) max(1.4rem, env(safe-area-inset-bottom)) max(2rem, env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
@@ -412,7 +414,7 @@ button.cell[disabled] { cursor: default; }
   overflow: hidden;
 }
 #sceneWrap { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
-#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#scene { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 #readyNote {
   position: absolute;
   top: 40%;
@@ -424,6 +426,9 @@ button.cell[disabled] { cursor: default; }
   text-shadow: 0 0.2rem 0.6rem rgba(0,0,0,0.5);
   animation: popIn 0.4s;
   pointer-events: none;
+  width: max-content;
+  max-width: 94%;
+  text-align: center;
 }
 
 #taskPanel {
@@ -504,6 +509,20 @@ button.cell[disabled] { cursor: default; }
   align-items: center;
   justify-content: center;
 }
+/* On-screen number pad (typing mode on touch screens). */
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.padKey {
+  height: 3.2rem;
+  border-radius: 0.9rem;
+  background: #fff;
+  color: var(--ink);
+  font-size: 1.8rem;
+  font-weight: 800;
+  box-shadow: 0 0.25rem 0 rgba(0,0,0,0.3);
+}
+.padKey:active { transform: translateY(0.15rem); box-shadow: 0 0.08rem 0 rgba(0,0,0,0.3); }
+.padBack { background: #ffe0e5; color: #c0304a; }
+.padOk { background: var(--good); color: #fff; }
 .typeHint { text-align: center; color: #d8d0ff; font-size: 1rem; }
 .typeHint b { color: var(--accent); }
 
@@ -511,7 +530,7 @@ button.cell[disabled] { cursor: default; }
 
 #overlay {
   position: fixed;
-  inset: 0;
+  top: 0; right: 0; bottom: 0; left: 0;
   background: rgba(20,12,50,0.6);
   display: flex;
   align-items: center;
@@ -541,7 +560,7 @@ button.cell[disabled] { cursor: default; }
 .resTrack { display: flex; justify-content: center; margin: 0.8rem 0 0.2rem; }
 .cheatNote { color: var(--bad); font-size: 0.9rem; }
 
-#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 11; }
+#fx { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 11; }
 
 #banner {
   position: fixed;
@@ -559,9 +578,122 @@ button.cell[disabled] { cursor: default; }
 }
 #banner.show { transform: translate(-50%, 0); opacity: 1; }
 
-/* Portrait (phones later): scene on top, task panel below. */
+/* Portrait: scene on top, task panel below. */
 @media (orientation: portrait) {
   #screenLesson { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
   #taskPanel { box-shadow: 0 -0.3rem 1rem rgba(0,0,0,0.3); }
   .avatarGrid { grid-template-columns: repeat(4, 4rem); }
+}
+
+/* Touch screens: no sticky hover zoom after a tap. */
+@media (hover: none) {
+  .btn:hover, .playerCard:hover, .opToggle:hover, .choice:hover, button.cell:not([disabled]):hover, .avatarBtn:not(.on):hover { transform: none; }
+}
+
+/* ---------- phones (reference: Poco X6 Pro, 444 × 987 CSS px) ---------- */
+
+/* Narrow screens (a phone in portrait). */
+@media (max-width: 620px) {
+  .screen { padding: max(1rem, env(safe-area-inset-top)) max(0.8rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-left)); }
+  h1 { font-size: 1.6rem; }
+
+  .logo { font-size: 2.4rem; margin-top: 0.6rem; }
+  .sub { margin-bottom: 1rem; }
+  .playerGrid { gap: 0.8rem; }
+  .playerCard { width: 9.5rem; min-height: 9.5rem; }
+  .pAvatar { font-size: 3rem; }
+
+  #nameInput { width: 100%; max-width: 18rem; }
+
+  .topBar { flex-wrap: wrap; gap: 0.6rem; }
+  .who { font-size: 1.3rem; }
+  .bigAvatar { font-size: 2.2rem; }
+  .coins { font-size: 1.2rem; }
+  .topBtns { width: 100%; }
+  .topBtns .btn { flex: 1; padding: 0.5rem 0.6rem; }
+  .summary { font-size: 0.8rem; margin: 0.6rem 0 0.8rem; }
+
+  /* Process row: icon, name and step on top, the track across the whole row below. */
+  .procRow {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "icon name side" "track track track";
+    align-items: center;
+    gap: 0.3rem 0.6rem;
+    padding: 0.6rem 0.6rem 0.7rem;
+  }
+  .procMain { display: contents; }
+  .procIcon { grid-area: icon; font-size: 2rem; width: auto; }
+  .procName { grid-area: name; font-size: 1.1rem; }
+  .procSide { grid-area: side; min-width: 0; font-size: 0.9rem; }
+  .procRow .track, .soonLabel { grid-area: track; }
+  .processList .track { width: 100%; gap: 0.2rem; }
+  .processList .cell { flex: 1 1 0; width: auto; height: auto; min-width: 0; max-width: 2.4rem; aspect-ratio: 1; }
+  .processList .pageBtn { width: 1.2rem; }
+  .processList .star.goal { font-size: 1.7rem; margin-left: 0.15rem; }
+  .resTrack .track { gap: 0.2rem; }
+  .resTrack .cell { width: 1.6rem; height: 1.6rem; }
+  .resTrack .star.goal { font-size: 1.6rem; }
+
+  .setHead h1 { font-size: 1.4rem; }
+  .tabs { flex-wrap: wrap; justify-content: center; gap: 0.3rem 1rem; }
+  .setBody { padding: 0.8rem; }
+  .setLine { gap: 0.8rem 1.6rem; }
+  .opsRow { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem 0.6rem; align-self: stretch; }
+  .opToggle { width: 100%; }
+  .speedSeg { align-self: stretch; }
+  .speedSeg .segBtn { width: auto; flex: 1 1 0; min-width: 0; padding: 0.3rem 0.1rem; }
+  .speedSeg .segBtn.on { transform: scale(1.05); }
+  .spIcon { font-size: 1.5rem; }
+  .spName { font-size: 0.7rem; line-height: 1.1; }
+
+  #taskPanel { gap: 0.5rem; padding: 0.7rem max(0.8rem, env(safe-area-inset-right)) max(0.8rem, env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-left)); }
+  #taskCard { margin-top: 0; padding: 0.6rem 0.8rem 0.7rem; }
+  .padKey { height: 3rem; }
+  #readyNote { font-size: 2.2rem; }
+  #readyNote.boss { font-size: 3rem; }
+  #readyNote small { font-size: 1.1rem; }
+
+  .panel { min-width: 0; width: 92vw; padding: 1.2rem 1rem; }
+}
+
+/* Low screens (a phone in landscape): a compact task panel and dialogs. */
+@media (max-height: 520px) and (orientation: landscape) {
+  .screen { padding-top: max(0.7rem, env(safe-area-inset-top)); padding-bottom: max(0.7rem, env(safe-area-inset-bottom)); }
+  .logo { font-size: 2.4rem; margin-top: 0; }
+  .sub { margin-bottom: 0.8rem; }
+  .procRow { padding: 0.45rem 1rem; }
+  .procIcon { font-size: 2.1rem; }
+
+  #screenLesson { grid-template-columns: 1fr minmax(18rem, 36vw); }
+  #taskPanel { gap: 0.4rem; padding: 0.6rem max(0.9rem, env(safe-area-inset-right)) 0.6rem 0.9rem; }
+  .lsTop { font-size: 0.95rem; }
+  .iconBtn { width: 2rem; height: 2rem; font-size: 0.95rem; }
+  .lsBar { height: 0.5rem; }
+  .lsStats { font-size: 0.95rem; }
+  #taskCard { margin-top: 0; padding: 0.35rem 0.6rem 0.45rem; }
+  #taskText { font-size: 2.4rem; }
+  #taskCard[data-len="m"] #taskText { font-size: 1.9rem; }
+  #taskCard[data-len="s"] #taskText { font-size: 1.5rem; }
+  .ansLine { font-size: 1.9rem; }
+  #wrongNote { min-height: 1.2rem; font-size: 1rem; }
+  .choices { gap: 0.5rem; }
+  .choice { font-size: 1.7rem; padding: 0.35rem 0.4rem; }
+  .choice .key { width: 1.1rem; height: 1.1rem; font-size: 0.7rem; top: 0.25rem; left: 0.35rem; }
+  .numpad { grid-template-columns: repeat(6, 1fr); gap: 0.4rem; }
+  .padKey { height: 2.5rem; font-size: 1.4rem; }
+  #readyNote { font-size: 2.2rem; }
+  #readyNote.boss { font-size: 3rem; }
+  #readyNote small { font-size: 1.1rem; }
+
+  #overlay { align-items: flex-start; overflow-y: auto; padding: 0.5rem 0; }
+  .panel { padding: 0.8rem 1.6rem; margin: auto 0; }
+  .panel h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .resIcon { font-size: 2.8rem; }
+  .resText { font-size: 1rem; margin-bottom: 0.3rem; }
+  .coinBig { font-size: 1.8rem; }
+  .star.huge { font-size: 2.8rem; }
+  .resStar { margin: 0.3rem 0; }
+  .resTrack { margin: 0.4rem 0 0; }
+  .panel .btnRow { margin-top: 0.6rem; }
 }

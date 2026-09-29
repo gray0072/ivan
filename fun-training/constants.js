@@ -144,3 +144,16 @@ const BALLOON_BURN_TIME = 0.8;  // s the burner flame shows
 // Campfire process.
 const FIRE_REFILL_TIME = 0.7;   // s the fire grows back after a log lands
 const LOG_FLIGHT_TIME = 0.5;    // s a thrown log / burning stick flies
+
+// Graphics quality, picked automatically and lowered / raised by the measured frame rate.
+// maxDpr = canvas pixels per CSS px; maxPixels = cap on the scene canvas backing store; glow = soft shadows.
+const QUALITY_LEVELS = [
+  { id: 'low', maxDpr: 1, maxPixels: 1280 * 720, glow: false, confetti: 0.5 },
+  { id: 'medium', maxDpr: 1.5, maxPixels: 1920 * 1080, glow: true, confetti: 0.75 },
+  { id: 'high', maxDpr: 2, maxPixels: 2560 * 1440, glow: true, confetti: 1 },
+];
+const QUALITY_KEY = 'funTraining.quality'; // localStorage: the level learned on this device
+const QUALITY_WINDOW = 2;        // s of lesson frames averaged per check
+const QUALITY_LOW_FPS = 45;      // average below this → one level down
+const QUALITY_HIGH_FPS = 57;     // average above this for QUALITY_UP_WINDOWS checks → one level up
+const QUALITY_UP_WINDOWS = 4;

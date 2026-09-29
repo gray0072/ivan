@@ -6,7 +6,7 @@ Developer/agent spec for the `fun-training` project. Repo-wide conventions live 
 
 A training game for school kids. Something is happening on screen (a flower dries out, zombies walk toward a house, a train runs out of rails, a balloon sinks, a campfire burns down) and the player keeps it going by answering tasks in time. Every correct answer "feeds" the process (waters the flower, throws a stone at the zombie); a wrong answer just brings a new task while the process keeps running. The name is deliberately not tied to math: math is only the first **task type**, more will follow.
 
-Target for now: **TV / big screen**, played with a keyboard or a TV remote (arrows, Enter, digits, Back). Phones come later — the layout already uses relative units and a scene/panel split that can stack vertically.
+Targets: **TV / big screen** with a keyboard or a TV remote (arrows, Enter, digits, Back; reference: LG 55NANO766QA, webOS browser), desktop with a mouse, and **phones** by touch (reference: Poco X6 Pro, 444 × 987 CSS px, both orientations).
 
 ## Screens
 
@@ -58,7 +58,7 @@ Settings are grouped by task type (`settings.math` today) so new types get their
 ### Answer modes
 
 - **Pick 1–4**: four answer buttons in a 2×2 grid, pressed with keys 1–4, arrows + Enter, or a click. Wrong options are plausible: ±1–3, ±10, ±100, swapped last digits, a neighbouring table result for × (answer ± a factor).
-- **Type**: digits typed on the keyboard / remote, Backspace deletes, Enter or Space submits. (An on-screen number pad comes with the phone version.)
+- **Type**: digits typed on the keyboard / remote, Backspace deletes, Enter or Space submits. On touch screens (`pointer: coarse`) an on-screen number pad replaces the "press Enter" hint: 1–9, ⌫, 0, ✓ (a 3 × 4 grid in portrait, 6 × 2 in a low landscape panel).
 
 ### Future task types (ideas)
 
@@ -86,6 +86,21 @@ All five processes are built. Scenes are drawn on a canvas in a fixed design spa
 4. **🎈 Balloon Flight** (built). A striped hot-air balloon with a pilot in goggles over the sea; its height is `f`. A correct answer fires the burner (flame, roar) and the balloon climbs back up; a wrong one gives a sad puff of smoke. A shark fin circles when the balloon is low. An island with a palm and a flag comes closer with each correct answer. Defeat: the basket splashes into the sea and the envelope deflates. **Boss:** an angry thundercloud with rain drifts toward the balloon (the sky darkens, thunder and flashes); each hit is a gust that shrinks it, the third blows it away and a rainbow appears; if it reaches the balloon, lightning knocks it into the sea.
 5. **🔥 Campfire Night** (built). Night forest, a tent and a kid toasting a marshmallow by the fire. The fire's size and the lit circle are `f`; glowing wolf eyes sit at the edge of the light and creep closer as it dims (their silhouettes show when close). A correct answer throws a log in: the fire flares with sparks and a crackle, and the eyes back off. Wrong answer: a puff of smoke. Defeat: the fire goes out and the wolves howl. Victory: dawn — the sky brightens, the sun rises, the wolves leave, birds chirp. **Boss:** the pack leader walks into the light (the fire stays full); each hit is a burning stick that makes it yelp, the third sends it running.
 
+## Phones and touch
+
+- The split-screen joystick scheme from the repo conventions doesn't apply: every action is a button (answers, number pad, pause), and plain `<button>`s are tapped directly.
+- Starting a lesson on a touch device requests fullscreen (`goFullscreen`, try/catch, works windowed on iPhone). The scene blocks page scroll / pinch zoom (`touch-action: none`, `preventDefault` on `touchstart` / `touchmove`).
+- Portrait: the scene on top, the task panel below; narrow screens (≤ 620 px) wrap the home top bar, put each process's track on its own full-width line with shrinking cells, use a 2 × 2 grid of operations and a full-width speed switch in the settings. Low landscape screens (≤ 520 px high) get a compact task panel and dialogs that scroll if needed. Safe-area insets are respected; sticky hover zoom is off on touch screens.
+
+## Graphics quality
+
+`quality.js` picks the canvas resolution automatically (`QUALITY_LEVELS`: low / medium / high = max device-pixel ratio 1 / 1.5 / 2, backing store capped at 1280 × 720 / 1920 × 1080 / 2560 × 1440 pixels; low also drops the soft glow of the wolves' eyes and halves the confetti).
+
+- Starting ceiling: TV browsers (user agent with webOS / Tizen / SmartTV…) and devices with ≤ 2 GB memory or ≤ 2 cores → low; touch devices → medium; others → high.
+- During a lesson the frame rate is averaged over `QUALITY_WINDOW` = 2 s windows (the first 0.6 s after a start / resume and hitches over 0.25 s are skipped): below `QUALITY_LOW_FPS` = 45 → one level down; above `QUALITY_HIGH_FPS` = 57 for `QUALITY_UP_WINDOWS` = 4 windows in a row → one level up, but never above the ceiling nor back to a level that was too slow in this session. The canvas is resized at once.
+- The level is remembered in `localStorage["funTraining.quality"]`, so the next visit starts at it.
+- Older TV browsers lack `CanvasRenderingContext2D.roundRect` (Chromium < 99); `fx.js` polyfills it — without it every scene threw on its first frame and the lesson froze on the TV. The CSS avoids newer features there too (no `inset`; the focus ring falls back to always visible without `:focus-visible`).
+
 ## Sounds
 
 Synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, boss drums and growl, victory fanfare, coins jingle, star fanfare, defeat sad trombone.
@@ -105,7 +120,8 @@ fun-training/
 ├── tasks.js         # task generator, expected time, answer choices
 ├── audio.js         # Web Audio sound effects
 ├── nav.js           # spatial keyboard / TV-remote focus navigation
-├── fx.js            # shared drawing helpers (fitScene, mixColor, starPath…) and the victory confetti
+├── quality.js       # automatic graphics quality (canvas resolution by device and frame rate)
+├── fx.js            # shared drawing helpers (roundRect polyfill, fitScene, mixColor, starPath…) and the victory confetti
 ├── scene-flower.js  # Grow a Flower process (state + canvas drawing)
 ├── scene-zombies.js # Zombie Defense process (state + canvas drawing)
 ├── scene-railway.js # Railway Rush process
@@ -121,11 +137,10 @@ fun-training/
 ## Differences from the repo conventions
 
 - No Easy / Medium / Hard: difficulty is the per-task-type settings (limits, number of operands, speed).
-- TV-first for now; phone layout and touch-specific controls (number pad, fullscreen flow) come later. The layout already stacks the scene above the panel in portrait.
+- No split-screen joystick on phones: the game is played with buttons only (see Phones and touch).
 - README is minimal: title and link to the live page.
 
 ## Backlog
 
 - [ ] Coin shop
 - [ ] More task types
-- [ ] Phone layout: on-screen number pad, fullscreen on start, portrait tuning

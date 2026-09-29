@@ -11,11 +11,14 @@ const Lesson = (() => {
   let L = null; // current lesson state
   let onEnd = null;
 
+  // The scene's box also changes without a window resize (the panel below it grows in portrait).
+  if (window.ResizeObserver) new ResizeObserver(() => { if (L) resize(); }).observe($('sceneWrap'));
+
   function resize() {
     const wrap = $('sceneWrap');
     cw = wrap.clientWidth;
     ch = wrap.clientHeight;
-    dpr = Math.min(window.devicePixelRatio || 1, 2, 2560 / Math.max(1, cw), 1440 / Math.max(1, ch));
+    dpr = Quality.canvasScale(cw, ch);
     canvas.width = Math.max(1, Math.round(cw * dpr));
     canvas.height = Math.max(1, Math.round(ch * dpr));
   }
@@ -37,8 +40,10 @@ const Lesson = (() => {
     };
     $('lsProc').textContent = proc.icon + ' ' + proc.name;
     $('lsStep').textContent = 'Step ' + step + (isBoss ? ' · Boss' : '');
+    const pad = st.answerMode === 'type' && matchMedia('(pointer: coarse)').matches;
     $('choices').hidden = st.answerMode !== 'choice';
-    $('typeHint').hidden = st.answerMode !== 'type';
+    $('numpad').hidden = !pad;
+    $('typeHint').hidden = st.answerMode !== 'type' || pad;
     $('wrongNote').textContent = '';
     showNote(isBoss ? 'Get ready! Boss at the end 👹' : 'Get ready!', false);
     resize();
@@ -220,22 +225,33 @@ const Lesson = (() => {
       }
       return false; // arrows / Enter work through the focused buttons
     }
+    return typeKey(k);
+  }
+
+  // Typing mode: a digit, Backspace or Enter / Space, from the keyboard or the on-screen number pad.
+  function typeKey(k) {
+    const open = L.phase === 'play' || L.phase === 'intro';
     if (/^[0-9]$/.test(k)) {
-      if (L.typed.length < TYPE_MAX_DIGITS && (L.phase === 'play' || L.phase === 'intro')) {
+      if (L.typed.length < TYPE_MAX_DIGITS && open) {
         L.typed = (L.typed === '0' ? '' : L.typed) + k;
         renderAnswer();
       }
       return true;
     }
     if (k === 'Backspace') {
-      if (L.phase === 'play' || L.phase === 'intro') { L.typed = L.typed.slice(0, -1); renderAnswer(); }
+      if (open) { L.typed = L.typed.slice(0, -1); renderAnswer(); }
       return true;
     }
     if (k === 'Enter' || k === ' ') {
-      if (L.typed && (L.phase === 'play' || L.phase === 'intro')) submit(Number(L.typed));
+      if (L.typed && open) submit(Number(L.typed));
       return true;
     }
     return false;
+  }
+
+  function padClick(btn) {
+    if (!L || L.phase === 'done' || L.st.answerMode !== 'type') return;
+    typeKey(btn.dataset.key);
   }
 
   function choiceClick(btn) {
@@ -254,7 +270,7 @@ const Lesson = (() => {
   }
 
   return {
-    start, update, draw, key, resize, choiceClick,
+    start, update, draw, key, resize, choiceClick, padClick,
     stop: () => { L = null; },
     active: () => !!L && L.phase !== 'done',
   };

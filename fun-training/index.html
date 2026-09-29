@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Fun Training</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
 
@@ -119,6 +119,20 @@
       <button class="choice"><span class="key">3</span><span class="val"></span></button>
       <button class="choice"><span class="key">4</span><span class="val"></span></button>
     </div>
+    <div id="numpad" class="numpad" hidden>
+      <button class="padKey" data-key="1">1</button>
+      <button class="padKey" data-key="2">2</button>
+      <button class="padKey" data-key="3">3</button>
+      <button class="padKey" data-key="4">4</button>
+      <button class="padKey" data-key="5">5</button>
+      <button class="padKey" data-key="6">6</button>
+      <button class="padKey" data-key="7">7</button>
+      <button class="padKey" data-key="8">8</button>
+      <button class="padKey" data-key="9">9</button>
+      <button class="padKey padBack" data-key="Backspace" aria-label="Delete">⌫</button>
+      <button class="padKey" data-key="0">0</button>
+      <button class="padKey padOk" data-key="Enter" aria-label="Answer">✓</button>
+    </div>
     <div id="typeHint" class="typeHint">Type the answer, then press <b>Enter</b></div>
   </div>
 </section>
@@ -150,18 +164,19 @@
 <canvas id="fx" hidden></canvas>
 <div id="banner"></div>
 
-<script src="constants.js?v=2"></script>
+<script src="constants.js?v=3"></script>
 <script src="storage.js?v=2"></script>
 <script src="tasks.js?v=1"></script>
 <script src="audio.js?v=2"></script>
 <script src="nav.js?v=2"></script>
-<script src="fx.js?v=2"></script>
+<script src="quality.js?v=1"></script>
+<script src="fx.js?v=3"></script>
 <script src="scene-flower.js?v=2"></script>
 <script src="scene-zombies.js?v=2"></script>
 <script src="scene-railway.js?v=1"></script>
 <script src="scene-balloon.js?v=1"></script>
-<script src="scene-campfire.js?v=1"></script>
-<script src="lesson.js?v=2"></script>
-<script src="app.js?v=2"></script>
+<script src="scene-campfire.js?v=2"></script>
+<script src="lesson.js?v=3"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>
