@@ -3,14 +3,21 @@
 // All drawing of the game world onto the main canvas. game.js owns the state and hands it over every frame
 // as a `view` (entity arrays, the camera helpers and the screen size); the scenery layers live in scenery.js.
 
-// Graphics presets: Low renders fewer pixels and skips the purely decorative full-screen layers
+// Graphics presets, best first (the order Auto steps through). maxPixels = cap on the canvas backing store;
+// sunRays / vignette / foodGlow = decorative layers; flat = solid fills instead of per-object gradients, no gloss,
+// motes or sand ripples; seaweed = draw the seaweed; crowd = share of the extra fish, jellyfish and plankton a
+// big screen gets over a phone (see screenMul in game.js)
 const GRAPHICS = {
-  high: { label: 'High', maxPixels: 2560 * 1440, sunRays: true, vignette: true, foodGlow: true },
-  low: { label: 'Low', maxPixels: 1600 * 900, sunRays: false, vignette: false, foodGlow: false }
+  high: { label: 'High', maxPixels: 2560 * 1440, sunRays: true, vignette: true, foodGlow: true, flat: false, seaweed: true, crowd: 1 },
+  medium: { label: 'Medium', maxPixels: 1600 * 900, sunRays: false, vignette: false, foodGlow: false, flat: false, seaweed: true, crowd: 1 },
+  low: { label: 'Low', maxPixels: 1280 * 720, sunRays: false, vignette: false, foodGlow: false, flat: true, seaweed: true, crowd: 0.75 },
+  minimal: { label: 'Minimal', maxPixels: 960 * 540, sunRays: false, vignette: false, foodGlow: false, flat: true, seaweed: false, crowd: 0.5 }
 };
+const GRAPHICS_ORDER = ['high', 'medium', 'low', 'minimal'];
 
 function createRenderer(canvas) {
-  const ctx = canvas.getContext('2d');
+  // opaque: sky and water always cover the whole screen, and the compositor skips blending the canvas
+  const ctx = canvas.getContext('2d', { alpha: false });
   let W = 0, H = 0;
   let gfx = GRAPHICS.high;
 
@@ -27,7 +34,9 @@ function createRenderer(canvas) {
   }
 
   function setGraphics(key) {
-    gfx = GRAPHICS[key] || GRAPHICS.high;
+    const next = GRAPHICS[key] || GRAPHICS.high;
+    if (next === gfx) return;
+    gfx = next;
     if (W) resize(W, H);
   }
 
@@ -165,13 +174,17 @@ function createRenderer(canvas) {
     ctx.save();
     ctx.scale(1, bodyK);
     fishBodyPath(r, wag, Math.max(rc, 0.1) / bodyK);
-    const g = ctx.createLinearGradient(0, -0.7 * r, 0, 0.7 * r);
-    g.addColorStop(0, shade(color, -0.35));
-    g.addColorStop(0.45, color);
-    g.addColorStop(1, shade(color, 0.55));
-    ctx.fillStyle = g;
+    if (gfx.flat) {
+      ctx.fillStyle = color;
+    } else {
+      const g = ctx.createLinearGradient(0, -0.7 * r, 0, 0.7 * r);
+      g.addColorStop(0, shade(color, -0.35));
+      g.addColorStop(0.45, color);
+      g.addColorStop(1, shade(color, 0.55));
+      ctx.fillStyle = g;
+    }
     ctx.fill();
-    if (rc < 0.99) {
+    if (rc < 0.99 && !gfx.flat) {
       const bg = ctx.createLinearGradient(0, -0.7 * r, 0, 0.7 * r);
       bg.addColorStop(0, color);
       bg.addColorStop(clamp(0.5 - 0.43 * rc / bodyK, 0, 1), shade(color, -0.45));
@@ -220,10 +233,12 @@ function createRenderer(canvas) {
     ctx.restore();
 
     // soft gloss along the back
-    ctx.fillStyle = 'rgba(255,255,255,0.16)';
-    ctx.beginPath();
-    ctx.ellipse(0.05 * r, -0.36 * r * rc, 0.5 * r, 0.12 * r * bodyK, -0.08 * rc, 0, Math.PI * 2);
-    ctx.fill();
+    if (!gfx.flat) {
+      ctx.fillStyle = 'rgba(255,255,255,0.16)';
+      ctx.beginPath();
+      ctx.ellipse(0.05 * r, -0.36 * r * rc, 0.5 * r, 0.12 * r * bodyK, -0.08 * rc, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // rolled toward the viewer, the dorsal fin runs along the back, over the body
     const dorsalFront = clamp((0.7 - rc) / 0.4, 0, 1);
@@ -620,11 +635,13 @@ function createRenderer(canvas) {
     const h = j.hue;
 
     // glow, stronger in dark water
-    const halo = ctx.createRadialGradient(p.x, p.y - R * 0.3, R * 0.2, p.x, p.y - R * 0.3, R * 2.2);
-    halo.addColorStop(0, `hsla(${h},90%,70%,${0.1 + 0.25 * df})`);
-    halo.addColorStop(1, `hsla(${h},90%,70%,0)`);
-    ctx.fillStyle = halo;
-    ctx.fillRect(p.x - R * 2.2, p.y - R * 2.5, R * 4.4, R * 4.4);
+    if (!gfx.flat) {
+      const halo = ctx.createRadialGradient(p.x, p.y - R * 0.3, R * 0.2, p.x, p.y - R * 0.3, R * 2.2);
+      halo.addColorStop(0, `hsla(${h},90%,70%,${0.1 + 0.25 * df})`);
+      halo.addColorStop(1, `hsla(${h},90%,70%,0)`);
+      ctx.fillStyle = halo;
+      ctx.fillRect(p.x - R * 2.2, p.y - R * 2.5, R * 4.4, R * 4.4);
+    }
 
     // tentacles, behind the bell
     ctx.strokeStyle = `hsla(${h},85%,78%,0.75)`;
@@ -640,11 +657,15 @@ function createRenderer(canvas) {
     ctx.lineCap = 'butt';
 
     // bell with a scalloped rim
-    const g = ctx.createRadialGradient(p.x - R * 0.25, p.y - R * 0.7, R * 0.1, p.x, p.y - R * 0.3, R * 1.1);
-    g.addColorStop(0, `hsla(${h},100%,93%,0.92)`);
-    g.addColorStop(0.5, `hsla(${h},85%,72%,0.62)`);
-    g.addColorStop(1, `hsla(${h},80%,55%,0.45)`);
-    ctx.fillStyle = g;
+    if (gfx.flat) {
+      ctx.fillStyle = `hsla(${h},85%,72%,0.7)`;
+    } else {
+      const g = ctx.createRadialGradient(p.x - R * 0.25, p.y - R * 0.7, R * 0.1, p.x, p.y - R * 0.3, R * 1.1);
+      g.addColorStop(0, `hsla(${h},100%,93%,0.92)`);
+      g.addColorStop(0.5, `hsla(${h},85%,72%,0.62)`);
+      g.addColorStop(1, `hsla(${h},80%,55%,0.45)`);
+      ctx.fillStyle = g;
+    }
     ctx.beginPath();
     ctx.arc(p.x, p.y, R, Math.PI, 0);
     const sc = 5;
@@ -672,5 +693,5 @@ function createRenderer(canvas) {
     ctx.lineCap = 'butt';
   }
 
-  return { resize, render, setGraphics };
+  return { resize, render, setGraphics, get crowd() { return gfx.crowd; } };
 }

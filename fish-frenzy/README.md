@@ -33,8 +33,11 @@ On every level the other fish notice you with a human-like delay, and they turn 
 
 The start screen also has a **Graphics** switch (remembered between visits):
 
+- **Auto** (the default) — picks the level by itself: it starts from a guess for the device (TVs start at Low, phones at Medium), watches the frame rate while you play and steps down if the game stutters (below 45 FPS), or back up once it runs smoothly. The FPS counter shows the level it's using, and the level it settles on is remembered.
 - **High** — full quality: sun rays, vignette and glowing plankton, rendered at up to 2560×1440.
-- **Low** — for weaker laptops and phones: no sun rays, vignette or plankton glow, rendered at up to 1600×900 and scaled to the screen.
+- **Medium** — no sun rays, vignette or plankton glow, rendered at up to 1600×900 and scaled to the screen.
+- **Low** — for TVs and weak devices: also plain single-colour fish, jellyfish and rocks (no shading), no drifting motes or sand ripples, rendered at up to 1280×720, and a quarter fewer extra fish on big screens.
+- **Minimal** — the lightest: like Low, but rendered at up to 960×540, without seaweed, and with half the extra fish on big screens (a phone-sized screen is never emptier than on a phone).
 
 ## Demo
 

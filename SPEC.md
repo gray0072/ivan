@@ -63,6 +63,7 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 │   ├── fireworks.js          # fireworks show for the max-size dialog
 │   ├── constants.js          # game tuning constants (sizes, speeds, counts, timings, hit shapes)
 │   ├── render.js             # canvas setup and drawing of fish, jellyfish, gulls, food, effects, touch controls
+│   ├── quality.js            # Auto graphics: picks the preset from the device and the measured frame rate
 │   ├── demo.js               # demo-mode pilot: steers the player with a bot-like brain (createDemoPilot)
 │   ├── game.js               # world, difficulty, update loop; hands its state to render.js each frame
 │   ├── README.md

@@ -2,11 +2,16 @@
 
 (function () {
   const renderer = createRenderer(document.getElementById('game'));
-  // Graphics quality (High / Low), picked on the start screen and remembered between visits
-  const GRAPHICS_KEY = 'fishFrenzy.graphics';
-  let graphicsKey = 'high';
-  try { if (localStorage.getItem(GRAPHICS_KEY) === 'low') graphicsKey = 'low'; } catch (err) { /* storage blocked */ }
-  renderer.setGraphics(graphicsKey);
+  // Graphics quality (Auto or one of the GRAPHICS presets), picked on the start screen and remembered between visits
+  const GRAPHICS_KEY = 'fishFrenzy.gfx';
+  let graphicsKey = 'auto';
+  try {
+    const saved = localStorage.getItem(GRAPHICS_KEY);
+    if (GRAPHICS[saved]) graphicsKey = saved;
+  } catch (err) { /* storage blocked */ }
+  const autoGraphics = createAutoGraphics((key) => { if (graphicsKey === 'auto') renderer.setGraphics(key); });
+  function activeGraphics() { return graphicsKey === 'auto' ? autoGraphics.key : graphicsKey; }
+  renderer.setGraphics(activeGraphics());
   let W = 0, H = 0;
   function resize() {
     W = window.innerWidth;
@@ -148,12 +153,17 @@
   function spawnRadius() { return SPAWN_SCREENS * Math.max(W, H) / currentZoom(); }
   function cullDist() { return spawnRadius() * CULL_MUL; }
   // How many times more area this screen populates than the reference phone screen (REF_SCREEN_SIDE) at the same zoom
-  function screenMul() {
+  function fullScreenMul() {
     const area = (side) => {
       const R = SPAWN_SCREENS * side / currentZoom();
       return 2 * R * Math.min(2 * R, WATER_DEPTH);
     };
     return clamp(area(Math.max(W, H)) / area(REF_SCREEN_SIDE), 1, SCREEN_MUL_MAX);
+  }
+  // The lower graphics presets keep only a share (crowd) of that extra population, never going below the phone's
+  function screenMul() {
+    const m = fullScreenMul();
+    return Math.max(1, 1 + (m - 1) * renderer.crowd);
   }
   // Big players see a wider area full of equally big fish, so thin the crowd out as the player grows
   function npcCount() { return Math.round(NPC_COUNT * clamp(1.2 - player.r / 800, 0.6, 1) * screenMul()); }
@@ -176,7 +186,8 @@
   // The count follows the spawn box (clipped to the water column), so the density stays the same at any zoom
   function foodCount() {
     const R = spawnRadius();
-    return Math.round(Math.min(FOOD_DENSITY * 2 * R * Math.min(2 * R, WATER_DEPTH), FOOD_MAX * screenMul()) * difficulty.food);
+    const crowdCut = screenMul() / fullScreenMul();
+    return Math.round(Math.min(FOOD_DENSITY * 2 * R * Math.min(2 * R, WATER_DEPTH), FOOD_MAX * fullScreenMul()) * crowdCut * difficulty.food);
   }
   function spawnFood() {
     const R = spawnRadius();
@@ -557,7 +568,7 @@
   const graphicsBtns = document.querySelectorAll('#menu .btn[data-graphics]');
   function setGraphics(key) {
     graphicsKey = key;
-    renderer.setGraphics(key);
+    renderer.setGraphics(activeGraphics());
     graphicsBtns.forEach((b) => b.classList.toggle('active', b.dataset.graphics === key));
     try { localStorage.setItem(GRAPHICS_KEY, key); } catch (err) { /* storage blocked */ }
   }
@@ -1386,17 +1397,27 @@
   function countFps(now) {
     fpsFrames++;
     if (now - fpsFrom < 500) return;
-    fpsEl.textContent = Math.round(fpsFrames * 1000 / (now - fpsFrom)) + ' FPS';
+    fpsEl.textContent = Math.round(fpsFrames * 1000 / (now - fpsFrom)) + ' FPS · ' +
+      (graphicsKey === 'auto' ? 'Auto ' : '') + GRAPHICS[activeGraphics()].label;
     fpsFrames = 0;
     fpsFrom = now;
   }
 
   const frameDue = frameLimiter();
+  let wasPlaying = false;
   function loop(now) {
     requestAnimationFrame(loop);
     if (!frameDue(now)) return;
-    const dt = Math.min((now - last) / 1000, 0.05);
+    const frameTime = (now - last) / 1000;
+    const dt = Math.min(frameTime, 0.05);
     last = now;
+    // Auto graphics measures only steady play: menus, pauses and dialogs don't count
+    const isPlaying = gameState === 'playing';
+    if (graphicsKey === 'auto' && isPlaying) {
+      if (!wasPlaying) autoGraphics.reset();
+      else autoGraphics.frame(frameTime);
+    }
+    wasPlaying = isPlaying;
     update(dt);
     updateRadarNeed();
     renderer.render(view);

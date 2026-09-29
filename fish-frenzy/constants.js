@@ -208,3 +208,12 @@ const GULL_SCARE_STAGE = 1;    // Small Fish
 const BIRD_LEAVE_CLIMB = 160;  // climb speed of a gull flying away
 const BIRD_LEAVE_SPEED = 1.8;  // ×horizontal speed while flying away
 const BIRD_LEAVE_H = 1400;     // a leaving gull is removed once this high above the surface
+
+// Auto graphics (quality.js): the preset is picked from the device, then stepped down / back up by the frame rate
+// measured while playing; the level it settles on is remembered per device
+const AUTO_GFX_KEY = 'fishFrenzy.autoGraphics';  // localStorage: the level Auto learned on this device
+const AUTO_GFX_WINDOW = 2;       // s of play frames averaged per check
+const AUTO_GFX_WARMUP = 0.6;     // s of frames skipped after a start, a resume or a level change
+const AUTO_GFX_LOW_FPS = 45;     // average below this → one level down
+const AUTO_GFX_HIGH_FPS = 57;    // average above this for AUTO_GFX_UP_WINDOWS checks in a row → one level up
+const AUTO_GFX_UP_WINDOWS = 4;

@@ -75,6 +75,7 @@ function drawWater(ctx, cam) {
   drawSunRays(ctx, cam, Math.max(0, sy));
 
   // drifting motes on a slower parallax layer
+  if (cam.gfx.flat) { ctx.restore(); return; }
   const P = 0.5, cell = 90;
   const ox = cam.x * P, oy = cam.y * P;
   const ix0 = Math.floor((ox - W / 2) / cell) - 1, ix1 = Math.floor((ox + W / 2) / cell) + 1;
@@ -500,10 +501,14 @@ function drawRock(ctx, cam, cx, s, seed) {
   const bottom = sceneToScreen(cam, cx, cam.floorY + s * 0.8);
   const hue = 20 + hash1(seed * 1.9) * 200;
   const light = 30 + hash1(seed * 2.3) * 10;
-  const g = ctx.createLinearGradient(0, top.y, 0, bottom.y);
-  g.addColorStop(0, `hsl(${hue},12%,${light + 12}%)`);
-  g.addColorStop(1, `hsl(${hue},14%,${light - 14}%)`);
-  ctx.fillStyle = g;
+  if (cam.gfx.flat) {
+    ctx.fillStyle = `hsl(${hue},13%,${light}%)`;
+  } else {
+    const g = ctx.createLinearGradient(0, top.y, 0, bottom.y);
+    g.addColorStop(0, `hsl(${hue},12%,${light + 12}%)`);
+    g.addColorStop(1, `hsl(${hue},14%,${light - 14}%)`);
+    ctx.fillStyle = g;
+  }
   ctx.beginPath();
   const m0x = (pts[7].x + pts[0].x) / 2, m0y = (pts[7].y + pts[0].y) / 2;
   ctx.moveTo(m0x, m0y);
@@ -569,7 +574,7 @@ function drawSeabed(ctx, cam) {
   const i0 = Math.floor(wxMin / DECOR_CELL), i1 = Math.floor(wxMax / DECOR_CELL);
 
   // seaweed grows behind everything else on the bed
-  for (let i = i0; i <= i1; i++) {
+  for (let i = i0; i <= i1 && cam.gfx.seaweed; i++) {
     if (hash1(i * 1.37) >= 0.5) continue;
     const count = 1 + Math.floor(hash1(i * 7.7) * 3);
     for (let b = 0; b < count; b++) {
@@ -599,7 +604,7 @@ function drawSeabed(ctx, cam) {
 
     ctx.strokeStyle = 'rgba(255,255,255,0.07)';
     ctx.lineWidth = 2;
-    for (let k = 1; k < 6; k++) {
+    for (let k = 1; k < 6 && !cam.gfx.flat; k++) {
       const yy = floorY + 18 * z * k;
       if (yy > H) break;
       ctx.beginPath();
