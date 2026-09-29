@@ -80,11 +80,13 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── AGENTS.md                   # instructions for AI coding agents
 ├── CLAUDE.md                   # -> points to AGENTS.md
 ├── flight-simulator/
+│   ├── SPEC.md                 # spec of this game
 │   ├── index.html              # the game
 │   ├── README.md / README_RU.md
 │   ├── icon.svg
 │   └── screenshot.png
 ├── fish-frenzy/
+│   ├── SPEC.md                 # spec of this game
 │   ├── index.html              # markup
 │   ├── styles.css, *.js        # styles and game code, split by concern
 │   ├── README.md / README_RU.md

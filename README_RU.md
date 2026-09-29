@@ -80,11 +80,13 @@ npx serve .        # или просто открой любой index.html в �
 ├── AGENTS.md                   # инструкции для AI-агентов
 ├── CLAUDE.md                   # -> ссылается на AGENTS.md
 ├── flight-simulator/
+│   ├── SPEC.md                 # спецификация этой игры
 │   ├── index.html              # сама игра
 │   ├── README.md / README_RU.md
 │   ├── icon.svg
 │   └── screenshot.png
 ├── fish-frenzy/
+│   ├── SPEC.md                 # спецификация этой игры
 │   ├── index.html              # разметка
 │   ├── styles.css, *.js        # стили и код игры, разбитый по файлам
 │   ├── README.md / README_RU.md

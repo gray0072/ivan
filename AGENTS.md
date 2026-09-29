@@ -4,10 +4,11 @@ Instructions for AI coding agents working in this repository.
 
 ## What this repo is
 
-A gallery of small, self-contained browser games and experiments, deployed as a static site to GitHub Pages. There is no build tool, no package manager, and no framework — every project is a folder with an `index.html`, its own CSS/JS files, an icon, a screenshot and three READMEs (English, Russian, Swedish). See `SPEC.md` for the full technical spec.
+A gallery of small, self-contained browser games and experiments, deployed as a static site to GitHub Pages. There is no build tool, no package manager, and no framework — every project is a folder with an `index.html`, its own CSS/JS files, an icon, a screenshot and three READMEs (English, Russian, Swedish). See the root `SPEC.md` for repo-wide conventions and each project's own `<name>/SPEC.md` for that game.
 
 ## Ground rules
 
+- **Every game has its own spec, and the spec comes first.** Each project folder contains a `SPEC.md` describing that game (idea, screens, rules, controls incl. touch, difficulty levels, cheats, files) — it is the source of truth for the game. Game-specific details never go into the root `SPEC.md`, which only lists the projects with a one-line summary and a link. When creating a new game, write its `SPEC.md` first and agree on it with the user, then implement the game. When changing a game, update its `SPEC.md` in the same change.
 - **English is the primary language.** All in-game text (titles, HUD labels, instructions, buttons, messages) and code comments must be written in English. `README.md` is English; `README_RU.md` (Russian) and `README_SV.md` (Swedish) are translations for players, but the games themselves are English-only.
 - **No build step.** Don't introduce a bundler, framework, or `package.json` unless the user explicitly asks for one for a specific new project. Everything must keep working by opening `index.html` directly or serving the folder as static files.
 - **Self-contained projects.** Each project folder should not depend on files outside itself (aside from the shared conventions below). It must work if copied out of the repo on its own.
@@ -40,6 +41,7 @@ Each project folder must contain:
 
 ```
 <name>/
+├── SPEC.md           # the game's own spec (written first, kept in sync with the code)
 ├── index.html        # markup only, links to the CSS/JS files below (versioned query strings)
 ├── styles.css         # all CSS for the project
 ├── constants.js       # game tuning constants (loaded before the game logic)
@@ -55,14 +57,16 @@ Each project folder must contain:
 
 ## When adding a new project
 
-1. Create the project folder and the files above (including `icon.svg`).
-2. Add a card to the root `index.html` gallery page (copy the existing `.card` block, update the image, icon, title, link, and description).
-3. Add a card (screenshot, icon, description, Play/Source links) to the games table in all three root READMEs (`README.md`, `README_RU.md`, `README_SV.md`).
-4. Update the `Projects` and `Project structure` sections of `SPEC.md`.
-5. Do not touch the GitHub Pages deployment setup (`Settings → Pages → Deploy from a branch → main / (root)`) — it already picks up every new file automatically, no workflow or build config needed.
+1. Create the project folder and write its `SPEC.md` first; agree on it with the user before writing game code.
+2. Create the rest of the files above (including `icon.svg`), implementing the spec.
+3. Add a card to the root `index.html` gallery page (copy the existing `.card` block, update the image, icon, title, link, and description).
+4. Add a card (screenshot, icon, description, Play/Source links) to the games table in all three root READMEs (`README.md`, `README_RU.md`, `README_SV.md`).
+5. Update the `Projects` (one-line summary + link to the game's `SPEC.md`) and `Project structure` sections of the root `SPEC.md`.
+6. Do not touch the GitHub Pages deployment setup (`Settings → Pages → Deploy from a branch → main / (root)`) — it already picks up every new file automatically, no workflow or build config needed.
 
 ## Docs to keep in sync
 
 - `README.md` / `README_RU.md` / `README_SV.md` (root) — end-user facing, gallery index.
-- `SPEC.md` — authoritative dev/agent spec, source of truth for structure and conventions.
+- `SPEC.md` (root) — authoritative dev/agent spec, source of truth for repo structure and conventions.
+- `<name>/SPEC.md` — source of truth for that game; update it together with the game's code.
 - `CLAUDE.md` — do not duplicate instructions there; it only points here.
