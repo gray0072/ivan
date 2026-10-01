@@ -283,6 +283,39 @@ button.cell[disabled] { cursor: default; }
 .tabs { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.6rem; }
 .tab { padding: 0.35rem 1rem; border-radius: 0.8rem 0.8rem 0 0; background: rgba(255,255,255,0.2); font-weight: 800; }
 .tab.on { background: #fff; color: var(--ink); }
+.tabUse {
+  display: none;
+  margin-left: 0.4rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: var(--good);
+  color: #fff;
+  font-size: 0.75rem;
+  vertical-align: 0.1rem;
+  align-items: center;
+  justify-content: center;
+}
+.tab.used .tabUse { display: inline-flex; }
+.tabPrice { margin-left: 0.4rem; font-size: 0.8rem; color: #e0a800; }
+.tab:not(.on) .tabPrice { color: var(--accent); }
+
+/* Price of the current settings: big coins per task and the steps that make it up. */
+.priceLine { display: flex; align-items: center; gap: 0.4rem 0.9rem; flex-wrap: wrap; }
+.priceBig {
+  padding: 0.25rem 0.9rem;
+  border-radius: 1rem;
+  background: var(--accent);
+  color: var(--ink);
+  font-size: 1.4rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 0.2rem 0 #c79a00;
+}
+.priceBig small { font-size: 0.75rem; }
+.priceSteps { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.pStep { background: rgba(255,255,255,0.12); border-radius: 0.7rem; padding: 0.15rem 0.6rem; font-size: 0.85rem; white-space: nowrap; }
+.pStep b { color: var(--accent); }
 .soon { color: #bdb4e6; font-size: 0.8rem; }
 
 .setBody {
@@ -295,6 +328,11 @@ button.cell[disabled] { cursor: default; }
   flex-direction: column;
   gap: 0.8rem;
 }
+.pane { display: flex; flex-direction: column; gap: 0.8rem; }
+.pane.unused > :not(.useLine) { opacity: 0.45; }
+.useLine { display: flex; align-items: center; gap: 0.4rem 1rem; flex-wrap: wrap; }
+.useLine .note { margin-top: 0; }
+.commonLine { border-top: 0.1rem solid rgba(255,255,255,0.15); padding-top: 0.8rem; }
 .setLine { display: flex; gap: 2.4rem; flex-wrap: wrap; }
 .setBlock { display: flex; flex-direction: column; align-items: flex-start; }
 .setBlock.off { opacity: 0.45; }
@@ -403,6 +441,20 @@ button.cell[disabled] { cursor: default; }
 
 .example { margin: 0; color: #d8d0ff; }
 .example b { color: #fff; font-size: 1.15rem; }
+.scaleExample { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+.scaleMini {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 26rem;
+  max-width: 100%;
+  padding: 0.3rem 0.8rem 0.3rem 0.4rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: var(--ink);
+}
+.scaleMini .scaleSvg { flex: 1 1 0; min-width: 0; }
+.scaleMini b { color: var(--blue); white-space: nowrap; font-size: 1.15rem; }
 
 /* ---------- lesson ---------- */
 
@@ -439,6 +491,7 @@ button.cell[disabled] { cursor: default; }
   background: linear-gradient(180deg, #332784, #241c5e);
   box-shadow: -0.3rem 0 1rem rgba(0,0,0,0.3);
   min-height: 0;
+  min-width: 0;
 }
 .lsTop { display: flex; align-items: center; gap: 0.6rem; font-weight: 800; font-size: 1.1rem; }
 #lsProc { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -451,12 +504,14 @@ button.cell[disabled] { cursor: default; }
 .lsStats .bad { opacity: 0.5; }
 .lsStats .bad.some { opacity: 1; }
 .lsStats .bad b { color: #ff9aac; }
+.lsStats .earned b { color: var(--accent); }
 .lsStats .boss { margin-left: auto; color: #ffb3c0; font-weight: 800; }
 .lsStats .boss.active { color: #fff; background: #c0304a; padding: 0 0.7rem; border-radius: 1rem; animation: pulse 1.2s infinite; }
 #readyNote.boss { color: #ffd23f; font-size: 4rem; text-shadow: 0 0 1rem #c0304a, 0 0.2rem 0.6rem rgba(0,0,0,0.6); white-space: nowrap; text-align: center; }
 #readyNote small { display: block; font-size: 1.5rem; color: #fff; }
 
 #taskCard {
+  position: relative;
   background: #fff;
   color: var(--ink);
   border-radius: 1.4rem;
@@ -465,9 +520,12 @@ button.cell[disabled] { cursor: default; }
   box-shadow: 0 0.35rem 0 rgba(0,0,0,0.25);
   margin-top: 0.4rem;
 }
+#taskPrice { position: absolute; top: 0.45rem; right: 0.7rem; font-size: 0.85rem; font-weight: 800; color: #c79a00; }
 #taskText { font-size: 3.2rem; font-weight: 800; white-space: nowrap; line-height: 1.2; }
 #taskCard[data-len="m"] #taskText { font-size: 2.4rem; }
 #taskCard[data-len="s"] #taskText { font-size: 1.8rem; }
+.scaleSvg { display: block; width: 100%; height: auto; }
+#taskScale .scaleSvg { max-width: 42rem; margin: 0 auto; }
 .ansLine { font-size: 2.6rem; font-weight: 800; color: var(--muted); }
 #answerBox { color: var(--blue); display: inline-block; min-width: 2ch; }
 #answerBox.empty { color: #c5c0e0; }
@@ -479,7 +537,9 @@ button.cell[disabled] { cursor: default; }
 #taskCard.bad { background: #ffe0e5; box-shadow: 0 0.35rem 0 var(--bad); animation: shake 0.35s; }
 @keyframes popIn { from { transform: scale(0.85); opacity: 0.3; } to { transform: scale(1); opacity: 1; } }
 
-#wrongNote { min-height: 1.6rem; text-align: center; font-size: 1.2rem; font-weight: 800; color: #ffb3c0; }
+#wrongNote { min-height: 1.6rem; text-align: center; font-size: 1.2rem; font-weight: 800; color: #ffb3c0; white-space: pre-line; }
+/* Scales explain a mistake in two lines; keep room for both so the answers don't jump. */
+.twoLineNote #wrongNote { min-height: 2.9rem; font-size: 1.05rem; line-height: 1.35; }
 
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
 .choice {
@@ -675,8 +735,10 @@ button.cell[disabled] { cursor: default; }
   #taskText { font-size: 2.4rem; }
   #taskCard[data-len="m"] #taskText { font-size: 1.9rem; }
   #taskCard[data-len="s"] #taskText { font-size: 1.5rem; }
+  #taskScale .scaleSvg { max-width: 28rem; }
   .ansLine { font-size: 1.9rem; }
   #wrongNote { min-height: 1.2rem; font-size: 1rem; }
+  .twoLineNote #wrongNote { min-height: 2.4rem; font-size: 0.9rem; line-height: 1.3; }
   .choices { gap: 0.5rem; }
   .choice { font-size: 1.7rem; padding: 0.35rem 0.4rem; }
   .choice .key { width: 1.1rem; height: 1.1rem; font-size: 0.7rem; top: 0.25rem; left: 0.35rem; }

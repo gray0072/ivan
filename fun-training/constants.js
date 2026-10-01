@@ -27,13 +27,13 @@ const MIN_TASK_TIME = 3;      // s, the process never fails faster than this
 
 const OPERAND_COUNTS = [2, 3, 4];
 
-// Speeds: seconds until the process fails = expected task time × mul.
+// Speeds: seconds until the process fails = expected task time × mul; price = the task's price multiplier.
 const SPEEDS = [
-  { id: 'vslow', name: 'Very slow', icon: '🐌', mul: 3.0 },
-  { id: 'slow', name: 'Slow', icon: '🐢', mul: 2.2 },
-  { id: 'medium', name: 'Medium', icon: '🐇', mul: 1.6 },
-  { id: 'fast', name: 'Fast', icon: '🐆', mul: 1.2 },
-  { id: 'vfast', name: 'Very fast', icon: '🚀', mul: 0.9 },
+  { id: 'vslow', name: 'Very slow', icon: '🐌', mul: 3.0, price: 0.5 },
+  { id: 'slow', name: 'Slow', icon: '🐢', mul: 2.2, price: 0.75 },
+  { id: 'medium', name: 'Medium', icon: '🐇', mul: 1.6, price: 1 },
+  { id: 'fast', name: 'Fast', icon: '🐆', mul: 1.2, price: 1.5 },
+  { id: 'vfast', name: 'Very fast', icon: '🚀', mul: 0.9, price: 2 },
 ];
 
 const ANSWER_MODES = [
@@ -44,9 +44,32 @@ const CHOICE_COUNT = 4;          // answer buttons in choice mode
 const TYPE_MAX_DIGITS = 6;       // longest typed answer
 const LESSON_LENGTHS = [10, 15, 20]; // correct answers needed to win a lesson
 
+// Task types; a lesson picks each task's type at random from the player's enabled ones.
+const TASK_TYPES = [
+  { id: 'math', name: 'Math', icon: '🔢' },
+  { id: 'scale', name: 'Scales', icon: '📏' },
+];
+
+// Scales: read the number a pointer shows on a ruler-like scale.
+const SCALE_PARTS = [2, 4, 5, 10];             // choosable parts (minor divisions) between two big ticks
+const SCALE_LIMITS = [20, 100, 1000, 10000];   // the biggest number on the scale
+const SCALE_LABELS = [
+  { id: 'all', name: 'Every big tick' },
+  { id: 'some', name: 'Every other one' },     // harder: the big ticks between two numbers are blank
+];
+// Big-tick steps the generator may use (each must split evenly into the chosen parts).
+const SCALE_MAJORS = [2, 4, 5, 10, 20, 25, 40, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000];
+const SCALE_MIN_MAJOR = 1 / 200;  // smallest big-tick step as a share of the limit (no 1-steps up to 10 000)
+const SCALE_BIG_TICKS = { all: 3, some: 4 }; // big-tick intervals shown (2 if they don't fit the limit)
+// Expected seconds to work out one part and count to the pointer, by parts (before the answer time).
+const SCALE_TIME = { 2: 3, 4: 4.5, 5: 4.5, 10: 5 };
+const SCALE_LIMIT_TIME = [0, 1, 2.5, 4];  // extra s for bigger numbers, index matches SCALE_LIMITS
+const SCALE_SOME_TIME = 2.5;              // extra s when only every other big tick has a number
+
 const DEFAULT_SETTINGS = {
   answerMode: 'choice',
   lessonLength: 10,
+  types: ['math'],
   math: {
     ops: ['add'],
     operands: 2,
@@ -54,17 +77,41 @@ const DEFAULT_SETTINGS = {
     limits: { add: 20, sub: 20, mul: 100, div: 100 },
     speed: 'medium',
   },
+  scale: {
+    parts: [4, 5, 10],
+    limit: 100,
+    labels: 'all',
+    speed: 'medium',
+  },
 };
 
-// Coins per task of a won lesson, by the lesson's mistakes: the first rule with mistakes <= maxMistakes.
+// Task price: coins for each correct answer, computed from the task type's settings.
+// Points are added up (the hardest choice + one for each extra complication), then multiplied, rounded, at least 1.
+// Math points of an operation by its limit (index matches LIMITS): every step up adds at least one coin.
+const OP_PRICE = {
+  add: [2, 3, 4, 5, 6, 7, 8, 9],
+  sub: [2, 3, 4, 5, 7, 8, 9, 10],
+  mul: [2, 3, 4, 5, 7, 8, 10, 12],
+  div: [2, 3, 4, 6, 7, 9, 11, 13],
+};
+const PRICE_EXTRA_OP = 1;                  // + for each enabled operation beyond the hardest one
+const PRICE_MIX = 2;                       // + when one task mixes operations
+const PRICE_OPERANDS = { 2: 1, 3: 1.75, 4: 2.5 }; // × by numbers in a task (2 and 3 operators instead of 1)
+const SCALE_LIMIT_PRICE = [1, 2, 3, 4];    // Scales points by "numbers up to" (index matches SCALE_LIMITS)
+const SCALE_PARTS_PRICE = { 2: 1, 4: 2, 5: 2, 10: 3 }; // + for the hardest parts choice
+const SCALE_SOME_PRICE = 2;                // + when only every other big tick has a number
+const PRICE_TYPED = 1.25;                  // × when answers are typed (no guessing among four)
+
+// Share of the earned coins a won lesson pays, by its mistakes: the first rule with mistakes <= maxMistakes.
+// rate (0–3) also colours the step on the track; share = rate / MAX_RATE.
 const COIN_RULES = [
-  { maxMistakes: 1, perTask: 3 },
-  { maxMistakes: 3, perTask: 2 },
-  { maxMistakes: 5, perTask: 1 },
-  { maxMistakes: Infinity, perTask: 0 },
+  { maxMistakes: 1, rate: 3 },
+  { maxMistakes: 3, rate: 2 },
+  { maxMistakes: 5, rate: 1 },
+  { maxMistakes: Infinity, rate: 0 },
 ];
 
-const MAX_RATE = 3;     // best coins per task (COIN_RULES[0]); steps done below it can be replayed for the rest
+const MAX_RATE = 3;     // the best rate (COIN_RULES[0]); steps done below it can be replayed for more coins
 const TRACK_LEN = 10;   // steps per star
 const BOSS_EVERY = 5;   // every Nth step is a boss step
 const BOSS_HITS = 3;    // correct answers the boss needs (its last task)
@@ -128,6 +175,7 @@ const ZOMBIE_START_X = 1150;    // design x of a new zombie (f = 1)
 const ZOMBIE_RISE_TIME = 0.5;   // s a new zombie climbs out of the ground
 const STONE_FLIGHT_TIME = 0.5;  // s a stone flies
 const ZOMBIE_FALL_TIME = 0.9;   // s a hit zombie falls and fades
+const ZOMBIE_NEXT_DELAY = 0.35; // s after the stone lands before the next zombie starts rising
 
 // Railway process.
 const RAIL_AHEAD = 680;         // design px of rails in front of the train at f = 1

@@ -15,6 +15,7 @@
   let paused = false;
   let lastResult = null;
   let newAvatar = AVATARS[0];
+  let setTab = 'math';    // task type shown in the settings
 
   // ---------- helpers ----------
 
@@ -69,7 +70,7 @@
       else {
         cls.push('partial', 'r' + rate);
         inner = '↻';
-        title += ` — replay with 0–1 mistakes for ${MAX_RATE - rate} more coins per task`;
+        title += ' — replay with 0–1 mistakes for more coins';
       }
     } else if (n === steps + 1) cls.push('current');
     else cls.push('future');
@@ -141,15 +142,33 @@
 
   function limitText(v) { return 'up to ' + Tasks.fmt(v); }
 
+  const speedText = id => { const sp = SPEEDS.find(s => s.id === id); return `${sp.icon} ${sp.name}`; };
+
   function summary(st) {
+    const parts = st.types.map(type => `${typeSummary(st, type)} · <b>🪙 ${Tasks.price(st, type).coins}</b> per task`);
+    const am = ANSWER_MODES.find(a => a.id === st.answerMode);
+    return parts.join(' &nbsp;|&nbsp; ') + ` · ${am.icon} ${am.name} · ${st.lessonLength} tasks`;
+  }
+
+  function typeSummary(st, type) {
+    if (type === 'scale') {
+      const sc = st.scale;
+      return `📏 Scales ${limitText(sc.limit)} · <b>${sc.parts.join(', ')}</b> parts` +
+        `${sc.labels === 'some' ? ' · every other number' : ''} · ${speedText(sc.speed)}`;
+    }
     const m = st.math;
     const ops = m.ops.map(id => {
       const op = OPERATIONS.find(o => o.id === id);
       return `<b>${op.sign}</b> ${limitText(m.limits[id])}`;
     }).join(', ');
-    const sp = SPEEDS.find(s => s.id === m.speed);
-    const am = ANSWER_MODES.find(a => a.id === st.answerMode);
-    return `🔢 ${ops} · ${m.operands} numbers${m.mix && m.ops.length > 1 && m.operands > 2 ? ' · mixed' : ''} · ${sp.icon} ${sp.name} · ${am.icon} ${am.name} · ${st.lessonLength} tasks`;
+    return `🔢 ${ops} · ${m.operands} numbers${m.mix && m.ops.length > 1 && m.operands > 2 ? ' · mixed' : ''} · ${speedText(m.speed)}`;
+  }
+
+  // Price of a task type's settings: the coins per task and the steps that make them up.
+  function priceHTML(st, type) {
+    const p = Tasks.price(st, type);
+    const steps = p.steps.map(s => `<span class="pStep">${s.label} <b>${s.add ? '+' + s.add : '×' + s.mul}</b></span>`).join('');
+    return { big: `🪙 ${p.coins} <small>per task</small>`, steps };
   }
 
   function goFullscreen() {
@@ -275,17 +294,46 @@
 
   // ---------- settings ----------
 
+  function shake(b) {
+    b.classList.remove('shake');
+    void b.offsetWidth;
+    b.classList.add('shake');
+  }
+
+  // onPick may return false to refuse the change (the button shakes).
   function segment(container, items, isOn, onPick) {
     container.innerHTML = '';
     for (const it of items) {
       const b = el('button', 'segBtn', it.html);
-      b.addEventListener('click', () => { onPick(it.value); refreshSettings(); });
+      b.addEventListener('click', () => { if (onPick(it.value) === false) shake(b); refreshSettings(); });
       b._isOn = () => isOn(it.value);
       container.append(b);
     }
   }
 
+  const speedItems = () => SPEEDS.map(s => ({ value: s.id, html: `<span class="spIcon">${s.icon}</span><span class="spName">${s.name}</span>` }));
+
   function buildSettings() {
+    // Task type tabs and each pane's "use in lessons" switch.
+    const tabs = $('typeTabs');
+    for (const tt of TASK_TYPES) {
+      const t = el('button', 'tab', `${tt.icon} ${tt.name}<span class="tabPrice"></span><span class="tabUse">✓</span>`);
+      t.dataset.type = tt.id;
+      t.addEventListener('click', () => { setTab = tt.id; refreshSettings(); });
+      tabs.append(t);
+    }
+    document.querySelectorAll('#screenSettings .pane').forEach(pane => {
+      const sw = pane.querySelector('.useSwitch');
+      sw.addEventListener('click', () => {
+        const st = current.settings, type = pane.dataset.type;
+        if (st.types.includes(type)) {
+          if (st.types.length === 1) { shake(sw); return; }
+          st.types = st.types.filter(x => x !== type);
+        } else st.types = TASK_TYPES.map(x => x.id).filter(id => id === type || st.types.includes(id));
+        saveSettings();
+      });
+    });
+
     const ops = $('opsRow');
     ops.innerHTML = '';
     for (const op of OPERATIONS) {
@@ -295,7 +343,7 @@
       t.addEventListener('click', () => {
         const m = current.settings.math;
         if (m.ops.includes(op.id)) {
-          if (m.ops.length === 1) { t.classList.remove('shake'); void t.offsetWidth; t.classList.add('shake'); return; }
+          if (m.ops.length === 1) { shake(t); return; }
           m.ops = m.ops.filter(x => x !== op.id);
         } else m.ops = OPERATIONS.map(o => o.id).filter(id => id === op.id || m.ops.includes(id));
         saveSettings();
@@ -327,8 +375,25 @@
     }
     segment($('operandSeg'), OPERAND_COUNTS.map(n => ({ value: n, html: String(n) })),
       v => current.settings.math.operands === v, v => { current.settings.math.operands = v; saveSettings(false); });
-    segment($('speedSeg'), SPEEDS.map(s => ({ value: s.id, html: `<span class="spIcon">${s.icon}</span><span class="spName">${s.name}</span>` })),
+    segment($('speedSeg'), speedItems(),
       v => current.settings.math.speed === v, v => { current.settings.math.speed = v; saveSettings(false); });
+
+    // Scales.
+    const sc = () => current.settings.scale;
+    segment($('partsSeg'), SCALE_PARTS.map(n => ({ value: n, html: String(n) })),
+      v => sc().parts.includes(v), v => {
+        if (sc().parts.includes(v)) {
+          if (sc().parts.length === 1) return false;
+          sc().parts = sc().parts.filter(x => x !== v);
+        } else sc().parts = SCALE_PARTS.filter(n => n === v || sc().parts.includes(n));
+        saveSettings(false);
+      });
+    segment($('scaleLimitSeg'), SCALE_LIMITS.map(n => ({ value: n, html: Tasks.fmt(n) })),
+      v => sc().limit === v, v => { sc().limit = v; saveSettings(false); });
+    segment($('labelsSeg'), SCALE_LABELS.map(l => ({ value: l.id, html: l.name })),
+      v => sc().labels === v, v => { sc().labels = v; saveSettings(false); });
+    segment($('scaleSpeedSeg'), speedItems(),
+      v => sc().speed === v, v => { sc().speed = v; saveSettings(false); });
     segment($('answerSeg'), ANSWER_MODES.map(a => ({ value: a.id, html: `${a.icon} ${a.name}` })),
       v => current.settings.answerMode === v, v => { current.settings.answerMode = v; saveSettings(false); });
     segment($('lengthSeg'), LESSON_LENGTHS.map(n => ({ value: n, html: String(n) })),
@@ -361,10 +426,34 @@
     $('mixBtn').classList.toggle('on', mixOn);
     $('mixBtn').querySelector('.switchLabel').textContent = mixOn ? 'On' : 'Off';
     $('mixNote').textContent = !multi ? 'Pick two or more operations' : m.operands === 2 ? 'Works with 3–4 numbers' : m.mix ? 'One task can mix them' : 'One operation per task';
-    const secs = Tasks.typicalFailTime(m, st.answerMode);
-    $('speedHint').textContent = `· about ${Math.round(secs)} s per task`;
-    const ex = Tasks.make(m);
-    $('exampleText').textContent = ex.text + ' = ' + Tasks.fmt(ex.answer);
+    $('typeTabs').querySelectorAll('.tab').forEach(t => {
+      t.querySelector('.tabPrice').textContent = '🪙' + Tasks.price(st, t.dataset.type).coins;
+      t.classList.toggle('on', t.dataset.type === setTab);
+      t.classList.toggle('used', st.types.includes(t.dataset.type));
+    });
+    document.querySelectorAll('#screenSettings .pane').forEach(pane => {
+      const type = pane.dataset.type, used = st.types.includes(type);
+      pane.hidden = type !== setTab;
+      pane.classList.toggle('unused', !used);
+      const sw = pane.querySelector('.useSwitch');
+      sw.classList.toggle('on', used);
+      sw.setAttribute('aria-checked', used);
+      sw.querySelector('.switchLabel').textContent = used ? 'Used in lessons' : 'Not used';
+      const pr = priceHTML(st, type);
+      pane.querySelector('.priceBig').innerHTML = pr.big;
+      pane.querySelector('.priceSteps').innerHTML = pr.steps;
+      pane.querySelector('.useNote').textContent = !used ? 'Switch on to get these tasks in lessons'
+        : st.types.length > 1 ? 'Mixed with the other task types' : 'The only task type — switch another one on to mix';
+    });
+    if (setTab === 'math') {
+      $('speedHint').textContent = `· about ${Math.round(Tasks.typicalFailTime(st, 'math'))} s per task`;
+      const ex = Tasks.make(st, 'math');
+      $('exampleText').textContent = ex.solution;
+    } else {
+      $('scaleSpeedHint').textContent = `· about ${Math.round(Tasks.typicalFailTime(st, 'scale'))} s per task`;
+      const ex = Tasks.make(st, 'scale');
+      $('scaleExample').innerHTML = ScaleTasks.svg(ex) + `<b>▼ = ${Tasks.fmt(ex.answer)}</b>`;
+    }
   }
 
   function openSettings() {
@@ -407,20 +496,25 @@
     lastResult = r;
     const p = current;
     const proc = r.proc;
-    let coins = 0, perTask = 0, star = -1, rule = '';
+    let coins = 0, rate = 0, star = -1, rule = '';
     const replay = r.step <= p.progress[proc.id];
     if (r.won) {
-      perTask = COIN_RULES.find(c => r.mistakes <= c.maxMistakes).perTask;
-      const before = replay ? p.rates[proc.id][r.step - 1] : 0;
-      coins = Math.max(0, perTask - before) * r.total;
-      rule = !replay ? `${perTask} per task`
-        : perTask > before ? `${before} → ${perTask} per task`
-        : `already earned ${before} per task`;
+      // The answers' prices, cut by the mistakes; a replay pays only what beats the step's best.
+      rate = COIN_RULES.find(c => r.mistakes <= c.maxMistakes).rate;
+      const got = Math.round(r.earned * rate / MAX_RATE);
+      const before = replay ? p.best[proc.id][r.step - 1] : 0;
+      coins = Math.max(0, got - before);
+      rule = `${r.earned} for the answers` +
+        (rate < MAX_RATE ? ` × ${Math.round(100 * rate / MAX_RATE)}% for ${r.mistakes} mistakes` : '') +
+        (!replay ? '' : got > before ? ` · ${got} − ${before} from before` : ` · you got ${before} here before`);
       if (!r.cheated) {
-        if (replay) p.rates[proc.id][r.step - 1] = Math.max(before, perTask);
-        else {
+        if (replay) {
+          p.rates[proc.id][r.step - 1] = Math.max(p.rates[proc.id][r.step - 1], rate);
+          p.best[proc.id][r.step - 1] = Math.max(before, got);
+        } else {
           p.progress[proc.id]++;
-          p.rates[proc.id].push(perTask);
+          p.rates[proc.id].push(rate);
+          p.best[proc.id].push(got);
           if (p.progress[proc.id] % TRACK_LEN === 0) star = p.progress[proc.id] / TRACK_LEN - 1;
         }
         p.coins += coins;
@@ -435,7 +529,8 @@
     $('resTitle').textContent = r.won ? proc.winTitle : proc.loseTitle;
     $('resText').textContent = r.won
       ? `Step ${r.step} ${replay ? 'replayed' : 'done'}! ${r.mistakes === 0 ? 'No mistakes — perfect!' : r.mistakes === 1 ? '1 mistake.' : r.mistakes + ' mistakes.'}` +
-        (perTask < MAX_RATE ? ' Replay it with 0–1 mistakes for more coins.' : '')
+        (rate < MAX_RATE ? ' Replay it with 0–1 mistakes for more coins.'
+          : replay && !coins ? ' Harder settings or a faster speed pay more per task.' : '')
       : r.bossLeft > 0 ? `The boss needed ${r.bossLeft} more ${r.bossLeft === 1 ? 'hit' : 'hits'}. Try again — you can do it!`
       : `You solved ${r.done} of ${r.total}. Try again — you can do it!`;
     $('resCoins').hidden = !r.won;

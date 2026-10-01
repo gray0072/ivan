@@ -17,9 +17,22 @@ const Store = (() => {
       const v = m.limits && m.limits[id];
       limits[id] = oneOf(v, LIMITS, d.math.limits[id]);
     }
+    const typeIds = TASK_TYPES.map(t => t.id);
+    let types = Array.isArray(s.types) ? typeIds.filter(id => s.types.includes(id)) : [];
+    if (!types.length) types = d.types.slice();
+    const sc = s.scale && typeof s.scale === 'object' ? s.scale : {};
+    let parts = Array.isArray(sc.parts) ? SCALE_PARTS.filter(n => sc.parts.includes(n)) : [];
+    if (!parts.length) parts = d.scale.parts.slice();
     return {
       answerMode: oneOf(s.answerMode, ANSWER_MODES.map(a => a.id), d.answerMode),
       lessonLength: oneOf(s.lessonLength, LESSON_LENGTHS, d.lessonLength),
+      types,
+      scale: {
+        parts,
+        limit: oneOf(sc.limit, SCALE_LIMITS, d.scale.limit),
+        labels: oneOf(sc.labels, SCALE_LABELS.map(x => x.id), d.scale.labels),
+        speed: oneOf(sc.speed, SPEEDS.map(x => x.id), d.scale.speed),
+      },
       math: {
         ops: opIds.filter(id => ops.includes(id)),
         operands: oneOf(m.operands, OPERAND_COUNTS, d.math.operands),
@@ -33,14 +46,19 @@ const Store = (() => {
   function cleanPlayer(p) {
     const progress = {};
     const src = p.progress && typeof p.progress === 'object' ? p.progress : {};
-    // rates[proc][i] = best coins per task earned on step i + 1 (older saves: every step counts as perfect).
-    const rates = {};
+    // rates[proc][i] = best rate (0–3, by mistakes) of step i + 1 (older saves: every step counts as perfect);
+    // best[proc][i] = most coins earned on it, a replay pays only what it beats (older saves: rate × lesson length).
+    const rates = {}, best = {};
     const rsrc = p.rates && typeof p.rates === 'object' ? p.rates : {};
+    const bsrc = p.best && typeof p.best === 'object' ? p.best : {};
+    const settings = cleanSettings(p.settings);
     for (const proc of PROCESSES) {
       const n = Math.max(0, Math.floor(Number(src[proc.id]) || 0));
       progress[proc.id] = n;
       const r = Array.isArray(rsrc[proc.id]) ? rsrc[proc.id] : [];
       rates[proc.id] = Array.from({ length: n }, (_, i) => (r[i] >= 0 && r[i] <= MAX_RATE ? Math.floor(r[i]) : MAX_RATE));
+      const b = Array.isArray(bsrc[proc.id]) ? bsrc[proc.id] : [];
+      best[proc.id] = Array.from({ length: n }, (_, i) => (b[i] >= 0 ? Math.floor(b[i]) : rates[proc.id][i] * settings.lessonLength));
     }
     return {
       id: String(p.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
@@ -49,7 +67,8 @@ const Store = (() => {
       coins: Math.max(0, Math.floor(Number(p.coins) || 0)),
       progress,
       rates,
-      settings: cleanSettings(p.settings),
+      best,
+      settings,
     };
   }
 

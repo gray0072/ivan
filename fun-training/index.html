@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#2b2170">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 
@@ -54,29 +54,70 @@
 <section id="screenSettings" class="screen" hidden>
   <header class="setHead">
     <h1>⚙ Settings <span id="setPlayer" class="muted"></span></h1>
-    <div class="tabs"><button class="tab on" id="tabMath">🔢 Math</button><span class="soon">More task types coming soon</span></div>
+    <div id="typeTabs" class="tabs"></div>
   </header>
   <div class="setBody">
-    <div class="setBlock">
-      <h3>Operations and number limits</h3>
-      <div id="opsRow" class="opsRow"></div>
-    </div>
-    <div class="setLine">
+    <div id="paneMath" class="pane" data-type="math">
+      <div class="useLine">
+        <button class="switch useSwitch" role="switch" aria-checked="false"><span class="knob"></span><span class="switchLabel">Off</span></button>
+        <span class="note useNote"></span>
+      </div>
       <div class="setBlock">
-        <h3>Numbers in a task</h3>
-        <div id="operandSeg" class="seg"></div>
+        <h3>Operations and number limits</h3>
+        <div id="opsRow" class="opsRow"></div>
       </div>
-      <div class="setBlock" id="mixBlock">
-        <h3>Mix operations</h3>
-        <button id="mixBtn" class="switch" role="switch" aria-checked="false"><span class="knob"></span><span class="switchLabel">Off</span></button>
-        <span id="mixNote" class="note">Works with 3–4 numbers</span>
+      <div class="setLine">
+        <div class="setBlock">
+          <h3>Numbers in a task</h3>
+          <div id="operandSeg" class="seg"></div>
+        </div>
+        <div class="setBlock" id="mixBlock">
+          <h3>Mix operations</h3>
+          <button id="mixBtn" class="switch" role="switch" aria-checked="false"><span class="knob"></span><span class="switchLabel">Off</span></button>
+          <span id="mixNote" class="note">Works with 3–4 numbers</span>
+        </div>
       </div>
+      <div class="setBlock">
+        <h3>Speed <span id="speedHint" class="muted"></span></h3>
+        <div id="speedSeg" class="speedSeg"></div>
+      </div>
+      <div class="priceLine">
+        <span class="priceBig"></span>
+        <span class="priceSteps"></span>
+      </div>
+      <p class="example">Example: <b id="exampleText"></b></p>
     </div>
-    <div class="setBlock">
-      <h3>Speed <span id="speedHint" class="muted"></span></h3>
-      <div id="speedSeg" class="speedSeg"></div>
+    <div id="paneScale" class="pane" data-type="scale" hidden>
+      <div class="useLine">
+        <button class="switch useSwitch" role="switch" aria-checked="false"><span class="knob"></span><span class="switchLabel">Off</span></button>
+        <span class="note useNote"></span>
+      </div>
+      <div class="setLine">
+        <div class="setBlock">
+          <h3>Parts between big ticks</h3>
+          <div id="partsSeg" class="seg"></div>
+          <span id="partsNote" class="note">Pick one or more</span>
+        </div>
+        <div class="setBlock">
+          <h3>Numbers up to</h3>
+          <div id="scaleLimitSeg" class="seg"></div>
+        </div>
+        <div class="setBlock">
+          <h3>Numbers on</h3>
+          <div id="labelsSeg" class="seg"></div>
+        </div>
+      </div>
+      <div class="setBlock">
+        <h3>Speed <span id="scaleSpeedHint" class="muted"></span></h3>
+        <div id="scaleSpeedSeg" class="speedSeg"></div>
+      </div>
+<div class="priceLine">
+        <span class="priceBig"></span>
+        <span class="priceSteps"></span>
+      </div>
+      <div class="example scaleExample"><span>Example:</span><span id="scaleExample" class="scaleMini"></span></div>
     </div>
-    <div class="setLine">
+    <div class="setLine commonLine">
       <div class="setBlock">
         <h3>Answers</h3>
         <div id="answerSeg" class="seg"></div>
@@ -86,7 +127,6 @@
         <div id="lengthSeg" class="seg"></div>
       </div>
     </div>
-    <p class="example">Example: <b id="exampleText"></b></p>
   </div>
   <div class="btnRow">
     <button class="btn default" id="settingsDone">Done</button>
@@ -109,11 +149,14 @@
     <div class="lsStats">
       <span class="ok">✔ <b id="lsCount"></b></span>
       <span id="lsMistakesBox" class="bad">✖ <b id="lsMistakes"></b></span>
+      <span class="earned" title="Coins for the correct answers">🪙 <b id="lsEarned">0</b></span>
       <span id="lsBoss" class="boss" hidden></span>
     </div>
     <div id="taskCard">
+      <span id="taskPrice" title="Coins for a correct answer"></span>
       <div id="taskText"></div>
-      <div class="ansLine">= <span id="answerBox">?</span></div>
+      <div id="taskScale" hidden></div>
+      <div class="ansLine"><span id="ansPrefix">=</span> <span id="answerBox">?</span></div>
     </div>
     <div id="wrongNote"></div>
     <div id="choices" class="choices">
@@ -167,19 +210,21 @@
 <canvas id="fx" hidden></canvas>
 <div id="banner"></div>
 
-<script src="constants.js?v=3"></script>
-<script src="storage.js?v=2"></script>
-<script src="tasks.js?v=1"></script>
+<script src="constants.js?v=6"></script>
+<script src="storage.js?v=4"></script>
+<script src="tasks/tasks.js?v=4"></script>
+<script src="tasks/math.js?v=3"></script>
+<script src="tasks/scale.js?v=3"></script>
 <script src="audio.js?v=2"></script>
 <script src="nav.js?v=2"></script>
 <script src="quality.js?v=1"></script>
 <script src="fx.js?v=3"></script>
-<script src="scene-flower.js?v=2"></script>
-<script src="scene-zombies.js?v=2"></script>
-<script src="scene-railway.js?v=1"></script>
-<script src="scene-balloon.js?v=1"></script>
-<script src="scene-campfire.js?v=2"></script>
-<script src="lesson.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="scenes/flower.js?v=2"></script>
+<script src="scenes/zombies.js?v=3"></script>
+<script src="scenes/railway.js?v=1"></script>
+<script src="scenes/balloon.js?v=1"></script>
+<script src="scenes/campfire.js?v=2"></script>
+<script src="lesson.js?v=6"></script>
+<script src="app.js?v=5"></script>
 </body>
 </html>

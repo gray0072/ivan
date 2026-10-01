@@ -34,6 +34,10 @@ const Lesson = (() => {
       need: isBoss ? st.lessonLength - 1 : st.lessonLength, // normal tasks before the boss
       bossHp: 0,
       done: 0, mistakes: 0, cheated: false,
+      prices: Object.fromEntries(st.types.map(t => [t, Tasks.price(st, t).coins])), // coins per correct answer, by task type
+      earned: 0, // coins of the correct answers so far (the share paid depends on the mistakes)
+      paid: 0,   // correct answers so far, boss hits included
+      typeSeq: typeSequence(st.types, isBoss ? st.lessonLength - 1 + BOSS_HITS : st.lessonLength),
       f: 1, phase: 'intro', phaseT: 0, wrongT: 0, tickT: 0, noteT: 0,
       task: null, typed: '', lastWrong: false,
       scene: SCENES[proc.id]({ step: step - 1 }),
@@ -45,19 +49,41 @@ const Lesson = (() => {
     $('numpad').hidden = !pad;
     $('typeHint').hidden = st.answerMode !== 'type' || pad;
     $('wrongNote').textContent = '';
+    $('taskPanel').classList.toggle('twoLineNote', st.types.includes('scale'));
     showNote(isBoss ? 'Get ready! Boss at the end 👹' : 'Get ready!', false);
     resize();
     nextTask();
     updateInfo();
   }
 
+  // Task type of each correct answer: an even split in random order, so a lesson's coins are the same
+  // every time it's played with the same settings (a perfect replay pays exactly what's missing).
+  // A wrong answer brings another task of the same type. The extra ones of an uneven split go to the first types.
+  function typeSequence(types, count) {
+    const seq = [];
+    for (let i = 0; i < count; i++) seq.push(types[i % types.length]);
+    for (let i = seq.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [seq[i], seq[j]] = [seq[j], seq[i]];
+    }
+    return seq;
+  }
+
   function nextTask() {
-    L.task = Tasks.make(L.st.math);
-    L.fail = Tasks.failTime(L.task, L.st.math, L.st.answerMode);
+    L.task = Tasks.make(L.st, L.typeSeq[Math.min(L.paid, L.typeSeq.length - 1)]);
+    L.fail = Tasks.failTime(L.task, L.st);
     L.typed = '';
-    $('taskText').textContent = L.task.text;
-    const len = L.task.text.length;
-    $('taskCard').dataset.len = len > 17 ? 's' : len > 11 ? 'm' : 'l';
+    $('taskPrice').textContent = '🪙 ' + L.prices[L.task.type];
+    const scale = L.task.type === 'scale';
+    $('taskText').hidden = scale;
+    $('taskScale').hidden = !scale;
+    $('ansPrefix').textContent = scale ? '▼ =' : '=';
+    if (scale) $('taskScale').innerHTML = ScaleTasks.svg(L.task);
+    else {
+      $('taskText').textContent = L.task.text;
+      const len = L.task.text.length;
+      $('taskCard').dataset.len = len > 17 ? 's' : len > 11 ? 'm' : 'l';
+    }
     renderAnswer();
     if (L.st.answerMode === 'choice') {
       const opts = Tasks.choices(L.task);
@@ -105,6 +131,7 @@ const Lesson = (() => {
       ? '👹 ' + '❤'.repeat(L.bossHp) + '♡'.repeat(BOSS_HITS - L.bossHp)
       : L.done >= L.total ? '👹 Defeated!' : '👹 Boss: ' + BOSS_HITS + ' hits';
     $('lsMistakes').textContent = L.mistakes;
+    $('lsEarned').textContent = L.earned;
     $('lsMistakesBox').classList.toggle('some', L.mistakes > 0);
     const bar = $('lsProgress');
     bar.style.width = (100 * L.done / L.total) + '%';
@@ -122,6 +149,8 @@ const Lesson = (() => {
       if (L.st.answerMode === 'type') { L.typed = String(value); renderAnswer(); }
       L.phaseT = 0;
       L.lastWrong = false;
+      L.earned += L.prices[L.task.type]; // every boss hit pays too
+      L.paid++;
       if (L.bossHp > 0) {
         // Boss round: each hit counts, the level is not refilled.
         L.bossHp--;
@@ -155,7 +184,7 @@ const Lesson = (() => {
       L.mistakes++;
       Sfx.wrong();
       card.classList.add('bad');
-      $('wrongNote').textContent = '✗  ' + L.task.text + ' = ' + Tasks.fmt(L.task.answer);
+      $('wrongNote').textContent = '✗  ' + L.task.solution;
       L.wrongT = WRONG_SHOW_TIME;
       L.phase = 'feedback';
       L.phaseT = 0;
@@ -198,7 +227,7 @@ const Lesson = (() => {
   }
 
   function finish(won) {
-    const r = { won, proc: L.proc, done: L.done, total: L.total, mistakes: L.mistakes, cheated: L.cheated, step: L.step, isBoss: L.isBoss, bossLeft: L.bossHp };
+    const r = { won, proc: L.proc, done: L.done, total: L.total, mistakes: L.mistakes, earned: L.earned, cheated: L.cheated, step: L.step, isBoss: L.isBoss, bossLeft: L.bossHp };
     L.phase = 'done';
     if (onEnd) onEnd(r);
   }

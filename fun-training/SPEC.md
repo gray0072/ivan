@@ -4,7 +4,7 @@ Developer/agent spec for the `fun-training` project. Repo-wide conventions live 
 
 ## Idea
 
-A training game for school kids. Something is happening on screen (a flower dries out, zombies walk toward a house, a train runs out of rails, a balloon sinks, a campfire burns down) and the player keeps it going by answering tasks in time. Every correct answer "feeds" the process (waters the flower, throws a stone at the zombie); a wrong answer just brings a new task while the process keeps running. The name is deliberately not tied to math: math is only the first **task type**, more will follow.
+A training game for school kids. Something is happening on screen (a flower dries out, zombies walk toward a house, a train runs out of rails, a balloon sinks, a campfire burns down) and the player keeps it going by answering tasks in time. Every correct answer "feeds" the process (waters the flower, throws a stone at the zombie); a wrong answer just brings a new task while the process keeps running. The name is deliberately not tied to math: tasks come in **task types** (Math and Scales today), more will follow.
 
 Targets: **TV / big screen** with a keyboard or a TV remote (arrows, Enter, digits, Back; reference: LG 55NANO766QA, webOS browser), desktop with a mouse, and **phones** by touch (reference: Poco X6 Pro, 444 × 987 CSS px, both orientations).
 
@@ -13,21 +13,32 @@ Targets: **TV / big screen** with a keyboard or a TV remote (arrows, Enter, digi
 1. **Players** — "Who's training today?": a card per saved player (avatar, name, coins, stars) and a **New player** card. Each player card has a small delete button that needs a second press within 3 s. The last used player is focused.
 2. **New player** — name field (up to `NAME_MAX` chars) and an avatar grid (`AVATARS`), **Create** / **Cancel**. Enter in the name field creates.
 3. **Home** (the player's account) — avatar, name, coins 🪙, **Settings** and **Players** buttons, a one-line summary of the current training settings, and one row per process with its progress track (see below). Every playable step of a track is a button: the next step, or any finished step to replay it. ‹ › at the track's ends page through earlier blocks of 10. The row's side shows the next step, the earned stars and "↻ N to improve". Rows of processes that aren't built yet (`ready: false`) are shown dimmed as "Coming soon".
-4. **Settings** — per player, see below. Changes are saved immediately; **Done** returns home.
-5. **Lesson** — the process scene (canvas, left) and the task panel (right): lesson info (process, step, "· Boss", task n / N, mistakes, the boss's hearts), the task card, and the answers.
+4. **Settings** — per player: a tab per task type (🔢 Math, 📏 Scales; a ✓ on the tab = used in lessons) with that type's settings, then the global Answers and Tasks per lesson. Changes are saved immediately; **Done** returns home.
+5. **Lesson** — the process scene (canvas, left) and the task panel (right): lesson info (process, step, "· Boss", task n / N, mistakes, 🪙 coins of the correct answers so far, the boss's hearts), the task card with its price in the corner (a math example, or a scale with a pointer and "▼ = ?"), and the answers.
 6. **Pause** dialog (Esc / Back / the ⏸ button, or leaving the tab): Continue, Quit to home.
-7. **Victory** dialog: process-specific title, coins earned (per-task rate, or "2 → 3 per task" / "already earned 3 per task" for a replay), total coins, the step's block on the track, a star message when a block of 10 is completed, a hint to replay when fewer than 3 coins per task were earned, confetti and a fanfare. **Next lesson** (default, the next unfinished step) / **Home**.
+7. **Victory** dialog: process-specific title, coins earned ("45 for the answers × 67% for 2 mistakes", for a replay "· 45 − 30 from before" / "you got 45 here before"), total coins, the step's block on the track, a star message when a block of 10 is completed, a hint to replay when fewer than 3 coins per task were earned, confetti and a fanfare. **Next lesson** (default, the next unfinished step) / **Home**.
 8. **Defeat** dialog: process-specific title ("The flower wilted…", "The zombies got in!"…), how many tasks were solved (or how many hits the boss still needed), a sad trombone. **Try again** (default, the same step) / **Home**.
 
 Navigation: arrow keys move the focus spatially between the visible buttons (nearest in that direction, preferring the same row/column); Enter/Space press the focused button, or the screen's default button when nothing is focused. Every screen focuses its default button when shown (the lesson focuses the first answer in choice mode). Esc / Backspace-outside-inputs / TV Back (`keyCode` 461 webOS, 10009 Tizen) = back / pause.
 
 ## Progress, stars, bosses, coins
 
-- Stored per player and per process: the number of completed steps (`progress[processId]`) and, per completed step, the best coins-per-task rate earned on it (`rates[processId][i]`, 0–3). Stars and the next step are derived.
+- Stored per player and per process: the number of completed steps (`progress[processId]`) and, per completed step, the best rate (`rates[processId][i]`, 0–3, by mistakes) and the most coins earned on it (`best[processId][i]`). Stars and the next step are derived.
 - The track shows a block of `TRACK_LEN` = 10 steps (by default the current one): steps done with 0–1 mistakes (rate 3) are green ✓; steps done with 2+ mistakes show ↻ on amber (rate 2), orange (rate 1) or red (rate 0) — they can be replayed for the missing coins; the next step is yellow and pulsing; later steps are grey and disabled; a goal star in the block's tier colour ends the track (full colour once earned).
 - Every 10 steps = a star. Tiers in order (`STAR_TIERS`): Bronze, Silver, Gold, Platinum, Diamond, Ruby, Emerald, Sapphire, then Rainbow for every further one. The list is expected to grow.
 - A lesson = `lessonLength` tasks (10 / 15 / 20, a setting). Winning the next step adds it to `progress` with its rate.
-- Coins, awarded only for a won lesson, per task by the lesson's mistakes (`COIN_RULES`): 0–1 mistakes → 3 per task, 2–3 → 2, 4–5 → 1, 6+ → 0. A replay of a finished step pays only the difference: (new rate − best rate) × tasks, and keeps the better rate. Coins accumulate on the player and are shown on the Players and Home screens. A shop to spend them comes later.
+- Coins are awarded only for a won lesson: the sum of the **prices** of its correct answers (see Task price; every boss hit counts as an answer), times a share by the lesson's mistakes (`COIN_RULES`, rate / 3): 0–1 mistakes → 100 %, 2–3 → 67 %, 4–5 → 33 %, 6+ → 0, rounded. A replay of a finished step pays only what beats the step's best (`best`), and keeps the better rate and best — so a step can be replayed for more coins with fewer mistakes *or* with harder settings. A replay that earns nothing new hints that harder settings or a faster speed pay more. Coins accumulate on the player and are shown on the Players and Home screens. A shop to spend them comes later.
+
+### Task price
+
+Every task type's settings give a **price**: whole coins for each correct answer, shown in the settings (a big "🪙 N per task" badge with the steps that make it up, and on each type's tab), on the home summary and in the corner of the task card. Harder settings always pay more per task, and a lesson's coins grow with the price, so the harder the settings, the more a lesson pays. The price tracks the expected effort: about 4 coins per 10 s of a task's expected time at Medium, for every type.
+
+- Points are added up: the hardest choice of the type, plus a fixed amount for each further complication. Then multipliers apply. The result is rounded, at least 1.
+- **Math**: the hardest enabled operation by its limit (`OP_PRICE`, each step up the limits adds at least 1: + 2…9, − 2…10, × 2…12, ÷ 2…13 for limits 10…10 000), + `PRICE_EXTRA_OP` = 1 for each other enabled operation, + `PRICE_MIX` = 2 when one task mixes operations; × `PRICE_OPERANDS` for numbers in a task (2 → ×1, 3 → ×1.75, 4 → ×2.5: 2 and 3 operators instead of 1).
+- **Scales**: points by "numbers up to" (`SCALE_LIMIT_PRICE` 1–4) + the hardest parts choice (`SCALE_PARTS_PRICE`: 2 → 1, 4 or 5 → 2, 10 → 3) + `SCALE_SOME_PRICE` = 2 with every other number.
+- Both: × `PRICE_TYPED` = 1.25 when answers are typed (no guessing among four), × the speed's `price` (Very slow ×0.5, Slow ×0.75, Medium ×1, Fast ×1.5, Very fast ×2) — less time and more risk pay more.
+- Examples (pick 1–4, Medium unless said): + up to 20 → 3; + up to 100 or the times table (× up to 100) → 5; + − × up to 100, 3 numbers mixed, Fast → 24; Scales 4/5/10 parts up to 100 → 5; Scales up to 10 000, every other number → 9.
+- In a lesson each task pays its own type's price, so mixed lessons add up both.
 
 ### Bosses
 
@@ -37,7 +48,9 @@ Navigation: arrow keys move the focus spatially between the visible buttons (nea
 
 ## Task types
 
-Settings are grouped by task type (`settings.math` today) so new types get their own difficulty and speed. Global per-player settings: answer mode and lesson length.
+Each type is a module in `tasks/` with `make(cfg)`, `expectedTime(task, cfg)` (without the answer time) and `mistakes(task)` (weighted wrong answers), registered in `Tasks` (`tasks/tasks.js`), listed in `TASK_TYPES` and given a settings tab.
+
+Settings are grouped by task type (`settings.math`, `settings.scale`) so each type has its own difficulty and speed. Each tab has a **Used in lessons** switch (`settings.types`, at least one stays on — switching off the last one shakes). With several types on, a lesson mixes them: the correct answers are split evenly between the types (the extra ones of an uneven split go to the first types; the boss's hits count as answers) in random order, and a wrong answer brings another task of the same type — so a lesson pays the same with the same settings every time it is played. Global per-player settings: answer mode and lesson length. Every task has a `solution` text shown under the card after a mistake.
 
 ### Math
 
@@ -55,14 +68,31 @@ Settings are grouped by task type (`settings.math` today) so new types get their
   - The time until the process fails = expected time × the speed's multiplier (Very slow ×3, Slow ×2.2, Medium ×1.6, Fast ×1.2, Very fast ×0.9), at least `MIN_TASK_TIME`. With Medium a child answering at the expected pace stays in the "safe" half.
   - The settings screen shows the resulting "≈ N s per task" and an example task for the current settings.
 
+### Scales
+
+Reading a ruler-like scale (grades 4–5): numbers stand under the big ticks, the parts between them are small ticks (a slightly longer one in the middle for 4 and 10 parts), a red pointer ▼ sits above one tick; the answer is the number it points at. Example: big ticks 10 and 20 with 4 small ticks between them (5 parts), the pointer on the second small tick → each part is 2, the answer is 14. Drawn as inline SVG (`tasks/scale.js`), faded ticks past the ends make it look like a piece of a longer ruler (none left of 0).
+
+- **Parts between big ticks** (`SCALE_PARTS`): 2, 4, 5, 10 — any combination, at least one; each task picks one of them.
+- **Numbers up to** (`SCALE_LIMITS`): 20, 100, 1 000, 10 000 — every number on the scale is ≤ the limit. The big-tick step is picked from `SCALE_MAJORS` (2, 4, 5, 10, 20, 25, 40, 50, 100 … 5000) so it splits evenly into the parts and is at least limit / 200 (no 1-steps up to 10 000); the scale starts at a random multiple of it.
+- **Numbers on**: *Every big tick* (3 big intervals shown) or *Every other one* (4 big intervals, only every second big tick has a number — the child first works out the blank big ticks). If that doesn't fit the limit, 2 big intervals are shown.
+- The pointer is never on a tick with a number (it can be on a blank big tick).
+- **Speed**: the same 5 steps as Math, its own setting. Expected time = `READ_TIME` (or the typing time) + `SCALE_TIME[parts]` (3–5 s) + `SCALE_LIMIT_TIME` (0–4 s by the limit) + `SCALE_SOME_TIME` = 2.5 s with every other number; e.g. 5 parts up to 100, pick 1–4 ≈ 7 s × 1.6 ≈ 11 s at Medium.
+- Wrong choices: ± one or two parts, small ticks counted as ones (when a part is < 10), ticks counted instead of parts, counted from the other number, the blank big ticks missed; never one of the numbers on the scale.
+- After a mistake the two-line solution: `1 part = (20 − 10) ÷ 5 = 2` / `10 + 2 × 2 = 14` (the task panel keeps room for both lines when Scales are on, so the answers don't jump).
+
 ### Answer modes
 
-- **Pick 1–4**: four answer buttons in a 2×2 grid, pressed with keys 1–4, arrows + Enter, or a click. Wrong options are plausible: ±1–3, ±10, ±100, swapped last digits, a neighbouring table result for × (answer ± a factor).
+Both modes work for every task type.
+
+- **Pick 1–4**: four answer buttons in a 2×2 grid, pressed with keys 1–4, arrows + Enter, or a click. Wrong options are close and plausible; for scales see above. For math:
+  - Close ones keep the units digit, so the last digit doesn't give the answer away: ±10, ±20, ±100, ±1000 (answers ≥ 10), plus ±1 rarely and the last two digits swapped. Answers below 10 get ±1–3.
+  - Typical slips, weighted higher: + a forgotten carry (47 + 36 → 73); − the smaller digit taken from the bigger one (52 − 37 → 25) or a borrow that doesn't lower the next column (61 − 25 → 46); × by a one-digit number with the carry forgotten (14 × 8 → 82) and a neighbouring table result (answer ± a factor up to 20); ÷ the quotient ±1; with mixed operations, the task worked left to right without doing × and ÷ first (20 − 8 ÷ 4 → 3).
+  - Options far from the answer (below half of it − 10 or above twice + 20) are dropped as unbelievable. About two thirds of the math wrong options share the answer's units digit.
 - **Type**: digits typed on the keyboard / remote, Backspace deletes, Enter or Space submits. On touch screens (`pointer: coarse`) an on-screen number pad replaces the "press Enter" hint: 1–9, ⌫, 0, ✓ (a 3 × 4 grid in portrait, 6 × 2 in a low landscape panel).
 
 ### Future task types (ideas)
 
-Clock reading, comparing numbers (<, =, >), number sequences, spelling / missing letter, multiplication-table drill, English words.
+Clock reading, comparing numbers (<, =, >), number sequences, spelling / missing letter, multiplication-table drill, English words, scales with decimals (0.1, 0.5 — needs a decimal point key).
 
 ## Lesson flow
 
@@ -78,10 +108,10 @@ Clock reading, comparing numbers (<, =, >), number sequences, spelling / missing
 
 ## Processes
 
-All five processes are built. Scenes are drawn on a canvas in a fixed design space (`fitScene`: scaled to fit, centred, anchored to the bottom, backgrounds full-bleed). Each scene module exposes `correct`, `wrong`, `win`, `lose`, `bossStart`, `bossHit`, `update(dt, f)`, `draw`, and picks its colours by the step number.
+All five processes are built. Scenes are drawn on a canvas in a fixed design space (`fitScene`: scaled to fit, centred, anchored to the bottom, backgrounds full-bleed). Each scene module (`scenes/<process>.js`, a `create…Scene` factory registered in `SCENES` in `lesson.js`) exposes `correct`, `wrong`, `win`, `lose`, `bossStart`, `bossHit`, `update(dt, f)`, `draw`, and picks its colours by the step number.
 
 1. **🌷 Grow a Flower** (built). A pot on a sunny windowsill and a glass water gauge with a ½ mark. The water level is `f` and goes down all the time. Below half the flower starts to wilt: the stem droops, leaves turn yellow then brown, petals fade and the flower's face frowns. A correct answer brings a watering can that pours (sound, droplets), the gauge refills to the top, the flower recovers smoothly and grows a little: over one lesson it goes from a sprout through a bud to full bloom. Each step has its own petal colour / shape. Defeat: the flower collapses and drops its petals. Victory: sparkles around the bloom. **Boss:** a caterpillar climbs the stem toward the flower (the gauge stays full); each hit sprays it with water, the third one turns it into a butterfly that flies away; if it reaches the flower it munches the petals.
-2. **🧟 Zombie Defense** (built). Evening, a house on the left with the family in the window and a kid in the attic window. A zombie rises from the ground on the right and walks to the door; its position is `f`. Correct answer: the kid throws a stone — BONK — the zombie falls over and disappears, the next one rises on the right. Wrong answer: the stone falls short, the zombie keeps walking. Defeat: the zombie reaches the door and the lights go out. Victory: fireworks over the house. Zombies are cartoonish (random shirt colours, sizes, hats), not scary. **Boss:** a big zombie king with a crown; each stone makes it stagger, the third knocks it over.
+2. **🧟 Zombie Defense** (built). Evening, a house on the left with the family in the window and a kid in the attic window. A zombie rises from the ground on the right and walks to the door; its position is `f`. Correct answer: the kid throws a stone — the hit zombie stops and stays until the stone lands — BONK — it falls over and fades, and only then (`ZOMBIE_NEXT_DELAY` after the hit) the next one rises on the right. Wrong answer: the stone falls short, the zombie keeps walking. Defeat: the zombie reaches the door and the lights go out. Victory: fireworks over the house. Zombies are cartoonish (random shirt colours, sizes, hats), not scary. **Boss:** a big zombie king with a crown; each stone makes it stagger, the third knocks it over.
 3. **🚂 Railway Rush** (built). Side view, the camera follows a steam train (locomotive, tender, passenger car with faces) through parallax mountains, hills, trees and telegraph poles. The rails end `f × RAIL_AHEAD` in front of the locomotive; the train moves exactly as much as `f` drains, so the rail end stays put in the world. A correct answer lays rail pieces up to `RAIL_AHEAD` ahead: they drop in one by one with a clank. A wrong answer drops a piece that bounces off. A warning sign blinks at the rail end when it's close. Defeat: the locomotive tips over the rail end in a cloud of dust. Victory: the train speeds up and rolls into a station with bunting, whistle. **Boss:** a ravine with a river opens where the rails end; each hit drops one of three bridge sections in; the train crashes into the ravine if it gets there first.
 4. **🎈 Balloon Flight** (built). A striped hot-air balloon with a pilot in goggles over the sea; its height is `f`. A correct answer fires the burner (flame, roar) and the balloon climbs back up; a wrong one gives a sad puff of smoke. A shark fin circles when the balloon is low. An island with a palm and a flag comes closer with each correct answer. Defeat: the basket splashes into the sea and the envelope deflates. **Boss:** an angry thundercloud with rain drifts toward the balloon (the sky darkens, thunder and flashes); each hit is a gust that shrinks it, the third blows it away and a rainbow appears; if it reaches the balloon, lightning knocks it into the sea.
 5. **🔥 Campfire Night** (built). Night forest, a tent and a kid toasting a marshmallow by the fire. The fire's size and the lit circle are `f`; glowing wolf eyes sit at the edge of the light and creep closer as it dims (their silhouettes show when close). A correct answer throws a log in: the fire flares with sparks and a crackle, and the eyes back off. Wrong answer: a puff of smoke. Defeat: the fire goes out and the wolves howl. Victory: dawn — the sky brightens, the sun rises, the wolves leave, birds chirp. **Boss:** the pack leader walks into the light (the fire stays full); each hit is a burning stick that makes it yelp, the third sends it running.
@@ -107,7 +137,7 @@ Synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wron
 
 ## Storage
 
-`localStorage["funTraining.v1"]` = `{ players: [{ id, name, avatar, coins, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, settings: { answerMode, lessonLength, math: { ops, operands, mix, limits: { add, sub, mul, div }, speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3); all access is wrapped in try/catch so the game still works without storage.
+`localStorage["funTraining.v1"]` = `{ players: [{ id, name, avatar, coins, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, best: { <processId>: [most coins earned on each step] }, settings: { answerMode, lessonLength, types: ['math', 'scale'], math: { ops, operands, mix, limits: { add, sub, mul, div }, speed }, scale: { parts, limit, labels: 'all' | 'some', speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3, a missing best as rate × lesson length; older saves get `types: ['math']` and the default scale settings); all access is wrapped in try/catch so the game still works without storage.
 
 ## Files
 
@@ -115,18 +145,22 @@ Synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wron
 fun-training/
 ├── index.html       # markup of all screens
 ├── styles.css
-├── constants.js     # operations, limits, time tables, speeds, coin rules, star tiers, processes, avatars, timings
+├── constants.js     # task types, operations, limits, scale options, time tables, speeds, coin rules, star tiers, processes, avatars, timings
 ├── storage.js       # players and their settings/progress in localStorage
-├── tasks.js         # task generator, expected time, answer choices
+├── tasks/           # task types, one file each; tasks.js first, then the types
+│   ├── tasks.js     # Tasks: picks the type, expected time, answer choices, shared helpers (fmt, rnd, pick)
+│   ├── math.js      # Math: example generator, time per operator, plausible mistakes
+│   └── scale.js     # Scales: generator, solution, plausible mistakes, SVG drawing
 ├── audio.js         # Web Audio sound effects
 ├── nav.js           # spatial keyboard / TV-remote focus navigation
 ├── quality.js       # automatic graphics quality (canvas resolution by device and frame rate)
 ├── fx.js            # shared drawing helpers (roundRect polyfill, fitScene, mixColor, starPath…) and the victory confetti
-├── scene-flower.js  # Grow a Flower process (state + canvas drawing)
-├── scene-zombies.js # Zombie Defense process (state + canvas drawing)
-├── scene-railway.js # Railway Rush process
-├── scene-balloon.js # Balloon Flight process
-├── scene-campfire.js # Campfire Night process
+├── scenes/          # processes, one file each (state + canvas drawing)
+│   ├── flower.js    # Grow a Flower
+│   ├── zombies.js   # Zombie Defense
+│   ├── railway.js   # Railway Rush
+│   ├── balloon.js   # Balloon Flight
+│   └── campfire.js  # Campfire Night
 ├── lesson.js        # lesson loop: tasks, safety level, answers, win/lose
 ├── app.js           # screens, settings UI, keyboard routing, main loop
 ├── README.md / README_RU.md   # short, link to the live page
@@ -137,11 +171,12 @@ fun-training/
 
 ## Differences from the repo conventions
 
-- No Easy / Medium / Hard: difficulty is the per-task-type settings (limits, number of operands, speed).
+- No Easy / Medium / Hard: difficulty is the per-task-type settings (limits, number of operands, parts, labels, speed).
 - No split-screen joystick on phones: the game is played with buttons only (see Phones and touch).
 - README is minimal: title and link to the live page.
 
 ## Backlog
 
 - [ ] Coin shop
+- [x] Scales task type
 - [ ] More task types
