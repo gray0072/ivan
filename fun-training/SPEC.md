@@ -131,6 +131,7 @@ fun-training/
 ├── app.js           # screens, settings UI, keyboard routing, main loop
 ├── README.md / README_RU.md   # short, link to the live page
 ├── icon.svg
+├── icon-maskable.svg, icon-*.png, apple-touch-icon.png, manifest.webmanifest   # PWA (installable, Android icon)
 └── screenshot.png
 ```
 

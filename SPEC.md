@@ -43,7 +43,9 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 ├── AGENTS.md                 # instructions for AI coding agents working in this repo
 ├── CLAUDE.md                 # Claude Code entry point, points to AGENTS.md
 ├── LICENSE                  # MIT
-├── assets/                  # icon.svg (favicon + README logo), icon-512.png, social-preview.png (GitHub social preview, og:image)
+├── manifest.webmanifest      # PWA manifest of the gallery (icons from assets/)
+├── tools/pwa-icons.sh        # renders a folder's PWA PNG icons from its SVGs with headless Chrome
+├── assets/                  # icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
 ├── flight-simulator/
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html           # the game itself, fully self-contained
@@ -51,6 +53,9 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 │   ├── README_RU.md           # project documentation (Russian, player-facing)
 │   ├── README_SV.md           # project documentation (Swedish, player-facing)
 │   ├── icon.svg              # project icon (favicon, READMEs, gallery card)
+│   ├── icon-maskable.svg     # full-bleed Android home-screen icon (artwork in the safe circle)
+│   ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png  # PWA icons, rendered by tools/pwa-icons.sh
+│   ├── manifest.webmanifest  # PWA manifest
 │   └── screenshot.png        # preview image (English UI) used by the gallery and all READMEs
 ├── fish-frenzy/
 │   ├── SPEC.md               # the game's own spec
@@ -70,6 +75,9 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 │   ├── README_RU.md
 │   ├── README_SV.md
 │   ├── icon.svg
+│   ├── icon-maskable.svg     # full-bleed Android home-screen icon (artwork in the safe circle)
+│   ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png  # PWA icons, rendered by tools/pwa-icons.sh
+│   ├── manifest.webmanifest  # PWA manifest
 │   └── screenshot.png
 ├── fun-training/
 │   ├── SPEC.md               # the game's own spec (screens, rules, files)
@@ -79,6 +87,9 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 │   ├── README.md
 │   ├── README_RU.md
 │   ├── icon.svg
+│   ├── icon-maskable.svg     # full-bleed Android home-screen icon (artwork in the safe circle)
+│   ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png  # PWA icons, rendered by tools/pwa-icons.sh
+│   ├── manifest.webmanifest  # PWA manifest
 │   └── screenshot.png
 └── ... (future project folders, same layout)
 ```
@@ -98,8 +109,9 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 4. Add a `README.md` (English), a `README_RU.md` (Russian) and a `README_SV.md` (Swedish), each written for players and linking to the other two (same pattern as this repo's root READMEs).
 5. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog.
 6. Add a `screenshot.png` preview image showing the English UI.
-7. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md` / `README_SV.md`.
-8. List it in the `Projects` section above with a one-line summary and a link to its `SPEC.md`.
+7. Make it an installable PWA: `icon-maskable.svg`, the PNGs from `tools/pwa-icons.sh <name>`, a `manifest.webmanifest` and the `<head>` links (see `AGENTS.md`).
+8. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md` / `README_SV.md`.
+9. List it in the `Projects` section above with a one-line summary and a link to its `SPEC.md`.
 
 ## Backlog
 

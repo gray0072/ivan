@@ -1,0 +1,16 @@
+{
+  "name": "Flight Simulator",
+  "short_name": "Flight Sim",
+  "description": "First-person arcade flight game: pop balloons with a twin-gun and land on the highlighted runway.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "theme_color": "#0d1b2a",
+  "background_color": "#0d1b2a",
+  "icons": [
+    { "src": "icon-192.png?v=1", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png?v=1", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
