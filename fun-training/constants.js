@@ -112,23 +112,32 @@ const COIN_RULES = [
 ];
 
 const MAX_RATE = 3;     // the best rate (COIN_RULES[0]); steps done below it can be replayed for more coins
-const TRACK_LEN = 10;   // steps per star
+const TRACK_LEN = 10;   // steps per level; all of them perfect (rate 3) = the level's star and the next level opens
 const BOSS_EVERY = 5;   // every Nth step is a boss step
 const BOSS_HITS = 3;    // correct answers the boss needs (its last task)
-const BOSS_TIME_MUL = 2; // the boss round's safety level drains over this × a task's fail time, with no refill
+// Boss kinds by the step's place in its level (5th / 10th). timeMul: the boss round's safety level drains over
+// this × a task's fail time, with no refill; gems: diamonds 💎 for beating it with 0–1 mistakes
+// (the share by mistakes follows COIN_RULES; a replay pays only what beats the step's best).
+const BOSS_KINDS = {
+  5: { name: 'Boss', icon: '💀', note: '👹 BOSS!', hint: '', timeMul: 2, gems: 3 },
+  10: { name: 'Big boss', icon: '👑', note: '👑 BIG BOSS!', hint: ' — twice as fast!', timeMul: 1, gems: 6 }, // twice as fast as the 5th step's boss
+};
 const BOSS_NOTE_TIME = 1.8; // s the "BOSS!" note stays on the scene
-// Star tiers in the order they are earned; the last one repeats.
+// Star levels in order, from wood to diamond; after the last one every further level is that one again.
+// light / color / dark: the star's gradient and outline; kind: its look (wood grain, stone speckles, metal shine, gem facets).
 const STAR_TIERS = [
-  { name: 'Bronze', color: '#d08a4c' },
-  { name: 'Silver', color: '#c9d3dd' },
-  { name: 'Gold', color: '#ffd23f' },
-  { name: 'Platinum', color: '#9ff0e6' },
-  { name: 'Diamond', color: '#8fd3ff' },
-  { name: 'Ruby', color: '#ff4f7b' },
-  { name: 'Emerald', color: '#3ddc97' },
-  { name: 'Sapphire', color: '#5b7cff' },
-  { name: 'Rainbow', color: 'rainbow' },
+  { name: 'Wooden', light: '#f2d49c', color: '#c99a5b', dark: '#7d5630', kind: 'wood' },
+  { name: 'Stone', light: '#dcd6c8', color: '#a39c8c', dark: '#5f594d', kind: 'stone' },
+  { name: 'Bronze', light: '#ffbf94', color: '#d46f32', dark: '#86350f', kind: 'metal' },
+  { name: 'Iron', light: '#c4cfd9', color: '#6b7a87', dark: '#343e47', kind: 'metal' },
+  { name: 'Silver', light: '#ffffff', color: '#c9d3dd', dark: '#7d8a96', kind: 'metal' },
+  { name: 'Gold', light: '#fff3a0', color: '#ffc928', dark: '#b07d00', kind: 'metal' },
+  { name: 'Platinum', light: '#f4fffd', color: '#a6e8df', dark: '#4fa79c', kind: 'metal' },
+  { name: 'Emerald', light: '#a8f7cf', color: '#2fc48a', dark: '#0f6b46', kind: 'gem' },
+  { name: 'Ruby', light: '#ffa3b8', color: '#f2385f', dark: '#99102f', kind: 'gem' },
+  { name: 'Diamond', light: '#ffffff', color: '#bfeaff', dark: '#4f9fd0', kind: 'diamond' },
 ];
+const FIREWORKS_TIME = 4;  // s of fireworks when a level is completed
 
 // Processes shown on the home screen; ready = playable.
 const PROCESSES = [

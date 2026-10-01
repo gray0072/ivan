@@ -79,6 +79,7 @@ function drawHearts(ctx, x, y, hp, size = 14) {
 const Confetti = (() => {
   const COLORS = ['#ff4f7b', '#ffd23f', '#3ddc97', '#5b7cff', '#ff9f43', '#b36bff', '#4fd8ff'];
   let canvas, ctx, parts = [], running = false, spawnLeft = 0, w = 0, h = 0, dpr = 1;
+  let sparks = [], fireLeft = 0, nextBurst = 0; // fireworks: bursts of sparks for fireLeft s
 
   function init(el) {
     canvas = el;
@@ -106,9 +107,25 @@ const Confetti = (() => {
     }
   }
 
-  function start() {
+  // A firework: a ring of sparks at a random spot in the upper part of the screen.
+  function burst() {
+    const x = w * (0.15 + Math.random() * 0.7), y = h * (0.12 + Math.random() * 0.35);
+    const c = COLORS[Math.floor(Math.random() * COLORS.length)];
+    const n = Math.round(48 * Quality.confetti()), v = Math.min(w, h) * (0.22 + Math.random() * 0.12);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2, k = v * (0.75 + Math.random() * 0.25);
+      sparks.push({ x, y, vx: Math.cos(a) * k, vy: Math.sin(a) * k, t: 0, life: 1.1 + Math.random() * 0.4, c });
+    }
+    Sfx.firework();
+  }
+
+  // fireworks: s of fireworks bursts over the confetti (a completed level).
+  function start(fireworks = 0) {
     resize();
     parts = [];
+    sparks = [];
+    fireLeft = fireworks;
+    nextBurst = 0.2;
     spawn(Math.round(160 * Quality.confetti()));
     spawnLeft = 3;
     running = true;
@@ -118,6 +135,8 @@ const Confetti = (() => {
   function stop() {
     running = false;
     parts = [];
+    sparks = [];
+    fireLeft = 0;
     if (canvas) { canvas.hidden = true; ctx.clearRect(0, 0, canvas.width, canvas.height); }
   }
 
@@ -140,7 +159,26 @@ const Confetti = (() => {
       ctx.restore();
     }
     parts = parts.filter(p => p.y < h + 30);
-    if (!parts.length && spawnLeft <= 0) stop();
+    if (fireLeft > 0) {
+      fireLeft -= dt;
+      nextBurst -= dt;
+      if (nextBurst <= 0) { burst(); nextBurst = 0.35 + Math.random() * 0.4; }
+    }
+    for (const s of sparks) {
+      s.t += dt;
+      s.vx *= 1 - 1.6 * dt;
+      s.vy = s.vy * (1 - 1.6 * dt) + 160 * dt;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      ctx.globalAlpha = Math.max(0, 1 - s.t / s.life);
+      ctx.fillStyle = s.c;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, 2.6 * Math.max(1, h / 900), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    sparks = sparks.filter(s => s.t < s.life);
+    if (!parts.length && !sparks.length && spawnLeft <= 0 && fireLeft <= 0) stop();
   }
 
   return { init, start, stop, update, resize };

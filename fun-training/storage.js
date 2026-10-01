@@ -47,8 +47,10 @@ const Store = (() => {
     const progress = {};
     const src = p.progress && typeof p.progress === 'object' ? p.progress : {};
     // rates[proc][i] = best rate (0–3, by mistakes) of step i + 1 (older saves: every step counts as perfect);
-    // best[proc][i] = most coins earned on it, a replay pays only what it beats (older saves: rate × lesson length).
-    const rates = {}, best = {};
+    // best[proc][i] = most coins earned on it, a replay pays only what it beats (older saves: rate × lesson length);
+    // bestGems[proc][i] = most diamonds earned on it (boss steps; older saves: none yet, a replay can earn them).
+    const rates = {}, best = {}, bestGems = {};
+    const gsrc = p.bestGems && typeof p.bestGems === 'object' ? p.bestGems : {};
     const rsrc = p.rates && typeof p.rates === 'object' ? p.rates : {};
     const bsrc = p.best && typeof p.best === 'object' ? p.best : {};
     const settings = cleanSettings(p.settings);
@@ -59,15 +61,19 @@ const Store = (() => {
       rates[proc.id] = Array.from({ length: n }, (_, i) => (r[i] >= 0 && r[i] <= MAX_RATE ? Math.floor(r[i]) : MAX_RATE));
       const b = Array.isArray(bsrc[proc.id]) ? bsrc[proc.id] : [];
       best[proc.id] = Array.from({ length: n }, (_, i) => (b[i] >= 0 ? Math.floor(b[i]) : rates[proc.id][i] * settings.lessonLength));
+      const g = Array.isArray(gsrc[proc.id]) ? gsrc[proc.id] : [];
+      bestGems[proc.id] = Array.from({ length: n }, (_, i) => (g[i] >= 0 ? Math.floor(g[i]) : 0));
     }
     return {
       id: String(p.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
       name: String(p.name || 'Player').slice(0, NAME_MAX),
       avatar: AVATARS.includes(p.avatar) ? p.avatar : AVATARS[0],
       coins: Math.max(0, Math.floor(Number(p.coins) || 0)),
+      gems: Math.max(0, Math.floor(Number(p.gems) || 0)), // diamonds 💎 from bosses
       progress,
       rates,
       best,
+      bestGems,
       settings,
     };
   }

@@ -12,22 +12,29 @@ Targets: **TV / big screen** with a keyboard or a TV remote (arrows, Enter, digi
 
 1. **Players** — "Who's training today?": a card per saved player (avatar, name, coins, stars) and a **New player** card. Each player card has a small delete button that needs a second press within 3 s. The last used player is focused.
 2. **New player** — name field (up to `NAME_MAX` chars) and an avatar grid (`AVATARS`), **Create** / **Cancel**. Enter in the name field creates.
-3. **Home** (the player's account) — avatar, name, coins 🪙, **Settings** and **Players** buttons, a one-line summary of the current training settings, and one row per process with its progress track (see below). Every playable step of a track is a button: the next step, or any finished step to replay it. ‹ › at the track's ends page through earlier blocks of 10. The row's side shows the next step, the earned stars and "↻ N to improve". Rows of processes that aren't built yet (`ready: false`) are shown dimmed as "Coming soon".
+3. **Home** (the player's account) — avatar, name, coins 🪙 and diamonds 💎, **Settings** and **Players** buttons, a one-line summary of the current training settings, and one row per process with its progress track (see below). Every playable step of a track is a button: the next step, or any finished step to replay it. ‹ › at the track's ends page through earlier levels. The row's side shows the current level (its star, dim until earned), the next step — or, when the level is finished but not perfect, "🔒 ↻ N steps to open <next level>" — the earned stars and "↻ N to improve". Rows of processes that aren't built yet (`ready: false`) are shown dimmed as "Coming soon".
 4. **Settings** — per player: a tab per task type (🔢 Math, 📏 Scales; a ✓ on the tab = used in lessons) with that type's settings, then the global Answers and Tasks per lesson. Changes are saved immediately; **Done** returns home.
 5. **Lesson** — the process scene (canvas, left) and the task panel (right): lesson info (process, step, "· Boss", task n / N, mistakes, 🪙 coins of the correct answers so far, the boss's hearts), the task card with its price in the corner (a math example, or a scale with a pointer and "▼ = ?"), and the answers.
 6. **Pause** dialog (Esc / Back / the ⏸ button, or leaving the tab): Continue, Quit to home.
-7. **Victory** dialog: process-specific title, coins earned ("45 for the answers × 67% for 2 mistakes", for a replay "· 45 − 30 from before" / "you got 45 here before"), total coins, the step's block on the track, a star message when a block of 10 is completed, a hint to replay when fewer than 3 coins per task were earned, confetti and a fanfare. **Next lesson** (default, the next unfinished step) / **Home**.
+7. **Victory** dialog: process-specific title, coins earned ("45 for the answers × 67% for 2 mistakes", for a replay "· 45 − 30 from before" / "you got 45 here before"), total coins, on a boss step the diamonds ("+4 💎", "Big boss: 4 of 6 💎"), the step's level on the track, a hint to replay when fewer than 3 coins per task were earned (or which ↻ steps still shut the next level), confetti and a fanfare. When the lesson completes a level: the level-up block (see Levels and stars) with fireworks. **Next lesson** (default: the next new step, or "Replay step N ↻" — the first ↻ step of a shut level) / **Home**.
 8. **Defeat** dialog: process-specific title ("The flower wilted…", "The zombies got in!"…), how many tasks were solved (or how many hits the boss still needed), a sad trombone. **Try again** (default, the same step) / **Home**.
 
 Navigation: arrow keys move the focus spatially between the visible buttons (nearest in that direction, preferring the same row/column); Enter/Space press the focused button, or the screen's default button when nothing is focused. Every screen focuses its default button when shown (the lesson focuses the first answer in choice mode). Esc / Backspace-outside-inputs / TV Back (`keyCode` 461 webOS, 10009 Tizen) = back / pause.
 
-## Progress, stars, bosses, coins
+## Progress, levels, stars, bosses, coins, diamonds
 
-- Stored per player and per process: the number of completed steps (`progress[processId]`) and, per completed step, the best rate (`rates[processId][i]`, 0–3, by mistakes) and the most coins earned on it (`best[processId][i]`). Stars and the next step are derived.
-- The track shows a block of `TRACK_LEN` = 10 steps (by default the current one): steps done with 0–1 mistakes (rate 3) are green ✓; steps done with 2+ mistakes show ↻ on amber (rate 2), orange (rate 1) or red (rate 0) — they can be replayed for the missing coins; the next step is yellow and pulsing; later steps are grey and disabled; a goal star in the block's tier colour ends the track (full colour once earned).
-- Every 10 steps = a star. Tiers in order (`STAR_TIERS`): Bronze, Silver, Gold, Platinum, Diamond, Ruby, Emerald, Sapphire, then Rainbow for every further one. The list is expected to grow.
+- Stored per player and per process: the number of completed steps (`progress[processId]`) and, per completed step, the best rate (`rates[processId][i]`, 0–3, by mistakes), the most coins earned on it (`best[processId][i]`) and the most diamonds (`bestGems[processId][i]`). Levels, stars and the next step are derived (`progress.js`).
+- The track shows one level of `TRACK_LEN` = 10 steps (by default the current one): steps done with 0–1 mistakes (rate 3) are green ✓; steps done with 2+ mistakes show ↻ on amber (rate 2), orange (rate 1) or red (rate 0) — they can be replayed for the missing coins; the next step is yellow and pulsing; later steps are grey and disabled; the level's goal star ends the track (dim until earned). Step 5 shows 💀 (boss), step 10 👑 (big boss).
 - A lesson = `lessonLength` tasks (10 / 15 / 20, a setting). Winning the next step adds it to `progress` with its rate.
 - Coins are awarded only for a won lesson: the sum of the **prices** of its correct answers (see Task price; every boss hit counts as an answer), times a share by the lesson's mistakes (`COIN_RULES`, rate / 3): 0–1 mistakes → 100 %, 2–3 → 67 %, 4–5 → 33 %, 6+ → 0, rounded. A replay of a finished step pays only what beats the step's best (`best`), and keeps the better rate and best — so a step can be replayed for more coins with fewer mistakes *or* with harder settings. A replay that earns nothing new hints that harder settings or a faster speed pay more. Coins accumulate on the player and are shown on the Players and Home screens. A shop to spend them comes later.
+
+### Levels and stars
+
+- Each process has its own road of levels, 10 steps each. A level is **complete** when all 10 steps (both bosses included) are done with 0–1 mistakes (all ✓). That earns the level's star and opens the next level: its 10 steps become playable.
+- Finishing step 10 with ↻ steps left keeps the next level shut: the home row says "🔒 ↻ N steps to open Stone", the ↻ step is the default button and **Next lesson** becomes "Replay step N ↻". The star comes the moment the last ↻ step is replayed perfectly — on any step, not only the boss. Steps already played in a later level (older saves) stay open.
+- Levels (`STAR_TIERS`), from wood to diamond: **Wooden, Stone, Bronze, Iron, Silver, Gold, Platinum, Emerald, Ruby, Diamond**; every level after Diamond is Diamond again. Each star is an SVG in its material (`stars.js`): a gradient of the material's light / base / dark colours with a dark outline, plus wood grain (Wooden), speckles (Stone), a shine (metals), cut facets (Emerald, Ruby, Diamond) and a twinkling sparkle (Diamond).
+- Where they show: the goal star at the end of every track; the level name with its star on the home row; the earned stars under it; the player card shows the best star and the star count; the level-up block.
+- **Level-up**: the result dialog adds the new star spinning in ("You earned the Wooden star! The Stone level is open — 10 new steps.") and the ladder of all 10 levels — earned ones bright, the next one pulsing with its name, the rest grey (on phones only the next one is named). Confetti plus `FIREWORKS_TIME` = 4 s of fireworks (bursts of sparks with a pop and crackle) and the star fanfare. Home then shows the new level.
 
 ### Task price
 
@@ -42,9 +49,10 @@ Every task type's settings give a **price**: whole coins for each correct answer
 
 ### Bosses
 
-- Every `BOSS_EVERY` = 5th step is a **boss** step (💀 on the track, "Step 5 · Boss" in the lesson).
-- A boss lesson has `lessonLength − 1` normal tasks; the last task is the boss: it needs `BOSS_HITS` = 3 correct answers. When it starts, the safety level is refilled once and a "👹 BOSS!" note shows; then it drains over `BOSS_TIME_MUL` = 2 × the current task's fail time and is **not** refilled by the boss hits — so the three answers must fit into twice the time of one task. Wrong answers bring a new task and the clock keeps running. The panel shows the boss's hearts.
-- Each process has its own boss (see below); it walks / climbs / drifts toward the player by `f`, shows its hearts over its head, reacts to each hit, and is driven off by the third one.
+- Every `BOSS_EVERY` = 5th step is a boss step; its kind by its place in the level (`BOSS_KINDS`): step 5 → **Boss** (💀), step 10 → **Big boss** (👑). The lesson shows "Step 10 · Big boss" and "Get ready! Big boss at the end 👹 / Beat it for up to 6 💎".
+- A boss lesson has `lessonLength − 1` normal tasks; the last task is the boss: it needs `BOSS_HITS` = 3 correct answers. When it starts, the safety level is refilled once and a note shows ("👹 BOSS!" / "👑 BIG BOSS! … twice as fast!"); then it drains over `timeMul` × the current task's fail time and is **not** refilled by the boss hits. Boss: `timeMul` = 2 (three answers in twice the time of one task, as before). Big boss: `timeMul` = 1 — twice as fast, three answers in the time of one task. Wrong answers bring a new task and the clock keeps running. The panel shows the boss's hearts and "up to N 💎".
+- **Diamonds 💎** — the premium for bosses, a separate currency for the shop: up to `gems` = 3 for the Boss and 6 for the Big boss, by the lesson's mistakes like coins (0–1 → all, 2–3 → 2/3, 4–5 → 1/3, 6+ → 0: Boss 3/2/1/0, Big boss 6/4/2/0). A replay pays only what beats the step's best diamonds. Shown on the Players and Home screens and in the result dialog with a sparkle sound.
+- Each process has its own boss (see below); it walks / climbs / drifts toward the player by `f`, shows its hearts over its head, reacts to each hit, and is driven off by the third one. The big boss uses the same figure for now.
 
 ## Task types
 
@@ -133,11 +141,11 @@ All five processes are built. Scenes are drawn on a canvas in a fixed design spa
 
 ## Sounds
 
-Synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, boss drums and growl, victory fanfare, coins jingle, star fanfare, defeat sad trombone.
+Synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, boss drums and growl, victory fanfare, coins jingle, diamonds sparkle, star fanfare, fireworks pops, defeat sad trombone.
 
 ## Storage
 
-`localStorage["funTraining.v1"]` = `{ players: [{ id, name, avatar, coins, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, best: { <processId>: [most coins earned on each step] }, settings: { answerMode, lessonLength, types: ['math', 'scale'], math: { ops, operands, mix, limits: { add, sub, mul, div }, speed }, scale: { parts, limit, labels: 'all' | 'some', speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3, a missing best as rate × lesson length; older saves get `types: ['math']` and the default scale settings); all access is wrapped in try/catch so the game still works without storage.
+`localStorage["funTraining.v1"]` = `{ players: [{ id, name, avatar, coins, gems, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, best: { <processId>: [most coins earned on each step] }, bestGems: { <processId>: [most diamonds earned on each step] }, settings: { answerMode, lessonLength, types: ['math', 'scale'], math: { ops, operands, mix, limits: { add, sub, mul, div }, speed }, scale: { parts, limit, labels: 'all' | 'some', speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3, a missing best as rate × lesson length, missing diamonds as 0 — old boss steps can be replayed for them; older saves get `types: ['math']` and the default scale settings); all access is wrapped in try/catch so the game still works without storage.
 
 ## Files
 
@@ -147,6 +155,8 @@ fun-training/
 ├── styles.css
 ├── constants.js     # task types, operations, limits, scale options, time tables, speeds, coin rules, star tiers, processes, avatars, timings
 ├── storage.js       # players and their settings/progress in localStorage
+├── progress.js      # levels: boss kinds, which step is open, level complete, stars, diamonds per boss
+├── stars.js         # level stars as SVG in their materials, the ladder of levels
 ├── tasks/           # task types, one file each; tasks.js first, then the types
 │   ├── tasks.js     # Tasks: picks the type, expected time, answer choices, shared helpers (fmt, rnd, pick)
 │   ├── math.js      # Math: example generator, time per operator, plausible mistakes
@@ -154,7 +164,7 @@ fun-training/
 ├── audio.js         # Web Audio sound effects
 ├── nav.js           # spatial keyboard / TV-remote focus navigation
 ├── quality.js       # automatic graphics quality (canvas resolution by device and frame rate)
-├── fx.js            # shared drawing helpers (roundRect polyfill, fitScene, mixColor, starPath…) and the victory confetti
+├── fx.js            # shared drawing helpers (roundRect polyfill, fitScene, mixColor, starPath…), the victory confetti and level-up fireworks
 ├── scenes/          # processes, one file each (state + canvas drawing)
 │   ├── flower.js    # Grow a Flower
 │   ├── zombies.js   # Zombie Defense

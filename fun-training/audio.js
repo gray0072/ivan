@@ -116,6 +116,14 @@ const Sfx = (() => {
       [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.12, 0.3, { type: 'triangle', gain: 0.22 }));
       [523, 659, 784].forEach(f => tone(f * 2, 0.5, 0.9, { type: 'triangle', gain: 0.12, hold: 0.3 }));
     },
+    firework() {
+      tone(160 + Math.random() * 60, 0, 0.25, { type: 'sine', gain: 0.25, to: 60 });
+      noise(0.02, 0.5, { freq: 2200, to: 900, q: 0.7, gain: 0.12, attack: 0.005 });
+      for (let i = 0; i < 5; i++) noise(0.15 + Math.random() * 0.4, 0.03, { freq: 3000 + Math.random() * 2000, q: 2, gain: 0.12, attack: 0.002 });
+    },
+    gems() {
+      [1568, 2093, 2637, 3136].forEach((f, i) => tone(f, i * 0.07, 0.35, { type: 'sine', gain: 0.1 }));
+    },
     star() {
       [784, 988, 1175, 1568].forEach((f, i) => tone(f, i * 0.09, 0.5, { type: 'sine', gain: 0.18 }));
     },

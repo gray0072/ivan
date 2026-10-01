@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#2b2170">
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 
@@ -40,7 +40,7 @@
 <section id="screenHome" class="screen" hidden>
   <header class="topBar">
     <div class="who"><span id="homeAvatar" class="bigAvatar"></span><span id="homeName"></span></div>
-    <div class="coins">🪙 <b id="homeCoins">0</b></div>
+    <div class="coins">🪙 <b id="homeCoins">0</b> <span class="gems">💎 <b id="homeGems">0</b></span></div>
     <div class="topBtns">
       <button class="btn secondary" id="settingsBtn">⚙ Settings</button>
       <button class="btn secondary" id="playersBtn">👥 Players</button>
@@ -210,21 +210,23 @@
 <canvas id="fx" hidden></canvas>
 <div id="banner"></div>
 
-<script src="constants.js?v=6"></script>
-<script src="storage.js?v=4"></script>
+<script src="constants.js?v=7"></script>
+<script src="storage.js?v=5"></script>
+<script src="progress.js?v=1"></script>
+<script src="stars.js?v=1"></script>
 <script src="tasks/tasks.js?v=4"></script>
 <script src="tasks/math.js?v=3"></script>
 <script src="tasks/scale.js?v=3"></script>
-<script src="audio.js?v=2"></script>
+<script src="audio.js?v=3"></script>
 <script src="nav.js?v=2"></script>
 <script src="quality.js?v=1"></script>
-<script src="fx.js?v=3"></script>
+<script src="fx.js?v=4"></script>
 <script src="scenes/flower.js?v=2"></script>
 <script src="scenes/zombies.js?v=3"></script>
 <script src="scenes/railway.js?v=1"></script>
 <script src="scenes/balloon.js?v=1"></script>
 <script src="scenes/campfire.js?v=2"></script>
-<script src="lesson.js?v=6"></script>
-<script src="app.js?v=5"></script>
+<script src="lesson.js?v=7"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

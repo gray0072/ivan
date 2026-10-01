@@ -27,9 +27,10 @@ const Lesson = (() => {
   function start(player, proc, step, endCb) {
     onEnd = endCb;
     const st = player.settings;
-    const isBoss = step % BOSS_EVERY === 0;
+    const boss = Progress.bossKind(step); // null on a normal step
+    const isBoss = !!boss;
     L = {
-      player, proc, st, step, isBoss,
+      player, proc, st, step, isBoss, boss,
       total: st.lessonLength,
       need: isBoss ? st.lessonLength - 1 : st.lessonLength, // normal tasks before the boss
       bossHp: 0,
@@ -43,14 +44,14 @@ const Lesson = (() => {
       scene: SCENES[proc.id]({ step: step - 1 }),
     };
     $('lsProc').textContent = proc.icon + ' ' + proc.name;
-    $('lsStep').textContent = 'Step ' + step + (isBoss ? ' · Boss' : '');
+    $('lsStep').textContent = 'Step ' + step + (isBoss ? ' · ' + boss.name : '');
     const pad = st.answerMode === 'type' && matchMedia('(pointer: coarse)').matches;
     $('choices').hidden = st.answerMode !== 'choice';
     $('numpad').hidden = !pad;
     $('typeHint').hidden = st.answerMode !== 'type' || pad;
     $('wrongNote').textContent = '';
     $('taskPanel').classList.toggle('twoLineNote', st.types.includes('scale'));
-    showNote(isBoss ? 'Get ready! Boss at the end 👹' : 'Get ready!', false);
+    showNote(isBoss ? `Get ready! ${boss.name} at the end 👹` : 'Get ready!', false, isBoss ? `Beat it for up to ${boss.gems} 💎` : '');
     resize();
     nextTask();
     updateInfo();
@@ -129,7 +130,7 @@ const Lesson = (() => {
     b.classList.toggle('active', L.bossHp > 0);
     b.textContent = L.bossHp > 0
       ? '👹 ' + '❤'.repeat(L.bossHp) + '♡'.repeat(BOSS_HITS - L.bossHp)
-      : L.done >= L.total ? '👹 Defeated!' : '👹 Boss: ' + BOSS_HITS + ' hits';
+      : L.done >= L.total ? '👹 Defeated!' : `👹 ${L.boss.name}: ${BOSS_HITS} hits · up to ${L.boss.gems} 💎`;
     $('lsMistakes').textContent = L.mistakes;
     $('lsEarned').textContent = L.earned;
     $('lsMistakesBox').classList.toggle('some', L.mistakes > 0);
@@ -174,7 +175,7 @@ const Lesson = (() => {
           L.scene.correct(L.done, L.total);
           L.scene.bossStart();
           Sfx.boss();
-          showNote('👹 BOSS!', true, BOSS_HITS + ' correct answers to win');
+          showNote(L.boss.note, true, BOSS_HITS + ' correct answers to win' + L.boss.hint);
         } else {
           L.phase = 'feedback';
           L.scene.correct(L.done, L.total);
@@ -201,7 +202,7 @@ const Lesson = (() => {
     if (L.noteT > 0) { L.noteT -= dt; if (L.noteT <= 0) $('readyNote').hidden = true; }
     const draining = L.phase === 'play' || (L.phase === 'feedback' && L.lastWrong);
     if (draining) {
-      L.f -= dt / (L.fail * (L.bossHp > 0 ? BOSS_TIME_MUL : 1));
+      L.f -= dt / (L.fail * (L.bossHp > 0 ? L.boss.timeMul : 1));
       if (L.f <= WARN_LEVEL) {
         L.tickT -= dt;
         if (L.tickT <= 0) { Sfx.tick(); L.tickT = L.f < WARN_LEVEL / 2 ? WARN_TICK / 2 : WARN_TICK; }

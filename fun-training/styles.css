@@ -191,6 +191,8 @@ h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #e4dcff; }
   border-radius: 2rem;
 }
 .coins b { color: var(--accent); }
+.coins .gems { margin-left: 0.6rem; }
+.coins .gems b { color: #9fe3ff; }
 .topBtns { display: flex; gap: 0.7rem; }
 .topBtns .btn { font-size: 0.95rem; padding: 0.5rem 1.1rem; }
 .summary { color: #d8d0ff; font-size: 0.9rem; margin: 0.8rem 0 1rem; text-align: center; }
@@ -217,6 +219,8 @@ h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #e4dcff; }
 .soonLabel { font-size: 0.9rem; opacity: 0.8; }
 .procSide { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; min-width: 7rem; }
 .procStep { font-weight: 800; color: var(--blue); }
+.procLevel { font-size: 0.85rem; font-weight: 800; color: var(--muted); white-space: nowrap; }
+.procLock { font-size: 0.8rem; font-weight: 800; color: #e08a00; text-align: right; }
 .procStars { min-height: 1.2rem; }
 
 .track { display: flex; align-items: center; gap: 0.35rem; }
@@ -262,17 +266,27 @@ button.cell[disabled] { cursor: default; }
   0%, 100% { box-shadow: 0 0 0 0 rgba(255,210,63,0.8); }
   50% { box-shadow: 0 0 0 0.35rem rgba(255,210,63,0); }
 }
-.star { color: var(--c); font-size: 1.8rem; line-height: 1; text-shadow: 0 0.08rem 0 rgba(0,0,0,0.25); }
-.star.small { font-size: 1.1rem; }
-.star.goal { margin-left: 0.3rem; font-size: 2rem; opacity: 0.45; }
-.star.goal.earned { opacity: 1; }
-.star.huge { font-size: 4rem; }
-.star.rainbow {
-  background: linear-gradient(90deg, #ff4f7b, #ffd23f, #3ddc97, #4fd8ff, #b36bff);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+/* Level stars: SVG in the level's material (stars.js), sized by font-size. */
+.star { width: 1em; height: 1em; font-size: 1.8rem; vertical-align: -0.15em; flex: none; filter: drop-shadow(0 0.06em 0 rgba(0,0,0,0.3)); }
+.star.small { font-size: 1.15rem; }
+.star.goal { margin-left: 0.3rem; font-size: 2rem; opacity: 0.35; filter: grayscale(0.6); }
+.star.goal.earned { opacity: 1; filter: drop-shadow(0 0.06em 0 rgba(0,0,0,0.3)); }
+.star.dim { opacity: 0.4; filter: grayscale(0.6); }
+.star.huge { font-size: 5rem; animation: starSpin 1.2s 0.6s both; }
+@keyframes starSpin { from { transform: scale(0) rotate(-200deg); } 70% { transform: scale(1.2) rotate(10deg); } to { transform: none; } }
+.star .spark { transform-origin: 19.5px 5px; animation: twinkle 1.6s infinite; }
+@keyframes twinkle { 0%, 60%, 100% { opacity: 0; transform: scale(0.3); } 75% { opacity: 1; transform: scale(1); } }
+
+/* Level-up in the result dialog: the new star and the road of levels from wood to diamond. */
+.levelUp { display: flex; align-items: center; justify-content: center; gap: 1rem; text-align: left; }
+.ladder { display: flex; justify-content: center; gap: 0.35rem; margin-top: 0.7rem; flex-wrap: wrap; }
+.rung { display: flex; flex-direction: column; align-items: center; width: 3.6rem; font-size: 0.7rem; color: var(--muted); }
+.rung .star { font-size: 1.7rem; }
+.rung.got small { color: var(--ink); font-weight: 800; }
+.rung.next .star { animation: pulseStar 1.2s infinite; }
+.rung.next small { color: var(--blue); font-weight: 800; }
+.rung.later .star { opacity: 0.3; filter: grayscale(1); }
+@keyframes pulseStar { 50% { transform: scale(1.25); } }
 .more { font-size: 0.8rem; font-weight: 800; margin-left: 0.2rem; }
 
 /* ---------- settings ---------- */
@@ -615,8 +629,9 @@ button.cell[disabled] { cursor: default; }
 .resText { margin: 0.2rem 0 0.6rem; font-size: 1.15rem; }
 .resCoins { display: flex; flex-direction: column; align-items: center; }
 .coinBig { font-size: 2.4rem; font-weight: 800; color: #e0a800; }
+.gemBig { margin-left: 0.6rem; color: #3a8fd0; }
 .coinRule { font-size: 0.85rem; color: var(--muted); }
-.resStar { display: flex; align-items: center; justify-content: center; gap: 0.8rem; margin: 0.6rem 0; font-size: 1.2rem; animation: popIn 0.6s 0.8s both; }
+.resStar { display: flex; flex-direction: column; align-items: center; margin: 0.6rem 0; font-size: 1.2rem; animation: popIn 0.6s 0.8s both; }
 .resTrack { display: flex; justify-content: center; margin: 0.8rem 0 0.2rem; }
 .cheatNote { color: var(--bad); font-size: 0.9rem; }
 
@@ -694,6 +709,12 @@ button.cell[disabled] { cursor: default; }
   .resTrack .track { gap: 0.2rem; }
   .resTrack .cell { width: 1.6rem; height: 1.6rem; }
   .resTrack .star.goal { font-size: 1.6rem; }
+  .ladder { gap: 0.15rem; flex-wrap: nowrap; }
+  .rung { width: 2.2rem; font-size: 0.65rem; }
+  .rung .star { font-size: 1.4rem; }
+  .rung small { visibility: hidden; white-space: nowrap; }
+  .rung.next small { visibility: visible; }
+  .levelUp { gap: 0.6rem; font-size: 1rem; }
 
   .setHead h1 { font-size: 1.4rem; }
   .tabs { flex-wrap: wrap; justify-content: center; gap: 0.3rem 1rem; }
@@ -755,6 +776,8 @@ button.cell[disabled] { cursor: default; }
   .resText { font-size: 1rem; margin-bottom: 0.3rem; }
   .coinBig { font-size: 1.8rem; }
   .star.huge { font-size: 2.8rem; }
+  .rung small { display: none; }
+  .ladder { margin-top: 0.3rem; }
   .resStar { margin: 0.3rem 0; }
   .resTrack { margin: 0.4rem 0 0; }
   .panel .btnRow { margin-top: 0.6rem; }

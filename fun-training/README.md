@@ -6,6 +6,8 @@ A training game for school kids: water a flower, stop zombies, lay rails for a t
 
 Tasks: math (+ − × ÷ with chosen number limits) and reading scales — find the number a pointer shows on a ruler-like scale. Pick one of four answers or type it yourself.
 
+Every 10 steps make a level, from Wooden to Diamond: do all of them with 0–1 mistakes to earn the level's star and open the next one. Bosses on steps 5 and 10 (twice as fast) pay up to 3 and 6 diamonds.
+
 Works on a TV (keyboard or remote: arrows, Enter, digits, Back), on a computer and on a phone: tap the answers, or type them on the on-screen number pad.
 
 ![Screenshot](screenshot.png)

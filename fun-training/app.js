@@ -42,24 +42,19 @@
 
   const overlayOpen = () => !$('overlay').hidden;
 
-  const tierOf = i => STAR_TIERS[Math.min(i, STAR_TIERS.length - 1)];
+  const tierOf = Stars.tierOf;
+  const starHTML = Stars.html;
 
-  function starHTML(i, cls = '') {
-    const tier = tierOf(i);
-    return tier.color === 'rainbow'
-      ? `<span class="star rainbow ${cls}" title="${tier.name} star">★</span>`
-      : `<span class="star ${cls}" style="--c:${tier.color}" title="${tier.name} star">★</span>`;
-  }
-
-  function starsHTML(count) {
+  // Earned stars of a process, small (at most 8, then +N).
+  function starsHTML(levels) {
     let h = '';
-    for (let i = 0; i < Math.min(count, 8); i++) h += starHTML(i, 'small');
-    if (count > 8) h += `<span class="more">+${count - 8}</span>`;
+    levels.slice(0, 8).forEach(lv => { h += starHTML(lv, 'small'); });
+    if (levels.length > 8) h += `<span class="more">+${levels.length - 8}</span>`;
     return h;
   }
 
   // One step cell of a track: done perfectly (✓), done with mistakes (↻, can be replayed for more coins),
-  // the next step, or a future one.
+  // the next step, or a future one (also every step after a finished level that isn't perfect yet).
   function cellInfo(p, proc, n) {
     const steps = p.progress[proc.id];
     const cls = ['cell'];
@@ -70,32 +65,35 @@
       else {
         cls.push('partial', 'r' + rate);
         inner = '↻';
-        title += ' — replay with 0–1 mistakes for more coins';
+        title += ' — replay with 0–1 mistakes for more coins and the level star';
       }
-    } else if (n === steps + 1) cls.push('current');
+    } else if (Progress.playable(p, proc, n)) cls.push('current');
     else cls.push('future');
-    if (n % BOSS_EVERY === 0) { cls.push('boss'); title += ' (boss)'; }
-    return { cls: cls.join(' '), inner: inner + (n % BOSS_EVERY === 0 ? '<i>💀</i>' : ''), title, playable: n <= steps + 1 };
+    const boss = Progress.bossKind(n);
+    if (boss) { cls.push('boss'); title += ` (${boss.name.toLowerCase()}, up to ${boss.gems} 💎)`; }
+    return { cls: cls.join(' '), inner: inner + (boss ? `<i>${boss.icon}</i>` : ''), title, playable: Progress.playable(p, proc, n) };
   }
 
-  // Static track (result dialog) of the block that holds step `n`.
+  // The level's goal star at the end of a track.
+  const goalHTML = (p, proc, lv) => starHTML(lv, 'goal' + (Progress.levelDone(p, proc, lv) ? ' earned' : ''));
+
+  // Static track (result dialog) of the level that holds step `n`.
   function trackHTML(p, proc, n) {
-    const block = Math.floor((n - 1) / TRACK_LEN);
+    const lv = Progress.levelOf(n);
     let h = '<span class="track">';
     for (let i = 0; i < TRACK_LEN; i++) {
-      const c = cellInfo(p, proc, block * TRACK_LEN + i + 1);
+      const c = cellInfo(p, proc, lv * TRACK_LEN + i + 1);
       h += `<span class="${c.cls}" title="${c.title}">${c.inner}</span>`;
     }
-    const earned = p.progress[proc.id] >= (block + 1) * TRACK_LEN;
-    return h + starHTML(block, 'goal' + (earned ? ' earned' : '')) + '</span>';
+    return h + goalHTML(p, proc, lv) + '</span>';
   }
 
-  const viewBlock = {}; // process id -> block shown on the home screen
+  const viewBlock = {}; // process id -> level shown on the home screen
 
-  // Interactive track: every playable cell is a button; ‹ › page through blocks of 10.
+  // Interactive track: every playable cell is a button; ‹ › page through the levels.
   function trackEl(p, proc, isFirst) {
-    const steps = p.progress[proc.id];
-    const cur = Math.floor(steps / TRACK_LEN);
+    const cur = Progress.currentLevel(p, proc);
+    const next = Progress.nextStep(p, proc);
     let block = viewBlock[proc.id];
     if (block === undefined || block > cur) block = viewBlock[proc.id] = cur;
     const wrap = el('div', 'track');
@@ -107,11 +105,11 @@
       b.addEventListener('click', () => { viewBlock[proc.id] = block + dir; renderHome(); focusCell(proc.id, dir); });
       return b;
     };
-    wrap.append(pager(-1, 'Earlier steps'));
+    wrap.append(pager(-1, 'Earlier levels'));
     for (let i = 0; i < TRACK_LEN; i++) {
       const n = block * TRACK_LEN + i + 1;
       const c = cellInfo(p, proc, n);
-      const b = el('button', c.cls + (isFirst && n === steps + 1 ? ' default' : ''), c.inner);
+      const b = el('button', c.cls + (isFirst && n === next ? ' default' : ''), c.inner);
       b.title = c.title;
       b.dataset.proc = proc.id;
       b.dataset.step = n;
@@ -119,9 +117,8 @@
       else b.disabled = true;
       wrap.append(b);
     }
-    const earned = steps >= (block + 1) * TRACK_LEN;
-    wrap.insertAdjacentHTML('beforeend', starHTML(block, 'goal' + (earned ? ' earned' : '')));
-    wrap.append(pager(1, 'Later steps'));
+    wrap.insertAdjacentHTML('beforeend', goalHTML(p, proc, block));
+    wrap.append(pager(1, 'Later levels'));
     return wrap;
   }
 
@@ -134,10 +131,6 @@
 
   function toImprove(p, proc) {
     return p.rates[proc.id].filter(r => r < MAX_RATE).length;
-  }
-
-  function totalStars(p) {
-    return PROCESSES.reduce((s, pr) => s + Math.floor(p.progress[pr.id] / TRACK_LEN), 0);
   }
 
   function limitText(v) { return 'up to ' + Tasks.fmt(v); }
@@ -191,7 +184,7 @@
       const slot = el('div', 'playerSlot');
       const card = el('button', 'playerCard' + (p.id === lastId ? ' default' : ''),
         `<span class="pAvatar">${p.avatar}</span><span class="pName">${esc(p.name)}</span>` +
-        `<span class="pMeta">🪙 ${p.coins} · ${starHTML(0, 'small')} ${totalStars(p)}</span>`);
+        `<span class="pMeta">🪙 ${p.coins} · 💎 ${p.gems} · ${starHTML(Math.max(0, Progress.bestLevel(p)), 'small' + (Progress.bestLevel(p) < 0 ? ' dim' : ''))} ${Progress.totalStars(p)}</span>`);
       card.addEventListener('click', () => selectPlayer(p.id));
       const del = el('button', 'pDelete', '🗑 Delete');
       let armed = 0;
@@ -271,25 +264,37 @@
     $('homeAvatar').textContent = p.avatar;
     $('homeName').textContent = p.name;
     $('homeCoins').textContent = p.coins;
+    $('homeGems').textContent = p.gems;
     $('trainingSummary').innerHTML = summary(p.settings);
     const list = $('processList');
     list.innerHTML = '';
     let first = true;
     for (const proc of PROCESSES) {
-      const steps = p.progress[proc.id];
       const row = el('div', 'procRow' + (proc.ready ? '' : ' soon'));
       const main = el('div', 'procMain', `<span class="procName">${proc.name}</span>`);
       if (proc.ready) main.append(trackEl(p, proc, first));
       else main.insertAdjacentHTML('beforeend', '<span class="soonLabel">Coming soon</span>');
-      const fix = proc.ready ? toImprove(p, proc) : 0;
-      const side = el('div', 'procSide', proc.ready
-        ? `<span class="procStep">Step ${steps + 1}</span><span class="procStars">${starsHTML(Math.floor(steps / TRACK_LEN))}</span>` +
-          (fix ? `<span class="procFix" title="Steps you can replay for more coins">↻ ${fix} to improve</span>` : '')
-        : '');
+      const side = el('div', 'procSide', proc.ready ? sideHTML(p, proc) : '');
       row.append(el('span', 'procIcon', proc.icon), main, side);
       if (proc.ready) first = false;
       list.append(row);
     }
+  }
+
+  // Right side of a process row: the level, the next step or what opens the next level, earned stars, ↻ count.
+  function sideHTML(p, proc) {
+    const lv = Progress.currentLevel(p, proc);
+    const tier = tierOf(lv);
+    let h = `<span class="procLevel">${starHTML(lv, 'small' + (Progress.levelDone(p, proc, lv) ? '' : ' dim'))} ${tier.name} level</span>`;
+    if (Progress.locked(p, proc)) {
+      const left = Progress.toPerfect(p, proc, lv);
+      h += `<span class="procLock" title="Replay the ↻ steps with 0–1 mistakes">🔒 ↻ ${left} ${left === 1 ? 'step' : 'steps'} to open ${tierOf(lv + 1).name}</span>`;
+    } else h += `<span class="procStep">Step ${p.progress[proc.id] + 1}</span>`;
+    const stars = Progress.stars(p, proc);
+    if (stars.length) h += `<span class="procStars">${starsHTML(stars)}</span>`;
+    const fix = toImprove(p, proc);
+    if (fix && !Progress.locked(p, proc)) h += `<span class="procFix" title="Steps you can replay for more coins">↻ ${fix} to improve</span>`;
+    return h;
   }
 
   // ---------- settings ----------
@@ -493,13 +498,14 @@
   }
 
   function lessonEnded(r) {
-    lastResult = r;
     const p = current;
     const proc = r.proc;
-    let coins = 0, rate = 0, star = -1, rule = '';
+    const lv = Progress.levelOf(r.step);
+    const wasDone = Progress.levelDone(p, proc, lv);
+    let coins = 0, gems = 0, rate = 0, rule = '', gemRule = '';
     const replay = r.step <= p.progress[proc.id];
     if (r.won) {
-      // The answers' prices, cut by the mistakes; a replay pays only what beats the step's best.
+      // The answers' prices, cut by the mistakes; a replay pays only what beats the step's best. Same for a boss's diamonds.
       rate = COIN_RULES.find(c => r.mistakes <= c.maxMistakes).rate;
       const got = Math.round(r.earned * rate / MAX_RATE);
       const before = replay ? p.best[proc.id][r.step - 1] : 0;
@@ -507,44 +513,67 @@
       rule = `${r.earned} for the answers` +
         (rate < MAX_RATE ? ` × ${Math.round(100 * rate / MAX_RATE)}% for ${r.mistakes} mistakes` : '') +
         (!replay ? '' : got > before ? ` · ${got} − ${before} from before` : ` · you got ${before} here before`);
+      const boss = Progress.bossKind(r.step);
+      const gGot = Progress.gems(r.step, rate);
+      const gBefore = replay ? p.bestGems[proc.id][r.step - 1] : 0;
+      if (boss) {
+        gems = Math.max(0, gGot - gBefore);
+        gemRule = `${boss.name}: ${gGot} of ${boss.gems} 💎` + (replay && gBefore ? ` · ${gBefore} before` : '');
+      }
       if (!r.cheated) {
         if (replay) {
           p.rates[proc.id][r.step - 1] = Math.max(p.rates[proc.id][r.step - 1], rate);
           p.best[proc.id][r.step - 1] = Math.max(before, got);
+          p.bestGems[proc.id][r.step - 1] = Math.max(gBefore, gGot);
         } else {
           p.progress[proc.id]++;
           p.rates[proc.id].push(rate);
           p.best[proc.id].push(got);
-          if (p.progress[proc.id] % TRACK_LEN === 0) star = p.progress[proc.id] / TRACK_LEN - 1;
+          p.bestGems[proc.id].push(gGot);
         }
         p.coins += coins;
+        p.gems += gems;
         Store.save();
       }
       Sfx.win();
       if (coins && !r.cheated) setTimeout(() => Sfx.coins(), 900);
-      if (star >= 0) setTimeout(() => Sfx.star(), 1400);
+      if (gems && !r.cheated) setTimeout(() => Sfx.gems(), 1150);
     } else Sfx.lose();
+    // All steps of the level perfect just now: its star, the next level opens.
+    const levelUp = r.won && !wasDone && Progress.levelDone(p, proc, lv);
+    if (levelUp) setTimeout(() => Sfx.star(), 1400);
+    const shut = r.won && !levelUp && Progress.locked(p, proc) && Progress.currentLevel(p, proc) === lv;
+    const next = r.won ? Progress.nextStep(p, proc) : r.step;
+    lastResult = { proc, next };
+    delete viewBlock[proc.id]; // home shows the current level again (a new one after a level-up)
 
     $('resIcon').textContent = r.won ? proc.winIcon : proc.loseIcon;
     $('resTitle').textContent = r.won ? proc.winTitle : proc.loseTitle;
     $('resText').textContent = r.won
       ? `Step ${r.step} ${replay ? 'replayed' : 'done'}! ${r.mistakes === 0 ? 'No mistakes — perfect!' : r.mistakes === 1 ? '1 mistake.' : r.mistakes + ' mistakes.'}` +
-        (rate < MAX_RATE ? ' Replay it with 0–1 mistakes for more coins.'
-          : replay && !coins ? ' Harder settings or a faster speed pay more per task.' : '')
+        (shut ? ` Replay the ↻ steps with 0–1 mistakes to earn the ${tierOf(lv).name} star and open the ${tierOf(lv + 1).name} level.`
+          : rate < MAX_RATE ? ' Replay it with 0–1 mistakes for more coins.'
+          : replay && !coins && !levelUp ? ' Harder settings or a faster speed pay more per task.' : '')
       : r.bossLeft > 0 ? `The boss needed ${r.bossLeft} more ${r.bossLeft === 1 ? 'hit' : 'hits'}. Try again — you can do it!`
       : `You solved ${r.done} of ${r.total}. Try again — you can do it!`;
     $('resCoins').hidden = !r.won;
     $('resCoins').innerHTML = r.won
-      ? `<span class="coinBig">+${r.cheated ? 0 : coins} 🪙</span><span class="coinRule">${rule} · total ${p.coins}</span>`
+      ? `<span class="coinBig">+${r.cheated ? 0 : coins} 🪙${gemRule ? ` <span class="gemBig">+${r.cheated ? 0 : gems} 💎</span>` : ''}</span>` +
+        `<span class="coinRule">${rule} · total ${p.coins}</span>` +
+        (gemRule ? `<span class="coinRule">${gemRule} · total ${p.gems} 💎</span>` : '')
       : '';
-    $('resStar').hidden = star < 0;
-    if (star >= 0) $('resStar').innerHTML = `${starHTML(star, 'huge')}<span>You earned a <b>${tierOf(star).name}</b> star!</span>`;
+    $('resStar').hidden = !levelUp;
+    if (levelUp) {
+      $('resStar').innerHTML = `<div class="levelUp">${starHTML(lv, 'huge')}<span>You earned the <b>${tierOf(lv).name}</b> star!<br>` +
+        `The <b>${tierOf(lv + 1).name}</b> level is open — ${TRACK_LEN} new steps.</span></div>` +
+        Stars.ladder(Progress.stars(p, proc), lv + 1);
+    }
     $('resTrack').innerHTML = trackHTML(p, proc, r.step);
     $('resCheat').hidden = !r.cheated;
-    $('resAgainBtn').textContent = r.won ? 'Next lesson ▶' : 'Try again ↻';
+    $('resAgainBtn').textContent = !r.won ? 'Try again ↻' : next <= p.progress[proc.id] ? `Replay step ${next} ↻` : 'Next lesson ▶';
     $('resultPanel').classList.toggle('won', r.won);
     showPanel('resultPanel');
-    if (r.won) Confetti.start();
+    if (r.won) Confetti.start(levelUp ? FIREWORKS_TIME : 0);
   }
 
   // ---------- wiring ----------
@@ -611,8 +640,7 @@
   $('resHomeBtn').addEventListener('click', () => { Lesson.stop(); openHome(); });
   $('resAgainBtn').addEventListener('click', () => {
     if (!lastResult) return;
-    const proc = lastResult.proc;
-    startLesson(proc, lastResult.won ? current.progress[proc.id] + 1 : lastResult.step);
+    startLesson(lastResult.proc, lastResult.next);
   });
   [...$('choices').children].forEach(b => b.addEventListener('click', () => Lesson.choiceClick(b)));
   $('numpad').querySelectorAll('button').forEach(b => b.addEventListener('click', () => Lesson.padClick(b)));
@@ -621,6 +649,7 @@
   $('nameInput').maxLength = NAME_MAX;
 
   Store.load();
+  Stars.init();
   Confetti.init($('fx'));
   buildSettings();
   renderPlayers();
