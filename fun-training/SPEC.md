@@ -101,8 +101,8 @@ Listening and reading: a voice says a letter, a word or a short phrase, and the 
 - Always picked among four, also when answers are typed: a lesson mixing Reading with typed tasks switches per task between the four buttons and typing / the number pad. Keys 1–4 pick.
 - Wrong options are close, all different, never the answer, and spread over different kinds:
   - letters: ones that sound alike (English B C D E G P T V Z; Swedish be, ce, de…; Russian Б / П, Ж / Ш / Щ, И / Й / Ы) or look alike (b d p q, m n w, И Н П, Ш Щ), rarely any other letter;
-  - words: real words of the list one or two letters apart (three for long words), and misspellings — a letter changed to one readers mix up (b / d, m / n, å / a, ш / щ; never е / ё in Russian, as ё is often written е), two inner letters swapped, an inner letter left out;
-  - phrases: one word changed that way (longer words more often, a different word in each option), or the first and last words swapped ("пёс и кот").
+  - words: only real words — it's reading, not a spelling test, so no made-up misspellings. From the word list and the words of the phrases (with their inflected forms: дереве, tänderna), the `READ_NEAR_WORDS` = 8 spelled most like the answer (fewest letters apart, then the same first letter and a close length; the nearest weigh most): cat → hat, cut, car; кошка → мошка, ложка, кошки;
+  - phrases: one word changed to such a real word (longer words more often, a different word in each option), or the first and last words swapped ("пёс и кот").
 - An answer doesn't come back within `READ_RECENT` = 40 reading tasks (at most half of the possible ones).
 - **Speed**: the same 5 steps, its own setting. Expected time = `READ_TIME` + `READ_LISTEN_TIME` = 1.2 s + (a letter: `READ_LETTER_TIME` = 1.2 s; words: `READ_CHAR_TIME` = 0.35 s per letter + `READ_WORD_TIME` = 1 s per word after the first): a letter ≈ 6 s at Medium, a 5-letter word ≈ 7 s, 3 words up to 10 letters ≈ 16–20 s.
 - After a mistake: "🔊 It said: кошка на дереве".

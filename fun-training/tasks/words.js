@@ -1,13 +1,12 @@
-// Reading task data per language: the alphabet, letters that sound or look alike, letter pairs a reader mixes up
-// (for close misspelled options), everyday words a school kid knows, and short meaningful phrases of 2–3 words.
-// Words are grouped by length when loaded; any word may also serve as a close option for another.
+// Reading task data per language: the alphabet, letters that sound or look alike, everyday words a school kid knows,
+// and short meaningful phrases of 2–3 words. Words are grouped by length when loaded; any word (also one of the
+// phrases) may serve as a close wrong option for another.
 
 const READ_DATA = {
   en: {
     letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     // Letters that sound alike (B C D E G P T V Z all end in "ee") or look alike in lower case (b d p q).
     similar: ['BCDEGPTVZ', 'AHJK', 'FLMNSX', 'IY', 'QUW', 'OQ', 'BDPQ', 'MNW', 'IJL', 'UV'],
-    swaps: 'bd pq bp mn nu il ea ao ou ck sz fv td gj wv ei',
     words: `
       am an as at be by do go he hi if in is it me my no of oh on or ox so to up us we
       ant ape arm bag bat bed bee big bow box boy bun bus cap car cat cot cow cry cub cup cut dad day dig dog dot
@@ -77,7 +76,6 @@ const READ_DATA = {
     letters: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ',
     // Sound alike (be, ce, de, ge, pe, te, ve · eff, ell, emm, enn, ess, ärr · hå, kå, å) or look alike (b d p q).
     similar: ['BCDEGPTV', 'FLMNRS', 'HKÅO', 'UYÖ', 'AÅÄ', 'OÖ', 'EÄ', 'IJY', 'QK', 'BDPQ', 'MNW', 'IJL', 'UV', 'SXZ'],
-    swaps: 'bd pq bp mn nu il ea ao ou ck sz fv td gk wv ei aå aä oö oå eä uy iy jg',
     words: `
       av du en ja ko bi is ni nu om på ur vi är åt
       apa arm arg ben bil blå bok bro båt dag fem fot får gul gås hav hon hus hår jag kam kul lam lek lim lök löv
@@ -137,8 +135,6 @@ const READ_DATA = {
     },
     // Sound alike (paired voiced / voiceless, hissing ones, close vowels) or look alike (И Н П, З Э, Ш Щ).
     similar: ['БП', 'ВФ', 'ГКХ', 'ДТ', 'ЖШЩ', 'ЗСЦ', 'ЕЁЭ', 'ИЙЫ', 'ОА', 'УЮ', 'ЯА', 'ЛМН', 'ЧЦЩ', 'ЬЪ', 'ИНП', 'ЗЭ', 'ВБ', 'РЬ'],
-    // No е / ё in misspellings: ё is often written as е, so that wouldn't be a mistake.
-    swaps: 'бд бп пн вф гк дт жш шщ зс сц еи ий ыи оа ую яа эе лм ин чц тш',
     words: `
       ёж уж ус ум юг ты он мы вы да на за по до от из но ну
       бег бок бык год гол два дар дом дуб дым ель жар жук зуб ива кит ком кот куб лак лев лес лёд лом лук мак мел

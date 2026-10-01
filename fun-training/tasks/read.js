@@ -1,10 +1,11 @@
 // Reading task type: a voice says a letter, a word or a short phrase; the answer is picked among four written
-// options close to it — letters that sound or look alike, words a letter or two apart, a misspelling, the words
-// of a phrase in another order. Always picked, never typed. Needs the device's speech synthesis (speech.js).
+// options close to it — letters that sound or look alike, other real words spelled alike, the words of a phrase in
+// another order. Only real words: it's reading, not a spelling test. Always picked, never typed.
+// Needs the device's speech synthesis (speech.js).
 
 const ReadTasks = (() => {
   const { pick, shuffle } = Tasks;
-  const langs = {}; // language id -> its READ_DATA prepared: words by length, phrases by word count, swap pairs
+  const langs = {}; // language id -> its READ_DATA prepared: words by length, phrases by word count, option words
 
   function data(id) {
     if (langs[id]) return langs[id];
@@ -17,13 +18,13 @@ const ReadTasks = (() => {
       const ws = text.split(' ');
       (phrases[ws.length] = phrases[ws.length] || []).push({ text, words: ws, max: Math.max(...ws.map(w => w.length)) });
     }
-    const swaps = {};
-    for (const pair of d.swaps.split(' ')) {
-      const [a, b] = [...pair];
-      (swaps[a] = swaps[a] || []).push(b);
-      (swaps[b] = swaps[b] || []).push(a);
+    // Real words for wrong options, by length: the word list and every word of the phrases (with their
+    // inflected forms — дереве, tänderna), so a phrase's word can be swapped for a real one that looks alike.
+    const pool = {};
+    for (const w of new Set(words.concat(d.phrases.join(' ').split(' ')))) {
+      if (w.length >= 2) (pool[w.length] = pool[w.length] || []).push(w);
     }
-    langs[id] = { letters: [...d.letters], names: d.names || {}, similar: d.similar, byLen, phrases, swaps };
+    langs[id] = { letters: [...d.letters], names: d.names || {}, similar: d.similar, byLen, phrases, pool, near: new Map() };
     return langs[id];
   }
 
@@ -93,24 +94,21 @@ const ReadTasks = (() => {
     return prev[b.length];
   }
 
-  // Close spellings of a word as [value, weight, kind]: real words a letter or two apart, then misspellings —
-  // a letter changed to one a reader mixes it up with (b / d, ш / щ, å / a), two inner letters swapped, one left out.
+  // The READ_NEAR_WORDS real words spelled most like w, as [value, weight, kind]: fewest letters apart, then the same
+  // first letter and a close length; the nearest weigh most. Never a made-up word.
   function closeWords(w, d) {
-    const out = [];
-    const max = w.length <= 3 ? 1 : w.length <= 6 ? 2 : 3;
-    for (let n = w.length - 1; n <= w.length + 1; n++) {
-      for (const x of d.byLen[n] || []) {
-        const dist = x === w ? 0 : distance(w, x, max);
-        if (dist && dist <= max) out.push([x, dist === 1 ? 4 : dist === 2 ? 2.5 : 1.5, 'word']);
+    if (d.near.has(w)) return d.near.get(w); // words come back often; the search is the slow part
+    const scored = [];
+    const cap = Math.max(2, Math.ceil(w.length * 0.6)); // farther words all count as cap + 1
+    for (let n = w.length - 2; n <= w.length + 2; n++) {
+      for (const x of d.pool[n] || []) {
+        if (x !== w) scored.push([x, distance(w, x, cap) + (x[0] === w[0] ? 0 : 0.5) + 0.3 * Math.abs(x.length - w.length)]);
       }
     }
-    const ch = [...w];
-    ch.forEach((c, i) => (d.swaps[c] || []).forEach(s => out.push([w.slice(0, i) + s + w.slice(i + 1), 3, 'letter'])));
-    for (let i = 1; i < ch.length - 2; i++) {
-      if (ch[i] !== ch[i + 1]) out.push([w.slice(0, i) + ch[i + 1] + ch[i] + w.slice(i + 2), 2, 'order']);
-    }
-    if (ch.length >= 4) for (let i = 1; i < ch.length - 1; i++) out.push([w.slice(0, i) + w.slice(i + 1), 1.5, 'drop']);
-    return out.filter(([v]) => v !== w);
+    scored.sort((a, b) => a[1] - b[1]);
+    const out = scored.slice(0, READ_NEAR_WORDS).map(([x, s]) => [x, 1 / (s * s), x]);
+    d.near.set(w, out);
+    return out;
   }
 
   // n different values picked by weight; after each pick the others of its kind weigh less, so the options vary.
@@ -151,10 +149,8 @@ const ReadTasks = (() => {
       wrong = weighted(cands, need, t.letter).map(letterLabel);
     } else if (t.kind === 'word') {
       wrong = weighted(closeWords(t.answer, d), need, t.answer);
-      const near = (d.byLen[t.answer.length] || []).map(x => [x, 1, 'any']);
-      if (wrong.length < need) wrong = wrong.concat(weighted(near, need - wrong.length, t.answer).filter(x => !wrong.includes(x)));
     } else {
-      // One word changed to a close one (longer words more often), or the first and last words swapped.
+      // One word changed to another real word spelled alike (longer words more often), or the first and last swapped.
       const cands = [];
       t.words.forEach((w, i) => {
         if (w.length < 2) return;

@@ -84,6 +84,7 @@ const READ_CHAR_TIME = 0.35;  // s per letter of the answer to read the four opt
 const READ_WORD_TIME = 1;     // extra s per word beyond the first
 const READ_VOICE_RATE = 0.85; // speech rate, 1 = normal: a bit slower for kids
 const READ_RECENT = 40;       // an answer isn't repeated within this many reading tasks
+const READ_NEAR_WORDS = 8;    // wrong options of a word come from this many real words spelled most like it
 
 const DEFAULT_SETTINGS = {
   answerMode: 'choice',
