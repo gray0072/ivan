@@ -156,6 +156,9 @@ const PROCESSES = [
   { id: 'campfire', name: 'Campfire Night', icon: '🔥', ready: true,
     winTitle: 'Good morning! You kept the fire going!', winIcon: '🌅',
     loseTitle: 'The fire went out…', loseIcon: '🐺' },
+  { id: 'panda', name: 'Panda Snack', icon: '🐼', ready: true,
+    winTitle: 'The panda is full and happy!', winIcon: '🐼',
+    loseTitle: 'The panda is sad and hungry…', loseIcon: '😢' },
 ];
 
 const AVATARS = ['🦊', '🐼', '🐯', '🐸', '🐵', '🦁', '🐰', '🐻', '🐨', '🐙', '🦄', '🐲', '🐧', '🦉', '🐝', '🐢'];
@@ -201,6 +204,13 @@ const BALLOON_BURN_TIME = 0.8;  // s the burner flame shows
 // Campfire process.
 const FIRE_REFILL_TIME = 0.7;   // s the fire grows back after a log lands
 const LOG_FLIGHT_TIME = 0.5;    // s a thrown log / burning stick flies
+
+// Panda process.
+const PANDA_TOSS_TIME = 0.55;   // s a treat flies from the basket
+const PANDA_CHEW_TIME = 1.1;    // s the panda munches a caught treat
+const PANDA_HAPPY_RATE = 1.6;   // mood regained per s while eating
+const PANDA_SAD_LEVEL = 0.4;    // below this level the panda gets sad (droopy ears, brows, tears)
+const PANDA_SUCK_LEVEL = 0.18;  // below this it sucks its paw and sniffles
 
 // Graphics quality, picked automatically and lowered / raised by the measured frame rate.
 // maxDpr = canvas pixels per CSS px; maxPixels = cap on the scene canvas backing store; glow = soft shadows.

@@ -42,7 +42,7 @@
     <td width="50%" valign="top">
       <a href="https://gray0072.github.io/ivan/fun-training/"><img src="fun-training/screenshot.png" alt="Скриншот Fun Training"></a>
       <h3><img src="fun-training/icon.svg" alt="" width="28" height="28" align="center"> Fun Training</h3>
-      <p>Игра-тренажёр для школьников: поливай цветок, останавливай зомби, укладывай рельсы перед поездом, держи в воздухе воздушный шар или поддерживай костёр, успевая отвечать на задания.</p>
+      <p>Игра-тренажёр для школьников: поливай цветок, останавливай зомби, укладывай рельсы перед поездом, держи в воздухе воздушный шар, поддерживай костёр или корми панду, чтобы она не грустила, — успевая отвечать на задания.</p>
       <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Играть</b></a> · <a href="fun-training/">Исходники</a></p>
     </td>
     <td width="50%" valign="top"></td>

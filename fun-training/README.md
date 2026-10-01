@@ -2,7 +2,7 @@
 
 *[Читать на русском](README_RU.md)*
 
-A training game for school kids: water a flower, stop zombies, lay rails for a train, keep a balloon in the air or a campfire burning by answering tasks in time.
+A training game for school kids: water a flower, stop zombies, lay rails for a train, keep a balloon in the air, a campfire burning or a panda fed and happy by answering tasks in time.
 
 Tasks: math (+ − × ÷ with chosen number limits) and reading scales — find the number a pointer shows on a ruler-like scale. Pick one of four answers or type it yourself.
 

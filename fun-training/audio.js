@@ -116,6 +116,29 @@ const Sfx = (() => {
       [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.12, 0.3, { type: 'triangle', gain: 0.22 }));
       [523, 659, 784].forEach(f => tone(f * 2, 0.5, 0.9, { type: 'triangle', gain: 0.12, hold: 0.3 }));
     },
+    munch() {
+      [0, 0.1].forEach(t => noise(t, 0.06, { freq: 1600 + Math.random() * 900, q: 1.2, gain: 0.22, attack: 0.003 }));
+      tone(140, 0, 0.08, { type: 'sine', gain: 0.15, to: 90 });
+    },
+    rumble() { tone(70, 0, 0.9, { type: 'sawtooth', gain: 0.07, to: 52, vibrato: 9, lowpass: 300, attack: 0.1, hold: 0.4 }); },
+    sniff() {
+      noise(0, 0.16, { freq: 2600, q: 2, gain: 0.07, attack: 0.03 });
+      noise(0.24, 0.2, { freq: 2300, q: 2, gain: 0.07, attack: 0.03 });
+    },
+    cry() {
+      tone(560, 0, 0.7, { type: 'triangle', gain: 0.1, to: 430, vibrato: 8, attack: 0.05, hold: 0.4 });
+      tone(520, 0.8, 1.1, { type: 'triangle', gain: 0.1, to: 340, vibrato: 10, attack: 0.05, hold: 0.6 });
+    },
+    roar() { tone(190, 0, 0.6, { type: 'sawtooth', gain: 0.13, to: 120, vibrato: 14, lowpass: 900, attack: 0.04, hold: 0.3 }); },
+    monkey() {
+      tone(620, 0, 0.13, { type: 'triangle', gain: 0.1, to: 900 });
+      tone(660, 0.18, 0.13, { type: 'triangle', gain: 0.1, to: 950 });
+      tone(900, 0.38, 0.35, { type: 'triangle', gain: 0.1, to: 520, vibrato: 7 });
+    },
+    squeak() {
+      tone(900, 0, 0.12, { type: 'sine', gain: 0.14, to: 1400 });
+      tone(1100, 0.15, 0.18, { type: 'sine', gain: 0.14, to: 1700 });
+    },
     firework() {
       tone(160 + Math.random() * 60, 0, 0.25, { type: 'sine', gain: 0.25, to: 60 });
       noise(0.02, 0.5, { freq: 2200, to: 900, q: 0.7, gain: 0.12, attack: 0.005 });

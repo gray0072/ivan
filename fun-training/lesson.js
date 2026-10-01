@@ -1,6 +1,6 @@
 // A lesson: tasks, the draining safety level, answers, win / lose.
 
-const SCENES = { flower: createFlowerScene, zombies: createZombieScene, railway: createRailwayScene, balloon: createBalloonScene, campfire: createCampfireScene };
+const SCENES = { flower: createFlowerScene, zombies: createZombieScene, railway: createRailwayScene, balloon: createBalloonScene, campfire: createCampfireScene, panda: createPandaScene };
 
 const Lesson = (() => {
   const $ = id => document.getElementById(id);
