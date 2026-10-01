@@ -4,7 +4,7 @@ Developer/agent spec for the `fun-training` project. Repo-wide conventions live 
 
 ## Idea
 
-A training game for school kids. Something is happening on screen (a flower dries out, zombies walk toward a house, a train runs out of rails, a balloon sinks, a campfire burns down, a panda gets hungry) and the player keeps it going by answering tasks in time. Every correct answer "feeds" the process (waters the flower, throws a stone at the zombie); a wrong answer just brings a new task while the process keeps running. The name is deliberately not tied to math: tasks come in **task types** (Math and Scales today), more will follow.
+A training game for school kids. Something is happening on screen (a flower dries out, zombies walk toward a house, a train runs out of rails, a balloon sinks, a campfire burns down, a panda gets hungry) and the player keeps it going by answering tasks in time. Every correct answer "feeds" the process (waters the flower, throws a stone at the zombie); a wrong answer just brings a new task while the process keeps running. The name is deliberately not tied to math: tasks come in **task types** (Math, Scales and Reading today), more will follow.
 
 Targets: **TV / big screen** with a keyboard or a TV remote (arrows, Enter, digits, Back; reference: LG 55NANO766QA, webOS browser), desktop with a mouse, and **phones** by touch (reference: Poco X6 Pro, 444 × 987 CSS px, both orientations).
 
@@ -13,8 +13,8 @@ Targets: **TV / big screen** with a keyboard or a TV remote (arrows, Enter, digi
 1. **Players** — "Who's training today?": a card per saved player (avatar, name, coins, stars) and a **New player** card. Each player card has a small delete button that needs a second press within 3 s. The last used player is focused.
 2. **New player** — name field (up to `NAME_MAX` chars) and an avatar grid (`AVATARS`), **Create** / **Cancel**. Enter in the name field creates.
 3. **Home** (the player's account) — avatar, name, coins 🪙 and diamonds 💎, **Settings** and **Players** buttons, a one-line summary of the current training settings, and one row per process with its progress track (see below). Every playable step of a track is a button: the next step, or any finished step to replay it. ‹ › at the track's ends page through earlier levels. The row's side shows the current level (its star, dim until earned), the next step — or, when the level is finished but not perfect, "🔒 ↻ N steps to open <next level>" — the earned stars and "↻ N to improve". Rows of processes that aren't built yet (`ready: false`) are shown dimmed as "Coming soon".
-4. **Settings** — per player: a tab per task type (🔢 Math, 📏 Scales; a ✓ on the tab = used in lessons) with that type's settings, then the global Answers and Tasks per lesson. Changes are saved immediately; **Done** returns home.
-5. **Lesson** — the process scene (canvas, left) and the task panel (right): lesson info (process, step, "· Boss", task n / N, mistakes, 🪙 coins of the correct answers so far, the boss's hearts), the task card with its price in the corner (a math example, or a scale with a pointer and "▼ = ?"), and the answers.
+4. **Settings** — per player: a tab per task type (🔢 Math, 📏 Scales, 📖 Reading; a ✓ on the tab = used in lessons, 🔇 = can't run on this device) with that type's settings, then the global Answers and Tasks per lesson. Changes are saved immediately; **Done** returns home.
+5. **Lesson** — the process scene (canvas, left) and the task panel (right): lesson info (process, step, "· Boss", task n / N, mistakes, 🪙 coins of the correct answers so far / the lesson's price, the boss's hearts), the task card with its price in the corner (a math example, a scale with a pointer and "▼ = ?", or a big 🔊 button and "Which one did you hear?"), and the answers.
 6. **Pause** dialog (Esc / Back / the ⏸ button, or leaving the tab): Continue, Quit to home.
 7. **Victory** dialog: process-specific title, coins earned ("45 for the answers × 67% for 2 mistakes", for a replay "· 45 − 30 from before" / "you got 45 here before"), total coins, on a boss step the diamonds ("+4 💎", "Big boss: 4 of 6 💎"), the step's level on the track, a hint to replay when fewer than 3 coins per task were earned (or which ↻ steps still shut the next level), confetti and a fanfare. When the lesson completes a level: the level-up block (see Levels and stars) with fireworks. **Next lesson** (default: the next new step, or "Replay step N ↻" — the first ↻ step of a shut level) / **Home**.
 8. **Defeat** dialog: process-specific title ("The flower wilted…", "The zombies got in!"…), how many tasks were solved (or how many hits the boss still needed), a sad trombone. **Try again** (default, the same step) / **Home**.
@@ -24,7 +24,7 @@ Navigation: arrow keys move the focus spatially between the visible buttons (nea
 ## Progress, levels, stars, bosses, coins, diamonds
 
 - Stored per player and per process: the number of completed steps (`progress[processId]`) and, per completed step, the best rate (`rates[processId][i]`, 0–3, by mistakes), the most coins earned on it (`best[processId][i]`) and the most diamonds (`bestGems[processId][i]`). Levels, stars and the next step are derived (`progress.js`).
-- The track shows one level of `TRACK_LEN` = 10 steps (by default the current one): steps done with 0–1 mistakes (rate 3) are green ✓; steps done with 2+ mistakes show ↻ on amber (rate 2), orange (rate 1) or red (rate 0) — they can be replayed for the missing coins; the next step is yellow and pulsing; later steps are grey and disabled; the level's goal star ends the track (dim until earned). Step 5 shows 💀 (boss), step 10 👑 (big boss).
+- The track shows one level of `TRACK_LEN` = 10 steps (by default the current one): steps done with 0–1 mistakes (rate 3) are green ✓; steps done with 2+ mistakes show ↻ on amber (rate 2), orange (rate 1) or red (rate 0) — they can be replayed for the missing coins; the next step is yellow and pulsing; later steps are grey and disabled; the level's goal star ends the track (dim until earned). Step 5 shows 🐲 (boss), step 10 👑 (big boss).
 - A lesson = `lessonLength` tasks (10 / 15 / 20, a setting). Winning the next step adds it to `progress` with its rate.
 - Coins are awarded only for a won lesson: the sum of the **prices** of its correct answers (see Task price; every boss hit counts as an answer), times a share by the lesson's mistakes (`COIN_RULES`, rate / 3): 0–1 mistakes → 100 %, 2–3 → 67 %, 4–5 → 33 %, 6+ → 0, rounded. A replay of a finished step pays only what beats the step's best (`best`), and keeps the better rate and best — so a step can be replayed for more coins with fewer mistakes *or* with harder settings. A replay that earns nothing new hints that harder settings or a faster speed pay more. Coins accumulate on the player and are shown on the Players and Home screens. A shop to spend them comes later.
 
@@ -43,22 +43,24 @@ Every task type's settings give a **price**: whole coins for each correct answer
 - Points are added up: the hardest choice of the type, plus a fixed amount for each further complication. Then multipliers apply. The result is rounded, at least 1.
 - **Math**: the hardest enabled operation by its limit (`OP_PRICE`, each step up the limits adds at least 1: + 2…9, − 2…10, × 2…12, ÷ 2…13 for limits 10…10 000), + `PRICE_EXTRA_OP` = 1 for each other enabled operation, + `PRICE_MIX` = 2 when one task mixes operations; × `PRICE_OPERANDS` for numbers in a task (2 → ×1, 3 → ×1.75, 4 → ×2.5: 2 and 3 operators instead of 1).
 - **Scales**: points by "numbers up to" (`SCALE_LIMIT_PRICE` 1–4) + the hardest parts choice (`SCALE_PARTS_PRICE`: 2 → 1, 4 or 5 → 2, 10 → 3) + `SCALE_SOME_PRICE` = 2 with every other number.
-- Both: × `PRICE_TYPED` = 1.25 when answers are typed (no guessing among four), × the speed's `price` (Very slow ×0.5, Slow ×0.75, Medium ×1, Fast ×1.5, Very fast ×2) — less time and more risk pay more.
-- Examples (pick 1–4, Medium unless said): + up to 20 → 3; + up to 100 or the times table (× up to 100) → 5; + − × up to 100, 3 numbers mixed, Fast → 24; Scales 4/5/10 parts up to 100 → 5; Scales up to 10 000, every other number → 9.
+- **Reading**: points by letters / word length (`READ_SIZE_PRICE`: letters, up to 3 or 4 → 2; 5–7 → 3; 8–10 → 4) × words in a task (`READ_WORDS_PRICE`: 1 → ×1, 2 → ×1.5, 3 → ×2). The language doesn't change it.
+- All: × `PRICE_TYPED` = 1.25 when answers are typed (no guessing among four; not for Reading, which is always picked), × the speed's `price` (Very slow ×0.5, Slow ×0.75, Medium ×1, Fast ×1.5, Very fast ×2) — less time and more risk pay more.
+- Examples (pick 1–4, Medium unless said): + up to 20 → 3; + up to 100 or the times table (× up to 100) → 5; + − × up to 100, 3 numbers mixed, Fast → 24; Scales 4/5/10 parts up to 100 → 5; Scales up to 10 000, every other number → 9; Reading letters → 2; Reading 3 words up to 10 letters → 8.
 - In a lesson each task pays its own type's price, so mixed lessons add up both.
+- **Lesson price** = the coins of all its correct answers with no mistakes (`Tasks.lessonCoins`): the answers split evenly between the types, each paid its price, so it grows with the tasks per lesson — 10 tasks of 🪙 3 = 🪙 30, 20 tasks = 🪙 60; a boss step has `lessonLength − 1 + BOSS_HITS` answers. Shown on the home summary ("20 tasks = 🪙 100 per lesson"), under Tasks per lesson in the settings ("Up to 🪙 100 per lesson, 🪙 110 with a boss") and in the lesson info as "🪙 earned / price", computed fresh from the current settings at each lesson's start.
 
 ### Bosses
 
-- Every `BOSS_EVERY` = 5th step is a boss step; its kind by its place in the level (`BOSS_KINDS`): step 5 → **Boss** (💀), step 10 → **Big boss** (👑). The lesson shows "Step 10 · Big boss" and "Get ready! Big boss at the end 👹 / Beat it for up to 6 💎".
-- A boss lesson has `lessonLength − 1` normal tasks; the last task is the boss: it needs `BOSS_HITS` = 3 correct answers. When it starts, the safety level is refilled once and a note shows ("👹 BOSS!" / "👑 BIG BOSS! … twice as fast!"); then it drains over `timeMul` × the current task's fail time and is **not** refilled by the boss hits. Boss: `timeMul` = 2 (three answers in twice the time of one task, as before). Big boss: `timeMul` = 1 — twice as fast, three answers in the time of one task. Wrong answers bring a new task and the clock keeps running. The panel shows the boss's hearts and "up to N 💎".
+- Every `BOSS_EVERY` = 5th step is a boss step; its kind by its place in the level (`BOSS_KINDS`): step 5 → **Boss** (🐲), step 10 → **Big boss** (👑). The lesson shows "Step 10 · Big boss" and "Get ready! Big boss at the end 👑 / Beat it for up to 6 💎" — the lesson's boss texts and hearts use the kind's icon.
+- A boss lesson has `lessonLength − 1` normal tasks; the last task is the boss: it needs `BOSS_HITS` = 3 correct answers. When it starts, the safety level is refilled once and a note shows ("🐲 BOSS!" / "👑 BIG BOSS! … twice as fast!"); then it drains over `timeMul` × the current task's fail time and is **not** refilled by the boss hits. Boss: `timeMul` = 2 (three answers in twice the time of one task, as before). Big boss: `timeMul` = 1 — twice as fast, three answers in the time of one task. Wrong answers bring a new task and the clock keeps running. The panel shows the boss's hearts and "up to N 💎".
 - **Diamonds 💎** — the premium for bosses, a separate currency for the shop: up to `gems` = 3 for the Boss and 6 for the Big boss, by the lesson's mistakes like coins (0–1 → all, 2–3 → 2/3, 4–5 → 1/3, 6+ → 0: Boss 3/2/1/0, Big boss 6/4/2/0). A replay pays only what beats the step's best diamonds. Shown on the Players and Home screens and in the result dialog with a sparkle sound.
 - Each process has its own boss (see below); it walks / climbs / drifts toward the player by `f`, shows its hearts over its head, reacts to each hit, and is driven off by the third one. The big boss uses the same figure for now.
 
 ## Task types
 
-Each type is a module in `tasks/` with `make(cfg)`, `expectedTime(task, cfg)` (without the answer time) and `mistakes(task)` (weighted wrong answers), registered in `Tasks` (`tasks/tasks.js`), listed in `TASK_TYPES` and given a settings tab.
+Each type is a module in `tasks/` with `make(cfg)`, `expectedTime(task, cfg)` (without the answer time), `price(cfg)` and either `mistakes(task)` (weighted wrong numbers; the options are built in `tasks.js`) or `choices(task)` (its own four options, e.g. words), registered in `Tasks` (`tasks/tasks.js`), listed in `TASK_TYPES` and given a settings tab. Optional: `choiceOnly` (always picked among four, never typed) and `blocked(cfg)` (why it can't run on this device, or null — Reading without a voice).
 
-Settings are grouped by task type (`settings.math`, `settings.scale`) so each type has its own difficulty and speed. Each tab has a **Used in lessons** switch (`settings.types`, at least one stays on — switching off the last one shakes). With several types on, a lesson mixes them: the correct answers are split evenly between the types (the extra ones of an uneven split go to the first types; the boss's hits count as answers) in random order, and a wrong answer brings another task of the same type — so a lesson pays the same with the same settings every time it is played. Global per-player settings: answer mode and lesson length. Every task has a `solution` text shown under the card after a mistake.
+Settings are grouped by task type (`settings.math`, `settings.scale`, `settings.read`) so each type has its own difficulty and speed. Each tab has a **Used in lessons** switch (`settings.types`, at least one stays on — switching off the last one shakes). With several types on, a lesson mixes them: the correct answers are split evenly between the types (the extra ones of an uneven split go to the first types; the boss's hits count as answers) in random order, and a wrong answer brings another task of the same type — so a lesson pays the same with the same settings every time it is played. Global per-player settings: answer mode and lesson length. Every task has a `solution` text shown under the card after a mistake.
 
 ### Math
 
@@ -88,9 +90,27 @@ Reading a ruler-like scale (grades 4–5): numbers stand under the big ticks, th
 - Wrong choices: ± one or two parts, small ticks counted as ones (when a part is < 10), ticks counted instead of parts, counted from the other number, the blank big ticks missed; never one of the numbers on the scale.
 - After a mistake the two-line solution: `1 part = (20 − 10) ÷ 5 = 2` / `10 + 2 × 2 = 14` (the task panel keeps room for both lines when Scales are on, so the answers don't jump).
 
+### Reading
+
+Listening and reading: a voice says a letter, a word or a short phrase, and the child picks what it said among four written options. The voice is the device's own speech synthesis (Web Speech API, `speech.js`), no sound files: per language the best voice is used (natural / neural ones first, then Google's, then the offline ones); a voice that fails (an online one while offline) is skipped for the rest of the session. Speech rate `READ_VOICE_RATE` = 0.85, a bit slower for kids.
+
+- **Language** (`READ_LANGS`): Swedish, English, Russian. A new player gets the browser's language when it is one of them. The data per language is in `tasks/words.js`: the alphabet, everyday words a school kid knows (about 300–600 per language, 2–10 letters, grouped by length on load) and short meaningful phrases of 2 and 3 words ("go home", "lila blommor", "кошка на дереве", "the cat sleeps", "vi går hem").
+- **Letters, or words up to N letters** (`READ_SIZES`): Letters, 3, 4 … 10. A letter is shown as "B b"; the voice says the letter itself, in Russian its name ("бэ", "эль", "и краткое" — a lone в / к / с would be read as a preposition). A word "up to N letters" is N − `READ_SPAN` … N letters long (at least 2).
+- **Words in a task**: 1, 2 or 3 (off with letters, which come one at a time). 2 and 3 words = a phrase from the list whose longest word fits N, those with the longest word near N first (if fewer than `READ_MIN_PICK` = 6 of them, any that fit; if none fit, the shortest ones).
+- The task card shows a big 🔊 button and "Which one did you hear?" instead of the text. The voice speaks when the task appears; the button, **0** or **R** say it again; pausing stops the voice, continuing says it again.
+- Always picked among four, also when answers are typed: a lesson mixing Reading with typed tasks switches per task between the four buttons and typing / the number pad. Keys 1–4 pick.
+- Wrong options are close, all different, never the answer, and spread over different kinds:
+  - letters: ones that sound alike (English B C D E G P T V Z; Swedish be, ce, de…; Russian Б / П, Ж / Ш / Щ, И / Й / Ы) or look alike (b d p q, m n w, И Н П, Ш Щ), rarely any other letter;
+  - words: real words of the list one or two letters apart (three for long words), and misspellings — a letter changed to one readers mix up (b / d, m / n, å / a, ш / щ; never е / ё in Russian, as ё is often written е), two inner letters swapped, an inner letter left out;
+  - phrases: one word changed that way (longer words more often, a different word in each option), or the first and last words swapped ("пёс и кот").
+- An answer doesn't come back within `READ_RECENT` = 40 reading tasks (at most half of the possible ones).
+- **Speed**: the same 5 steps, its own setting. Expected time = `READ_TIME` + `READ_LISTEN_TIME` = 1.2 s + (a letter: `READ_LETTER_TIME` = 1.2 s; words: `READ_CHAR_TIME` = 0.35 s per letter + `READ_WORD_TIME` = 1 s per word after the first): a letter ≈ 6 s at Medium, a 5-letter word ≈ 7 s, 3 words up to 10 letters ≈ 16–20 s.
+- After a mistake: "🔊 It said: кошка на дереве".
+- **Devices without speech** (TV browsers: no `speechSynthesis`, or no voices): the Reading tab shows 🔇 and an explanation ("This device can't speak … It works on a computer or a phone."), its switch shakes instead of turning on, and lessons use the other enabled types — Math when Reading was the only one. The home summary shows "🔇 off on this device". A language with no voice on this device is marked 🔇 in the language switch, explained the same way and left out of lessons. Voices load asynchronously, so the settings and home screens refresh when the voice list changes.
+
 ### Answer modes
 
-Both modes work for every task type.
+Both modes work for every task type except Reading (always picked).
 
 - **Pick 1–4**: four answer buttons in a 2×2 grid, pressed with keys 1–4, arrows + Enter, or a click. Wrong options are close and plausible; for scales see above. For math:
   - Close ones keep the units digit, so the last digit doesn't give the answer away: ±10, ±20, ±100, ±1000 (answers ≥ 10), plus ±1 rarely and the last two digits swapped. Answers below 10 get ±1–3.
@@ -100,12 +120,13 @@ Both modes work for every task type.
 
 ### Future task types (ideas)
 
-Clock reading, comparing numbers (<, =, >), number sequences, spelling / missing letter, multiplication-table drill, English words, scales with decimals (0.1, 0.5 — needs a decimal point key).
+Clock reading, comparing numbers (<, =, >), number sequences, spelling / missing letter (typed on a letter keyboard), multiplication-table drill, word meanings (picture ↔ word, translations), scales with decimals (0.1, 0.5 — needs a decimal point key).
 
 ## Lesson flow
 
 - The lesson owns a **safety level** `f` from 1 (safe) to 0 (fail). It drains at `1 / failTime(task)` per second; each process draws it its own way.
 - Start: a short "Get ready" (`INTRO_TIME`) while the first task is already visible; then the process starts running.
+- A reading task is spoken when it appears (see Reading).
 - Correct answer: a chime, the card flashes green, `f` is restored to 1 (not during the boss round) and the process reacts (see below); the next task appears after `FEEDBACK_TIME`, during which the process is frozen.
 - Wrong answer: a buzz, the card shakes red, the solved example (`47 + 36 = 83`) stays visible under the card for `WRONG_SHOW_TIME`, and a new task appears after `FEEDBACK_TIME` — the process keeps draining meanwhile.
 - Below `WARN_LEVEL` a soft tick plays (faster when almost empty).
@@ -142,11 +163,11 @@ All six processes are built. Scenes are drawn on a canvas in a fixed design spac
 
 ## Sounds
 
-Synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, munching, tummy rumble, sniffles, crying, a cute roar, monkey chatter, a happy squeak, boss drums and growl, victory fanfare, coins jingle, diamonds sparkle, star fanfare, fireworks pops, defeat sad trombone.
+The Reading voice is the device's speech synthesis (`speech.js`). Everything else is synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, munching, tummy rumble, sniffles, crying, a cute roar, monkey chatter, a happy squeak, boss drums and growl, victory fanfare, coins jingle, diamonds sparkle, star fanfare, fireworks pops, defeat sad trombone.
 
 ## Storage
 
-`localStorage["funTraining.v1"]` = `{ players: [{ id, name, avatar, coins, gems, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, best: { <processId>: [most coins earned on each step] }, bestGems: { <processId>: [most diamonds earned on each step] }, settings: { answerMode, lessonLength, types: ['math', 'scale'], math: { ops, operands, mix, limits: { add, sub, mul, div }, speed }, scale: { parts, limit, labels: 'all' | 'some', speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3, a missing best as rate × lesson length, missing diamonds as 0 — old boss steps can be replayed for them; older saves get `types: ['math']` and the default scale settings); all access is wrapped in try/catch so the game still works without storage.
+`localStorage["funTraining.v1"]` = `{ players: [{ id, name, avatar, coins, gems, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, best: { <processId>: [most coins earned on each step] }, bestGems: { <processId>: [most diamonds earned on each step] }, settings: { answerMode, lessonLength, types: ['math', 'scale'], math: { ops, operands, mix, limits: { add, sub, mul, div }, speed }, scale: { parts, limit, labels: 'all' | 'some', speed }, read: { lang: 'sv' | 'en' | 'ru', size: 0 (letters) | 3–10, words: 1–3, speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3, a missing best as rate × lesson length, missing diamonds as 0 — old boss steps can be replayed for them; older saves get `types: ['math']` and the default scale and reading settings); all access is wrapped in try/catch so the game still works without storage.
 
 ## Files
 
@@ -154,15 +175,18 @@ Synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wron
 fun-training/
 ├── index.html       # markup of all screens
 ├── styles.css
-├── constants.js     # task types, operations, limits, scale options, time tables, speeds, coin rules, star tiers, processes, avatars, timings
+├── constants.js     # task types, operations, limits, scale and reading options, time tables, speeds, coin rules, star tiers, processes, avatars, timings
 ├── storage.js       # players and their settings/progress in localStorage
 ├── progress.js      # levels: boss kinds, which step is open, level complete, stars, diamonds per boss
 ├── stars.js         # level stars as SVG in their materials, the ladder of levels
 ├── tasks/           # task types, one file each; tasks.js first, then the types
 │   ├── tasks.js     # Tasks: picks the type, expected time, answer choices, shared helpers (fmt, rnd, pick)
 │   ├── math.js      # Math: example generator, time per operator, plausible mistakes
-│   └── scale.js     # Scales: generator, solution, plausible mistakes, SVG drawing
+│   ├── scale.js     # Scales: generator, solution, plausible mistakes, SVG drawing
+│   ├── words.js     # Reading data per language: alphabet, alike letters, words, phrases
+│   └── read.js      # Reading: letter / word / phrase picker, close options, needs a voice
 ├── audio.js         # Web Audio sound effects
+├── speech.js        # speech synthesis: a voice per language, says the Reading tasks
 ├── nav.js           # spatial keyboard / TV-remote focus navigation
 ├── quality.js       # automatic graphics quality (canvas resolution by device and frame rate)
 ├── fx.js            # shared drawing helpers (roundRect polyfill, fitScene, mixColor, starPath…), the victory confetti and level-up fireworks
@@ -191,4 +215,5 @@ fun-training/
 
 - [ ] Coin shop
 - [x] Scales task type
+- [x] Reading task type
 - [ ] More task types

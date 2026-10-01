@@ -23,6 +23,10 @@ const Store = (() => {
     const sc = s.scale && typeof s.scale === 'object' ? s.scale : {};
     let parts = Array.isArray(sc.parts) ? SCALE_PARTS.filter(n => sc.parts.includes(n)) : [];
     if (!parts.length) parts = d.scale.parts.slice();
+    const rd = s.read && typeof s.read === 'object' ? s.read : {};
+    const langIds = READ_LANGS.map(l => l.id);
+    let navLang = '';
+    try { navLang = String(navigator.language || '').slice(0, 2).toLowerCase(); } catch (e) { /* ignore */ }
     return {
       answerMode: oneOf(s.answerMode, ANSWER_MODES.map(a => a.id), d.answerMode),
       lessonLength: oneOf(s.lessonLength, LESSON_LENGTHS, d.lessonLength),
@@ -32,6 +36,12 @@ const Store = (() => {
         limit: oneOf(sc.limit, SCALE_LIMITS, d.scale.limit),
         labels: oneOf(sc.labels, SCALE_LABELS.map(x => x.id), d.scale.labels),
         speed: oneOf(sc.speed, SPEEDS.map(x => x.id), d.scale.speed),
+      },
+      read: {
+        lang: oneOf(rd.lang, langIds, langIds.includes(navLang) ? navLang : d.read.lang), // new: the browser's language
+        size: oneOf(rd.size, READ_SIZES, d.read.size),
+        words: oneOf(rd.words, READ_WORD_COUNTS, d.read.words),
+        speed: oneOf(rd.speed, SPEEDS.map(x => x.id), d.read.speed),
       },
       math: {
         ops: opIds.filter(id => ops.includes(id)),

@@ -29,29 +29,29 @@ const Lesson = (() => {
     const st = player.settings;
     const boss = Progress.bossKind(step); // null on a normal step
     const isBoss = !!boss;
+    const types = Tasks.usable(st); // enabled types this device can run (Reading needs a voice)
     L = {
       player, proc, st, step, isBoss, boss,
       total: st.lessonLength,
       need: isBoss ? st.lessonLength - 1 : st.lessonLength, // normal tasks before the boss
       bossHp: 0,
       done: 0, mistakes: 0, cheated: false,
-      prices: Object.fromEntries(st.types.map(t => [t, Tasks.price(st, t).coins])), // coins per correct answer, by task type
+      types,
+      prices: Object.fromEntries(types.map(t => [t, Tasks.price(st, t).coins])), // coins per correct answer, by task type
       earned: 0, // coins of the correct answers so far (the share paid depends on the mistakes)
       paid: 0,   // correct answers so far, boss hits included
-      typeSeq: typeSequence(st.types, isBoss ? st.lessonLength - 1 + BOSS_HITS : st.lessonLength),
+      typeSeq: typeSequence(types, isBoss ? st.lessonLength - 1 + BOSS_HITS : st.lessonLength),
+      maxCoins: 0, // the lesson's price: coins of all its answers (boss hits included) with no mistakes
       f: 1, phase: 'intro', phaseT: 0, wrongT: 0, tickT: 0, noteT: 0,
-      task: null, typed: '', lastWrong: false,
+      task: null, typed: '', lastWrong: false, mode: 'choice', opts: [],
       scene: SCENES[proc.id]({ step: step - 1 }),
     };
+    L.maxCoins = L.typeSeq.reduce((s, t) => s + L.prices[t], 0);
     $('lsProc').textContent = proc.icon + ' ' + proc.name;
     $('lsStep').textContent = 'Step ' + step + (isBoss ? ' · ' + boss.name : '');
-    const pad = st.answerMode === 'type' && matchMedia('(pointer: coarse)').matches;
-    $('choices').hidden = st.answerMode !== 'choice';
-    $('numpad').hidden = !pad;
-    $('typeHint').hidden = st.answerMode !== 'type' || pad;
     $('wrongNote').textContent = '';
-    $('taskPanel').classList.toggle('twoLineNote', st.types.includes('scale'));
-    showNote(isBoss ? `Get ready! ${boss.name} at the end 👹` : 'Get ready!', false, isBoss ? `Beat it for up to ${boss.gems} 💎` : '');
+    $('taskPanel').classList.toggle('twoLineNote', types.includes('scale'));
+    showNote(isBoss ? `Get ready! ${boss.name} at the end ${boss.icon}` : 'Get ready!', false, isBoss ? `Beat it for up to ${boss.gems} 💎` : '');
     resize();
     nextTask();
     updateInfo();
@@ -74,23 +74,28 @@ const Lesson = (() => {
     L.task = Tasks.make(L.st, L.typeSeq[Math.min(L.paid, L.typeSeq.length - 1)]);
     L.fail = Tasks.failTime(L.task, L.st);
     L.typed = '';
-    $('taskPrice').textContent = '🪙 ' + L.prices[L.task.type];
-    const scale = L.task.type === 'scale';
-    $('taskText').hidden = scale;
-    $('taskScale').hidden = !scale;
-    $('ansPrefix').textContent = scale ? '▼ =' : '=';
-    if (scale) $('taskScale').innerHTML = ScaleTasks.svg(L.task);
-    else {
+    const type = L.task.type;
+    setMode(L.st.answerMode === 'type' && !Tasks.choiceOnly(type) ? 'type' : 'choice');
+    $('taskPrice').textContent = '🪙 ' + L.prices[type];
+    $('taskText').hidden = type !== 'math';
+    $('taskScale').hidden = type !== 'scale';
+    $('taskRead').hidden = type !== 'read';
+    $('ansLine').hidden = type === 'read';
+    $('ansPrefix').textContent = type === 'scale' ? '▼ =' : '=';
+    if (type === 'scale') $('taskScale').innerHTML = ScaleTasks.svg(L.task);
+    else if (type === 'math') {
       $('taskText').textContent = L.task.text;
       const len = L.task.text.length;
       $('taskCard').dataset.len = len > 17 ? 's' : len > 11 ? 'm' : 'l';
     }
     renderAnswer();
-    if (L.st.answerMode === 'choice') {
-      const opts = Tasks.choices(L.task);
+    if (L.mode === 'choice') {
+      L.opts = Tasks.choices(L.task);
+      // Words and phrases get a smaller font the longer the longest option is.
+      const long = Math.max(...L.opts.map(o => Tasks.label(o).length));
+      $('choices').dataset.len = long > 14 ? 'xs' : long > 9 ? 's' : long > 6 ? 'm' : '';
       [...$('choices').children].forEach((b, i) => {
-        b.dataset.value = opts[i];
-        b.querySelector('.val').textContent = Tasks.fmt(opts[i]);
+        b.querySelector('.val').textContent = Tasks.label(L.opts[i]);
         b.classList.remove('picked');
       });
     }
@@ -98,13 +103,32 @@ const Lesson = (() => {
     card.classList.remove('ok', 'bad', 'pop');
     void card.offsetWidth;
     card.classList.add('pop');
+    sayTask();
+  }
+
+  // Answer controls for the task: four buttons, or typing (with the number pad on touch screens).
+  // Reading is always picked, so a lesson mixing it with typed math switches between the two.
+  function setMode(mode) {
+    L.mode = mode;
+    const choice = mode === 'choice';
+    const pad = !choice && matchMedia('(pointer: coarse)').matches;
+    const wasHidden = $('choices').hidden;
+    $('choices').hidden = !choice;
+    $('numpad').hidden = !pad;
+    $('typeHint').hidden = choice || pad;
+    if (choice && wasHidden) $('choices').children[0].focus();
+  }
+
+  // A reading task: the voice says it (again).
+  function sayTask() {
+    if (L && L.task && L.task.type === 'read' && L.phase !== 'done') ReadTasks.say(L.task);
   }
 
   function renderAnswer() {
     const box = $('answerBox');
     box.textContent = L.typed ? Tasks.fmt(Number(L.typed)) : '?';
     box.classList.toggle('empty', !L.typed);
-    box.classList.toggle('typing', L.st.answerMode === 'type');
+    box.classList.toggle('typing', L.mode === 'type');
   }
 
   function showNote(text, boss, sub) {
@@ -128,11 +152,12 @@ const Lesson = (() => {
     const b = $('lsBoss');
     b.hidden = !L.isBoss;
     b.classList.toggle('active', L.bossHp > 0);
-    b.textContent = L.bossHp > 0
-      ? '👹 ' + '❤'.repeat(L.bossHp) + '♡'.repeat(BOSS_HITS - L.bossHp)
-      : L.done >= L.total ? '👹 Defeated!' : `👹 ${L.boss.name}: ${BOSS_HITS} hits · up to ${L.boss.gems} 💎`;
+    b.textContent = !L.isBoss ? ''
+      : L.bossHp > 0 ? L.boss.icon + ' ' + '❤'.repeat(L.bossHp) + '♡'.repeat(BOSS_HITS - L.bossHp)
+      : L.done >= L.total ? L.boss.icon + ' Defeated!' : `${L.boss.icon} ${L.boss.name}: ${BOSS_HITS} hits · up to ${L.boss.gems} 💎`;
     $('lsMistakes').textContent = L.mistakes;
     $('lsEarned').textContent = L.earned;
+    $('lsCoinMax').textContent = L.maxCoins;
     $('lsMistakesBox').classList.toggle('some', L.mistakes > 0);
     const bar = $('lsProgress');
     bar.style.width = (100 * L.done / L.total) + '%';
@@ -147,7 +172,7 @@ const Lesson = (() => {
     if (value === L.task.answer) {
       Sfx.correct();
       card.classList.add('ok');
-      if (L.st.answerMode === 'type') { L.typed = String(value); renderAnswer(); }
+      if (L.mode === 'type') { L.typed = String(value); renderAnswer(); }
       L.phaseT = 0;
       L.lastWrong = false;
       L.earned += L.prices[L.task.type]; // every boss hit pays too
@@ -212,6 +237,7 @@ const Lesson = (() => {
         L.phase = 'lose';
         L.phaseT = 0;
         L.scene.lose();
+        Speech.stop();
       }
     }
     if (L.phase === 'feedback' && L.phaseT >= FEEDBACK_TIME) { L.phase = 'play'; nextTask(); }
@@ -228,6 +254,7 @@ const Lesson = (() => {
   }
 
   function finish(won) {
+    Speech.stop();
     const r = { won, proc: L.proc, done: L.done, total: L.total, mistakes: L.mistakes, earned: L.earned, cheated: L.cheated, step: L.step, isBoss: L.isBoss, bossLeft: L.bossHp };
     L.phase = 'done';
     if (onEnd) onEnd(r);
@@ -245,14 +272,14 @@ const Lesson = (() => {
     if (!L || L.phase === 'done') return false;
     const k = e.key;
     if (k === ']') { cheat(); return true; }
-    if (L.st.answerMode === 'choice') {
+    if (L.mode === 'choice') {
       const n = Number(k);
       if (n >= 1 && n <= CHOICE_COUNT) {
-        const b = $('choices').children[n - 1];
-        b.classList.add('picked');
-        submit(Number(b.dataset.value));
+        $('choices').children[n - 1].classList.add('picked');
+        submit(L.opts[n - 1]);
         return true;
       }
+      if (L.task.type === 'read' && (k === '0' || k === 'r' || k === 'R')) { sayTask(); return true; }
       return false; // arrows / Enter work through the focused buttons
     }
     return typeKey(k);
@@ -280,14 +307,14 @@ const Lesson = (() => {
   }
 
   function padClick(btn) {
-    if (!L || L.phase === 'done' || L.st.answerMode !== 'type') return;
+    if (!L || L.phase === 'done' || L.mode !== 'type') return;
     typeKey(btn.dataset.key);
   }
 
   function choiceClick(btn) {
     if (!L) return;
     btn.classList.add('picked');
-    submit(Number(btn.dataset.value));
+    submit(L.opts[[...$('choices').children].indexOf(btn)]);
   }
 
   let bannerTimer = 0;
@@ -300,8 +327,9 @@ const Lesson = (() => {
   }
 
   return {
-    start, update, draw, key, resize, choiceClick, padClick,
-    stop: () => { L = null; },
+    start, update, draw, key, resize, choiceClick, padClick, sayTask,
+    stop: () => { L = null; Speech.stop(); },
     active: () => !!L && L.phase !== 'done',
+    typing: () => !!L && L.mode === 'type', // the current task's answer is typed (Backspace deletes, not back)
   };
 })();

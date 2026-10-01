@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#2b2170">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
 
@@ -117,6 +117,37 @@
       </div>
       <div class="example scaleExample"><span>Example:</span><span id="scaleExample" class="scaleMini"></span></div>
     </div>
+    <div id="paneRead" class="pane" data-type="read" hidden>
+      <div class="useLine">
+        <button class="switch useSwitch" role="switch" aria-checked="false"><span class="knob"></span><span class="switchLabel">Off</span></button>
+        <span class="note useNote"></span>
+      </div>
+      <p id="readWarn" class="warnNote" hidden></p>
+      <div class="setLine">
+        <div class="setBlock">
+          <h3>Language</h3>
+          <div id="langSeg" class="seg"></div>
+        </div>
+        <div class="setBlock" id="wordsBlock">
+          <h3>Words in a task</h3>
+          <div id="wordsSeg" class="seg"></div>
+          <span id="wordsNote" class="note"></span>
+        </div>
+      </div>
+      <div class="setBlock">
+        <h3>Letters, or words up to … letters</h3>
+        <div id="sizeSeg" class="seg sizeSeg"></div>
+      </div>
+      <div class="setBlock">
+        <h3>Speed <span id="readSpeedHint" class="muted"></span></h3>
+        <div id="readSpeedSeg" class="speedSeg"></div>
+      </div>
+      <div class="priceLine">
+        <span class="priceBig"></span>
+        <span class="priceSteps"></span>
+      </div>
+      <p class="example">Example: <b id="readExample"></b> <button id="readListen" class="listenBtn">🔊 Listen</button></p>
+    </div>
     <div class="setLine commonLine">
       <div class="setBlock">
         <h3>Answers</h3>
@@ -125,6 +156,7 @@
       <div class="setBlock">
         <h3>Tasks per lesson</h3>
         <div id="lengthSeg" class="seg"></div>
+        <span id="lengthNote" class="note"></span>
       </div>
     </div>
   </div>
@@ -149,14 +181,18 @@
     <div class="lsStats">
       <span class="ok">✔ <b id="lsCount"></b></span>
       <span id="lsMistakesBox" class="bad">✖ <b id="lsMistakes"></b></span>
-      <span class="earned" title="Coins for the correct answers">🪙 <b id="lsEarned">0</b></span>
+      <span class="earned" title="Coins for the correct answers, of the lesson's price">🪙 <b id="lsEarned">0</b> <small>/ <span id="lsCoinMax">0</span></small></span>
       <span id="lsBoss" class="boss" hidden></span>
     </div>
     <div id="taskCard">
       <span id="taskPrice" title="Coins for a correct answer"></span>
       <div id="taskText"></div>
       <div id="taskScale" hidden></div>
-      <div class="ansLine"><span id="ansPrefix">=</span> <span id="answerBox">?</span></div>
+      <div id="taskRead" hidden>
+        <button id="sayBtn" class="sayBtn" aria-label="Listen again" title="Listen again (0)">🔊</button>
+        <span class="sayHint">Which one did you hear?</span>
+      </div>
+      <div class="ansLine" id="ansLine"><span id="ansPrefix">=</span> <span id="answerBox">?</span></div>
     </div>
     <div id="wrongNote"></div>
     <div id="choices" class="choices">
@@ -210,14 +246,17 @@
 <canvas id="fx" hidden></canvas>
 <div id="banner"></div>
 
-<script src="constants.js?v=8"></script>
-<script src="storage.js?v=5"></script>
+<script src="constants.js?v=11"></script>
+<script src="storage.js?v=6"></script>
 <script src="progress.js?v=1"></script>
 <script src="stars.js?v=1"></script>
-<script src="tasks/tasks.js?v=4"></script>
+<script src="tasks/tasks.js?v=6"></script>
 <script src="tasks/math.js?v=3"></script>
 <script src="tasks/scale.js?v=3"></script>
+<script src="tasks/words.js?v=1"></script>
+<script src="tasks/read.js?v=1"></script>
 <script src="audio.js?v=4"></script>
+<script src="speech.js?v=1"></script>
 <script src="nav.js?v=2"></script>
 <script src="quality.js?v=1"></script>
 <script src="fx.js?v=4"></script>
@@ -227,7 +266,7 @@
 <script src="scenes/balloon.js?v=1"></script>
 <script src="scenes/campfire.js?v=2"></script>
 <script src="scenes/panda.js?v=1"></script>
-<script src="lesson.js?v=8"></script>
-<script src="app.js?v=6"></script>
+<script src="lesson.js?v=11"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

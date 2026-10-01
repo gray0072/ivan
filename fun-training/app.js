@@ -16,6 +16,7 @@
   let lastResult = null;
   let newAvatar = AVATARS[0];
   let setTab = 'math';    // task type shown in the settings
+  let readExample = null; // the reading example on the settings screen (🔊 Listen says it)
 
   // ---------- helpers ----------
 
@@ -137,13 +138,22 @@
 
   const speedText = id => { const sp = SPEEDS.find(s => s.id === id); return `${sp.icon} ${sp.name}`; };
 
+  // Types that can't run here (Reading without a voice) are listed as off; Math stands in when nothing else is left.
   function summary(st) {
-    const parts = st.types.map(type => `${typeSummary(st, type)} · <b>🪙 ${Tasks.price(st, type).coins}</b> per task`);
+    const parts = Tasks.usable(st).map(type => `${typeSummary(st, type)} · <b>🪙 ${Tasks.price(st, type).coins}</b> per task` +
+      (st.types.includes(type) ? '' : ' (instead)'));
+    st.types.filter(type => Tasks.blocked(st, type)).forEach(type => parts.push(`${typeSummary(st, type)} · 🔇 off on this device`));
     const am = ANSWER_MODES.find(a => a.id === st.answerMode);
-    return parts.join(' &nbsp;|&nbsp; ') + ` · ${am.icon} ${am.name} · ${st.lessonLength} tasks`;
+    return parts.join(' &nbsp;|&nbsp; ') + ` · ${am.icon} ${am.name} · ${st.lessonLength} tasks` +
+      ` = <b>🪙 ${Tasks.lessonCoins(st, st.lessonLength)}</b> per lesson`;
   }
 
   function typeSummary(st, type) {
+    if (type === 'read') {
+      const rd = st.read;
+      const what = rd.size ? `words up to <b>${rd.size}</b> letters${rd.words > 1 ? ` · ${rd.words} words` : ''}` : '<b>letters</b>';
+      return `📖 ${READ_LANGS.find(l => l.id === rd.lang).name} ${what} · ${speedText(rd.speed)}`;
+    }
     if (type === 'scale') {
       const sc = st.scale;
       return `📏 Scales ${limitText(sc.limit)} · <b>${sc.parts.join(', ')}</b> parts` +
@@ -322,7 +332,7 @@
     // Task type tabs and each pane's "use in lessons" switch.
     const tabs = $('typeTabs');
     for (const tt of TASK_TYPES) {
-      const t = el('button', 'tab', `${tt.icon} ${tt.name}<span class="tabPrice"></span><span class="tabUse">✓</span>`);
+      const t = el('button', 'tab', `${tt.icon} ${tt.name}<span class="tabPrice"></span><span class="tabUse">✓</span><span class="tabNa" title="Off on this device">🔇</span>`);
       t.dataset.type = tt.id;
       t.addEventListener('click', () => { setTab = tt.id; refreshSettings(); });
       tabs.append(t);
@@ -331,10 +341,12 @@
       const sw = pane.querySelector('.useSwitch');
       sw.addEventListener('click', () => {
         const st = current.settings, type = pane.dataset.type;
+        const why = Tasks.blocked(st, type);
         if (st.types.includes(type)) {
           if (st.types.length === 1) { shake(sw); return; }
           st.types = st.types.filter(x => x !== type);
-        } else st.types = TASK_TYPES.map(x => x.id).filter(id => id === type || st.types.includes(id));
+        } else if (why && why.hard) { shake(sw); return; } // this device can't speak at all
+        else st.types = TASK_TYPES.map(x => x.id).filter(id => id === type || st.types.includes(id));
         saveSettings();
       });
     });
@@ -399,6 +411,22 @@
       v => sc().labels === v, v => { sc().labels = v; saveSettings(false); });
     segment($('scaleSpeedSeg'), speedItems(),
       v => sc().speed === v, v => { sc().speed = v; saveSettings(false); });
+    // Reading.
+    const rd = () => current.settings.read;
+    segment($('langSeg'), READ_LANGS.map(l => ({ value: l.id, html: `${l.name}<span class="noVoice" title="No voice on this device"> 🔇</span>` })),
+      v => rd().lang === v, v => { rd().lang = v; saveSettings(false); });
+    segment($('sizeSeg'), READ_SIZES.map(n => ({ value: n, html: n ? String(n) : 'Letters' })),
+      v => rd().size === v, v => { rd().size = v; saveSettings(false); });
+    segment($('wordsSeg'), READ_WORD_COUNTS.map(n => ({ value: n, html: String(n) })),
+      v => rd().words === v, v => {
+        if (!rd().size) return false; // letters come one at a time
+        rd().words = v;
+        saveSettings(false);
+      });
+    segment($('readSpeedSeg'), speedItems(),
+      v => rd().speed === v, v => { rd().speed = v; saveSettings(false); });
+    $('readListen').addEventListener('click', () => { if (readExample) ReadTasks.say(readExample); });
+
     segment($('answerSeg'), ANSWER_MODES.map(a => ({ value: a.id, html: `${a.icon} ${a.name}` })),
       v => current.settings.answerMode === v, v => { current.settings.answerMode = v; saveSettings(false); });
     segment($('lengthSeg'), LESSON_LENGTHS.map(n => ({ value: n, html: String(n) })),
@@ -431,10 +459,14 @@
     $('mixBtn').classList.toggle('on', mixOn);
     $('mixBtn').querySelector('.switchLabel').textContent = mixOn ? 'On' : 'Off';
     $('mixNote').textContent = !multi ? 'Pick two or more operations' : m.operands === 2 ? 'Works with 3–4 numbers' : m.mix ? 'One task can mix them' : 'One operation per task';
+    const n = st.lessonLength;
+    $('lengthNote').textContent = `Up to 🪙 ${Tasks.lessonCoins(st, n)} per lesson, ` +
+      `🪙 ${Tasks.lessonCoins(st, n - 1 + BOSS_HITS)} with a boss (${BOSS_HITS} hits for the last task)`;
     $('typeTabs').querySelectorAll('.tab').forEach(t => {
       t.querySelector('.tabPrice').textContent = '🪙' + Tasks.price(st, t.dataset.type).coins;
       t.classList.toggle('on', t.dataset.type === setTab);
       t.classList.toggle('used', st.types.includes(t.dataset.type));
+      t.classList.toggle('na', !!Tasks.blocked(st, t.dataset.type));
     });
     document.querySelectorAll('#screenSettings .pane').forEach(pane => {
       const type = pane.dataset.type, used = st.types.includes(type);
@@ -447,17 +479,32 @@
       const pr = priceHTML(st, type);
       pane.querySelector('.priceBig').innerHTML = pr.big;
       pane.querySelector('.priceSteps').innerHTML = pr.steps;
-      pane.querySelector('.useNote').textContent = !used ? 'Switch on to get these tasks in lessons'
+      const why = Tasks.blocked(st, type);
+      pane.querySelector('.useNote').textContent = why ? (used ? '🔇 Off on this device — see below' : '🔇 Not available on this device')
+        : !used ? 'Switch on to get these tasks in lessons'
         : st.types.length > 1 ? 'Mixed with the other task types' : 'The only task type — switch another one on to mix';
     });
     if (setTab === 'math') {
       $('speedHint').textContent = `· about ${Math.round(Tasks.typicalFailTime(st, 'math'))} s per task`;
       const ex = Tasks.make(st, 'math');
       $('exampleText').textContent = ex.solution;
-    } else {
+    } else if (setTab === 'scale') {
       $('scaleSpeedHint').textContent = `· about ${Math.round(Tasks.typicalFailTime(st, 'scale'))} s per task`;
       const ex = Tasks.make(st, 'scale');
       $('scaleExample').innerHTML = ScaleTasks.svg(ex) + `<b>▼ = ${Tasks.fmt(ex.answer)}</b>`;
+    } else {
+      const why = Tasks.blocked(st, 'read');
+      $('readWarn').hidden = !why;
+      $('readWarn').textContent = why ? '🔇 ' + why.text : '';
+      $('langSeg').querySelectorAll('.segBtn').forEach((b, i) => b.classList.toggle('mute', !Speech.hasVoice(READ_LANGS[i].id)));
+      const letters = !st.read.size;
+      $('wordsBlock').classList.toggle('off', letters);
+      $('wordsSeg').querySelectorAll('.segBtn').forEach(b => { b.disabled = letters; });
+      $('wordsNote').textContent = letters ? 'Letters come one at a time' : st.read.words === 1 ? 'One word' : 'A short phrase that makes sense';
+      $('readSpeedHint').textContent = `· about ${Math.round(Tasks.typicalFailTime(st, 'read'))} s per task`;
+      readExample = Tasks.make(st, 'read');
+      $('readExample').textContent = readExample.answer;
+      $('readListen').disabled = !!why;
     }
   }
 
@@ -481,6 +528,7 @@
   function pause() {
     if (screen !== 'lesson' || paused || overlayOpen() || !Lesson.active()) return;
     paused = true;
+    Speech.stop();
     showPanel('pausePanel');
   }
 
@@ -489,6 +537,7 @@
     hideOverlay();
     Nav.setRoot($('taskPanel'));
     Quality.reset();
+    Lesson.sayTask();
   }
 
   function quitLesson() {
@@ -596,7 +645,7 @@
     Sfx.unlock();
     const k = e.key;
     const inInput = e.target && e.target.tagName === 'INPUT';
-    const typing = screen === 'lesson' && !overlayOpen() && current && current.settings.answerMode === 'type';
+    const typing = screen === 'lesson' && !overlayOpen() && Lesson.typing();
     const isBack = k === 'Escape' || k === 'GoBack' || k === 'BrowserBack' || e.keyCode === 461 || e.keyCode === 10009 ||
       (k === 'Backspace' && !inInput && !typing);
     if (isBack) { e.preventDefault(); back(); return; }
@@ -644,6 +693,7 @@
   });
   [...$('choices').children].forEach(b => b.addEventListener('click', () => Lesson.choiceClick(b)));
   $('numpad').querySelectorAll('button').forEach(b => b.addEventListener('click', () => Lesson.padClick(b)));
+  $('sayBtn').addEventListener('click', () => Lesson.sayTask());
   // Touch: no page scroll / pinch zoom over the scene.
   ['touchstart', 'touchmove'].forEach(t => $('sceneWrap').addEventListener(t, e => e.preventDefault(), { passive: false }));
   $('nameInput').maxLength = NAME_MAX;
@@ -656,6 +706,12 @@
   showScreen('players');
 
   Quality.onChange(() => { Lesson.resize(); Confetti.resize(); });
+  // Voices load asynchronously: show what Reading can do on this device once they are known.
+  Speech.onChange(() => {
+    if (!current) return;
+    if (screen === 'settings') refreshSettings();
+    else if (screen === 'home') renderHome();
+  });
 
   let last = performance.now();
   function frame(now) {

@@ -48,6 +48,7 @@ const LESSON_LENGTHS = [10, 15, 20]; // correct answers needed to win a lesson
 const TASK_TYPES = [
   { id: 'math', name: 'Math', icon: '🔢' },
   { id: 'scale', name: 'Scales', icon: '📏' },
+  { id: 'read', name: 'Reading', icon: '📖' },
 ];
 
 // Scales: read the number a pointer shows on a ruler-like scale.
@@ -66,6 +67,24 @@ const SCALE_TIME = { 2: 3, 4: 4.5, 5: 4.5, 10: 5 };
 const SCALE_LIMIT_TIME = [0, 1, 2.5, 4];  // extra s for bigger numbers, index matches SCALE_LIMITS
 const SCALE_SOME_TIME = 2.5;              // extra s when only every other big tick has a number
 
+// Reading: a voice (the device's speech synthesis) says a letter, a word or a short phrase; pick it among four
+// written options. Words and phrases per language live in tasks/words.js.
+const READ_LANGS = [
+  { id: 'sv', name: 'Swedish' },
+  { id: 'en', name: 'English' },
+  { id: 'ru', name: 'Russian' },
+];
+const READ_SIZES = [0, 3, 4, 5, 6, 7, 8, 9, 10]; // 0 = single letters, N = words up to N letters
+const READ_WORD_COUNTS = [1, 2, 3];              // words in a task (with letters: always one letter)
+const READ_SPAN = 2;          // a word of "up to N letters" is N − READ_SPAN … N letters long (at least 2)
+const READ_MIN_PICK = 6;      // fewer phrases than this with the longest word in that span → any that fit
+const READ_LISTEN_TIME = 1.2; // s the voice takes to say it
+const READ_LETTER_TIME = 1.2; // s to find a letter among four
+const READ_CHAR_TIME = 0.35;  // s per letter of the answer to read the four options
+const READ_WORD_TIME = 1;     // extra s per word beyond the first
+const READ_VOICE_RATE = 0.85; // speech rate, 1 = normal: a bit slower for kids
+const READ_RECENT = 40;       // an answer isn't repeated within this many reading tasks
+
 const DEFAULT_SETTINGS = {
   answerMode: 'choice',
   lessonLength: 10,
@@ -81,6 +100,12 @@ const DEFAULT_SETTINGS = {
     parts: [4, 5, 10],
     limit: 100,
     labels: 'all',
+    speed: 'medium',
+  },
+  read: {
+    lang: 'en',   // a new player gets the browser's language when it is one of READ_LANGS
+    size: 4,
+    words: 1,
     speed: 'medium',
   },
 };
@@ -100,7 +125,9 @@ const PRICE_OPERANDS = { 2: 1, 3: 1.75, 4: 2.5 }; // × by numbers in a task (2 
 const SCALE_LIMIT_PRICE = [1, 2, 3, 4];    // Scales points by "numbers up to" (index matches SCALE_LIMITS)
 const SCALE_PARTS_PRICE = { 2: 1, 4: 2, 5: 2, 10: 3 }; // + for the hardest parts choice
 const SCALE_SOME_PRICE = 2;                // + when only every other big tick has a number
-const PRICE_TYPED = 1.25;                  // × when answers are typed (no guessing among four)
+const READ_SIZE_PRICE = { 0: 2, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 4, 10: 4 }; // Reading points: letters / words up to N
+const READ_WORDS_PRICE = { 1: 1, 2: 1.5, 3: 2 }; // × by words in a task
+const PRICE_TYPED = 1.25;                  // × when answers are typed (no guessing among four; Reading is always picked)
 
 // Share of the earned coins a won lesson pays, by its mistakes: the first rule with mistakes <= maxMistakes.
 // rate (0–3) also colours the step on the track; share = rate / MAX_RATE.
@@ -119,7 +146,7 @@ const BOSS_HITS = 3;    // correct answers the boss needs (its last task)
 // this × a task's fail time, with no refill; gems: diamonds 💎 for beating it with 0–1 mistakes
 // (the share by mistakes follows COIN_RULES; a replay pays only what beats the step's best).
 const BOSS_KINDS = {
-  5: { name: 'Boss', icon: '💀', note: '👹 BOSS!', hint: '', timeMul: 2, gems: 3 },
+  5: { name: 'Boss', icon: '🐲', note: '🐲 BOSS!', hint: '', timeMul: 2, gems: 3 },
   10: { name: 'Big boss', icon: '👑', note: '👑 BIG BOSS!', hint: ' — twice as fast!', timeMul: 1, gems: 6 }, // twice as fast as the 5th step's boss
 };
 const BOSS_NOTE_TIME = 1.8; // s the "BOSS!" note stays on the scene

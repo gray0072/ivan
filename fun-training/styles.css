@@ -311,6 +311,8 @@ button.cell[disabled] { cursor: default; }
   justify-content: center;
 }
 .tab.used .tabUse { display: inline-flex; }
+.tabNa { display: none; margin-left: 0.3rem; font-size: 0.85rem; }
+.tab.na .tabNa { display: inline; }
 .tabPrice { margin-left: 0.4rem; font-size: 0.8rem; color: #e0a800; }
 .tab:not(.on) .tabPrice { color: var(--accent); }
 
@@ -343,7 +345,8 @@ button.cell[disabled] { cursor: default; }
   gap: 0.8rem;
 }
 .pane { display: flex; flex-direction: column; gap: 0.8rem; }
-.pane.unused > :not(.useLine) { opacity: 0.45; }
+.pane.unused > :not(.useLine):not(.warnNote) { opacity: 0.45; }
+.warnNote { margin: 0; padding: 0.5rem 0.9rem; border-radius: 0.9rem; background: rgba(255,79,109,0.2); color: #ffd6dd; font-weight: 700; }
 .useLine { display: flex; align-items: center; gap: 0.4rem 1rem; flex-wrap: wrap; }
 .useLine .note { margin-top: 0; }
 .commonLine { border-top: 0.1rem solid rgba(255,255,255,0.15); padding-top: 0.8rem; }
@@ -401,6 +404,10 @@ button.cell[disabled] { cursor: default; }
 .seg { display: flex; background: rgba(255,255,255,0.12); border-radius: 1rem; padding: 0.2rem; gap: 0.2rem; }
 .segBtn { padding: 0.4rem 1rem; border-radius: 0.8rem; font-weight: 800; min-width: 3rem; color: #e4dcff; }
 .segBtn.on { background: #fff; color: var(--ink); box-shadow: 0 0.15rem 0 rgba(0,0,0,0.2); }
+.segBtn .noVoice { display: none; }
+.segBtn.mute .noVoice { display: inline; }
+.sizeSeg { flex-wrap: wrap; }
+.sizeSeg .segBtn { min-width: 2.6rem; padding: 0.4rem 0.7rem; }
 
 .switch {
   display: inline-flex;
@@ -455,6 +462,9 @@ button.cell[disabled] { cursor: default; }
 
 .example { margin: 0; color: #d8d0ff; }
 .example b { color: #fff; font-size: 1.15rem; }
+.listenBtn { margin-left: 0.5rem; padding: 0.2rem 0.8rem; border-radius: 0.8rem; background: rgba(255,255,255,0.18); font-weight: 800; }
+.listenBtn:hover:not([disabled]) { background: rgba(255,255,255,0.3); }
+.listenBtn[disabled] { opacity: 0.4; }
 .scaleExample { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
 .scaleMini {
   display: flex;
@@ -519,6 +529,7 @@ button.cell[disabled] { cursor: default; }
 .lsStats .bad.some { opacity: 1; }
 .lsStats .bad b { color: #ff9aac; }
 .lsStats .earned b { color: var(--accent); }
+.lsStats .earned small { font-size: 0.8em; opacity: 0.75; }
 .lsStats .boss { margin-left: auto; color: #ffb3c0; font-weight: 800; }
 .lsStats .boss.active { color: #fff; background: #c0304a; padding: 0 0.7rem; border-radius: 1rem; animation: pulse 1.2s infinite; }
 #readyNote.boss { color: #ffd23f; font-size: 4rem; text-shadow: 0 0 1rem #c0304a, 0 0.2rem 0.6rem rgba(0,0,0,0.6); white-space: nowrap; text-align: center; }
@@ -540,6 +551,21 @@ button.cell[disabled] { cursor: default; }
 #taskCard[data-len="s"] #taskText { font-size: 1.8rem; }
 .scaleSvg { display: block; width: 100%; height: auto; }
 #taskScale .scaleSvg { max-width: 42rem; margin: 0 auto; }
+/* Reading: a big speaker button (listen again) instead of the task text. */
+#taskRead { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 0.3rem 0; }
+.sayBtn {
+  width: 5.4rem;
+  height: 5.4rem;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 2.6rem;
+  line-height: 1;
+  box-shadow: 0 0.3rem 0 rgba(0,0,0,0.25);
+  transition: transform 0.1s;
+}
+.sayBtn:hover, .sayBtn:focus-visible { transform: scale(1.08); }
+.sayHint { font-size: 1.1rem; font-weight: 800; color: var(--muted); }
 .ansLine { font-size: 2.6rem; font-weight: 800; color: var(--muted); }
 #answerBox { color: var(--blue); display: inline-block; min-width: 2ch; }
 #answerBox.empty { color: #c5c0e0; }
@@ -568,6 +594,13 @@ button.cell[disabled] { cursor: default; }
   transition: transform 0.08s;
 }
 .choice:hover, .choice:focus-visible { transform: scale(1.04); }
+/* Words and phrases: smaller the longer the longest option is; long ones wrap. */
+.choice .val { overflow-wrap: anywhere; }
+.choices[data-len] .choice { padding-left: 2rem; padding-right: 0.6rem; }
+.choices[data-len=""] .choice { padding-left: 0.5rem; padding-right: 0.5rem; }
+.choices[data-len="m"] .choice { font-size: 1.8rem; }
+.choices[data-len="s"] .choice { font-size: 1.4rem; }
+.choices[data-len="xs"] .choice { font-size: 1.1rem; line-height: 1.25; }
 .choice.picked { transform: translateY(0.15rem); box-shadow: 0 0.1rem 0 rgba(0,0,0,0.3); }
 .choice .key {
   position: absolute;
@@ -730,6 +763,8 @@ button.cell[disabled] { cursor: default; }
 
   #taskPanel { gap: 0.5rem; padding: 0.7rem max(0.8rem, env(safe-area-inset-right)) max(0.8rem, env(safe-area-inset-bottom)) max(0.8rem, env(safe-area-inset-left)); }
   #taskCard { margin-top: 0; padding: 0.6rem 0.8rem 0.7rem; }
+  .sayBtn { width: 4.2rem; height: 4.2rem; font-size: 2rem; }
+  .sizeSeg .segBtn { min-width: 2.2rem; padding: 0.35rem 0.5rem; }
   .padKey { height: 3rem; }
   #readyNote { font-size: 2.2rem; }
   #readyNote.boss { font-size: 3rem; }
@@ -763,6 +798,14 @@ button.cell[disabled] { cursor: default; }
   .choices { gap: 0.5rem; }
   .choice { font-size: 1.7rem; padding: 0.35rem 0.4rem; }
   .choice .key { width: 1.1rem; height: 1.1rem; font-size: 0.7rem; top: 0.25rem; left: 0.35rem; }
+  .choices[data-len="m"] .choice { font-size: 1.4rem; }
+  .choices[data-len="s"] .choice { font-size: 1.15rem; }
+  .choices[data-len="xs"] .choice { font-size: 0.95rem; }
+  .choices[data-len] .choice { padding-left: 1.5rem; padding-right: 0.4rem; }
+  .choices[data-len=""] .choice { padding-left: 0.4rem; }
+  #taskRead { flex-direction: row; justify-content: center; gap: 0.8rem; padding: 0; }
+  .sayBtn { width: 3.4rem; height: 3.4rem; font-size: 1.7rem; }
+  .sayHint { font-size: 0.95rem; }
   .numpad { grid-template-columns: repeat(6, 1fr); gap: 0.4rem; }
   .padKey { height: 2.5rem; font-size: 1.4rem; }
   #readyNote { font-size: 2.2rem; }
