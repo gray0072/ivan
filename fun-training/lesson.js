@@ -317,15 +317,6 @@ const Lesson = (() => {
     submit(L.opts[[...$('choices').children].indexOf(btn)]);
   }
 
-  let bannerTimer = 0;
-  function showBanner(text) {
-    const b = $('banner');
-    b.textContent = text;
-    b.classList.add('show');
-    clearTimeout(bannerTimer);
-    bannerTimer = setTimeout(() => b.classList.remove('show'), 2200);
-  }
-
   return {
     start, update, draw, key, resize, choiceClick, padClick, sayTask,
     stop: () => { L = null; Speech.stop(); },

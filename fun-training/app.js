@@ -14,7 +14,7 @@
   let current = null;     // current player
   let paused = false;
   let lastResult = null;
-  let newAvatar = AVATARS[0];
+  let newChar = CHARACTERS[0].id; // character picked for a new player
   let setTab = 'math';    // task type shown in the settings
   let readExample = null; // the reading example on the settings screen (🔊 Listen says it)
 
@@ -193,7 +193,7 @@
     for (const p of players) {
       const slot = el('div', 'playerSlot');
       const card = el('button', 'playerCard' + (p.id === lastId ? ' default' : ''),
-        `<span class="pAvatar">${p.avatar}</span><span class="pName">${esc(p.name)}</span>` +
+        `<span class="pAvatar">${Look.ofPlayer(p, 'mini')}${hungryBadge(p)}</span><span class="pName">${esc(p.name)}</span>` +
         `<span class="pMeta">🪙 ${p.coins} · 💎 ${p.gems} · ${starHTML(Math.max(0, Progress.bestLevel(p)), 'small' + (Progress.bestLevel(p) < 0 ? ' dim' : ''))} ${Progress.totalStars(p)}</span>`);
       card.addEventListener('click', () => selectPlayer(p.id));
       const del = el('button', 'pDelete', '🗑 Delete');
@@ -221,6 +221,9 @@
     list.append(slot);
   }
 
+  // A 🍽 badge on a hungry character.
+  const hungryBadge = p => (Shop.fullness(p) < FULL_HUNGRY ? '<i class="hungry" title="Hungry">🍽</i>' : '');
+
   function selectPlayer(id) {
     current = Store.get(id);
     if (!current) return;
@@ -230,22 +233,34 @@
 
   function openNewPlayer() {
     $('nameInput').value = '';
-    newAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
-    renderAvatars();
+    newChar = CHARACTERS[Math.floor(Math.random() * CHARACTERS.length)].id;
+    renderChars();
     showScreen('new');
   }
 
-  function renderAvatars() {
-    const g = $('avatarGrid');
+  // The characters to pick from, each drawn happy; the picked one waves (arms up) and its favourite food is shown.
+  function renderChars() {
+    const g = $('charGrid');
     g.innerHTML = '';
-    for (const a of AVATARS) {
-      const b = el('button', 'avatarBtn' + (a === newAvatar ? ' on' : ''), a);
-      b.addEventListener('click', () => {
-        newAvatar = a;
-        g.querySelectorAll('.avatarBtn').forEach(x => x.classList.toggle('on', x === b));
-      });
+    for (const c of CHARACTERS) {
+      const b = el('button', 'charBtn');
+      b.dataset.id = c.id;
+      b.title = c.name;
+      b.addEventListener('click', () => { newChar = c.id; Sfx.squeak(); markChar(); });
       g.append(b);
     }
+    markChar();
+  }
+
+  function markChar() {
+    $('charGrid').querySelectorAll('.charBtn').forEach(b => {
+      const on = b.dataset.id === newChar;
+      const c = CHARACTERS.find(x => x.id === b.dataset.id);
+      b.classList.toggle('on', on);
+      b.innerHTML = Look.svg(c.id, {}, on ? 'giggle' : 'happy') + `<span class="charName">${c.name}</span>`;
+    });
+    const c = CHARACTERS.find(x => x.id === newChar);
+    $('charNote').textContent = `${c.name} loves ${c.loves.map(id => FOODS.find(f => f.id === id).name.toLowerCase()).join(' and ')}.`;
   }
 
   function createPlayer() {
@@ -258,7 +273,7 @@
       input.focus();
       return;
     }
-    current = Store.create(name, newAvatar);
+    current = Store.create(name, newChar);
     openHome();
   }
 
@@ -271,8 +286,11 @@
 
   function renderHome() {
     const p = current;
-    $('homeAvatar').textContent = p.avatar;
+    $('homeAvatar').innerHTML = Look.ofPlayer(p, 'mini', 'head') + hungryBadge(p);
     $('homeName').textContent = p.name;
+    const full = Shop.fullness(p);
+    $('homeMood').textContent = full < FULL_HUNGRY ? `🏠 ${Shop.charOf(p).name} is hungry!` : '🏠 My room';
+    $('roomBtn').classList.toggle('needs', full < FULL_HUNGRY);
     $('homeCoins').textContent = p.coins;
     $('homeGems').textContent = p.gems;
     $('trainingSummary').innerHTML = summary(p.settings);
@@ -444,7 +462,7 @@
 
   function refreshSettings() {
     const st = current.settings, m = st.math;
-    $('setPlayer').textContent = '· ' + current.avatar + ' ' + current.name;
+    $('setPlayer').textContent = '· ' + Shop.charOf(current).emoji + ' ' + current.name;
     $('opsRow').querySelectorAll('.opCol').forEach(c => c._refresh());
     document.querySelectorAll('#screenSettings .segBtn').forEach(b => {
       b.classList.toggle('on', b._isOn());
@@ -513,6 +531,18 @@
     showScreen('settings');
   }
 
+  // ---------- room ----------
+
+  function openRoom() {
+    Room.open(current);
+    showScreen('room');
+  }
+
+  function leaveRoom() {
+    Room.close();
+    openHome();
+  }
+
   // ---------- lesson ----------
 
   function startLesson(proc, step) {
@@ -552,6 +582,7 @@
     const lv = Progress.levelOf(r.step);
     const wasDone = Progress.levelDone(p, proc, lv);
     let coins = 0, gems = 0, rate = 0, rule = '', gemRule = '';
+    const coinsBefore = p.coins, gemsBefore = p.gems;
     const replay = r.step <= p.progress[proc.id];
     if (r.won) {
       // The answers' prices, cut by the mistakes; a replay pays only what beats the step's best. Same for a boss's diamonds.
@@ -611,6 +642,9 @@
         `<span class="coinRule">${rule} · total ${p.coins}</span>` +
         (gemRule ? `<span class="coinRule">${gemRule} · total ${p.gems} 💎</span>` : '')
       : '';
+    const buyable = r.won && !r.cheated ? Shop.newlyAffordable(p, coinsBefore, gemsBefore) : null;
+    $('resShop').hidden = !buyable;
+    $('resShop').textContent = buyable ? `🛍️ Now you can buy: ${buyable.name} (${Shop.costText(buyable)})` : '';
     $('resStar').hidden = !levelUp;
     if (levelUp) {
       $('resStar').innerHTML = `<div class="levelUp">${starHTML(lv, 'huge')}<span>You earned the <b>${tierOf(lv).name}</b> star!<br>` +
@@ -636,6 +670,7 @@
     if (screen === 'lesson') pause();
     else if (screen === 'new') { renderPlayers(); showScreen('players'); }
     else if (screen === 'settings') openHome();
+    else if (screen === 'room') leaveRoom();
     else if (screen === 'home') { renderPlayers(); showScreen('players'); }
   }
 
@@ -654,6 +689,7 @@
       if (k === 'p' || k === 'P') { pause(); return; }
       if (Lesson.key(e)) { e.preventDefault(); return; }
     }
+    if (screen === 'room' && Room.key(e)) { e.preventDefault(); return; }
     if (ARROWS[k]) {
       if (inInput && (k === 'ArrowLeft' || k === 'ArrowRight')) return;
       e.preventDefault();
@@ -681,6 +717,9 @@
   $('createBtn').addEventListener('click', createPlayer);
   $('cancelNewBtn').addEventListener('click', () => { renderPlayers(); showScreen('players'); });
   $('settingsBtn').addEventListener('click', openSettings);
+  $('roomBtn').addEventListener('click', openRoom);
+  $('shopBtn').addEventListener('click', openRoom);
+  $('roomBack').addEventListener('click', leaveRoom);
   $('playersBtn').addEventListener('click', () => { renderPlayers(); showScreen('players'); });
   $('settingsDone').addEventListener('click', openHome);
   $('pauseBtn').addEventListener('click', pause);
@@ -723,6 +762,7 @@
       Lesson.draw();
       if (!overlayOpen()) Quality.frame(raw);
     }
+    if (screen === 'room') Room.update(dt);
     Confetti.update(dt);
     requestAnimationFrame(frame);
   }

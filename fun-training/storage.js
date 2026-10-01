@@ -74,10 +74,28 @@ const Store = (() => {
       const g = Array.isArray(gsrc[proc.id]) ? gsrc[proc.id] : [];
       bestGems[proc.id] = Array.from({ length: n }, (_, i) => (g[i] >= 0 ? Math.floor(g[i]) : 0));
     }
+    // The character (older saves: the one nearest to their emoji avatar), what's bought and worn / placed.
+    const charIds = CHARACTERS.map(c => c.id);
+    const character = charIds.includes(p.character) ? p.character : OLD_AVATARS[p.avatar] || charIds[0];
+    const itemIds = ITEMS.map(it => it.id);
+    const owned = Array.isArray(p.owned) ? itemIds.filter(id => p.owned.includes(id)) : [];
+    const equip = {};
+    const esrc = p.equip && typeof p.equip === 'object' ? p.equip : {};
+    for (const slot of ITEM_SLOTS) {
+      const it = ITEMS.find(x => x.id === esrc[slot.id] && x.slot === slot.id);
+      if (it && (owned.includes(it.id) || !it.price && !it.gems)) equip[slot.id] = it.id;
+      else if (slot.def) equip[slot.id] = slot.def;
+    }
+    const now = Date.now();
+    const fedAt = Number(p.fedAt) > 0 && Number(p.fedAt) <= now ? Number(p.fedAt) : now;
     return {
       id: String(p.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
       name: String(p.name || 'Player').slice(0, NAME_MAX),
-      avatar: AVATARS.includes(p.avatar) ? p.avatar : AVATARS[0],
+      character,
+      fullness: p.fullness >= 0 ? Math.min(FULL_MAX, Number(p.fullness)) : FULL_START, // at fedAt; drops HUNGER_HOURS from full to empty
+      fedAt,
+      owned,
+      equip,
       coins: Math.max(0, Math.floor(Number(p.coins) || 0)),
       gems: Math.max(0, Math.floor(Number(p.gems) || 0)), // diamonds 💎 from bosses
       progress,
@@ -102,8 +120,8 @@ const Store = (() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
   }
 
-  function create(name, avatar) {
-    const p = cleanPlayer({ name, avatar });
+  function create(name, character) {
+    const p = cleanPlayer({ name, character });
     data.players.push(p);
     data.lastPlayerId = p.id;
     save();

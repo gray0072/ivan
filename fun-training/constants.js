@@ -189,7 +189,202 @@ const PROCESSES = [
     loseTitle: 'The panda is sad and hungry…', loseIcon: '😢' },
 ];
 
-const AVATARS = ['🦊', '🐼', '🐯', '🐸', '🐵', '🦁', '🐰', '🐻', '🐨', '🐙', '🦄', '🐲', '🐧', '🦉', '🐝', '🐢'];
+// Characters a player picks (drawn in characters/): all share one body, so every piece of clothing fits all of them.
+// loves: favourite foods (a happy dance, FOOD_LOVE_FILL × fullness); dislikes: foods it makes a face at (still eats).
+const CHARACTERS = [
+  { id: 'kitty', name: 'Kitty', emoji: '🐱', loves: ['fish', 'milk'], dislikes: ['carrot'] },
+  { id: 'puppy', name: 'Puppy', emoji: '🐶', loves: ['sausage', 'pizza'], dislikes: ['broccoli'] },
+  { id: 'bunny', name: 'Bunny', emoji: '🐰', loves: ['carrot', 'strawberry'], dislikes: ['sausage'] },
+  { id: 'panda', name: 'Panda', emoji: '🐼', loves: ['bamboo', 'dumpling'], dislikes: ['fish'] },
+  { id: 'fox', name: 'Fox', emoji: '🦊', loves: ['drumstick', 'strawberry'], dislikes: ['bamboo'] },
+  { id: 'bear', name: 'Bear', emoji: '🐻', loves: ['honey', 'fish'], dislikes: ['broccoli'] },
+  { id: 'unicorn', name: 'Unicorn', emoji: '🦄', loves: ['cupcake', 'apple'], dislikes: ['drumstick'] },
+  { id: 'dragon', name: 'Dragon', emoji: '🐲', loves: ['chili', 'drumstick'], dislikes: ['icecream'] },
+  { id: 'penguin', name: 'Penguin', emoji: '🐧', loves: ['fish', 'icecream'], dislikes: ['chili'] },
+  { id: 'lion', name: 'Lion', emoji: '🦁', loves: ['steak', 'sausage'], dislikes: ['broccoli'] },
+];
+// Avatars of older saves -> the nearest character.
+const OLD_AVATARS = { '🦊': 'fox', '🐼': 'panda', '🐯': 'lion', '🐸': 'dragon', '🐵': 'bear', '🦁': 'lion', '🐰': 'bunny',
+  '🐻': 'bear', '🐨': 'panda', '🐙': 'kitty', '🦄': 'unicorn', '🐲': 'dragon', '🐧': 'penguin', '🦉': 'penguin', '🐝': 'bear', '🐢': 'dragon' };
+
+// Food: eaten at once. price in coins (gems: in diamonds instead), fill = fullness points (of FULL_MAX).
+// taste: a special reaction for everyone who doesn't love it — sour (lemon), spicy (chili: steam from the ears),
+// cold (ice cream: shivers, only for those who dislike it); treat: everyone loves it.
+const FOODS = [
+  { id: 'lemon', name: 'Lemon', price: 3, fill: 8, taste: 'sour' },
+  { id: 'broccoli', name: 'Broccoli', price: 4, fill: 15 },
+  { id: 'apple', name: 'Apple', price: 5, fill: 15 },
+  { id: 'carrot', name: 'Carrot', price: 5, fill: 15 },
+  { id: 'bamboo', name: 'Bamboo', price: 5, fill: 15 },
+  { id: 'banana', name: 'Banana', price: 6, fill: 18 },
+  { id: 'chili', name: 'Chili pepper', price: 6, fill: 12, taste: 'spicy' },
+  { id: 'milk', name: 'Milk', price: 8, fill: 20 },
+  { id: 'fish', name: 'Fish', price: 10, fill: 25 },
+  { id: 'sausage', name: 'Sausage', price: 10, fill: 25 },
+  { id: 'strawberry', name: 'Strawberries', price: 12, fill: 25 },
+  { id: 'drumstick', name: 'Drumstick', price: 14, fill: 30 },
+  { id: 'honey', name: 'Honey', price: 15, fill: 30 },
+  { id: 'dumpling', name: 'Dumplings', price: 18, fill: 35 },
+  { id: 'steak', name: 'Steak', price: 20, fill: 40 },
+  { id: 'icecream', name: 'Ice cream', price: 20, fill: 30, taste: 'cold' },
+  { id: 'pizza', name: 'Pizza', price: 25, fill: 50 },
+  { id: 'cupcake', name: 'Rainbow cupcake', price: 30, fill: 40 },
+  { id: 'cake', name: 'Birthday cake', price: 60, fill: 80, treat: true },
+  { id: 'goldapple', name: 'Golden apple', gems: 2, fill: 100, treat: true },
+];
+const FULL_MAX = 100;          // fullness points of a full tummy
+const FULL_START = 50;         // a new character is a bit hungry
+const HUNGER_HOURS = 48;       // real hours from full to empty (it keeps dropping while the game is closed)
+const FULL_HAPPY = 70;         // at or above: happy face
+const FULL_HUNGRY = 35;        // below: hungry (sad face, tummy rumbles)
+const FULL_STARVING = 12;      // below: very hungry (a tear)
+const FULL_REFUSE = 95;        // at or above: "I'm full!", no more food
+const FOOD_LOVE_FILL = 1.5;    // × fullness from a favourite food
+
+// Things to wear and to put in the room, by slot. kind: 'wear' (on the character) or 'room'.
+// def: what the slot holds before anything is bought (owned from the start, the "poor" look); none = empty.
+const ITEM_SLOTS = [
+  { id: 'head', kind: 'wear', name: 'Hats', icon: '🎩' },
+  { id: 'face', kind: 'wear', name: 'Glasses', icon: '👓' },
+  { id: 'neck', kind: 'wear', name: 'Neck', icon: '🧣' },
+  { id: 'body', kind: 'wear', name: 'Outfits', icon: '👕' },
+  { id: 'back', kind: 'wear', name: 'Back', icon: '🎒' },
+  { id: 'feet', kind: 'wear', name: 'Shoes', icon: '👟' },
+  { id: 'hand', kind: 'wear', name: 'In hand', icon: '🎈' },
+  { id: 'wall', kind: 'room', name: 'Walls', icon: '🧱', def: 'plaster' },
+  { id: 'floor', kind: 'room', name: 'Floors', icon: '🟫', def: 'boards' },
+  { id: 'bed', kind: 'room', name: 'Beds', icon: '🛏️', def: 'box' },
+  { id: 'table', kind: 'room', name: 'Tables', icon: '🪑', def: 'crate' },
+  { id: 'lamp', kind: 'room', name: 'Lamps', icon: '💡', def: 'bulb' },
+  { id: 'window', kind: 'room', name: 'Windows', icon: '🪟', def: 'smallwindow' },
+  { id: 'rug', kind: 'room', name: 'Rugs', icon: '🟣' },
+  { id: 'picture', kind: 'room', name: 'Pictures', icon: '🖼️' },
+  { id: 'plant', kind: 'room', name: 'Plants', icon: '🪴' },
+  { id: 'toy', kind: 'room', name: 'Toys', icon: '🧸' },
+  { id: 'pet', kind: 'room', name: 'Pets', icon: '🐠' },
+];
+
+// The catalog, cheap to elite within each slot: price in coins, or gems = diamonds only (the elite pieces).
+// With 🪙 30–60 a lesson: the cheapest piece after the first lesson, 🪙 100–300 in a few days, 🪙 1000+ in weeks;
+// diamond pieces (💎 10–45) after one or a few levels of bosses.
+const ITEMS = [
+  // Hats.
+  { id: 'cap', slot: 'head', name: 'Cap', price: 25 },
+  { id: 'bow', slot: 'head', name: 'Big bow', price: 25 },
+  { id: 'beanie', slot: 'head', name: 'Beanie', price: 60 },
+  { id: 'flowers', slot: 'head', name: 'Flower crown', price: 120 },
+  { id: 'pirate', slot: 'head', name: 'Pirate hat', price: 250 },
+  { id: 'tophat', slot: 'head', name: 'Top hat', price: 400 },
+  { id: 'wizard', slot: 'head', name: 'Wizard hat', price: 700 },
+  { id: 'tiara', slot: 'head', name: 'Diamond tiara', gems: 20 },
+  { id: 'crown', slot: 'head', name: 'Royal crown', gems: 35 },
+  // Glasses.
+  { id: 'glasses', slot: 'face', name: 'Round glasses', price: 40 },
+  { id: 'sunglasses', slot: 'face', name: 'Sunglasses', price: 120 },
+  { id: 'starglasses', slot: 'face', name: 'Star glasses', price: 300 },
+  { id: 'goldshades', slot: 'face', name: 'Golden shades', gems: 15 },
+  // Neck.
+  { id: 'bandana', slot: 'neck', name: 'Bandana', price: 20 },
+  { id: 'scarf', slot: 'neck', name: 'Striped scarf', price: 35 },
+  { id: 'bowtie', slot: 'neck', name: 'Bow tie', price: 60 },
+  { id: 'pearls', slot: 'neck', name: 'Pearl necklace', price: 300 },
+  { id: 'medal', slot: 'neck', name: 'Champion medal', gems: 10 },
+  // Outfits.
+  { id: 'tshirt', slot: 'body', name: 'T-shirt', price: 40 },
+  { id: 'sweater', slot: 'body', name: 'Striped sweater', price: 120 },
+  { id: 'dress', slot: 'body', name: 'Polka-dot dress', price: 150 },
+  { id: 'hoodie', slot: 'body', name: 'Hoodie', price: 200 },
+  { id: 'hero', slot: 'body', name: 'Superhero suit', price: 500 },
+  { id: 'gown', slot: 'body', name: 'Princess gown', price: 900 },
+  { id: 'tuxedo', slot: 'body', name: 'Tuxedo', price: 900 },
+  { id: 'spacesuit', slot: 'body', name: 'Space suit', price: 1500 },
+  { id: 'armor', slot: 'body', name: 'Golden armor', gems: 40 },
+  // Back.
+  { id: 'backpack', slot: 'back', name: 'Backpack', price: 80 },
+  { id: 'cape', slot: 'back', name: 'Hero cape', price: 300 },
+  { id: 'fairywings', slot: 'back', name: 'Fairy wings', price: 600 },
+  { id: 'jetpack', slot: 'back', name: 'Jetpack', price: 1200 },
+  { id: 'angelwings', slot: 'back', name: 'Angel wings', gems: 25 },
+  // Shoes.
+  { id: 'slippers', slot: 'feet', name: 'Fluffy slippers', price: 30 },
+  { id: 'sneakers', slot: 'feet', name: 'Sneakers', price: 50 },
+  { id: 'rainboots', slot: 'feet', name: 'Rain boots', price: 80 },
+  { id: 'skates', slot: 'feet', name: 'Roller skates', price: 400 },
+  { id: 'rocketboots', slot: 'feet', name: 'Rocket boots', gems: 15 },
+  // In hand.
+  { id: 'balloon', slot: 'hand', name: 'Balloon', price: 20 },
+  { id: 'sword', slot: 'hand', name: 'Wooden sword', price: 80 },
+  { id: 'wand', slot: 'hand', name: 'Magic wand', price: 350 },
+  { id: 'guitar', slot: 'hand', name: 'Guitar', price: 600 },
+  { id: 'scepter', slot: 'hand', name: 'Diamond scepter', gems: 25 },
+  // Walls.
+  { id: 'plaster', slot: 'wall', name: 'Old plaster', price: 0 },
+  { id: 'stripes', slot: 'wall', name: 'Striped wallpaper', price: 80 },
+  { id: 'flowerwall', slot: 'wall', name: 'Flower wallpaper', price: 150 },
+  { id: 'starwall', slot: 'wall', name: 'Starry wallpaper', price: 300 },
+  { id: 'castlewall', slot: 'wall', name: 'Castle stones', price: 700 },
+  { id: 'palace', slot: 'wall', name: 'Golden palace', gems: 35 },
+  // Floors.
+  { id: 'boards', slot: 'floor', name: 'Bare boards', price: 0 },
+  { id: 'parquet', slot: 'floor', name: 'Parquet', price: 100 },
+  { id: 'checker', slot: 'floor', name: 'Checkered tiles', price: 200 },
+  { id: 'marble', slot: 'floor', name: 'Marble', price: 600 },
+  // Beds.
+  { id: 'box', slot: 'bed', name: 'Cardboard box', price: 0 },
+  { id: 'mattress', slot: 'bed', name: 'Mattress', price: 60 },
+  { id: 'woodbed', slot: 'bed', name: 'Wooden bed', price: 250 },
+  { id: 'carbed', slot: 'bed', name: 'Race car bed', price: 1200 },
+  { id: 'royalbed', slot: 'bed', name: 'Royal bed', gems: 40 },
+  // Tables.
+  { id: 'crate', slot: 'table', name: 'Wooden crate', price: 0 },
+  { id: 'smalltable', slot: 'table', name: 'Table and chair', price: 70 },
+  { id: 'desk', slot: 'table', name: 'Desk with books', price: 300 },
+  { id: 'gamingdesk', slot: 'table', name: 'Gaming desk', price: 1500 },
+  // Lamps.
+  { id: 'bulb', slot: 'lamp', name: 'Bare bulb', price: 0 },
+  { id: 'shade', slot: 'lamp', name: 'Lamp shade', price: 40 },
+  { id: 'lantern', slot: 'lamp', name: 'Paper lantern', price: 150 },
+  { id: 'discoball', slot: 'lamp', name: 'Disco ball', price: 800 },
+  { id: 'chandelier', slot: 'lamp', name: 'Crystal chandelier', gems: 25 },
+  // Windows.
+  { id: 'smallwindow', slot: 'window', name: 'Small window', price: 0 },
+  { id: 'curtains', slot: 'window', name: 'Curtains', price: 50 },
+  { id: 'flowerbox', slot: 'window', name: 'Window with flowers', price: 250 },
+  { id: 'royaldrapes', slot: 'window', name: 'Royal drapes', gems: 15 },
+  // Rugs.
+  { id: 'roundrug', slot: 'rug', name: 'Round rug', price: 50 },
+  { id: 'striperug', slot: 'rug', name: 'Striped rug', price: 150 },
+  { id: 'cloudrug', slot: 'rug', name: 'Fluffy cloud rug', price: 400 },
+  { id: 'redcarpet', slot: 'rug', name: 'Red carpet', gems: 10 },
+  // Pictures.
+  { id: 'drawing', slot: 'picture', name: 'Sun drawing', price: 15 },
+  { id: 'landscape', slot: 'picture', name: 'Mountain painting', price: 120 },
+  { id: 'portrait', slot: 'picture', name: 'My portrait', price: 400 },
+  { id: 'goldmirror', slot: 'picture', name: 'Golden mirror', gems: 20 },
+  // Plants.
+  { id: 'cactus', slot: 'plant', name: 'Cactus', price: 30 },
+  { id: 'flowerpot', slot: 'plant', name: 'Flower pot', price: 80 },
+  { id: 'palm', slot: 'plant', name: 'Palm tree', price: 300 },
+  { id: 'goldtree', slot: 'plant', name: 'Golden tree', gems: 20 },
+  // Toys.
+  { id: 'ball', slot: 'toy', name: 'Ball', price: 20 },
+  { id: 'teddy', slot: 'toy', name: 'Teddy bear', price: 90 },
+  { id: 'rockinghorse', slot: 'toy', name: 'Rocking horse', price: 350 },
+  { id: 'robot', slot: 'toy', name: 'Toy robot', price: 700 },
+  { id: 'toycastle', slot: 'toy', name: 'Toy castle', gems: 25 },
+  // Pets.
+  { id: 'goldfish', slot: 'pet', name: 'Goldfish', price: 150 },
+  { id: 'parrot', slot: 'pet', name: 'Parrot', price: 500 },
+  { id: 'babydragon', slot: 'pet', name: 'Baby dragon', gems: 45 },
+];
+
+// Room screen timing, s.
+const REACT_TIME = 2.2;        // a food reaction (hearts, "Bleh!", steam…) lasts this long
+const FOOD_FLY_TIME = 0.5;     // food flies to the mouth
+const FOOD_BITES = 3;          // bites to eat it (one munch each)
+const BITE_TIME = 0.35;        // s per bite
+const HUNGRY_RUMBLE = 6;       // s between tummy rumbles while hungry on the room screen
+
 const NAME_MAX = 14;           // chars in a player name
 const DELETE_CONFIRM_TIME = 3; // s to press delete a second time
 

@@ -195,5 +195,26 @@ const Sfx = (() => {
       [0, 0.25, 0.9, 1.1].forEach(t => tone(2600 + Math.random() * 600, t, 0.12, { gain: 0.07, to: 3800 }));
     },
     scream() { tone(700, 0, 0.5, { type: 'sawtooth', gain: 0.08, to: 1100, vibrato: 9, lowpass: 2500 }); },
+    // Room and shop.
+    spend() { [0, 0.07].forEach((t, i) => tone(i ? 1760 : 1320, t, 0.12, { type: 'square', gain: 0.05, lowpass: 5000 })); },
+    buy() {
+      // Cash register: a drawer clunk, coins and a bell.
+      noise(0, 0.12, { freq: 500, filter: 'lowpass', gain: 0.25, attack: 0.003 });
+      [0.08, 0.16, 0.24].forEach(t => tone(1800 + Math.random() * 600, t, 0.12, { type: 'square', gain: 0.05, lowpass: 6000 }));
+      tone(2093, 0.32, 0.8, { type: 'sine', gain: 0.18 });
+      tone(2637, 0.32, 0.8, { type: 'sine', gain: 0.08 });
+    },
+    yum() {
+      tone(500, 0, 0.18, { type: 'triangle', gain: 0.14, to: 700 });
+      tone(700, 0.2, 0.25, { type: 'triangle', gain: 0.14, to: 520, vibrato: 6 });
+    },
+    bleh() { tone(320, 0, 0.55, { type: 'sawtooth', gain: 0.11, to: 140, vibrato: 22, lowpass: 1400, attack: 0.02 }); },
+    sour() { tone(900, 0, 0.5, { type: 'square', gain: 0.06, to: 1500, vibrato: 14, lowpass: 3000 }); },
+    sizzle() {
+      noise(0, 0.9, { freq: 5000, q: 0.8, gain: 0.1, attack: 0.05 });
+      tone(300, 0.1, 0.6, { type: 'sawtooth', gain: 0.07, to: 900, lowpass: 2000 });
+    },
+    brr() { for (let i = 0; i < 9; i++) noise(i * 0.06, 0.03, { freq: 2500, q: 3, gain: 0.15, attack: 0.002 }); },
+    giggle() { [0, 0.11, 0.22, 0.33].forEach((t, i) => tone(1000 + (i % 2) * 260, t, 0.09, { type: 'sine', gain: 0.12, to: 1300 })); },
   };
 })();

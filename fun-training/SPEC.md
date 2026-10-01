@@ -6,18 +6,23 @@ Developer/agent spec for the `fun-training` project. Repo-wide conventions live 
 
 A training game for school kids. Something is happening on screen (a flower dries out, zombies walk toward a house, a train runs out of rails, a balloon sinks, a campfire burns down, a panda gets hungry) and the player keeps it going by answering tasks in time. Every correct answer "feeds" the process (waters the flower, throws a stone at the zombie); a wrong answer just brings a new task while the process keeps running. The name is deliberately not tied to math: tasks come in **task types** (Math, Scales and Reading today), more will follow.
 
+The coins and diamonds won in lessons are spent on the player's own **character** — a cute animal that starts out poor and hungry in a bare room: feed it, dress it up and furnish its room (see Characters, room and shop). That's what makes it worth earning more.
+
 Targets: **TV / big screen** with a keyboard or a TV remote (arrows, Enter, digits, Back; reference: LG 55NANO766QA, webOS browser), desktop with a mouse, and **phones** by touch (reference: Poco X6 Pro, 444 × 987 CSS px, both orientations).
 
 ## Screens
 
-1. **Players** — "Who's training today?": a card per saved player (avatar, name, coins, stars) and a **New player** card. Each player card has a small delete button that needs a second press within 3 s. The last used player is focused.
-2. **New player** — name field (up to `NAME_MAX` chars) and an avatar grid (`AVATARS`), **Create** / **Cancel**. Enter in the name field creates.
-3. **Home** (the player's account) — avatar, name, coins 🪙 and diamonds 💎, **Settings** and **Players** buttons, a one-line summary of the current training settings, and one row per process with its progress track (see below). Every playable step of a track is a button: the next step, or any finished step to replay it. ‹ › at the track's ends page through earlier levels. The row's side shows the current level (its star, dim until earned), the next step — or, when the level is finished but not perfect, "🔒 ↻ N steps to open <next level>" — the earned stars and "↻ N to improve". Rows of processes that aren't built yet (`ready: false`) are shown dimmed as "Coming soon".
+1. **Players** — "Who's training today?": a card per saved player (their character as it looks now — outfit, mood, a pulsing 🍽 when hungry; name, coins, stars) and a **New player** card. Each player card has a small delete button that needs a second press within 3 s. The last used player is focused.
+2. **New player** — name field (up to `NAME_MAX` chars) and the 10 characters to pick from (`CHARACTERS`, drawn; a random one is preselected and waves, "Kitty loves fish and milk."), **Create** / **Cancel**. Enter in the name field creates.
+3. **Home** (the player's account) — the character's head and the name as a button to the room ("🏠 My room", or "🏠 Kitty is hungry!" in yellow with a 🍽 badge), coins 🪙 and diamonds 💎, **🛍️ Shop** (also opens the room), **Settings** and **Players** buttons, a one-line summary of the current training settings, and one row per process with its progress track (see below). Every playable step of a track is a button: the next step, or any finished step to replay it. ‹ › at the track's ends page through earlier levels. The row's side shows the current level (its star, dim until earned), the next step — or, when the level is finished but not perfect, "🔒 ↻ N steps to open <next level>" — the earned stars and "↻ N to improve". Rows of processes that aren't built yet (`ready: false`) are shown dimmed as "Coming soon".
 4. **Settings** — per player: a tab per task type (🔢 Math, 📏 Scales, 📖 Reading; a ✓ on the tab = used in lessons, 🔇 = can't run on this device) with that type's settings, then the global Answers and Tasks per lesson. Changes are saved immediately; **Done** returns home.
 5. **Lesson** — the process scene (canvas, left) and the task panel (right): lesson info (process, step, "· Boss", task n / N, mistakes, 🪙 coins of the correct answers so far / the lesson's price, the boss's hearts), the task card with its price in the corner (a math example, a scale with a pointer and "▼ = ?", or a big 🔊 button and "Which one did you hear?"), and the answers.
 6. **Pause** dialog (Esc / Back / the ⏸ button, or leaving the tab): Continue, Quit to home.
 7. **Victory** dialog: process-specific title, coins earned ("45 for the answers × 67% for 2 mistakes", for a replay "· 45 − 30 from before" / "you got 45 here before"), total coins, on a boss step the diamonds ("+4 💎", "Big boss: 4 of 6 💎"), the step's level on the track, a hint to replay when fewer than 3 coins per task were earned (or which ↻ steps still shut the next level), confetti and a fanfare. When the lesson completes a level: the level-up block (see Levels and stars) with fireworks. **Next lesson** (default: the next new step, or "Replay step N ↻" — the first ↻ step of a shut level) / **Home**.
+   A won lesson that makes something new affordable adds "🛍️ Now you can buy: Top hat (🪙 400)" (the priciest such item).
 8. **Defeat** dialog: process-specific title ("The flower wilted…", "The zombies got in!"…), how many tasks were solved (or how many hits the boss still needed), a sad trombone. **Try again** (default, the same step) / **Home**.
+
+9. **Room** — the character's room (left; on top in portrait) and the shop panel (right; below): see Characters, room and shop. **‹ Home** / Esc / Back returns home.
 
 Navigation: arrow keys move the focus spatially between the visible buttons (nearest in that direction, preferring the same row/column); Enter/Space press the focused button, or the screen's default button when nothing is focused. Every screen focuses its default button when shown (the lesson focuses the first answer in choice mode). Esc / Backspace-outside-inputs / TV Back (`keyCode` 461 webOS, 10009 Tizen) = back / pause.
 
@@ -26,7 +31,7 @@ Navigation: arrow keys move the focus spatially between the visible buttons (nea
 - Stored per player and per process: the number of completed steps (`progress[processId]`) and, per completed step, the best rate (`rates[processId][i]`, 0–3, by mistakes), the most coins earned on it (`best[processId][i]`) and the most diamonds (`bestGems[processId][i]`). Levels, stars and the next step are derived (`progress.js`).
 - The track shows one level of `TRACK_LEN` = 10 steps (by default the current one): steps done with 0–1 mistakes (rate 3) are green ✓; steps done with 2+ mistakes show ↻ on amber (rate 2), orange (rate 1) or red (rate 0) — they can be replayed for the missing coins; the next step is yellow and pulsing; later steps are grey and disabled; the level's goal star ends the track (dim until earned). Step 5 shows 🐲 (boss), step 10 👑 (big boss).
 - A lesson = `lessonLength` tasks (10 / 15 / 20, a setting). Winning the next step adds it to `progress` with its rate.
-- Coins are awarded only for a won lesson: the sum of the **prices** of its correct answers (see Task price; every boss hit counts as an answer), times a share by the lesson's mistakes (`COIN_RULES`, rate / 3): 0–1 mistakes → 100 %, 2–3 → 67 %, 4–5 → 33 %, 6+ → 0, rounded. A replay of a finished step pays only what beats the step's best (`best`), and keeps the better rate and best — so a step can be replayed for more coins with fewer mistakes *or* with harder settings. A replay that earns nothing new hints that harder settings or a faster speed pay more. Coins accumulate on the player and are shown on the Players and Home screens. A shop to spend them comes later.
+- Coins are awarded only for a won lesson: the sum of the **prices** of its correct answers (see Task price; every boss hit counts as an answer), times a share by the lesson's mistakes (`COIN_RULES`, rate / 3): 0–1 mistakes → 100 %, 2–3 → 67 %, 4–5 → 33 %, 6+ → 0, rounded. A replay of a finished step pays only what beats the step's best (`best`), and keeps the better rate and best — so a step can be replayed for more coins with fewer mistakes *or* with harder settings. A replay that earns nothing new hints that harder settings or a faster speed pay more. Coins accumulate on the player and are shown on the Players and Home screens; they are spent in the shop (see Characters, room and shop).
 
 ### Levels and stars
 
@@ -146,11 +151,40 @@ All six processes are built. Scenes are drawn on a canvas in a fixed design spac
 5. **🔥 Campfire Night** (built). Night forest, a tent and a kid toasting a marshmallow by the fire. The fire's size and the lit circle are `f`; glowing wolf eyes sit at the edge of the light and creep closer as it dims (their silhouettes show when close). A correct answer throws a log in: the fire flares with sparks and a crackle, and the eyes back off. Wrong answer: a puff of smoke. Defeat: the fire goes out and the wolves howl. Victory: dawn — the sky brightens, the sun rises, the wolves leave, birds chirp. **Boss:** the pack leader walks into the light (the fire stays full); each hit is a burning stick that makes it yelp, the third sends it running.
 6. **🐼 Panda Snack** (built). A bamboo forest (morning / midday / sunset by step) with a chubby panda sitting next to a basket of food; a heart in the corner fills with `f`. The panda's mood follows `f` and shows in stages: content (smile, blush, a gentle sway) → hungry below 0.6 (looks at the basket, tummy rumbles "~grr~") → sad below `PANDA_SAD_LEVEL` (droopy ears and brows, tears roll down) → below `PANDA_SUCK_LEVEL` it sucks its paw and sniffles. A correct answer tosses a treat from the basket (bamboo, apple, carrot or a bao bun, in turn): the panda catches it with both paws and munches it (`PANDA_CHEW_TIME`, crunching sounds, crumbs, "Yum!", little hearts), and its mood comes back up while it eats; its belly gets rounder over the lesson. Wrong answer: the treat falls short and rolls away, the panda watches it. Defeat: it bursts into tears. Victory: a happy bouncing dance with arms up and a stream of hearts. Each step has its own accessory (a bow in one of five colours or a flower). **Boss:** a cheeky monkey creeps toward the basket to steal it (the mood stays full); each hit is the panda's "ROAR!" that startles it, the third sends it fleeing; if it reaches the basket it runs off with it and the panda cries. The big boss (step 10) is a bigger monkey with a crown.
 
+## Characters, room and shop
+
+### Characters
+
+- 10 characters (`CHARACTERS`), not split into boys' and girls': **Kitty, Puppy, Bunny, Panda, Fox, Bear, Unicorn, Dragon, Penguin, Lion** — cute, popular and easy to draw; the style (bows and gowns or caps and armor) comes from the clothes, so everyone finds theirs. Older saves get the character nearest to their old emoji avatar (`OLD_AVATARS`).
+- Drawn as SVG (`characters/`): one shared chibi body (big round head, round body, short limbs) and per-species parts (`species.js`: colours, ears, tail / wings, face markings, nose). Because the body is shared, **every piece of clothing fits every character**.
+- Faces (`Look.FACES`): by fullness — happy (≥ `FULL_HAPPY` = 70), ok, hungry (< `FULL_HUNGRY` = 35: worried brows, frown, the tummy rumbles "I'm hungry…" every `HUNGRY_RUMBLE` = 6 s in the room), very hungry (< `FULL_STARVING` = 12: a tear) — and reactions: love (heart eyes, arms up), chew, yum, bleh (green face, tongue out), sour (squint, pucker), spicy (red face, steam from the ears), fire (the dragon breathes fire), cold (blue, shivering, chattering teeth), sparkle (star eyes), giggle, proud. Eyes blink; tails wag.
+- Each character loves two foods and dislikes one: Kitty fish, milk / carrot; Puppy sausage, pizza / broccoli; Bunny carrot, strawberries / sausage; Panda bamboo, dumplings / fish; Fox drumstick, strawberries / bamboo; Bear honey, fish / broccoli; Unicorn rainbow cupcake, apple / drumstick; Dragon chili, drumstick / ice cream; Penguin fish, ice cream / chili; Lion steak, sausage / broccoli.
+
+### Room screen
+
+- The room (`room.js`, one SVG, viewBox 800 × 500: wall, floor, furniture, the character in the middle, toy and pet in front) with a HUD: the player's name, the character and what it loves, a tummy bar (Full / Happy / Peckish / Hungry / Very hungry!).
+- **The poor start**: a bare character in a room with old cracked plaster with a cobweb, worn boards, a cardboard box for a bed, a crate for a table, a bare bulb on a wire and a small cracked window; a new character is a bit hungry (`FULL_START` = 50) and the player has no coins yet — the first lesson buys the first food.
+- The shop panel: **🍎 Food / 👕 Clothes / 🛋️ Room** tabs; Clothes and Room have slot chips (a green dot = something there is affordable now), then a grid of item cards (thumbnail + price, "✓" in use, "Owned", greyed when too expensive, 💎 prices in blue, ❤ on favourite food) and an info line with the action button.
+- Picking a piece of clothing **tries it on** (the character shows it off), a room item is shown in the room; the action is **Buy 🪙 N** (then it's worn / placed at once, cash-register sound, "Looking good!" with sparkles), **Wear it** / **Put it in the room**, **Take off** / **Put back: Cardboard box** (slots with a default go back to it). Too expensive: the button is grey and shakes, the note says "Need 🪙 40 more — about 2 lessons" (by the lesson price with the current settings) or "Need 💎 5 more — beat bosses".
+- **Feeding**: Feed 🪙 N pays and the food flies to the mouth, is munched in `FOOD_BITES` = 3 bites with crumbs, then the reaction (`REACT_TIME` = 2.2 s, a popup, a sound): favourite → hearts, a jump, "My favorite!" (and ×`FOOD_LOVE_FILL` = 1.5 fullness); disliked → "Bleh!"; lemon → "Sooo sour!" for everyone; chili → "Hot hot hot!" with steam, the dragon breathes fire ("ROAR!"); ice cream → "Brrr!" for the dragon; cake → loved by all; golden apple → star eyes and sparkles. At ≥ `FULL_REFUSE` = 95 it's "I'm full!".
+- **Hunger**: fullness drops from full to empty in `HUNGER_HOURS` = 48 real hours, also while the game is closed (stored as the value at `fedAt`). It's only looks and a nudge — nothing is lost when it's hungry.
+- Tapping the character makes it giggle and jump (or say it's hungry).
+- Debug cheat (keyboard, room screen): `[` takes 25 fullness away (banner).
+
+### Catalog and prices
+
+All in `constants.js` (`FOODS`, `ITEM_SLOTS`, `ITEMS`); drawings in `items/`. Prices follow the lessons: a lesson pays about 🪙 30–60 with starter settings (more with harder ones), and a level of one process (10 steps) gives up to 9 💎.
+
+- **Food** (20, eaten at once, the steady coin sink): lemon 🪙 3, broccoli 4, apple / carrot / bamboo 5, banana / chili 6, milk 8, fish / sausage 10, strawberries 12, drumstick 14, honey 15, dumplings 18, steak / ice cream 20, pizza 25, rainbow cupcake 30, birthday cake 60, golden apple 💎 2. Fill 8–100; keeping the tummy full costs about 🪙 15–30 a day.
+- **Clothes** (42) in 7 slots — Hats (cap, big bow 🪙 25 … top hat 400, wizard hat 700, diamond tiara 💎 20, royal crown 💎 35), Glasses (40 … golden shades 💎 15), Neck (bandana 20 … pearls 300, champion medal 💎 10), Outfits (T-shirt 40, sweater, dress, hoodie, superhero suit 500, princess gown / tuxedo 900, space suit 1500, golden armor 💎 40), Back (backpack 80, cape 300, fairy wings 600, jetpack 1200, angel wings 💎 25), Shoes (slippers 30 … roller skates 400, rocket boots 💎 15), In hand (balloon 20, wooden sword 80, magic wand 350, guitar 600, diamond scepter 💎 25).
+- **Room** (48) in 11 slots — Walls (old plaster → striped 80 … castle stones 700, golden palace 💎 35), Floors (bare boards → parquet 100, tiles 200, marble 600), Beds (cardboard box → mattress 60, wooden bed 250, race car bed 1200, royal bed 💎 40), Tables (crate → table and chair 70, desk with books 300, gaming desk 1500), Lamps (bare bulb → shade 40, paper lantern 150, disco ball 800, crystal chandelier 💎 25), Windows (small window → curtains 50, flower box 250, royal drapes 💎 15), Rugs (50 … red carpet 💎 10), Pictures (sun drawing 15, mountain painting 120, my portrait 400 — the player's own character —, golden mirror 💎 20), Plants (cactus 30 … golden tree 💎 20), Toys (ball 20 … toy robot 700, toy castle 💎 25), Pets (goldfish 150, parrot 500, baby dragon 💎 45).
+- Pace: something new after the first lesson, 🪙 100–300 pieces every few days, 🪙 1000+ in weeks, diamond pieces after one or a few levels of bosses. About 🪙 20 000 and 💎 400 for everything — months of play; more items and rooms can be added later (a new entry in `ITEMS` + its drawing).
+
 ## Phones and touch
 
 - The split-screen joystick scheme from the repo conventions doesn't apply: every action is a button (answers, number pad, pause), and plain `<button>`s are tapped directly.
 - Starting a lesson on a touch device requests fullscreen (`goFullscreen`, try/catch, works windowed on iPhone). The scene blocks page scroll / pinch zoom (`touch-action: none`, `preventDefault` on `touchstart` / `touchmove`).
-- Portrait: the scene on top, the task panel below; narrow screens (≤ 620 px) wrap the home top bar, put each process's track on its own full-width line with shrinking cells, use a 2 × 2 grid of operations and a full-width speed switch in the settings. Low landscape screens (≤ 520 px high) get a compact task panel and dialogs that scroll if needed. Safe-area insets are respected; sticky hover zoom is off on touch screens.
+- Portrait: the scene on top, the task panel below (the room: the room on top, the shop below); narrow screens (≤ 620 px) wrap the home top bar, put each process's track on its own full-width line with shrinking cells, use a 2 × 2 grid of operations and a full-width speed switch in the settings. Low landscape screens (≤ 520 px high) get a compact task panel and dialogs that scroll if needed. Safe-area insets are respected; sticky hover zoom is off on touch screens.
 
 ## Graphics quality
 
@@ -163,11 +197,11 @@ All six processes are built. Scenes are drawn on a canvas in a fixed design spac
 
 ## Sounds
 
-The Reading voice is the device's speech synthesis (`speech.js`). Everything else is synthesized with Web Audio (`audio.js`), no files: UI click, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, munching, tummy rumble, sniffles, crying, a cute roar, monkey chatter, a happy squeak, boss drums and growl, victory fanfare, coins jingle, diamonds sparkle, star fanfare, fireworks pops, defeat sad trombone.
+The Reading voice is the device's speech synthesis (`speech.js`). Everything else is synthesized with Web Audio (`audio.js`), no files: UI click, cash register, coins spent, yum, bleh, sour, sizzle, teeth chattering, giggle, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, munching, tummy rumble, sniffles, crying, a cute roar, monkey chatter, a happy squeak, boss drums and growl, victory fanfare, coins jingle, diamonds sparkle, star fanfare, fireworks pops, defeat sad trombone.
 
 ## Storage
 
-`localStorage["funTraining.v1"]` = `{ players: [{ id, name, avatar, coins, gems, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, best: { <processId>: [most coins earned on each step] }, bestGems: { <processId>: [most diamonds earned on each step] }, settings: { answerMode, lessonLength, types: ['math', 'scale'], math: { ops, operands, mix, limits: { add, sub, mul, div }, speed }, scale: { parts, limit, labels: 'all' | 'some', speed }, read: { lang: 'sv' | 'en' | 'ru', size: 0 (letters) | 3–10, words: 1–3, speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3, a missing best as rate × lesson length, missing diamonds as 0 — old boss steps can be replayed for them; older saves get `types: ['math']` and the default scale and reading settings); all access is wrapped in try/catch so the game still works without storage.
+`localStorage["funTraining.v1"]` = `{ players: [{ id, name, character, fullness (at fedAt), fedAt (ms), owned: [item ids], equip: { <slot>: item id }, coins, gems, progress: { <processId>: steps }, rates: { <processId>: [best coins per task of each step] }, best: { <processId>: [most coins earned on each step] }, bestGems: { <processId>: [most diamonds earned on each step] }, settings: { answerMode, lessonLength, types: ['math', 'scale'], math: { ops, operands, mix, limits: { add, sub, mul, div }, speed }, scale: { parts, limit, labels: 'all' | 'some', speed }, read: { lang: 'sv' | 'en' | 'ru', size: 0 (letters) | 3–10, words: 1–3, speed } } }], lastPlayerId }`. Loaded values are validated and merged with `DEFAULT_SETTINGS` (missing rates count as 3, a missing best as rate × lesson length, missing diamonds as 0 — old boss steps can be replayed for them; older saves get `types: ['math']` and the default scale and reading settings, the character nearest to their avatar, `FULL_START` fullness and the poor room; equipped items must be owned or a free default); all access is wrapped in try/catch so the game still works without storage.
 
 ## Files
 
@@ -175,7 +209,7 @@ The Reading voice is the device's speech synthesis (`speech.js`). Everything els
 fun-training/
 ├── index.html       # markup of all screens
 ├── styles.css
-├── constants.js     # task types, operations, limits, scale and reading options, time tables, speeds, coin rules, star tiers, processes, avatars, timings
+├── constants.js     # task types, operations, limits, scale and reading options, time tables, speeds, coin rules, star tiers, processes, characters, food / item catalog and prices, hunger, timings
 ├── storage.js       # players and their settings/progress in localStorage
 ├── progress.js      # levels: boss kinds, which step is open, level complete, stars, diamonds per boss
 ├── stars.js         # level stars as SVG in their materials, the ladder of levels
@@ -197,7 +231,16 @@ fun-training/
 │   ├── balloon.js   # Balloon Flight
 │   ├── campfire.js  # Campfire Night
 │   └── panda.js     # Panda Snack
+├── characters/      # the characters, drawn as SVG
+│   ├── species.js   # per character: colours, ears, tail / wings, face markings, nose
+│   └── look.js      # Look: the shared body + species parts + outfit + face (moods, reactions)
+├── items/           # things to buy, one file per kind of drawing, plus the shop logic
+│   ├── food.js      # food drawings
+│   ├── clothes.js   # clothes drawings in character coordinates, by slot
+│   ├── furniture.js # room item drawings, room layout (where each slot stands)
+│   └── shop.js      # Shop: owning, buying, wearing / placing, feeding, hunger, tastes, thumbnails
 ├── lesson.js        # lesson loop: tasks, safety level, answers, win/lose
+├── room.js          # the room screen: room scene, shop panel, feeding / trying on / buying, reactions
 ├── app.js           # screens, settings UI, keyboard routing, main loop
 ├── README.md / README_RU.md   # short, link to the live page
 ├── icon.svg
@@ -213,7 +256,8 @@ fun-training/
 
 ## Backlog
 
-- [ ] Coin shop
+- [x] Coin shop: characters, food, clothes, room
+- [ ] More rooms / scenes (garden, beach…) and more items
 - [x] Scales task type
 - [x] Reading task type
 - [ ] More task types

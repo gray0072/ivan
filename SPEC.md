@@ -29,7 +29,7 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style): eat smaller fish, av
 
 ### fun-training
 
-Training game for school kids: a process runs (a flower dries out, zombies approach a house, a train runs out of rails, a balloon sinks, a campfire burns down, a panda gets hungry) and the player keeps it going by answering tasks in time. Players, per-process progress tracks with stars, boss steps and replays for more coins, per-task-type settings. For TV (remote), desktop and phones. Full spec: [`fun-training/SPEC.md`](fun-training/SPEC.md).
+Training game for school kids: a process runs (a flower dries out, zombies approach a house, a train runs out of rails, a balloon sinks, a campfire burns down, a panda gets hungry) and the player keeps it going by answering tasks in time. Players, per-process progress tracks with stars, boss steps and replays for more coins, per-task-type settings; each player has an animal character to feed, dress and give a room, bought with the coins and diamonds. For TV (remote), desktop and phones. Full spec: [`fun-training/SPEC.md`](fun-training/SPEC.md).
 
 ## Project structure
 

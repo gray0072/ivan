@@ -76,6 +76,16 @@ function drawHearts(ctx, x, y, hp, size = 14) {
   }
 }
 
+// A short note at the top of the screen (debug cheats say what they did).
+let bannerTimer = 0;
+function showBanner(text) {
+  const b = document.getElementById('banner');
+  b.textContent = text;
+  b.classList.add('show');
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => b.classList.remove('show'), 2200);
+}
+
 const Confetti = (() => {
   const COLORS = ['#ff4f7b', '#ffd23f', '#3ddc97', '#5b7cff', '#ff9f43', '#b36bff', '#4fd8ff'];
   let canvas, ctx, parts = [], running = false, spawnLeft = 0, w = 0, h = 0, dpr = 1;

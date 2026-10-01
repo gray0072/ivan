@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#2b2170">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 
@@ -28,8 +28,9 @@
   <label class="nameLabel">Name
     <input id="nameInput" type="text" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Type a name" data-autofocus>
   </label>
-  <p class="hint">Pick an avatar:</p>
-  <div id="avatarGrid" class="avatarGrid"></div>
+  <p class="hint">Pick your character:</p>
+  <div id="charGrid" class="charGrid"></div>
+  <p id="charNote" class="charNote"></p>
   <div class="btnRow">
     <button class="btn default" id="createBtn">Create</button>
     <button class="btn secondary" id="cancelNewBtn">Cancel</button>
@@ -39,9 +40,10 @@
 <!-- 3. Home -->
 <section id="screenHome" class="screen" hidden>
   <header class="topBar">
-    <div class="who"><span id="homeAvatar" class="bigAvatar"></span><span id="homeName"></span></div>
+    <button class="who" id="roomBtn" title="Your room and the shop"><span id="homeAvatar" class="bigAvatar"></span><span class="whoText"><span id="homeName"></span><small id="homeMood"></small></span></button>
     <div class="coins">🪙 <b id="homeCoins">0</b> <span class="gems">💎 <b id="homeGems">0</b></span></div>
     <div class="topBtns">
+      <button class="btn" id="shopBtn">🛍️ Shop</button>
       <button class="btn secondary" id="settingsBtn">⚙ Settings</button>
       <button class="btn secondary" id="playersBtn">👥 Players</button>
     </div>
@@ -219,6 +221,34 @@
   </div>
 </section>
 
+<!-- 6. Room: the character's room and the shop -->
+<section id="screenRoom" class="screen" hidden>
+  <div id="roomWrap">
+    <svg id="roomScene" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" aria-label="Your room"></svg>
+    <div class="roomHud">
+      <span id="roomWho" class="roomWho"></span>
+      <span class="tummy" title="How full the tummy is"><span>🍽</span><span class="tummyBar"><i id="tummyFill"></i></span><b id="tummyText"></b></span>
+    </div>
+  </div>
+  <div id="shopPanel">
+    <div class="shopTop">
+      <button class="btn secondary" id="roomBack">‹ Home</button>
+      <div class="coins">🪙 <b id="roomCoins">0</b> <span class="gems">💎 <b id="roomGems">0</b></span></div>
+    </div>
+    <div id="shopTabs" class="shopTabs">
+      <button class="shopTab" data-tab="food">🍎 Food</button>
+      <button class="shopTab" data-tab="wear">👕 Clothes</button>
+      <button class="shopTab" data-tab="room">🛋️ Room</button>
+    </div>
+    <div id="slotTabs" class="slotTabs"></div>
+    <div id="itemGrid" class="itemGrid"></div>
+    <div class="itemInfo">
+      <div class="infoText"><b id="infoName"></b><span id="infoNote"></span></div>
+      <button class="btn" id="infoAct"></button>
+    </div>
+  </div>
+</section>
+
 <!-- Dialogs -->
 <div id="overlay" hidden>
   <div id="pausePanel" class="panel" hidden>
@@ -233,6 +263,7 @@
     <h1 id="resTitle"></h1>
     <p id="resText" class="resText"></p>
     <div id="resCoins" class="resCoins"></div>
+    <p id="resShop" class="resShop" hidden></p>
     <div id="resStar" class="resStar" hidden></div>
     <div id="resTrack" class="resTrack"></div>
     <p id="resCheat" class="cheatNote" hidden>Cheats were used — this lesson doesn't count.</p>
@@ -246,8 +277,8 @@
 <canvas id="fx" hidden></canvas>
 <div id="banner"></div>
 
-<script src="constants.js?v=12"></script>
-<script src="storage.js?v=6"></script>
+<script src="constants.js?v=13"></script>
+<script src="storage.js?v=7"></script>
 <script src="progress.js?v=1"></script>
 <script src="stars.js?v=1"></script>
 <script src="tasks/tasks.js?v=6"></script>
@@ -255,18 +286,25 @@
 <script src="tasks/scale.js?v=3"></script>
 <script src="tasks/words.js?v=2"></script>
 <script src="tasks/read.js?v=2"></script>
-<script src="audio.js?v=4"></script>
+<script src="characters/species.js?v=1"></script>
+<script src="characters/look.js?v=1"></script>
+<script src="items/food.js?v=1"></script>
+<script src="items/clothes.js?v=1"></script>
+<script src="items/furniture.js?v=1"></script>
+<script src="items/shop.js?v=1"></script>
+<script src="audio.js?v=5"></script>
 <script src="speech.js?v=1"></script>
 <script src="nav.js?v=2"></script>
 <script src="quality.js?v=1"></script>
-<script src="fx.js?v=4"></script>
+<script src="fx.js?v=5"></script>
 <script src="scenes/flower.js?v=2"></script>
 <script src="scenes/zombies.js?v=3"></script>
 <script src="scenes/railway.js?v=1"></script>
 <script src="scenes/balloon.js?v=1"></script>
 <script src="scenes/campfire.js?v=2"></script>
 <script src="scenes/panda.js?v=1"></script>
-<script src="lesson.js?v=11"></script>
-<script src="app.js?v=8"></script>
+<script src="lesson.js?v=12"></script>
+<script src="room.js?v=1"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>
