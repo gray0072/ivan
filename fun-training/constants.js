@@ -264,119 +264,19 @@ const ITEM_SLOTS = [
   { id: 'pet', kind: 'room', name: 'Pets', icon: '🐠' },
 ];
 
-// The catalog, cheap to elite within each slot: price in coins, or gems = diamonds only (the elite pieces).
-// With 🪙 30–60 a lesson: the cheapest piece after the first lesson, 🪙 100–300 in a few days, 🪙 1000+ in weeks;
-// diamond pieces (💎 10–45) after one or a few levels of bosses.
-const ITEMS = [
-  // Hats.
-  { id: 'cap', slot: 'head', name: 'Cap', price: 25 },
-  { id: 'bow', slot: 'head', name: 'Big bow', price: 25 },
-  { id: 'beanie', slot: 'head', name: 'Beanie', price: 60 },
-  { id: 'flowers', slot: 'head', name: 'Flower crown', price: 120 },
-  { id: 'pirate', slot: 'head', name: 'Pirate hat', price: 250 },
-  { id: 'tophat', slot: 'head', name: 'Top hat', price: 400 },
-  { id: 'wizard', slot: 'head', name: 'Wizard hat', price: 700 },
-  { id: 'tiara', slot: 'head', name: 'Diamond tiara', gems: 20 },
-  { id: 'crown', slot: 'head', name: 'Royal crown', gems: 35 },
-  // Glasses.
-  { id: 'glasses', slot: 'face', name: 'Round glasses', price: 40 },
-  { id: 'sunglasses', slot: 'face', name: 'Sunglasses', price: 120 },
-  { id: 'starglasses', slot: 'face', name: 'Star glasses', price: 300 },
-  { id: 'goldshades', slot: 'face', name: 'Golden shades', gems: 15 },
-  // Neck.
-  { id: 'bandana', slot: 'neck', name: 'Bandana', price: 20 },
-  { id: 'scarf', slot: 'neck', name: 'Striped scarf', price: 35 },
-  { id: 'bowtie', slot: 'neck', name: 'Bow tie', price: 60 },
-  { id: 'pearls', slot: 'neck', name: 'Pearl necklace', price: 300 },
-  { id: 'medal', slot: 'neck', name: 'Champion medal', gems: 10 },
-  // Outfits.
-  { id: 'tshirt', slot: 'body', name: 'T-shirt', price: 40 },
-  { id: 'sweater', slot: 'body', name: 'Striped sweater', price: 120 },
-  { id: 'dress', slot: 'body', name: 'Polka-dot dress', price: 150 },
-  { id: 'hoodie', slot: 'body', name: 'Hoodie', price: 200 },
-  { id: 'hero', slot: 'body', name: 'Superhero suit', price: 500 },
-  { id: 'gown', slot: 'body', name: 'Princess gown', price: 900 },
-  { id: 'tuxedo', slot: 'body', name: 'Tuxedo', price: 900 },
-  { id: 'spacesuit', slot: 'body', name: 'Space suit', price: 1500 },
-  { id: 'armor', slot: 'body', name: 'Golden armor', gems: 40 },
-  // Back.
-  { id: 'backpack', slot: 'back', name: 'Backpack', price: 80 },
-  { id: 'cape', slot: 'back', name: 'Hero cape', price: 300 },
-  { id: 'fairywings', slot: 'back', name: 'Fairy wings', price: 600 },
-  { id: 'jetpack', slot: 'back', name: 'Jetpack', price: 1200 },
-  { id: 'angelwings', slot: 'back', name: 'Angel wings', gems: 25 },
-  // Shoes.
-  { id: 'slippers', slot: 'feet', name: 'Fluffy slippers', price: 30 },
-  { id: 'sneakers', slot: 'feet', name: 'Sneakers', price: 50 },
-  { id: 'rainboots', slot: 'feet', name: 'Rain boots', price: 80 },
-  { id: 'skates', slot: 'feet', name: 'Roller skates', price: 400 },
-  { id: 'rocketboots', slot: 'feet', name: 'Rocket boots', gems: 15 },
-  // In hand.
-  { id: 'balloon', slot: 'hand', name: 'Balloon', price: 20 },
-  { id: 'sword', slot: 'hand', name: 'Wooden sword', price: 80 },
-  { id: 'wand', slot: 'hand', name: 'Magic wand', price: 350 },
-  { id: 'guitar', slot: 'hand', name: 'Guitar', price: 600 },
-  { id: 'scepter', slot: 'hand', name: 'Diamond scepter', gems: 25 },
-  // Walls.
-  { id: 'plaster', slot: 'wall', name: 'Old plaster', price: 0 },
-  { id: 'stripes', slot: 'wall', name: 'Striped wallpaper', price: 80 },
-  { id: 'flowerwall', slot: 'wall', name: 'Flower wallpaper', price: 150 },
-  { id: 'starwall', slot: 'wall', name: 'Starry wallpaper', price: 300 },
-  { id: 'castlewall', slot: 'wall', name: 'Castle stones', price: 700 },
-  { id: 'palace', slot: 'wall', name: 'Golden palace', gems: 35 },
-  // Floors.
-  { id: 'boards', slot: 'floor', name: 'Bare boards', price: 0 },
-  { id: 'parquet', slot: 'floor', name: 'Parquet', price: 100 },
-  { id: 'checker', slot: 'floor', name: 'Checkered tiles', price: 200 },
-  { id: 'marble', slot: 'floor', name: 'Marble', price: 600 },
-  // Beds.
-  { id: 'box', slot: 'bed', name: 'Cardboard box', price: 0 },
-  { id: 'mattress', slot: 'bed', name: 'Mattress', price: 60 },
-  { id: 'woodbed', slot: 'bed', name: 'Wooden bed', price: 250 },
-  { id: 'carbed', slot: 'bed', name: 'Race car bed', price: 1200 },
-  { id: 'royalbed', slot: 'bed', name: 'Royal bed', gems: 40 },
-  // Tables.
-  { id: 'crate', slot: 'table', name: 'Wooden crate', price: 0 },
-  { id: 'smalltable', slot: 'table', name: 'Table and chair', price: 70 },
-  { id: 'desk', slot: 'table', name: 'Desk with books', price: 300 },
-  { id: 'gamingdesk', slot: 'table', name: 'Gaming desk', price: 1500 },
-  // Lamps.
-  { id: 'bulb', slot: 'lamp', name: 'Bare bulb', price: 0 },
-  { id: 'shade', slot: 'lamp', name: 'Lamp shade', price: 40 },
-  { id: 'lantern', slot: 'lamp', name: 'Paper lantern', price: 150 },
-  { id: 'discoball', slot: 'lamp', name: 'Disco ball', price: 800 },
-  { id: 'chandelier', slot: 'lamp', name: 'Crystal chandelier', gems: 25 },
-  // Windows.
-  { id: 'smallwindow', slot: 'window', name: 'Small window', price: 0 },
-  { id: 'curtains', slot: 'window', name: 'Curtains', price: 50 },
-  { id: 'flowerbox', slot: 'window', name: 'Window with flowers', price: 250 },
-  { id: 'royaldrapes', slot: 'window', name: 'Royal drapes', gems: 15 },
-  // Rugs.
-  { id: 'roundrug', slot: 'rug', name: 'Round rug', price: 50 },
-  { id: 'striperug', slot: 'rug', name: 'Striped rug', price: 150 },
-  { id: 'cloudrug', slot: 'rug', name: 'Fluffy cloud rug', price: 400 },
-  { id: 'redcarpet', slot: 'rug', name: 'Red carpet', gems: 10 },
-  // Pictures.
-  { id: 'drawing', slot: 'picture', name: 'Sun drawing', price: 15 },
-  { id: 'landscape', slot: 'picture', name: 'Mountain painting', price: 120 },
-  { id: 'portrait', slot: 'picture', name: 'My portrait', price: 400 },
-  { id: 'goldmirror', slot: 'picture', name: 'Golden mirror', gems: 20 },
-  // Plants.
-  { id: 'cactus', slot: 'plant', name: 'Cactus', price: 30 },
-  { id: 'flowerpot', slot: 'plant', name: 'Flower pot', price: 80 },
-  { id: 'palm', slot: 'plant', name: 'Palm tree', price: 300 },
-  { id: 'goldtree', slot: 'plant', name: 'Golden tree', gems: 20 },
-  // Toys.
-  { id: 'ball', slot: 'toy', name: 'Ball', price: 20 },
-  { id: 'teddy', slot: 'toy', name: 'Teddy bear', price: 90 },
-  { id: 'rockinghorse', slot: 'toy', name: 'Rocking horse', price: 350 },
-  { id: 'robot', slot: 'toy', name: 'Toy robot', price: 700 },
-  { id: 'toycastle', slot: 'toy', name: 'Toy castle', gems: 25 },
-  // Pets.
-  { id: 'goldfish', slot: 'pet', name: 'Goldfish', price: 150 },
-  { id: 'parrot', slot: 'pet', name: 'Parrot', price: 500 },
-  { id: 'babydragon', slot: 'pet', name: 'Baby dragon', gems: 45 },
-];
+// The catalog, cheap to elite within each slot: price in coins, or gems = diamonds only (the elite pieces). One file per
+// slot (items/wear/<slot>.js, items/room/<slot>.js) adds its items with addItems: the catalog entry here, the drawing to
+// WEAR_ART / ROOM_ART. With 🪙 30–60 a lesson: the cheapest pieces after the first lesson, 🪙 100–300 every few days,
+// 🪙 1000+ in weeks; diamond pieces (💎 10–60) after one or a few levels of bosses.
+const ITEMS = [];
+
+// Add a slot's items, in shop order: { id, name, price | gems, ...art } — art (draw, box, sleeve, legs…) goes to art[id].
+function addItems(slot, art, list) {
+  for (const { id, name, price, gems, ...look } of list) {
+    ITEMS.push(gems ? { id, slot, name, gems } : { id, slot, name, price: price || 0 });
+    art[id] = look;
+  }
+}
 
 // Room screen timing, s.
 const REACT_TIME = 2.2;        // a food reaction (hearts, "Bleh!", steam…) lasts this long
@@ -396,6 +296,11 @@ const END_ANIM_TIME = 1.9;     // win / lose animation before the dialog
 const WARN_LEVEL = 0.25;       // safety level below which the warning tick plays
 const WARN_TICK = 0.6;         // s between ticks (half of it below WARN_LEVEL / 2)
 const DANGER_LEVEL = 0.5;      // flower wilts below this water level
+// Pause: extra time to think the task over (it stays on screen), paid for: the Coin Muncher eats the current task's
+// coins while the game is paused (otherwise Very fast + a pause on every task would pay double for free).
+const PAUSE_FEE = 1;           // coins of the current task eaten at once when pausing
+const PAUSE_EAT_TIME = 30;     // s to eat the rest of the current task's coins
+const PAUSE_CHOMP_GAP = 0.22;  // s between chomp sounds / flying coins when it eats fast
 
 // Flower process.
 const FLOWER_REFILL_TIME = 0.6; // s the gauge takes to fill up

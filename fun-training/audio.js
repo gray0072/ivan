@@ -215,6 +215,13 @@ const Sfx = (() => {
       tone(300, 0.1, 0.6, { type: 'sawtooth', gain: 0.07, to: 900, lowpass: 2000 });
     },
     brr() { for (let i = 0; i < 9; i++) noise(i * 0.06, 0.03, { freq: 2500, q: 3, gain: 0.15, attack: 0.002 }); },
+    // The Coin Muncher (pause dialog): a chomp with a coin clink, a little burp when nothing is left.
+    chomp() {
+      tone(1900, 0, 0.07, { type: 'square', gain: 0.04, lowpass: 6000 });
+      noise(0.05, 0.06, { freq: 1400 + Math.random() * 600, q: 1.2, gain: 0.2, attack: 0.003 });
+      tone(150, 0.05, 0.09, { type: 'sine', gain: 0.16, to: 90 });
+    },
+    burp() { tone(120, 0, 0.45, { type: 'sawtooth', gain: 0.12, to: 85, vibrato: 24, lowpass: 700, attack: 0.02, hold: 0.15 }); },
     giggle() { [0, 0.11, 0.22, 0.33].forEach((t, i) => tone(1000 + (i % 2) * 260, t, 0.09, { type: 'sine', gain: 0.12, to: 1300 })); },
   };
 })();

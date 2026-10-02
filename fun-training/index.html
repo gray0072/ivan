@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#2b2170">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
 
@@ -177,13 +177,13 @@
     <div class="lsTop">
       <span id="lsProc"></span>
       <span id="lsStep" class="chip"></span>
-      <button id="pauseBtn" class="iconBtn" aria-label="Pause" title="Pause (Esc)">⏸</button>
+      <button id="pauseBtn" class="iconBtn" aria-label="Pause" title="Pause (Esc) — the Coin Muncher eats coins while paused">⏸</button>
     </div>
     <div class="lsBar"><div id="lsProgress"></div></div>
     <div class="lsStats">
       <span class="ok">✔ <b id="lsCount"></b></span>
       <span id="lsMistakesBox" class="bad">✖ <b id="lsMistakes"></b></span>
-      <span class="earned" title="Coins for the correct answers, of the lesson's price">🪙 <b id="lsEarned">0</b> <small>/ <span id="lsCoinMax">0</span></small></span>
+      <span class="earned" title="Coins for the correct answers, of the lesson's price">🪙 <b id="lsEarned">0</b> <small>/ <span id="lsCoinMax">0</span></small> <small id="lsEaten" class="eaten" title="Eaten by the Coin Muncher during pauses" hidden></small></span>
       <span id="lsBoss" class="boss" hidden></span>
     </div>
     <div id="taskCard">
@@ -253,6 +253,15 @@
 <div id="overlay" hidden>
   <div id="pausePanel" class="panel" hidden>
     <h1>⏸ Paused</h1>
+    <svg id="muncher" class="muncher" viewBox="0 0 280 170" aria-hidden="true"></svg>
+    <p class="pauseLeft">🪙 <b id="pauseLeft">0</b> <small>left of this task's coins</small></p>
+    <p id="pauseNote" class="pauseNote"></p>
+    <p class="pauseNew">🤔 The task is still there — think it over.</p>
+    <div class="pauseSpeed">
+      <button class="btn speedBtn" id="slowerBtn"><span class="spAsk">🐢 Too fast?</span><span class="spChange" id="slowerInfo"></span></button>
+      <button class="btn speedBtn" id="fasterBtn"><span class="spAsk">🚀 Can go faster?</span><span class="spChange" id="fasterInfo"></span></button>
+    </div>
+    <p id="speedNote" class="speedNote" hidden></p>
     <div class="btnRow">
       <button class="btn default" id="resumeBtn">Continue</button>
       <button class="btn secondary" id="quitBtn">Quit lesson</button>
@@ -266,9 +275,11 @@
     <p id="resShop" class="resShop" hidden></p>
     <div id="resStar" class="resStar" hidden></div>
     <div id="resTrack" class="resTrack"></div>
+    <p id="resSlow" class="resSlow" hidden></p>
     <p id="resCheat" class="cheatNote" hidden>Cheats were used — this lesson doesn't count.</p>
     <div class="btnRow">
       <button class="btn default" id="resAgainBtn"></button>
+      <button class="btn slower" id="resSlowBtn" hidden></button>
       <button class="btn secondary" id="resHomeBtn">Home</button>
     </div>
   </div>
@@ -277,7 +288,7 @@
 <canvas id="fx" hidden></canvas>
 <div id="banner"></div>
 
-<script src="constants.js?v=13"></script>
+<script src="constants.js?v=15"></script>
 <script src="storage.js?v=7"></script>
 <script src="progress.js?v=1"></script>
 <script src="stars.js?v=1"></script>
@@ -289,10 +300,28 @@
 <script src="characters/species.js?v=1"></script>
 <script src="characters/look.js?v=1"></script>
 <script src="items/food.js?v=1"></script>
-<script src="items/clothes.js?v=1"></script>
-<script src="items/furniture.js?v=1"></script>
+<script src="items/clothes.js?v=2"></script>
+<script src="items/wear/head.js?v=1"></script>
+<script src="items/wear/face.js?v=1"></script>
+<script src="items/wear/neck.js?v=1"></script>
+<script src="items/wear/body.js?v=1"></script>
+<script src="items/wear/back.js?v=1"></script>
+<script src="items/wear/feet.js?v=1"></script>
+<script src="items/wear/hand.js?v=1"></script>
+<script src="items/furniture.js?v=2"></script>
+<script src="items/room/wall.js?v=1"></script>
+<script src="items/room/floor.js?v=1"></script>
+<script src="items/room/bed.js?v=1"></script>
+<script src="items/room/table.js?v=1"></script>
+<script src="items/room/lamp.js?v=1"></script>
+<script src="items/room/window.js?v=1"></script>
+<script src="items/room/rug.js?v=1"></script>
+<script src="items/room/picture.js?v=1"></script>
+<script src="items/room/plant.js?v=1"></script>
+<script src="items/room/toy.js?v=1"></script>
+<script src="items/room/pet.js?v=1"></script>
 <script src="items/shop.js?v=1"></script>
-<script src="audio.js?v=5"></script>
+<script src="audio.js?v=6"></script>
 <script src="speech.js?v=1"></script>
 <script src="nav.js?v=2"></script>
 <script src="quality.js?v=1"></script>
@@ -303,8 +332,9 @@
 <script src="scenes/balloon.js?v=1"></script>
 <script src="scenes/campfire.js?v=2"></script>
 <script src="scenes/panda.js?v=1"></script>
-<script src="lesson.js?v=12"></script>
+<script src="muncher.js?v=3"></script>
+<script src="lesson.js?v=15"></script>
 <script src="room.js?v=1"></script>
-<script src="app.js?v=9"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

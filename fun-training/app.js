@@ -32,8 +32,17 @@
   function showPanel(id) {
     const o = $('overlay');
     o.hidden = false;
+    o.classList.toggle('overScene', id === 'pausePanel');
+    placeOverlay();
     o.querySelectorAll('.panel').forEach(p => { p.hidden = p.id !== id; });
     Nav.setRoot($(id));
+  }
+
+  // The pause dialog covers only the scene, so the task stays readable next to it (a pause is time to think).
+  function placeOverlay() {
+    const o = $('overlay'), on = o.classList.contains('overScene');
+    const r = on ? $('sceneWrap').getBoundingClientRect() : null;
+    for (const k of ['left', 'top', 'width', 'height']) o.style[k] = on ? r[k] + 'px' : '';
   }
 
   function hideOverlay() {
@@ -555,23 +564,65 @@
     Quality.reset();
   }
 
+  // Pausing costs coins: the Coin Muncher eats them while the dialog is open (see Lesson.pause).
   function pause() {
-    if (screen !== 'lesson' || paused || overlayOpen() || !Lesson.active()) return;
+    if (screen !== 'lesson' || paused || overlayOpen() || !Lesson.canPause()) return;
     paused = true;
     Speech.stop();
+    const fee = Lesson.pause();
+    Muncher.show(fee, Lesson.taskCoins());
+    $('speedNote').hidden = true;
+    renderPauseSpeed();
     showPanel('pausePanel');
+  }
+
+  // Pause dialog: the current task's type one speed slower / faster — the speed icons and the new price per task.
+  function renderPauseSpeed() {
+    const type = Lesson.curType(), st = current.settings;
+    const i = SPEEDS.findIndex(sp => sp.id === st[type].speed);
+    const tt = TASK_TYPES.find(x => x.id === type);
+    const now = Tasks.price(st, type).coins;
+    const priceAt = id => { const s2 = JSON.parse(JSON.stringify(st)); s2[type].speed = id; return Tasks.price(s2, type).coins; };
+    const option = (btn, j) => {
+      const on = j >= 0 && j < SPEEDS.length;
+      $(btn).hidden = !on;
+      $(btn).dataset.speed = on ? SPEEDS[j].id : '';
+      if (on) {
+        $(btn).querySelector('.spChange').innerHTML = `${tt.icon} ${tt.name}: ${SPEEDS[i].icon} → ${SPEEDS[j].icon} ${SPEEDS[j].name}` +
+          `<small>🪙 ${now} → <b>${priceAt(SPEEDS[j].id)}</b> per task</small>`;
+      }
+    };
+    option('slowerBtn', i - 1);
+    option('fasterBtn', i + 1);
+  }
+
+  // A speed button in the pause dialog: the setting is saved and the lesson pays the new price from this task on.
+  function changeSpeed(btn) {
+    const id = btn.dataset.speed;
+    if (!id) return;
+    const type = Lesson.curType();
+    Lesson.setSpeed(type, id); // the lesson's settings are the player's
+    Store.save();
+    Muncher.refill(Lesson.taskCoins());
+    const sp = SPEEDS.find(x => x.id === id), tt = TASK_TYPES.find(x => x.id === type);
+    $('speedNote').hidden = false;
+    $('speedNote').textContent = `✓ ${tt.icon} ${tt.name} is now ${sp.icon} ${sp.name}: 🪙 ${Tasks.price(current.settings, type).coins} per task`;
+    renderPauseSpeed();
+    if (btn.hidden) Nav.focusDefault();
   }
 
   function resume() {
     paused = false;
+    Muncher.hide();
     hideOverlay();
     Nav.setRoot($('taskPanel'));
     Quality.reset();
-    Lesson.sayTask();
+    Lesson.resume(); // the same task goes on (a reading one is said again)
   }
 
   function quitLesson() {
     paused = false;
+    Muncher.hide();
     Lesson.stop();
     openHome();
   }
@@ -585,12 +636,13 @@
     const coinsBefore = p.coins, gemsBefore = p.gems;
     const replay = r.step <= p.progress[proc.id];
     if (r.won) {
-      // The answers' prices, cut by the mistakes; a replay pays only what beats the step's best. Same for a boss's diamonds.
+      // The answers' prices less what the Coin Muncher ate in pauses, cut by the mistakes; a replay pays only what beats
+      // the step's best. Same for a boss's diamonds.
       rate = COIN_RULES.find(c => r.mistakes <= c.maxMistakes).rate;
-      const got = Math.round(r.earned * rate / MAX_RATE);
+      const got = Math.round((r.earned - r.eaten) * rate / MAX_RATE);
       const before = replay ? p.best[proc.id][r.step - 1] : 0;
       coins = Math.max(0, got - before);
-      rule = `${r.earned} for the answers` +
+      rule = `${r.earned} for the answers` + (r.eaten ? ` − ${r.eaten} 😋 eaten in pauses` : '') +
         (rate < MAX_RATE ? ` × ${Math.round(100 * rate / MAX_RATE)}% for ${r.mistakes} mistakes` : '') +
         (!replay ? '' : got > before ? ` · ${got} − ${before} from before` : ` · you got ${before} here before`);
       const boss = Progress.bossKind(r.step);
@@ -624,7 +676,8 @@
     if (levelUp) setTimeout(() => Sfx.star(), 1400);
     const shut = r.won && !levelUp && Progress.locked(p, proc) && Progress.currentLevel(p, proc) === lv;
     const next = r.won ? Progress.nextStep(p, proc) : r.step;
-    lastResult = { proc, next };
+    const slow = slowerOffer(p.settings, r, rate);
+    lastResult = { proc, next, step: r.step, slow };
     delete viewBlock[proc.id]; // home shows the current level again (a new one after a level-up)
 
     $('resIcon').textContent = r.won ? proc.winIcon : proc.loseIcon;
@@ -654,9 +707,32 @@
     $('resTrack').innerHTML = trackHTML(p, proc, r.step);
     $('resCheat').hidden = !r.cheated;
     $('resAgainBtn').textContent = !r.won ? 'Try again ↻' : next <= p.progress[proc.id] ? `Replay step ${next} ↻` : 'Next lesson ▶';
+    // Lost, or lost coins to mistakes: the same step a speed slower is one press away (the default after a defeat).
+    $('resSlow').hidden = $('resSlowBtn').hidden = !slow;
+    if (slow) {
+      $('resSlow').textContent = (r.won ? 'Lots of mistakes? Replay it slower: ' : 'Too fast? Try it slower: ') + slow.text;
+      $('resSlowBtn').textContent = r.won ? '🐢 Replay slower' : '🐢 Try slower';
+    }
+    $('resSlowBtn').classList.toggle('default', !!slow && !r.won);
+    $('resAgainBtn').classList.toggle('default', !slow || r.won);
     $('resultPanel').classList.toggle('won', r.won);
     showPanel('resultPanel');
     if (r.won) Confetti.start(levelUp ? FIREWORKS_TIME : 0);
+  }
+
+  // After a defeat or a win with coins lost to mistakes: the task types that had the mistakes (or ran out of time), one
+  // speed slower. Null when the lesson was perfect or they are all at the slowest speed already.
+  function slowerOffer(st, r, rate) {
+    if (r.won && rate >= MAX_RATE) return null;
+    const used = Tasks.usable(st);
+    const types = (r.missTypes.length ? r.missTypes : used).filter(t => used.includes(t) && st[t].speed !== SPEEDS[0].id);
+    if (!types.length) return null;
+    const after = JSON.parse(JSON.stringify(st));
+    types.forEach(t => { after[t].speed = SPEEDS[SPEEDS.findIndex(sp => sp.id === st[t].speed) - 1].id; });
+    const name = t => { const tt = TASK_TYPES.find(x => x.id === t); return tt.icon + ' ' + tt.name; };
+    const text = types.map(t => `${name(t)} ${speedText(st[t].speed)} → ${speedText(after[t].speed)}`).join(', ') +
+      ` (🪙 ${Tasks.lessonCoins(st, st.lessonLength)} → ${Tasks.lessonCoins(after, st.lessonLength)} per lesson)`;
+    return { types, after, text };
   }
 
   // ---------- wiring ----------
@@ -712,7 +788,7 @@
 
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
 
-  window.addEventListener('resize', () => { Lesson.resize(); Confetti.resize(); });
+  window.addEventListener('resize', () => { Lesson.resize(); Confetti.resize(); if (overlayOpen()) placeOverlay(); });
 
   $('createBtn').addEventListener('click', createPlayer);
   $('cancelNewBtn').addEventListener('click', () => { renderPlayers(); showScreen('players'); });
@@ -724,11 +800,19 @@
   $('settingsDone').addEventListener('click', openHome);
   $('pauseBtn').addEventListener('click', pause);
   $('resumeBtn').addEventListener('click', resume);
+  ['slowerBtn', 'fasterBtn'].forEach(id => $(id).addEventListener('click', () => changeSpeed($(id))));
   $('quitBtn').addEventListener('click', quitLesson);
   $('resHomeBtn').addEventListener('click', () => { Lesson.stop(); openHome(); });
   $('resAgainBtn').addEventListener('click', () => {
     if (!lastResult) return;
     startLesson(lastResult.proc, lastResult.next);
+  });
+  $('resSlowBtn').addEventListener('click', () => {
+    const slow = lastResult && lastResult.slow;
+    if (!slow) return;
+    slow.types.forEach(t => { current.settings[t].speed = slow.after[t].speed; });
+    Store.save();
+    startLesson(lastResult.proc, lastResult.step);
   });
   [...$('choices').children].forEach(b => b.addEventListener('click', () => Lesson.choiceClick(b)));
   $('numpad').querySelectorAll('button').forEach(b => b.addEventListener('click', () => Lesson.padClick(b)));
@@ -759,6 +843,13 @@
     last = now;
     if (screen === 'lesson') {
       if (!paused) Lesson.update(dt);
+      else if (!$('pausePanel').hidden) {
+        // Real time (a slow frame rate doesn't slow the Muncher down; a hidden tab doesn't count).
+        const pdt = Math.min(0.5, raw);
+        const n = Lesson.pauseTick(pdt);
+        if (n) Muncher.eat(n, Lesson.taskCoins());
+        Muncher.update(pdt);
+      }
       Lesson.draw();
       if (!overlayOpen()) Quality.frame(raw);
     }

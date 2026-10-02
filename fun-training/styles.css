@@ -541,6 +541,7 @@ button.cell[disabled] { cursor: default; }
 .lsStats .bad b { color: #ff9aac; }
 .lsStats .earned b { color: var(--accent); }
 .lsStats .earned small { font-size: 0.8em; opacity: 0.75; }
+.lsStats .earned .eaten { color: #ffb3c9; opacity: 1; }
 .lsStats .boss { margin-left: auto; color: #ffb3c0; font-weight: 800; }
 .lsStats .boss.active { color: #fff; background: #c0304a; padding: 0 0.7rem; border-radius: 1rem; animation: pulse 1.2s infinite; }
 #readyNote.boss { color: #ffd23f; font-size: 4rem; text-shadow: 0 0 1rem #c0304a, 0 0.2rem 0.6rem rgba(0,0,0,0.6); white-space: nowrap; text-align: center; }
@@ -774,6 +775,46 @@ button.cell[disabled] { cursor: default; }
 .resStar { display: flex; flex-direction: column; align-items: center; margin: 0.6rem 0; font-size: 1.2rem; animation: popIn 0.6s 0.8s both; }
 .resTrack { display: flex; justify-content: center; margin: 0.8rem 0 0.2rem; }
 .cheatNote { color: var(--bad); font-size: 0.9rem; }
+.resSlow { margin: 0.5rem 0 0; font-weight: 700; color: #2a7d5a; }
+.panel .btn.slower { background: #7fe0b0; color: var(--ink); box-shadow: 0 0.25rem 0 #3fae7c; }
+
+/* ---------- pause: the Coin Muncher (muncher.js) ---------- */
+
+#overlay.overScene { right: auto; bottom: auto; background: rgba(20,12,50,0.45); overflow-y: auto; }
+#overlay.overScene .panel { min-width: 0; max-width: calc(100% - 1rem); margin: auto; }
+
+.muncher { display: block; width: min(17rem, 70vw); height: auto; margin: 0.1rem auto 0; overflow: visible; }
+.muncher .mnBody, .muncher .mnOpen, .muncher .mnEyes, .muncher .mnPupils, .mnFly, .mnMinus { transform-box: fill-box; transform-origin: center; }
+.muncher .mnEyes { animation: lkBlink 4s infinite; }
+.muncher .mnOpen { transform-origin: center top; }
+.muncher.eating .mnOpen { animation: mnChomp 0.44s ease-in-out infinite; }
+@keyframes mnChomp { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.12); } }
+.muncher.eating .mnBody { transform-origin: center bottom; animation: mnSquash 0.44s ease-in-out infinite; }
+@keyframes mnSquash { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.04, 0.95); } }
+.muncher .mnShut, .muncher .mnHappy { display: none; }
+.muncher.full .mnOpen, .muncher.full .mnEyes { display: none; }
+.muncher.full .mnShut, .muncher.full .mnHappy { display: inline; }
+.muncher.full .mnBody { transform-origin: center bottom; animation: mnSquash 2.4s ease-in-out infinite; }
+.mnFly { animation: mnFly 0.5s ease-in forwards; }
+@keyframes mnFly { 0% { transform: translate(0, 0); } 45% { transform: translate(calc(var(--dx) * 0.45), calc(var(--dy) * 0.45 - 34px)); }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0.3; } }
+.mnMinus { font: 800 22px 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; fill: #ff4f7b; stroke: #fff; stroke-width: 5px; paint-order: stroke; text-anchor: middle; animation: mnUp 0.8s ease-out forwards; }
+@keyframes mnUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-26px); opacity: 0; } }
+.pauseLeft { margin: 0.1rem 0 0; font-size: 1.6rem; font-weight: 800; }
+.pauseLeft b { color: #d99a00; }
+.pauseLeft small { font-size: 0.9rem; font-weight: 700; opacity: 0.7; }
+.pauseNote { margin: 0.3rem auto 0; max-width: 22rem; font-size: 1rem; }
+.pauseNew { margin: 0.3rem 0 0; font-size: 0.9rem; opacity: 0.7; }
+.pauseSpeed { display: flex; justify-content: center; gap: 0.6rem; margin-top: 0.7rem; flex-wrap: wrap; }
+.panel .btn.speedBtn { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.45rem 0.9rem; font-size: 1rem;
+  background: #e4def8; color: var(--ink); box-shadow: 0 0.25rem 0 #c4bce4; }
+.panel .btn#slowerBtn { background: #c9f3dd; box-shadow: 0 0.25rem 0 #7fcfa6; }
+.panel .btn#fasterBtn { background: #ffe1c7; box-shadow: 0 0.25rem 0 #f0a86b; }
+.speedBtn .spAsk { font-weight: 800; }
+.speedBtn .spChange { font-size: 0.85rem; font-weight: 700; }
+.speedBtn .spChange small { display: block; font-size: 0.8rem; opacity: 0.8; }
+.speedBtn .spChange b { color: #b07d00; }
+.speedNote { margin: 0.4rem 0 0; font-weight: 700; color: #2a7d5a; font-size: 0.95rem; }
 
 #fx { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 11; }
 
@@ -958,13 +999,19 @@ button.cell[disabled] { cursor: default; }
   .ladder { margin-top: 0.3rem; }
   .resStar { margin: 0.3rem 0; }
   .resTrack { margin: 0.4rem 0 0; }
+  .muncher { width: 10rem; }
+  .pauseLeft { font-size: 1.2rem; }
+  .pauseNote { font-size: 0.85rem; }
+  .pauseSpeed { margin-top: 0.4rem; }
+  .panel .btn.speedBtn { padding: 0.3rem 0.7rem; font-size: 0.9rem; }
   .panel .btnRow { margin-top: 0.6rem; }
 }
 
 /* ---------- character and item art (SVG) animations ---------- */
 
 .lk-eyes, .lk-chew, .lk-tear, .lk-steam, .lk-fire, .lk-wag,
-.an-bob, .an-sway, .an-spin, .an-twinkle, .an-swim, .an-flicker, .an-pulse { transform-box: fill-box; transform-origin: center; }
+.an-bob, .an-sway, .an-spin, .an-twinkle, .an-swim, .an-flicker, .an-pulse,
+.an-float, .an-wiggle, .an-glow, .an-blink, .an-rise, .an-fall, .an-drift, .an-jump { transform-box: fill-box; transform-origin: center; }
 .lk-eyes { animation: lkBlink 4.5s infinite; }
 @keyframes lkBlink { 0%, 95%, 100% { transform: scaleY(1); } 97.5% { transform: scaleY(0.1); } }
 .lk-wag { transform-origin: left center; animation: lkWag 1.4s ease-in-out infinite alternate; }
@@ -995,3 +1042,23 @@ button.cell[disabled] { cursor: default; }
 @keyframes anFlicker { from { transform: scaleY(0.8); } to { transform: scaleY(1.15); } }
 .an-pulse { animation: anPulse 1.2s ease-in-out infinite alternate; }
 @keyframes anPulse { from { transform: scale(0.94); } to { transform: scale(1.06); } }
+/* More: float (drift up and down with a tilt), wiggle (a quick shake), glow (fades in and out), blink (on / off lights),
+   rise (bubbles / steam going up and fading), fall (snow / rain / leaves dropping), drift (slides across and back), jump (hops).
+   an-d1…an-d4 delay any of them so neighbours don't move in step. */
+.an-float { animation: anFloat 3s ease-in-out infinite alternate; }
+@keyframes anFloat { from { transform: translateY(2px) rotate(-3deg); } to { transform: translateY(-8px) rotate(3deg); } }
+.an-wiggle { animation: anWiggle 0.9s ease-in-out infinite alternate; }
+@keyframes anWiggle { from { transform: rotate(-7deg); } to { transform: rotate(7deg); } }
+.an-glow { animation: anGlow 2.2s ease-in-out infinite alternate; }
+@keyframes anGlow { from { opacity: 0.35; } to { opacity: 1; } }
+.an-blink { animation: anBlink 1.2s steps(1) infinite; }
+@keyframes anBlink { 0% { opacity: 1; } 50% { opacity: 0.25; } }
+.an-rise { animation: anRise 2.4s ease-in infinite; }
+@keyframes anRise { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(-40px) scale(1.1); opacity: 0; } }
+.an-fall { animation: anFall 3s linear infinite; }
+@keyframes anFall { 0% { transform: translateY(-30px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(30px); opacity: 0; } }
+.an-drift { animation: anDrift 6s ease-in-out infinite alternate; }
+@keyframes anDrift { from { transform: translateX(-30px); } to { transform: translateX(30px); } }
+.an-jump { transform-origin: bottom center; animation: anJump 1.6s ease-in-out infinite; }
+@keyframes anJump { 0%, 60%, 100% { transform: translateY(0) scaleY(1); } 70% { transform: translateY(0) scaleY(0.88); } 82% { transform: translateY(-12px) scaleY(1.05); } }
+.an-d1 { animation-delay: -0.4s; } .an-d2 { animation-delay: -0.9s; } .an-d3 { animation-delay: -1.4s; } .an-d4 { animation-delay: -2s; }

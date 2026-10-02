@@ -83,9 +83,11 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 │   ├── SPEC.md               # the game's own spec (screens, rules, files)
 │   ├── index.html            # markup only, links versioned CSS/JS
 │   ├── styles.css
-│   ├── *.js                  # constants, storage, audio, speech, nav, quality, fx, lesson, app
+│   ├── *.js                  # constants, storage, progress, stars, audio, speech, nav, quality, fx, lesson, muncher, room, app
 │   ├── tasks/                # task types (tasks.js dispatcher, math.js, scale.js, read.js + words.js)
 │   ├── scenes/               # processes (flower, zombies, railway, balloon, campfire, panda)
+│   ├── characters/           # the player's animal characters as SVG (species.js, look.js)
+│   ├── items/                # shop: food.js, clothes.js + wear/<slot>.js, furniture.js + room/<slot>.js, shop.js
 │   ├── README.md
 │   ├── README_RU.md
 │   ├── icon.svg

@@ -1,5 +1,6 @@
 // Shop: what a player owns, wears and has in the room, buying, feeding and how hungry the character is.
-// The catalog is in constants.js (FOODS, ITEM_SLOTS, ITEMS); the drawings in food.js, clothes.js and furniture.js.
+// The catalog: FOODS and ITEM_SLOTS in constants.js, ITEMS filled by the slot files (items/wear/, items/room/), drawings in
+// food.js and the slot files.
 
 const Shop = (() => {
   const item = id => ITEMS.find(it => it.id === id) || null;

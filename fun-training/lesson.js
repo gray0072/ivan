@@ -39,6 +39,10 @@ const Lesson = (() => {
       types,
       prices: Object.fromEntries(types.map(t => [t, Tasks.price(st, t).coins])), // coins per correct answer, by task type
       earned: 0, // coins of the correct answers so far (the share paid depends on the mistakes)
+      eaten: 0,  // of them, coins the Coin Muncher ate during pauses (of the tasks answered since)
+      taskEaten: 0, // coins it ate of the current task (taken off its price when it is answered)
+      munch: null, // while paused: { rate: coins / s, acc } — see pause()
+      missTypes: new Set(), // task types that had a mistake or ran out of time (to offer them slower)
       paid: 0,   // correct answers so far, boss hits included
       typeSeq: typeSequence(types, isBoss ? st.lessonLength - 1 + BOSS_HITS : st.lessonLength),
       maxCoins: 0, // the lesson's price: coins of all its answers (boss hits included) with no mistakes
@@ -76,7 +80,7 @@ const Lesson = (() => {
     L.typed = '';
     const type = L.task.type;
     setMode(L.st.answerMode === 'type' && !Tasks.choiceOnly(type) ? 'type' : 'choice');
-    $('taskPrice').textContent = '🪙 ' + L.prices[type];
+    renderPrice();
     $('taskText').hidden = type !== 'math';
     $('taskScale').hidden = type !== 'scale';
     $('taskRead').hidden = type !== 'read';
@@ -124,6 +128,11 @@ const Lesson = (() => {
     if (L && L.task && L.task.type === 'read' && L.phase !== 'done') ReadTasks.say(L.task);
   }
 
+  // The task card's price: what the current task pays (less what the Coin Muncher ate of it).
+  function renderPrice() {
+    $('taskPrice').textContent = '🪙 ' + taskCoins() + (L.taskEaten ? ' 😋' : '');
+  }
+
   function renderAnswer() {
     const box = $('answerBox');
     box.textContent = L.typed ? Tasks.fmt(Number(L.typed)) : '?';
@@ -156,7 +165,9 @@ const Lesson = (() => {
       : L.bossHp > 0 ? L.boss.icon + ' ' + '❤'.repeat(L.bossHp) + '♡'.repeat(BOSS_HITS - L.bossHp)
       : L.done >= L.total ? L.boss.icon + ' Defeated!' : `${L.boss.icon} ${L.boss.name}: ${BOSS_HITS} hits · up to ${L.boss.gems} 💎`;
     $('lsMistakes').textContent = L.mistakes;
-    $('lsEarned').textContent = L.earned;
+    $('lsEarned').textContent = coinsLeft();
+    $('lsEaten').hidden = !(L.eaten + L.taskEaten);
+    $('lsEaten').textContent = '😋 −' + (L.eaten + L.taskEaten);
     $('lsCoinMax').textContent = L.maxCoins;
     $('lsMistakesBox').classList.toggle('some', L.mistakes > 0);
     const bar = $('lsProgress');
@@ -164,7 +175,7 @@ const Lesson = (() => {
   }
 
   function submit(value) {
-    if (!L || (L.phase !== 'play' && L.phase !== 'intro')) return;
+    if (!L || L.munch || (L.phase !== 'play' && L.phase !== 'intro')) return;
     if (L.phase === 'intro') { L.phase = 'play'; $('readyNote').hidden = true; }
     const card = $('taskCard');
     card.classList.remove('ok', 'bad', 'pop');
@@ -176,6 +187,8 @@ const Lesson = (() => {
       L.phaseT = 0;
       L.lastWrong = false;
       L.earned += L.prices[L.task.type]; // every boss hit pays too
+      L.eaten += Math.min(L.taskEaten, L.prices[L.task.type]);
+      L.taskEaten = 0;
       L.paid++;
       if (L.bossHp > 0) {
         // Boss round: each hit counts, the level is not refilled.
@@ -208,6 +221,7 @@ const Lesson = (() => {
       }
     } else {
       L.mistakes++;
+      L.missTypes.add(L.task.type);
       Sfx.wrong();
       card.classList.add('bad');
       $('wrongNote').textContent = '✗  ' + L.task.solution;
@@ -236,6 +250,7 @@ const Lesson = (() => {
         L.f = 0;
         L.phase = 'lose';
         L.phaseT = 0;
+        L.missTypes.add(L.task.type);
         L.scene.lose();
         Speech.stop();
       }
@@ -255,9 +270,66 @@ const Lesson = (() => {
 
   function finish(won) {
     Speech.stop();
-    const r = { won, proc: L.proc, done: L.done, total: L.total, mistakes: L.mistakes, earned: L.earned, cheated: L.cheated, step: L.step, isBoss: L.isBoss, bossLeft: L.bossHp };
+    const r = { won, proc: L.proc, done: L.done, total: L.total, mistakes: L.mistakes, earned: L.earned, eaten: L.eaten,
+      cheated: L.cheated, step: L.step, isBoss: L.isBoss, bossLeft: L.bossHp, missTypes: [...L.missTypes] };
     L.phase = 'done';
     if (onEnd) onEnd(r);
+  }
+
+  // ---------- pause: the Coin Muncher ----------
+
+  const coinsLeft = () => (L ? L.earned - L.eaten : 0);
+  // The task being worked on: the type of the next correct answer (a task swapped on Continue keeps it).
+  const curType = () => L.typeSeq[Math.min(L.paid, L.typeSeq.length - 1)];
+  // What the current task still pays: its price less what the Coin Muncher ate of it.
+  const taskCoins = () => (L ? Math.max(0, L.prices[curType()] - L.taskEaten) : 0);
+  // A lesson can be paused while it runs (not during its win / lose animation).
+  const canPause = () => !!L && (L.phase === 'intro' || L.phase === 'play' || L.phase === 'feedback');
+
+  // A pause is extra time to think the task over (it stays on screen), but not for free: it costs PAUSE_FEE coins of
+  // the current task at once, then the rest of its coins are eaten over
+  // PAUSE_EAT_TIME. Returns the coins eaten at once.
+  function pause() {
+    if (!canPause() || L.munch) return 0;
+    const fee = Math.min(PAUSE_FEE, taskCoins());
+    L.taskEaten += fee;
+    L.munch = { rate: taskCoins() / PAUSE_EAT_TIME, acc: 0 };
+    renderPrice();
+    updateInfo();
+    return fee;
+  }
+
+  // While paused: whole coins eaten during dt.
+  function pauseTick(dt) {
+    if (!L || !L.munch) return 0;
+    L.munch.acc += L.munch.rate * dt;
+    const n = Math.min(Math.floor(L.munch.acc), taskCoins());
+    if (n <= 0) return 0;
+    L.munch.acc -= n;
+    L.taskEaten += n;
+    renderPrice();
+    updateInfo();
+    return n;
+  }
+
+  // A task type's speed changed (from the pause dialog): its price and time apply from now on.
+  function setSpeed(type, speed) {
+    if (!L) return;
+    L.st[type].speed = speed;
+    if (L.prices[type] === undefined) return;
+    L.prices[type] = Tasks.price(L.st, type).coins;
+    L.maxCoins = L.earned + L.typeSeq.slice(L.paid).reduce((s, t) => s + L.prices[t], 0);
+    if (L.task) L.fail = Tasks.failTime(L.task, L.st);
+    if (L.munch) L.munch.rate = taskCoins() / PAUSE_EAT_TIME;
+    renderPrice();
+    updateInfo();
+  }
+
+  // Continue: the same task goes on (a reading one is said again).
+  function resume() {
+    if (!L || !L.munch) return;
+    L.munch = null;
+    sayTask();
   }
 
   function cheat() {
@@ -287,7 +359,7 @@ const Lesson = (() => {
 
   // Typing mode: a digit, Backspace or Enter / Space, from the keyboard or the on-screen number pad.
   function typeKey(k) {
-    const open = L.phase === 'play' || L.phase === 'intro';
+    const open = !L.munch && (L.phase === 'play' || L.phase === 'intro');
     if (/^[0-9]$/.test(k)) {
       if (L.typed.length < TYPE_MAX_DIGITS && open) {
         L.typed = (L.typed === '0' ? '' : L.typed) + k;
@@ -318,7 +390,8 @@ const Lesson = (() => {
   }
 
   return {
-    start, update, draw, key, resize, choiceClick, padClick, sayTask,
+    start, update, draw, key, resize, choiceClick, padClick, sayTask, pause, pauseTick, resume, canPause, taskCoins, setSpeed,
+    curType: () => (L ? curType() : null),
     stop: () => { L = null; Speech.stop(); },
     active: () => !!L && L.phase !== 'done',
     typing: () => !!L && L.mode === 'type', // the current task's answer is typed (Backspace deletes, not back)
