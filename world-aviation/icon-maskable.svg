@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1a33"/>
+      <stop offset="1" stop-color="#1d4677"/>
+    </linearGradient>
+    <radialGradient id="sea" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#4aa3e8"/>
+      <stop offset="1" stop-color="#1b5c9e"/>
+    </radialGradient>
+    <clipPath id="tile"><rect width="512" height="512"/></clipPath>
+    <clipPath id="globe"><circle cx="256" cy="282" r="120"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#sky)"/>
+    <circle cx="256" cy="282" r="120" fill="url(#sea)"/>
+    <g clip-path="url(#globe)"><g transform="translate(256 282) scale(0.714) translate(-256 -276)">
+      <!-- continents -->
+      <path d="M150 150 C 190 120, 250 128, 268 160 C 282 186, 252 196, 240 222 C 228 250, 250 268, 236 300 C 222 330, 186 336, 170 310 C 154 286, 128 268, 120 236 C 112 204, 122 172, 150 150 Z" fill="#5cc28a"/>
+      <path d="M300 150 C 340 146, 392 170, 410 214 C 424 250, 400 268, 372 262 C 344 256, 330 282, 344 312 C 356 340, 340 380, 306 392 C 286 400, 276 370, 286 340 C 296 310, 270 300, 268 270 C 266 236, 290 220, 286 196 C 282 176, 282 154, 300 150 Z" fill="#5cc28a"/>
+      <!-- latitude and longitude lines -->
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="6">
+        <ellipse cx="256" cy="276" rx="168" ry="60"/>
+        <path d="M88 276 H 424"/>
+        <ellipse cx="256" cy="276" rx="70" ry="168"/>
+        <path d="M256 108 V 444"/>
+      </g>
+    </g></g>
+    <circle cx="256" cy="282" r="120" fill="none" stroke="#bfe0ff" stroke-opacity="0.6" stroke-width="8"/>
+    <!-- the flight: a contrail arc and the aeroplane on it -->
+    <path d="M128 318 C 136 196, 232 140, 312 150" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-dasharray="4 22"/>
+    <g fill="#ffffff" transform="translate(318 152) rotate(-4) scale(0.36)">
+      <path d="M-150 -10 C -150 -24 -132 -28 -110 -26 L 130 -16 C 160 -14 175 -6 175 0 C 175 6 160 14 130 16 L -110 26 C -132 28 -150 24 -150 10 Z"/>
+      <path d="M-10 -18 L -50 -150 L -18 -150 L 62 -18 Z"/>
+      <path d="M-10 18 L -50 150 L -18 150 L 62 18 Z"/>
+      <path d="M-128 -12 L -150 -66 L -132 -66 L -96 -12 Z"/>
+      <path d="M-128 12 L -150 66 L -132 66 L -96 12 Z"/>
+    </g>
+  </g>
+</svg>

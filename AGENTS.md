@@ -72,6 +72,14 @@ Each project folder must contain:
 5. Update the `Projects` (one-line summary + link to the game's `SPEC.md`) and `Project structure` sections of the root `SPEC.md`.
 6. Do not touch the GitHub Pages deployment setup (`Settings → Pages → Deploy from a branch → main / (root)`) — it already picks up every new file automatically, no workflow or build config needed.
 
+## Testing the games
+
+- No Playwright/Puppeteer is installed. Drive a page in headless Chrome over raw CDP: spawn `C:/Program Files/Google/Chrome/Application/chrome.exe --headless=new --remote-debugging-port=N --user-data-dir=<temp>`, fetch `http://127.0.0.1:N/json`, open the page's websocket and send `Runtime.evaluate`, `Page.captureScreenshot`, `Input.dispatchKeyEvent`, `Emulation.setDeviceMetricsOverride` / `setTouchEmulationEnabled` (phone, `pointer: coarse`). Node 20 needs `node --experimental-websocket` for the global `WebSocket`. Pages open fine from `file:///D:/Projects/my/ivan/<game>/index.html`.
+- Stop Chrome with `taskkill /PID <pid> /T /F` — killing only the main process leaves the GPU/renderer children running.
+- Headless Chrome renders WebGL in software (SwiftShader): 5–20 fps and 100 % CPU. Keep browser runs short (boot, a few screenshots, about a minute) and never run several in parallel.
+- Long gameplay tests (e.g. whole `world-aviation` flights) run in Node instead: load the game's logic files (constants, utils, geodata, terrain, world, audio, flight, systems, career, input, game) into a `vm` context with stub `HUD` / `Scene3D` / `UI` / DOM objects, replace `Input.axes` with a bot, and call `Game.frame(1 / 30)` in a plain loop under `os.setPriority(BELOW_NORMAL)` with a wall-clock limit. A gate-to-gate flight takes 7–25 s that way.
+- Headless Chrome on this machine has speech voices: Microsoft en-GB (George, Hazel, Susan), Microsoft Bengt sv-SE, plus online Google voices (incl. Russian).
+
 ## Docs to keep in sync
 
 - `README.md` / `README_RU.md` / `README_SV.md` (root) — end-user facing, gallery index.

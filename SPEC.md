@@ -31,6 +31,10 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style): eat smaller fish, av
 
 Training game for school kids: a process runs (a flower dries out, zombies approach a house, a train runs out of rails, a balloon sinks, a campfire burns down, a panda gets hungry) and the player keeps it going by answering tasks in time. Players, per-process progress tracks with stars, boss steps and replays for more coins, per-task-type settings; each player has an animal character to feed, dress and give a room, bought with the coins and diamonds. For TV (remote), desktop and phones. Full spec: [`fun-training/SPEC.md`](fun-training/SPEC.md).
 
+### world-aviation
+
+Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (114 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, ten aircraft and a training tree. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
+
 ## Project structure
 
 ```
@@ -93,6 +97,16 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 │   ├── icon.svg
 │   ├── icon-maskable.svg     # full-bleed Android home-screen icon (artwork in the safe circle)
 │   ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png  # PWA icons, rendered by tools/pwa-icons.sh
+│   ├── manifest.webmanifest  # PWA manifest
+│   └── screenshot.png
+├── world-aviation/
+│   ├── SPEC.md               # the game's own spec
+│   ├── index.html            # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── three.min.js          # three.js r147 (UMD), vendored
+│   ├── *.js                  # constants, utils, geodata, terrain, world, audio, flight, systems, models, scene3d, instruments, cockpit, hud, career, input, ui, game
+│   ├── README.md, README_RU.md, README_SV.md
+│   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest
 │   └── screenshot.png
 └── ... (future project folders, same layout)

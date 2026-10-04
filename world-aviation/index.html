@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="World Aviation — a cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, win Scandinavia, then fly the whole world. Push back, taxi, take off, handle emergencies and land.">
+<title>World Aviation</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=2">
+<link rel="manifest" href="manifest.webmanifest?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<meta name="theme-color" content="#0e141c">
+<link rel="stylesheet" href="styles.css?v=3">
+</head>
+<body>
+
+<canvas id="scene3d"></canvas>
+<canvas id="ui"></canvas>
+
+<div id="hud" hidden>
+  <div id="strip" hidden></div>
+  <div id="messages"></div>
+  <div id="taxiArrow" hidden><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L33 34 L20 26 L7 34 Z"/></svg><b></b></div>
+  <div id="prompt" hidden></div>
+  <div id="checklist" class="panelBox" hidden></div>
+  <div id="banner" class="banner" hidden></div>
+  <div id="fps"></div>
+</div>
+
+<div id="touch">
+  <div id="stickZone"><div id="stickBase"></div><div id="stickKnob"></div></div>
+  <div id="throttleZone"><span>THR</span><div id="throttleKnob"></div></div>
+  <div id="touchButtons">
+    <button type="button" class="go" data-act="starter">Go</button>
+    <button type="button" data-act="gear">Gear</button>
+    <button type="button" data-act="pause">Menu</button>
+    <button type="button" data-act="flapsDown">Flap +</button>
+    <button type="button" data-act="flapsUp">Flap &minus;</button>
+    <button type="button" data-act="brake">Brake</button>
+    <button type="button" data-act="parkBrake">Park</button>
+    <button type="button" data-act="ap">AP</button>
+    <button type="button" data-act="timeAccel">Time</button>
+  </div>
+</div>
+
+<div id="mapOverlay" hidden>
+  <canvas id="mapCanvas" width="680" height="420"></canvas>
+  <p>Moving map &middot; north up &middot; <kbd>M</kbd> to close</p>
+</div>
+
+<div id="helpPanel" class="panelBox" hidden>
+  <h3>Controls</h3>
+  <div class="keysGrid">
+    <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> / <kbd>W</kbd><kbd>S</kbd></span><span>pitch</span>
+    <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> / <kbd>A</kbd><kbd>D</kbd></span><span>roll</span>
+    <span><kbd>Q</kbd><kbd>E</kbd></span><span>rudder</span>
+    <span><kbd>Z</kbd><kbd>X</kbd></span><span>throttle</span>
+    <span><kbd>1</kbd>&hellip;<kbd>9</kbd></span><span>throttle to 10&ndash;90 %</span>
+    <span><kbd>Enter</kbd></span><span>push back / start engines / taxi / take-off clearance</span>
+    <span><kbd>G</kbd></span><span>landing gear</span>
+    <span><kbd>F</kbd><kbd>V</kbd></span><span>flaps down / up</span>
+    <span><kbd>B</kbd></span><span>brakes (hold)</span>
+    <span><kbd>Space</kbd></span><span>parking brake</span>
+    <span><kbd>Y</kbd> <kbd>N</kbd></span><span>autopilot · NAV mode (route and ILS)</span>
+    <span><kbd>,</kbd><kbd>.</kbd></span><span>selected altitude</span>
+    <span><kbd>;</kbd><kbd>'</kbd></span><span>selected heading</span>
+    <span><kbd>T</kbd></span><span>time acceleration</span>
+    <span><kbd>C</kbd><kbd>M</kbd><kbd>I</kbd></span><span>camera &middot; map &middot; instrument lights</span>
+    <span><kbd>R</kbd><kbd>K</kbd></span><span>spoiler &middot; anti-ice</span>
+    <span><kbd>H</kbd> <kbd>Esc</kbd></span><span>this card &middot; pause</span>
+  </div>
+  <button type="button" class="btn" data-act="help">Close</button>
+</div>
+
+<div id="screen"></div>
+
+<div id="bootScreen">
+  <div class="bootInner">
+    <img src="icon.svg" alt="" width="96" height="96">
+    <h1>World Aviation</h1>
+    <p id="bootStatus">Loading…</p>
+  </div>
+</div>
+
+<div id="webglError" hidden>
+  <div class="bootInner">
+    <h1>WebGL is not available</h1>
+    <p>World Aviation renders the cockpit view with WebGL. Enable hardware acceleration in your browser, or try another one.</p>
+  </div>
+</div>
+
+<script src="three.min.js?v=1"></script>
+<script src="constants.js?v=7"></script>
+<script src="utils.js?v=4"></script>
+<script src="geodata.js?v=1"></script>
+<script src="terrain.js?v=4"></script>
+<script src="world.js?v=5"></script>
+<script src="audio.js?v=3"></script>
+<script src="flight.js?v=9"></script>
+<script src="systems.js?v=3"></script>
+<script src="models.js?v=2"></script>
+<script src="scene3d.js?v=4"></script>
+<script src="instruments.js?v=4"></script>
+<script src="cockpit.js?v=3"></script>
+<script src="hud.js?v=3"></script>
+<script src="career.js?v=4"></script>
+<script src="input.js?v=3"></script>
+<script src="ui.js?v=4"></script>
+<script src="game.js?v=7"></script>
+</body>
+</html>

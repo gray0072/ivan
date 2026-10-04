@@ -45,7 +45,12 @@
       <p>Игра-тренажёр для школьников: поливай цветок, останавливай зомби, укладывай рельсы перед поездом, держи в воздухе воздушный шар, поддерживай костёр или корми панду, чтобы она не грустила, — успевая отвечать на задания. На монеты корми, одевай своего персонажа и обставляй его комнату.</p>
       <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Играть</b></a> · <a href="fun-training/">Исходники</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/world-aviation/"><img src="world-aviation/screenshot.png" alt="Скриншот World Aviation"></a>
+      <h3><img src="world-aviation/icon.svg" alt="" width="28" height="28" align="center"> World Aviation</h3>
+      <p>Авиасимулятор с видом из кабины и карьера пилота: начните со шведских внутренних рейсов из Арланды, завоюйте Скандинавию, а потом, регион за регионом, весь мир. Буксировка, руление, взлёт, отказы и чек-листы, заход по ILS, посадка и руление к гейту.</p>
+      <p><a href="https://gray0072.github.io/ivan/world-aviation/"><b>▶ Играть</b></a> · <a href="world-aviation/">Исходники</a></p>
+    </td>
   </tr>
 </table>
 
@@ -96,6 +101,12 @@ npx serve .        # или просто открой любой index.html в �
 │   ├── SPEC.md                 # спецификация этой игры
 │   ├── index.html, styles.css, *.js
 │   ├── README.md / README_RU.md
+│   ├── icon.svg
+│   └── screenshot.png
+├── world-aviation/
+│   ├── SPEC.md                 # spec of this game
+│   ├── index.html, styles.css, *.js, three.min.js
+│   ├── README.md / README_RU.md / README_SV.md
 │   ├── icon.svg
 │   └── screenshot.png
 └── ...                         # со временем — новые игры, та же структура

@@ -45,7 +45,12 @@
       <p>A training game for school kids: water a flower, stop zombies, lay rails for a train, keep a balloon in the air, a campfire burning or a panda fed and happy by answering tasks in time. Spend the coins on your own character: feed it, dress it up and furnish its room.</p>
       <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Play</b></a> · <a href="fun-training/">Source</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/world-aviation/"><img src="world-aviation/screenshot.png" alt="World Aviation screenshot"></a>
+      <h3><img src="world-aviation/icon.svg" alt="" width="28" height="28" align="center"> World Aviation</h3>
+      <p>A cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, win Scandinavia, then the whole world region by region. Push back, taxi, take off, handle emergencies with the checklists, fly the ILS, land and taxi to the gate.</p>
+      <p><a href="https://gray0072.github.io/ivan/world-aviation/"><b>▶ Play</b></a> · <a href="world-aviation/">Source</a></p>
+    </td>
   </tr>
 </table>
 
@@ -96,6 +101,12 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 │   ├── SPEC.md                 # spec of this game
 │   ├── index.html, styles.css, *.js
 │   ├── README.md / README_RU.md
+│   ├── icon.svg
+│   └── screenshot.png
+├── world-aviation/
+│   ├── SPEC.md                 # spec of this game
+│   ├── index.html, styles.css, *.js, three.min.js
+│   ├── README.md / README_RU.md / README_SV.md
 │   ├── icon.svg
 │   └── screenshot.png
 └── ...                         # more games over time, same layout
