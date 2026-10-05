@@ -103,35 +103,43 @@ Overall grade A+ … F feeds the payout multiplier (0.4 … 1.35).
 
 ## Emergencies (the point of the game)
 
-Every flight draws its emergencies from the weighted list (Easy: one, Medium: one or two, Hard: two), each pinned to one of its phases and a random moment in it. An emergency **interrupts the flight**: time acceleration is cut to 1×, the master caution lights, a caution chime sounds, and a **QRH checklist** opens — an ordered list of steps that must be clicked in the correct order, some of them *set* steps (power, altitude). With a hint (Easy, or the Advanced Systems course) the steps are listed in order and the next one is named; otherwise the remaining steps are shuffled and the player has to know the order. A wrong step only costs time. Run out of time and the failure escalates (the penalty in the table: damage, lost fuel, lost reputation or pay, plus the specific consequence — a lost engine, a gear that drops hard, …). The checklist clock is real time; its length is the emergency's limit × the course bonuses × the difficulty factor.
+Every flight draws its emergencies from the weighted list in `data/emergencies.js` (Easy: one, Medium: one or two, Hard: two), each pinned to one of its phases and a random moment in it (the gear failure only on aircraft with retractable gear). An emergency **interrupts the flight**: time acceleration is cut to 1×, the master caution lights, a caution chime sounds, and the **QRH checklist** panel opens:
 
-What the emergencies actually do to the aeroplane: an engine fire or failure removes that engine's thrust, a fuel leak drains 40–80 % of the tank capacity per hour, hydraulic failure weakens the brakes, depressurisation raises the cabin altitude, the gear failure locks the gear up until the checklist is done, a nav failure hides the route guidance, a bird strike limits one engine to 70 % N1, icing keeps building ice (lift down, drag and stall speed up) until anti-ice is on, windshear is a 14 s downdraft with a loss of headwind, a load shift pitches the nose down.
+- the title, a timer bar, and one line on **what happened** ("Fire warning on engine 2: the bell is ringing and its EGT is climbing.") — with the real engine number;
+- the steps **top to bottom, in QRH order**, each with the **control that works it** on the right: the current step is lit, done steps are ticked;
+- every step is worked with a real control of the aeroplane, or, for the switches that only exist in the QRH (a fire handle, a crossfeed valve, a call to ATC), with **Enter** / the **Go** button / a tap on the lit step. The checklist moves on by itself as soon as the control has been worked (a step stays ticked even if the autothrottle then moves the levers):
+  - `switch` — Enter / Go / tap; `setAlt` / `setAltBy` — Enter sets the autopilot altitude (an absolute value, or so many feet below the present one; never below the arrival field + 600 ft) and engages the autopilot;
+  - `idle` — the thrust levers to idle (**0**, the throttle slider down); `thrustMax` / `thrustMin` — the thrust at most / at least a value (the digit keys, the slider);
+  - `antiIce` (**K** / Ice), `gearDown` (**G** / Gear, even though the gear does not move), `spoiler` (**/** / Spoiler), `apOff` (**Y** / AP), `parkBrake` (**Space** / Park);
+  - `climb` — climbing at 500 fpm or more (pull the nose up); `slowVne` — the speed back below Vne;
+- Enter or a tap on a step that is done with a control (or on a later step) does nothing but say which control it wants ("This one is done with the controls: press 0 — thrust to idle");
+- **checklist hints** (Easy, or the Advanced Systems course) add one line under the lit step on **why** it is done;
+- a few steps can go either way: a fire may still burn after the first bottle (30 %: one more step, "FIRE STILL ON — fire bottle 2"), a failed engine may **relight** (40 %: it runs its start sequence again), and the alternate gear extension drops the gear on its own weight;
+- when the checklist is done, the panel turns green for a few seconds with the time used ("complete in 14 s of 25 s") and what the crew now knows ("Fire out. Engine 2 is shut down — set the thrust again and fly on with the other one."); run out of time and it turns red with what went wrong, and the failure escalates (the penalty: damage, lost fuel, lost reputation or pay, plus the specific consequence — a lost engine, a gear that drops hard, …).
 
-Checklist example (Engine Fire):
+The checklist clock is real time; its length is the emergency's limit × the course bonuses × the difficulty factor. The tuning (the chances, how long a ticked step stays, how long the result stays) is `QRH` in `constants.js`.
 
-1. Throttle to idle · 2. Fire handle pull · 3. Engine master off · 4. Confirm warning light out · 5. "Inflight shutdown complete"
+What the emergencies actually do to the aeroplane: an engine fire or failure removes that engine's thrust, a fuel leak drains 40–80 % of the tank capacity per hour, hydraulic failure weakens the brakes, depressurisation raises the cabin altitude, the gear failure locks the gear up until the checklist is done, a nav failure hides the route guidance, a bird strike limits one engine to 70 % N1, icing keeps building ice (lift down, drag and stall speed up) until anti-ice is on, windshear is a 14 s downdraft with a loss of headwind, a load shift pitches the nose down, an overspeed is a gust that pushes the speed 8 kt past Vne.
 
-The full list (12 + variants), each with trigger, weight, time limit, escalation and countermeasure:
-
-| Emergency | What you do |
+| Emergency | Steps (the control) |
 | --- | --- |
-| Engine fire | idle, handle, master off, confirm |
-| Engine failure | idle the dead one, feather, restart attempt, drift down / divert |
-| Fuel leak | pump off, crossfeed, declare, bingo fuel |
-| Low fuel / fuel exhaustion | decide now: divert or hold |
-| Icing | exit the moisture, anti-ice, pitot heat, do not extend gear/flaps |
-| Wind shear / microburst | pitch attitude 15°, max thrust, hold it out |
-| Bird strike | engine check, flameout risk, may need shutdown |
-| Cabin depressurization | masks, emergency descent, pressurize below 10 000 ft |
-| Gear will not extend | gear lever, blow down, manual release, land gear-up or go around |
-| Hydraulic failure | verify, manual gear, degraded brakes/steering |
-| Nav/comm failure | dead reckoning, fly the magenta line |
-| Medical emergency | priority, diversion, time limit |
-| Cargo shift (cargo branch) | re-secure, CG change, limits |
-| Overweight / misload | pre-takeoff performance check |
-| Overshoot on approach | go around |
+| Engine fire | thrust levers idle (0) · fire handle pull (Enter) · fire bottle 1 (Enter) · maybe bottle 2 (Enter) |
+| Engine failure | confirm on the gauges · check the fuel · relight (Enter each; 40 % it starts again) |
+| Fuel leak | compare fuel used and on board · crossfeed open · pumps on the leaking side off (Enter) |
+| Fuel state | check fuel to destination · "minimum fuel" to ATC (Enter) |
+| Icing | anti-ice on (K) · autopilot 2 000 ft lower, out of the cloud (Enter) · flaps and gear stay up (Enter) |
+| Windshear | autopilot off (Y) · full thrust (9) · climb (↓) — 15 s |
+| Bird strike | check the gauges (Enter) · thrust 40 % or less (4) · report to ATC (Enter) |
+| Cabin altitude | oxygen masks (Enter) · autopilot 10 000 ft, emergency descent (Enter) · speed brake out (/) |
+| Gear will not extend (approach only) | gear lever down (G) · alternate extension (Enter — the gear drops) · three green (Enter) |
+| Hydraulic failure | find the failed system · brake accumulator arm · landing distance +50 % (Enter) |
+| Nav/comm failure | note heading and time · radio 2 · restart the navigation computer (Enter) |
+| Medical emergency | cabin crew first aid · PAN PAN medical to ATC (Enter) |
+| Load shifted (cargo) | seat belts on, turbulence speed · pitch trim reset (Enter) |
+| Overweight / misload (on the ground) | parking brake set (Space) · check the load sheet · offload (Enter) |
+| Overspeed | thrust idle (0) · speed brake out (/) · speed below Vne |
 
-Courses change this: e.g. *Advanced Systems* shows a checklist hint, *De-icing & Winter Survival* slows ice accretion, *CRM & Cabin Safety* gives 50 % more response time.
+Courses change this: e.g. *Advanced Systems* adds the checklist hints, *De-icing & Winter Survival* slows ice accretion, *CRM & Cabin Safety* gives more response time.
 
 ## Difficulty
 
@@ -139,8 +147,8 @@ Chosen on the title screen and changeable in settings; applies to every flight o
 
 Also offered in the pause, debrief and failure dialogs (pre-selected), remembered in `localStorage`; a change applies from the next flight or the restart.
 
-- **Easy** — wind ×0.5, turbulence light, one emergency per flight, checklists in order with the next step named and ×1.5 time, generous landing grading, no deadlines, taxi assist (the nosewheel follows the guidance arrow while the player does not steer).
-- **Medium** — wind ×1.0, moderate turbulence, one or two emergencies, shuffled checklists with normal time, standard deadlines and grading.
+- **Easy** — wind ×0.5, turbulence light, one emergency per flight, checklist hints (why each step) and ×1.5 time, generous landing grading, no deadlines, taxi assist (the nosewheel follows the guidance arrow while the player does not steer).
+- **Medium** — wind ×1.0, moderate turbulence, one or two emergencies, checklists without hints and with normal time, standard deadlines and grading.
 - **Hard** — wind ×1.5, severe turbulence, two emergencies every flight, ×0.75 checklist time, deadlines ×0.8, strict grading, ×1.5 damage from mishandled emergencies.
 
 ## Career, money and the technology tree
@@ -212,7 +220,7 @@ Keyboard:
 - The cheats use **Alt + digit** so they cannot fire in normal play.
 - Overlay buttons (title, ops, briefing, debrief, pause) are pressed with Space / Enter, the arrow keys move between them.
 
-Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider (a thrust lever: thrust = position^1.8, so the lower half gives fine control of taxi power; the knob shows the thrust in % and follows the autothrottle and the keys when the thumb is off it), and the top right has fifteen buttons in five columns (three rows, clear of the throttle slider even on a 400 px tall landscape phone such as the Poco X6 Pro): Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot, Time +, view, map, spoiler, NAV (back to the programme), Time − and Ice (anti-ice). The QRH checklist buttons are tapped directly. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
+Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider (a thrust lever: thrust = position^1.8, so the lower half gives fine control of taxi power; the knob shows the thrust in % and follows the autothrottle and the keys when the thumb is off it), and the top right has fifteen buttons in five columns (three rows, clear of the throttle slider even on a 400 px tall landscape phone such as the Poco X6 Pro): Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot, Time +, view, map, spoiler, NAV (back to the programme), Time − and Ice (anti-ice). In a QRH checklist the lit switch is tapped (or Go); the other steps are worked with the real controls. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
 
 ## Views
 
@@ -254,7 +262,7 @@ world-aviation/
 ├── SPEC.md
 ├── index.html              markup only, versioned <link>/<script> tags
 ├── styles.css
-├── constants.js            world, aircraft, difficulties, emergencies, courses, the views, tuning
+├── constants.js            world, aircraft, difficulties, courses, the views, tuning (QRH: the checklist tuning)
 ├── game.js                 main loop, phase machine, wiring, self-test mode
 ├── career.js               save/load, contracts, courses, unlocks, payout, reputation
 ├── lib/
@@ -267,6 +275,7 @@ world-aviation/
 │   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)
 │   ├── countries.js        each country's flag and its local "welcome"
 │   ├── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
+│   ├── emergencies.js      the emergencies and their QRH checklists
 │   ├── quizzes.js          the course exams in English, Russian and Swedish, with hints; the Training tab's words and the course texts in Russian and Swedish
 │   └── geodata.js          the world's coastlines, inland water and mountain ranges ([lon, lat])
 ├── art/

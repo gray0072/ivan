@@ -8,7 +8,10 @@
 // accretes in cloud and precipitation below freezing, and the cabin
 // can depressurise. Emergencies are drawn per flight and interrupt
 // it: the clock drops to 1x, the master caution lights, and a quick
-// reference checklist has to be worked step by step in time.
+// reference checklist (data/emergencies.js) has to be worked in time:
+// each step with a real control (the thrust levers, anti-ice, the gear
+// lever, the autopilot...) or, for the switches that exist only in the
+// QRH, with Enter / the Go button. The checklist moves on by itself.
 // ============================================================
 
 const Systems = {
@@ -28,7 +31,8 @@ const Systems = {
   brakeFactor: 1,
   fire: false,
   warnings: {},
-  checklist: null,   // {def, stepIndex, timeLeft, limit}
+  checklist: null,   // {def, steps, stepIndex, timeLeft, limit, engine, okT, outcome}
+  outcome: null,     // the last checklist's result for the screen: {title, text, ok, t, used, limit}
   checklistDone: [], // ids of emergencies handled correctly
   checklistFailed: [],
 
@@ -51,7 +55,7 @@ const Systems = {
       });
     }
     this.queue = []; this.firedIds = {}; this.log = [];
-    this.checklist = null;
+    this.checklist = null; this.outcome = null;
     this.checklistDone = []; this.checklistFailed = [];
     this.fire = false;
     this.hydraulics = true; this.brakeFactor = 1;
@@ -197,7 +201,8 @@ const Systems = {
   schedule() {
     if (this.noEmergencies) return;
     const fl = this.flight;
-    const pool = EMERGENCIES.filter((d) => !(d.cargoOnly && (!fl.contract || fl.contract.faction !== 'cargo')));
+    const pool = EMERGENCIES.filter((d) => !(d.cargoOnly && (!fl.contract || fl.contract.faction !== 'cargo')) &&
+      !(d.retractGear && fl.ac.look && fl.ac.look.fixedGear));
     const d = this.diff;
     const count = d.emergencyOverlap >= 2 ? 2 : d.emergencyOverlap >= 1 ? (this.rng.chance(0.4) ? 2 : 1) : 1;
     const picked = [];
@@ -231,9 +236,17 @@ const Systems = {
       }
     }
     // run the open checklist (the clock is real time: the trigger cut time acceleration)
-    if (this.checklist) {
-      this.checklist.timeLeft -= dt;
-      if (this.checklist.timeLeft <= 0) this.escalate('out of time');
+    const c = this.checklist;
+    if (c) {
+      c.timeLeft -= dt;
+      const step = c.steps[c.stepIndex];
+      // a step worked with a control ticks by itself (and stays ticked, even if the autothrottle
+      // then moves the levers), and the next one lights up a moment later
+      if (step && !this.isSwitch(step) && (c.okT > 0 || this.stepMet(step))) {
+        c.okT += dt;
+        if (c.okT >= QRH.STEP_HOLD) { c.okT = 0; this.advance(); }
+      } else c.okT = 0;
+      if (this.checklist && this.checklist.timeLeft <= 0) this.escalate('out of time');
     }
   },
 
@@ -242,13 +255,14 @@ const Systems = {
     if (this.firedIds[def.id]) return;
     this.firedIds[def.id] = true;
     const limit = def.limit * this.responseFactor * (this.diff.qrhTimeFactor || 1);
-    this.checklist = { def, stepIndex: 0, timeLeft: limit, limit };
+    const engine = this.applyTrigger(def);
+    this.checklist = { def, steps: def.steps.slice(), stepIndex: 0, timeLeft: limit, limit, engine, okT: 0, outcome: null };
+    this.outcome = null;
     Audio2.cue('caution');
     fl.warn(def.id.toUpperCase(), def.title);
     // the interruption: drop the clock back to real time
     fl.timeAccelIndex = 0; fl.cheatAccel = false;
     fl.env.timeAccel = 1;
-    this.applyTrigger(def);
   },
 
   pickEngine() {
@@ -256,50 +270,107 @@ const Systems = {
     return live.length ? live[this.rng.int(0, live.length - 1)] : this.engines[0];
   },
 
+  // what happens to the aeroplane; returns the index of the engine it happened to (or null)
   applyTrigger(def) {
     const fl = this.flight, st = fl.st;
+    let eng = null;
     switch (def.id) {
-      case 'eng_fire': { const e = this.pickEngine(); e.fire = true; this.fire = true; break; }
-      case 'eng_fail': { const e = this.pickEngine(); e.failed = true; e.running = false; break; }
+      case 'eng_fire': eng = this.pickEngine(); eng.fire = true; this.fire = true; break;
+      case 'eng_fail': eng = this.pickEngine(); eng.failed = true; eng.running = false; eng.startPhase = 'off'; break;
       case 'fuel_leak': st.leakRate = fl.ac.fuelCapKg * this.rng.range(0.4, 0.8); break;   // kg per hour
       case 'hydraulic': this.hydraulics = false; this.brakeFactor = 0.35; break;
       case 'depress': this.depressurised = true; break;
-      case 'gear': st.gearFailed = true; if (st.gearTarget === 1 && st.gear < 1) st.gearTarget = st.gear; break;
+      case 'gear': st.gearFailed = true; st.gearSelected = false; if (st.gearTarget === 1 && st.gear < 1) st.gearTarget = st.gear; break;
       case 'nav': fl.navFailed = true; break;
-      case 'bird': { const e = this.pickEngine(); e.bird = true; break; }
+      case 'bird': eng = this.pickEngine(); eng.bird = true; break;
       case 'icing': fl.env.forcedIce = true; this.antiIce = false; break;
       case 'windshear': fl.env.shearT = 14; break;
       case 'cargoshift': fl.cargoShift = true; break;
       case 'medical': fl.medical = true; break;
       case 'overweight': st.overweight = true; break;
+      case 'overspeed': {
+        // a gust: the speed jumps past Vne
+        const k = (fl.ac.vne + 8) * KTS / Math.max(1, st.ias);
+        if (k > 1) { st.vel.x *= k; st.vel.z *= k; }
+        break;
+      }
       default: break;
     }
     this.log.push({ t: fl.elapsed, text: def.title });
+    return eng ? eng.i : null;
   },
 
-  // The player pressed the button for the current step
-  doStep(stepIndex) {
-    const c = this.checklist;
-    if (!c || stepIndex !== c.stepIndex) {
-      if (c) Audio2.cue('bad');
-      return false;
+  // a step that is a switch in the QRH (Enter / Go / a tap), not a control of the aeroplane
+  isSwitch(step) { return step.kind === 'switch' || step.kind === 'setAlt' || step.kind === 'setAltBy'; },
+
+  // a step's or a message's text with the engine number filled in
+  qrhText(s, c) {
+    c = c || this.checklist;
+    const e = c && c.engine !== null && c.engine !== undefined ? c.engine + 1 : 1;
+    return String(s).replace(/\{e\}/g, e);
+  },
+
+  // has the current step's control been worked?
+  stepMet(step) {
+    const fl = this.flight, st = fl.st;
+    switch (step.kind) {
+      case 'idle': return st.throttle <= QRH.IDLE_MAX;
+      case 'thrustMax': return st.throttle <= step.value + 0.005;
+      case 'thrustMin': return st.throttle >= step.value - 0.005;
+      case 'antiIce': return this.antiIce;
+      case 'gearDown': return st.gearTarget >= 0.5 || !!st.gearSelected;
+      case 'spoiler': return st.spoiler > 0.5;
+      case 'apOff': return !fl.ap.on;
+      case 'parkBrake': return !!st.parkingBrake;
+      case 'climb': return st.vel.y / FT * 60 >= QRH.CLIMB_FPM;
+      case 'slowVne': return st.ias / KTS < fl.ac.vne + step.value;
+      default: return false;
     }
-    const step = c.def.steps[c.stepIndex];
-    this.applyStep(step);
-    c.stepIndex++;
+  },
+
+  // Enter / the Go button / a tap on the step works the current switch. Returns true when it
+  // did, the step itself when that step is done with a control instead (the screen says which).
+  confirm() {
+    const c = this.checklist;
+    const step = c && c.steps[c.stepIndex];
+    if (!step) return false;
+    const fl = this.flight;
+    if (!this.isSwitch(step)) { Audio2.cue('bad'); return step; }
+    if (step.kind !== 'switch') {
+      const ft = step.kind === 'setAlt' ? step.value : Math.round((fl.st.pos.y / FT + step.value) / 100) * 100;
+      const floor = Math.round((fl.arrival.elev + 600) / FT / 100) * 100;
+      fl.ap.alt = Math.max(floor, Math.min(fl.ap.alt, ft));
+      if (!fl.ap.on && !fl.st.onGround) { fl.ap.on = true; fl.ap.vsI = 0; }
+      fl.info('Autopilot ALT ' + fmtAltFt(fl.ap.alt) + ' ft — descending');
+    }
     Audio2.cue('click');
-    if (c.stepIndex >= c.def.steps.length) this.finishChecklist();
+    this.advance();
     return true;
   },
 
-  applyStep(step) {
+  // the current step is done: its effect, then the next step (or the end of the checklist)
+  advance() {
+    const c = this.checklist;
+    const step = c.steps[c.stepIndex];
     const fl = this.flight, st = fl.st;
-    switch (step.kind) {
-      case 'setPower': st.throttle = clamp(step.value, 0, 1); break;
-      case 'setAlt': fl.ap.alt = Math.max(Math.round((fl.arrival.elev + 600) / FT / 100) * 100, Math.min(fl.ap.alt, step.value)); break;
-      default: break;
+    const eng = c.engine !== null && c.engine !== undefined ? this.engines[c.engine] : null;
+    if (step.effect === 'bottle' && !c.bottle2 && this.rng.chance(QRH.BOTTLE2_CHANCE)) {
+      // the fire is still burning: one more step
+      c.bottle2 = true;
+      c.steps.splice(c.stepIndex + 1, 0, { kind: 'switch', text: 'FIRE STILL ON — fire bottle 2, DISCHARGE',
+        why: 'The first bottle was not enough. The second one is the last.' });
+      Audio2.cue('caution');
+    } else if (step.effect === 'relight' && eng) {
+      if (this.rng.chance(QRH.RELIGHT_CHANCE)) {
+        eng.failed = false; eng.startPhase = 'motoring'; eng.startTimer = 0; eng.n2 = Math.max(eng.n2, 0.15);
+        c.outcome = 'Relight! Engine ' + (c.engine + 1) + ' is starting again — watch its N1 come up.';
+      }
+    } else if (step.effect === 'freefall') {
+      st.gearFailed = false; st.gearTarget = 1;
+      Audio2.cue('lever');
     }
-    if (/anti-ice/i.test(step.text)) this.antiIce = true;
+    c.stepIndex++;
+    if (c.stepIndex >= c.steps.length) this.finishChecklist();
   },
 
   // Effects that fire when a checklist is completed
@@ -319,8 +390,7 @@ const Systems = {
       case 'fuel_leak': st.leakRate = 0; break;
       case 'depress': this.depressurised = false; break;
       case 'hydraulic': this.brakeFactor = 0.6; break;
-      case 'gear': st.gearFailed = false; st.gearTarget = 1; break;
-      case 'bird': break;
+      case 'gear': st.gearFailed = false; st.gearTarget = 1; st.gearSelected = false; break;
       case 'icing': fl.env.forcedIce = false; this.antiIce = true; break;
       case 'nav': fl.navFailed = false; break;
       case 'medical': fl.medicalResolved = true; break;
@@ -329,7 +399,10 @@ const Systems = {
       default: break;
     }
     this.checklistDone.push(def.id);
-    fl.info(def.title + ' — checklist complete');
+    const used = Math.max(1, Math.round(c.limit - c.timeLeft));
+    this.outcome = { title: def.title, text: c.outcome || this.qrhText(def.done, c), ok: true,
+      t: fl.realElapsed, used, limit: Math.round(c.limit) };
+    fl.info(def.title + ' — checklist complete in ' + used + ' s');
     Audio2.cue('resolved');
   },
 
@@ -354,15 +427,17 @@ const Systems = {
         break;
       }
       case 'fuel_leak': st.leakRate *= 0.5; break;
-      case 'gear': st.gearFailed = false; st.gearTarget = 1; st.gear = 1; st.damage = clamp(st.damage + 0.1, 0, 1); break;
+      case 'gear': st.gearFailed = false; st.gearTarget = 1; st.gear = 1; st.gearSelected = false; st.damage = clamp(st.damage + 0.1, 0, 1); break;
       case 'icing': fl.env.forcedIce = false; this.antiIce = true; break;
       case 'nav': fl.navFailed = false; break;
       case 'bird': { const e = this.engines.find((x) => x.bird); if (e) { e.running = false; e.failed = true; } break; }
       case 'medical': fl.medicalResolved = false; break;
+      case 'depress': this.depressurised = false; break;
       default: break;
     }
     fl.warn('QRH', (def.escTitle || def.title) + ' — ' + reason);
     this.log.push({ t: fl.elapsed, text: def.escTitle || def.title });
+    this.outcome = { title: def.escTitle || def.title, text: def.esc, ok: false, t: fl.realElapsed };
     Audio2.cue('warning');
   },
 

@@ -40,14 +40,14 @@ The controls work in any keyboard layout (the keys are read by their place on th
 
 ## Emergencies
 
-Every flight draws its problems: engine fire or failure, a fuel leak, icing, windshear, a bird strike, cabin depressurisation, a gear that will not come down, hydraulic or navigation failure, a medical emergency, a shifted load… When one happens the time acceleration stops, the caution sounds and a **QRH checklist** opens: click its steps in the right order before the timer runs out, or the failure escalates — damage, lost engines, lost fuel, a lower pay.
+Every flight draws its problems: engine fire or failure, a fuel leak, icing, windshear, a bird strike, cabin depressurisation, a gear that will not come down, hydraulic or navigation failure, a medical emergency, a shifted load… When one happens the time acceleration stops, the caution sounds and a **QRH checklist** opens. It says what happened and lists the steps in order; the lit one is next, and each step shows the control that does it. Most are the real controls — thrust to idle with **0**, anti-ice **K**, the gear lever **G**, the speed brake **/**, the autopilot **Y**, pulling up with **↓** — and the checklist ticks them off as you do them; the switches that only exist in the checklist (a fire handle, a crossfeed valve, a call to ATC) are worked with **Enter** (on a phone: tap the lit step or **Go**). Some things can go either way: the fire may need the second bottle, a failed engine may start again. Finish before the timer runs out and you see how long it took; run out of time and the failure escalates — damage, lost engines, lost fuel, a lower pay.
 
 ## Difficulty
 
 Chosen on the title screen and in the pause and debrief dialogs, remembered between visits:
 
-- **Easy** — half the wind and light turbulence, one problem at a time, checklists show their steps in order with the next one highlighted and 50 % more time, generous landing grading, no deadlines, and a taxi assist that keeps you on the line.
-- **Medium** — real wind and turbulence, sometimes two problems in one flight, the checklist steps are shuffled (you have to know the order), standard deadlines and grading.
+- **Easy** — half the wind and light turbulence, one problem at a time, checklists explain why each step is done and give 50 % more time, generous landing grading, no deadlines, and a taxi assist that keeps you on the line.
+- **Medium** — real wind and turbulence, sometimes two problems in one flight, checklists without the explanations, standard deadlines and grading.
 - **Hard** — strong wind and severe turbulence, two problems every flight, 25 % less time on the checklists, short deadlines, strict grading and more damage.
 
 ## Career

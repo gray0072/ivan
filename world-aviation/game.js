@@ -648,7 +648,11 @@ const Game = {
         Audio2.cue('click');
         break;
       case 'throttlePreset': fl.setThrottle(arg); break;
-      case 'starter': this.next(); break;
+      case 'starter':
+        // with a checklist open, Enter / Go works its current switch
+        if (sys.checklist) this.doChecklistStep(sys.checklist.stepIndex);
+        else this.next();
+        break;
       case 'pause': this.pause(); break;
       case 'help': this.helpOpen = !this.helpOpen; el('helpPanel').hidden = !this.helpOpen; break;
       default: break;
@@ -686,9 +690,15 @@ const Game = {
     }
   },
 
+  // Enter, the Go button or a tap on step i of the open checklist: the current step's switch
+  // is worked; a step done with a control (or a later step) only says what to do
   doChecklistStep(i) {
-    if (!this.systems || !this.systems.checklist) return;
-    this.systems.doStep(i);
+    const sys = this.systems, c = sys && sys.checklist;
+    if (!c) return;
+    const step = c.steps[c.stepIndex];
+    if (i !== c.stepIndex) { Audio2.cue('bad'); HUD.nudgeChecklist('Step ' + (c.stepIndex + 1) + ' first — the order matters'); return; }
+    const r = sys.confirm();
+    if (r && r !== true) HUD.nudgeChecklist('This one is done with the controls: ' + HUD.qrhControl(step, false));
   },
 
   // ---------- cheats ----------

@@ -181,7 +181,7 @@ const UI = {
       '<li>At the gate press Enter for the push back, start the engines, release the brake and taxi along the arrow to the holding point.</li>' +
       '<li>Set take-off flaps, ask for the clearance, line up, full power, rotate at Vr, gear up.</li>' +
       '<li>Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×64 on the autopilot.</li>' +
-      '<li>When a warning sounds, work the checklist — the order matters and so does the clock.</li>' +
+      '<li>When a warning sounds, a checklist opens: do the lit step with the control shown next to it — Enter (Go) for its switches, the real controls (0, K, G, /, Y…) for the rest. The clock is running.</li>' +
       '<li>Flaps and gear down on the approach, land by hand from 200 ft, brake, and leave the runway below 35 kt.</li>' +
       '<li>Taxi to your gate, stop in the parking box and set the parking brake.</li>' +
       '</ul></div></div>' +

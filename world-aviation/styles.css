@@ -140,10 +140,18 @@ kbd {
 .qrhTimer { width: 84px; text-align: right; font: 700 11px ui-monospace, monospace; }
 .qrhBar { height: 5px; border-radius: 3px; background: #2a323b; overflow: hidden; margin-bottom: 3px; }
 .qrhBar i { display: block; height: 100%; background: #7de08a; }
-.qrhSub { margin: 3px 0 6px; font-size: 10px; color: #93a2b1; }
-.qrhHint { margin: 4px 0; font-size: 11px; color: #ffd97a; }
+.qrhWhat { margin: 4px 0 7px; font-size: 12px; line-height: 1.4; color: #e9d6cf; }
+.qrhSub { margin: 6px 0 0; font-size: 10px; color: #93a2b1; }
+.qrhSub kbd, .qrhStep kbd {
+  font: 700 10px ui-monospace, monospace; padding: 1px 5px; border-radius: 4px;
+  border: 1px solid #4a5868; background: #0f151c; color: #cfe0ef; white-space: nowrap;
+}
+.qrhNudge { margin: 6px 0 0; font-size: 11px; color: #ffd97a; }
 .qrhStep {
-  display: block;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
   width: 100%;
   margin: 3px 0;
   padding: 7px 9px;
@@ -155,9 +163,20 @@ kbd {
   text-align: left;
   cursor: pointer;
 }
+.qrhN { font: 700 11px ui-monospace, monospace; color: #93a2b1; text-align: center; }
+.qrhWhy { grid-column: 2 / 4; font-size: 11px; color: #ffd97a; }
 .qrhStep:hover:not(:disabled) { border-color: #6f8ba6; }
-.qrhStep.cur { border-color: #ff9c7a; background: #2a1d1a; color: #ffd9cd; }
-.qrhStep.done { opacity: 0.45; text-decoration: line-through; cursor: default; }
+.qrhStep.cur { border-color: #ff9c7a; background: #2a1d1a; color: #ffe3d8; box-shadow: 0 0 0 1px rgba(255, 156, 122, 0.35); }
+.qrhStep.cur .qrhN { color: #ff9c7a; }
+.qrhStep.cur kbd { border-color: #ff9c7a; color: #ffd9cd; }
+.qrhStep.later { opacity: 0.6; }
+.qrhStep.done { opacity: 0.5; cursor: default; }
+.qrhStep.done .qrhN { color: #7de08a; }
+.qrhStep.done .qrhT { text-decoration: line-through; }
+#checklist.qrhDone { border-color: #4ac47f; }
+#checklist.qrhDone .qrhTitle { color: #7de08a; }
+#checklist.qrhLost { border-color: #e0574a; }
+#checklist.qrhLost .qrhTitle { color: #ff7a5c; }
 
 .banner {
   position: absolute;

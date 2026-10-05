@@ -141,7 +141,7 @@ const Flight = {
   setGear(down) {
     const st = this.st;
     if (!down && st.onGround) { this.warn('GEAR', 'Gear lever locked — weight on wheels'); return; }
-    if (down && st.gearFailed) { this.warn('GEAR', 'Gear will not extend — work the checklist'); return; }
+    if (down && st.gearFailed) { st.gearSelected = true; this.warn('GEAR', 'Gear will not extend — work the checklist'); return; }
     if (down && st.ias / KTS > this.ac.vlo + 5) {
       this.warn('GEAR', 'Gear inhibited above Vlo ' + this.ac.vlo + ' kt');
       return;

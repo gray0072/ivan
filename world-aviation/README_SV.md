@@ -40,14 +40,14 @@ Kontrollerna fungerar med alla tangentbordslayouter (tangenterna läses efter si
 
 ## Nödsituationer
 
-Varje flygning drar sina problem: motorbrand eller motorbortfall, bränsleläcka, isbildning, vindskjuvning, fågelkollision, tryckfall i kabinen, ett landställ som inte går ut, hydraul- eller navigationsfel, en sjuk passagerare, en last som har förskjutits… Då stannar tidsaccelerationen, varningen ljuder och en **QRH-checklista** öppnas: klicka stegen i rätt ordning innan tiden tar slut, annars förvärras felet — skador, förlorade motorer, förlorat bränsle, lägre betalning.
+Varje flygning drar sina problem: motorbrand eller motorbortfall, bränsleläcka, isbildning, vindskjuvning, fågelkollision, tryckfall i kabinen, ett landställ som inte går ut, hydraul- eller navigationsfel, en sjuk passagerare, en last som har förskjutits… Då stannar tidsaccelerationen, varningen ljuder och en **QRH-checklista** öppnas. Den säger vad som hänt och listar stegen i ordning; nästa steg lyser, och varje steg visar vilket reglage som gör det. Oftast är det de riktiga reglagen — tomgång med **0**, avisning **K**, landställsspaken **G**, luftbromsen **/**, autopiloten **Y**, dra upp nosen med **↓** — och checklistan bockar av dem när du gör dem; de brytare som bara finns i checklistan (brandhandtaget, crossfeed-ventilen, ett anrop till flygledningen) görs med **Enter** (på mobilen: tryck på steget som lyser eller **Go**). En del kan gå åt båda hållen: branden kan kräva den andra flaskan, en stoppad motor kan starta igen. Hinner du före timern ser du hur lång tid det tog; tar tiden slut förvärras felet — skador, förlorade motorer, förlorat bränsle, lägre betalning.
 
 ## Svårighetsgrad
 
 Väljs på startskärmen och i paus- och genomgångsdialogerna, och sparas mellan besöken:
 
-- **Easy** — halva vinden och lätt turbulens, ett problem åt gången, checklistans steg i ordning med nästa steg markerat och 50 % mer tid, generös landningsbedömning, inga deadlines och en taxihjälp som håller dig på linjen.
-- **Medium** — riktig vind och turbulens, ibland två problem under en flygning, checklistans steg blandade (du måste kunna ordningen), vanliga deadlines och bedömning.
+- **Easy** — halva vinden och lätt turbulens, ett problem åt gången, checklistan förklarar varför varje steg görs och ger 50 % mer tid, generös landningsbedömning, inga deadlines och en taxihjälp som håller dig på linjen.
+- **Medium** — riktig vind och turbulens, ibland två problem under en flygning, checklistor utan förklaringar, vanliga deadlines och bedömning.
 - **Hard** — stark vind och kraftig turbulens, två problem varje flygning, 25 % mindre tid på checklistorna, korta deadlines, sträng bedömning och mer skador.
 
 ## Karriär

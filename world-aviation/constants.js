@@ -395,190 +395,16 @@ const FACTIONS = {
   bush: { id: 'bush', name: 'Bush & air ambulance operators', short: 'Bush & SAR', color: '#63d6a8' }
 };
 
-// ---------- Emergency quick-reference checklists ----------
-// kind: 'do' = confirm the step, 'setAlt' / 'setHdg' / 'setPower' = a value to dial in,
-// 'note' = information the player just reads and acknowledges.
-const EMERGENCIES = [
-  {
-    id: 'eng_fire', title: 'ENGINE FIRE', weight: 1.0, phase: ['CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'],
-    alert: 'continuous', limit: 25, escTitle: 'Engine fire not contained',
-    esc: 'The fire burns through the nacelle, the engine shuts down and you fly the rest on one engine with a fire warning you cannot clear.',
-    penalty: { damage: 0.18, fuel: 0.1 },
-    steps: [
-      { kind: 'setPower', value: 0, text: 'Throttle to the idle stop' },
-      { kind: 'do', text: 'Pull the engine fire handle' },
-      { kind: 'do', text: 'Engine master switch OFF' },
-      { kind: 'do', text: 'Confirm the fire warning light is out' },
-      { kind: 'note', text: 'Inflight shutdown complete. Note the failure, continue the flight.' }
-    ]
-  },
-  {
-    id: 'eng_fail', title: 'ENGINE FAILURE', weight: 1.2, phase: ['CLIMB', 'CRUISE', 'DESCENT'],
-    alert: 'continuous', limit: 40, escTitle: 'Engine failure mishandled',
-    esc: 'You kept the failed engine at high power. It tore itself apart and you lost altitude you did not have.',
-    penalty: { damage: 0.25 },
-    steps: [
-      { kind: 'do', text: 'Verify the failure on the engine page' },
-      { kind: 'setPower', value: 0, text: 'Throttle the failed engine to idle' },
-      { kind: 'do', text: 'Propeller feather / engine start valve closed' },
-      { kind: 'do', text: 'Attempt a restart on the remaining fuel pressure' },
-      { kind: 'note', text: 'Restart failed. Drift down at best-glide speed and plan for the nearest suitable airport.' }
-    ]
-  },
-  {
-    id: 'fuel_leak', title: 'FUEL LEAK', weight: 1.1, phase: ['CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'],
-    alert: 'continuous', limit: 45, escTitle: 'Fuel leak unchecked',
-    esc: 'The leak drained the tanks while you flew on. You reached the coast with nothing left in reserve.',
-    penalty: { fuel: 0.35, damage: 0.05 },
-    steps: [
-      { kind: 'do', text: 'Fuel pump for the leaking side OFF' },
-      { kind: 'do', text: 'Crossfeed valve OPEN' },
-      { kind: 'do', text: 'Declare the emergency to ATC' },
-      { kind: 'note', text: 'Recirculate on the remaining tank. Recompute your landing fuel and expect a delay.' }
-    ]
-  },
-  {
-    id: 'low_fuel', title: 'FUEL STATE', weight: 0.9, phase: ['CRUISE', 'DESCENT'],
-    alert: 'single', limit: 60, escTitle: 'Ran the tanks dry',
-    esc: 'Both engines flamed out with the destination still on the nose. You glided, and you did not have enough height.',
-    penalty: { damage: 0.3 },
-    steps: [
-      { kind: 'do', text: 'Recalculate fuel to destination' },
-      { kind: 'do', text: 'Review the nearest diversion field' },
-      { kind: 'setAlt', value: 10000, text: 'Level off at 10 000 ft, economy power' },
-      { kind: 'note', text: 'Declare minimum fuel state and continue to the planned airport.' }
-    ]
-  },
-  {
-    id: 'icing', title: 'ICE ACCRETION', weight: 1.3, phase: ['CLIMB', 'CRUISE'],
-    alert: 'single', limit: 50, escTitle: 'Iced beyond recovery',
-    esc: 'Ice kept building on the wings. Lift fell away, the aeroplane stalled, and it broke up in the cloud.',
-    penalty: { damage: 0.45 },
-    steps: [
-      { kind: 'do', text: 'Exit the icing conditions — turn or descend out of the moisture' },
-      { kind: 'do', text: 'Engine anti-ice ON, both engines' },
-      { kind: 'do', text: 'Pitot heat ON' },
-      { kind: 'do', text: 'Do NOT extend gear or flaps while ice remains' },
-      { kind: 'note', text: 'Hold level until the ice sheds. Expect the stall speed to be higher.' }
-    ]
-  },
-  {
-    id: 'windshear', title: 'WINDSHEAR ALERT', weight: 1.0, phase: ['APPROACH'],
-    alert: 'continuous', limit: 12, escTitle: 'Windshear not escaped',
-    esc: 'The shear hit you below the glideslope. You touched down 20 kt fast, into a sink, on the numbers.',
-    penalty: { damage: 0.4 },
-    steps: [
-      { kind: 'note', text: 'WINDSHEAR, WINDSHEAR — runway performance degraded' },
-      { kind: 'note', text: 'Pitch attitude 15°, thrust to the go-around limit' },
-      { kind: 'do', text: 'Windshield wipers and landing lights ON' },
-      { kind: 'note', text: 'Fly through the shear and land long, or go around if you are not stable.' }
-    ]
-  },
-  {
-    id: 'bird', title: 'BIRD STRIKE', weight: 0.8, phase: ['CLIMB', 'CRUISE', 'TAKEOFF', 'APPROACH'],
-    alert: 'single', limit: 40, escTitle: 'Struck bird, engine lost',
-    esc: 'The bird went into the intake. The engine flamed out and the aeroplane was no longer flyable.',
-    penalty: { damage: 0.3 },
-    steps: [
-      { kind: 'do', text: 'Check the affected engine: N1, EGT, vibration' },
-      { kind: 'setPower', value: 0.4, text: 'Reduce the affected engine to flight idle' },
-      { kind: 'do', text: 'Report the strike to ATC' },
-      { kind: 'note', text: 'Monitor for a flameout. Continue the flight and land at the planned destination.' }
-    ]
-  },
-  {
-    id: 'depress', title: 'CABIN ALTITUDE', weight: 0.7, phase: ['CLIMB', 'CRUISE', 'DESCENT'],
-    alert: 'continuous', limit: 30, escTitle: 'Cabin depressurised',
-    esc: 'The cabin blew out at cruise altitude. Everybody on board got a hypoxia warning they never heard.',
-    penalty: { damage: 0.1, penaltyRep: 8 },
-    steps: [
-      { kind: 'do', text: 'Crew and passenger oxygen masks ON' },
-      { kind: 'setAlt', value: 10000, text: 'Emergency descent to 10 000 ft' },
-      { kind: 'do', text: 'Pack the depressurisation, then re-pressurise' },
-      { kind: 'note', text: 'Cabin altitude back inside limits. Report the defect and continue.' }
-    ]
-  },
-  {
-    id: 'gear', title: 'GEAR WILL NOT EXTEND', weight: 0.9, phase: ['APPROACH', 'DESCENT'],
-    alert: 'single', limit: 55, escTitle: 'Gear not down',
-    esc: 'The gear hung half extended. You landed with it not locked — and the leg collapsed under the load.',
-    penalty: { damage: 0.5 },
-    steps: [
-      { kind: 'do', text: 'Gear selector DOWN, then check the hydraulic page' },
-      { kind: 'do', text: 'Blow down the gear reservoir (AUTO to GROUND to UP slowly)' },
-      { kind: 'do', text: 'Manual extension / free-fall release' },
-      { kind: 'note', text: 'Gear status: three green. If still not down: land on a grass strip or go around.' }
-    ]
-  },
-  {
-    id: 'hydraulic', title: 'HYDRAULIC FAILURE', weight: 0.7, phase: ['CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'],
-    alert: 'single', limit: 60, escTitle: 'Systems low',
-    esc: 'Without hydraulics the gear and the brakes went with them. You touched down and could not steer or stop.',
-    penalty: { damage: 0.35 },
-    steps: [
-      { kind: 'do', text: 'Verify which system failed on the hydraulic page' },
-      { kind: 'do', text: 'Gear selector down — electric extension backup' },
-      { kind: 'do', text: 'Accumulate the brakes, expect slow pressure build-up' },
-      { kind: 'note', text: 'Maximum deflection only. Plan for a longer rollout and a firm landing.' }
-    ]
-  },
-  {
-    id: 'nav', title: 'NAV / COMM FAILURE', weight: 0.6, phase: ['CLIMB', 'CRUISE', 'DESCENT'],
-    alert: 'single', limit: 70, escTitle: 'Lost the route',
-    esc: 'With no navigation and no radio you drifted. The fuel ran low over terrain instead of over the coastline.',
-    penalty: { fuel: 0.2 },
-    steps: [
-      { kind: 'do', text: 'Try both radios and both transponders' },
-      { kind: 'do', text: 'Compass and clock: note heading and time' },
-      { kind: 'do', text: 'Dead-reckon to the destination, monitor fuel to the field' },
-      { kind: 'note', text: 'Declare the failure when the radios come back. Keep the magenta line.' }
-    ]
-  },
-  {
-    id: 'medical', title: 'MEDICAL EMERGENCY', weight: 0.6, phase: ['CLIMB', 'CRUISE', 'DESCENT'],
-    alert: 'single', limit: 120, escTitle: 'Passenger critical',
-    esc: 'A passenger went critical and needed a hospital. The diversion and the paperwork cost more than the contract paid.',
-    penalty: { penaltyRep: 10, moneyFactor: -0.25 },
-    steps: [
-      { kind: 'do', text: 'Cabin crew: first aid, oxygen, declare a medical emergency' },
-      { kind: 'do', text: 'Request the nearest hospital diversion' },
-      { kind: 'note', text: 'Contract void — you are paid for the flying time you did, not the delivery.' }
-    ]
-  },
-  {
-    id: 'cargoshift', title: 'LOAD SHIFTED', weight: 0.7, phase: ['CLIMB', 'CRUISE', 'DESCENT'], cargoOnly: true,
-    alert: 'single', limit: 60, escTitle: 'Load shift unchecked',
-    esc: 'The pallets walked aft in the turbulence. The aeroplane trimmed itself nose-down and it never recovered.',
-    penalty: { damage: 0.2 },
-    steps: [
-      { kind: 'do', text: 'Reduce speed to the turbulence penetration speed' },
-      { kind: 'do', text: 'Trim for the new centre of gravity' },
-      { kind: 'note', text: 'Do not exceed the aft CG limit. Re-check the landing distance and the Vref.' }
-    ]
-  },
-  {
-    id: 'overweight', title: 'OVERWEIGHT / MISLOAD', weight: 0.6, phase: ['TAXI_OUT', 'HOLD_SHORT'], preflight: true,
-    alert: 'single', limit: 75, escTitle: 'Rotated overweight',
-    esc: 'You took off over the maximum weight. The aeroplane used every metre of the runway and you barely cleared the fence.',
-    penalty: { damage: 0.2 },
-    steps: [
-      { kind: 'do', text: 'Recompute the takeoff distance for the actual weight' },
-      { kind: 'setPower', value: 0.85, text: 'Set the reduced takeoff thrust' },
-      { kind: 'note', text: 'Offload the excess, or compute a lower Vref and a longer ground roll.' }
-    ]
-  },
-  {
-    id: 'overspeed', title: 'OVERSPEED', weight: 0.5, phase: ['DESCENT', 'APPROACH'],
-    alert: 'continuous', limit: 20, escTitle: 'Exceeded Vne',
-    esc: 'You flew the approach 40 kt over Vne. The airframe gave up before the runway did.',
-    penalty: { damage: 0.35 },
-    steps: [
-      { kind: 'do', text: 'Immediately reduce thrust and check the energy' },
-      { kind: 'note', text: 'Recover level, decelerate, then continue the approach' },
-      { kind: 'note', text: 'Overspeed is a maintenance event — file it in the technical log' }
-    ]
-  }
-];
+// ---------- Emergency checklists (QRH) ----------
+// The emergencies and their checklists are in data/emergencies.js.
+const QRH = {
+  STEP_HOLD: 0.45,          // seconds a step done with a control stays ticked before the next one lights up
+  BOTTLE2_CHANCE: 0.3,      // the first fire bottle is not enough
+  RELIGHT_CHANCE: 0.4,      // a failed engine starts again
+  CLIMB_FPM: 500,           // the 'climb' step: at least this climb rate
+  IDLE_MAX: 0.05,           // the 'idle' step: the thrust levers at or below this
+  OUTCOME_SEC: 9            // how long the result of a checklist stays on the screen
+};
 
 // ---------- Training courses ----------
 // The technology tree: one general branch plus three career branches, four tiers each.
@@ -592,7 +418,7 @@ const COURSES = [
     effect: 'Shows the full forecast at both ends, +10% fuel margin planning, 20% less icing.', course: 'pax' },
   { id: 'gen3', branch: 'general', tier: 2, name: 'Advanced Systems', cost: 5200, requires: ['gen2'],
     blurb: 'Hydraulics, generators, pressurisation and the QRH — and how to work it under pressure.',
-    effect: 'Checklist hints show the next step, +40% response time on every emergency.', course: 'pax' },
+    effect: 'Checklist hints explain every step, +40% response time on every emergency.', course: 'pax' },
   { id: 'gen4', branch: 'general', tier: 3, name: 'CRM & Cabin Safety', cost: 11000, requires: ['gen3'],
     blurb: 'Crew resource management, cabin crew briefing, medical response and awkward passengers.',
     effect: '+60% emergency response time, medical emergencies pay, +5 reputation per flight.', course: 'pax' },

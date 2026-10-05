@@ -127,51 +127,87 @@ const HUD = {
   hideBanner() { if (this.banner) this.banner.hidden = true; },
 
   // ---------- QRH checklist ----------
-  // The buttons are rebuilt only when the checklist or its step changes, so a
-  // click is never lost to a DOM swap; the timer is updated every frame.
+  // The emergency, what it is, and its steps top to bottom. Each step shows the control that
+  // works it (Enter for the QRH switches, the real controls for the rest); the current one is
+  // lit, and with checklist hints it says why. Once done or failed, the result stays a while.
+  // The panel is rebuilt only when something in it changes, so a tap is never lost to a DOM
+  // swap; the timer is updated every frame.
   updateChecklist(sys, hint) {
     const box = this.checklistBox;
     if (!box) return;
     const c = sys && sys.checklist;
-    if (!c) {
+    const fl = sys && sys.flight;
+    const out = !c && sys && sys.outcome && fl && fl.realElapsed - sys.outcome.t < QRH.OUTCOME_SEC ? sys.outcome : null;
+    if (!c && !out) {
       if (!box.hidden) { box.hidden = true; box.innerHTML = ''; this.checklistKey = ''; }
       return;
     }
-    const key = c.def.id + ':' + c.stepIndex;
+    const nudge = this.nudge && performance.now() - this.nudge.t < 2600 ? this.nudge.text : '';
+    const key = c ? c.def.id + ':' + c.stepIndex + ':' + c.steps.length + ':' + (c.okT > 0) + ':' + nudge + ':' + hint
+      : 'out:' + out.t;
     if (key !== this.checklistKey) {
       this.checklistKey = key;
       box.hidden = false;
-      const step = c.def.steps[c.stepIndex];
-      const buttons = c.def.steps.map((st, i) => {
-        const done = i < c.stepIndex;
-        const cur = i === c.stepIndex && hint;
-        let extra = '';
-        if (st.kind === 'setPower') extra = ' <b>' + Math.round(st.value * 100) + '%</b>';
-        if (st.kind === 'setAlt') extra = ' <b>' + Units.alt(st.value) + '</b>';
-        return '<button type="button" class="qrhStep' + (done ? ' done' : '') + (cur ? ' cur' : '') + '" data-step="' + i + '"' +
-          (done ? ' disabled' : '') + '>' + (done ? '&#10003; ' : '') + esc(Units.text(st.text)) + extra + '</button>';
-      });
-      // without a hint the remaining steps are shuffled: you have to know the order
-      const order = c.def.steps.map((st, i) => i);
-      if (!hint) {
-        const rng = makeRng(hashStr(c.def.id));
-        const pending = rng.shuffle(order.filter((i) => i >= c.stepIndex));
-        order.splice(c.stepIndex, pending.length, ...pending);
+      box.classList.toggle('qrhDone', !c && out.ok);
+      box.classList.toggle('qrhLost', !c && !out.ok);
+      if (!c) {
+        box.innerHTML = '<div class="qrhTitle">' + (out.ok ? '&#10003; ' : '&#10007; ') + esc(out.title) + '</div>' +
+          (out.ok ? '<div class="qrhSub">Checklist complete in ' + out.used + ' s of ' + out.limit + ' s</div>' : '') +
+          '<div class="qrhWhat">' + esc(Units.text(out.text)) + '</div>';
+        return;
       }
+      const coarse = Input.isCoarse;
+      const rows = c.steps.map((st, i) => {
+        const done = i < c.stepIndex || (i === c.stepIndex && c.okT > 0);
+        const cur = i === c.stepIndex && !done;
+        const cls = 'qrhStep' + (done ? ' done' : cur ? ' cur' : ' later');
+        return '<button type="button" class="' + cls + '" data-step="' + i + '"' + (done ? ' disabled' : '') + '>' +
+          '<span class="qrhN">' + (done ? '&#10003;' : i + 1) + '</span>' +
+          '<span class="qrhT">' + esc(Units.text(sys.qrhText(st.text))) + '</span>' +
+          '<kbd>' + esc(this.qrhControl(st, true, coarse)) + '</kbd>' +
+          (cur && hint && st.why ? '<span class="qrhWhy">' + esc(st.why) + '</span>' : '') +
+          '</button>';
+      }).join('');
       box.innerHTML =
         '<div class="qrhHead"><div class="qrhTitle">' + esc(c.def.title) + '</div>' +
         '<div class="qrhTimer"><div class="qrhBar"><i></i></div><span></span></div></div>' +
-        '<div class="qrhSub">QRH &middot; ' + (hint ? 'work the steps top to bottom' : 'work the steps in the right order') + '</div>' +
-        (hint && step ? '<div class="qrhHint">Next: ' + esc(step.text) + '</div>' : '') +
-        order.map((i) => buttons[i]).join('');
+        '<div class="qrhWhat">' + esc(Units.text(sys.qrhText(c.def.what || ''))) + '</div>' +
+        rows +
+        (nudge ? '<div class="qrhNudge">' + esc(nudge) + '</div>'
+          : '<div class="qrhSub">' + (coarse ? 'Tap the lit switch (or Go); the other steps tick when you use the control shown.'
+            : '<kbd>Enter</kbd> works the lit switch; the other steps tick when you use the control shown.') + '</div>');
       box.querySelectorAll('[data-step]').forEach((b) => {
         b.addEventListener('click', () => Game.doChecklistStep(parseInt(b.getAttribute('data-step'), 10)));
       });
     }
+    if (!c) return;
     const pct = clamp(c.timeLeft / c.limit, 0, 1);
     const bar = box.querySelector('.qrhBar i'), num = box.querySelector('.qrhTimer span');
     if (bar) { bar.style.width = (pct * 100) + '%'; bar.style.background = pct < 0.3 ? '#ff7a5c' : '#7de08a'; }
     if (num) num.textContent = Math.max(0, Math.ceil(c.timeLeft)) + ' s';
+  },
+  // a short line in the checklist panel: a wrong key, or a step that wants a control
+  nudgeChecklist(text) { this.nudge = { text, t: performance.now() }; },
+  // the control that works a checklist step: short (the badge) or as a phrase
+  qrhControl(step, short, coarse) {
+    if (coarse === undefined) coarse = Input.isCoarse;
+    const pct = Math.round((step.value || 0) * 100);
+    const T = {
+      switch: ['Enter', 'tap', 'press Enter', 'tap the step'],
+      setAlt: ['Enter', 'tap', 'press Enter', 'tap the step'],
+      setAltBy: ['Enter', 'tap', 'press Enter', 'tap the step'],
+      idle: ['0', 'THR ▼', 'press 0 — thrust to idle', 'pull the throttle slider all the way down'],
+      thrustMax: [String(Math.round(pct / 10)), 'THR ' + pct + '%', 'press ' + Math.round(pct / 10) + ' or lower — thrust ' + pct + ' %', 'throttle slider to ' + pct + ' % or less'],
+      thrustMin: ['9', 'THR ▲', 'press 9 — full thrust', 'push the throttle slider all the way up'],
+      antiIce: ['K', 'Ice', 'press K — anti-ice', 'the Ice button'],
+      gearDown: ['G', 'Gear', 'press G — gear lever', 'the Gear button'],
+      spoiler: ['/', 'Spoiler', 'press / — speed brake', 'the Spoiler button'],
+      apOff: ['Y', 'AP', 'press Y — autopilot off', 'the AP button'],
+      parkBrake: ['Space', 'Park', 'press Space — parking brake', 'the Park button'],
+      climb: ['↓', 'stick ▼', 'hold ↓ — pull the nose up', 'drag the stick down — nose up'],
+      slowVne: ['speed', 'speed', 'wait for the speed to drop', 'wait for the speed to drop']
+    }[step.kind] || ['Enter', 'tap', 'press Enter', 'tap the step'];
+    return T[(short ? 0 : 2) + (coarse ? 1 : 0)];
   },
 
   // ---------- taxi guidance ----------
