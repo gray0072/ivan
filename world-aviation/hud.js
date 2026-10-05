@@ -50,7 +50,7 @@ const HUD = {
     if (key !== this.msgKey) {
       this.msgKey = key;
       this.msgBox.innerHTML = this.messages.map((m) =>
-        '<div class="msg ' + (m.kind === 'info' ? 'info' : 'warn') + '">' + esc(m.text) + '</div>').join('');
+        '<div class="msg ' + (m.kind === 'info' ? 'info' : 'warn') + '">' + esc(Units.text(m.text)) + '</div>').join('');
     }
     // fade the old ones out
     const nodes = this.msgBox.children;
@@ -72,7 +72,7 @@ const HUD = {
       '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + c.type.toUpperCase() + '</span></div>' +
       '<div class="stripRow big">' + c.fromId + ' → ' + c.toId + '</div>' +
       '<div class="stripRow"><span>' + (c.pax ? c.pax + ' pax · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
-      '<span>' + Math.round(c.distanceNm) + ' nm</span></div>' +
+      '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
       '<div class="stripRow"><span>FUEL ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
       '<div class="stripRow"><span>PAY</span><b>' + fmtMoney(c.pay) + '</b></div>' +
@@ -85,6 +85,7 @@ const HUD = {
     if (!this.prompt) return;
     if (!html) { this.prompt.hidden = true; this.promptHtml = ''; return; }
     if (Input.isCoarse) html = touchPrompt(html);
+    html = Units.text(html);
     this.prompt.hidden = false;
     if (html !== this.promptHtml) { this.promptHtml = html; this.prompt.innerHTML = html; }
   },
@@ -93,7 +94,7 @@ const HUD = {
     if (!this.banner) return;
     this.banner.hidden = false;
     this.banner.className = 'banner ' + (kind || '');
-    this.banner.textContent = text;
+    this.banner.textContent = Units.text(text);
     clearTimeout(this.bannerTimer);
     if (ms) this.bannerTimer = setTimeout(() => this.hideBanner(), ms);
   },
@@ -120,9 +121,9 @@ const HUD = {
         const cur = i === c.stepIndex && hint;
         let extra = '';
         if (st.kind === 'setPower') extra = ' <b>' + Math.round(st.value * 100) + '%</b>';
-        if (st.kind === 'setAlt') extra = ' <b>' + st.value.toLocaleString('en-US') + ' ft</b>';
+        if (st.kind === 'setAlt') extra = ' <b>' + Units.alt(st.value) + '</b>';
         return '<button type="button" class="qrhStep' + (done ? ' done' : '') + (cur ? ' cur' : '') + '" data-step="' + i + '"' +
-          (done ? ' disabled' : '') + '>' + (done ? '&#10003; ' : '') + esc(st.text) + extra + '</button>';
+          (done ? ' disabled' : '') + '>' + (done ? '&#10003; ' : '') + esc(Units.text(st.text)) + extra + '</button>';
       });
       // without a hint the remaining steps are shuffled: you have to know the order
       const order = c.def.steps.map((st, i) => i);
@@ -223,9 +224,15 @@ const HUD = {
     g.setLineDash([7, 6]);
     g.beginPath(); g.moveTo(X(p0.x), Y(p0.z)); g.lineTo(X(p1.x), Y(p1.z)); g.stroke();
     g.setLineDash([]);
-    // flown part
-    g.strokeStyle = '#54d68a';
-    g.beginPath(); g.moveTo(X(p0.x), Y(p0.z)); g.lineTo(X(st.pos.x), Y(st.pos.z)); g.stroke();
+    // the track flown so far: yellow on the ground, green in the air, up to the aeroplane
+    const tr = fl.track || [];
+    g.lineWidth = 2.5;
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    for (let i = 1; i <= tr.length; i++) {
+      const a = tr[i - 1], b = i < tr.length ? tr[i] : { x: st.pos.x, z: st.pos.z, air: !st.onGround };
+      g.strokeStyle = a.air || b.air ? '#54d68a' : '#ffd54a';
+      g.beginPath(); g.moveTo(X(a.x), Y(a.z)); g.lineTo(X(b.x), Y(b.z)); g.stroke();
+    }
     // airports
     const dot = (p, label, colour, r) => {
       g.fillStyle = colour;
@@ -247,14 +254,14 @@ const HUD = {
     g.closePath(); g.fill();
     g.restore();
     // scale bar, in real nautical miles (the world is drawn compressed by WORLD.SCALE)
-    const pxPerNm = sc * NM * WORLD.SCALE;
-    const nm = [10, 25, 50, 100, 250, 500, 1000].find((v) => v * pxPerNm > 60) || 1000;
+    const pxPerUnit = sc * WORLD.SCALE * (Units.metric ? 1000 : NM);     // real km or nm
+    const len = [10, 25, 50, 100, 250, 500, 1000, 2000].find((v) => v * pxPerUnit > 60) || 2000;
     g.strokeStyle = '#8d99a6'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(20, h - 20); g.lineTo(20 + nm * pxPerNm, h - 20); g.stroke();
+    g.beginPath(); g.moveTo(20, h - 20); g.lineTo(20 + len * pxPerUnit, h - 20); g.stroke();
     g.fillStyle = '#8d99a6';
     g.font = '600 11px system-ui, sans-serif';
     g.textAlign = 'left';
-    g.fillText(nm + ' nm', 22, h - 26);
+    g.fillText(len + (Units.metric ? ' km' : ' nm'), 22, h - 26);
   }
 };
 

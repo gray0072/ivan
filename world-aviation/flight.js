@@ -77,6 +77,7 @@ const Flight = {
       surfaceWind: { dir: 240, speed: 6 }, altWind: { dir: 250, speed: 40 }
     };
     this.events = [];
+    this.track = [];                 // the flown track for the map: {x, z, air}
     this.landed = null;
     this.failure = null;
     this.elapsed = 0;
@@ -249,7 +250,24 @@ const Flight = {
       this.elapsed += dt;
       this.phaseTime += dt;
     }
+    this.recordTrack();
     return steps * dt;
+  },
+
+  // A point every 60 m on the ground and every 600 m in the air (or on a turn of 3°); when the
+  // track gets long, every other point is dropped so it never costs much to keep or to draw.
+  recordTrack() {
+    const st = this.st, tr = this.track;
+    const last = tr[tr.length - 1];
+    const air = !st.onGround;
+    if (last) {
+      const d = Math.hypot(st.pos.x - last.x, st.pos.z - last.z);
+      const turned = Math.abs(wrapDeg(this.headingDeg() - last.h)) > 3;
+      if (d < (air ? 600 : 60) && !(turned && d > (air ? 150 : 20)) && last.air === air) return;
+      if (d > 30000) tr.length = 0;           // a jump (the final-approach cheat): start again
+    }
+    tr.push({ x: st.pos.x, z: st.pos.z, air, h: this.headingDeg() });
+    if (tr.length > 2400) this.track = tr.filter((p, i) => i % 2 === 0 || i === tr.length - 1);
   },
 
   timeAccel() {

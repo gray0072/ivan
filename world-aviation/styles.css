@@ -273,7 +273,7 @@ kbd {
     right: calc(8px + env(safe-area-inset-right));
     top: calc(8px + env(safe-area-inset-top));
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 6px;
     pointer-events: auto;
   }
@@ -303,7 +303,8 @@ kbd {
 @media (pointer: coarse) and (max-height: 520px) {
   #strip { font-size: 10px; min-width: 150px; padding: 5px 8px; line-height: 1.4; }
   #strip .stripRow.big { font-size: 13px; }
-  #touchButtons button { min-width: 50px; min-height: 34px; padding: 5px 3px; font-size: 10px; }
+  #touchButtons button { min-width: 48px; min-height: 34px; padding: 5px 3px; font-size: 10px; }
+  #touchButtons { gap: 5px; }
   #taxiArrow { top: 24%; }
 }
 
@@ -368,6 +369,7 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .bigBtn.default, .btn.default { border-color: #ffd97a; }
 
 .settingsRow { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; }
+.btnRow + .settingsRow { margin-top: 22px; }
 .setGroup { display: flex; align-items: center; gap: 6px; }
 .setGroup span { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8296a8; margin-right: 4px; }
 .chip {
@@ -493,7 +495,8 @@ table.wx { width: 100%; font-size: 12px; border-collapse: collapse; }
 table.wx td { padding: 2px 0; border-bottom: 1px dashed rgba(140, 170, 200, 0.1); }
 table.wx td:first-child { color: #8296a8; }
 table.wx tr:has(td:nth-child(2):last-child) td { color: #ffd97a; }
-.form { display: grid; gap: 10px; }
+.form { display: grid; gap: 12px; margin: 4px 0 22px; }
+button, input, select { font-family: inherit; }
 .form label { display: grid; gap: 4px; font-size: 12px; color: #8296a8; }
 .form input, .form select {
   padding: 9px 10px;
@@ -571,3 +574,15 @@ table.money tr.total td { font-weight: 800; font-size: 16px; border-bottom: 0; p
   #strip { font-size: 10px; min-width: 150px; }
   #messages { font-size: 11px; }
 }
+
+/* ---------- exams ---------- */
+.quizTop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 4px; }
+.quizTop .quizHead { margin: 0; }
+.quizLang .chip { padding: 4px 10px; font-size: 12px; }
+.opt.right { border-color: #4ac47f; background: #183a28; color: #dff7e8; opacity: 1; }
+.opt.wrong { border-color: #e0574a; background: #3d1d1b; color: #ffd9d4; opacity: 1; }
+.opt.dim { opacity: 0.5; }
+.quizNote { margin: 12px 0 0; padding: 10px 12px; border-radius: 9px; background: #16202b; border: 1px solid #2c3b4a; color: #cfdbe6; font-size: 14px; line-height: 1.45; }
+.quizNote.good { border-color: #4ac47f; }
+.quizNote.bad { border-color: #e8b13a; }
+

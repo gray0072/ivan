@@ -59,7 +59,7 @@ const UI = {
   panel(html, cls) {
     this.screen.hidden = false;
     this.screen.dataset.view = '';
-    this.screen.innerHTML = '<div class="panel ' + (cls || '') + '">' + html + '</div>';
+    this.screen.innerHTML = '<div class="panel ' + (cls || '') + '">' + Units.text(html) + '</div>';
     this.screen.scrollTop = 0;
     this.wire();
     return this.screen.querySelector('.panel');
@@ -112,6 +112,7 @@ const UI = {
       '<div class="setGroup"><span>Graphics</span>' + qualBtns + '</div>' +
       '<div class="setGroup"><span>Sound</span>' +
       '<button class="chip' + (s.sound ? ' on' : '') + '" data-act="sound">' + (s.sound ? 'On' : 'Off') + '</button></div>' +
+      this.unitChips() +
       '</div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">How to fly</button>' +
@@ -507,47 +508,76 @@ const UI = {
       '<button class="btn" data-act="restart">Restart this flight</button>' +
       '<button class="btn" data-act="howto2">Controls</button>' +
       '<button class="btn" data-act="ops">Abandon, back to ops</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + '</div>' +
       '<p class="fineprint">Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.</p>', 'narrow');
   },
 
+  // aviation units (ft, kt, nm) or metric (m, km/h, km)
+  unitChips() {
+    const u = Career.settings.units === 'metric' ? 'metric' : 'aviation';
+    return '<div class="setGroup"><span>Units</span>' +
+      '<button class="chip' + (u === 'aviation' ? ' on' : '') + '" data-act="units" data-v="aviation" title="feet, knots, nautical miles">ft · kt · nm</button>' +
+      '<button class="chip' + (u === 'metric' ? ' on' : '') + '" data-act="units" data-v="metric" title="metres, km/h, kilometres">m · km/h · km</button></div>';
+  },
+
   // ---------- quiz ----------
+  // Four questions from the course's pool, the options shuffled; in English, Russian or Swedish.
+  // A hint can be shown before answering, and after each answer the explanation follows.
   showQuiz(courseId) {
     const course = COURSES.find((c) => c.id === courseId);
     const st = Career.courseState(course);
     if (!st.available || !Career.canAfford(course)) { this.showOps(); return; }
     const pool = (QUIZZES[courseId] || []).slice();
     const rng = makeRng(hashStr(courseId) ^ Date.now());
-    const questions = rng.shuffle(pool).slice(0, Math.min(4, pool.length));
-    this.quiz = { course, questions, index: 0, correct: 0 };
+    const questions = rng.shuffle(pool).slice(0, Math.min(4, pool.length))
+      .map((item) => ({ item, order: rng.shuffle([1, 2, 3]) }));
+    this.quiz = { course, questions, index: 0, correct: 0, hint: false, answer: null };
     this.renderQuiz();
   },
+  quizLang() { return QUIZ_TEXT[Career.settings.quizLang] ? Career.settings.quizLang : 'en'; },
   renderQuiz() {
     const q = this.quiz;
     if (!q) return;
+    const lang = this.quizLang(), T = QUIZ_TEXT[lang];
+    const langChips = '<div class="setGroup quizLang"><span>' + esc(T.lang) + '</span>' +
+      Object.keys(QUIZ_LANGS).map((l) => '<button class="chip' + (l === lang ? ' on' : '') + '" data-act="quizLang" data-v="' + l + '">' +
+        esc(QUIZ_LANGS[l]) + '</button>').join('') + '</div>';
     if (q.index >= q.questions.length) {
       const pass = q.correct >= 3 || q.questions.length === 0;
-      if (pass) Career.buyCourse(q.course);
+      if (pass && !q.paid) { Career.buyCourse(q.course); q.paid = true; Audio2.cue('good'); }
+      if (!pass && !q.told) { q.told = true; Audio2.cue('bad'); }
       this.panel('<h2>' + esc(q.course.name) + '</h2>' +
         '<p class="lead">' + (pass
-          ? 'You passed — ' + q.correct + ' of ' + q.questions.length + ' correct.' + (q.course.cost ? ' Course fee ' + fmtMoney(q.course.cost) + ' paid.' : '')
-          : 'Not this time — ' + q.correct + ' of ' + q.questions.length + ' correct. You need 3. Nothing is charged.') + '</p>' +
+          ? esc(T.passed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '.' +
+            (q.course.cost ? ' ' + esc(T.fee) + ' ' + fmtMoney(q.course.cost) + '.' : '')
+          : esc(T.failed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '. ' + esc(T.need)) + '</p>' +
         (pass ? '<p class="ok">' + esc(q.course.effect) + '</p>' : '') +
-        '<div class="btnRow">' + (pass ? '<button class="btn default" data-act="tab" data-v="training">Back to the training tree</button>'
-          : '<button class="btn default" data-act="course" data-v="' + q.course.id + '">Try again</button>' +
-          '<button class="btn" data-act="tab" data-v="training">Give up</button>') + '</div>', 'narrow');
-      Audio2.cue(pass ? 'good' : 'bad');
-      this.quiz = null;
+        '<div class="btnRow">' + (pass ? '<button class="btn default" data-act="quizdone">' + esc(T.back) + '</button>'
+          : '<button class="btn default" data-act="course" data-v="' + q.course.id + '">' + esc(T.again) + '</button>' +
+          '<button class="btn" data-act="quizdone">' + esc(T.giveUp) + '</button>') + '</div>', 'narrow');
       return;
     }
-    const item = q.questions[q.index];
-    const opts = item.o.map((o, i) =>
-      '<button class="opt" data-act="answer" data-v="' + i + '">' + esc(o) + '</button>').join('');
+    const { item, order } = q.questions[q.index];
+    const L = item[lang] || item.en;
+    const ans = q.answer;                               // null, or the option (1..3) picked
+    const opts = order.map((k) => {
+      let cls = 'opt';
+      if (ans !== null) cls += k === 1 ? ' right' : k === ans ? ' wrong' : ' dim';
+      return '<button class="' + cls + '" data-act="answer" data-v="' + k + '"' + (ans !== null ? ' disabled' : '') + '>' + esc(L[k]) + '</button>';
+    }).join('');
+    const after = ans === null ? ''
+      : '<div class="quizNote ' + (ans === 1 ? 'good' : 'bad') + '"><b>' + esc(ans === 1 ? T.right : T.wrong + ' ' + L[1]) + '</b><br>' + esc(L[4]) + '</div>';
     this.panel(
       '<h2>' + esc(q.course.name) + '</h2>' +
-      '<div class="quizHead">Question ' + (q.index + 1) + ' of ' + q.questions.length + ' · pass mark 3</div>' +
-      '<p class="qText">' + esc(item.q) + '</p>' + opts +
-      '<div class="btnRow"><button class="btn" data-act="quitquiz">Give up</button></div>', 'narrow');
+      '<div class="quizTop"><div class="quizHead">' + esc(T.question) + ' ' + (q.index + 1) + ' ' + esc(T.of) + ' ' + q.questions.length +
+      ' · ' + esc(T.pass) + ' 3</div>' + langChips + '</div>' +
+      '<p class="qText">' + esc(L[0]) + '</p>' + opts +
+      (ans === null && q.hint ? '<div class="quizNote">' + esc(L[4]) + '</div>' : '') + after +
+      '<div class="btnRow">' +
+      (ans === null
+        ? (q.hint ? '' : '<button class="btn" data-act="quizHint">💡 ' + esc(T.hint) + '</button>')
+        : '<button class="btn default" data-act="quizNext">' + esc(T.next) + '</button>') +
+      '<button class="btn" data-act="quitquiz">' + esc(T.giveUp) + '</button></div>', 'narrow');
   },
 
   // ---------- every button ----------
@@ -580,6 +610,11 @@ const UI = {
         Audio2.setMuted(!Career.settings.sound);
         this.showTitle();
         break;
+      case 'units':
+        Career.settings.units = v; Career.saveSettings();
+        Units.metric = v === 'metric';
+        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        break;
       case 'howto': this.backTo = 'title'; this.showHowTo(); break;
       case 'howto2': this.backTo = 'pause'; this.showHowTo(); break;
       case 'wipe': this.confirmWipe(); break;
@@ -596,13 +631,22 @@ const UI = {
       case 'course': this.showQuiz(v); break;
       case 'answer': {
         const q = this.quiz;
-        if (!q) break;
-        const item = q.questions[q.index];
-        if (parseInt(v, 10) === item.a) q.correct++;
-        q.index++;
+        if (!q || q.answer !== null) break;
+        q.answer = parseInt(v, 10);
+        if (q.answer === 1) q.correct++;
+        Audio2.cue(q.answer === 1 ? 'resolved' : 'bad');
         this.renderQuiz();
         break;
       }
+      case 'quizHint': if (this.quiz) { this.quiz.hint = true; this.renderQuiz(); } break;
+      case 'quizNext':
+        if (this.quiz) { this.quiz.index++; this.quiz.answer = null; this.quiz.hint = false; this.renderQuiz(); }
+        break;
+      case 'quizLang':
+        Career.settings.quizLang = v; Career.saveSettings();
+        this.renderQuiz();
+        break;
+      case 'quizdone': this.quiz = null; this.tab = 'training'; this.showOps(); break;
       case 'quitquiz': this.quiz = null; this.tab = 'training'; this.showOps(); break;
       case 'fly': {
         const c = Career.contractById(this.selContract);

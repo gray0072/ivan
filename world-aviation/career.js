@@ -13,14 +13,16 @@ const SETTINGS_KEY = 'worldaviation.settings.v1';
 
 const Career = {
   data: null,
-  settings: { difficulty: 'medium', quality: 'auto', sound: true, unit: 'kt' },
+  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', quizLang: 'en' },
 
   // ---------- persistence ----------
   loadSettings() {
     try {
       const raw = localStorage.getItem(SETTINGS_KEY);
       if (raw) Object.assign(this.settings, JSON.parse(raw));
+      delete this.settings.unit;
     } catch (err) { /* first run */ }
+    Units.metric = this.settings.units === 'metric';
     return this.settings;
   },
   saveSettings() {

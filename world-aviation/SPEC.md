@@ -57,7 +57,7 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
 5. **Debrief** — landing grade, touchdown data (vertical speed, speed vs Vref, distance from the threshold, centreline offset, bank and crab), the log, the invoice, the reputation change, the difficulty choice and "Next flight".
 6. **Failure** — crash (terrain, ditching, wing or nose strike, gear-up landing, gear collapse), runway excursion, landing back at the departure. Shows the cause and the cost; "Try again" (the same contract) or "Back to ops", with the difficulty choice.
 7. **Pause** (Esc) — resume (Esc / Space / Enter), restart the flight, controls, abandon to Ops, the difficulty choice.
-8. **Quiz** — a training course: 4–5 multiple-choice questions, pass mark 3/4.
+8. **Quiz** — a training course's exam (`data/quizzes.js`): four questions drawn from a pool of five, three options each (shuffled), pass mark 3/4. Written for a school pupil: plain words, one clearly right answer. A **Hint** button shows a clue before answering; after each answer the right option is marked and the same text explains it, then **Next**. The exam runs in English, Russian or Swedish (`QUIZ_TEXT`, chips on the exam screen, remembered as `settings.quizLang`); the rest of the game stays English.
 
 ## Flight model
 
@@ -203,13 +203,13 @@ Keyboard:
 - **Enter** — the next ground step: push back, start the engines, taxi, take-off clearance
 - **G** — landing gear (locked with weight on wheels and above Vlo) · **F** — flaps extend one notch (not above that notch's Vfe) · **V** — flaps retract · **B** — wheel brakes (hold) · **Space** — parking brake · **R** — spoiler · **K** — engine and wing anti-ice
 - **← / →** also steer the nosewheel on the ground (the rudder keys do too)
-- **Y** — autopilot · **N** — autopilot NAV mode · **, / .** — selected altitude down / up · **; / '** — selected heading (HDG mode)
+- **Y** — autopilot · **N** — back to the programme: NAV along the route and the altitude the flight plan wants now (the cruise level, or 2 500 ft above the arrival after the top of descent); engages the autopilot if it is off · **, / .** — selected altitude down / up · **; / '** — selected heading (HDG mode)
 - **T** — time acceleration (×1 … ×8, up to ×64 in the cruise; only above 500 ft with the autopilot in CMD) · **M** — moving map (north up) · **C** — the next view, **Shift+C** — the previous one (see Views) · **I** — instrument lights · **H** — controls card · **Esc** — pause
 - The keys are read by their place on the keyboard (`e.code`), not by the character they type, so the controls work in any layout (Russian, Swedish, …).
 - The cheats use **Alt + digit** so they cannot fire in normal play.
 - Overlay buttons (title, ops, briefing, debrief, pause) are pressed with Space / Enter, the arrow keys move between them.
 
-Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider, and the top right has twelve large buttons: Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot, time acceleration, view, map and spoiler. The QRH checklist buttons are tapped directly. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
+Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider, and the top right has fourteen buttons in five columns (three rows, clear of the throttle slider even on a 400 px tall landscape phone such as the Poco X6 Pro): Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot, time acceleration, view, map, spoiler, NAV (back to the programme) and Ice (anti-ice). The QRH checklist buttons are tapped directly. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
 
 ## Views
 
@@ -251,11 +251,12 @@ world-aviation/
 ├── SPEC.md
 ├── index.html              markup only, versioned <link>/<script> tags
 ├── styles.css
-├── constants.js            world, aircraft, difficulties, emergencies, courses, tuning
+├── constants.js            world, aircraft, difficulties, emergencies, courses, the views, tuning
 ├── data/
 │   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)
 │   ├── countries.js        each country's flag and its local "welcome"
-│   └── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
+│   ├── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
+│   └── quizzes.js          the course exams in English, Russian and Swedish, with hints
 ├── art/
 │   ├── flags.js            national flags (Canvas 2D), and small flag images for the screens
 │   ├── landmarks.js        the city symbols: about 100 landmark silhouettes
@@ -283,6 +284,18 @@ world-aviation/
 ├── manifest.webmanifest
 └── screenshot.png
 ```
+
+## Units
+
+`settings.units`: `aviation` (ft, kt, nm, fpm — the default) or `metric` (m, km/h, km, m/s), chosen on the title screen and in the pause. Everything inside the game stays in aviation units; `Units` in `utils.js` converts where things are shown: `Units.text` rewrites every "<number> ft|kt|nm|fpm" in prompts, messages, banners, checklists and the HTML screens; the instruments draw metric scales (airspeed in km/h, altimeter one turn = 1 000 m, VSI ±10 m/s). Metric values are rounded to sensible numbers: altitudes to 10 m (50 m above 1 000 m), speeds to 5 km/h, distances to 1 km (0.1 km under 10 km), vertical speed to 0.1 m/s.
+
+## The map
+
+**M** opens the moving map (north up): coastlines, airports, the planned route (dashed), and the **track actually flown** — `Flight.recordTrack` keeps a point every 60 m on the ground and every 600 m in the air (sooner on a turn), thins itself out past 2 400 points, and restarts after a jump (the final-approach cheat). Yellow on the ground, green in the air. The scale bar follows the units.
+
+## Instruments
+
+The airspeed dial starts at zero (so the needle never rests on a number it is not showing), with a number every 40–100 kt depending on the size, and the digital speed in a window; the VSI has its ticks and numbers on the arc the needle swings on (±2 000 fpm or ±10 m/s at ±150°), so it reads true everywhere; all needles are pointed, their tips exactly on the value.
 
 ## Quality presets
 

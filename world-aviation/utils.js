@@ -203,6 +203,41 @@ function fmtDist(m) {
 }
 function fmtAlt(m) { return Math.round(m / FT / 10) * 10; }
 
+// ---------- Units ----------
+// Everything inside the game is in aviation units (ft, kt, nm, fpm). With the metric setting the
+// texts are converted where they are shown (Units.text on prompts, messages and screens) and the
+// instruments draw metric scales. Values are rounded to sensible metric numbers.
+const Units = {
+  metric: false,
+  // numbers in metric units
+  m(ft) { const m = ft * FT; return Math.abs(m) < 1000 ? Math.round(m / 10) * 10 : Math.round(m / 50) * 50; },
+  kmh(kt) { const v = kt * 1.852; return Math.abs(v) < 50 ? Math.round(v) : Math.round(v / 5) * 5; },
+  km(nm) { const v = nm * 1.852; return Math.abs(v) < 10 ? Math.round(v * 10) / 10 : Math.round(v); },
+  ms(fpm) { return Math.round(fpm * FPM * 10) / 10; },
+  // a value with its unit, in the chosen system
+  alt(ft) { return this.metric ? fmtNum(this.m(ft)) + ' m' : fmtNum(Math.round(ft)) + ' ft'; },
+  spd(kt) { return this.metric ? this.kmh(kt) + ' km/h' : Math.round(kt) + ' kt'; },
+  dist(nm, dec) { return this.metric ? fmtNum(this.km(nm)) + ' km' : (dec ? nm.toFixed(dec) : fmtNum(Math.round(nm))) + ' nm'; },
+  vs(fpm) { return this.metric ? this.ms(fpm).toFixed(1) + ' m/s' : Math.round(fpm) + ' fpm'; },
+  // every "<number> ft|kt|nm|fpm" in a text, converted
+  text(s) {
+    if (!this.metric || !s) return s;
+    return String(s).replace(/(\d{1,3}(?:[ ,  ]\d{3})+|\d+(?:\.\d+)?)\s?(ft|kt|nm|fpm)\b/g, (all, num, unit) => {
+      const v = parseFloat(num.replace(/[ ,  ]/g, ''));
+      if (!isFinite(v)) return all;
+      if (unit === 'ft') return fmtNum(this.m(v)) + ' m';
+      if (unit === 'kt') return this.kmh(v) + ' km/h';
+      if (unit === 'nm') return fmtNum(this.km(v)) + ' km';
+      return this.ms(v).toFixed(1) + ' m/s';
+    });
+  }
+};
+// 12 500 with a thin space for the thousands, 3.5 as it is
+function fmtNum(v) {
+  if (Math.abs(v) < 10000 || v % 1) return String(v);
+  return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
 // ---------- Small DOM helpers ----------
 function el(id) { return document.getElementById(id); }
 function show(node, on) { if (node) node.hidden = !on; }

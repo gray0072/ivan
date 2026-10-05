@@ -232,7 +232,7 @@ const Game = {
     ctx.font = '700 13px system-ui, sans-serif';
     if (margin < 12) {
       ctx.fillStyle = margin < 4 ? '#ff4d3d' : '#ffb03a';
-      ctx.fillText(margin < 0 ? 'STALL' : 'SPEED  +' + Math.round(margin) + ' kt', w / 2, Cockpit.panelTop(h) - 60);
+      ctx.fillText(margin < 0 ? 'STALL' : 'SPEED  +' + Units.spd(margin), w / 2, Cockpit.panelTop(h) - 60);
     }
   },
 
@@ -403,6 +403,13 @@ const Game = {
     const lose = fl.st.pos.y / FT - (fl.arrival.elev / FT + 2500);
     return Math.max(SIM.DESCENT_START_NM, lose / 1000 * 3.2 + 12);
   },
+  // the altitude the flight plan wants now: the cruise level until the top of descent, then
+  // 2 500 ft above the arrival for the approach
+  programAltFt() {
+    const fl = this.flight, arr = fl.arrival;
+    if (fl.phase === 'DESCENT' || fl.phase === 'APPROACH') return Math.round((arr.elev + 2500 * FT) / FT / 100) * 100;
+    return this.cruiseAltFt();
+  },
   startDescent() {
     const fl = this.flight, arr = fl.arrival;
     fl.setPhase('DESCENT');
@@ -524,11 +531,16 @@ const Game = {
       case 'hdgUp': case 'hdgDown':
         if (fl.ap.nav) { fl.ap.nav = false; fl.ap.hdg = Math.round(fl.headingDeg()); }
         fl.ap.hdg = (fl.ap.hdg + (name === 'hdgUp' ? 5 : 355)) % 360;
-        fl.info('Heading ' + String(fl.ap.hdg).padStart(3, '0') + '° (HDG mode — N for NAV)');
+        fl.info('Heading ' + String(fl.ap.hdg).padStart(3, '0') + '° (HDG mode — N, or NAV on the touch screen, goes back to the programme)');
         break;
       case 'nav':
+        // back on the programme: NAV along the route and the altitude for this phase of the flight
+        if (st.onGround) { fl.info('NAV: the autopilot flies the route once you are in the air'); break; }
         fl.ap.nav = true; fl.locCaptured = false;
-        fl.info('Autopilot NAV — flying the route to ' + fl.arrival.id);
+        fl.ap.alt = this.programAltFt();
+        if (!fl.ap.on) { fl.ap.on = true; fl.ap.vsI = 0; }
+        fl.info('Autopilot back on the programme — NAV to ' + fl.arrival.id + ' · ALT ' + fmtAltFt(fl.ap.alt) + ' ft');
+        Audio2.cue('click');
         break;
       case 'throttlePreset': fl.setThrottle(arg); break;
       case 'starter': this.next(); break;

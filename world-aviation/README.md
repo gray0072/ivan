@@ -17,8 +17,8 @@ Open [index.html](index.html) in a browser — no build step, no server required
 1. **At the gate** press **Enter** — the tug pushes you back onto the apron. Start the engines (**Enter**) and watch N1 and EGT come up.
 2. **Taxi**: **Enter** releases the parking brake; a little power (**1**–**3**), steer with **← →**, brake with **B**, and follow the yellow arrow to the holding point.
 3. At the **holding point** set the take-off flaps (**F**) and ask for the clearance (**Enter**). Line up, full power (**9**), pull back (**↓**) at Vr, gear up (**G**).
-4. **Autopilot** (**Y**): in NAV mode it flies the route, joins the final approach and follows the ILS glideslope down to 200 ft. **T** speeds up time en route (×2 … ×8, up to ×64 in the cruise) — only with the autopilot on.
-5. **Approach**: flaps and gear down, land by hand from 200 ft at Vref, brake, and slow below 35 kt.
+4. **Autopilot** (**Y**): in NAV mode it flies the route, joins the final approach and follows the ILS glideslope down to 200 ft (60 m). **T** speeds up time en route (×2 … ×8, up to ×64 in the cruise) — only with the autopilot on.
+5. **Approach**: flaps and gear down, land by hand from 200 ft (60 m) at Vref, brake, and slow below 35 kt (65 km/h).
 6. **Taxi in** along the arrow, stop in the parking box at your gate and set the parking brake (**Space**). The engines shut down and the debrief shows your grade and the invoice.
 
 You can also start a contract **after pushback** — the tug has already taken you to the holding point and the client pays a ground-handling bonus.
@@ -29,10 +29,10 @@ You can also start a contract **after pushback** — the tug has already taken y
 - **Z X** or **− +** — throttle · **1**…**9** — 10 %…90 % · **0** — idle
 - **Enter** — the next step on the ground: push back, start, taxi, take-off clearance
 - **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **R** spoiler · **K** anti-ice
-- **Y** autopilot · **N** NAV mode · **, .** selected altitude · **; '** selected heading (HDG mode)
+- **Y** autopilot · **N** back to the programme (NAV along the route and the planned altitude, after you changed the heading or the altitude) · **, .** selected altitude · **; '** selected heading (HDG mode)
 - **T** time acceleration · **C / Shift+C** next / previous view: cockpit, chase, front looking back, wing, tail fin, landing gear, top down, tower / fly-by · **M** moving map · **I** instrument lights · **H** controls card · **Esc** pause
 
-**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground. The **slider on the right edge** is the throttle. The buttons at the top right are **Go** (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, time acceleration, view, map, spoiler and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
+**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground. The **slider on the right edge** is the throttle. The buttons at the top right are **Go** (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, time acceleration, view, map, spoiler, NAV (back to the programme), anti-ice (Ice) and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
 
 The controls work in any keyboard layout (the keys are read by their place on the keyboard).
 
@@ -54,7 +54,7 @@ Chosen on the title screen and in the pause and debrief dialogs, remembered betw
 
 Money is in Swedish kronor. Each contract pays for the distance and the load, plus bonuses for the landing grade, being on time and handled emergencies, minus the aircraft lease (per flight hour), the fuel burnt, repairs and penalties.
 
-- **Network** — the world is opened a region at a time: **Sweden** (where you start), **Scandinavia & the North Atlantic** (Norway's fjords, Finland, Denmark, Iceland, Greenland, Svalbard), **Europe**, **the Middle East & Africa**, **the Americas** and **Asia & the Pacific** — 114 real airports. Each region's traffic rights need reputation and flights, and cost money. From Arlanda the board offers the open regions; away from home it offers the flight back and onward legs, so the far side of the world is reached in legs of up to 4 500 nm.
+- **Network** — the world is opened a region at a time: **Sweden** (where you start), **Scandinavia & the North Atlantic** (Norway's fjords, Finland, Denmark, Iceland, Greenland, Svalbard), **Europe**, **the Middle East & Africa**, **the Americas** and **Asia & the Pacific** — 114 real airports. Each region's traffic rights need reputation and flights, and cost money. From Arlanda the board offers the open regions; away from home it offers the flight back and onward legs, so the far side of the world is reached in legs of up to 4 500 nm (8 300 km).
 - **Long haul** — on long legs the time acceleration goes up to ×64 in the cruise; Stockholm–New York takes about ten minutes of real time.
 
 - **Hangar** — ten aircraft, from the 19-seat Vikna 19 turboprop and the Frostwing bush plane to the **Boeing 737-800**, the **Airbus A320neo**, the **Airbus A350-900** and the four-engine **Boeing 747-8F** freighter, each with its own weight, speeds, range, runway needs and its own 3D model.
@@ -66,6 +66,16 @@ Money is in Swedish kronor. Each contract pays for the distance and the load, pl
 The clients are real airlines: SAS, Norwegian, Finnair and Widerøe at home, then Lufthansa, British Airways, KLM, Emirates, Qatar Airways, Delta, Qantas and about 75 more — passenger airlines, cargo carriers (DHL, FedEx, UPS, Cargolux, West Atlantic) and bush and air ambulance operators. Each has its logo on the contract board, and your aeroplane flies in the colours of the airline that hired it, titles on the fuselage and the emblem on the fin; the home carriers stand at the gates and have their logos on the hangars.
 
 Every airport is recognisable from the cockpit: its name in big letters on the terminal roof, a "Welcome" banner with the city's landmark (the Three Crowns of Stockholm, Big Ben, the Eiffel Tower, the Burj Khalifa, the Sydney Opera House…), the national flag and the city flag on the roof and over the tower — they stream with the wind, like the windsock. Runways have concrete ends with joints, tyre marks, shoulders and blast pads, edge and centreline lights, approach lights with a running flasher and a working PAPI (two white, two red: on the glide path); taxiways have shoulders and edge lines, the apron has concrete slabs and stand markings, and a road, a car park and a perimeter road surround the field.
+
+## Exams
+
+Every course ends in a short exam: four questions, three right to pass. They are written in plain words — a school pupil can work them out — with a **Hint** button and an explanation after every answer, and they can be taken in **English, Russian or Swedish** (switch on the exam screen; the choice is remembered).
+
+## Units and the map
+
+**Units** on the title screen (and in the pause): aviation units — feet, knots, nautical miles, fpm — or **metric**: metres, km/h, kilometres, m/s, rounded to sensible numbers. Prompts, messages, screens and the instruments all follow the setting.
+
+The **moving map** (**M**) draws the track you have actually flown — yellow on the ground, green in the air — over the planned route.
 
 ## Graphics
 

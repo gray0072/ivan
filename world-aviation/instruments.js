@@ -98,75 +98,75 @@ const Instruments = {
   },
 
   // ---------- airspeed ----------
+  // The dial starts at zero (so the needle never sits on a number it is not showing), in knots
+  // or km/h; the needle is pointed, its tip exactly on the speed.
   asi(ctx, x, y, r, fl) {
     const st = fl.st, ac = fl.ac;
-    const kts = st.ias / KTS;
-    const vs0 = fl.vsLanding();
-    const vs1 = fl.vsNow();
-    this.bezel(ctx, x, y, r, 'AIRSPEED', 'kt');
+    const k = Units.metric ? 1.852 : 1;
+    const v = st.ias / KTS * k;
+    this.bezel(ctx, x, y, r, 'AIRSPEED', Units.metric ? 'km/h' : 'kt');
     ctx.save();
     ctx.beginPath(); ctx.arc(x, y, r * 0.93, 0, TAU); ctx.clip();
     ctx.translate(x, y);
-    const a0 = 135 * DEG, a1 = 405 * DEG;
-    const vmax = Math.ceil(ac.vne * 1.1 / 50) * 50;
-    const ang = (v) => a0 + (a1 - a0) * clamp((v - 40) / (vmax - 40), 0, 1);
-    // coloured arcs: white flap range, green normal range, red line at Vne
+    const a0 = 120 * DEG, a1 = 420 * DEG;
+    const vmax = Units.metric ? Math.ceil(ac.vne * k * 1.1 / 100) * 100 : Math.ceil(ac.vne * 1.1 / 50) * 50;
+    const ang = (s) => a0 + (a1 - a0) * clamp(s / vmax, 0, 1);
+    // coloured arcs: white flap range, green normal range, amber caution, red line at Vne
     ctx.lineWidth = r * 0.07;
     ctx.strokeStyle = '#e6edf3';
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.84, ang(vs0), ang(ac.flaps[0].vfe)); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.84, ang(fl.vsLanding() * k), ang(ac.flaps[0].vfe * k)); ctx.stroke();
     ctx.strokeStyle = '#4ac47f';
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.76, ang(vs1), ang(ac.vne * 0.9)); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.76, ang(fl.vsNow() * k), ang(ac.vne * 0.9 * k)); ctx.stroke();
     ctx.strokeStyle = '#e8b13a';
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.76, ang(ac.vne * 0.9), ang(ac.vne)); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.76, ang(ac.vne * 0.9 * k), ang(ac.vne * k)); ctx.stroke();
     ctx.strokeStyle = '#e0574a';
     ctx.lineWidth = r * 0.12;
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.78, ang(ac.vne), ang(ac.vne + 4)); ctx.stroke();
-    // ticks
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.78, ang(ac.vne * k), ang(ac.vne * k + vmax * 0.008)); ctx.stroke();
+    // ticks every `minor`, a longer one every 2, a number every `label`
+    const minor = vmax <= 250 ? 10 : vmax <= 500 ? 20 : 50;
+    const label = [20, 40, 50, 100, 200, 250].find((l) => l % minor === 0 && vmax / l <= (r < 70 ? 5 : 7)) || 200;
     ctx.strokeStyle = '#c8d2dc';
     ctx.fillStyle = '#c8d2dc';
-    ctx.font = '600 ' + Math.round(r * 0.2) + 'px system-ui, sans-serif';
+    ctx.font = '600 ' + Math.max(8, Math.round(r * 0.15)) + 'px system-ui, sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    const stepV = vmax > 300 ? 20 : 10;
-    for (let v = 40; v <= vmax; v += stepV) {
-      const a = ang(v);
-      const major = v % (stepV * 2) === 0;
-      ctx.lineWidth = major ? r * 0.045 : r * 0.02;
+    for (let s = 0; s <= vmax; s += minor) {
+      const a = ang(s);
+      const major = s % (minor * 2) === 0;
+      ctx.lineWidth = major ? r * 0.035 : r * 0.018;
       ctx.beginPath();
       ctx.moveTo(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9);
-      ctx.lineTo(Math.cos(a) * r * (major ? 0.76 : 0.82), Math.sin(a) * r * (major ? 0.76 : 0.82));
+      ctx.lineTo(Math.cos(a) * r * (major ? 0.77 : 0.83), Math.sin(a) * r * (major ? 0.77 : 0.83));
       ctx.stroke();
-      if (major && r > 46 && v % (stepV * (vmax > 400 || r < 78 ? 4 : 2)) === 0) ctx.fillText(String(v), Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62);
+      if (s > 0 && s % label === 0 && r > 40) ctx.fillText(String(s), Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6);
     }
     // V-speed bugs
-    const bug = (v, color, label) => {
-      const a = ang(v);
+    const bug = (s, color) => {
       ctx.save();
-      ctx.rotate(a);
+      ctx.rotate(ang(s * k));
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.moveTo(r * 0.95, 0); ctx.lineTo(r * 0.72, -r * 0.07); ctx.lineTo(r * 0.72, r * 0.07);
       ctx.closePath(); ctx.fill();
       ctx.restore();
     };
-    bug(fl.vRef(), '#54d68a', 'Vref');
-    bug(fl.vr(), '#7fc4ff', 'Vr');
-    if (fl.ap.on && fl.ap.speed) bug(fl.ap.speed, '#e65cf0', 'SPD');
-    // needle
-    const an = ang(kts);
-    ctx.rotate(an);
-    ctx.fillStyle = '#f5f7fa';
-    ctx.beginPath();
-    ctx.moveTo(-r * 0.2, 0); ctx.lineTo(r * 0.86, -r * 0.035); ctx.lineTo(r * 0.86, r * 0.035);
-    ctx.closePath(); ctx.fill();
-    ctx.rotate(-an);
-    ctx.fillStyle = '#0e1116';
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.09, 0, TAU); ctx.fill();
-    ctx.restore();
-    // digital readout
+    bug(fl.vRef(), '#54d68a');
+    bug(fl.vr(), '#7fc4ff');
+    if (fl.ap.on && fl.ap.speed) bug(fl.ap.speed, '#e65cf0');
+    // digital window (under the needle)
+    ctx.fillStyle = '#05070a';
+    ctx.strokeStyle = '#4c5561';
+    ctx.lineWidth = 1;
+    roundRect(ctx, -r * 0.3, r * 0.24, r * 0.6, r * 0.25, 3);
+    ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#7de08a';
-    ctx.font = '700 ' + Math.round(r * 0.28) + 'px ui-monospace, monospace';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText(String(Math.round(kts)), x, y + r * 0.46);
+    ctx.font = '700 ' + Math.round(r * 0.18) + 'px ui-monospace, monospace';
+    ctx.fillText(String(Math.round(v)), 0, r * 0.37);
+    // the needle: pointed, the tip on the speed
+    ctx.rotate(ang(v));
+    pointer(ctx, r * 0.86, r * 0.045, r * 0.2, '#f5f7fa');
+    ctx.fillStyle = '#0e1116';
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.08, 0, TAU); ctx.fill();
+    ctx.restore();
   },
   vs0(fl) {
     const st = fl.st, ac = fl.ac;
@@ -245,8 +245,8 @@ const Instruments = {
   // ---------- altimeter ----------
   alt(ctx, x, y, r, fl) {
     const st = fl.st;
-    const ft = st.pos.y / FT;
-    this.bezel(ctx, x, y, r, 'ALT', 'ft');
+    const ft = Units.metric ? st.pos.y : st.pos.y / FT;          // the dial's unit: ft, or m
+    this.bezel(ctx, x, y, r, 'ALT', Units.metric ? 'm' : 'ft');
     ctx.save();
     ctx.translate(x, y);
     ctx.strokeStyle = '#c8d2dc';
@@ -264,7 +264,7 @@ const Instruments = {
       if (major && r > 40) ctx.fillText(String(i / 5), Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62);
     }
     // selected altitude bug on the rim
-    const sel = fl.ap.alt;
+    const sel = Units.metric ? fl.ap.alt * FT : fl.ap.alt;
     const sa = (sel % 1000) / 1000 * TAU - Math.PI / 2;
     ctx.fillStyle = '#e65cf0';
     ctx.beginPath();
@@ -280,6 +280,7 @@ const Instruments = {
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#7de08a';
     ctx.font = '700 ' + Math.round(r * 0.22) + 'px ui-monospace, monospace';
+    ctx.font = '700 ' + Math.round(r * 0.19) + 'px ui-monospace, monospace';
     ctx.fillText(String(Math.round(ft / 10) * 10), 0, r * 0.355);
     // needles: thousands (short, wide) and hundreds (long)
     const needle = (a, len, wid, col) => {
@@ -291,8 +292,9 @@ const Instruments = {
       ctx.closePath(); ctx.fill();
       ctx.restore();
     };
-    needle((ft % 10000) / 10000 * TAU, r * 0.5, r * 0.07, '#c8d2dc');
-    needle((ft % 1000) / 1000 * TAU, r * 0.84, r * 0.035, '#f5f7fa');
+    const pos = (v, turn) => (((v % turn) + turn) % turn) / turn * TAU;
+    needle(pos(ft, 10000), r * 0.5, r * 0.07, '#c8d2dc');
+    needle(pos(ft, 1000), r * 0.84, r * 0.035, '#f5f7fa');
     ctx.fillStyle = '#0e1116';
     ctx.beginPath(); ctx.arc(0, 0, r * 0.07, 0, TAU); ctx.fill();
     ctx.restore();
@@ -323,26 +325,42 @@ const Instruments = {
   },
 
   // ---------- VSI ----------
+  // Zero at 3 o'clock, climb up and descent down, the full scale at ±150°; the ticks and the
+  // numbers sit on the arc the needle swings on, so it reads true everywhere.
   vsi(ctx, x, y, r, fl) {
-    const vs = fl.st.vs / FPM;
-    this.bezel(ctx, x, y, r, 'V/S', 'fpm');
+    const metric = Units.metric;
+    const v = metric ? fl.st.vs : fl.st.vs / FPM;                 // m/s or fpm
+    const vmax = metric ? 10 : 2000;
+    const majors = metric ? [2, 4, 6, 8, 10] : [500, 1000, 1500, 2000];
+    const minor = metric ? 1 : 250;
+    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm ×1000');
     ctx.save();
     ctx.translate(x, y);
+    const ang = (s) => -clamp(s, -vmax, vmax) / vmax * 150 * DEG;
     ctx.strokeStyle = '#c8d2dc';
     ctx.fillStyle = '#c8d2dc';
-    ctx.lineWidth = r * 0.02;
-    ctx.font = '500 ' + Math.round(r * 0.16) + 'px system-ui, sans-serif';
-    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    for (const v of [-2000, -1000, 0, 1000, 2000]) {
-      const yy = -(clamp(v, -2000, 2000) / 2000) * r * 0.68;
-      ctx.beginPath(); ctx.moveTo(-r * 0.2, yy); ctx.lineTo(r * 0.18, yy); ctx.stroke();
-      ctx.fillText(String(Math.abs(v)), -r * 0.26, yy);
+    ctx.font = '600 ' + Math.max(7, Math.round(r * 0.17)) + 'px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (let s = -vmax; s <= vmax + 1e-6; s += minor) {
+      const a = ang(s);
+      const major = s === 0 || majors.indexOf(Math.abs(s)) >= 0;
+      ctx.lineWidth = major ? r * 0.04 : r * 0.02;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9);
+      ctx.lineTo(Math.cos(a) * r * (major ? 0.74 : 0.82), Math.sin(a) * r * (major ? 0.74 : 0.82));
+      ctx.stroke();
+      if (major && r > 30 && Math.abs(s) < vmax - 1e-6 || s === 0) {
+        const txt = s === 0 ? '0' : metric ? String(Math.abs(s)) : String(Math.abs(s) / 1000);
+        if (s !== 0 && Math.abs(s) % (metric ? 4 : 1000) !== 0 && r < 60) continue;
+        ctx.fillText(txt, Math.cos(a) * r * 0.56, Math.sin(a) * r * 0.56);
+      }
     }
-    ctx.rotate(-clamp(vs, -2000, 2000) / 2000 * 1.35);
-    ctx.fillStyle = '#f5f7fa';
-    ctx.beginPath();
-    ctx.moveTo(r * 0.1, 0); ctx.lineTo(r * 0.72, -r * 0.05); ctx.lineTo(r * 0.72, r * 0.05);
-    ctx.closePath(); ctx.fill();
+    ctx.fillText('UP', -r * 0.22, -r * 0.3);
+    ctx.fillText('DN', -r * 0.22, r * 0.3);
+    ctx.rotate(ang(v));
+    pointer(ctx, r * 0.84, r * 0.05, r * 0.12, '#f5f7fa');
+    ctx.fillStyle = '#0e1116';
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.08, 0, TAU); ctx.fill();
     ctx.restore();
   },
 
@@ -494,9 +512,9 @@ const Instruments = {
     line(7, 'ICE', fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
       fl.env.iceAmount > 0.2 ? '#ff7a5c' : fl.env.iceAmount > 0.02 ? '#e8b13a' : '#c8d2dc');
     if (h > 150) {
-      line(8, 'GS · SEL', Math.round(fl.groundSpeedKt()) + ' kt · ' + fmtAltFt(fl.ap.alt), '#dfe7ee');
+      line(8, 'GS · SEL', Units.spd(fl.groundSpeedKt()).replace(' ', '') + ' · ' + Units.alt(fl.ap.alt).replace(/ (ft|m)$/, ''), '#dfe7ee');
       line(9, 'NEXT', fl.targetName(), '#e65cf0');
-      line(10, 'DIST', fl.st.onGround ? '-' : fl.targetDistNm().toFixed(1) + ' nm', '#e65cf0');
+      line(10, 'DIST', fl.st.onGround ? '-' : Units.dist(fl.targetDistNm(), 1), '#e65cf0');
     }
     ctx.restore();
   },
@@ -552,4 +570,17 @@ function roundRect(ctx, x, y, w, h, r) {
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
+}
+
+// a needle along +x: pointed at `len` (its tip exactly on the value), `wid` wide at the hub,
+// with a short tail behind the centre
+function pointer(ctx, len, wid, tail, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-tail, -wid * 0.7);
+  ctx.lineTo(0, -wid);
+  ctx.lineTo(len, 0);
+  ctx.lineTo(0, wid);
+  ctx.lineTo(-tail, wid * 0.7);
+  ctx.closePath(); ctx.fill();
 }
