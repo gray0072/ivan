@@ -87,54 +87,138 @@ const Airport3D = {
     return rec;
   },
 
-  // ---------- yellow ground markings ----------
-  // The taxi centrelines, the stand lead-in lines and stop bars and the runway holding
-  // position are real thin strips on the ground, not painted into the ground texture
-  // (about 1-2 m a texel there, which turned a half-metre line into a wide yellow smear).
+  // ---------- ground markings ----------
+  // The fine markings are real thin strips on the ground, not painted into the ground
+  // texture (about 1-2 m a texel there, which turned a half-metre line into a wide smear):
+  //   yellow - taxi centrelines, the taxiway edge lines, the stand lead-in lines and stop
+  //            bars, the runway holding position
+  //   white  - the runway edge lines and centreline, the lines of the landside roads and the
+  //            apron service road, the zebra crossings
   buildMarkings(a, at) {
     const L = LAYOUT;
-    const pos = [];
-    const Y = 0.16;                       // above the ground plane (0.05) and the runway (0.12)
-    // a strip from (t1, a1) to (t2, a2), w metres wide; local x = across, z = -t
-    const strip = (t1, a1, t2, a2, w) => {
-      const dt = t2 - t1, da = a2 - a1, len = Math.hypot(dt, da);
-      if (len < 0.01) return;
-      const nt = -da / len * w / 2, na = dt / len * w / 2;
-      const p = [[t1 + nt, a1 + na], [t2 + nt, a2 + na], [t2 - nt, a2 - na], [t1 - nt, a1 - na]];
-      for (const k of [0, 1, 2, 0, 2, 3]) pos.push(p[k][1], Y, -p[k][0]);
-    };
-    // a small octagon where two centreline strips meet, so the turns have no gaps
-    const dot = (t, ac, r) => {
-      for (let i = 0; i < 8; i++) {
-        const a0 = i / 8 * TAU, a1 = (i + 1) / 8 * TAU;
-        pos.push(ac, Y, -t, ac + Math.sin(a1) * r, Y, -(t + Math.cos(a1) * r), ac + Math.sin(a0) * r, Y, -(t + Math.cos(a0) * r));
-      }
-    };
+    const Y = markBatch(0.16), W = markBatch(0.15);   // above the ground plane (0.05) and the runway (0.12)
+
     const CL = 0.45;                      // centreline width (wider than the real 0.15 m, to read from the cockpit)
     for (const s of a.twySegs) {
       const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
-      strip(p.t, p.across, q.t, q.across, CL);
-      dot(p.t, p.across, CL / 2); dot(q.t, q.across, CL / 2);
+      Y.strip(p.t, p.across, q.t, q.across, CL);
+      Y.dot(p.t, p.across, CL / 2); Y.dot(q.t, q.across, CL / 2);
     }
+    this.buildTaxiEdges(a, Y);
     // the stands: the lead-in line and the stop bar
     for (const gate of a.gates) {
-      strip(gate.t, L.APRON_LANE, gate.t, L.STAND + 12, 0.4);
-      strip(gate.t - 8, L.STAND + 4, gate.t + 8, L.STAND + 4, 1.0);
+      Y.strip(gate.t, L.APRON_LANE, gate.t, L.STAND + 12, 0.4);
+      Y.strip(gate.t - 8, L.STAND + 4, gate.t + 8, L.STAND + 4, 1.0);
     }
     // the runway holding position: two solid and two dashed lines across the connector
     const hold = a.nodes.hold;
     for (let k = 0; k < 4; k++) {
       const ac = hold.across - 6 + k * 2.2;
-      if (k < 2) strip(hold.t - 15, ac, hold.t + 15, ac, 0.4);
-      else for (let t = hold.t - 15; t < hold.t + 15; t += 2.7) strip(t, ac, Math.min(t + 1.5, hold.t + 15), ac, 0.4);
+      if (k < 2) Y.strip(hold.t - 15, ac, hold.t + 15, ac, 0.4);
+      else for (let t = hold.t - 15; t < hold.t + 15; t += 2.7) Y.strip(t, ac, Math.min(t + 1.5, hold.t + 15), ac, 0.4);
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    const nor = new Float32Array(pos.length);
-    for (let i = 1; i < nor.length; i += 3) nor[i] = 1;
-    geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-    const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color('#f2c832').convertSRGBToLinear(), side: THREE.DoubleSide });
-    at(new THREE.Mesh(geo, mat), 0, 0, 0);
+
+    // the runway: edge lines and the centreline
+    const h = a.half, e = RWY_HALF_WIDTH;
+    for (const side of [-1, 1]) W.strip(-h, side * (e - 0.65), h, side * (e - 0.65), 0.9);
+    for (let t = -h + 140; t < h - 140; t += 50) W.strip(t, 0, t + 30, 0, 0.9);
+    // the landside roads: edge lines, dashed lane lines and a solid line in the middle; they
+    // stop where the ground texture fades into the terrain
+    const box = groundBox(a), FADE = 150;
+    const r = a.apronRect, roadA = L.TERMINAL + 52;
+    for (const road of landsideRoads(a)) {
+      const pts = truncateInBox(road, box.tMin + FADE, box.tMax - FADE, box.aMin + FADE, box.aMax - FADE);
+      W.poly(pts, 0.3);
+      for (const d of [-9.3, 9.3]) W.poly(offsetPolyline(pts, d), 0.3);
+      for (const d of [-4.65, 4.65]) W.poly(offsetPolyline(pts, d), 0.22, 4, 6);
+    }
+    // the zebra crossings from the terminal to the car park
+    for (const tc of [r.t0 + (r.t1 - r.t0) * 0.3, r.t0 + (r.t1 - r.t0) * 0.7]) {
+      for (let k = -8; k <= 8; k += 1.6) W.strip(tc + k + 0.4, roadA - 9.6, tc + k + 0.4, roadA + 9.6, 0.8);
+    }
+    // the apron service road between the stands and the building
+    W.strip(r.t0, L.STAND + 18.2, r.t1, L.STAND + 18.2, 0.4);
+    W.strip(r.t0, L.STAND + 31.8, r.t1, L.STAND + 31.8, 0.4);
+    for (let t = r.t0; t + 4.5 <= r.t1; t += 9) W.strip(t, L.STAND + 25, t + 4.5, L.STAND + 25, 0.4);
+
+    for (const [b, color] of [[Y, '#f2c832'], [W, '#e9e8e2']]) {
+      if (!b.pos.length) continue;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
+      const nor = new Float32Array(b.pos.length);
+      for (let i = 1; i < nor.length; i += 3) nor[i] = 1;
+      geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(color).convertSRGBToLinear(), side: THREE.DoubleSide });
+      at(new THREE.Mesh(geo, mat), 0, 0, 0);
+    }
+  },
+
+  // The yellow taxiway edge line runs just inside the pavement edge round the outside of the
+  // whole network: both sides of every taxiway and the round ends of every segment, with
+  // whatever falls on other pavement (another taxiway, the runway, the apron, a hangar pad)
+  // cut away, so the lines stop exactly where the taxiways meet.
+  buildTaxiEdges(a, Y) {
+    const L = LAYOUT;
+    const EW = 0.45, IN = 0.55;           // line width, and how far inside the pavement edge its middle is
+    const segs = a.twySegs.filter((s) => s.kind === 'taxi' || s.kind === 'connector').map((s) => {
+      const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
+      return { t1: p.t, a1: p.across, t2: q.t, a2: q.across, r: s.w / 2 };
+    });
+    const r = a.apronRect;
+    const rects = [
+      [-a.half - RWY_BLAST, a.half + RWY_BLAST, -RWY_HALF_WIDTH - RWY_SHOULDER, RWY_HALF_WIDTH + RWY_SHOULDER],
+      [r.t0, r.t1, r.a0, r.a1]
+    ];
+    for (const b of a.buildings) {
+      if (b.kind !== 'hangar' && b.kind !== 'warehouse' && b.kind !== 'fuel') continue;
+      rects.push([b.t - b.along / 2 - 6, b.t + b.along / 2 + 6, L.TWY_OFFSET + 40, b.across - b.acrossSize / 2]);
+      rects.push([b.t - 12, b.t + 12, L.TWY_OFFSET, L.TWY_OFFSET + 40]);
+    }
+    const covered = (t, ac) => {
+      for (const q of rects) if (t > q[0] && t < q[1] && ac > q[2] && ac < q[3]) return true;
+      for (const s of segs) {
+        const dt = s.t2 - s.t1, da = s.a2 - s.a1, l2 = dt * dt + da * da;
+        const k = l2 ? clamp(((t - s.t1) * dt + (ac - s.a1) * da) / l2, 0, 1) : 0;
+        if (Math.hypot(t - s.t1 - dt * k, ac - s.a1 - da * k) < s.r - IN - 0.04) return true;
+      }
+      return false;
+    };
+    const mix = (p, q, k) => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k];
+    // the point between a kept point p and a cut one q where the other pavement starts
+    const edgeAt = (p, q) => {
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 10; i++) { const m = (lo + hi) / 2; const x = mix(p, q, m); if (covered(x[0], x[1])) hi = m; else lo = m; }
+      return mix(p, q, lo);
+    };
+    for (const s of segs) {
+      const dt = s.t2 - s.t1, da = s.a2 - s.a1, len = Math.hypot(dt, da);
+      if (len < 0.5) continue;
+      const off = s.r - IN, n = Math.ceil(len / 2);
+      for (const side of [-1, 1]) {
+        const nt = -da / len * off * side, na = dt / len * off * side;
+        const pts = [];
+        for (let i = 0; i <= n; i++) pts.push([s.t1 + dt * i / n + nt, s.a1 + da * i / n + na]);
+        const keep = pts.map((p) => !covered(p[0], p[1]));
+        for (let i = 0; i <= n; i++) {
+          if (!keep[i]) continue;
+          let j = i;
+          while (j < n && keep[j + 1]) j++;
+          const u = i > 0 ? edgeAt(pts[i], pts[i - 1]) : pts[i];
+          const v = j < n ? edgeAt(pts[j], pts[j + 1]) : pts[j];
+          Y.strip(u[0], u[1], v[0], v[1], EW);
+          i = j;
+        }
+      }
+      // the round ends: the outside of the corners where the taxiway turns
+      const N = 48;
+      for (const [ct, ca] of [[s.t1, s.a1], [s.t2, s.a2]]) {
+        for (let i = 0; i < N; i++) {
+          const a0 = i / N * TAU, a1 = (i + 1) / N * TAU, am = (a0 + a1) / 2;
+          if (covered(ct + Math.cos(am) * off, ca + Math.sin(am) * off)) continue;
+          Y.strip(ct + Math.cos(a0) * off, ca + Math.sin(a0) * off, ct + Math.cos(a1) * off, ca + Math.sin(a1) * off, EW);
+        }
+      }
+    }
   },
 
   // ---------- lights ----------
@@ -421,10 +505,97 @@ function cellBox(w, h, d) {
   return new THREE.BoxGeometry(w, h, d, n(w), n(h), n(d));
 }
 
+// ---------- marking strips ----------
+// A batch of flat strips at height y in the airport frame, filled in [t, across] metres
+// (local x = across, z = -t): Airport3D.buildMarkings turns each batch into one mesh
+function markBatch(y) {
+  const pos = [];
+  // a strip from (t1, a1) to (t2, a2), w metres wide
+  const strip = (t1, a1, t2, a2, w) => {
+    const dt = t2 - t1, da = a2 - a1, len = Math.hypot(dt, da);
+    if (len < 0.01) return;
+    const nt = -da / len * w / 2, na = dt / len * w / 2;
+    const p = [[t1 + nt, a1 + na], [t2 + nt, a2 + na], [t2 - nt, a2 - na], [t1 - nt, a1 - na]];
+    for (const k of [0, 1, 2, 0, 2, 3]) pos.push(p[k][1], y, -p[k][0]);
+  };
+  // a small octagon where two strips meet, so the turns have no gaps
+  const dot = (t, ac, r) => {
+    for (let i = 0; i < 8; i++) {
+      const a0 = i / 8 * TAU, a1 = (i + 1) / 8 * TAU;
+      pos.push(ac, y, -t, ac + Math.sin(a1) * r, y, -(t + Math.cos(a1) * r), ac + Math.sin(a0) * r, y, -(t + Math.cos(a0) * r));
+    }
+  };
+  // a line along [t, across] points, solid, or dashed with dash / gap metres
+  const poly = (pts, w, dash, gap) => {
+    if (!dash) {
+      for (let i = 0; i + 1 < pts.length; i++) strip(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], w);
+      for (let i = 1; i + 1 < pts.length; i++) dot(pts[i][0], pts[i][1], w / 2);
+      return;
+    }
+    let base = 0;                         // distance along the line at the start of segment i
+    let d0 = 0;                           // where the current dash starts
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const p = pts[i], q = pts[i + 1], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      const at = (d) => { const k = clamp((d - base) / (len || 1), 0, 1); return [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k]; };
+      while (d0 < base + len) {
+        const u = at(Math.max(d0, base)), v = at(d0 + dash);
+        strip(u[0], u[1], v[0], v[1], w);
+        if (d0 + dash > base + len) break;    // the dash goes on round the corner
+        d0 += dash + gap;
+      }
+      base += len;
+    }
+  };
+  return { pos, strip, dot, poly };
+}
+
+// a polyline of [t, across] points moved d metres to its side (the strip normal), mitred
+function offsetPolyline(pts, d) {
+  const nrm = (p, q) => { const dt = q[0] - p[0], da = q[1] - p[1], l = Math.hypot(dt, da) || 1; return [-da / l, dt / l]; };
+  return pts.map((p, i) => {
+    const n0 = i > 0 ? nrm(pts[i - 1], p) : nrm(p, pts[i + 1]);
+    const n1 = i + 1 < pts.length ? nrm(p, pts[i + 1]) : n0;
+    let mt = n0[0] + n1[0], ma = n0[1] + n1[1];
+    const ml = Math.hypot(mt, ma) || 1;
+    mt /= ml; ma /= ml;
+    const k = d / Math.max(0.3, mt * n0[0] + ma * n0[1]);
+    return [p[0] + mt * k, p[1] + ma * k];
+  });
+}
+
+// a polyline that starts inside the box, cut where it first leaves it
+function truncateInBox(pts, t0, t1, a0, a1) {
+  const inBox = (p) => p[0] >= t0 && p[0] <= t1 && p[1] >= a0 && p[1] <= a1;
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length; i++) {
+    if (inBox(pts[i])) { out.push(pts[i]); continue; }
+    const p = pts[i - 1], q = pts[i];
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 20; k++) { const m = (lo + hi) / 2; if (inBox([p[0] + (q[0] - p[0]) * m, p[1] + (q[1] - p[1]) * m])) lo = m; else hi = m; }
+    out.push([p[0] + (q[0] - p[0]) * lo, p[1] + (q[1] - p[1]) * lo]);
+    break;
+  }
+  return out;
+}
+
+// the area the ground texture covers, metres along (t) and across the runway
+function groundBox(a) {
+  return { tMin: -a.half - 700, tMax: a.half + 700, aMin: -500, aMax: LAYOUT.TERMINAL + 400 };
+}
+
+// the landside roads as [t, across] polylines: in front of the terminal and out to the
+// motorway, and the branch along the runway
+function landsideRoads(a) {
+  const r = a.apronRect, roadA = LAYOUT.TERMINAL + 52, box = groundBox(a);
+  return [
+    [[r.t0 - 220, roadA], [r.t1 + 120, roadA], [r.t1 + 260, roadA + 140], [r.t1 + 260, box.aMax + 20]],
+    [[r.t0 - 220, roadA], [box.tMin - 20, roadA + 60]]
+  ];
+}
+
 function makeGroundCanvas(a, id, ch) {
   const L = LAYOUT;
-  const tMin = -a.half - 700, tMax = a.half + 700;
-  const aMin = -500, aMax = L.TERMINAL + 400;
+  const { tMin, tMax, aMin, aMax } = groundBox(a);
   const A = tMax - tMin, B = aMax - aMin;
   const cw = Math.round(ch * B / A / 4) * 4;
   const cv = document.createElement('canvas');
@@ -465,20 +636,10 @@ function makeGroundCanvas(a, id, ch) {
   // the landside: a road in front of the terminal, the access road, the car park
   const r = a.apronRect;
   const roadA = L.TERMINAL + 52;
-  const access = line([[r.t0 - 220, roadA], [r.t1 + 120, roadA], [r.t1 + 260, roadA + 140], [r.t1 + 260, aMax + 20]]);
-  const access2 = line([[r.t0 - 220, roadA], [tMin - 20, roadA + 60]]);
-  for (const p of [access, access2]) {
-    asphalt(p, 20, '#4a4d50');
-    asphalt(p, 0.3, 'rgba(250,250,245,0.9)');
-    g.setLineDash([px(4), px(6)]);
-    g.save(); g.translate(px(4.6), 0); asphalt(p, 0.2, 'rgba(250,250,245,0.8)'); g.restore();
-    g.save(); g.translate(-px(4.6), 0); asphalt(p, 0.2, 'rgba(250,250,245,0.8)'); g.restore();
-    g.setLineDash([]);
-  }
-  // the kerb in front of the doors, and zebra crossings to the car park
+  // (their lines and the zebra crossings are strips of geometry: Airport3D.buildMarkings)
+  for (const road of landsideRoads(a)) asphalt(line(road), 20, '#4a4d50');
+  // the kerb in front of the doors
   g.fillStyle = '#b9b6ad'; rect(r.t0, r.t1, L.TERMINAL + 30, L.TERMINAL + 40);
-  g.fillStyle = 'rgba(245,245,240,0.9)';
-  for (const tc of [r.t0 + (r.t1 - r.t0) * 0.3, r.t0 + (r.t1 - r.t0) * 0.7]) for (let k = -8; k <= 8; k += 1.6) rect(tc + k, tc + k + 0.8, roadA - 10, roadA + 10);
   // the car park
   const c0 = roadA + 16, c1 = Math.min(aMax - 30, roadA + 130);
   g.fillStyle = '#56595c'; rect(r.t0 - 60, r.t1 - 10, c0, c1);
@@ -505,14 +666,12 @@ function makeGroundCanvas(a, id, ch) {
     rect(b.t - 12, b.t + 12, L.TWY_OFFSET, L.TWY_OFFSET + 40);
   }
 
-  // taxiways: shoulders, the yellow edge line (left showing only round the outside of the
-  // whole network), the pavement, then the centrelines
+  // taxiways: shoulders and the pavement (the edge lines and the centrelines are geometry)
   const segPaths = a.twySegs.filter((s) => s.kind === 'taxi' || s.kind === 'connector').map((s) => {
     const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
     return { path: line([[p.t, p.across], [q.t, q.across]]), w: s.w };
   });
   for (const s of segPaths) asphalt(s.path, s.w + 15, '#8a8574');
-  for (const s of segPaths) { g.strokeStyle = 'rgba(232,195,58,0.8)'; g.lineWidth = s.w * sx + 2; g.stroke(s.path); }
   for (const s of segPaths) asphalt(s.path, s.w, '#65696d');
   for (let i = 0; i < 1600; i++) {          // a little texture on the pavement
     g.fillStyle = rng.chance(0.5) ? 'rgba(40,42,45,0.12)' : 'rgba(150,150,150,0.08)';
@@ -531,11 +690,8 @@ function makeGroundCanvas(a, id, ch) {
   for (let ac = r.a0; ac < r.a1; ac += 7.5) rect(r.t0, r.t1, ac, ac + 0.25);
   // the service road between the stands and the building
   g.fillStyle = 'rgba(60,62,64,0.5)'; rect(r.t0, r.t1, L.STAND + 18, L.STAND + 32);
-  g.fillStyle = 'rgba(250,250,245,0.9)';
-  rect(r.t0, r.t1, L.STAND + 18, L.STAND + 18.4); rect(r.t0, r.t1, L.STAND + 31.6, L.STAND + 32);
-  for (let t = r.t0; t < r.t1; t += 9) rect(t, t + 4.5, L.STAND + 24.8, L.STAND + 25.2);
-  // (the yellow centrelines, the stand lead-in lines, stop bars and the holding position
-  // lines are thin strips of geometry: Airport3D.buildMarkings)
+  // (the service road lines, the yellow centrelines, the stand lead-in lines, stop bars and
+  // the holding position lines are thin strips of geometry: Airport3D.buildMarkings)
   // the stands: red safety box, an oil stain, the stand number
   for (const gate of a.gates) {
     g.fillStyle = 'rgba(30,30,28,0.2)';
@@ -623,11 +779,8 @@ function makeRunwayCanvas(a, ch) {
     g.beginPath(); g.moveTo(X(ac), Y(t)); g.lineTo(X(ac + rng.range(-0.6, 0.6)), Y(t + rng.range(30, 120))); g.stroke();
   }
 
-  // markings: white
+  // markings: white (the edge lines and the centreline are geometry: Airport3D.buildMarkings)
   g.fillStyle = '#ecebe6';
-  rect(-h, h, -e + 0.2, -e + 1.1);                    // edge lines
-  rect(-h, h, e - 1.1, e - 0.2);
-  for (let t = -h + 140; t < h - 140; t += 50) rect(t, t + 30, -0.45, 0.45);   // centreline
   for (const end of [-1, 1]) {
     const tTh = end * h;
     // threshold bar and piano keys

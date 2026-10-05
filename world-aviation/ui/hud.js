@@ -30,6 +30,9 @@ const HUD = {
     try { this.miniWanted = localStorage.getItem('worldAviation.miniMap') !== 'off'; } catch (e) { /* storage blocked */ }
     // on a touch screen a tap folds the prompt to its first line, and opens it again
     if (this.prompt) this.prompt.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.togglePrompt(); });
+    // and a tap anywhere on the big map closes it (it covers the buttons, the Map one too)
+    const mo = el('mapOverlay');
+    if (mo) mo.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); this.closeMap(); });
   },
 
   reset() {
@@ -207,7 +210,8 @@ const HUD = {
     if (!m) return;
     m.hidden = !this.mapOpen;
     const hint = m.querySelector('p');
-    if (hint) hint.innerHTML = 'Moving map &middot; north up &middot; <kbd>M</kbd> to ' + (this.bigScreen() ? 'hide' : 'close');
+    if (hint) hint.innerHTML = 'Moving map &middot; north up &middot; ' +
+      (Input.isCoarse ? 'tap anywhere to close' : '<kbd>M</kbd> to ' + (this.bigScreen() ? 'hide' : 'close'));
   },
   // the mini map is there when it helps and gone when it would be in the way: in the air,
   // not during a checklist, not on the last 1 000 ft of the approach
