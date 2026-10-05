@@ -610,8 +610,7 @@ table.money tr.total td { font-weight: 800; font-size: 16px; border-bottom: 0; p
 }
 
 /* ---------- exams ---------- */
-.quizTop { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 4px; }
-.quizTop .quizHead { margin: 0; }
+.trainTop { display: flex; justify-content: flex-end; margin-bottom: 8px; }
 .quizLang .chip { padding: 4px 10px; font-size: 12px; }
 .opt.right { border-color: #4ac47f; background: #183a28; color: #dff7e8; opacity: 1; }
 .opt.wrong { border-color: #e0574a; background: #3d1d1b; color: #ffd9d4; opacity: 1; }

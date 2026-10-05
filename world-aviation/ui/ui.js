@@ -323,34 +323,39 @@ const UI = {
       'a heavy jet needs runway, needs a rating, and costs more to lease.</div><div class="cards">' + cards + '</div>';
   },
 
+  // The course tree, in the exam language picked here (the exams then run in it too)
   trainingBody() {
-    const branches = [
-      { id: 'general', name: 'General' },
-      { id: 'pax', name: 'Passenger' },
-      { id: 'cargo', name: 'Cargo' },
-      { id: 'bush', name: 'Bush & SAR' }
-    ];
-    const columns = branches.map((b) => {
-      const courses = COURSES.filter((c) => c.branch === b.id).sort((x, y) => x.tier - y.tier);
+    const lang = this.quizLang(), T = QUIZ_TEXT[lang];
+    const langChips = '<div class="setGroup quizLang"><span>' + esc(T.lang) + '</span>' +
+      Object.keys(QUIZ_LANGS).map((l) => '<button class="chip' + (l === lang ? ' on' : '') + '" data-act="quizLang" data-v="' + l + '">' +
+        esc(QUIZ_LANGS[l]) + '</button>').join('') + '</div>';
+    const columns = ['general', 'pax', 'cargo', 'bush'].map((b) => {
+      const courses = COURSES.filter((c) => c.branch === b).sort((x, y) => x.tier - y.tier);
       const items = courses.map((c) => {
         const st = Career.courseState(c);
         const afford = Career.canAfford(c);
-        const status = st.bought ? '<span class="ok">Passed</span>'
-          : st.lockedByCourse ? '<span class="need">Locked</span>'
-            : st.lockedByRep ? '<span class="need">Needs ' + c.rep + ' ' + FACTIONS[b.id === 'general' ? 'pax' : b.id].short + ' reputation</span>'
-              : '<span class="price">' + (c.cost ? fmtMoney(c.cost) : 'free') + '</span>';
+        const tx = this.courseText(c, lang);
+        const status = st.bought ? '<span class="ok">' + esc(T.done) + '</span>'
+          : st.lockedByCourse ? '<span class="need">' + esc(T.locked) + '</span>'
+            : st.lockedByRep ? '<span class="need">' + esc(T.needRep.replace('{n}', c.rep).replace('{b}', T.branches[b === 'general' ? 'pax' : b])) + '</span>'
+              : '<span class="price">' + (c.cost ? fmtMoney(c.cost) : esc(T.free)) + '</span>';
         const can = st.available && afford;
         const btn = st.bought ? '' : '<button class="btn small' + (can ? ' default' : ' disabled') + '" data-act="course" data-v="' + c.id + '"' +
-          (can ? '' : ' disabled') + '>' + (st.available ? (afford ? 'Take the exam' : 'Not enough money') : 'Locked') + '</button>';
+          (can ? '' : ' disabled') + '>' + esc(st.available ? (afford ? T.take : T.noMoney) : T.locked) + '</button>';
         return '<div class="course' + (st.bought ? ' done' : '') + '">' +
-          '<div class="coHead"><b>' + esc(c.name) + '</b>' + status + '</div>' +
-          '<p>' + esc(c.blurb) + '</p>' +
-          '<p class="effect">' + esc(c.effect) + '</p>' + btn + '</div>';
+          '<div class="coHead"><b>' + esc(tx.name) + '</b>' + status + '</div>' +
+          '<p>' + esc(tx.blurb) + '</p>' +
+          '<p class="effect">' + esc(tx.effect) + '</p>' + btn + '</div>';
       }).join('');
-      return '<div class="branch"><h3>' + b.name + '</h3>' + items + '</div>';
+      return '<div class="branch"><h3>' + esc(T.branches[b]) + '</h3>' + items + '</div>';
     }).join('');
-    return '<div class="hint">Courses are the only way up. Each one ends in a short exam — 3 of 4 questions right and the course is yours; ' +
-      'the fee is paid when you pass. Reputation with each client opens the higher tiers.</div><div class="branches">' + columns + '</div>';
+    return '<div class="trainTop">' + langChips + '</div>' +
+      '<div class="hint">' + esc(T.intro) + '</div><div class="branches">' + columns + '</div>';
+  },
+  // a course's name, description and effect in the exam language (English from COURSES)
+  courseText(c, lang) {
+    const t = COURSE_TEXT[lang] && COURSE_TEXT[lang][c.id];
+    return t ? { name: t[0], blurb: t[1], effect: t[2] } : { name: c.name, blurb: c.blurb, effect: c.effect };
   },
 
   careerBody() {
@@ -522,7 +527,8 @@ const UI = {
   },
 
   // ---------- quiz ----------
-  // Four questions from the course's pool, the options shuffled; in English, Russian or Swedish.
+  // Four questions from the course's pool, the options shuffled; in the language picked on
+  // the Training tab (English, Russian or Swedish).
   // A hint can be shown before answering, and after each answer the explanation follows.
   showQuiz(courseId) {
     const course = COURSES.find((c) => c.id === courseId);
@@ -539,20 +545,17 @@ const UI = {
   renderQuiz() {
     const q = this.quiz;
     if (!q) return;
-    const lang = this.quizLang(), T = QUIZ_TEXT[lang];
-    const langChips = '<div class="setGroup quizLang"><span>' + esc(T.lang) + '</span>' +
-      Object.keys(QUIZ_LANGS).map((l) => '<button class="chip' + (l === lang ? ' on' : '') + '" data-act="quizLang" data-v="' + l + '">' +
-        esc(QUIZ_LANGS[l]) + '</button>').join('') + '</div>';
+    const lang = this.quizLang(), T = QUIZ_TEXT[lang], tx = this.courseText(q.course, lang);
     if (q.index >= q.questions.length) {
       const pass = q.correct >= 3 || q.questions.length === 0;
       if (pass && !q.paid) { Career.buyCourse(q.course); q.paid = true; Audio2.cue('good'); }
       if (!pass && !q.told) { q.told = true; Audio2.cue('bad'); }
-      this.panel('<h2>' + esc(q.course.name) + '</h2>' +
+      this.panel('<h2>' + esc(tx.name) + '</h2>' +
         '<p class="lead">' + (pass
           ? esc(T.passed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '.' +
             (q.course.cost ? ' ' + esc(T.fee) + ' ' + fmtMoney(q.course.cost) + '.' : '')
           : esc(T.failed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '. ' + esc(T.need)) + '</p>' +
-        (pass ? '<p class="ok">' + esc(q.course.effect) + '</p>' : '') +
+        (pass ? '<p class="ok">' + esc(tx.effect) + '</p>' : '') +
         '<div class="btnRow">' + (pass ? '<button class="btn default" data-act="quizdone">' + esc(T.back) + '</button>'
           : '<button class="btn default" data-act="course" data-v="' + q.course.id + '">' + esc(T.again) + '</button>' +
           '<button class="btn" data-act="quizdone">' + esc(T.giveUp) + '</button>') + '</div>', 'narrow');
@@ -569,9 +572,9 @@ const UI = {
     const after = ans === null ? ''
       : '<div class="quizNote ' + (ans === 1 ? 'good' : 'bad') + '"><b>' + esc(ans === 1 ? T.right : T.wrong + ' ' + L[1]) + '</b><br>' + esc(L[4]) + '</div>';
     this.panel(
-      '<h2>' + esc(q.course.name) + '</h2>' +
-      '<div class="quizTop"><div class="quizHead">' + esc(T.question) + ' ' + (q.index + 1) + ' ' + esc(T.of) + ' ' + q.questions.length +
-      ' · ' + esc(T.pass) + ' 3</div>' + langChips + '</div>' +
+      '<h2>' + esc(tx.name) + '</h2>' +
+      '<div class="quizHead">' + esc(T.question) + ' ' + (q.index + 1) + ' ' + esc(T.of) + ' ' + q.questions.length +
+      ' · ' + esc(T.pass) + ' 3</div>' +
       '<p class="qText">' + esc(L[0]) + '</p>' + opts +
       (ans === null && q.hint ? '<div class="quizNote">' + esc(L[4]) + '</div>' : '') + after +
       '<div class="btnRow">' +
@@ -645,7 +648,7 @@ const UI = {
         break;
       case 'quizLang':
         Career.settings.quizLang = v; Career.saveSettings();
-        this.renderQuiz();
+        this.showOps();
         break;
       case 'quizdone': this.quiz = null; this.tab = 'training'; this.showOps(); break;
       case 'quitquiz': this.quiz = null; this.tab = 'training'; this.showOps(); break;

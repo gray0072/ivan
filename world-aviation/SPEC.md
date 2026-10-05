@@ -49,7 +49,7 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
 2. **Ops (career hub)** — four tabs:
    - **Dispatch** — the contract board (3–5 offers), each with client, route, load, payout, requirements.
    - **Hangar** — the aircraft ladder, specs, lease/buy, "which aircraft is selected".
-   - **Training** — the technology tree (see below) with branches and tiers.
+   - **Training** — the technology tree (see below) with branches and tiers, and the exam language switch (English / Русский / Svenska): the tab itself — branch names, course names, descriptions, effects, statuses and buttons — is shown in the chosen language (`QUIZ_TEXT`, `COURSE_TEXT` in `data/quizzes.js`), and the exams then run in it.
    - **Career** — money, reputation with the three client factions, licences, block time, landings, records, cheat count.
 3. **Briefing** — route map, runway in use at both ends, distance, block time, payload, fuel plan, weather at departure/arrival/cruise altitude, NOTAM-style hints, and the two start options:
    - **At the gate** — full sequence: doors closed, push back by tug, engine start, taxi.
@@ -60,7 +60,7 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
 5. **Debrief** — landing grade, touchdown data (vertical speed, speed vs Vref, distance from the threshold, centreline offset, bank and crab), the log, the invoice, the reputation change, the difficulty choice and "Next flight".
 6. **Failure** — crash (terrain, ditching, wing or nose strike, gear-up landing, gear collapse), runway excursion, landing back at the departure. Shows the cause and the cost; "Try again" (the same contract) or "Back to ops", with the difficulty choice.
 7. **Pause** (Esc) — resume (Esc / Space / Enter), restart the flight, controls, abandon to Ops, the difficulty choice.
-8. **Quiz** — a training course's exam (`data/quizzes.js`): four questions drawn from a pool of five, three options each (shuffled), pass mark 3/4. Written for a school pupil: plain words, one clearly right answer. A **Hint** button shows a clue before answering; after each answer the right option is marked and the same text explains it, then **Next**. The exam runs in English, Russian or Swedish (`QUIZ_TEXT`, chips on the exam screen, remembered as `settings.quizLang`); the rest of the game stays English.
+8. **Quiz** — a training course's exam (`data/quizzes.js`): four questions drawn from a pool of five, three options each (shuffled), pass mark 3/4. Written for a school pupil: plain words, one clearly right answer. A **Hint** button shows a clue before answering; after each answer the right option is marked and the same text explains it, then **Next**. The exam runs straight away in the language picked on the Training tab (English, Russian or Swedish, remembered as `settings.quizLang`; there is no switch on the exam screen itself); the rest of the game stays English.
 
 ## Flight model
 
@@ -267,7 +267,7 @@ world-aviation/
 │   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)
 │   ├── countries.js        each country's flag and its local "welcome"
 │   ├── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
-│   ├── quizzes.js          the course exams in English, Russian and Swedish, with hints
+│   ├── quizzes.js          the course exams in English, Russian and Swedish, with hints; the Training tab's words and the course texts in Russian and Swedish
 │   └── geodata.js          the world's coastlines, inland water and mountain ranges ([lon, lat])
 ├── art/
 │   ├── flags.js            national flags (Canvas 2D), and small flag images for the screens

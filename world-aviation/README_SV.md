@@ -68,7 +68,7 @@ Varje flygplats känns igen från cockpit: namnet med stora bokstäver på termi
 
 ## Prov
 
-Varje kurs slutar med ett kort prov: fyra frågor, tre rätt för godkänt. De är skrivna med enkla ord — en skolelev kan klura ut dem — med en knapp för **Ledtråd** och en förklaring efter varje svar, och de kan göras på **engelska, ryska eller svenska** (välj på provskärmen; valet sparas).
+Varje kurs slutar med ett kort prov: fyra frågor, tre rätt för godkänt. De är skrivna med enkla ord — en skolelev kan klura ut dem — med en knapp för **Ledtråd** och en förklaring efter varje svar, och de kan göras på **engelska, ryska eller svenska** (välj språk på fliken Training — kursernas namn och beskrivningar byter också språk, proven går sedan direkt på det, och valet sparas).
 
 ## Enheter och kartan
 

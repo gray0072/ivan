@@ -69,7 +69,7 @@ Every airport is recognisable from the cockpit: its name in big letters on the t
 
 ## Exams
 
-Every course ends in a short exam: four questions, three right to pass. They are written in plain words — a school pupil can work them out — with a **Hint** button and an explanation after every answer, and they can be taken in **English, Russian or Swedish** (switch on the exam screen; the choice is remembered).
+Every course ends in a short exam: four questions, three right to pass. They are written in plain words — a school pupil can work them out — with a **Hint** button and an explanation after every answer, and they can be taken in **English, Russian or Swedish** (pick the language on the Training tab — the course names and descriptions switch to it too, the exams then start in it, and the choice is remembered).
 
 ## Units and the map
 

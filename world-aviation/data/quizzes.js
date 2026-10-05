@@ -8,21 +8,109 @@
 // (also shown as the explanation after answering).
 // Each language entry is [question, RIGHT ANSWER, wrong, wrong, hint];
 // the options are shuffled on screen. English, Russian and Swedish.
+// The language is picked on the Training tab, which is shown in it too
+// (the course names, descriptions and effects: COURSE_TEXT), and the
+// exam then runs in it.
 // ============================================================
 
 const QUIZ_LANGS = { en: 'English', ru: 'Русский', sv: 'Svenska' };
 
-// the exam screen's own words
+// the Training tab's and the exam screen's own words; {n} = a number, {b} = a branch name
 const QUIZ_TEXT = {
   en: { question: 'Question', of: 'of', pass: 'pass mark', hint: 'Hint', next: 'Next', right: 'Right!', wrong: 'Not quite — the answer is:',
     passed: 'You passed', failed: 'Not this time', correct: 'correct', need: 'You need 3. Nothing is charged.', fee: 'Course fee paid:',
-    back: 'Back to the training tree', again: 'Try again', giveUp: 'Give up', lang: 'Language' },
+    back: 'Back to the training tree', again: 'Try again', giveUp: 'Give up', lang: 'Exam language',
+    intro: 'Courses are the only way up. Each one ends in a short exam — 3 of 4 questions right and the course is yours; ' +
+      'the fee is paid when you pass. Reputation with each client opens the higher tiers.',
+    branches: { general: 'General', pax: 'Passenger', cargo: 'Cargo', bush: 'Bush & SAR' },
+    done: 'Passed', locked: 'Locked', needRep: 'Needs {n} {b} reputation', free: 'free', take: 'Take the exam', noMoney: 'Not enough money' },
   ru: { question: 'Вопрос', of: 'из', pass: 'для зачёта', hint: 'Подсказка', next: 'Дальше', right: 'Верно!', wrong: 'Не совсем — правильный ответ:',
     passed: 'Экзамен сдан', failed: 'Пока не сдан', correct: 'верно', need: 'Нужно 3. Деньги не списаны.', fee: 'Оплачен курс:',
-    back: 'К дереву обучения', again: 'Ещё раз', giveUp: 'Сдаться', lang: 'Язык' },
+    back: 'К дереву обучения', again: 'Ещё раз', giveUp: 'Сдаться', lang: 'Язык экзаменов',
+    intro: 'Расти можно только через курсы. Каждый заканчивается коротким экзаменом: 3 верных ответа из 4 — и курс ваш; ' +
+      'плата списывается, только когда экзамен сдан. Репутация у заказчиков открывает следующие ступени.',
+    branches: { general: 'Общие', pax: 'Пассажиры', cargo: 'Грузы', bush: 'Малая авиация и ПСО' },
+    done: 'Сдан', locked: 'Закрыт', needRep: 'Нужна репутация {n} · {b}', free: 'бесплатно', take: 'Сдать экзамен', noMoney: 'Не хватает денег' },
   sv: { question: 'Fråga', of: 'av', pass: 'för godkänt', hint: 'Ledtråd', next: 'Nästa', right: 'Rätt!', wrong: 'Inte riktigt — rätt svar är:',
     passed: 'Godkänd', failed: 'Inte den här gången', correct: 'rätt', need: 'Du behöver 3. Inget dras.', fee: 'Kursavgift betald:',
-    back: 'Tillbaka till utbildningen', again: 'Försök igen', giveUp: 'Ge upp', lang: 'Språk' }
+    back: 'Tillbaka till utbildningen', again: 'Försök igen', giveUp: 'Ge upp', lang: 'Provets språk',
+    intro: 'Kurserna är enda vägen uppåt. Varje kurs slutar med ett kort prov — 3 av 4 rätt och kursen är din; ' +
+      'avgiften dras först när du klarar provet. Rykte hos kunderna öppnar de högre nivåerna.',
+    branches: { general: 'Allmänt', pax: 'Passagerare', cargo: 'Frakt', bush: 'Bush och SAR' },
+    done: 'Godkänd', locked: 'Låst', needRep: 'Kräver {n} i rykte · {b}', free: 'gratis', take: 'Gör provet', noMoney: 'För lite pengar' }
+};
+
+// the courses (COURSES in constants.js, which holds the English) in Russian and Swedish:
+// [name, description, what it gives]
+const COURSE_TEXT = {
+  ru: {
+    gen1: ['Наземная подготовка', 'Основы теории, управление самолётом и стандартные процедуры небольшой авиакомпании. Отсюда начинают все.',
+      'Фундамент вашей карьеры.'],
+    gen2: ['Авиационная метеорология', 'METAR, TAF, сдвиг ветра и обледенение. Чем точнее прогноз, тем точнее расчёт топлива.',
+      'Полный прогноз в обоих аэропортах, +10% запаса топлива при планировании, на 20% меньше обледенения.'],
+    gen3: ['Системы самолёта', 'Гидравлика, генераторы, наддув и QRH — и как работать по нему, когда время поджимает.',
+      'Подсказки в чек-листах показывают следующий шаг, +40% времени на реакцию в любой аварийной ситуации.'],
+    gen4: ['CRM и безопасность в салоне', 'Управление ресурсами экипажа, брифинг бортпроводников, медицинская помощь и трудные пассажиры.',
+      '+60% времени на реакцию в аварийных ситуациях, медицинские случаи оплачиваются, +5 репутации за рейс.'],
+    pax1: ['Региональные реактивные', 'Пилотирование RJ-84: большая тяга на отрыве, более высокая скорость сваливания, набор высоты с наддувом.',
+      'Открывает Fjordliner RJ-84 и контракты на региональных реактивных.'],
+    pax2: ['Полёты по приборам (IFR)', 'Заход, когда полосы не видно: ILS, NDB, заход с круга и чисто выполненный уход на второй круг.',
+      'Открывает Boeing 737-800 и контракты при плохой видимости и в облаках.'],
+    pax3: ['Горы и сложная погода', 'Берген под дождём, Тромсё в январе: рельеф, сдвиг ветра, нисходящие потоки и крутые заходы.',
+      'Открывает Airbus A320neo, горные и арктические пассажирские маршруты, +15% к оплате контрактов в сложную погоду.'],
+    pax4: ['Широкофюзеляжные самолёты', 'Двести тонн самолёта: длинные чек-листы, тяжёлые посадки, высокая Vref и ограничения в жару и высокогорье.',
+      'Открывает Nordjet 320, Airbus A350-900 и дальнемагистральные контракты.'],
+    cargo1: ['Опасные грузы', 'Легковоспламеняющиеся жидкости класса 3, литиевые батареи и все документы к ним.',
+      'Открывает контракты на опасные грузы (тариф +80%).'],
+    cargo2: ['Загрузка и центровка', 'Загрузка, балансировка, задний предел центровки и что делает плохо загруженный грузовой самолёт на отрыве.',
+      'Открывает Skarv F-27P, +15% допуска по загрузке, со смещением груза справляться легче.'],
+    cargo3: ['Арктическое наземное обслуживание', 'Противообледенительная обработка, грузовые отсеки на морозе, снежные валы и гравийные перроны.',
+      'Открывает контракты на ледовые аэродромы и рефрижераторные грузы, лёд нарастает на 35% медленнее.'],
+    cargo4: ['Тяжёлые грузовые самолёты', 'Загрузка главной палубы, пятьдесят тонн груза и самое плотное расписание на севере.',
+      'Открывает Bulklord 600F, Boeing 747-8F и сверхдальние контракты.'],
+    bush1: ['Короткие полосы', 'Взлёт и посадка на половине дистанции — на траве, гравии и песке.',
+      'Открывает Frostwing S-12, грунтовые полосы и контракты STOL.'],
+    bush2: ['Обледенение и выживание зимой', 'Обледенение карбюратора и планера, противообледенительная система двигателя и выживание в зимней кабине.',
+      'Лёд нарастает на 45% медленнее, при обледенении на 30% больше времени, зимние контракты платят +20%.'],
+    bush3: ['Санавиация и поиск и спасение', 'Поисково-спасательные работы, санитарные рейсы и как успеть, пока погода не закрыла полосу.',
+      'Открывает срочные спасательные и санитарные контракты (короткие сроки, тариф до 3x).'],
+    bush4: ['Гидросамолёты и удалённые базы', 'Поплавки, лыжи и полосы без топлива, без огней и без второй попытки.',
+      'Открывает ледовые аэродромы и удалённые полосы для всех типов самолётов.']
+  },
+  sv: {
+    gen1: ['Grundutbildning', 'Grundläggande teori, flygplanshantering och standardrutinerna hos ett litet flygbolag. Alla börjar här.',
+      'Grunden för din karriär.'],
+    gen2: ['Flygmeteorologi', 'METAR, TAF, vindskjuvning och isbildning. Bättre prognoser ger bättre bränsleplaner.',
+      'Visar hela prognosen i båda ändar, +10 % bränslemarginal i planeringen, 20 % mindre isbildning.'],
+    gen3: ['Avancerade system', 'Hydraulik, generatorer, kabintryck och QRH — och hur man arbetar efter den under press.',
+      'Checklisttipsen visar nästa steg, +40 % reaktionstid vid varje nödläge.'],
+    gen4: ['CRM och kabinsäkerhet', 'Samarbete i besättningen, genomgång med kabinpersonalen, sjukvårdsinsatser och besvärliga passagerare.',
+      '+60 % reaktionstid vid nödlägen, sjukdomsfall ombord ger betalt, +5 i rykte per flygning.'],
+    pax1: ['Regionaljet', 'Jetflygning med RJ-84: hög dragkraft vid rotation, högre överstegringsfart, stigning med tryckkabin.',
+      'Låser upp Fjordliner RJ-84 och uppdrag med regionaljet.'],
+    pax2: ['Instrumentbehörighet (IFR)', 'Inflygning när du inte ser banan: ILS, NDB, cirkling och en väl flugen avbruten inflygning.',
+      'Låser upp Boeing 737-800 och uppdrag i dålig sikt och i moln.'],
+    pax3: ['Fjäll och svårt väder', 'Bergen i regn, Tromsø i januari: terräng, vindskjuvning, fallvindar och branta inflygningar.',
+      'Låser upp Airbus A320neo, fjäll- och arktiska passagerarlinjer, +15 % betalt för uppdrag i svårt väder.'],
+    pax4: ['Widebody-procedurer', 'Tvåhundra ton flygplan: längre checklistor, tyngre landningar, högre Vref och gränser vid värme och hög höjd.',
+      'Låser upp Nordjet 320, Airbus A350-900 och långdistansuppdragen.'],
+    cargo1: ['Farligt gods', 'Brandfarliga vätskor i klass 3, litiumbatterier och pappersarbetet som hör till.',
+      'Låser upp uppdrag med farligt gods (+80 % taxa).'],
+    cargo2: ['Vikt och balans', 'Lastning, trim, bakre tyngdpunktsgräns och vad ett fellastat fraktplan gör vid rotation.',
+      'Låser upp Skarv F-27P, +15 % lasttolerans, lastförskjutning hanteras bättre.'],
+    cargo3: ['Arktisk markhantering', 'Avisning, lastrum i kyla, snövallar och grusplattor.',
+      'Låser upp isfälts- och kylfraktsuppdrag, isen byggs på 35 % långsammare.'],
+    cargo4: ['Tung frakt', 'Lastning på huvuddäck, femtio ton frakt och de tuffaste tidtabellerna i norr.',
+      'Låser upp Bulklord 600F, Boeing 747-8F och de ultralånga uppdragen.'],
+    bush1: ['Kortfältsflygning', 'Start och landning på halva sträckan — på gräs, grus och sand.',
+      'Låser upp Frostwing S-12, gräsbanor och STOL-uppdrag.'],
+    bush2: ['Avisning och vinteröverlevnad', 'Is i förgasaren och på skrovet, motorns avisning och överlevnad i en kall vinterkabin.',
+      'Isen byggs på 45 % långsammare, 30 % mer tid vid isbildning, vinteruppdrag ger +20 %.'],
+    bush3: ['Ambulansflyg och SAR', 'Sök och räddning, ambulansflygningar och att hinna fram innan vädret stänger banan.',
+      'Låser upp brådskande SAR- och ambulansuppdrag (korta tidsfrister, upp till 3x taxan).'],
+    bush4: ['Sjöflyg och avlägsna baser', 'Flottörer, skidor och banor utan bränsle, utan ljus och utan andra försök.',
+      'Låser upp isfält och avlägsna banor för alla flygplanstyper.']
+  }
 };
 
 const QUIZZES = {
