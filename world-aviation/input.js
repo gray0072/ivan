@@ -29,7 +29,7 @@ const Input = {
   },
 
   keyDown(e) {
-    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const k = keyName(e);
     const code = e.code;
     // cheats need Alt so they cannot fire in normal play (Digit codes: Alt+digit may type a symbol)
     if (e.altKey && /^Digit[0-9]$/.test(code)) {
@@ -50,7 +50,7 @@ const Input = {
       case 'y': this.fire('ap'); break;
       case 'n': this.fire('nav'); break;
       case 't': this.fire('timeAccel'); break;
-      case 'c': this.fire('camera'); break;
+      case 'c': this.fire('camera', e.shiftKey ? -1 : 1); break;
       case 'm': this.fire('map'); break;
       case 'i': this.fire('brightness'); break;
       case 'r': this.fire('spoiler'); break;
@@ -69,7 +69,7 @@ const Input = {
     }
   },
   keyUp(e) {
-    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const k = keyName(e);
     this.keys[k] = false;
     // Shift changes e.key between keydown and keyup ('=' / '+'), so clear both
     if (k === '+' || k === '=') { this.keys['+'] = false; this.keys['='] = false; }
@@ -211,6 +211,21 @@ const Input = {
   touchThrottle: null,
   touchBrake: false
 };
+
+// The key by its place on the keyboard (e.code), not by the character it types, so the
+// controls work in any layout (Russian, Swedish, …): KeyW is 'w' whatever the letter on it.
+const CODE_KEYS = {
+  Comma: ',', Period: '.', Semicolon: ';', Quote: "'", Minus: '-', Equal: '=', Space: ' ',
+  NumpadAdd: '+', NumpadSubtract: '-', NumpadEnter: 'Enter'
+};
+function keyName(e) {
+  const c = e.code || '';
+  if (/^Key[A-Z]$/.test(c)) return c.slice(3).toLowerCase();
+  if (/^Digit[0-9]$/.test(c)) return c.slice(5);
+  if (/^Numpad[0-9]$/.test(c)) return c.slice(6);
+  if (CODE_KEYS[c]) return CODE_KEYS[c];
+  return e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+}
 
 const HANDLED = {
   ArrowUp: 1, ArrowDown: 1, ArrowLeft: 1, ArrowRight: 1, Space: 1, Enter: 1, Escape: 1,

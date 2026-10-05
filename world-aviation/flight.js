@@ -581,7 +581,7 @@ const Flight = {
       };
     }
     this.info('TOUCHDOWN ' + Math.round(Math.max(0, fpm)) + ' fpm');
-    Audio2.cue('touchdown');
+    Audio2.cue('touchdown', Math.max(0, fpm));
   },
 
   nearestApt() {
@@ -736,7 +736,7 @@ const Flight = {
   // ALT hold or G/S vertically, and an autothrottle on the speed.
   updateAutopilot(dt) {
     const st = this.st, ap = this.ap, ac = this.ac;
-    if (!ap.on) return;
+    if (!ap.on) { ap.lastIas = undefined; return; }
     if (st.onGround) { ap.on = false; return; }
     const ias = st.ias / KTS;
 
@@ -797,7 +797,14 @@ const Flight = {
     target = Math.min(target, this.flapVfeNow() - 8, st.gear > 0.05 ? ac.vlo : 999);
     target = Math.max(target, vs * 1.35, this.phase === 'APPROACH' ? this.vRef() : 0);
     ap.speed = target;
-    st.throttle = clamp(st.throttle + clamp((target - ias) * 0.012, -0.3, 0.3) * dt * 4 - (e < -4 ? 0.1 * dt : 0), 0, 1);
+    // A smooth loop: the speed error moves the thrust levers, the speed trend (smoothed) damps
+    // them, so they lead the slow engines instead of hunting between idle and full; the levers
+    // move at most 12 % a second, like a real autothrottle.
+    if (ap.lastIas === undefined) { ap.lastIas = ias; ap.accF = 0; }
+    ap.accF += ((ias - ap.lastIas) / dt - ap.accF) * Math.min(1, dt / 1.5);
+    ap.lastIas = ias;
+    const want = (target - ias) * 0.03 - ap.accF * 0.35 - (e < -4 ? 0.3 : 0);
+    st.throttle = clamp(st.throttle + clamp(want, -1, 1) * 0.12 * dt, 0, 1);
     if (st.stallWarn) { ap.on = false; this.warn('AP', 'Autopilot disconnect — stall warning'); }
   }
 };

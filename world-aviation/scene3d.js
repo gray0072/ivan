@@ -411,26 +411,92 @@ const Scene3D = {
     this.w = w; this.h = h;
   },
 
+  // ---------- the camera (VIEW.MODES) ----------
+  // Most views ride with the aeroplane, in its own axes (x right, y up, z forward) scaled to
+  // its size; the top-down view keeps the nose up, and the tower view stands on the
+  // nearest tower (or, en route, beside the flight path for a fly-by) and zooms in on the aeroplane.
+  placeCamera(fl, ax) {
+    const st = fl.st, d = fl.dims;
+    const L = d.len, S = d.span, R = d.fus / 2;
+    const P = (x, y, z) => new THREE.Vector3(
+      st.pos.x + ax.right.x * x + ax.up.x * y + ax.nose.x * z,
+      st.pos.y + ax.right.y * x + ax.up.y * y + ax.nose.y * z,
+      st.pos.z + ax.right.z * x + ax.up.z * y + ax.nose.z * z);
+    const pos = new THREE.Vector3(st.pos.x, st.pos.y, st.pos.z);
+    let eye, look, up = new THREE.Vector3(ax.up.x, ax.up.y, ax.up.z), fov = VIEW.FOV_DEG, minAgl = 1;
+    switch (this.camMode) {
+      case 'chase': eye = P(0, S * 0.5, -S * 1.62); look = P(0, 0, 4); break;
+      case 'front': eye = P(0, L * 0.42, L * 0.9); look = P(0, 0, -L * 0.1); break;
+      case 'wing': eye = P(-S * 0.69, S * 0.15, -S * 0.19); look = P(0, 0, 4); break;
+      case 'tail': eye = P(0, R * 2.9 + L * 0.06 + 1.5, -L * 0.44); look = P(0, -R * 2, L * 1.4); fov = 75; break;
+      case 'gear': eye = P(R * 0.4, -(R + (d.gearH - R) * 0.5), L * 0.3); look = P(0, -d.gearH * 0.85, -L * 0.2); fov = 80; minAgl = 0.3; break;
+      case 'top': {
+        eye = pos.clone(); eye.y += S * 3.4 + 15;
+        look = pos;
+        up = new THREE.Vector3(ax.nose.x, 0, ax.nose.z);
+        if (up.lengthSq() < 1e-6) up.set(0, 0, -1);
+        up.normalize();
+        fov = 60;
+        break;
+      }
+      case 'tower': {
+        let best = null, bd = 14000;
+        for (const a of World.airports) {
+          const dd = Math.hypot(a.x - st.pos.x, a.z - st.pos.z);
+          if (dd < bd) { bd = dd; best = a; }
+        }
+        const tw = best && best.buildings.find((b) => b.kind === 'tower');
+        if (tw) {
+          eye = new THREE.Vector3(tw.x, best.elev + tw.h + 40, tw.z);          // above the cab, the flag and the roof
+          this.flyby = null;
+        } else {
+          // a fly-by: wait beside the flight path ahead, then move on once the aeroplane has passed
+          const v = new THREE.Vector3(st.vel.x, 0, st.vel.z);
+          const fb = this.flyby;
+          const passed = fb && (fb.clone().sub(pos).dot(v) < 0) && fb.distanceTo(pos) > S * 12 + 300;
+          if (!fb || passed || fb.distanceTo(pos) > 6000) {
+            const ahead = v.lengthSq() > 25 ? v.clone().multiplyScalar(7) : new THREE.Vector3(ax.nose.x, 0, ax.nose.z).multiplyScalar(80);
+            const side = new THREE.Vector3(ahead.z, 0, -ahead.x).normalize().multiplyScalar(S * 1.6 + 35);
+            this.flyby = pos.clone().add(ahead).add(side);
+            this.flyby.y += 10;
+          }
+          eye = this.flyby.clone();
+          minAgl = 4;
+        }
+        look = pos;
+        up = new THREE.Vector3(0, 1, 0);
+        const dist = Math.max(1, eye.distanceTo(pos));
+        fov = clamp(2 * Math.atan(S * 1.3 / dist) / DEG, 5, 60);
+        break;
+      }
+      default: {          // the cockpit
+        const k = L / 18, o = VIEW.COCKPIT_EYE;
+        eye = P(o.x * k, o.y * k, o.z * k);
+        look = new THREE.Vector3(eye.x + ax.nose.x - ax.up.x * 0.06, eye.y + ax.nose.y - ax.up.y * 0.06, eye.z + ax.nose.z - ax.up.z * 0.06);
+      }
+    }
+    // never below the ground
+    const gEye = Terrain.heightAt(eye.x, eye.z) + minAgl;
+    if (eye.y < gEye) eye.y = gEye;
+    const cam = this.camera;
+    cam.position.copy(eye);
+    cam.up.copy(up);
+    cam.lookAt(look);
+    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
+    // outside, the instrument panel covers the bottom of the screen: aim above the middle
+    const shift = this.camMode === 'cockpit' ? 0 : Math.round(this.h * 0.14);
+    if (shift !== this.viewShift || this.w + 'x' + this.h !== this.viewW) {
+      this.viewShift = shift; this.viewW = this.w + 'x' + this.h;
+      if (shift) cam.setViewOffset(this.w, this.h, 0, shift, this.w, this.h); else cam.clearViewOffset();
+    }
+    return eye;
+  },
+
   update(dt, fl, sys) {
     this.time += dt;
     const st = fl.st, env = fl.env;
     const ax = st.axes || fl.updateAxes();
-    const off = this.camMode === 'cockpit' ? VIEW.COCKPIT_EYE : this.camMode === 'chase' ? VIEW.CHASE_OFFSET : VIEW.WING_OFFSET;
-    const k = this.camMode === 'cockpit' ? fl.dims.len / 18 : fl.dims.span / 16;
-    const ex = off.x * k, ey = off.y * k, ez = off.z * k;
-    const eye = new THREE.Vector3(
-      st.pos.x + ax.right.x * ex + ax.up.x * ey + ax.nose.x * ez,
-      st.pos.y + ax.right.y * ex + ax.up.y * ey + ax.nose.y * ez,
-      st.pos.z + ax.right.z * ex + ax.up.z * ey + ax.nose.z * ez);
-    // never below the ground
-    const gEye = Terrain.heightAt(eye.x, eye.z) + 1;
-    if (eye.y < gEye) eye.y = gEye;
-    this.camera.position.copy(eye);
-    this.camera.up.set(ax.up.x, ax.up.y, ax.up.z);
-    const look = this.camMode === 'cockpit'
-      ? new THREE.Vector3(eye.x + ax.nose.x - ax.up.x * 0.06, eye.y + ax.nose.y - ax.up.y * 0.06, eye.z + ax.nose.z - ax.up.z * 0.06)
-      : new THREE.Vector3(st.pos.x + ax.nose.x * 4, st.pos.y + ax.nose.y * 4, st.pos.z + ax.nose.z * 4);
-    this.camera.lookAt(look);
+    const eye = this.placeCamera(fl, ax);
     this.aircraftY = st.pos.y;
     this.lastGround = fl.groundHeight();
 

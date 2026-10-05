@@ -30,9 +30,13 @@ You can also start a contract **after pushback** — the tug has already taken y
 - **Enter** — the next step on the ground: push back, start, taxi, take-off clearance
 - **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **R** spoiler · **K** anti-ice
 - **Y** autopilot · **N** NAV mode · **, .** selected altitude · **; '** selected heading (HDG mode)
-- **T** time acceleration · **C** camera (cockpit, chase, wing) · **M** moving map · **I** instrument lights · **H** controls card · **Esc** pause
+- **T** time acceleration · **C / Shift+C** next / previous view: cockpit, chase, front looking back, wing, tail fin, landing gear, top down, tower / fly-by · **M** moving map · **I** instrument lights · **H** controls card · **Esc** pause
 
-**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground. The **slider on the right edge** is the throttle. The buttons at the top right are **Go** (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, time acceleration and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
+**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground. The **slider on the right edge** is the throttle. The buttons at the top right are **Go** (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, time acceleration, view, map, spoiler and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
+
+The controls work in any keyboard layout (the keys are read by their place on the keyboard).
+
+**Sound**: jet fans whine and roar with the power, propellers beat, the wheels rumble over the slab joints, the brakes hiss, the gear and the flaps whir and clunk, the tyres chirp on touchdown — and a voice calls "V one", "rotate" and the radio heights down to "ten" on landing.
 
 ## Emergencies
 

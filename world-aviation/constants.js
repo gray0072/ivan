@@ -801,10 +801,14 @@ const QUALITY = {
 
 const VIEW = {
   FOV_DEG: 68,
-  // camera offsets in the aircraft's own axes: x = right, y = up, z = forward (metres)
+  // the pilot's eye in the aircraft's own axes: x = right, y = up, z = forward (metres, an 18 m aeroplane)
   COCKPIT_EYE: { x: 0, y: 1.6, z: 5.5 },
-  CHASE_OFFSET: { x: 0, y: 8, z: -26 },
-  WING_OFFSET: { x: -11, y: 2.4, z: -3 },
+  // the views C (and Shift+C) cycle through, and their names
+  MODES: ['cockpit', 'chase', 'front', 'wing', 'tail', 'gear', 'top', 'tower'],
+  NAMES: {
+    cockpit: 'cockpit', chase: 'chase', front: 'front, looking back', wing: 'wing', tail: 'tail fin',
+    gear: 'landing gear', top: 'top down', tower: 'tower / fly-by'
+  },
   NEAR_CLIP: 0.7,
   FOG_DENSITY: 1 / 62000,      // 1/e per metre
   COCKPIT_DRAW_DIST: 12000

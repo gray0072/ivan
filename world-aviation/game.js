@@ -484,9 +484,9 @@ const Game = {
     const fl = this.flight;
     const sys = this.systems, st = fl.st;
     switch (name) {
-      case 'gear': fl.setGear(st.gearTarget < 0.5); Audio2.cue('gear'); break;
-      case 'flapsDown': fl.setFlaps(st.flapsTarget + 1); break;
-      case 'flapsUp': fl.setFlaps(st.flapsTarget - 1); break;
+      case 'gear': fl.setGear(st.gearTarget < 0.5); Audio2.cue('lever'); break;
+      case 'flapsDown': fl.setFlaps(st.flapsTarget + 1); Audio2.cue('lever'); break;
+      case 'flapsUp': fl.setFlaps(st.flapsTarget - 1); Audio2.cue('lever'); break;
       case 'ap':
         if (st.onGround) { fl.warn('AP', 'The autopilot engages in the air only'); break; }
         fl.ap.on = !fl.ap.on;
@@ -500,8 +500,11 @@ const Game = {
         break;
       case 'timeAccel': fl.cycleTimeAccel(); break;
       case 'camera':
-        this.camMode = this.camMode === 'cockpit' ? 'chase' : this.camMode === 'chase' ? 'wing' : 'cockpit';
-        fl.info('View: ' + this.camMode);
+      {
+        const modes = VIEW.MODES, n = modes.length;
+        this.camMode = modes[(modes.indexOf(this.camMode) + (arg === -1 ? n - 1 : 1)) % n];
+        fl.info('View: ' + VIEW.NAMES[this.camMode]);
+      }
         break;
       case 'map': HUD.toggleMap(); break;
       case 'brightness': Instruments.bright = Instruments.bright > 0.6 ? 0.45 : 1; break;
@@ -514,7 +517,7 @@ const Game = {
         if (fl.phase === 'PUSHBACK') break;
         st.parkingBrake = !st.parkingBrake;
         fl.info('Parking brake ' + (st.parkingBrake ? 'set' : 'released'));
-        Audio2.cue('click');
+        Audio2.cue('parkbrake', st.parkingBrake);
         break;
       case 'altUp': fl.ap.alt = Math.min(fl.ap.alt + 500, 41000); fl.info('Selected altitude ' + fmtAltFt(fl.ap.alt) + ' ft'); break;
       case 'altDown': fl.ap.alt = Math.max(1000, fl.ap.alt - 500); fl.info('Selected altitude ' + fmtAltFt(fl.ap.alt) + ' ft'); break;

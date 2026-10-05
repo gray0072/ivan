@@ -19,7 +19,7 @@ Rendering layout:
 - **`three.min.js`** (vendored, ~594 KB) — WebGL renderer, scene, camera, lighting.
 - **WebGL canvas** — the world: sky dome shader, terrain mesh, sea, runways and taxiways (canvas-generated textures with real markings), buildings, trees, clouds, aircraft, other traffic.
 - **Canvas 2D overlay** — the cockpit: window frame, glareshield, the full instrument panel (airspeed, attitude, altimeter, HSI, VSI, engine gauges, warning lights), windshield effects (rain, frost, fog, lightning) and the HUD. A 2D overlay keeps the gauges crisp and cheap and lets the cockpit frame be drawn on top of the 3D scene.
-- **Web Audio API** — synthesized sounds, no audio files.
+- **Web Audio API** — synthesized sounds, no audio files; spoken callouts with `speechSynthesis` where the browser has it.
 
 Terrain: every flight builds a heightmap of its own part of the world (see below) and one near-field mesh that follows the aircraft (110–420 m cells depending on the quality preset and the height, heights and normals rebuilt on the CPU when the aircraft has moved far enough), so the ground stays detailed under the wheels without a huge vertex count. The far mesh sits 30 m under the real ground and the near mesh fades into it at its edge, so they never fight; the renderer uses a logarithmic depth buffer for the same reason.
 
@@ -92,7 +92,7 @@ Overall grade A+ … F feeds the payout multiplier (0.4 … 1.35).
 
 ## Autopilot and time acceleration
 
-- **Y** engages the autopilot in the air (moving the stick hard disconnects it). Laterally it flies **NAV** (the default, **N**): to an initial approach fix 15 nm before the threshold on the extended centreline, then it captures the localiser — at an intercept angle under 60°, or at the fix (an aeroplane pointing the wrong way first turns onto a 45° intercept heading towards the centreline) — and tracks it as a track (crabbing into the wind) that closes the cross-track error with a 22 s time constant. Below its selected altitude it never descends under the **minimum safe altitude**: the highest ground 20 km ahead (and 1.5 km to each side) + 450 m, until it is established in the approach corridor. **; '** switch to **HDG** mode and turn the selected heading. Vertically it holds the selected altitude (**, .**, 500 ft steps; set automatically for the climb and the descent) and, on the localiser, captures the glideslope from below and descends on it. It disconnects at 200 ft AGL (decision height) — the landing is always flown by hand. An autothrottle holds the cruise speed, slows down for the descent and the approach (never below Vref, never above the flap and gear limits).
+- **Y** engages the autopilot in the air (moving the stick hard disconnects it). Laterally it flies **NAV** (the default, **N**): to an initial approach fix 15 nm before the threshold on the extended centreline, then it captures the localiser — at an intercept angle under 60°, or at the fix (an aeroplane pointing the wrong way first turns onto a 45° intercept heading towards the centreline) — and tracks it as a track (crabbing into the wind) that closes the cross-track error with a 22 s time constant. Below its selected altitude it never descends under the **minimum safe altitude**: the highest ground 20 km ahead (and 1.5 km to each side) + 450 m, until it is established in the approach corridor. **; '** switch to **HDG** mode and turn the selected heading. Vertically it holds the selected altitude (**, .**, 500 ft steps; set automatically for the climb and the descent) and, on the localiser, captures the glideslope from below and descends on it. It disconnects at 200 ft AGL (decision height) — the landing is always flown by hand. An autothrottle holds the cruise speed, slows down for the descent and the approach (never below Vref, never above the flap and gear limits). It moves the thrust levers smoothly: the speed error drives them, the smoothed speed trend damps them (so they lead the slow engines instead of hunting between idle and full), and they travel at most 12 % a second.
 - **Terrain**: every runway has an approach corridor (the ground stays under a 2.4° slope rising away from the threshold, 32 km out; the glideslope is 3°) and a departure corridor (3.5° past the far end), so the final approach and the climb-out are always clear even at Bergen or Tromsø. Flying by hand, **TERRAIN — PULL UP** sounds when the ground 25 s ahead is less than 120 m below the flight path (not on the localiser, where the ground is meant to come up).
 - **T** cycles the time acceleration ×1 → ×2 → ×4 → ×8, and in the cruise on to ×16 → ×32 → ×64 (for the long legs), only in the air above 500 ft AGL with the autopilot engaged. The descent starts at the top of descent: at least 45 nm out, 3.2 nm per 1 000 ft to lose; long legs cruise up to 92 % of the type's cruise altitude. It drops back to ×1 on the approach, on any emergency, and when the conditions are no longer met. The simulation runs at a fixed 60 Hz on a real-time accumulator, so the speed is the same at any frame rate.
 
@@ -204,11 +204,39 @@ Keyboard:
 - **G** — landing gear (locked with weight on wheels and above Vlo) · **F** — flaps extend one notch (not above that notch's Vfe) · **V** — flaps retract · **B** — wheel brakes (hold) · **Space** — parking brake · **R** — spoiler · **K** — engine and wing anti-ice
 - **← / →** also steer the nosewheel on the ground (the rudder keys do too)
 - **Y** — autopilot · **N** — autopilot NAV mode · **, / .** — selected altitude down / up · **; / '** — selected heading (HDG mode)
-- **T** — time acceleration (×1 … ×8, up to ×64 in the cruise; only above 500 ft with the autopilot in CMD) · **M** — moving map (north up) · **C** — camera (cockpit / chase / wing) · **I** — instrument lights · **H** — controls card · **Esc** — pause
+- **T** — time acceleration (×1 … ×8, up to ×64 in the cruise; only above 500 ft with the autopilot in CMD) · **M** — moving map (north up) · **C** — the next view, **Shift+C** — the previous one (see Views) · **I** — instrument lights · **H** — controls card · **Esc** — pause
+- The keys are read by their place on the keyboard (`e.code`), not by the character they type, so the controls work in any layout (Russian, Swedish, …).
 - The cheats use **Alt + digit** so they cannot fire in normal play.
 - Overlay buttons (title, ops, briefing, debrief, pause) are pressed with Space / Enter, the arrow keys move between them.
 
-Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider, and the top right has nine large buttons: Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot and time acceleration. The QRH checklist buttons are tapped directly. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
+Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider, and the top right has twelve large buttons: Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot, time acceleration, view, map and spoiler. The QRH checklist buttons are tapped directly. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
+
+## Views
+
+**C** / **Shift+C** (touch: **View**) cycle through `VIEW.MODES` (`scene3d.js` `placeCamera`); the views riding with the aeroplane are in its own axes, scaled to its length, span and fuselage:
+
+- **Cockpit** — the pilot's eye, with the cockpit frame and the windshield effects.
+- **Chase** — behind and above.
+- **Front, looking back** — high in front of the nose, looking back over the whole aeroplane.
+- **Wing** — off the left wingtip, looking forward.
+- **Tail fin** — on top of the fin, looking forward along the fuselage.
+- **Landing gear** — under the nose, looking back at the main gear and the runway (a landing from here is spectacular).
+- **Top down** — straight down from above, nose up.
+- **Tower / fly-by** — near an airport (14 km) from above the nearest tower's cab; en route a fly-by camera waits beside the flight path ahead and moves on once the aeroplane has passed. It zooms (the field of view follows the distance) so the aeroplane stays the same size.
+
+The instrument panel stays on screen in every view, so outside the cockpit the projection is shifted up (`setViewOffset`) to keep the aeroplane in the open part of the screen.
+
+## Sound
+
+`audio.js`, all synthesized. Two buses: the world (engines, wheels, airflow) goes through a lowpass that muffles it in the cockpit and opens outside, where the sound also fades with the distance from the camera and shifts in pitch as the aeroplane approaches or leaves (Doppler, from the rate of change of the distance); the cockpit bus (warnings, levers, the stick shaker) is never filtered.
+
+- **Engines** — a jet's fan whine (two detuned tones in a resonant band at 260–2 960 Hz with N1), its roar (noise through a lowpass that opens with the power, louder behind), the core rumble and, above 78 % N1, the buzz-saw of the fan tips (louder in front); a turboprop's blade beat (4 blades) and a thin turbine whine. They follow N2 during the start, so the spool-up is heard.
+- **Airflow** — with the airspeed, more with the gear, the flaps and the spoiler out.
+- **Wheels** — a rolling rumble with the ground speed (rougher on grass), a bump every 12 m on the taxiways and the apron and every 30 m on the runway (the slab joints), the brakes (a hiss, and a squeal when nearly stopped).
+- **Systems** — the hydraulic pumps while the gear or the flaps travel; the gear clunks down-and-locked and up-locked, the flaps stop with a soft clunk, the spoiler hisses out and in, the levers click, the parking brake sets with a puff of air.
+- **Touchdown** — a tyre chirp per main gear and a thump as hard as the landing; a hard landing rattles.
+- **Warnings** — the master caution, the warning tone, the stick shaker on a stall warning, a two-tone chime crossing 10 000 ft.
+- **Callouts** (spoken, en-GB voice where there is one): "eighty knots", "V one", "rotate" on the take-off roll and "positive rate" once climbing; on the way down to land the radio heights 1 000, 500, 100, 50, 40, 30, 20, 10 ft and "minimums" at 200 ft (at ×1 time only). They respect the sound setting.
 
 ## Cheats
 
@@ -237,7 +265,7 @@ world-aviation/
 ├── terrain.js              the heightmap of a flight's area, airport flattening and corridors, biome colours
 ├── models.js               3D aircraft models and liveries built from each type's dimensions and look, in an airline's colours
 ├── airport3d.js            an airport in 3D: runway and ground textures, lights and PAPI, buildings, flags, banners, signs
-├── scene3d.js              three.js scene: sky, terrain, sea, lighting, camera modes, follow mesh, airports in view
+├── scene3d.js              three.js scene: sky, terrain, sea, lighting, the views, follow mesh, airports in view
 ├── world.js                airports (static data, and placed and laid out for a flight), taxi routing, weather
 ├── flight.js               flight dynamics, ground handling, phases of the flight
 ├── systems.js              engines, fuel, hydraulics, ice, pressurisation, emergencies, QRH checklists
@@ -245,7 +273,7 @@ world-aviation/
 ├── cockpit.js              cockpit frame, windshield effects
 ├── hud.js                  HUD, banners, checklist panel, map, messages
 ├── career.js               save/load, contracts, courses, unlocks, payout, reputation
-├── audio.js                synthesized engine, wind, gear, warning and UI sounds
+├── audio.js                synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts
 ├── input.js                keyboard, touch joystick/throttle/buttons, fullscreen
 ├── ui.js                   title, ops hub, briefing, debrief, failure, pause, quiz screens
 ├── game.js                 main loop, phase machine, wiring, self-test mode

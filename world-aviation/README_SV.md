@@ -30,9 +30,13 @@ Du kan också börja ett uppdrag **efter pushback** — bogserbilen har redan ta
 - **Enter** — nästa steg på marken: pushback, start, taxning, startklarering
 - **G** landställ · **F / V** klaffar ut / in · **B** bromsar (håll) · **Mellanslag** parkeringsbroms · **R** spoiler · **K** avisning
 - **Y** autopilot · **N** NAV-läge · **, .** vald höjd · **; '** vald kurs (HDG-läge)
-- **T** tidsacceleration · **C** kamera (cockpit, bakifrån, vinge) · **M** karta · **I** instrumentbelysning · **H** kontrollkort · **Esc** paus
+- **T** tidsacceleration · **C / Shift+C** nästa / föregående vy: cockpit, bakifrån, framifrån bakåt, vinge, fena, landställ, ovanifrån, torn / förbiflygning · **M** karta · **I** instrumentbelysning · **H** kontrollkort · **Esc** paus
 
-**På mobil eller surfplatta** går spelet till helskärm när du startar (där webbläsaren tillåter det). **Vänstra halvan** av skärmen är en flytande joystick — den dyker upp där tummen landar: dra nedåt för att lyfta nosen, åt sidorna för att rolla och för att styra på marken. **Reglaget vid högra kanten** är gasen. Knapparna uppe till höger är **Go** (pushback, start, taxning, klarering), landställ, klaffar, bromsar, parkeringsbroms, autopilot, tidsacceleration och menyn. Båda tummarna fungerar samtidigt, så du kan flyga och arbeta en checklista på en gång.
+**På mobil eller surfplatta** går spelet till helskärm när du startar (där webbläsaren tillåter det). **Vänstra halvan** av skärmen är en flytande joystick — den dyker upp där tummen landar: dra nedåt för att lyfta nosen, åt sidorna för att rolla och för att styra på marken. **Reglaget vid högra kanten** är gasen. Knapparna uppe till höger är **Go** (pushback, start, taxning, klarering), landställ, klaffar, bromsar, parkeringsbroms, autopilot, tidsacceleration, vy, karta, spoiler och menyn. Båda tummarna fungerar samtidigt, så du kan flyga och arbeta en checklista på en gång.
+
+Kontrollerna fungerar med alla tangentbordslayouter (tangenterna läses efter sin plats, inte efter bokstaven).
+
+**Ljud**: jetmotorerna tjuter och dånar med gasen, propellrarna dunkar, hjulen dunsar över plattfogarna, bromsarna väser, landställ och klaffar surrar och låser med en duns, däcken tjuter vid sättningen — och en röst ropar "V one", "rotate" och höjderna ner till "ten" vid landningen.
 
 ## Nödsituationer
 
