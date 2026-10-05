@@ -3,13 +3,16 @@
 // ============================================================
 // World Aviation — the heads-up layer: messages, the QRH checklist
 // panel, the contract strip, phase prompts, taxi guidance, the
-// moving map and the cheat banner. DOM for the text panels, a
-// small canvas for the map and the steering arrow.
+// moving map (big, or a mini map in the corner of a large desktop
+// screen) and the cheat banner. DOM for the text panels, canvases
+// for the maps.
 // ============================================================
 
 const HUD = {
   messages: [],
-  mapOpen: false,
+  mapOpen: false,          // the big map overlay
+  miniWanted: true,        // the mini map in the corner (large desktop screens only), remembered
+  promptCollapsed: false,  // touch screens: the prompt folded to one line by a tap
   bannerText: '',
   bannerT: 0,
 
@@ -23,6 +26,10 @@ const HUD = {
     this.mapCanvas = el('mapCanvas');
     this.mapCtx = this.mapCanvas ? this.mapCanvas.getContext('2d') : null;
     this.arrow = el('taxiArrow');
+    this.mini = el('miniMap');
+    try { this.miniWanted = localStorage.getItem('worldAviation.miniMap') !== 'off'; } catch (e) { /* storage blocked */ }
+    // on a touch screen a tap folds the prompt to its first line, and opens it again
+    if (this.prompt) this.prompt.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.togglePrompt(); });
   },
 
   reset() {
@@ -65,6 +72,10 @@ const HUD = {
     const c = fl.contract;
     if (!c) { this.strip.hidden = true; return; }
     this.strip.hidden = false;
+    // touch screens: the prompt sits right under the strip, whatever its height
+    if (Input.isCoarse && this.box && (this.stripN = (this.stripN || 0) + 1) % 30 === 1) {
+      this.box.style.setProperty('--stripH', this.strip.offsetHeight + 'px');
+    }
     const left = res ? Math.max(0, res.deadline - fl.realElapsed) : 0;
     const late = res && fl.realElapsed > res.deadline;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);
@@ -87,8 +98,20 @@ const HUD = {
     if (Input.isCoarse) html = touchPrompt(html);
     html = Units.text(html);
     this.prompt.hidden = false;
-    if (html !== this.promptHtml) { this.promptHtml = html; this.prompt.innerHTML = html; }
+    if (html !== this.promptHtml) {
+      this.promptHtml = html;
+      // the first line stays when the prompt is folded
+      const i = html.indexOf('<br>');
+      this.prompt.innerHTML = i < 0 ? html : html.slice(0, i) + '<span class="more">' + html.slice(i) + '</span>';
+    }
   },
+  // touch screens only: folded, the prompt shows its first line; a new phase unfolds it
+  togglePrompt(open) {
+    if (!this.prompt || !Input.isCoarse) return;
+    this.promptCollapsed = open === undefined ? !this.promptCollapsed : !open;
+    this.prompt.classList.toggle('collapsed', this.promptCollapsed);
+  },
+  expandPrompt() { if (this.promptCollapsed) this.togglePrompt(true); },
 
   showBanner(text, kind, ms) {
     if (!this.banner) return;
@@ -163,25 +186,65 @@ const HUD = {
   },
 
   // ---------- map ----------
+  // A large desktop window keeps a mini map in the top right corner; M cycles
+  // mini -> big -> off -> mini. Elsewhere M opens and closes the big map.
+  bigScreen() {
+    return !Input.isCoarse && window.innerWidth >= CONTROLS.MINIMAP_MIN_W && window.innerHeight >= CONTROLS.MINIMAP_MIN_H;
+  },
   toggleMap() {
-    this.mapOpen = !this.mapOpen;
-    const m = el('mapOverlay');
-    if (m) m.hidden = !this.mapOpen;
+    if (this.bigScreen()) {
+      if (this.mapOpen) { this.mapOpen = false; this.miniWanted = false; }
+      else if (this.miniWanted) this.mapOpen = true;
+      else this.miniWanted = true;
+      try { localStorage.setItem('worldAviation.miniMap', this.miniWanted ? 'on' : 'off'); } catch (e) { /* storage blocked */ }
+    } else this.mapOpen = !this.mapOpen;
+    this.showMapOverlay();
     return this.mapOpen;
+  },
+  closeMap() { this.mapOpen = false; this.showMapOverlay(); },
+  showMapOverlay() {
+    const m = el('mapOverlay');
+    if (!m) return;
+    m.hidden = !this.mapOpen;
+    const hint = m.querySelector('p');
+    if (hint) hint.innerHTML = 'Moving map &middot; north up &middot; <kbd>M</kbd> to ' + (this.bigScreen() ? 'hide' : 'close');
+  },
+  // the mini map is there when it helps and gone when it would be in the way: in the air,
+  // not during a checklist, not on the last 1 000 ft of the approach
+  updateMini(fl, sys, helpOpen) {
+    const cv = this.mini;
+    if (!cv) return;
+    const st = fl.st;
+    const show = this.bigScreen() && this.miniWanted && !this.mapOpen && !helpOpen && !st.onGround &&
+      fl.phase !== 'TAKEOFF' && !(sys && sys.checklist) && !(fl.phase === 'APPROACH' && fl.altAgl() < 1000 * FT);
+    if (cv.hidden === show) cv.hidden = !show;
+    if (!show) return;
+    const now = performance.now();
+    if (now - (this.miniT || 0) < 1000 / CONTROLS.MINIMAP_FPS) return;
+    this.miniT = now;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    const g = this.miniCtx || (this.miniCtx = cv.getContext('2d'));
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.paintMap(g, w, h, fl, true);
   },
   drawMap(fl, sys) {
     if (!this.mapOpen || !this.mapCtx) return;
-    const cv = this.mapCanvas, g = this.mapCtx;
-    const w = cv.width, h = cv.height;
+    const cv = this.mapCanvas;
+    this.paintMap(this.mapCtx, cv.width, cv.height, fl, false);
+  },
+  paintMap(g, w, h, fl, mini) {
     g.clearRect(0, 0, w, h);
     const from = fl.world, to = fl.arrival;
     const p0 = { x: from.x, z: from.z }, p1 = { x: to.x, z: to.z };
     const st = fl.st;
     // fit departure, arrival and the aeroplane
-    const minX = Math.min(p0.x, p1.x, st.pos.x) - 20000;
-    const maxX = Math.max(p0.x, p1.x, st.pos.x) + 20000;
-    const minZ = Math.min(p0.z, p1.z, st.pos.z) - 20000;
-    const maxZ = Math.max(p0.z, p1.z, st.pos.z) + 20000;
+    const pad = mini ? 12000 : 20000;
+    const minX = Math.min(p0.x, p1.x, st.pos.x) - pad;
+    const maxX = Math.max(p0.x, p1.x, st.pos.x) + pad;
+    const minZ = Math.min(p0.z, p1.z, st.pos.z) - pad;
+    const maxZ = Math.max(p0.z, p1.z, st.pos.z) + pad;
     const sc = Math.min(w / (maxX - minX), h / (maxZ - minZ));
     const X = (x) => (x - minX) * sc + (w - (maxX - minX) * sc) / 2;
     const Y = (z) => (z - minZ) * sc + (h - (maxZ - minZ) * sc) / 2;      // north (-z) is up
@@ -214,6 +277,7 @@ const HUD = {
       if (a === from || a === to) continue;
       g.fillStyle = '#6b7c8c';
       g.fillRect(X(a.x) - 2, Y(a.z) - 2, 4, 4);
+      if (mini) continue;
       g.font = '500 10px system-ui, sans-serif';
       g.textAlign = 'left';
       g.fillText(a.id, X(a.x) + 4, Y(a.z) + 3);
@@ -233,12 +297,41 @@ const HUD = {
       g.strokeStyle = a.air || b.air ? '#54d68a' : '#ffd54a';
       g.beginPath(); g.moveTo(X(a.x), Y(a.z)); g.lineTo(X(b.x), Y(b.z)); g.stroke();
     }
+    // the arrival runway and its final approach: the extended centreline out to 12 nm, an
+    // arrow flying down it towards the threshold, and the runway number
+    {
+      const fin = World.at(to, -to.half - 12 * NM, 0), thr = World.at(to, -to.half, 0), end = World.at(to, to.half, 0);
+      const fx = X(fin.x), fy = Y(fin.z), tx = X(thr.x), ty = Y(thr.z);
+      const len = Math.hypot(tx - fx, ty - fy) || 1, ux = (tx - fx) / len, uy = (ty - fy) / len;
+      g.strokeStyle = 'rgba(230,92,240,0.85)'; g.lineWidth = mini ? 1.5 : 2;
+      g.setLineDash([5, 4]);
+      g.beginPath(); g.moveTo(fx, fy); g.lineTo(tx, ty); g.stroke();
+      g.setLineDash([]);
+      // the runway itself, at least a few pixels long
+      const rl = Math.max(mini ? 7 : 10, Math.hypot(X(end.x) - tx, Y(end.z) - ty));
+      g.strokeStyle = '#f2f5f8'; g.lineWidth = mini ? 3 : 4;
+      g.beginPath(); g.moveTo(tx, ty); g.lineTo(tx + ux * rl, ty + uy * rl); g.stroke();
+      // the arrow in the middle of the final, pointing the way you land
+      const ax = fx + ux * len * 0.55, ay = fy + uy * len * 0.55, s = mini ? 6 : 8;
+      g.fillStyle = '#e65cf0';
+      g.beginPath();
+      g.moveTo(ax + ux * s, ay + uy * s);
+      g.lineTo(ax - ux * s - uy * s * 0.7, ay - uy * s + ux * s * 0.7);
+      g.lineTo(ax - ux * s + uy * s * 0.7, ay - uy * s - ux * s * 0.7);
+      g.closePath(); g.fill();
+      if (len > 30) {
+        g.fillStyle = '#f0c8fa';
+        g.font = (mini ? '600 10px' : '600 11px') + ' system-ui, sans-serif';
+        g.textAlign = 'center';
+        g.fillText('RWY ' + to.rwyName, fx - ux * 12, fy - uy * 12 + 4);
+      }
+    }
     // airports
     const dot = (p, label, colour, r) => {
       g.fillStyle = colour;
       g.beginPath(); g.arc(X(p.x), Y(p.z), r, 0, TAU); g.fill();
       g.fillStyle = '#dfe7ee';
-      g.font = '600 12px system-ui, sans-serif';
+      g.font = mini ? '600 11px system-ui, sans-serif' : '600 12px system-ui, sans-serif';
       g.textAlign = 'center';
       g.fillText(label, X(p.x), Y(p.z) - r - 5);
     };
@@ -253,6 +346,14 @@ const HUD = {
     g.moveTo(0, -9); g.lineTo(7, 7); g.lineTo(0, 3); g.lineTo(-7, 7);
     g.closePath(); g.fill();
     g.restore();
+    if (mini) {
+      // instead of a scale bar: how far to go
+      g.fillStyle = '#c8d4df';
+      g.font = '600 11px system-ui, sans-serif';
+      g.textAlign = 'right';
+      g.fillText(Units.dist(fl.distToDestNm()) + ' to ' + to.id, w - 8, h - 8);
+      return;
+    }
     // scale bar, in real nautical miles (the world is drawn compressed by WORLD.SCALE)
     const pxPerUnit = sc * WORLD.SCALE * (Units.metric ? 1000 : NM);     // real km or nm
     const len = [10, 25, 50, 100, 250, 500, 1000, 2000].find((v) => v * pxPerUnit > 60) || 2000;
@@ -273,9 +374,9 @@ function esc(s) {
 const TOUCH_KEYS = [
   ['<kbd>Enter</kbd>', '<b>Go</b>'], ['<kbd>Space</kbd>', '<b>Park</b>'], ['<kbd>G</kbd>', '<b>Gear</b>'],
   ['<kbd>F</kbd>', '<b>Flap +</b>'], ['<kbd>V</kbd>', '<b>Flap −</b>'], ['<kbd>B</kbd>', '<b>Brake</b>'],
-  ['<kbd>Y</kbd>', '<b>AP</b>'], ['<kbd>T</kbd>', '<b>Time</b>'], ['<kbd>9</kbd>', 'throttle slider up'],
+  ['<kbd>Y</kbd>', '<b>AP</b>'], ['<kbd>T</kbd>', '<b>Time +</b>'], ['<kbd>R</kbd>', '<b>Time −</b>'], ['<kbd>9</kbd>', 'throttle slider up'],
   ['<kbd>0</kbd>', 'throttle slider down'], ['<kbd>1</kbd>–<kbd>3</kbd>', 'a little throttle'],
-  ['<kbd>←</kbd><kbd>→</kbd>', 'the stick'], ['<kbd>↓</kbd>', 'stick down'], [', spoiler <kbd>R</kbd>', '']
+  ['<kbd>←</kbd><kbd>→</kbd>', 'the stick'], ['<kbd>↓</kbd>', 'stick down'], ['<kbd>/</kbd>', '<b>Spoiler</b>']
 ];
 function touchPrompt(html) {
   for (const [k, t] of TOUCH_KEYS) html = html.split(k).join(t);

@@ -107,8 +107,18 @@ const Game = {
         fl.ap.on = false;
         fl.warn('AP', 'Autopilot disconnected — you have control');
       }
-      if (ax.throttle) fl.setThrottle(st.throttle + ax.throttle * dt * 0.45);
-      if (Input.touchThrottle !== null) fl.setThrottle(approach(st.throttle, Input.touchThrottle, dt * 0.8));
+      // the keys move the lever, which maps to thrust on a curve (finer at low power)
+      if (ax.throttle) fl.setThrottle(throttleFromLever(leverFromThrottle(st.throttle) + ax.throttle * dt * CONTROLS.THROTTLE_KEY_RATE));
+      // the slider sets a target; once there (or when the autothrottle takes over) it lets go of the levers
+      const tt = Input.touchThrottle;
+      if (tt !== null) {
+        if (fl.ap.on && !Input.touch.thr) Input.touchThrottle = null;
+        else {
+          fl.setThrottle(approach(st.throttle, tt, dt * 0.8));
+          if (!Input.touch.thr && Math.abs(st.throttle - tt) < 0.002) Input.touchThrottle = null;
+        }
+      }
+      Input.syncThrottle(st.throttle);
       st.brakeInput = ax.brake;
 
       if (fl.phase === 'PUSHBACK') this.updatePushback(dt);
@@ -131,6 +141,7 @@ const Game = {
     HUD.updateChecklist(sys, this.hintOn());
     HUD.updateGuidance(fl, dt);
     if (HUD.mapOpen) HUD.drawMap(fl, sys);
+    HUD.updateMini(fl, sys, this.helpOpen);
 
     if (fl.failure && this.mode === 'flying') this.failFlight(fl.failure);
   },
@@ -155,47 +166,125 @@ const Game = {
     ctx.save();
     ctx.scale(dpr, dpr);
     this.drawFpm(ctx, w, h, fl);
+    this.drawApproachPath(ctx, w, h, fl);
     this.drawIls(ctx, w, h, fl);
     ctx.restore();
   },
 
-  // localiser / glideslope needles
+  // The ILS, shown so that it reads at a glance: the localiser scale (magenta) carries a
+  // little runway that sits where the runway is, the glideslope scale (cyan) a triangle that
+  // sits where the glide path is, and a line of plain words says what to do. Drawn high on
+  // the windscreen in the cockpit, and to the right of the aeroplane in the outside views.
   drawIls(ctx, w, h, fl) {
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
     if (fl.distToRunwayNm() > SIM.APPROACH_NM + 4 || fl.navFailed) return;
     const d = fl.ilsDeviation();
     if (d.along > 0) return;
-    const cx = w / 2, cy = Cockpit.panelTop(h) * 0.5;
-    const R = Math.min(110, w * 0.16), V = Math.min(80, h * 0.12);
+    const top = Cockpit.panelTop(h);
+    const R = Math.min(110, w * 0.16), V = Math.min(70, h * 0.1);
+    const inside = this.camMode === 'cockpit';
+    const cx = inside ? w / 2 : w - R - 110, cy = inside ? top * 0.5 : top * 0.56;
+    const LOC = '#e65cf0', GS = '#4fd8ff';
+    const loc = clamp(-d.locDeg / 2.5, -1, 1);       // + : the runway is to the right
+    const gs = clamp(-d.gsDeg / 0.7, -1, 1);         // + : the glide path is above you
+    const ly = cy + V + 16, gx = cx + R + 18;
     ctx.save();
-    ctx.strokeStyle = 'rgba(216,226,236,0.35)';
+    // dark outlines instead of a panel: the colours read against a bright sky, the view stays open
+    ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
+    const say = (t, x, y, c) => {
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,12,18,0.8)'; ctx.strokeText(t, x, y);
+      ctx.fillStyle = c; ctx.fillText(t, x, y);
+    };
     ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(216,226,236,0.45)';
     ctx.beginPath();
-    ctx.moveTo(cx - R, cy + V + 14); ctx.lineTo(cx + R, cy + V + 14);
-    ctx.moveTo(cx + R + 14, cy - V); ctx.lineTo(cx + R + 14, cy + V);
+    ctx.moveTo(cx - R, ly); ctx.lineTo(cx + R, ly);
+    ctx.moveTo(gx, cy - V); ctx.lineTo(gx, cy + V);
     ctx.stroke();
     for (const k of [-1, -0.5, 0.5, 1]) {
-      ctx.beginPath(); ctx.arc(cx + k * R, cy + V + 14, 2.5, 0, TAU); ctx.stroke();
-      ctx.beginPath(); ctx.arc(cx + R + 14, cy + k * V, 2.5, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx + k * R, ly, 2.5, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(gx, cy + k * V, 2.5, 0, TAU); ctx.stroke();
     }
-    // localiser diamond: where the runway is (right of you = needle right)
-    const loc = clamp(-d.locDeg / 2.5, -1, 1);
-    const gs = clamp(-d.gsDeg / 0.7, -1, 1);
-    const diamond = (x, y, col) => {
-      ctx.fillStyle = col;
-      ctx.beginPath(); ctx.moveTo(x, y - 7); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 7); ctx.lineTo(x - 6, y); ctx.closePath(); ctx.fill();
-    };
-    diamond(cx + loc * R, cy + V + 14, Math.abs(loc) >= 1 ? '#ff7a5c' : '#e65cf0');
-    diamond(cx + R + 14, cy - gs * V, Math.abs(gs) >= 1 ? '#ff7a5c' : '#e65cf0');
-    ctx.fillStyle = '#c8d2dc';
-    ctx.font = '600 11px system-ui, sans-serif';
+    // the centre marks: you
+    ctx.strokeStyle = '#ffd97a'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx, ly - 9); ctx.lineTo(cx, ly + 9); ctx.moveTo(gx - 9, cy); ctx.lineTo(gx + 9, cy); ctx.stroke();
+    // the runway on the localiser scale: a little runway seen from the approach
+    const rx = cx + loc * R;
+    ctx.fillStyle = Math.abs(loc) >= 1 ? '#ff7a5c' : LOC;
+    ctx.beginPath(); ctx.moveTo(rx - 3, ly - 12); ctx.lineTo(rx + 3, ly - 12); ctx.lineTo(rx + 7, ly + 12); ctx.lineTo(rx - 7, ly + 12); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(rx, ly - 10); ctx.lineTo(rx, ly + 11); ctx.stroke(); ctx.setLineDash([]);
+    // the glide path on the glideslope scale: a triangle pointing at the scale
+    const gy = cy - gs * V;
+    ctx.fillStyle = Math.abs(gs) >= 1 ? '#ff7a5c' : GS;
+    ctx.beginPath(); ctx.moveTo(gx - 3, gy); ctx.lineTo(gx + 13, gy - 8); ctx.lineTo(gx + 13, gy + 8); ctx.closePath(); ctx.fill();
+    // labels and plain words
+    ctx.font = '700 11px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('LOC', cx - R - 18, cy + V + 18);
-    ctx.fillText('G/S', cx + R + 14, cy - V - 8);
-    if (Math.abs(d.gsDeg) < 0.25 && Math.abs(d.locDeg) < 0.6) {
-      ctx.fillStyle = '#54d68a';
-      ctx.font = '700 13px system-ui, sans-serif';
-      ctx.fillText('ON GLIDE PATH', cx, cy - V - 8);
+    ctx.shadowBlur = 0;
+    say('RUNWAY', cx - R - 34, ly + 4, LOC);
+    say('GLIDE PATH', gx + 4, cy - V - 9, GS);
+    const words = [];
+    if (Math.abs(d.locDeg) < 0.6) words.push(['on the centreline', '#54d68a']);
+    else words.push([loc > 0 ? 'runway to the RIGHT ▶ turn right' : '◀ runway to the LEFT turn left', LOC]);
+    if (Math.abs(d.gsDeg) < 0.25) words.push(['on the glide path', '#54d68a']);
+    else words.push([gs > 0 ? 'LOW ▲ descend less' : 'HIGH ▼ descend more', GS]);
+    ctx.font = '700 12px system-ui, sans-serif';
+    const both = Math.abs(d.locDeg) < 0.6 && Math.abs(d.gsDeg) < 0.25;
+    if (both) say('ON THE CENTRELINE AND THE GLIDE PATH', cx, ly + 30, '#54d68a');
+    else words.forEach(([t, c], i) => say(t, cx, ly + 28 + i * 15, c));
+    ctx.restore();
+  },
+
+  // The approach in the world: a dot on the extended centreline at the height of the glide
+  // path every nautical mile out to 12 nm, and the threshold. Projected through whichever
+  // camera is in use, so it works from the cockpit and from every outside view; flying down
+  // the line of dots is flying the ILS.
+  drawApproachPath(ctx, w, h, fl) {
+    const p = fl.phase;
+    if (fl.st.onGround || fl.navFailed || !(p === 'DESCENT' || p === 'APPROACH' || p === 'CRUISE')) return;
+    const nm = fl.distToRunwayNm();
+    if (nm > 30) return;
+    const a = fl.arrival, cam = Scene3D.camera;
+    const v = this.pathVec || (this.pathVec = new THREE.Vector3());
+    cam.updateMatrixWorld();
+    const top = Cockpit.panelTop(h);
+    const fade = clamp((30 - nm) / 8, 0, 1);
+    const pts = [];
+    for (let k = 0; k <= 12; k++) {
+      const q = World.at(a, -a.half - k * NM, 0);
+      v.set(q.x, a.elev + 15 + k * NM * Math.tan(SIM.GLIDESLOPE_DEG * DEG), q.z).project(cam);
+      if (v.z > 1 || v.z < -1) { pts.push(null); continue; }
+      // the dots grow as they come closer
+      const dist = Math.hypot(q.x - cam.position.x, a.elev + k * NM * 0.05 - cam.position.y, q.z - cam.position.z);
+      pts.push({ x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h, k, r: clamp(5000 / Math.max(1, dist), 2, 8) });
+    }
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, w, top);
+    ctx.clip();
+    ctx.globalAlpha = fade;
+    ctx.strokeStyle = 'rgba(230,92,240,0.45)'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    let pen = false;
+    for (const q of pts) { if (!q) { pen = false; continue; } if (pen) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); pen = true; }
+    ctx.stroke();
+    ctx.font = '700 11px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    for (const q of pts) {
+      if (!q) continue;
+      if (q.k === 0) {
+        // the threshold: the runway's number
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.moveTo(q.x, q.y + 2); ctx.lineTo(q.x - 6, q.y - 8); ctx.lineTo(q.x + 6, q.y - 8); ctx.closePath(); ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,12,18,0.8)'; ctx.strokeText('RWY ' + a.rwyName, q.x + 9, q.y - 2);
+        ctx.fillText('RWY ' + a.rwyName, q.x + 9, q.y - 2);
+        continue;
+      }
+      const r = q.r;
+      ctx.fillStyle = '#e65cf0';
+      ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, TAU); ctx.fill();
+      if (q.k % 4 === 0) { ctx.fillStyle = 'rgba(240,200,250,0.9)'; ctx.fillText(Units.dist(q.k), q.x + r + 4, q.y + 4); }
     }
     ctx.restore();
   },
@@ -208,14 +297,17 @@ const Game = {
     const v = st.vel;
     const vf = v.x * ax.nose.x + v.y * ax.nose.y + v.z * ax.nose.z;
     if (vf < 5) return;
-    const vu = v.x * ax.up.x + v.y * ax.up.y + v.z * ax.up.z;
-    const vr = v.x * ax.right.x + v.y * ax.right.y + v.z * ax.right.z;
+    // the point 1 km down the flight path, through the cockpit camera (which looks a little below the nose)
     const cam = Scene3D.camera;
-    const f = (h / 2) / Math.tan(cam.fov * DEG / 2);
-    // the cockpit camera looks a little below the nose
-    const x = w / 2 + vr / vf * f;
-    const y = h / 2 - (vu / vf - 0.06) * f;
-    if (y > Cockpit.panelTop(h) - 10) return;
+    const sp = Math.hypot(v.x, v.y, v.z);
+    const p = this.fpmVec || (this.fpmVec = new THREE.Vector3());
+    p.set(cam.position.x + v.x / sp * 1000, cam.position.y + v.y / sp * 1000, cam.position.z + v.z / sp * 1000);
+    cam.updateMatrixWorld();
+    p.project(cam);
+    if (p.z > 1) return;
+    const x = (p.x + 1) / 2 * w;
+    const y = (1 - p.y) / 2 * h;
+    if (y > Cockpit.panelTop(h) - 10 || y < 0 || x < 0 || x > w) return;
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(-st.roll);
@@ -260,6 +352,8 @@ const Game = {
     const p = fl.phase;
     const speed = fl.groundSpeedKt();
     const apt = fl.world, arr = fl.arrival;
+    // a new phase unfolds the prompt the player folded away on a touch screen
+    if (p !== this.promptPhase) { this.promptPhase = p; if (HUD.expandPrompt) HUD.expandPrompt(); }
 
     // a touchdown at the destination ends the flying part, whatever the phase says
     if (AIRBORNE_PHASES.includes(p) && st.onGround && st.wasAirborne) {
@@ -268,6 +362,16 @@ const Game = {
         fl.fail('returned', 'You landed back at ' + apt.id + ' — the load was not delivered.');
         return;
       }
+    }
+
+    // off without asking the tower: the flight goes on (the prompts and the arrow move on to the
+    // climb), but the tower is not amused
+    if ((p === 'ENGINE_START' || p === 'TAXI_OUT' || p === 'HOLD_SHORT') && (!st.onGround || speed > SIM.TAKEOFF_NO_CLEARANCE_KT)) {
+      fl.noClearance = true;
+      st.parkingBrake = false;
+      fl.setPhase('TAKEOFF');
+      fl.warn('CLEARANCE', 'Tower: you took off without a clearance — this will be reported');
+      return;
     }
 
     if (p === 'GATE') {
@@ -299,7 +403,7 @@ const Game = {
     } else if (p === 'TAKEOFF') {
       const vr = Math.round(fl.vr());
       HUD.setPrompt(st.onGround
-        ? '<b>Runway ' + apt.rwyName + ' · cleared for take-off</b><br>line up, full power <kbd>9</kbd>, rotate at Vr ' + vr +
+        ? '<b>Runway ' + apt.rwyName + (fl.noClearance ? ' · no clearance!' : ' · cleared for take-off') + '</b><br>line up, full power <kbd>9</kbd>, rotate at Vr ' + vr +
           ' kt — pull back <kbd>↓</kbd>' + (st.flapsTarget < 1 ? ' · <b>flaps!</b>' : '')
         : '<b>Positive climb</b> · gear up <kbd>G</kbd>');
       if (!st.onGround && fl.altAgl() > 150) {
@@ -313,12 +417,12 @@ const Game = {
         (!fl.ap.on ? ' · autopilot <kbd>Y</kbd>' : ''));
       if (Math.abs(st.pos.y / FT - fl.ap.alt) < 300) {
         fl.setPhase('CRUISE');
-        fl.info('Cruise · time acceleration T');
+        fl.info('Cruise · time acceleration: T faster, R slower');
       }
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'CRUISE') {
       HUD.setPrompt('<b>Cruise · ' + Math.round(fl.distToDestNm()) + ' nm to ' + arr.id + '</b><br>' +
-        (fl.ap.on ? 'autopilot NAV · time acceleration <kbd>T</kbd> (x' + fl.env.timeAccel + ')' : 'autopilot <kbd>Y</kbd> flies the route') +
+        (fl.ap.on ? 'autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x' + fl.env.timeAccel + ')' : 'autopilot <kbd>Y</kbd> flies the route') +
         (this.res && fl.realElapsed > this.res.deadline * 0.75 ? ' · <b class="bad">running late</b>' : ''));
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'DESCENT') {
@@ -326,7 +430,6 @@ const Game = {
       fl.navTarget();                                   // keeps the localiser capture up to date
       if (fl.locCaptured && fl.distToRunwayNm() < SIM.APPROACH_NM) {
         fl.setPhase('APPROACH');
-        if (fl.timeAccelIndex || fl.cheatAccel) { fl.timeAccelIndex = 0; fl.cheatAccel = false; fl.info('TIME x1'); }
         fl.info('Approach runway ' + arr.rwyName + ' · Vref ' + Math.round(fl.vRef()) + ' kt · flaps and gear down');
       }
     } else if (p === 'APPROACH') {
@@ -349,7 +452,7 @@ const Game = {
       }
     } else if (p === 'ROLLOUT') {
       HUD.setPrompt('<b>Touchdown ' + (fl.landed ? fl.landed.fpm + ' fpm' : '') + '</b><br>' +
-        'idle <kbd>0</kbd>, brakes <kbd>B</kbd>, spoiler <kbd>R</kbd> — slow below ' + SIM.ROLLOUT_EXIT_KT + ' kt');
+        'idle <kbd>0</kbd>, brakes <kbd>B</kbd>, spoiler <kbd>/</kbd> — slow below ' + SIM.ROLLOUT_EXIT_KT + ' kt');
       if (!st.onGround && fl.altAgl() > 15) {
         // touch-and-go: the next landing is the one that counts
         fl.landed = null;
@@ -505,7 +608,8 @@ const Game = {
         fl.info('Autopilot ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + fmtAltFt(fl.ap.alt) : 'off'));
         Audio2.cue('click');
         break;
-      case 'timeAccel': fl.cycleTimeAccel(); break;
+      case 'timeFaster': fl.changeTimeAccel(1); break;
+      case 'timeSlower': fl.changeTimeAccel(-1); break;
       case 'camera':
       {
         const modes = VIEW.MODES, n = modes.length;
@@ -514,6 +618,7 @@ const Game = {
       }
         break;
       case 'map': HUD.toggleMap(); break;
+      case 'prompt': HUD.togglePrompt(); break;
       case 'brightness': Instruments.bright = Instruments.bright > 0.6 ? 0.45 : 1; break;
       case 'spoiler': fl.toggleSpoiler(); fl.info('Spoiler ' + (st.spoiler ? 'out' : 'in')); break;
       case 'antiIce':
@@ -590,7 +695,7 @@ const Game = {
   cheat(digit) {
     if (digit === 0) {
       HUD.showBanner('Cheats: Alt+1 full fuel · Alt+2 no emergencies · Alt+3 jump to final · Alt+4 +10 000 kr · ' +
-        'Alt+5 repair · Alt+6 time x16', 'cheat', 7000);
+        'Alt+5 repair · Alt+6 time x' + SIM.TIME_ACCEL_CHEAT, 'cheat', 7000);
       return;
     }
     const fl = this.flight;
@@ -625,8 +730,8 @@ const Game = {
       case 4: Career.data.money += 10000; Career.save(); text = '+10 000 kr'; break;
       case 5: st.damage = 0; text = 'aircraft repaired'; break;
       case 6:
-        if (st.onGround) { text = 'time x16 works in the air only'; break; }
-        fl.cheatAccel = true; fl.ap.on = true; text = 'time acceleration x16'; break;
+        if (st.onGround) { text = 'time x' + SIM.TIME_ACCEL_CHEAT + ' works in the air only'; break; }
+        fl.cheatAccel = true; fl.ap.on = true; text = 'time acceleration x' + SIM.TIME_ACCEL_CHEAT; break;
       default: return;
     }
     HUD.showBanner('Cheat: ' + text + ' — this flight will not be paid', 'cheat', 2600);
@@ -719,7 +824,7 @@ const Game = {
     this.mode = failed ? 'failed' : 'debrief';
     Input.active = false;
     el('hud').hidden = true;
-    if (HUD.mapOpen) HUD.toggleMap();
+    if (HUD.mapOpen) HUD.closeMap();
     const landed = fl.landed || { fpm: 0, bank: 0, ias: 0, vref: 0, crab: 0, fromThr: 0, offset: 0, damage: 0 };
     const diff = Career.difficulty;
     const grade = failed ? 'F' : this.gradeLanding(landed, fl, diff);
@@ -731,7 +836,8 @@ const Game = {
       damage: clamp(fl.st.damage, 0, 1), fuelUsed: this.fuel0 - fl.st.fuel,
       blockSec: fl.elapsed, realSec: fl.realElapsed, pushbackSkipped: this.setup.skipPushback,
       cheated: this.cheated, cheatsUsed: this.cheatsUsed,
-      moneyFactor: fl.moneyFactor || 1, repPenalty: fl.pendingRepPenalty || 0
+      moneyFactor: fl.moneyFactor || 1, repPenalty: (fl.pendingRepPenalty || 0) + (fl.noClearance ? 5 : 0),
+      noClearance: !!fl.noClearance
     };
     const payout = failed
       ? Career.failFlight({ contract: this.contract, reason: this.failure ? this.failure.text : 'Failed', cheated: this.cheated })
@@ -789,7 +895,7 @@ const Game = {
     this.flight = null;
     this.systems = null;
     el('hud').hidden = true;
-    if (HUD.mapOpen) HUD.toggleMap();
+    if (HUD.mapOpen) HUD.closeMap();
     Audio2.update(0, null, null);
     UI.showOps();
   },

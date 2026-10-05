@@ -356,6 +356,7 @@ const Career = {
     if (result.moneyFactor && result.moneyFactor < 1) {
       lines.push({ label: 'Medical diversion costs', value: -Math.round(c.pay * (1 - result.moneyFactor)) });
     }
+    if (result.noClearance) lines.push({ label: 'Took off without a clearance (fine)', value: -Math.round(base * SIM.NO_CLEARANCE_FINE) });
     if (!result.onTime) lines.push({ label: 'Late delivery', value: -Math.round(base * 0.12) });
     const total = lines.reduce((s, l) => s + l.value, 0);
     d.money += total;

@@ -4,7 +4,8 @@
 // World Aviation — input: keyboard, touch, fullscreen
 //
 // The aeroplane is flown with the arrow keys or WASD, the throttle
-// with Z/X (or 1-9), the rudder with Q/E. On a phone the left half
+// with Z/X (or 1-9), the rudder with Q/E; T and R make the time run
+// faster and slower. On a phone the left half
 // of the screen is a floating joystick for pitch and roll, the
 // right edge is a throttle slider, and the upper right has big
 // buttons for gear, flaps, brakes, autopilot and the menu. Both
@@ -49,11 +50,12 @@ const Input = {
       case 'v': this.fire('flapsUp'); break;
       case 'y': this.fire('ap'); break;
       case 'n': this.fire('nav'); break;
-      case 't': this.fire('timeAccel'); break;
+      case 't': this.fire('timeFaster'); break;
+      case 'r': this.fire('timeSlower'); break;
       case 'c': this.fire('camera', e.shiftKey ? -1 : 1); break;
       case 'm': this.fire('map'); break;
       case 'i': this.fire('brightness'); break;
-      case 'r': this.fire('spoiler'); break;
+      case '/': this.fire('spoiler'); break;
       case 'k': this.fire('antiIce'); break;
       case 'Enter': this.fire('starter'); break;
       case ' ': this.fire('parkBrake'); break;
@@ -87,6 +89,7 @@ const Input = {
     if (tb) tb.classList.remove('on');
     const knob = el('throttleKnob');
     if (knob) knob.style.bottom = '';
+    this.knobLever = undefined;
   },
 
   // axis state for this frame
@@ -201,21 +204,43 @@ const Input = {
     document.addEventListener('touchmove', block, { passive: false });
   },
 
+  // The slider is the thrust lever: its position maps to thrust on a curve, so the low end
+  // (taxi power) has more room under the thumb.
   moveThrottle(e, zone, knob) {
     const r = zone.getBoundingClientRect();
     const v = clamp(1 - (e.clientY - r.top) / r.height, 0, 1);
-    this.touchThrottle = v;
-    if (knob) knob.style.bottom = 'calc(' + (v * 100) + '% - 18px)';
+    this.touchThrottle = throttleFromLever(v);
+    this.placeThrottleKnob(v, knob);
+  },
+  placeThrottleKnob(v, knob) {
+    knob = knob || el('throttleKnob');
+    if (!knob) return;
+    knob.style.bottom = 'calc(' + (v * 100) + '% - 18px)';
+  },
+  // the knob follows the levers when the thumb is off the slider (the autothrottle, the keys)
+  syncThrottle(throttle) {
+    if (!this.isCoarse) return;
+    const knob = el('throttleKnob');
+    if (!knob) return;
+    const pct = Math.round(throttle * 100);
+    if (pct !== this.knobPct) { this.knobPct = pct; knob.textContent = pct + '%'; }
+    if (this.touch.thr) return;
+    const v = leverFromThrottle(throttle);
+    if (Math.abs(v - (this.knobLever === undefined ? -1 : this.knobLever)) > 0.003) { this.knobLever = v; this.placeThrottleKnob(v, knob); }
   },
 
   touchThrottle: null,
   touchBrake: false
 };
 
+// thrust lever position (0..1) <-> thrust (0..1)
+function throttleFromLever(v) { return Math.pow(clamp(v, 0, 1), CONTROLS.THROTTLE_CURVE); }
+function leverFromThrottle(t) { return Math.pow(clamp(t, 0, 1), 1 / CONTROLS.THROTTLE_CURVE); }
+
 // The key by its place on the keyboard (e.code), not by the character it types, so the
 // controls work in any layout (Russian, Swedish, …): KeyW is 'w' whatever the letter on it.
 const CODE_KEYS = {
-  Comma: ',', Period: '.', Semicolon: ';', Quote: "'", Minus: '-', Equal: '=', Space: ' ',
+  Comma: ',', Period: '.', Slash: '/', NumpadDivide: '/', Semicolon: ';', Quote: "'", Minus: '-', Equal: '=', Space: ' ',
   NumpadAdd: '+', NumpadSubtract: '-', NumpadEnter: 'Enter'
 };
 function keyName(e) {

@@ -88,7 +88,7 @@ const Flight = {
     this.cheatAccel = false;
     this.guidance = null;
     this.navFailed = false; this.cargoShift = false; this.medical = false;
-    this.moneyFactor = 1; this.pendingRepPenalty = 0;
+    this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false;
     this.warnedBank = false;
     this.locCaptured = false; this.overRunway = false;
     this.ap = {
@@ -270,32 +270,58 @@ const Flight = {
     if (tr.length > 2400) this.track = tr.filter((p, i) => i % 2 === 0 || i === tr.length - 1);
   },
 
+  // The fastest step allowed now: up to x64 on the autopilot in any phase; flying by hand it
+  // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down or in a checklist.
+  timeAccelMax() {
+    if (this.st.onGround || (this.systems && this.systems.checklist)) return 1;
+    const agl = this.altAgl();
+    if (agl < SIM.TIME_ACCEL_MIN_ALT_M) return 1;
+    if (this.ap.on) return SIM.TIME_ACCEL_AP_MAX;
+    let max = 1;
+    for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
+    return max;
+  },
+  timeAccelTop() {
+    const max = this.timeAccelMax();
+    let top = 0;
+    SIM.TIME_ACCEL_STEPS.forEach((v, i) => { if (v <= max) top = i; });
+    return top;
+  },
   timeAccel() {
     const e = this.env;
     if (this.timeAccelIndex === 0 && !this.cheatAccel) { e.timeAccel = 1; return 1; }
-    const ok = !this.st.onGround && this.altAgl() > SIM.TIME_ACCEL_MIN_ALT_M &&
-      (!SIM.TIME_ACCEL_NEEDS_AP || this.ap.on) && !(this.systems && this.systems.checklist);
-    if (!ok) {
-      if (e.timeAccel > 1) this.info('TIME x1');
-      this.timeAccelIndex = 0; this.cheatAccel = false; e.timeAccel = 1;
-      return 1;
-    }
-    // the fastest steps (x16 and up) only in the cruise
-    if (this.phase !== 'CRUISE' && this.timeAccelIndex > SIM.TIME_ACCEL_LOW_MAX) this.timeAccelIndex = SIM.TIME_ACCEL_LOW_MAX;
+    const top = this.timeAccelTop();
+    const was = e.timeAccel;
+    if (this.cheatAccel && (!this.ap.on || top < SIM.TIME_ACCEL_STEPS.length - 1)) this.cheatAccel = false;
+    // the conditions got stricter (the autopilot is off, lower down, an emergency): step down to what is allowed
+    if (this.timeAccelIndex > top) this.timeAccelIndex = top;
     e.timeAccel = this.cheatAccel ? SIM.TIME_ACCEL_CHEAT : SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
+    if (e.timeAccel < was) this.info('TIME x' + e.timeAccel + (e.timeAccel > 1 && !this.ap.on ? ' — the most by hand at this height' : ''));
     return e.timeAccel;
   },
-  cycleTimeAccel() {
-    if (this.st.onGround || this.altAgl() < SIM.TIME_ACCEL_MIN_ALT_M) {
-      this.warn('TIME', 'Time acceleration only in the air, above ' + fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) + ' ft');
-      return;
-    }
-    if (SIM.TIME_ACCEL_NEEDS_AP && !this.ap.on) { this.warn('TIME', 'Time acceleration needs the autopilot — press Y'); return; }
-    this.cheatAccel = false;
-    const top = this.phase === 'CRUISE' ? SIM.TIME_ACCEL_STEPS.length - 1 : SIM.TIME_ACCEL_LOW_MAX;
-    this.timeAccelIndex = this.timeAccelIndex >= top ? 0 : this.timeAccelIndex + 1;
-    this.env.timeAccel = SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
+  // dir = +1 (T, faster) or -1 (R, slower)
+  changeTimeAccel(dir) {
+    const steps = SIM.TIME_ACCEL_STEPS;
+    const top = this.timeAccelTop();
+    if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = dir < 0 ? top : this.timeAccelIndex; }
+    else if (dir > 0 && this.timeAccelIndex >= top) { this.warn('TIME', this.timeAccelLimitText()); return; }
+    else if (dir < 0 && this.timeAccelIndex === 0) { this.info('TIME x1'); return; }
+    else this.timeAccelIndex = clamp(this.timeAccelIndex + dir, 0, top);
+    this.env.timeAccel = steps[this.timeAccelIndex];
     this.info('TIME x' + this.env.timeAccel);
+  },
+  // why T cannot go any faster
+  timeAccelLimitText() {
+    if (this.st.onGround || this.altAgl() < SIM.TIME_ACCEL_MIN_ALT_M) {
+      return 'Time acceleration only in the air, above ' + fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) + ' ft';
+    }
+    if (this.systems && this.systems.checklist) return 'Work the checklist first — time runs at x1';
+    if (this.ap.on) return 'Time x' + SIM.TIME_ACCEL_AP_MAX + ' is the fastest';
+    const max = this.timeAccelMax();
+    const next = SIM.TIME_ACCEL_MANUAL.find((t) => t.max > max);
+    return next
+      ? 'By hand: time x' + next.max + ' above ' + next.aglFt + ' ft AGL — the autopilot (Y) allows up to x' + SIM.TIME_ACCEL_AP_MAX
+      : 'By hand time x' + max + ' is the most — the autopilot (Y) allows up to x' + SIM.TIME_ACCEL_AP_MAX;
   },
 
   // body axes from the Euler angles

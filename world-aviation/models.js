@@ -10,11 +10,15 @@
 //   - a canvas livery wrapped around it: windows, cheatline, belly,
 //     cockpit glass; in an airline's colours (data/airlines.js) also
 //     its titles, and its emblem on both sides of the fin
-//   - tapered, swept wings with dihedral, a swept fin and tailplane
-//     (or a T-tail), winglets
+//   - tapered, swept wings with dihedral and an airfoil section that
+//     thins towards a rounded tip, a swept fin and tailplane (or a
+//     T-tail), winglets
+//   - moving control surfaces: flaps, ailerons, spoilers, elevators
+//     and the rudder, hinged on their real hinge lines
 //   - engines under the wings (2 or 4), on the rear fuselage, or
 //     turboprops with spinning propellers
-//   - landing gear that retracts
+//   - landing gear that folds away (jets inwards, turboprops forwards
+//     into the engine nacelles)
 //
 // Model axes: +z = nose, +y = up, +x = left wing. The origin is the
 // centre of gravity, and the wheels touch y = -gearH.
@@ -33,7 +37,8 @@ const AircraftModels = {
     const L = d.len, R = d.radius, S = d.span;
     const jet = ac.engineType === 'jet';
     const g = new THREE.Group();
-    g.userData = { gear: [], props: [] };
+    g.userData = { gear: [], props: [], surf: { flap: [], aileron: [], spoiler: [], elevator: [], rudder: [] } };
+    const surf = g.userData.surf;
 
     const metal = new THREE.MeshLambertMaterial({ color: 0xd9dee3 });
     // colours given like the livery canvas (sRGB), so the painted parts match the painted skin
@@ -62,13 +67,17 @@ const AircraftModels = {
     const semi = S / 2 - R * 0.8;
     const rootC = jet ? S * (look.engines === 'wing4' ? 0.2 : 0.17) : S * 0.115;
     const tipC = rootC * (jet ? 0.28 : 0.55);
-    const thick = rootC * (jet ? 0.1 : 0.13);
+    const thick = rootC * (jet ? 0.1 : 0.13);                      // for placing the engines and the gear
     const wingY = high ? R * 0.82 : -R * 0.55;
     const wingZ = L * (jet ? 0.08 : 0.1) + rootC * 0.45;           // leading edge at the root
     const dihedral = (high ? 1 : jet ? 5 : 4) * DEG;
-    const wing = wingGeometry(semi, rootC, tipC, sweep, thick);
+    const wingDef = {
+      semi, rootC, tipC, sweep, tRoot: rootC * (jet ? 0.12 : 0.15), tTip: tipC * (jet ? 0.09 : 0.12), cut: jet ? 0.76 : 0.72,
+      pieces: [{ kind: 'flap', f0: 0, f1: 0.6 }, { f0: 0.6, f1: 0.64 }, { kind: 'aileron', f0: 0.64, f1: 0.94 }, { f0: 0.94, f1: 1 }],
+      spoilers: jet ? [[0.2, 0.36], [0.38, 0.55]] : [[0.25, 0.55]]
+    };
     for (const side of [1, -1]) {
-      const m = new THREE.Mesh(wing, metal);
+      const m = liftingSurface(wingDef, metal, surf, side);
       m.position.set(side * R * 0.8, wingY, wingZ);
       m.scale.x = side;
       m.rotation.z = side * dihedral;
@@ -98,15 +107,24 @@ const AircraftModels = {
     const finSweep = (jet ? 38 : 30) * DEG;
     const finZ = -L * 0.5 + finRoot + L * 0.015;                   // fin leading edge at the root
     const finY = R * 0.62;
-    const fin = new THREE.Mesh(finGeometry(finRoot, finTip, finH, finSweep, Math.max(0.12, finRoot * 0.09)), paint);
+    // the fin is a lifting surface stood on end (its span up), with the rudder behind it
+    const finT = finRoot * 0.08;
+    const fin = liftingSurface({
+      semi: finH, rootC: finRoot, tipC: finTip, sweep: finSweep, tRoot: finT, tTip: finTip * 0.08, cut: 0.7, sym: true,
+      pieces: [{ f0: 0, f1: 0.06 }, { kind: 'rudder', f0: 0.06, f1: 0.97 }, { f0: 0.97, f1: 1 }]
+    }, paint, surf, 1);
+    fin.rotation.z = Math.PI / 2;
     fin.position.set(0, finY, finZ);
     g.add(fin);
-    if (al) this.finDecals(g, ac, al, finRoot, finTip, finH, finSweep, Math.max(0.12, finRoot * 0.09), finY, finZ);
+    if (al) this.finDecals(g, ac, al, finRoot, finTip, finH, finSweep, finT * 1.02, finY, finZ);
     const tSemi = S * (jet ? 0.19 : 0.21), tRoot = finRoot * 0.75, tTip = tRoot * 0.42;
-    const tail = wingGeometry(tSemi, tRoot, tTip, (jet ? 32 : 6) * DEG, tRoot * 0.08);
+    const tailDef = {
+      semi: tSemi, rootC: tRoot, tipC: tTip, sweep: (jet ? 32 : 6) * DEG, tRoot: tRoot * 0.1, tTip: tTip * 0.09, cut: 0.68, sym: true,
+      pieces: [{ kind: 'elevator', f0: 0, f1: 0.96 }, { f0: 0.96, f1: 1 }]
+    };
     const tTop = look.tail === 't';
     for (const side of [1, -1]) {
-      const m = new THREE.Mesh(tail, tTop ? paint : metal);
+      const m = liftingSurface(tailDef, tTop ? paint : metal, surf, side);
       if (tTop) m.position.set(0, finY + finH - 0.1, finZ - finH * Math.tan(finSweep) - finTip * 0.05);
       else m.position.set(side * R * 0.15, R * 0.42, -L * 0.5 + tRoot + L * 0.02);
       m.scale.x = side;
@@ -115,6 +133,7 @@ const AircraftModels = {
     }
 
     // ---- engines
+    let propGear = null;                                             // low-wing turboprops: main gear under the nacelles
     const spanAt = (f) => R * 0.8 + semi * f;                      // x of a point at a fraction of the semispan
     const leAt = (f) => wingZ - semi * f * Math.tan(sweep);         // leading edge z there
     const yAt = (f) => wingY + semi * f * Math.sin(dihedral);
@@ -144,6 +163,7 @@ const AircraftModels = {
       const dia = d.fus * 0.42;
       for (const side of [1, -1]) {
         const f = 0.3;
+        if (!high) propGear = { x: spanAt(f), top: -(yAt(f) - thick * 0.5) };
         const ny = high ? yAt(f) - thick * 0.4 - dia * 0.25 : yAt(f) + thick * 0.2;
         // real props are about 0.65 of the fuselage diameter in radius; keep them clear of the body and the ground
         const propR = Math.min(d.fus * 0.65, (spanAt(f) - R) * 0.9, ny + d.gearH - 0.35);
@@ -152,6 +172,10 @@ const AircraftModels = {
         nac.rotation.x = Math.PI / 2;
         nac.position.set(side * spanAt(f), ny, nz);
         g.add(nac);
+        const tailCone = new THREE.Mesh(new THREE.ConeGeometry(dia * 0.5, rootC * 0.7, 14), base);
+        tailCone.rotation.x = -Math.PI / 2;
+        tailCone.position.set(side * spanAt(f), ny, nz - rootC * 0.75 - rootC * 0.35);
+        g.add(tailCone);
         const front = nz + rootC * 0.75;
         const spin = new THREE.Mesh(new THREE.ConeGeometry(dia * 0.32, dia * 0.7, 14), dark);
         spin.rotation.x = Math.PI / 2;
@@ -177,43 +201,61 @@ const AircraftModels = {
       }
     }
 
-    // ---- landing gear: nose gear and two main legs (they reach y = -gearH)
+    // ---- landing gear: nose gear and two main legs (they reach y = -gearH). Each leg hangs
+    // from a pivot at its top and folds up about it: the nose gear forwards, a jet's main
+    // gear inwards into the belly, a turboprop's forwards into the nacelle.
     const wheelR = Math.max(0.28, d.fus * 0.13);
     const legR = Math.max(0.07, d.fus * 0.025);
-    const mainX = high ? R * 1.05 : R * (S > 50 ? 1.15 : 0.95);
-    const mainZ = -L * 0.03;
+    const mainX = propGear ? propGear.x : high ? R * 1.05 : R * (S > 50 ? 1.15 : 0.95);
+    const mainZ = propGear ? wingZ - rootC * 0.55 : -L * 0.03;
     const noseZ = L * 0.38;
     const gear = [];
-    const addLeg = (x, z, top, wheels) => {
+    const wheel = () => {
+      const w = new THREE.Group();
+      const tyre = new THREE.Mesh(new THREE.CylinderGeometry(wheelR, wheelR, wheelR * 0.7, 16), dark);
+      tyre.rotation.z = Math.PI / 2;
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(wheelR * 0.45, wheelR * 0.45, wheelR * 0.74, 10), grey);
+      hub.rotation.z = Math.PI / 2;
+      w.add(tyre, hub);
+      return w;
+    };
+    // wheels: [x offset, z offset] from the foot of the leg
+    const addLeg = (x, z, top, wheels, fold) => {
       const len = Math.max(0.2, d.gearH - wheelR - top);
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(legR, legR, len, 6), grey);
-      leg.position.set(x, -top - len / 2, z);
-      g.add(leg); gear.push(leg);
-      for (const off of wheels) {
-        const w = new THREE.Mesh(new THREE.CylinderGeometry(wheelR, wheelR, wheelR * 0.7, 14), dark);
-        w.rotation.z = Math.PI / 2;
-        w.position.set(x + off, -d.gearH + wheelR, z);
-        g.add(w); gear.push(w);
+      const pivot = new THREE.Group();
+      pivot.position.set(x, -top, z);
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(legR, legR * 1.2, len, 8), grey);
+      leg.position.y = -len / 2;
+      pivot.add(leg);
+      // a torque link and the axle beam, so the leg reads as a leg
+      const axle = new THREE.Mesh(new THREE.BoxGeometry(legR * 2, legR * 2, Math.max(legR * 3, Math.abs(wheels[wheels.length - 1][1]) + legR * 2)), grey);
+      axle.position.set(0, -len, wheels[wheels.length - 1][1] / 2);
+      pivot.add(axle);
+      for (const [ox, oz] of wheels) {
+        const w = wheel();
+        w.position.set(ox, -len, oz);
+        pivot.add(w);
       }
+      g.add(pivot);
+      gear.push({ pivot, axis: fold[0], angle: fold[1] });
     };
     const big = S > 50;
-    addLeg(0, noseZ, R * 0.75, big ? [-wheelR * 0.4, wheelR * 0.4] : [0]);
+    const FWD = ['x', -Math.PI / 2];                                   // the foot swings forwards and up
+    addLeg(0, noseZ, R * 0.75, big ? [[-wheelR * 0.4, 0], [wheelR * 0.4, 0]] : [[0, 0]], FWD);
     for (const side of [1, -1]) {
       const pair = big ? [-wheelR * 0.45, wheelR * 0.45] : [0];
-      addLeg(side * mainX, mainZ, high ? R * 0.5 : R * 0.7, pair);
-      if (big) {
-        // bogies: a second row behind the first
-        for (const off of pair) {
-          const w = new THREE.Mesh(new THREE.CylinderGeometry(wheelR, wheelR, wheelR * 0.7, 14), dark);
-          w.rotation.z = Math.PI / 2;
-          w.position.set(side * mainX + off, -d.gearH + wheelR, mainZ - wheelR * 2.3);
-          g.add(w); gear.push(w);
-        }
-      }
+      const wheels = [];
+      for (const off of pair) wheels.push([off, 0]);
+      if (big) for (const off of pair) wheels.push([off, -wheelR * 2.3]);   // bogies: a second row behind the first
+      const top = propGear ? propGear.top : high ? R * 0.5 : R * 0.7;
+      addLeg(side * mainX, mainZ, top, wheels, propGear || high ? FWD : ['z', -side * Math.PI / 2]);
     }
     if (look.engines === 'wing4' || look.hump) {
       // the 747's body gear between the wing gear
-      for (const side of [1, -1]) addLeg(side * R * 0.35, mainZ - L * 0.04, R * 0.9, [-wheelR * 0.45, wheelR * 0.45]);
+      for (const side of [1, -1]) {
+        addLeg(side * R * 0.35, mainZ - L * 0.04, R * 0.9,
+          [[-wheelR * 0.45, 0], [wheelR * 0.45, 0], [-wheelR * 0.45, -wheelR * 2.3], [wheelR * 0.45, -wheelR * 2.3]], FWD);
+      }
     }
     if (!look.fixedGear) g.userData.gear = gear;
     return g;
@@ -228,7 +270,21 @@ const AircraftModels = {
       p.userData.disc.material.opacity = blur * 0.35;
       for (const b of p.userData.blades) b.visible = blur < 0.9;
     }
-    for (const part of model.userData.gear) part.visible = st.gear > 0.5;
+    const down = st.gear === undefined ? 1 : clamp(st.gear, 0, 1);
+    for (const leg of model.userData.gear) {
+      leg.pivot.rotation[leg.axis] = leg.angle * (1 - down);
+      leg.pivot.visible = down > 0.02;
+    }
+    // the control surfaces: angles in radians, + = trailing edge up (rudder: to the right)
+    const s = model.userData.surf;
+    if (!s) return;
+    const flap = clamp(st.flaps || 0, 0, 1) * -0.62;
+    for (const p of s.flap) p.rotation.x = flap;
+    for (const p of s.aileron) p.rotation.x = -p.userData.side * clamp(st.aileron || 0, -1, 1) * 0.35;
+    for (const p of s.elevator) p.rotation.x = clamp(st.elevator || 0, -1, 1) * 0.4;
+    for (const p of s.rudder) p.rotation.x = clamp(st.rudder || 0, -1, 1) * 0.4;
+    const sp = clamp(st.spoiler || 0, 0, 1);
+    for (const p of s.spoiler) { p.visible = sp > 0.02; p.rotation.x = sp * 0.85; }
   },
 
   // the paint scheme: a canvas wrapped around the fuselage (x = along, nose at the right; y = around, top at 0)
@@ -414,7 +470,8 @@ function fuselageGeometry(L, R) {
     const r = i === 0 ? 0 : c.r;                                 // close the tail end
     for (let j = 0; j <= SEG; j++) {
       const th = j / SEG * TAU;
-      pos.push(Math.sin(th) * r, c.y + Math.cos(th) * r, z);
+      // round from the top towards -x (the right side), so the triangles face outwards
+      pos.push(-Math.sin(th) * r, c.y + Math.cos(th) * r, z);
       uv.push((z - zTail) / L, 1 - j / SEG);
     }
   }
@@ -431,19 +488,106 @@ function fuselageGeometry(L, R) {
   return { geo };
 }
 
-// A half wing (or tailplane) towards +x: tapered and swept, leading edge root at the origin, chord towards -z
-function wingGeometry(semi, rootC, tipC, sweep, thick) {
-  const sh = new THREE.Shape();
-  const tipLe = -semi * Math.tan(sweep);
-  sh.moveTo(0, 0);
-  sh.lineTo(semi, tipLe);
-  sh.lineTo(semi, tipLe - tipC);
-  sh.lineTo(0, -rootC);
-  sh.closePath();
-  const geo = new THREE.ExtrudeGeometry(sh, { depth: thick, bevelEnabled: false });
-  geo.rotateX(Math.PI / 2);                 // shape y (chord) → z, the extrusion → down
-  geo.translate(0, thick / 2, 0);
-  return geo;
+// A half wing (or tailplane, or a fin on its side) towards +x: tapered and swept, the leading
+// edge root at the origin, the chord towards -z, an airfoil section (NACA-like thickness, a
+// little flatter underneath) that thins towards the tip, which is rounded off. The part behind
+// the hinge line (`cut`, a fraction of the chord) is made of separate pieces; the ones with a
+// `kind` hang from pivots on the hinge line and go into `surf` to be moved by animate().
+// def: { semi, rootC, tipC, sweep, tRoot, tTip, cut, pieces: [{ kind?, f0, f1 }], spoilers?, sym?, noCap? }
+function liftingSurface(def, mat, surf, side) {
+  const grp = new THREE.Group();
+  const tanS = Math.tan(def.sweep);
+  const up = def.sym ? 1 : 1.15, lo = def.sym ? 1 : 0.85;
+  const yt = (x) => (0.2969 * Math.sqrt(x) - 0.126 * x - 0.3516 * x * x + 0.2843 * x * x * x - 0.1036 * x * x * x * x) / 0.1003 * 0.5;
+  // a point of the surface: span fraction f, chord fraction x, upper (+1) or lower (-1)
+  const P = (f, x, s) => {
+    const c = def.rootC + (def.tipC - def.rootC) * f, t = def.tRoot + (def.tTip - def.tRoot) * f;
+    return [def.semi * f, s * t * yt(x) * (s > 0 ? up : lo), -def.semi * f * tanS - x * c];
+  };
+  // the ring of a section between chord fractions x0 and x1: upper surface back to front, lower front to back
+  const N = 9;
+  const xs = (x0, x1) => { const r = []; for (let i = 0; i <= N; i++) r.push(x0 + (x1 - x0) * (0.5 - 0.5 * Math.cos(Math.PI * i / N))); return r; };
+  const ring = (f, x0, x1, pt) => {
+    const X = xs(x0, x1), r = [];
+    for (let i = N; i >= 0; i--) r.push(pt(f, X[i], 1));
+    for (let i = x0 === 0 ? 1 : 0; i <= N; i++) r.push(pt(f, X[i], -1));
+    return r;
+  };
+  // a loft through rings, optionally closed at both ends
+  const loft = (rings, caps) => {
+    const pos = [], idx = [], K = rings[0].length;
+    for (const r of rings) for (const p of r) pos.push(p[0], p[1], p[2]);
+    for (let i = 0; i + 1 < rings.length; i++) for (let j = 0; j < K; j++) {
+      const a = i * K + j, b = i * K + (j + 1) % K, c = a + K, e = b + K;
+      idx.push(a, c, b, b, c, e);
+    }
+    if (caps) for (const [ri, flip] of [[0, true], [rings.length - 1, false]]) {
+      const base = ri * K;
+      for (let j = 1; j + 1 < K; j++) idx.push(...(flip ? [base, base + j + 1, base + j] : [base, base + j, base + j + 1]));
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    // make sure the triangles face outwards: the highest point's normal must point up
+    let top = 0;
+    for (let i = 1; i < pos.length / 3; i++) if (pos[i * 3 + 1] > pos[top * 3 + 1]) top = i;
+    if (geo.attributes.normal.getY(top) < 0) {
+      for (let i = 0; i < idx.length; i += 3) { const t = idx[i + 1]; idx[i + 1] = idx[i + 2]; idx[i + 2] = t; }
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+    }
+    return geo;
+  };
+  const cut = def.cut;
+  grp.add(new THREE.Mesh(loft([ring(0, 0, cut, P), ring(1, 0, cut, P)], false), mat));
+  // the rounded tip: sections past the tip whose chord and thickness shrink on a quarter circle
+  if (!def.noCap) {
+    const cap = [ring(1, 0, 1, P)];
+    const capLen = def.tipC * 0.32;
+    const tipLe = -def.semi * tanS;
+    for (const e of [0.4, 0.7, 0.9, 1]) {
+      const s = Math.max(0.06, Math.sqrt(1 - e * e));
+      const c = def.tipC * s, le = tipLe - def.tipC * (1 - s) * 0.35, t = def.tTip * s;
+      cap.push(ring(0, 0, 1, (f, x, sg) => [def.semi + capLen * e, sg * t * yt(x) * (sg > 0 ? up : lo), le - x * c]));
+    }
+    grp.add(new THREE.Mesh(loft(cap, false), mat));
+  }
+  // the pieces behind the hinge line
+  for (const pc of def.pieces) {
+    const geo = loft([ring(pc.f0, cut, 1, P), ring(pc.f1, cut, 1, P)], true);
+    if (!pc.kind) { grp.add(new THREE.Mesh(geo, mat)); continue; }
+    grp.add(hinged(geo, mat, P(pc.f0, cut, 1), P(pc.f1, cut, 1), def.tRoot * 0.25, surf[pc.kind], side));
+  }
+  // spoiler panels lying on the upper surface ahead of the flaps, hinged at their front
+  for (const [f0, f1] of def.spoilers || []) {
+    const x0 = cut - 0.2, x1 = cut - 0.01;
+    const panel = (f, x) => { const p = P(f, x, 1); p[1] += 0.015; return p; };
+    const a = panel(f0, x0), b = panel(f1, x0), c = panel(f1, x1), e = panel(f0, x1);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute([...a, ...e, ...c, ...a, ...c, ...b], 3));
+    geo.computeVertexNormals();
+    const piv = hinged(geo, new THREE.MeshLambertMaterial({ color: 0xc4cad0, side: THREE.DoubleSide }), a, b, 0, surf.spoiler, side);
+    piv.children[0].visible = false;
+    grp.add(piv);
+  }
+  return grp;
+}
+
+// A moving part: a pivot on the hinge line from h0 to h1 (lifted by `lift` to the middle of the
+// section); the mesh inside it turns about its local x axis, which lies along the hinge.
+function hinged(geo, mat, h0, h1, lift, list, side) {
+  const a = new THREE.Vector3(h0[0], h0[1] - lift, h0[2]), b = new THREE.Vector3(h1[0], h1[1] - lift, h1[2]);
+  const pivot = new THREE.Group();
+  pivot.position.copy(a);
+  pivot.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), b.clone().sub(a).normalize());
+  pivot.updateMatrix();
+  geo.applyMatrix4(pivot.matrix.clone().invert());
+  const m = new THREE.Mesh(geo, mat);
+  m.userData.side = side;
+  pivot.add(m);
+  list.push(m);
+  return pivot;
 }
 
 // A fin: chord along z (leading edge root at the origin), height up +y, thickness centred on x = 0

@@ -33,7 +33,9 @@ const Scene3D = {
   init(canvas) {
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({
-      canvas, antialias: false, powerPreference: 'high-performance', logarithmicDepthBuffer: true
+      // multisampling on desktops keeps thin things (window mullions, ground markings) from
+      // shimmering as you taxi past; phones keep the fill rate for the frame rate
+      canvas, antialias: !isCoarsePointer(), powerPreference: 'high-performance', logarithmicDepthBuffer: true
     });
     this.maxAniso = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
     this.renderer.setPixelRatio(1);
@@ -568,7 +570,10 @@ const Scene3D = {
       this.ownAircraft.quaternion.setFromRotationMatrix(m);
       let n1 = 0;
       if (sys) for (const e of sys.engines) n1 += e.n1 / sys.engines.length;
-      AircraftModels.animate(this.ownAircraft, { gear: st.gear, propSpeed: n1 * 0.9 });
+      AircraftModels.animate(this.ownAircraft, {
+        gear: st.gear, propSpeed: n1 * 0.9, flaps: st.flaps / Math.max(1, fl.ac.flaps.length),
+        aileron: st.aileron, elevator: st.elevator, rudder: st.rudder, spoiler: st.spoiler ? 1 : 0
+      });
     }
   },
 

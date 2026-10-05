@@ -17,7 +17,7 @@ Open [index.html](index.html) in a browser — no build step, no server required
 1. **At the gate** press **Enter** — the tug pushes you back onto the apron. Start the engines (**Enter**) and watch N1 and EGT come up.
 2. **Taxi**: **Enter** releases the parking brake; a little power (**1**–**3**), steer with **← →**, brake with **B**, and follow the yellow arrow to the holding point.
 3. At the **holding point** set the take-off flaps (**F**) and ask for the clearance (**Enter**). Line up, full power (**9**), pull back (**↓**) at Vr, gear up (**G**).
-4. **Autopilot** (**Y**): in NAV mode it flies the route, joins the final approach and follows the ILS glideslope down to 200 ft (60 m). **T** speeds up time en route (×2 … ×8, up to ×64 in the cruise) — only with the autopilot on.
+4. **Autopilot** (**Y**): in NAV mode it flies the route, joins the final approach and follows the ILS glideslope down to 200 ft (60 m). **T** speeds up time, **R** slows it down: with the autopilot on up to ×64, flying by hand ×2 above 1 000 ft, ×4 above 3 000, ×8 above 6 000, ×16 above 8 000, ×32 above 9 000 and ×64 above 10 000 ft.
 5. **Approach**: flaps and gear down, land by hand from 200 ft (60 m) at Vref, brake, and slow below 35 kt (65 km/h).
 6. **Taxi in** along the arrow, stop in the parking box at your gate and set the parking brake (**Space**). The engines shut down and the debrief shows your grade and the invoice.
 
@@ -28,11 +28,11 @@ You can also start a contract **after pushback** — the tug has already taken y
 - **↑ ↓** or **W S** — pitch (↓ pulls the nose up) · **← →** or **A D** — roll, and steering on the ground · **Q E** — rudder
 - **Z X** or **− +** — throttle · **1**…**9** — 10 %…90 % · **0** — idle
 - **Enter** — the next step on the ground: push back, start, taxi, take-off clearance
-- **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **R** spoiler · **K** anti-ice
+- **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **/** spoiler · **K** anti-ice
 - **Y** autopilot · **N** back to the programme (NAV along the route and the planned altitude, after you changed the heading or the altitude) · **, .** selected altitude · **; '** selected heading (HDG mode)
-- **T** time acceleration · **C / Shift+C** next / previous view: cockpit, chase, front looking back, wing, tail fin, landing gear, top down, tower / fly-by · **M** moving map · **I** instrument lights · **H** controls card · **Esc** pause
+- **T / R** time faster / slower · **C / Shift+C** next / previous view: cockpit, chase, front looking back, wing, tail fin, landing gear, top down, tower / fly-by · **M** moving map (on a big screen: mini map, big map, off) · **I** instrument lights · **H** controls card · **Esc** pause
 
-**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground. The **slider on the right edge** is the throttle. The buttons at the top right are **Go** (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, time acceleration, view, map, spoiler, NAV (back to the programme), anti-ice (Ice) and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
+**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground. The **slider on the right edge** is the throttle — its lower half gives fine control of low power for taxiing. The hint text sits on the left; tap it to fold it to one line. The buttons at the top right are **Go** (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, **Time +** / **Time −**, view, map, spoiler, NAV (back to the programme), anti-ice (Ice) and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
 
 The controls work in any keyboard layout (the keys are read by their place on the keyboard).
 
@@ -55,7 +55,7 @@ Chosen on the title screen and in the pause and debrief dialogs, remembered betw
 Money is in Swedish kronor. Each contract pays for the distance and the load, plus bonuses for the landing grade, being on time and handled emergencies, minus the aircraft lease (per flight hour), the fuel burnt, repairs and penalties.
 
 - **Network** — the world is opened a region at a time: **Sweden** (where you start), **Scandinavia & the North Atlantic** (Norway's fjords, Finland, Denmark, Iceland, Greenland, Svalbard), **Europe**, **the Middle East & Africa**, **the Americas** and **Asia & the Pacific** — 114 real airports. Each region's traffic rights need reputation and flights, and cost money. From Arlanda the board offers the open regions; away from home it offers the flight back and onward legs, so the far side of the world is reached in legs of up to 4 500 nm (8 300 km).
-- **Long haul** — on long legs the time acceleration goes up to ×64 in the cruise; Stockholm–New York takes about ten minutes of real time.
+- **Long haul** — on the autopilot the time acceleration goes up to ×64; Stockholm–New York takes about ten minutes of real time.
 
 - **Hangar** — ten aircraft, from the 19-seat Vikna 19 turboprop and the Frostwing bush plane to the **Boeing 737-800**, the **Airbus A320neo**, the **Airbus A350-900** and the four-engine **Boeing 747-8F** freighter, each with its own weight, speeds, range, runway needs and its own 3D model.
 - **Training** — 16 courses in four branches (General, Passenger, Cargo, Bush & SAR). Each ends in a short exam (3 of 4 right) and unlocks aircraft, contract types or real advantages: checklist hints, more time in emergencies, slower icing.
@@ -75,7 +75,9 @@ Every course ends in a short exam: four questions, three right to pass. They are
 
 **Units** on the title screen (and in the pause): aviation units — feet, knots, nautical miles, fpm — or **metric**: metres, km/h, kilometres, m/s, rounded to sensible numbers. Prompts, messages, screens and the instruments all follow the setting.
 
-The **moving map** (**M**) draws the track you have actually flown — yellow on the ground, green in the air — over the planned route.
+The **moving map** (**M**) draws the track you have actually flown — yellow on the ground, green in the air — over the planned route. On a big computer screen a **mini map** stays in the top right corner while you fly; **M** switches between the mini map, the big map and no map. The maps show the arrival runway with its final approach (a dashed line and an arrow in the landing direction).
+
+On the approach the **ILS** shows a little magenta runway on the RUNWAY scale where the runway is and a cyan triangle on the GLIDE PATH scale where the glide path is, with plain words underneath ("runway to the RIGHT — turn right", "HIGH — descend more"). A line of **magenta dots** in the sky, one every nautical mile, marks the glide path down to the runway — in every camera view; fly down the dots and you are on the ILS.
 
 ## Graphics
 

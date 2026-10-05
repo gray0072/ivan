@@ -159,27 +159,28 @@ const UI = {
       keyRow('F / V', 'flaps down / up') +
       keyRow('B', 'wheel brakes (hold)') +
       keyRow('Space', 'parking brake') +
-      keyRow('R', 'spoiler') +
+      keyRow('/', 'spoiler') +
       keyRow('K', 'engine and wing anti-ice') +
       keyRow('Y', 'autopilot on / off') +
       keyRow('N', 'autopilot NAV: fly the route and the ILS') +
       keyRow(', / .', 'selected altitude down / up') +
       keyRow('; / \'', 'selected heading (autopilot HDG mode)') +
-      keyRow('T', 'time acceleration (autopilot needed)') +
-      keyRow('C / M / I', 'camera · map · instrument lights') +
+      keyRow('T / R', 'time faster / slower: up to ×64 on the autopilot, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft') +
+      keyRow('C / M / I', 'camera · map (on a big screen: mini, big, off) · instrument lights') +
       keyRow('H', 'controls card') +
       keyRow('Esc', 'pause') +
       '</ul></div>' +
       '<div><h3>Touch</h3><ul>' +
       '<li>The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag down to pull the nose up, left and right to roll — and to steer on the ground.</li>' +
-      '<li>The <b>slider on the right edge</b> is the throttle.</li>' +
-      '<li>The buttons at the top right: <b>Go</b> (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, time acceleration and the menu.</li>' +
+      '<li>The <b>slider on the right edge</b> is the throttle — its lower half gives fine control of low power for taxiing.</li>' +
+      '<li>The buttons at the top right: <b>Go</b> (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, <b>Time +</b> / <b>Time −</b> and the menu.</li>' +
+      '<li>Tap the hint text to fold it to one line, tap again to open it.</li>' +
       '<li>Both thumbs work at once, so you can fly and work a checklist together.</li>' +
       '</ul>' +
       '<h3>How a flight goes</h3><ul>' +
       '<li>At the gate press Enter for the push back, start the engines, release the brake and taxi along the arrow to the holding point.</li>' +
       '<li>Set take-off flaps, ask for the clearance, line up, full power, rotate at Vr, gear up.</li>' +
-      '<li>Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Use time acceleration (T) en route.</li>' +
+      '<li>Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×64 on the autopilot.</li>' +
       '<li>When a warning sounds, work the checklist — the order matters and so does the clock.</li>' +
       '<li>Flaps and gear down on the approach, land by hand from 200 ft, brake, and leave the runway below 35 kt.</li>' +
       '<li>Taxi to your gate, stop in the parking box and set the parking brake.</li>' +

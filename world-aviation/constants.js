@@ -42,11 +42,15 @@ const SIM = {
   MAX_FRAME_DT: 0.25,          // never simulate more than this per frame
   GRAVITY: 9.80665,
   RHO_SL: 1.225,               // sea level air density, kg/m^3
-  TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64],
-  TIME_ACCEL_LOW_MAX: 3,       // index of the fastest step outside the cruise (x8)
+  TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64],   // T one step faster, R one step slower
   TIME_ACCEL_CHEAT: 128,       // the Alt+6 cheat
   TIME_ACCEL_MIN_ALT_M: 150,   // time acceleration only above this height AGL
-  TIME_ACCEL_NEEDS_AP: true,
+  TIME_ACCEL_AP_MAX: 64,       // with the autopilot engaged: up to x64 in any phase
+  // flying by hand: the fastest step allowed above each height AGL (feet)
+  TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
+    { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],
+  TAKEOFF_NO_CLEARANCE_KT: 50, // rolling faster than this before the clearance counts as a take-off without one
+  NO_CLEARANCE_FINE: 0.05,     // ... and costs this share of the contract pay
   MAX_STEPS_PER_FRAME: 160,    // physics steps per rendered frame at most
   CRUISE_ALT_MIN: 2500,
   CRUISE_ALT_MAX: 11300,
@@ -698,6 +702,15 @@ const VIEW = {
   NEAR_CLIP: 0.7,
   FOG_DENSITY: 1 / 62000,      // 1/e per metre
   COCKPIT_DRAW_DIST: 12000
+};
+
+// ---------- Controls and screen layout ----------
+const CONTROLS = {
+  THROTTLE_CURVE: 1.8,         // thrust = lever position ^ this: the low end of the lever is finer (taxi power)
+  THROTTLE_KEY_RATE: 0.45,     // lever travel per second with Z / X
+  MINIMAP_MIN_W: 1100,         // the mini map in the corner: desktop windows at least this wide ...
+  MINIMAP_MIN_H: 640,          // ... and this tall
+  MINIMAP_FPS: 6               // the mini map is redrawn this often
 };
 
 const PALETTE = {
