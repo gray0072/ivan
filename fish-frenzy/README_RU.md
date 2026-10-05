@@ -65,4 +65,4 @@
 
 ## Технологии
 
-HTML + CSS + несколько файлов на чистом JavaScript (`utils.js`, `audio.js`, `input.js`, `scenery.js`, `fireworks.js`, `constants.js`, `game.js`) — без фреймворков и сборки. Canvas 2D для графики, Web Audio API для звука.
+HTML + CSS + чистый JavaScript в нескольких папках (`core/` — утилиты, звук, управление и автонастройка графики, `render/` — мир и декорации, `sim/` — автопилот демо-режима, `ui/` — салют, а сверху `constants.js` и `game.js`) — без фреймворков и сборки. Canvas 2D для графики, Web Audio API для звука.

@@ -43,3 +43,31 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Sea King stage: jellyfish no longer sting the player; touching one with the mouth eats it (queued growth)
 - Spawn / cull distances follow the view (`spawnRadius` = `SPAWN_SCREENS` × the larger screen side / current zoom, `cullDist` = × `CULL_MUL` 1.3), for fish, jellyfish and plankton alike; the plankton count follows the spawn box clipped to the water column (`FOOD_DENSITY`, capped at `FOOD_MAX`) so its density doesn't depend on the zoom or the screen size. The fish count (`NPC_COUNT`), the jellyfish count (`JELLY_COUNT`) and the plankton cap are tuned for a phone in landscape (larger side `REF_SCREEN_SIDE` = 900 CSS px) and multiplied by the populated area of the actual screen relative to that one at the same zoom (clipped to the water column; ×1 … ×`SCREEN_MUL_MAX` 6), so a big monitor is as crowded as a phone
 - Crowd control: NPC count scales down with player size (`npcCount`, down to 60% of `NPC_COUNT`); surplus bots are retired off-screen, farthest first
+
+## Files
+
+```
+fish-frenzy/
+├── SPEC.md
+├── index.html          markup only, versioned <link>/<script> tags
+├── styles.css
+├── constants.js        tuning: difficulty, sizes, speeds, counts, timings, hit shapes, stages
+├── game.js             world, NPCs, jellyfish, gulls, leaps, the flow and the screens, update loop
+├── core/
+│   ├── utils.js        math helpers, canvasScale, frameLimiter
+│   ├── audio.js        Web Audio sound effects
+│   ├── input.js        keyboard, split-screen touch joystick and boost zones, fullscreen
+│   └── quality.js      Auto graphics (createAutoGraphics): preset from the device and the frame rate
+├── sim/
+│   └── demo.js         the demo-mode pilot (createDemoPilot)
+├── render/
+│   ├── render.js       the canvas, graphics presets, fish, jellyfish, gulls, food, effects, touch controls
+│   └── scenery.js      stateless background: sky, islands, surface, light rays, sand, seaweed, rocks
+├── ui/
+│   └── fireworks.js    the fireworks show above the max-size dialog
+├── README.md / README_RU.md
+├── icon.svg / icon-maskable.svg
+├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
+├── manifest.webmanifest
+└── screenshot.png
+```

@@ -65,16 +65,12 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html           # markup only, links versioned CSS/JS
 │   ├── styles.css
-│   ├── utils.js              # math helpers
-│   ├── audio.js              # Web Audio sound effects
-│   ├── input.js              # keyboard, touch joystick/boost zones, fullscreen
-│   ├── scenery.js            # background: water, light rays, ridges, sand, seaweed, rocks
-│   ├── fireworks.js          # fireworks show for the max-size dialog
 │   ├── constants.js          # game tuning constants (sizes, speeds, counts, timings, hit shapes)
-│   ├── render.js             # canvas setup and drawing of fish, jellyfish, gulls, food, effects, touch controls
-│   ├── quality.js            # Auto graphics: picks the preset from the device and the measured frame rate
-│   ├── demo.js               # demo-mode pilot: steers the player with a bot-like brain (createDemoPilot)
-│   ├── game.js               # world, difficulty, update loop; hands its state to render.js each frame
+│   ├── game.js               # world, difficulty, update loop; hands its state to render/render.js each frame
+│   ├── core/                 # utils, audio, input (keyboard, touch joystick/boost zones, fullscreen), quality (Auto graphics)
+│   ├── sim/                  # demo.js — demo-mode pilot (createDemoPilot)
+│   ├── render/               # render.js (canvas, fish, jellyfish, gulls, effects), scenery.js (background)
+│   ├── ui/                   # fireworks.js — fireworks show for the max-size dialog
 │   ├── README.md
 │   ├── README_RU.md
 │   ├── README_SV.md
@@ -87,9 +83,11 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── SPEC.md               # the game's own spec (screens, rules, files)
 │   ├── index.html            # markup only, links versioned CSS/JS
 │   ├── styles.css
-│   ├── *.js                  # constants, storage, progress, stars, audio, speech, nav, quality, fx, lesson, muncher, room, app
+│   ├── constants.js, progress.js, app.js  # tuning, levels and stars, screens and the main loop
+│   ├── core/                 # storage, audio, speech, nav (keyboard / TV-remote focus), quality
+│   ├── ui/                   # stars, lesson, muncher (pause dialog), room
 │   ├── tasks/                # task types (tasks.js dispatcher, math.js, scale.js, read.js + words.js)
-│   ├── scenes/               # processes (flower, zombies, railway, balloon, campfire, panda)
+│   ├── scenes/               # fx.js shared drawing helpers + processes (flower, zombies, railway, balloon, campfire, panda)
 │   ├── characters/           # the player's animal characters as SVG (species.js, look.js)
 │   ├── items/                # shop: food.js, clothes.js + wear/<slot>.js, furniture.js + room/<slot>.js, shop.js
 │   ├── README.md

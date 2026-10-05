@@ -65,4 +65,4 @@ The **Demo** button under the graphics switch starts an Easy run where the fish 
 
 ## Tech stack
 
-Plain HTML + CSS + a few vanilla JavaScript files (`utils.js`, `audio.js`, `input.js`, `scenery.js`, `fireworks.js`, `constants.js`, `game.js`) — no frameworks, no build step. Canvas 2D for rendering, Web Audio API for sound.
+Plain HTML + CSS + vanilla JavaScript in a few folders (`core/` helpers, sound, input and auto graphics, `render/` the world and scenery, `sim/` the demo pilot, `ui/` the fireworks, with `constants.js` and `game.js` on top) — no frameworks, no build step. Canvas 2D for rendering, Web Audio API for sound.

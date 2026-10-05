@@ -225,21 +225,21 @@ fun-training/
 ├── index.html       # markup of all screens
 ├── styles.css
 ├── constants.js     # task types, operations, limits, scale and reading options, time tables, speeds, coin rules, star tiers, processes, characters, food / item catalog and prices, hunger, timings
-├── storage.js       # players and their settings/progress in localStorage
+├── core/            # plumbing with no game rules
+│   ├── storage.js   # players and their settings/progress in localStorage
+│   ├── audio.js     # Web Audio sound effects
+│   ├── speech.js    # speech synthesis: a voice per language, says the Reading tasks
+│   ├── nav.js       # spatial keyboard / TV-remote focus navigation
+│   └── quality.js   # automatic graphics quality (canvas resolution by device and frame rate)
 ├── progress.js      # levels: boss kinds, which step is open, level complete, stars, diamonds per boss
-├── stars.js         # level stars as SVG in their materials, the ladder of levels
 ├── tasks/           # task types, one file each; tasks.js first, then the types
 │   ├── tasks.js     # Tasks: picks the type, expected time, answer choices, shared helpers (fmt, rnd, pick)
 │   ├── math.js      # Math: example generator, time per operator, plausible mistakes
 │   ├── scale.js     # Scales: generator, solution, plausible mistakes, SVG drawing
 │   ├── words.js     # Reading data per language: alphabet, alike letters, words, phrases
 │   └── read.js      # Reading: letter / word / phrase picker, close options, needs a voice
-├── audio.js         # Web Audio sound effects
-├── speech.js        # speech synthesis: a voice per language, says the Reading tasks
-├── nav.js           # spatial keyboard / TV-remote focus navigation
-├── quality.js       # automatic graphics quality (canvas resolution by device and frame rate)
-├── fx.js            # shared drawing helpers (roundRect polyfill, fitScene, mixColor, starPath…), the victory confetti and level-up fireworks
 ├── scenes/          # processes, one file each (state + canvas drawing)
+│   ├── fx.js        # shared drawing helpers (roundRect polyfill, fitScene, mixColor, starPath…), the victory confetti and level-up fireworks
 │   ├── flower.js    # Grow a Flower
 │   ├── zombies.js   # Zombie Defense
 │   ├── railway.js   # Railway Rush
@@ -256,9 +256,11 @@ fun-training/
 │   ├── furniture.js # ROOM_ART, the room layout (where each slot stands, draw order) and ROOM_KIT helpers
 │   ├── room/        # wall.js, floor.js, bed.js, table.js, lamp.js, window.js, rug.js, picture.js, plant.js, toy.js, pet.js
 │   └── shop.js      # Shop: owning, buying, wearing / placing, feeding, hunger, tastes, thumbnails
-├── lesson.js        # lesson loop: tasks, safety level, answers, win/lose, the paid pause
-├── muncher.js       # the Coin Muncher in the pause dialog (drawing, chomping coins)
-├── room.js          # the room screen: room scene, shop panel, feeding / trying on / buying, reactions
+├── ui/              # screens and their parts
+│   ├── stars.js     # level stars as SVG in their materials, the ladder of levels
+│   ├── lesson.js    # lesson loop: tasks, safety level, answers, win/lose, the paid pause
+│   ├── muncher.js   # the Coin Muncher in the pause dialog (drawing, chomping coins)
+│   └── room.js      # the room screen: room scene, shop panel, feeding / trying on / buying, reactions
 ├── app.js           # screens, settings UI, keyboard routing, main loop
 ├── README.md / README_RU.md   # short, link to the live page
 ├── icon.svg
