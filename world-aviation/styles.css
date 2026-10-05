@@ -424,6 +424,9 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .settingsRow { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; }
 .btnRow + .settingsRow { margin-top: 22px; }
 .setGroup { display: flex; align-items: center; gap: 6px; }
+/* the language picker at the top of the title screen */
+.langPick { justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
+.langPick .chip { padding: 5px 12px; font-size: 13px; }
 .setGroup span { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8296a8; margin-right: 4px; }
 .chip {
   padding: 6px 12px;
@@ -629,8 +632,7 @@ table.money tr.total td { font-weight: 800; font-size: 16px; border-bottom: 0; p
 }
 
 /* ---------- exams ---------- */
-.trainTop { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-.quizLang .chip { padding: 4px 10px; font-size: 12px; }
+
 .opt.right { border-color: #4ac47f; background: #183a28; color: #dff7e8; opacity: 1; }
 .opt.wrong { border-color: #e0574a; background: #3d1d1b; color: #ffd9d4; opacity: 1; }
 .opt.dim { opacity: 0.5; }

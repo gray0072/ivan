@@ -83,14 +83,14 @@ const HUD = {
     const late = res && fl.realElapsed > res.deadline;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);
     this.strip.innerHTML =
-      '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + c.type.toUpperCase() + '</span></div>' +
+      '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + esc(tr(PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type).toUpperCase()) + '</span></div>' +
       '<div class="stripRow big">' + c.fromId + ' → ' + c.toId + '</div>' +
-      '<div class="stripRow"><span>' + (c.pax ? c.pax + ' pax · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
+      '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
       '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
-      '<div class="stripRow"><span>FUEL ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
+      '<div class="stripRow"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
-      '<div class="stripRow"><span>PAY</span><b>' + fmtMoney(c.pay) + '</b></div>' +
-      (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow"><span>' + (late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
+      '<div class="stripRow"><span>' + tr('PAY') + '</span><b>' + fmtMoney(c.pay) + '</b></div>' +
+      (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
         (late ? 'bad' : (left < 60 ? 'warn' : 'good')) + '">' + fmtTime(late ? fl.realElapsed - res.deadline : left) + '</b></div>' : '');
   },
 
@@ -151,9 +151,9 @@ const HUD = {
       box.classList.toggle('qrhDone', !c && out.ok);
       box.classList.toggle('qrhLost', !c && !out.ok);
       if (!c) {
-        box.innerHTML = '<div class="qrhTitle">' + (out.ok ? '&#10003; ' : '&#10007; ') + esc(out.title) + '</div>' +
-          (out.ok ? '<div class="qrhSub">Checklist complete in ' + out.used + ' s of ' + out.limit + ' s</div>' : '') +
-          '<div class="qrhWhat">' + esc(Units.text(out.text)) + '</div>';
+        box.innerHTML = '<div class="qrhTitle">' + (out.ok ? '&#10003; ' : '&#10007; ') + esc(tr(out.title)) + '</div>' +
+          (out.ok ? '<div class="qrhSub">' + tr('Checklist complete in {a} s of {b} s', { a: out.used, b: out.limit }) + '</div>' : '') +
+          '<div class="qrhWhat">' + esc(Units.text(sys.qrhText(tr(out.text), out))) + '</div>';
         return;
       }
       const coarse = Input.isCoarse;
@@ -163,18 +163,18 @@ const HUD = {
         const cls = 'qrhStep' + (done ? ' done' : cur ? ' cur' : ' later');
         return '<button type="button" class="' + cls + '" data-step="' + i + '"' + (done ? ' disabled' : '') + '>' +
           '<span class="qrhN">' + (done ? '&#10003;' : i + 1) + '</span>' +
-          '<span class="qrhT">' + esc(Units.text(sys.qrhText(st.text))) + '</span>' +
+          '<span class="qrhT">' + esc(Units.text(sys.qrhText(tr(st.text)))) + '</span>' +
           '<kbd>' + esc(this.qrhControl(st, true, coarse)) + '</kbd>' +
-          (cur && hint && st.why ? '<span class="qrhWhy">' + esc(st.why) + '</span>' : '') +
+          (cur && hint && st.why ? '<span class="qrhWhy">' + esc(tr(st.why)) + '</span>' : '') +
           '</button>';
       }).join('');
       box.innerHTML =
-        '<div class="qrhHead"><div class="qrhTitle">' + esc(c.def.title) + '</div>' +
+        '<div class="qrhHead"><div class="qrhTitle">' + esc(tr(c.def.title)) + '</div>' +
         '<div class="qrhTimer"><div class="qrhBar"><i></i></div><span></span></div></div>' +
-        '<div class="qrhWhat">' + esc(Units.text(sys.qrhText(c.def.what || ''))) + '</div>' +
+        '<div class="qrhWhat">' + esc(Units.text(sys.qrhText(tr(c.def.what || '')))) + '</div>' +
         rows +
         (nudge ? '<div class="qrhNudge">' + esc(nudge) + '</div>'
-          : '<div class="qrhSub">' + (coarse ? 'Tap the lit switch (or Go); the other steps tick when you use the control shown.'
+          : '<div class="qrhSub">' + tr(coarse ? 'Tap the lit switch (or Go); the other steps tick when you use the control shown.'
             : '<kbd>Enter</kbd> works the lit switch; the other steps tick when you use the control shown.') + '</div>');
       box.querySelectorAll('[data-step]').forEach((b) => {
         b.addEventListener('click', () => Game.doChecklistStep(parseInt(b.getAttribute('data-step'), 10)));
@@ -192,12 +192,13 @@ const HUD = {
   qrhControl(step, short, coarse) {
     if (coarse === undefined) coarse = Input.isCoarse;
     const pct = Math.round((step.value || 0) * 100);
+    const p = { pct, d: Math.round(pct / 10) };
     const T = {
       switch: ['Enter', 'tap', 'press Enter', 'tap the step'],
       setAlt: ['Enter', 'tap', 'press Enter', 'tap the step'],
       setAltBy: ['Enter', 'tap', 'press Enter', 'tap the step'],
       idle: ['0', 'THR ▼', 'press 0 — thrust to idle', 'pull the throttle slider all the way down'],
-      thrustMax: [String(Math.round(pct / 10)), 'THR ' + pct + '%', 'press ' + Math.round(pct / 10) + ' or lower — thrust ' + pct + ' %', 'throttle slider to ' + pct + ' % or less'],
+      thrustMax: ['{d}', 'THR {pct}%', 'press {d} or lower — thrust {pct} %', 'throttle slider to {pct} % or less'],
       thrustMin: ['9', 'THR ▲', 'press 9 — full thrust', 'push the throttle slider all the way up'],
       antiIce: ['K', 'Ice', 'press K — anti-ice', 'the Ice button'],
       gearDown: ['G', 'Gear', 'press G — gear lever', 'the Gear button'],
@@ -207,7 +208,7 @@ const HUD = {
       climb: ['↓', 'stick ▼', 'hold ↓ — pull the nose up', 'drag the stick down — nose up'],
       slowVne: ['speed', 'speed', 'wait for the speed to drop', 'wait for the speed to drop']
     }[step.kind] || ['Enter', 'tap', 'press Enter', 'tap the step'];
-    return T[(short ? 0 : 2) + (coarse ? 1 : 0)];
+    return tr(T[(short ? 0 : 2) + (coarse ? 1 : 0)], p);
   },
 
   // ---------- taxi guidance ----------
@@ -246,8 +247,8 @@ const HUD = {
     if (!m) return;
     m.hidden = !this.mapOpen;
     const hint = m.querySelector('p');
-    if (hint) hint.innerHTML = 'Moving map &middot; north up &middot; ' +
-      (Input.isCoarse ? 'tap anywhere to close' : '<kbd>M</kbd> to ' + (this.bigScreen() ? 'hide' : 'close'));
+    if (hint) hint.innerHTML = tr('Moving map &middot; north up') + ' &middot; ' +
+      tr(Input.isCoarse ? 'tap anywhere to close' : this.bigScreen() ? '<kbd>M</kbd> to hide' : '<kbd>M</kbd> to close');
   },
   // the mini map is there when it helps and gone when it would be in the way: in the air,
   // not during a checklist, not on the last 1 000 ft of the approach
@@ -391,7 +392,7 @@ const HUD = {
       g.fillStyle = '#c8d4df';
       g.font = '600 11px system-ui, sans-serif';
       g.textAlign = 'right';
-      g.fillText(Units.dist(fl.distToDestNm()) + ' to ' + to.id, w - 8, h - 8);
+      g.fillText(tr('{d} to {id}', { d: Units.dist(fl.distToDestNm()), id: to.id }), w - 8, h - 8);
       return;
     }
     // scale bar, in real nautical miles (the world is drawn compressed by WORLD.SCALE)
@@ -411,14 +412,15 @@ function esc(s) {
 }
 
 // On a touch screen the prompts name the on-screen buttons instead of the keys
+// (the button names as on the buttons, in the game's language)
 const TOUCH_KEYS = [
-  ['<kbd>Enter</kbd>', '<b>Go</b>'], ['<kbd>Space</kbd>', '<b>Park</b>'], ['<kbd>G</kbd>', '<b>Gear</b>'],
-  ['<kbd>F</kbd>', '<b>Flap +</b>'], ['<kbd>V</kbd>', '<b>Flap −</b>'], ['<kbd>B</kbd>', '<b>Brake</b>'],
-  ['<kbd>Y</kbd>', '<b>AP</b>'], ['<kbd>T</kbd>', '<b>Time +</b>'], ['<kbd>R</kbd>', '<b>Time −</b>'], ['<kbd>9</kbd>', 'throttle slider up'],
+  ['<kbd>Enter</kbd>', 'Go', 1], ['<kbd>Space</kbd>', 'Park', 1], ['<kbd>G</kbd>', 'Gear', 1],
+  ['<kbd>F</kbd>', 'Flap +', 1], ['<kbd>V</kbd>', 'Flap −', 1], ['<kbd>B</kbd>', 'Brake', 1],
+  ['<kbd>Y</kbd>', 'AP', 1], ['<kbd>T</kbd>', 'Time +', 1], ['<kbd>R</kbd>', 'Time −', 1], ['<kbd>9</kbd>', 'throttle slider up'],
   ['<kbd>0</kbd>', 'throttle slider down'], ['<kbd>1</kbd>–<kbd>3</kbd>', 'a little throttle'],
-  ['<kbd>←</kbd><kbd>→</kbd>', 'the stick'], ['<kbd>↓</kbd>', 'stick down'], ['<kbd>/</kbd>', '<b>Spoiler</b>']
+  ['<kbd>←</kbd><kbd>→</kbd>', 'the stick'], ['<kbd>↓</kbd>', 'stick down'], ['<kbd>/</kbd>', 'Spoiler', 1]
 ];
 function touchPrompt(html) {
-  for (const [k, t] of TOUCH_KEYS) html = html.split(k).join(t);
+  for (const [k, t, btn] of TOUCH_KEYS) html = html.split(k).join(btn ? '<b>' + tr(t) + '</b>' : tr(t));
   return html.replace(/<kbd>[^<]*<\/kbd>/g, '');
 }

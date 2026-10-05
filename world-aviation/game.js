@@ -45,14 +45,14 @@ const Game = {
       box.hidden = false;
       el('bootScreen').hidden = true;
       const p = box.querySelector('p');
-      if (p) p.textContent = 'World Aviation renders the cockpit view with WebGL (' +
-        (err && err.message ? err.message : 'unknown error') + '). Enable hardware acceleration in your browser, or try another one.';
+      if (p) p.textContent = tr('World Aviation renders the cockpit view with WebGL ({err}). Enable hardware acceleration in your browser, or try another one.',
+        { err: err && err.message ? err.message : tr('unknown error') });
       return;
     }
     World.init();
     Scene3D.setQuality(this.quality);
     Scene3D.resize();
-    el('bootStatus').textContent = 'Ready';
+    el('bootStatus').textContent = tr('Ready');
     await frame();
 
     Input.onAction = (name, arg) => this.action(name, arg);
@@ -105,7 +105,7 @@ const Game = {
         if (st.onGround && !ax.rudder) st.rudder = ax.roll;
       } else if (Math.abs(ax.pitch) > 0.5 || Math.abs(ax.roll) > 0.5) {
         fl.ap.on = false;
-        fl.warn('AP', 'Autopilot disconnected — you have control');
+        fl.warn('AP', tr('Autopilot disconnected — you have control'));
       }
       // the keys move the lever, which maps to thrust on a curve (finer at low power)
       if (ax.throttle) fl.setThrottle(throttleFromLever(leverFromThrottle(st.throttle) + ax.throttle * dt * CONTROLS.THROTTLE_KEY_RATE));
@@ -222,16 +222,16 @@ const Game = {
     ctx.font = '700 11px system-ui, sans-serif';
     ctx.textAlign = 'center';
     ctx.shadowBlur = 0;
-    say('RUNWAY', cx - R - 34, ly + 4, LOC);
-    say('GLIDE PATH', gx + 4, cy - V - 9, GS);
+    say(tr('RUNWAY'), cx - R - 34, ly + 4, LOC);
+    say(tr('GLIDE PATH'), gx + 4, cy - V - 9, GS);
     const words = [];
-    if (Math.abs(d.locDeg) < 0.6) words.push(['on the centreline', '#54d68a']);
-    else words.push([loc > 0 ? 'runway to the RIGHT ▶ turn right' : '◀ runway to the LEFT turn left', LOC]);
-    if (Math.abs(d.gsDeg) < 0.25) words.push(['on the glide path', '#54d68a']);
-    else words.push([gs > 0 ? 'LOW ▲ descend less' : 'HIGH ▼ descend more', GS]);
+    if (Math.abs(d.locDeg) < 0.6) words.push([tr('on the centreline'), '#54d68a']);
+    else words.push([tr(loc > 0 ? 'runway to the RIGHT ▶ turn right' : '◀ runway to the LEFT turn left'), LOC]);
+    if (Math.abs(d.gsDeg) < 0.25) words.push([tr('on the glide path'), '#54d68a']);
+    else words.push([tr(gs > 0 ? 'LOW ▲ descend less' : 'HIGH ▼ descend more'), GS]);
     ctx.font = '700 12px system-ui, sans-serif';
     const both = Math.abs(d.locDeg) < 0.6 && Math.abs(d.gsDeg) < 0.25;
-    if (both) say('ON THE CENTRELINE AND THE GLIDE PATH', cx, ly + 30, '#54d68a');
+    if (both) say(tr('ON THE CENTRELINE AND THE GLIDE PATH'), cx, ly + 30, '#54d68a');
     else words.forEach(([t, c], i) => say(t, cx, ly + 28 + i * 15, c));
     ctx.restore();
   },
@@ -324,7 +324,7 @@ const Game = {
     ctx.font = '700 13px system-ui, sans-serif';
     if (margin < 12) {
       ctx.fillStyle = margin < 4 ? '#ff4d3d' : '#ffb03a';
-      ctx.fillText(margin < 0 ? 'STALL' : 'SPEED  +' + Units.spd(margin), w / 2, Cockpit.panelTop(h) - 60);
+      ctx.fillText(margin < 0 ? tr('STALL') : tr('SPEED') + '  +' + Units.spd(margin), w / 2, Cockpit.panelTop(h) - 60);
     }
   },
 
@@ -342,7 +342,7 @@ const Game = {
     if (p.t >= SIM.PUSHBACK_S) {
       st.parkingBrake = true;
       fl.setPhase('ENGINE_START');
-      fl.info('Push back complete — tug disconnected, parking brake set');
+      fl.info(tr('Push back complete — tug disconnected, parking brake set'));
     }
   },
 
@@ -359,7 +359,7 @@ const Game = {
     if (AIRBORNE_PHASES.includes(p) && st.onGround && st.wasAirborne) {
       if (fl.nearestApt() === arr && fl.landed) { fl.setPhase('ROLLOUT'); return; }
       if (fl.nearestApt() === apt && speed < 30) {
-        fl.fail('returned', 'You landed back at ' + apt.id + ' — the load was not delivered.');
+        fl.fail('returned', tr('You landed back at {id} — the load was not delivered.', { id: apt.id }));
         return;
       }
     }
@@ -370,89 +370,89 @@ const Game = {
       fl.noClearance = true;
       st.parkingBrake = false;
       fl.setPhase('TAKEOFF');
-      fl.warn('CLEARANCE', 'Tower: you took off without a clearance — this will be reported');
+      fl.warn('CLEARANCE', tr('Tower: you took off without a clearance — this will be reported'));
       return;
     }
 
     if (p === 'GATE') {
-      HUD.setPrompt('<b>' + apt.id + ' · ' + this.flight.startGate.name + '</b> · doors closed, ready to go<br>' +
-        'press <kbd>Enter</kbd> to call the tug for push back');
+      HUD.setPrompt('<b>' + apt.id + ' · ' + gateName(this.flight.startGate) + '</b> · ' + tr('doors closed, ready to go') + '<br>' +
+        tr('press <kbd>Enter</kbd> to call the tug for push back'));
     } else if (p === 'PUSHBACK') {
-      HUD.setPrompt('<b>Push back</b> · the tug is pushing you onto the apron<br>' +
-        (sys.started ? 'engines starting' : 'you can start the engines now — <kbd>Enter</kbd>'));
+      HUD.setPrompt(tr('<b>Push back</b> · the tug is pushing you onto the apron') + '<br>' +
+        tr(sys.started ? 'engines starting' : 'you can start the engines now — <kbd>Enter</kbd>'));
     } else if (p === 'ENGINE_START') {
       const all = sys.runningCount() === fl.ac.engines;
-      HUD.setPrompt(all
+      HUD.setPrompt(tr(all
         ? '<b>Engines running</b><br>press <kbd>Enter</kbd> to release the parking brake and taxi'
-        : sys.started ? '<b>Starting</b> · watch the N1 and EGT gauges' : '<b>Start the engines</b><br>press <kbd>Enter</kbd>');
+        : sys.started ? '<b>Starting</b> · watch the N1 and EGT gauges' : '<b>Start the engines</b><br>press <kbd>Enter</kbd>'));
     } else if (p === 'TAXI_OUT') {
       const g = fl.guidance;
       const hold = apt.nodes.hold;
       const dHold = Math.hypot(st.pos.x - hold.x, st.pos.z - hold.z);
       if (dHold < 30) {
         fl.setPhase('HOLD_SHORT');
-        fl.info('Holding point runway ' + apt.rwyName + ' — stop and wait for the clearance');
+        fl.info(tr('Holding point runway {rwy} — stop and wait for the clearance', { rwy: apt.rwyName }));
       }
-      HUD.setPrompt('<b>Taxi</b> to the holding point of runway ' + apt.rwyName +
-        ' · throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>' +
-        (g && g.visible ? '<br>' + fmtDist(g.remaining) + ' to go' : '') +
-        (speed > 25 ? ' · <b class="bad">too fast — keep below 20 kt</b>' : ''));
+      HUD.setPrompt(tr('<b>Taxi</b> to the holding point of runway {rwy}', { rwy: apt.rwyName }) +
+        ' · ' + tr('throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>') +
+        (g && g.visible ? '<br>' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') +
+        (speed > 25 ? ' · <b class="bad">' + tr('too fast — keep below 20 kt') + '</b>' : ''));
     } else if (p === 'HOLD_SHORT') {
-      HUD.setPrompt('<b>Holding point runway ' + apt.rwyName + '</b>' + (speed > 2 ? ' · <b>stop here</b>' : '') +
-        '<br>set flaps ' + this.takeoffFlaps() + ' <kbd>F</kbd>, then <kbd>Enter</kbd> for the take-off clearance');
+      HUD.setPrompt('<b>' + tr('Holding point runway {rwy}', { rwy: apt.rwyName }) + '</b>' + (speed > 2 ? ' · <b>' + tr('stop here') + '</b>' : '') +
+        '<br>' + tr('set flaps {n} <kbd>F</kbd>, then <kbd>Enter</kbd> for the take-off clearance', { n: this.takeoffFlaps() }));
     } else if (p === 'TAKEOFF') {
       const vr = Math.round(fl.vr());
       HUD.setPrompt(st.onGround
-        ? '<b>Runway ' + apt.rwyName + (fl.noClearance ? ' · no clearance!' : ' · cleared for take-off') + '</b><br>line up, full power <kbd>9</kbd>, rotate at Vr ' + vr +
-          ' kt — pull back <kbd>↓</kbd>' + (st.flapsTarget < 1 ? ' · <b>flaps!</b>' : '')
-        : '<b>Positive climb</b> · gear up <kbd>G</kbd>');
+        ? '<b>' + tr('Runway {rwy}', { rwy: apt.rwyName }) + ' · ' + tr(fl.noClearance ? 'no clearance!' : 'cleared for take-off') + '</b><br>' +
+          tr('line up, full power <kbd>9</kbd>, rotate at Vr {vr} kt — pull back <kbd>↓</kbd>', { vr }) + (st.flapsTarget < 1 ? ' · <b>' + tr('flaps!') + '</b>' : '')
+        : tr('<b>Positive climb</b> · gear up <kbd>G</kbd>'));
       if (!st.onGround && fl.altAgl() > 150) {
         fl.setPhase('CLIMB');
         fl.ap.alt = this.cruiseAltFt();
-        fl.info('Climb to ' + fmtAltFt(fl.ap.alt) + ' ft — engage the autopilot with Y');
+        fl.info(tr('Climb to {alt} ft — engage the autopilot with Y', { alt: fmtAltFt(fl.ap.alt) }));
       }
     } else if (p === 'CLIMB') {
-      HUD.setPrompt('<b>Climb</b> to ' + fmtAltFt(fl.ap.alt) + ' ft' +
-        (st.gearTarget === 1 ? ' · gear up <kbd>G</kbd>' : '') + (st.flapsTarget > 0 && st.ias / KTS > fl.vr() + 25 ? ' · flaps up <kbd>V</kbd>' : '') +
-        (!fl.ap.on ? ' · autopilot <kbd>Y</kbd>' : ''));
+      HUD.setPrompt(tr('<b>Climb</b> to {alt} ft', { alt: fmtAltFt(fl.ap.alt) }) +
+        (st.gearTarget === 1 ? ' · ' + tr('gear up <kbd>G</kbd>') : '') + (st.flapsTarget > 0 && st.ias / KTS > fl.vr() + 25 ? ' · ' + tr('flaps up <kbd>V</kbd>') : '') +
+        (!fl.ap.on ? ' · ' + tr('autopilot <kbd>Y</kbd>') : ''));
       if (Math.abs(st.pos.y / FT - fl.ap.alt) < 300) {
         fl.setPhase('CRUISE');
-        fl.info('Cruise · time acceleration: T faster, R slower');
+        fl.info(tr('Cruise · time acceleration: T faster, R slower'));
       }
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'CRUISE') {
-      HUD.setPrompt('<b>Cruise · ' + Math.round(fl.distToDestNm()) + ' nm to ' + arr.id + '</b><br>' +
-        (fl.ap.on ? 'autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x' + fl.env.timeAccel + ')' : 'autopilot <kbd>Y</kbd> flies the route') +
-        (this.res && fl.realElapsed > this.res.deadline * 0.75 ? ' · <b class="bad">running late</b>' : ''));
+      HUD.setPrompt('<b>' + tr('Cruise · {nm} nm to {id}', { nm: Math.round(fl.distToDestNm()), id: arr.id }) + '</b><br>' +
+        (fl.ap.on ? tr('autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel }) : tr('autopilot <kbd>Y</kbd> flies the route')) +
+        (this.res && fl.realElapsed > this.res.deadline * 0.75 ? ' · <b class="bad">' + tr('running late') + '</b>' : ''));
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'DESCENT') {
-      HUD.setPrompt('<b>Descent</b> to ' + fmtAltFt(fl.ap.alt) + ' ft · ' + Math.round(fl.distToRunwayNm()) + ' nm to runway ' + arr.rwyName);
+      HUD.setPrompt(tr('<b>Descent</b> to {alt} ft · {nm} nm to runway {rwy}', { alt: fmtAltFt(fl.ap.alt), nm: Math.round(fl.distToRunwayNm()), rwy: arr.rwyName }));
       fl.navTarget();                                   // keeps the localiser capture up to date
       if (fl.locCaptured && fl.distToRunwayNm() < SIM.APPROACH_NM) {
         fl.setPhase('APPROACH');
-        fl.info('Approach runway ' + arr.rwyName + ' · Vref ' + Math.round(fl.vRef()) + ' kt · flaps and gear down');
+        fl.info(tr('Approach runway {rwy} · Vref {v} kt · flaps and gear down', { rwy: arr.rwyName, v: Math.round(fl.vRef()) }));
       }
     } else if (p === 'APPROACH') {
       const nm = fl.distToRunwayNm();
       const need = [];
-      if (st.flapsTarget < fl.ac.flaps.length && nm < 8) need.push('flaps <kbd>F</kbd>');
-      if (st.gearTarget < 1 && nm < 7) need.push('<b>gear down</b> <kbd>G</kbd>');
-      HUD.setPrompt('<b>Approach · runway ' + arr.rwyName + '</b> · ' + nm.toFixed(1) + ' nm · Vref ' + Math.round(fl.vRef()) + ' kt' +
-        (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>autopilot flies the ILS down to 200 ft' : '')));
-      if (nm < 1.5 && fl.altAgl() < 90 && st.gearTarget < 1) fl.warn('TOOLOWGEAR', 'TOO LOW — GEAR');
+      if (st.flapsTarget < fl.ac.flaps.length && nm < 8) need.push(tr('flaps <kbd>F</kbd>'));
+      if (st.gearTarget < 1 && nm < 7) need.push(tr('<b>gear down</b> <kbd>G</kbd>'));
+      HUD.setPrompt('<b>' + tr('Approach · runway {rwy}', { rwy: arr.rwyName }) + '</b> · ' + nm.toFixed(1) + ' nm · Vref ' + Math.round(fl.vRef()) + ' kt' +
+        (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>' + tr('autopilot flies the ILS down to 200 ft') : '')));
+      if (nm < 1.5 && fl.altAgl() < 90 && st.gearTarget < 1) fl.warn('TOOLOWGEAR', tr('TOO LOW — GEAR'));
       // over the runway and still flying at its far end: go around and try again
       const loc = World.local(arr, st.pos.x, st.pos.z);
       const overRunway = Math.abs(loc.across) < 400 && loc.t > -arr.half && loc.t < arr.half;
       if (overRunway && !st.onGround) fl.overRunway = true;
       if (fl.overRunway && !st.onGround && loc.t > arr.half - 150) {
-        fl.warn('GOAROUND', 'Go around — climb, and fly the approach again');
+        fl.warn('GOAROUND', tr('Go around — climb, and fly the approach again'));
         fl.overRunway = false; fl.locCaptured = false; fl.ap.gs = false;
         fl.ap.alt = Math.round((arr.elev + 2500 * FT) / FT / 100) * 100;
         fl.setPhase('DESCENT');
       }
     } else if (p === 'ROLLOUT') {
-      HUD.setPrompt('<b>Touchdown ' + (fl.landed ? fl.landed.fpm + ' fpm' : '') + '</b><br>' +
-        'idle <kbd>0</kbd>, brakes <kbd>B</kbd>, spoiler <kbd>/</kbd> — slow below ' + SIM.ROLLOUT_EXIT_KT + ' kt');
+      HUD.setPrompt('<b>' + tr('Touchdown') + ' ' + (fl.landed ? fl.landed.fpm + ' fpm' : '') + '</b><br>' +
+        tr('idle <kbd>0</kbd>, brakes <kbd>B</kbd>, spoiler <kbd>/</kbd> — slow below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
       if (!st.onGround && fl.altAgl() > 15) {
         // touch-and-go: the next landing is the one that counts
         fl.landed = null;
@@ -466,18 +466,18 @@ const Game = {
       const align = Math.abs(wrapDeg(fl.headingDeg() - gate.parkHdg));
       const inBox = d < SIM.PARK_RADIUS_M && align < SIM.PARK_ALIGN_DEG;
       if (inBox && speed < 1.5) {
-        if (!st.parkingBrake) HUD.setPrompt('<b>In the parking box</b><br>set the parking brake — <kbd>Space</kbd>');
+        if (!st.parkingBrake) HUD.setPrompt(tr('<b>In the parking box</b><br>set the parking brake — <kbd>Space</kbd>'));
         else {
           fl.setPhase('SHUTDOWN');
           sys.stopEngines();
-          fl.info('Parking brake set — engines shutting down');
+          fl.info(tr('Parking brake set — engines shutting down'));
         }
       } else {
-        HUD.setPrompt('<b>Taxi to ' + gate.name + '</b> · follow the arrow, keep below 20 kt' +
-          (d < 80 ? '<br>stop on the stop bar — ' + Math.round(d) + ' m' + (align > SIM.PARK_ALIGN_DEG ? ', straighten up' : '') : ''));
+        HUD.setPrompt('<b>' + tr('Taxi to {gate}', { gate: gateName(gate) }) + '</b> · ' + tr('follow the arrow, keep below 20 kt') +
+          (d < 80 ? '<br>' + tr('stop on the stop bar — {d} m', { d: Math.round(d) }) + (align > SIM.PARK_ALIGN_DEG ? ', ' + tr('straighten up') : '') : ''));
       }
     } else if (p === 'SHUTDOWN') {
-      HUD.setPrompt('<b>Shutting down</b> · ' + fl.ac.name + ' at ' + this.arrivalGate.name);
+      HUD.setPrompt(tr('<b>Shutting down</b> · {ac} at {gate}', { ac: fl.ac.name, gate: gateName(this.arrivalGate) }));
       if (sys.allStopped) fl.setPhase('PARKED');
     } else if (p === 'PARKED') {
       HUD.setPrompt('');
@@ -485,10 +485,10 @@ const Game = {
     }
 
     // fuel starvation
-    if (st.fuel <= 0.5 && !st.onGround) fl.warn('FUEL', 'Out of fuel — glide to the nearest field');
+    if (st.fuel <= 0.5 && !st.onGround) fl.warn('FUEL', tr('Out of fuel — glide to the nearest field'));
     // ground proximity: not on a stable final, where the ground is meant to come up
     if (!st.onGround && fl.altAgl() > 30 && !(p === 'APPROACH' && fl.onCorridor()) && p !== 'TAKEOFF' && fl.terrainAhead() < 120) {
-      fl.warn('TERRAIN', 'TERRAIN — PULL UP');
+      fl.warn('TERRAIN', tr('TERRAIN — PULL UP'));
     }
   },
 
@@ -518,7 +518,7 @@ const Game = {
     fl.setPhase('DESCENT');
     fl.ap.alt = Math.round((arr.elev + 2500 * FT) / FT / 100) * 100;
     this.applyArrivalWeather();
-    fl.info('Top of descent — ' + arr.id + ' runway ' + arr.rwyName + ', descend to ' + fmtAltFt(fl.ap.alt) + ' ft');
+    fl.info(tr('Top of descent — {id} runway {rwy}, descend to {alt} ft', { id: arr.id, rwy: arr.rwyName, alt: fmtAltFt(fl.ap.alt) }));
   },
   applyArrivalWeather() {
     const env = this.flight.env, w = this.setup.weather.arr;
@@ -536,7 +536,7 @@ const Game = {
     const exit = World.exitAhead(a, loc.t);
     this.arrivalRoute = World.findRoute(a, exit, this.arrivalGate.node);
     fl.setPhase('EXIT');
-    fl.info('Leave the runway at the next exit and taxi to ' + this.arrivalGate.name);
+    fl.info(tr('Leave the runway at the next exit and taxi to {gate}', { gate: gateName(this.arrivalGate) }));
   },
 
   // ---------- guidance ----------
@@ -598,14 +598,14 @@ const Game = {
       case 'flapsDown': fl.setFlaps(st.flapsTarget + 1); Audio2.cue('lever'); break;
       case 'flapsUp': fl.setFlaps(st.flapsTarget - 1); Audio2.cue('lever'); break;
       case 'ap':
-        if (st.onGround) { fl.warn('AP', 'The autopilot engages in the air only'); break; }
+        if (st.onGround) { fl.warn('AP', tr('The autopilot engages in the air only')); break; }
         fl.ap.on = !fl.ap.on;
         if (fl.ap.on) {
           fl.ap.vsI = 0;
           if (!fl.ap.nav) fl.ap.hdg = Math.round(fl.headingDeg());
           if (fl.phase === 'TAKEOFF' || fl.phase === 'CLIMB') fl.ap.alt = Math.max(fl.ap.alt, this.cruiseAltFt());
         }
-        fl.info('Autopilot ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + fmtAltFt(fl.ap.alt) : 'off'));
+        fl.info(tr('Autopilot') + ' ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + fmtAltFt(fl.ap.alt) : tr('off')));
         Audio2.cue('click');
         break;
       case 'timeFaster': fl.changeTimeAccel(1); break;
@@ -614,37 +614,37 @@ const Game = {
       {
         const modes = VIEW.MODES, n = modes.length;
         this.camMode = modes[(modes.indexOf(this.camMode) + (arg === -1 ? n - 1 : 1)) % n];
-        fl.info('View: ' + VIEW.NAMES[this.camMode]);
+        fl.info(tr('View: {v}', { v: tr(VIEW.NAMES[this.camMode]) }));
       }
         break;
       case 'map': HUD.toggleMap(); break;
       case 'prompt': HUD.togglePrompt(); break;
       case 'brightness': Instruments.bright = Instruments.bright > 0.6 ? 0.45 : 1; break;
-      case 'spoiler': fl.toggleSpoiler(); fl.info('Spoiler ' + (st.spoiler ? 'out' : 'in')); break;
+      case 'spoiler': fl.toggleSpoiler(); fl.info(tr(st.spoiler ? 'Spoiler out' : 'Spoiler in')); break;
       case 'antiIce':
         sys.antiIce = !sys.antiIce;
-        fl.info('Engine and wing anti-ice ' + (sys.antiIce ? 'ON' : 'off'));
+        fl.info(tr(sys.antiIce ? 'Engine and wing anti-ice ON' : 'Engine and wing anti-ice off'));
         break;
       case 'parkBrake':
         if (fl.phase === 'PUSHBACK') break;
         st.parkingBrake = !st.parkingBrake;
-        fl.info('Parking brake ' + (st.parkingBrake ? 'set' : 'released'));
+        fl.info(tr(st.parkingBrake ? 'Parking brake set' : 'Parking brake released'));
         Audio2.cue('parkbrake', st.parkingBrake);
         break;
-      case 'altUp': fl.ap.alt = Math.min(fl.ap.alt + 500, 41000); fl.info('Selected altitude ' + fmtAltFt(fl.ap.alt) + ' ft'); break;
-      case 'altDown': fl.ap.alt = Math.max(1000, fl.ap.alt - 500); fl.info('Selected altitude ' + fmtAltFt(fl.ap.alt) + ' ft'); break;
+      case 'altUp': fl.ap.alt = Math.min(fl.ap.alt + 500, 41000); fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
+      case 'altDown': fl.ap.alt = Math.max(1000, fl.ap.alt - 500); fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
       case 'hdgUp': case 'hdgDown':
         if (fl.ap.nav) { fl.ap.nav = false; fl.ap.hdg = Math.round(fl.headingDeg()); }
         fl.ap.hdg = (fl.ap.hdg + (name === 'hdgUp' ? 5 : 355)) % 360;
-        fl.info('Heading ' + String(fl.ap.hdg).padStart(3, '0') + '° (HDG mode — N, or NAV on the touch screen, goes back to the programme)');
+        fl.info(tr('Heading {h}° (HDG mode — N, or NAV on the touch screen, goes back to the programme)', { h: String(fl.ap.hdg).padStart(3, '0') }));
         break;
       case 'nav':
         // back on the programme: NAV along the route and the altitude for this phase of the flight
-        if (st.onGround) { fl.info('NAV: the autopilot flies the route once you are in the air'); break; }
+        if (st.onGround) { fl.info(tr('NAV: the autopilot flies the route once you are in the air')); break; }
         fl.ap.nav = true; fl.locCaptured = false;
         fl.ap.alt = this.programAltFt();
         if (!fl.ap.on) { fl.ap.on = true; fl.ap.vsI = 0; }
-        fl.info('Autopilot back on the programme — NAV to ' + fl.arrival.id + ' · ALT ' + fmtAltFt(fl.ap.alt) + ' ft');
+        fl.info(tr('Autopilot back on the programme — NAV to {id} · ALT {alt} ft', { id: fl.arrival.id, alt: fmtAltFt(fl.ap.alt) }));
         Audio2.cue('click');
         break;
       case 'throttlePreset': fl.setThrottle(arg); break;
@@ -671,22 +671,22 @@ const Game = {
         h0: st.hdg, h1: wrapRad(fl.world.hdg + Math.PI)
       };
       fl.setPhase('PUSHBACK');
-      fl.info('Ground: push back approved — brakes released');
+      fl.info(tr('Ground: push back approved — brakes released'));
       Audio2.cue('click');
     } else if (p === 'PUSHBACK' || (p === 'ENGINE_START' && sys.runningCount() < fl.ac.engines)) {
       if (!sys.started) sys.startEngines();
     } else if (p === 'ENGINE_START') {
       st.parkingBrake = false;
       fl.setPhase('TAXI_OUT');
-      fl.info('Taxi to holding point runway ' + fl.world.rwyName + ' — follow the arrow');
+      fl.info(tr('Taxi to holding point runway {rwy} — follow the arrow', { rwy: fl.world.rwyName }));
     } else if (p === 'HOLD_SHORT') {
       const w = fl.env.surfaceWind;
       st.parkingBrake = false;
       fl.setPhase('TAKEOFF');
-      fl.info('Tower: wind ' + String(Math.round(w.dir)).padStart(3, '0') + '° ' + Math.round(w.speed) +
-        ' kt, runway ' + fl.world.rwyName + ' cleared for take-off');
+      fl.info(tr('Tower: wind {d}° {v} kt, runway {rwy} cleared for take-off',
+        { d: String(Math.round(w.dir)).padStart(3, '0'), v: Math.round(w.speed), rwy: fl.world.rwyName }));
     } else if (p === 'TAXI_OUT') {
-      fl.warn('HOLD', 'Taxi to the holding point first');
+      fl.warn('HOLD', tr('Taxi to the holding point first'));
     }
   },
 
@@ -696,9 +696,9 @@ const Game = {
     const sys = this.systems, c = sys && sys.checklist;
     if (!c) return;
     const step = c.steps[c.stepIndex];
-    if (i !== c.stepIndex) { Audio2.cue('bad'); HUD.nudgeChecklist('Step ' + (c.stepIndex + 1) + ' first — the order matters'); return; }
+    if (i !== c.stepIndex) { Audio2.cue('bad'); HUD.nudgeChecklist(tr('Step {n} first — the order matters', { n: c.stepIndex + 1 })); return; }
     const r = sys.confirm();
-    if (r && r !== true) HUD.nudgeChecklist('This one is done with the controls: ' + HUD.qrhControl(step, false));
+    if (r && r !== true) HUD.nudgeChecklist(tr('This one is done with the controls: {c}', { c: HUD.qrhControl(step, false) }));
   },
 
   // ---------- cheats ----------
@@ -751,7 +751,7 @@ const Game = {
   // building a flight's world takes a moment: say so, then start
   launch(contract, opts) {
     const boot = el('bootScreen');
-    el('bootStatus').textContent = 'Preparing the route ' + contract.fromId + ' → ' + contract.toId + '…';
+    el('bootStatus').textContent = tr('Preparing the route {from} → {to}…', { from: contract.fromId, to: contract.toId });
     boot.hidden = false;
     el('screen').hidden = true;
     frame().then(frame).then(() => {
@@ -850,7 +850,7 @@ const Game = {
       noClearance: !!fl.noClearance
     };
     const payout = failed
-      ? Career.failFlight({ contract: this.contract, reason: this.failure ? this.failure.text : 'Failed', cheated: this.cheated })
+      ? Career.failFlight({ contract: this.contract, reason: this.failure ? this.failure.text : tr('Failed'), cheated: this.cheated })
       : Career.payout(result);
     this.result = Object.assign({}, result, { payout });
     Audio2.update(0, null, null);
@@ -925,6 +925,8 @@ const Game = {
 
 function frame() { return new Promise((r) => requestAnimationFrame(() => r())); }
 function fmtAltFt(ft) { return Math.round(ft).toLocaleString('en-US'); }
+// a stand's name in the game's language ("Gate 3")
+function gateName(g) { return g.number ? tr('Gate {n}', { n: g.number }) : tr(g.name); }
 function pickQuality(setting) {
   if (setting && setting !== 'auto') return setting;
   return isCoarsePointer() ? 'medium' : 'high';

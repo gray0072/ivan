@@ -94,7 +94,7 @@ const Systems = {
       started++;
     }
     if (started) {
-      this.flight.info('Start: fuel boost on, ignition, starter engaged');
+      this.flight.info(tr('Start: fuel boost on, ignition, starter engaged'));
       Audio2.cue('starter');
     }
     return started;
@@ -129,7 +129,7 @@ const Systems = {
       if (e.n2 >= 0.25 && fuelOk) {
         e.startPhase = 'lightoff'; e.startTimer = 0;
         Audio2.cue('lightoff');
-        fl.info('Engine ' + (e.i + 1) + ': light-off');
+        fl.info(tr('Engine {n}: light-off', { n: e.i + 1 }));
       }
     } else if (e.startPhase === 'lightoff') {
       e.startTimer += dt;
@@ -138,11 +138,11 @@ const Systems = {
       e.n1 = approach(e.n1, idle, 0.06 * dt);
       if (e.n1 >= idle - 0.005) {
         e.running = true; e.startPhase = 'idle';
-        fl.info('Engine ' + (e.i + 1) + ' running');
+        fl.info(tr('Engine {n} running', { n: e.i + 1 }));
         Audio2.cue('idle');
       } else if (e.startTimer > 20 || !fuelOk) {
         e.startPhase = 'off';
-        fl.warn('START', 'Engine ' + (e.i + 1) + ' did not light off — check the fuel');
+        fl.warn('START', tr('Engine {n} did not light off — check the fuel', { n: e.i + 1 }));
       }
     } else if (e.running) {
       if (e.shuttingDown) {
@@ -168,7 +168,7 @@ const Systems = {
     if (!fuelOk && e.running) {
       // starved: the engine flames out in a second or two
       e.n1 = approach(e.n1, 0, 0.3 * dt);
-      if (e.n1 < 0.1) { e.running = false; e.startPhase = 'off'; fl.warn('FLAMEOUT', 'Engine ' + (e.i + 1) + ' flameout — fuel exhausted'); }
+      if (e.n1 < 0.1) { e.running = false; e.startPhase = 'off'; fl.warn('FLAMEOUT', tr('Engine {n} flameout — fuel exhausted', { n: e.i + 1 })); }
     }
   },
 
@@ -186,7 +186,7 @@ const Systems = {
       e.iceAmount = approach(e.iceAmount, 0, (this.antiIce ? 0.03 : 0.004) * dt);
     }
     e.icing = e.iceAmount > 0.08;
-    if (inIcing && !this.antiIce && e.iceAmount > 0.15) fl.warn('ICE', 'Ice building — engine anti-ice K');
+    if (inIcing && !this.antiIce && e.iceAmount > 0.15) fl.warn('ICE', tr('Ice building — engine anti-ice K'));
   },
 
   updatePressurisation(dt) {
@@ -259,7 +259,7 @@ const Systems = {
     this.checklist = { def, steps: def.steps.slice(), stepIndex: 0, timeLeft: limit, limit, engine, okT: 0, outcome: null };
     this.outcome = null;
     Audio2.cue('caution');
-    fl.warn(def.id.toUpperCase(), def.title);
+    fl.warn(def.id.toUpperCase(), tr(def.title));
     // the interruption: drop the clock back to real time
     fl.timeAccelIndex = 0; fl.cheatAccel = false;
     fl.env.timeAccel = 1;
@@ -303,7 +303,7 @@ const Systems = {
   // a step that is a switch in the QRH (Enter / Go / a tap), not a control of the aeroplane
   isSwitch(step) { return step.kind === 'switch' || step.kind === 'setAlt' || step.kind === 'setAltBy'; },
 
-  // a step's or a message's text with the engine number filled in
+  // a step's or a message's text with the engine number filled in (c: the checklist, or its outcome)
   qrhText(s, c) {
     c = c || this.checklist;
     const e = c && c.engine !== null && c.engine !== undefined ? c.engine + 1 : 1;
@@ -341,7 +341,7 @@ const Systems = {
       const floor = Math.round((fl.arrival.elev + 600) / FT / 100) * 100;
       fl.ap.alt = Math.max(floor, Math.min(fl.ap.alt, ft));
       if (!fl.ap.on && !fl.st.onGround) { fl.ap.on = true; fl.ap.vsI = 0; }
-      fl.info('Autopilot ALT ' + fmtAltFt(fl.ap.alt) + ' ft — descending');
+      fl.info(tr('Autopilot ALT {alt} ft — descending', { alt: fmtAltFt(fl.ap.alt) }));
     }
     Audio2.cue('click');
     this.advance();
@@ -363,7 +363,7 @@ const Systems = {
     } else if (step.effect === 'relight' && eng) {
       if (this.rng.chance(QRH.RELIGHT_CHANCE)) {
         eng.failed = false; eng.startPhase = 'motoring'; eng.startTimer = 0; eng.n2 = Math.max(eng.n2, 0.15);
-        c.outcome = 'Relight! Engine ' + (c.engine + 1) + ' is starting again — watch its N1 come up.';
+        c.outcome = 'Relight! Engine {e} is starting again — watch its N1 come up.';
       }
     } else if (step.effect === 'freefall') {
       st.gearFailed = false; st.gearTarget = 1;
@@ -400,9 +400,10 @@ const Systems = {
     }
     this.checklistDone.push(def.id);
     const used = Math.max(1, Math.round(c.limit - c.timeLeft));
-    this.outcome = { title: def.title, text: c.outcome || this.qrhText(def.done, c), ok: true,
+    // the outcome keeps the English text and the engine: the HUD shows it in the game's language
+    this.outcome = { title: def.title, text: c.outcome || def.done, engine: c.engine, ok: true,
       t: fl.realElapsed, used, limit: Math.round(c.limit) };
-    fl.info(def.title + ' — checklist complete in ' + used + ' s');
+    fl.info(tr('{title} — checklist complete in {s} s', { title: tr(def.title), s: used }));
     Audio2.cue('resolved');
   },
 
@@ -435,9 +436,9 @@ const Systems = {
       case 'depress': this.depressurised = false; break;
       default: break;
     }
-    fl.warn('QRH', (def.escTitle || def.title) + ' — ' + reason);
+    fl.warn('QRH', tr(def.escTitle || def.title) + ' — ' + tr(reason));
     this.log.push({ t: fl.elapsed, text: def.escTitle || def.title });
-    this.outcome = { title: def.escTitle || def.title, text: def.esc, ok: false, t: fl.realElapsed };
+    this.outcome = { title: def.escTitle || def.title, text: def.esc, engine: c.engine, ok: false, t: fl.realElapsed };
     Audio2.cue('warning');
   },
 

@@ -69,7 +69,11 @@ Every airport is recognisable from the cockpit: its name in big letters on the t
 
 ## Exams
 
-Every course ends in a short exam: four questions, three right to pass. They are written in plain words — a school pupil can work them out — with a **Hint** button and an explanation after every answer, and they can be taken in **English, Russian or Swedish** (pick the language on the Training tab — the course names and descriptions switch to it too, the exams then start in it, and the choice is remembered).
+Every course ends in a short exam: four questions, three right to pass. They are written in plain words — a school pupil can work them out — with a **Hint** button and an explanation after every answer, and they run in the game's language — **English, Russian or Swedish**.
+
+## Language
+
+The whole game — the menus, the briefings and debriefs, the prompts and messages in flight, the emergency checklists, the touch buttons, the courses and the exams — is in **English, Russian or Swedish**. Pick the language at the top of the title screen; the choice is remembered (the first time the game follows your browser's language). Airport, city and airline names, the instrument labels and the spoken callouts stay as in a real cockpit.
 
 ## Units and the map
 
@@ -85,4 +89,4 @@ On the approach the **ILS** shows a little magenta runway on the RUNWAY scale wh
 
 ## Tech stack
 
-Plain HTML + CSS + vanilla JavaScript split by concern into folders — `core/` (helpers, input, sound), `data/` (airports, countries, airlines, exams, coastlines), `art/` (flags, city symbols, airline emblems), `sim/` (the world, terrain, flight dynamics, systems), `render/` (the 3D models, airports and scene) and `ui/` (instruments, cockpit, HUD, screens), with `game.js` and `career.js` on top — no build step. The 3D world uses three.js (vendored as `lib/three.min.js`), the cockpit and instruments are Canvas 2D, and the sound is synthesized with the Web Audio API.
+Plain HTML + CSS + vanilla JavaScript split by concern into folders — `core/` (helpers, language, input, sound), `data/` (airports, countries, airlines, exams, the Russian and Swedish texts, coastlines), `art/` (flags, city symbols, airline emblems), `sim/` (the world, terrain, flight dynamics, systems), `render/` (the 3D models, airports and scene) and `ui/` (instruments, cockpit, HUD, screens), with `game.js` and `career.js` on top — no build step. The 3D world uses three.js (vendored as `lib/three.min.js`), the cockpit and instruments are Canvas 2D, and the sound is synthesized with the Web Audio API.

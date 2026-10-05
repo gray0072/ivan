@@ -33,7 +33,7 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 
 ### world-aviation
 
-Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (114 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, ten aircraft and a training tree. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
+Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (114 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, ten aircraft and a training tree; playable in English, Russian or Swedish. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
 
 ## Project structure
 
@@ -103,8 +103,8 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── styles.css
 │   ├── constants.js, game.js, career.js  # tuning, main loop and phase machine, the career
 │   ├── lib/                  # three.min.js — three.js r147 (UMD), vendored
-│   ├── core/                 # utils, input, audio
-│   ├── data/                 # airports, countries, airlines, quizzes, geodata (coastlines, mountains)
+│   ├── core/                 # i18n (the game's language), utils, input, audio
+│   ├── data/                 # airports, countries, airlines, emergencies, quizzes, lang-ru / lang-sv (translations), geodata (coastlines, mountains)
 │   ├── art/                  # flags, landmarks (city symbols), airline emblems
 │   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems
 │   ├── render/               # three.js: aircraft models, airport3d, scene3d

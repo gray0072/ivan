@@ -133,17 +133,17 @@ const Flight = {
     const f = ac.flaps[n - 1];
     const spd = this.st.ias / KTS;
     if (n > this.st.flapsTarget && f && spd > f.vfe + 4) {
-      this.warn('SPEED', 'Flaps ' + n + ' inhibited above Vfe ' + f.vfe + ' kt');
+      this.warn('SPEED', tr('Flaps {n} inhibited above Vfe {v} kt', { n, v: f.vfe }));
       return;
     }
     this.st.flapsTarget = n;
   },
   setGear(down) {
     const st = this.st;
-    if (!down && st.onGround) { this.warn('GEAR', 'Gear lever locked — weight on wheels'); return; }
-    if (down && st.gearFailed) { st.gearSelected = true; this.warn('GEAR', 'Gear will not extend — work the checklist'); return; }
+    if (!down && st.onGround) { this.warn('GEAR', tr('Gear lever locked — weight on wheels')); return; }
+    if (down && st.gearFailed) { st.gearSelected = true; this.warn('GEAR', tr('Gear will not extend — work the checklist')); return; }
     if (down && st.ias / KTS > this.ac.vlo + 5) {
-      this.warn('GEAR', 'Gear inhibited above Vlo ' + this.ac.vlo + ' kt');
+      this.warn('GEAR', tr('Gear inhibited above Vlo {v} kt', { v: this.ac.vlo }));
       return;
     }
     st.gearTarget = down ? 1 : 0;
@@ -296,7 +296,7 @@ const Flight = {
     // the conditions got stricter (the autopilot is off, lower down, an emergency): step down to what is allowed
     if (this.timeAccelIndex > top) this.timeAccelIndex = top;
     e.timeAccel = this.cheatAccel ? SIM.TIME_ACCEL_CHEAT : SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
-    if (e.timeAccel < was) this.info('TIME x' + e.timeAccel + (e.timeAccel > 1 && !this.ap.on ? ' — the most by hand at this height' : ''));
+    if (e.timeAccel < was) this.info(tr('TIME x{n}', { n: e.timeAccel }) + (e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height') : ''));
     return e.timeAccel;
   },
   // dir = +1 (T, faster) or -1 (R, slower)
@@ -305,23 +305,23 @@ const Flight = {
     const top = this.timeAccelTop();
     if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = dir < 0 ? top : this.timeAccelIndex; }
     else if (dir > 0 && this.timeAccelIndex >= top) { this.warn('TIME', this.timeAccelLimitText()); return; }
-    else if (dir < 0 && this.timeAccelIndex === 0) { this.info('TIME x1'); return; }
+    else if (dir < 0 && this.timeAccelIndex === 0) { this.info(tr('TIME x{n}', { n: 1 })); return; }
     else this.timeAccelIndex = clamp(this.timeAccelIndex + dir, 0, top);
     this.env.timeAccel = steps[this.timeAccelIndex];
-    this.info('TIME x' + this.env.timeAccel);
+    this.info(tr('TIME x{n}', { n: this.env.timeAccel }));
   },
   // why T cannot go any faster
   timeAccelLimitText() {
     if (this.st.onGround || this.altAgl() < SIM.TIME_ACCEL_MIN_ALT_M) {
-      return 'Time acceleration only in the air, above ' + fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) + ' ft';
+      return tr('Time acceleration only in the air, above {alt} ft', { alt: fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) });
     }
-    if (this.systems && this.systems.checklist) return 'Work the checklist first — time runs at x1';
-    if (this.ap.on) return 'Time x' + SIM.TIME_ACCEL_AP_MAX + ' is the fastest';
+    if (this.systems && this.systems.checklist) return tr('Work the checklist first — time runs at x1');
+    if (this.ap.on) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_AP_MAX });
     const max = this.timeAccelMax();
     const next = SIM.TIME_ACCEL_MANUAL.find((t) => t.max > max);
     return next
-      ? 'By hand: time x' + next.max + ' above ' + next.aglFt + ' ft AGL — the autopilot (Y) allows up to x' + SIM.TIME_ACCEL_AP_MAX
-      : 'By hand time x' + max + ' is the most — the autopilot (Y) allows up to x' + SIM.TIME_ACCEL_AP_MAX;
+      ? tr('By hand: time x{n} above {ft} ft AGL — the autopilot (Y) allows up to x{ap}', { n: next.max, ft: next.aglFt, ap: SIM.TIME_ACCEL_AP_MAX })
+      : tr('By hand time x{n} is the most — the autopilot (Y) allows up to x{ap}', { n: max, ap: SIM.TIME_ACCEL_AP_MAX });
   },
 
   // body axes from the Euler angles
@@ -465,7 +465,7 @@ const Flight = {
       // past 70 degrees of bank the wing drops further and the roll is limited
       if (Math.abs(st.roll) > 1.2) {
         st.rollRate -= Math.sign(st.roll) * 0.8 * dt;
-        if (!this.warnedBank) { this.warnedBank = true; this.warn('BANK', 'BANK ANGLE — level the wings'); }
+        if (!this.warnedBank) { this.warnedBank = true; this.warn('BANK', tr('BANK ANGLE — level the wings')); }
       } else if (Math.abs(st.roll) < 0.9) this.warnedBank = false;
       if (Math.abs(st.roll) > 1.5) { st.roll = Math.sign(st.roll) * 1.5; st.rollRate = 0; }
     }
@@ -500,16 +500,16 @@ const Flight = {
     // --- warnings
     const ias = st.ias / KTS;
     st.stallWarn = !st.onGround && ias > 30 && (ias < this.vsNow() * 1.08 || st.alpha > SIM.STALL_WARN_AOA_DEG * DEG);
-    if (st.stallWarn) this.warn('STALL', 'STALL — lower the nose, add power');
+    if (st.stallWarn) this.warn('STALL', tr('STALL — lower the nose, add power'));
     if (ias > ac.vne) {
-      this.warn('OVERSPEED', 'OVERSPEED — Vne ' + ac.vne + ' kt');
+      this.warn('OVERSPEED', tr('OVERSPEED — Vne {v} kt', { v: ac.vne }));
       st.damage = Math.min(1, st.damage + dt * 0.01 * (ias - ac.vne) / 10);
     }
     if (st.flaps > 0.5 && ias > this.flapVfeNow() + 10) {
-      this.warn('FLAPSPEED', 'Flap overspeed — retract the flaps or slow down');
+      this.warn('FLAPSPEED', tr('Flap overspeed — retract the flaps or slow down'));
       st.damage = Math.min(1, st.damage + dt * 0.004);
     }
-    if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', 'Gear overspeed — gear up (G)');
+    if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', tr('Gear overspeed — gear up (G)'));
   },
 
   // the limit speed of the flaps that are out right now (flaps up: no limit)
@@ -533,7 +533,7 @@ const Flight = {
     const want = st.elevator > 0 ? st.elevator * rotAuth * maxPitch : -Math.max(0.05, st.pitch) * 1.5;
     st.pitchRate = approach(st.pitchRate, want, maxPitch * 3 * dt);
     st.pitch = clamp(st.pitch + st.pitchRate * dt, 0, 12 * DEG);
-    if (st.pitch >= 12 * DEG - 1e-4 && st.elevator > 0.5 && ias > 40) this.warn('TAIL', 'Tail strike — too much rotation');
+    if (st.pitch >= 12 * DEG - 1e-4 && st.elevator > 0.5 && ias > 40) this.warn('TAIL', tr('Tail strike — too much rotation'));
     st.roll = approach(st.roll, 0, dt * 0.8);
     st.rollRate = 0;
 
@@ -572,10 +572,10 @@ const Flight = {
 
     // off-pavement consequences
     const gs = Math.hypot(st.vel.x, st.vel.z) / KTS;
-    if (!surf.onPavement && gs > 25 && !surf.allowed) this.fail('excursion', 'Runway excursion — you left the paved surface at ' + Math.round(gs) + ' kt.');
+    if (!surf.onPavement && gs > 25 && !surf.allowed) this.fail('excursion', tr('Runway excursion — you left the paved surface at {v} kt.', { v: Math.round(gs) }));
     else if (!surf.onPavement && gs > 40) {
       st.damage = Math.min(1, st.damage + dt * 0.03);
-      this.warn('ROUGH', 'Off the paved surface — rough field');
+      this.warn('ROUGH', tr('Off the paved surface — rough field'));
     }
   },
 
@@ -589,12 +589,12 @@ const Flight = {
     const a = this.nearestApt();
     const loc = World.local(a, st.pos.x, st.pos.z);
     const onAirport = Math.abs(loc.t) < a.half + 400 && loc.across > -300 && loc.across < LAYOUT.TERMINAL + 150;
-    if (gh < 0.3 && !onAirport) { this.fail('ditch', 'You ditched in the water.'); return; }
-    if (!onAirport) { this.fail('terrain', 'Controlled flight into terrain — you hit the ground away from any runway.'); return; }
-    if (bank > SIM.CRASH_BANK_DEG) { this.fail('wing', 'A wing hit the ground — ' + Math.round(bank) + '° of bank at touchdown.'); return; }
-    if (pitch < SIM.CRASH_PITCH_DEG) { this.fail('nose', 'The nose hit the ground first and the nose gear collapsed.'); return; }
-    if (st.gear < 0.9) { this.fail('gearup', 'Landed with the gear up.'); return; }
-    if (fpm > SIM.TOUCHDOWN_BREAK_FPM) { this.fail('gearbreak', 'Touchdown at ' + Math.round(fpm) + ' fpm — the gear collapsed.'); return; }
+    if (gh < 0.3 && !onAirport) { this.fail('ditch', tr('You ditched in the water.')); return; }
+    if (!onAirport) { this.fail('terrain', tr('Controlled flight into terrain — you hit the ground away from any runway.')); return; }
+    if (bank > SIM.CRASH_BANK_DEG) { this.fail('wing', tr('A wing hit the ground — {b}° of bank at touchdown.', { b: Math.round(bank) })); return; }
+    if (pitch < SIM.CRASH_PITCH_DEG) { this.fail('nose', tr('The nose hit the ground first and the nose gear collapsed.')); return; }
+    if (st.gear < 0.9) { this.fail('gearup', tr('Landed with the gear up.')); return; }
+    if (fpm > SIM.TOUCHDOWN_BREAK_FPM) { this.fail('gearbreak', tr('Touchdown at {v} fpm — the gear collapsed.', { v: Math.round(fpm) })); return; }
     this.touchdown(fpm, a, loc);
   },
 
@@ -602,10 +602,10 @@ const Flight = {
     const st = this.st;
     const bank = Math.abs(st.roll) * RAD;
     let damage = 0;
-    if (bank > 9) { damage += 0.12; this.warn('STRIKE', 'Wingtip strike — bank angle at touchdown'); }
+    if (bank > 9) { damage += 0.12; this.warn('STRIKE', tr('Wingtip strike — bank angle at touchdown')); }
     if (fpm > SIM.TOUCHDOWN_HARD_FPM) {
       damage += 0.18;
-      this.warn('HARD', 'Hard landing — ' + Math.round(fpm) + ' fpm');
+      this.warn('HARD', tr('Hard landing — {v} fpm', { v: Math.round(fpm) }));
     }
     const surf = this.surfaceAt(st.pos.x, st.pos.z);
     if (!surf.onPavement && !surf.allowed) damage += 0.3;
@@ -624,7 +624,7 @@ const Flight = {
         damage
       };
     }
-    this.info('TOUCHDOWN ' + Math.round(Math.max(0, fpm)) + ' fpm');
+    this.info(tr('TOUCHDOWN {v} fpm', { v: Math.round(Math.max(0, fpm)) }));
     Audio2.cue('touchdown', Math.max(0, fpm));
   },
 
@@ -714,7 +714,7 @@ const Flight = {
       const inCone = before > 2 * NM && before < iafD + 3 * NM && Math.abs(loc.across) < Math.max(1200, before * 0.3);
       if (nearIaf || (inCone && Math.abs(off) < 60)) {
         this.locCaptured = true;
-        this.info('Localiser captured — runway ' + a.rwyName);
+        this.info(tr('Localiser captured — runway {rwy}', { rwy: a.rwyName }));
       }
     }
     if (this.locCaptured) {
@@ -803,12 +803,12 @@ const Flight = {
     // the glideslope is captured from below (or when already on it), never chased up from far below
     const corridor = onFinal && this.onCorridor();
     if (corridor && (ap.gs || (ils.along < 0 && ils.gsDeg > -0.25 && ils.dist < (SIM.FINAL_FIX_NM + 4) * NM))) {
-      if (!ap.gs) { ap.gs = true; this.info('Glideslope captured'); }
+      if (!ap.gs) { ap.gs = true; this.info(tr('Glideslope captured')); }
       const gsV = -st.tas * Math.sin(SIM.GLIDESLOPE_DEG * DEG);
       vsT = gsV + (ils.targetAlt - (st.pos.y - st.gearH)) * 0.12;
       if (this.altAgl() < 60) {
         ap.on = false; ap.gs = false;
-        this.warn('AP', 'Autopilot disconnect — decision height, land it by hand');
+        this.warn('AP', tr('Autopilot disconnect — decision height, land it by hand'));
         return;
       }
       vsT = clamp(vsT, -15, 5);
@@ -820,7 +820,7 @@ const Flight = {
       const target = Math.max(ap.alt * FT, corridor ? 0 : this.msa || 0);
       if (target > ap.alt * FT + 30 && this.realElapsed - (this.msaWarnT || -99) > 30) {
         this.msaWarnT = this.realElapsed;
-        this.info('Terrain ahead — the autopilot holds ' + fmtAltFt(Math.ceil(target / FT / 100) * 100) + ' ft');
+        this.info(tr('Terrain ahead — the autopilot holds {alt} ft', { alt: fmtAltFt(Math.ceil(target / FT / 100) * 100) }));
       }
       vsT = clamp((target - st.pos.y) * 0.05, -11, ac.climbRate);
     }
@@ -849,7 +849,7 @@ const Flight = {
     ap.lastIas = ias;
     const want = (target - ias) * 0.03 - ap.accF * 0.35 - (e < -4 ? 0.3 : 0);
     st.throttle = clamp(st.throttle + clamp(want, -1, 1) * 0.12 * dt, 0, 1);
-    if (st.stallWarn) { ap.on = false; this.warn('AP', 'Autopilot disconnect — stall warning'); }
+    if (st.stallWarn) { ap.on = false; this.warn('AP', tr('Autopilot disconnect — stall warning')); }
   }
 };
 

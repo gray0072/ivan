@@ -3,7 +3,8 @@
 // ============================================================
 // World Aviation — screens: title, the ops hub (dispatch, hangar,
 // training, career), the briefing, the debrief, failures, pause
-// and the course quizzes. Plain DOM, all copy in English.
+// and the course quizzes. Plain DOM; the copy is written in English
+// and shown through tr() in the language picked on the title screen.
 // Every button carries data-act (and data-v); UI.action routes them.
 // ============================================================
 
@@ -83,10 +84,16 @@ const UI = {
 
   difficultyChips() {
     const s = Career.settings;
-    return '<div class="setGroup"><span>Difficulty</span>' + ['easy', 'medium', 'hard'].map((d) =>
+    return '<div class="setGroup"><span>' + tr('Difficulty') + '</span>' + ['easy', 'medium', 'hard'].map((d) =>
       '<button class="chip' + (s.difficulty === d ? ' on' : '') + '" data-act="difficulty" data-v="' + d + '">' +
-      DIFFICULTY[d].name + '</button>').join('') + '</div>' +
-      '<p class="fineprint">' + esc(Career.difficulty.description) + '</p>';
+      esc(tr(DIFFICULTY[d].name)) + '</button>').join('') + '</div>' +
+      '<p class="fineprint">' + esc(tr(Career.difficulty.description)) + '</p>';
+  },
+
+  // the game's language, first thing on the title screen
+  langChips() {
+    return '<div class="setGroup langPick">' + Object.keys(LANGS).map((l) =>
+      '<button class="chip' + (I18N.lang === l ? ' on' : '') + '" data-act="lang" data-v="' + l + '">' + esc(LANGS[l]) + '</button>').join('') + '</div>';
   },
 
   // ---------- title ----------
@@ -96,96 +103,96 @@ const UI = {
     const s = Career.settings;
     const qualBtns = ['auto', 'low', 'medium', 'high'].map((d) =>
       '<button class="chip' + (s.quality === d ? ' on' : '') + '" data-act="quality" data-v="' + d + '">' +
-      (d === 'auto' ? 'Auto' : QUALITY[d].name) + '</button>').join('');
+      esc(tr(d === 'auto' ? 'Auto' : QUALITY[d].name)) + '</button>').join('');
     this.panel(
       '<div class="titleWrap">' +
+      this.langChips() +
       '<h1 class="logo">World Aviation</h1>' +
-      '<p class="tagline">A Swedish pilot, one leased turboprop — and the whole world to win, one region at a time.</p>' +
+      '<p class="tagline">' + tr('A Swedish pilot, one leased turboprop — and the whole world to win, one region at a time.') + '</p>' +
       '<div class="cardRow">' +
-      (has ? '<button class="bigBtn default" data-act="continue">Continue career<small>' + esc(Career.data.pilot.airline) + ' · ' +
+      (has ? '<button class="bigBtn default" data-act="continue">' + tr('Continue career') + '<small>' + esc(Career.data.pilot.airline) + ' · ' +
         fmtMoney(Career.data.money) + '</small></button>' +
-        '<button class="bigBtn" data-act="newcareer">New career<small>different pilot, new certificate</small></button>'
-        : '<button class="bigBtn default" data-act="newcareer">Start your career<small>based at Stockholm Arlanda</small></button>') +
+        '<button class="bigBtn" data-act="newcareer">' + tr('New career') + '<small>' + tr('different pilot, new certificate') + '</small></button>'
+        : '<button class="bigBtn default" data-act="newcareer">' + tr('Start your career') + '<small>' + tr('based at Stockholm Arlanda') + '</small></button>') +
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="settingsRow">' +
-      '<div class="setGroup"><span>Graphics</span>' + qualBtns + '</div>' +
-      '<div class="setGroup"><span>Sound</span>' +
-      '<button class="chip' + (s.sound ? ' on' : '') + '" data-act="sound">' + (s.sound ? 'On' : 'Off') + '</button></div>' +
+      '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + qualBtns + '</div>' +
+      '<div class="setGroup"><span>' + tr('Sound') + '</span>' +
+      '<button class="chip' + (s.sound ? ' on' : '') + '" data-act="sound">' + tr(s.sound ? 'On' : 'Off') + '</button></div>' +
       this.unitChips() +
       '</div>' +
       '<div class="titleFoot">' +
-      '<button class="btn" data-act="howto">How to fly</button>' +
-      (has ? '<button class="btn" data-act="wipe">Delete career</button>' : '') +
+      '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
+      (has ? '<button class="btn" data-act="wipe">' + tr('Delete career') + '</button>' : '') +
       '</div>' +
-      '<p class="fineprint">' + esc(CAREER.INTRO) + '</p>' +
+      '<p class="fineprint">' + esc(tr(CAREER.INTRO)) + '</p>' +
       '</div>', 'title');
   },
 
   showNewCareer() {
     this.panel(
-      '<h2>New career</h2>' +
-      '<p class="lead">You have an EASA ATPL, one leased turboprop and a fresh operator certificate out of Stockholm Arlanda. ' +
-      'Fill this in:</p>' +
+      '<h2>' + tr('New career') + '</h2>' +
+      '<p class="lead">' + tr('You have an EASA ATPL, one leased turboprop and a fresh operator certificate out of Stockholm Arlanda. Fill this in:') + '</p>' +
       '<div class="form">' +
-      '<label>Pilot name<input id="pilotName" value="' + esc(CAREER.PILOT_NAME_DEFAULT) + '" maxlength="24"></label>' +
-      '<label>Operator name<input id="airlineName" value="' + esc(CAREER.AIRLINE_DEFAULT) + '" maxlength="24"></label>' +
+      '<label>' + tr('Pilot name') + '<input id="pilotName" value="' + esc(CAREER.PILOT_NAME_DEFAULT) + '" maxlength="24"></label>' +
+      '<label>' + tr('Operator name') + '<input id="airlineName" value="' + esc(CAREER.AIRLINE_DEFAULT) + '" maxlength="24"></label>' +
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
-      '<div class="btnRow"><button class="btn default" data-act="startcareer">Start flying</button>' +
-      '<button class="btn" data-act="back">Back</button></div>', 'narrow');
+      '<div class="btnRow"><button class="btn default" data-act="startcareer">' + tr('Start flying') + '</button>' +
+      '<button class="btn" data-act="back">' + tr('Back') + '</button></div>', 'narrow');
     this.screen.dataset.view = 'newcareer';
   },
 
   confirmWipe() {
     this.panel(
-      '<h2>Delete this career?</h2><p class="lead">The certificate, the money, the reputation and every course you have passed will be gone.</p>' +
-      '<div class="btnRow"><button class="btn danger" data-act="wipeyes">Delete it</button>' +
-      '<button class="btn default" data-act="back">Keep it</button></div>', 'narrow');
+      '<h2>' + tr('Delete this career?') + '</h2><p class="lead">' + tr('The certificate, the money, the reputation and every course you have passed will be gone.') + '</p>' +
+      '<div class="btnRow"><button class="btn danger" data-act="wipeyes">' + tr('Delete it') + '</button>' +
+      '<button class="btn default" data-act="back">' + tr('Keep it') + '</button></div>', 'narrow');
   },
 
   showHowTo() {
     this.panel(
-      '<h2>How to fly</h2>' +
+      '<h2>' + tr('How to fly') + '</h2>' +
       '<div class="cols">' +
-      '<div><h3>Keyboard</h3><ul class="keys">' +
-      keyRow('↑ / ↓ or W / S', 'pitch — ↓ pulls the nose up') +
-      keyRow('← / → or A / D', 'roll — and steering on the ground') +
-      keyRow('Q / E', 'rudder') +
-      keyRow('Z / X, or − / +', 'throttle down / up') +
-      keyRow('1 … 9, 0', 'throttle to 10 % … 90 %, idle') +
-      keyRow('Enter', 'push back, start the engines, taxi, take-off clearance') +
-      keyRow('G', 'landing gear') +
-      keyRow('F / V', 'flaps down / up') +
-      keyRow('B', 'wheel brakes (hold)') +
-      keyRow('Space', 'parking brake') +
-      keyRow('/', 'spoiler') +
-      keyRow('K', 'engine and wing anti-ice') +
-      keyRow('Y', 'autopilot on / off') +
-      keyRow('N', 'autopilot NAV: fly the route and the ILS') +
-      keyRow(', / .', 'selected altitude down / up') +
-      keyRow('; / \'', 'selected heading (autopilot HDG mode)') +
-      keyRow('T / R', 'time faster / slower: up to ×64 on the autopilot, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft') +
-      keyRow('C / M / I', 'camera · map (on a big screen: mini, big, off) · instrument lights') +
-      keyRow('H', 'controls card') +
-      keyRow('Esc', 'pause') +
+      '<div><h3>' + tr('Keyboard') + '</h3><ul class="keys">' +
+      keyRow('↑ / ↓ · W / S', tr('pitch — ↓ pulls the nose up')) +
+      keyRow('← / → · A / D', tr('roll — and steering on the ground')) +
+      keyRow('Q / E', tr('rudder')) +
+      keyRow('Z / X · − / +', tr('throttle down / up')) +
+      keyRow('1 … 9, 0', tr('throttle to 10 % … 90 %, idle')) +
+      keyRow('Enter', tr('push back, start the engines, taxi, take-off clearance')) +
+      keyRow('G', tr('landing gear')) +
+      keyRow('F / V', tr('flaps down / up')) +
+      keyRow('B', tr('wheel brakes (hold)')) +
+      keyRow('Space', tr('parking brake')) +
+      keyRow('/', tr('spoiler')) +
+      keyRow('K', tr('engine and wing anti-ice')) +
+      keyRow('Y', tr('autopilot on / off')) +
+      keyRow('N', tr('autopilot NAV: fly the route and the ILS')) +
+      keyRow(', / .', tr('selected altitude down / up')) +
+      keyRow('; / \'', tr('selected heading (autopilot HDG mode)')) +
+      keyRow('T / R', tr('time faster / slower: up to ×64 on the autopilot, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft')) +
+      keyRow('C / M / I', tr('camera · map (on a big screen: mini, big, off) · instrument lights')) +
+      keyRow('H', tr('controls card')) +
+      keyRow('Esc', tr('pause')) +
       '</ul></div>' +
-      '<div><h3>Touch</h3><ul>' +
-      '<li>The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag down to pull the nose up, left and right to roll — and to steer on the ground.</li>' +
-      '<li>The <b>slider on the right edge</b> is the throttle — its lower half gives fine control of low power for taxiing.</li>' +
-      '<li>The buttons at the top right: <b>Go</b> (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, <b>Time +</b> / <b>Time −</b> and the menu.</li>' +
-      '<li>Tap the hint text to fold it to one line, tap again to open it.</li>' +
-      '<li>Both thumbs work at once, so you can fly and work a checklist together.</li>' +
+      '<div><h3>' + tr('Touch') + '</h3><ul>' +
+      '<li>' + tr('The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag down to pull the nose up, left and right to roll — and to steer on the ground.') + '</li>' +
+      '<li>' + tr('The <b>slider on the right edge</b> is the throttle — its lower half gives fine control of low power for taxiing.') + '</li>' +
+      '<li>' + tr('The buttons at the top right: <b>Go</b> (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, <b>Time +</b> / <b>Time −</b> and the menu.') + '</li>' +
+      '<li>' + tr('Tap the hint text to fold it to one line, tap again to open it.') + '</li>' +
+      '<li>' + tr('Both thumbs work at once, so you can fly and work a checklist together.') + '</li>' +
       '</ul>' +
-      '<h3>How a flight goes</h3><ul>' +
-      '<li>At the gate press Enter for the push back, start the engines, release the brake and taxi along the arrow to the holding point.</li>' +
-      '<li>Set take-off flaps, ask for the clearance, line up, full power, rotate at Vr, gear up.</li>' +
-      '<li>Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×64 on the autopilot.</li>' +
-      '<li>When a warning sounds, a checklist opens: do the lit step with the control shown next to it — Enter (Go) for its switches, the real controls (0, K, G, /, Y…) for the rest. The clock is running.</li>' +
-      '<li>Flaps and gear down on the approach, land by hand from 200 ft, brake, and leave the runway below 35 kt.</li>' +
-      '<li>Taxi to your gate, stop in the parking box and set the parking brake.</li>' +
+      '<h3>' + tr('How a flight goes') + '</h3><ul>' +
+      '<li>' + tr('At the gate press Enter for the push back, start the engines, release the brake and taxi along the arrow to the holding point.') + '</li>' +
+      '<li>' + tr('Set take-off flaps, ask for the clearance, line up, full power, rotate at Vr, gear up.') + '</li>' +
+      '<li>' + tr('Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×64 on the autopilot.') + '</li>' +
+      '<li>' + tr('When a warning sounds, a checklist opens: do the lit step with the control shown next to it — Enter (Go) for its switches, the real controls (0, K, G, /, Y…) for the rest. The clock is running.') + '</li>' +
+      '<li>' + tr('Flaps and gear down on the approach, land by hand from 200 ft, brake, and leave the runway below 35 kt.') + '</li>' +
+      '<li>' + tr('Taxi to your gate, stop in the parking box and set the parking brake.') + '</li>' +
       '</ul></div></div>' +
-      '<div class="btnRow"><button class="btn default" data-act="back">Got it</button></div>');
+      '<div class="btnRow"><button class="btn default" data-act="back">' + tr('Got it') + '</button></div>');
   },
 
   // ---------- ops hub ----------
@@ -199,18 +206,18 @@ const UI = {
     this.panel(
       '<div class="opsHead">' +
       '<div><div class="opsWho">' + esc(d.pilot.airline) + '</div>' +
-      '<div class="opsSub">' + esc(d.pilot.name) + ' · ' + CAREER.PILOT_LICENSE + ' · base ' + d.base +
-      (d.lastTo && d.lastTo !== d.base ? ' · now at ' + d.lastTo : '') + '</div></div>' +
+      '<div class="opsSub">' + esc(d.pilot.name) + ' · ' + CAREER.PILOT_LICENSE + ' · ' + tr('base {id}', { id: d.base }) +
+      (d.lastTo && d.lastTo !== d.base ? ' · ' + tr('now at {id}', { id: d.lastTo }) : '') + '</div></div>' +
       '<div class="opsMoney">' + fmtMoney(d.money) + '</div>' +
       '<div class="opsReps">' +
       Object.keys(FACTIONS).map((k) =>
-        '<span class="rep" title="' + esc(FACTIONS[k].name) + '"><i style="background:' + FACTIONS[k].color + '"></i>' +
+        '<span class="rep" title="' + esc(tr(FACTIONS[k].name)) + '"><i style="background:' + FACTIONS[k].color + '"></i>' +
         Math.round(d.rep[k]) + '</span>').join('') +
       '</div></div>' +
       '<div class="tabs">' + tabs.map((t) =>
         '<button class="tab' + (this.tab === t ? ' on' : '') + '" data-act="tab" data-v="' + t + '">' +
-        t.charAt(0).toUpperCase() + t.slice(1) + '</button>').join('') +
-      '<button class="tab" data-act="backtitle">Menu</button></div>' +
+        tr(t.charAt(0).toUpperCase() + t.slice(1)) + '</button>').join('') +
+      '<button class="tab" data-act="backtitle">' + tr('Menu') + '</button></div>' +
       '<div class="tabBody">' + body + '</div>');
   },
 
@@ -232,28 +239,28 @@ const UI = {
       const need = this.requirement(c);
       return '<div class="contract' + (this.selContract === c.id ? ' sel' : '') + '">' +
         '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
-        FACTIONS[c.faction].short + '</span></div>' +
+        esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
         '<div class="cRoute"><b>' + c.fromId + ' → ' + c.toId + '</b>' +
         '<span>' + flagImg(from) + esc(from.city) + ' → ' + flagImg(to) + esc(to.city) + '</span></div>' +
         '<div class="cGrid">' +
-        row2('Load', loadText(c)) +
-        row2('Distance', c.distanceNm + ' nm') +
-        row2('Payout', fmtMoney(c.pay)) +
-        row2('Reputation', '+' + c.repGain + ' ' + FACTIONS[c.faction].short) +
-        row2('Schedule', Career.difficulty.id === 'easy' ? 'no deadline' : fmtTime(c.deadline) + ' real time') +
-        row2('Fuel plan', c.fuelKg + ' kg') +
+        row2(tr('Load'), loadText(c)) +
+        row2(tr('Distance'), c.distanceNm + ' nm') +
+        row2(tr('Payout'), fmtMoney(c.pay)) +
+        row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
+        row2(tr('Schedule'), Career.difficulty.id === 'easy' ? tr('no deadline') : tr('{t} real time', { t: fmtTime(c.deadline) })) +
+        row2(tr('Fuel plan'), c.fuelKg + ' kg') +
         '</div>' +
-        '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">difficulty ' + c.difficulty.toFixed(1) + '</span>' +
-        (need ? '<span class="need">' + esc(need) + '</span>' : '<span class="ok">cleared for this type</span>') +
+        '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
+        (need ? '<span class="need">' + esc(need) + '</span>' : '<span class="ok">' + tr('cleared for this type') + '</span>') +
         '<button class="btn' + (need ? ' disabled' : ' default') + '" data-act="briefing" data-v="' + esc(c.id) + '"' +
-        (need ? ' disabled' : '') + '>Fly this</button></div>' +
+        (need ? ' disabled' : '') + '>' + tr('Fly this') + '</button></div>' +
         '</div>';
     }).join('');
     const away = d.lastTo && d.lastTo !== d.base;
-    return '<div class="hint">Aircraft: <b>' + esc(ac.name) + '</b> (' + ac.klass + ' · max ' + ac.maxRangeNm + ' nm). ' +
-      (away ? 'You are at ' + d.lastTo + ' (' + esc(World.byId[d.lastTo].city) + ') — the board shows the flight home to ' + d.base + ' if it is in reach, and onward legs.'
-        : 'From your base ' + d.base + ' to ' + d.regions.length + ' open region' + (d.regions.length > 1 ? 's' : '') + ' — more in the Network tab.') + '</div>' +
-      '<div class="contracts">' + (list || '<p class="lead">No contracts for this aircraft right now — try another type in the hangar.</p>') + '</div>';
+    return '<div class="hint">' + tr('Aircraft: <b>{ac}</b> ({klass} · max {nm} nm).', { ac: esc(ac.name), klass: esc(tr(ac.klass)), nm: ac.maxRangeNm }) + ' ' +
+      (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(World.byId[d.lastTo].city), base: d.base })
+        : tr('From your base {base} · open regions: {n} — more in the Network tab.', { base: d.base, n: d.regions.length })) + '</div>' +
+      '<div class="contracts">' + (list || '<p class="lead">' + tr('No contracts for this aircraft right now — try another type in the hangar.') + '</p>') + '</div>';
   },
 
   // the regions of the world and their traffic rights
@@ -262,34 +269,33 @@ const UI = {
     const cards = REGIONS.map((rg) => {
       const st = Career.regionState(rg);
       const apts = World.list.filter((a) => a.region === rg.id);
-      const status = st.owned ? '<span class="ok">Traffic rights held</span>'
-        : '<span class="' + (st.repOk ? 'ok' : 'need') + '">reputation ' + Math.floor(Career.bestRep()) + ' / ' + rg.rep + '</span>' +
-          '<span class="' + (st.flightsOk ? 'ok' : 'need') + '">flights ' + d.stats.flights + ' / ' + rg.flights + '</span>';
+      const status = st.owned ? '<span class="ok">' + tr('Traffic rights held') + '</span>'
+        : '<span class="' + (st.repOk ? 'ok' : 'need') + '">' + tr('reputation {a} / {b}', { a: Math.floor(Career.bestRep()), b: rg.rep }) + '</span>' +
+          '<span class="' + (st.flightsOk ? 'ok' : 'need') + '">' + tr('flights {a} / {b}', { a: d.stats.flights, b: rg.flights }) + '</span>';
       const can = st.available && st.afford;
       const btn = st.owned ? '' : '<button class="btn' + (can ? ' default' : ' disabled') + '" data-act="buyRegion" data-v="' + rg.id + '"' +
-        (can ? '' : ' disabled') + '>' + (st.available ? (st.afford ? 'Buy the rights · ' + fmtMoney(rg.cost) : 'Needs ' + fmtMoney(rg.cost)) : 'Locked') + '</button>';
+        (can ? '' : ' disabled') + '>' + (st.available ? (st.afford ? tr('Buy the rights · {cost}', { cost: fmtMoney(rg.cost) }) : tr('Needs {cost}', { cost: fmtMoney(rg.cost) })) : tr('Locked')) + '</button>';
       return '<div class="acCard' + (st.owned ? ' sel' : '') + '">' +
-        '<div class="acHead"><b>' + esc(rg.name) + '</b><span class="tag">' + apts.length + ' airports</span></div>' +
-        '<p class="acBlurb">' + esc(rg.blurb) + '</p>' +
+        '<div class="acHead"><b>' + esc(tr(rg.name)) + '</b><span class="tag">' + tr('airports: {n}', { n: apts.length }) + '</span></div>' +
+        '<p class="acBlurb">' + esc(tr(rg.blurb)) + '</p>' +
         '<p class="acBlurb">' + apts.map((a) => a.id).join(' · ') + '</p>' +
         '<div class="cFoot">' + status + btn + '</div></div>';
     }).join('');
-    return '<div class="hint">Your operator starts with Swedish domestic flying out of Arlanda. Each region of the world needs traffic rights: ' +
-      'earn the reputation and the flights, then buy them. A leg may be up to ' + CONTRACTS.MAX_NM.toLocaleString('en-US') +
-      ' nm — further than that, fly there in legs and the board offers onward flights.</div><div class="cards">' + cards + '</div>';
+    return '<div class="hint">' + tr('Your operator starts with Swedish domestic flying out of Arlanda. Each region of the world needs traffic rights: earn the reputation and the flights, then buy them. A leg may be up to {nm} nm — further than that, fly there in legs and the board offers onward flights.',
+      { nm: CONTRACTS.MAX_NM.toLocaleString('en-US') }) + '</div><div class="cards">' + cards + '</div>';
   },
 
   requirement(c) {
     const ac = Career.aircraft();
-    if (c.aircraftId && c.aircraftId !== ac.id) return 'Offered for another aircraft type';
-    if (c.payloadKg + ac.emptyKg > ac.mtow) return 'Too heavy for ' + ac.name;
-    if (c.distanceNm > ac.maxRangeNm) return 'Beyond the range of ' + ac.name;
-    if (c.type === 'hazmat' && !Career.effects().hazmat) return 'Dangerous goods rating required';
-    if (c.type === 'medevac' && !Career.effects().medevac) return 'Medevac rating required';
-    if ((c.type === 'reefer' || c.type === 'fish') && !Career.has('cargo3')) return 'Arctic ground handling required';
+    if (c.aircraftId && c.aircraftId !== ac.id) return tr('Offered for another aircraft type');
+    if (c.payloadKg + ac.emptyKg > ac.mtow) return tr('Too heavy for {ac}', { ac: ac.name });
+    if (c.distanceNm > ac.maxRangeNm) return tr('Beyond the range of {ac}', { ac: ac.name });
+    if (c.type === 'hazmat' && !Career.effects().hazmat) return tr('Dangerous goods rating required');
+    if (c.type === 'medevac' && !Career.effects().medevac) return tr('Medevac rating required');
+    if ((c.type === 'reefer' || c.type === 'fish') && !Career.has('cargo3')) return tr('Arctic ground handling required');
     const to = World.byId[c.toId];
-    if (to.rwyLen < ac.takeoffDist * 0.9) return 'Runway at ' + to.id + ' too short for ' + ac.name;
-    if (to.aptClass.length === 1 && to.aptClass[0] === 'bush' && ac.surfaces.indexOf('grass') < 0) return 'Grass strip — not cleared for ' + ac.name;
+    if (to.rwyLen < ac.takeoffDist * 0.9) return tr('Runway at {id} too short for {ac}', { id: to.id, ac: ac.name });
+    if (to.aptClass.length === 1 && to.aptClass[0] === 'bush' && ac.surfaces.indexOf('grass') < 0) return tr('Grass strip — not cleared for {ac}', { ac: ac.name });
     return null;
   },
 
@@ -300,35 +306,32 @@ const UI = {
       const sel = d.selected === a.id;
       const course = a.unlock ? COURSES.find((c) => c.id === a.unlock) : null;
       return '<div class="acCard' + (sel ? ' sel' : '') + '">' +
-        '<div class="acHead"><b>' + esc(a.name) + '</b><span class="tag">' + esc(a.klass) + '</span></div>' +
-        '<p class="acBlurb">' + esc(a.blurb) + '</p>' +
+        '<div class="acHead"><b>' + esc(a.name) + '</b><span class="tag">' + esc(tr(a.klass)) + '</span></div>' +
+        '<p class="acBlurb">' + esc(tr(a.blurb)) + '</p>' +
         '<div class="cGrid">' +
-        row2(a.seats < 10 ? 'Crew / payload' : 'Seats / payload', a.seats + ' · ' + Math.round(a.payloadKg / 100) / 10 + ' t') +
-        row2('Length / span', a.dims.len + ' m · ' + a.dims.span + ' m') +
-        row2('Runway needed', a.takeoffDist + ' m') +
-        row2('Cruise', a.cruiseTas + ' kt') +
-        row2('Stall speed', Math.round(vs0Of(a, a.mtow)) + ' kt, full flaps, max weight') +
-        row2('Range', a.maxRangeNm + ' nm') +
-        row2('Crosswind limit', a.crosswindLimit + ' kt') +
-        row2('Surfaces', a.surfaces.join(', ')) +
-        row2('Lease per sector', fmtMoney(a.rent)) +
+        row2(tr(a.seats < 10 ? 'Crew / payload' : 'Seats / payload'), a.seats + ' · ' + Math.round(a.payloadKg / 100) / 10 + ' t') +
+        row2(tr('Length / span'), a.dims.len + ' m · ' + a.dims.span + ' m') +
+        row2(tr('Runway needed'), a.takeoffDist + ' m') +
+        row2(tr('Cruise'), a.cruiseTas + ' kt') +
+        row2(tr('Stall speed'), tr('{v} kt, full flaps, max weight', { v: Math.round(vs0Of(a, a.mtow)) })) +
+        row2(tr('Range'), a.maxRangeNm + ' nm') +
+        row2(tr('Crosswind limit'), a.crosswindLimit + ' kt') +
+        row2(tr('Surfaces'), a.surfaces.map((x) => tr(x)).join(', ')) +
+        row2(tr('Lease per sector'), fmtMoney(a.rent)) +
         '</div>' +
         (locked
-          ? '<div class="cFoot"><span class="need">Locked — pass ' + esc(course.name) + '</span></div>'
-          : '<div class="cFoot"><span class="ok">' + (sel ? 'Selected' : 'Available to lease') + '</span>' +
-            (sel ? '' : '<button class="btn" data-act="selectAc" data-v="' + a.id + '">Select</button>') + '</div>') +
+          ? '<div class="cFoot"><span class="need">' + tr('Locked — pass {course}', { course: esc(this.courseText(course).name) }) + '</span></div>'
+          : '<div class="cFoot"><span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
+            (sel ? '' : '<button class="btn" data-act="selectAc" data-v="' + a.id + '">' + tr('Select') + '</button>') + '</div>') +
         '</div>';
     }).join('');
-    return '<div class="hint">Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: ' +
-      'a heavy jet needs runway, needs a rating, and costs more to lease.</div><div class="cards">' + cards + '</div>';
+    return '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') +
+      '</div><div class="cards">' + cards + '</div>';
   },
 
-  // The course tree, in the exam language picked here (the exams then run in it too)
+  // The course tree, in the game's language (the exams run in it too)
   trainingBody() {
     const lang = this.quizLang(), T = QUIZ_TEXT[lang];
-    const langChips = '<div class="setGroup quizLang"><span>' + esc(T.lang) + '</span>' +
-      Object.keys(QUIZ_LANGS).map((l) => '<button class="chip' + (l === lang ? ' on' : '') + '" data-act="quizLang" data-v="' + l + '">' +
-        esc(QUIZ_LANGS[l]) + '</button>').join('') + '</div>';
     const columns = ['general', 'pax', 'cargo', 'bush'].map((b) => {
       const courses = COURSES.filter((c) => c.branch === b).sort((x, y) => x.tier - y.tier);
       const items = courses.map((c) => {
@@ -349,11 +352,11 @@ const UI = {
       }).join('');
       return '<div class="branch"><h3>' + esc(T.branches[b]) + '</h3>' + items + '</div>';
     }).join('');
-    return '<div class="trainTop">' + langChips + '</div>' +
-      '<div class="hint">' + esc(T.intro) + '</div><div class="branches">' + columns + '</div>';
+    return '<div class="hint">' + esc(T.intro) + '</div><div class="branches">' + columns + '</div>';
   },
-  // a course's name, description and effect in the exam language (English from COURSES)
+  // a course's name, description and effect in the game's language (English from COURSES)
   courseText(c, lang) {
+    lang = lang || this.quizLang();
     const t = COURSE_TEXT[lang] && COURSE_TEXT[lang][c.id];
     return t ? { name: t[0], blurb: t[1], effect: t[2] } : { name: c.name, blurb: c.blurb, effect: c.effect };
   },
@@ -362,46 +365,46 @@ const UI = {
     const d = Career.data;
     const fx = Career.effects();
     const s = d.stats;
-    const licences = COURSES.filter((c) => Career.has(c.id)).map((c) => c.name);
-    const log = (d.log || []).map((l) => '<li>' + esc(l.text) + '</li>').join('');
+    const licences = COURSES.filter((c) => Career.has(c.id)).map((c) => this.courseText(c).name);
+    const log = (d.log || []).map((l) => '<li>' + esc(logText(l)) + '</li>').join('');
     return '<div class="careerCols"><div>' +
-      '<h3>Pilot</h3>' +
-      '<div class="cGrid">' + row2('Name', esc(d.pilot.name)) + row2('Operator', esc(d.pilot.airline)) +
-      row2('Licence', CAREER.PILOT_LICENSE) + row2('Home base', World.byId[d.base].name) +
-      row2('Balance', fmtMoney(d.money)) + row2('Difficulty', Career.difficulty.name) + '</div>' +
-      '<h3>Reputation</h3>' +
+      '<h3>' + tr('Pilot') + '</h3>' +
+      '<div class="cGrid">' + row2(tr('Name'), esc(d.pilot.name)) + row2(tr('Operator'), esc(d.pilot.airline)) +
+      row2(tr('Licence'), CAREER.PILOT_LICENSE) + row2(tr('Home base'), World.byId[d.base].name) +
+      row2(tr('Balance'), fmtMoney(d.money)) + row2(tr('Difficulty'), esc(tr(Career.difficulty.name))) + '</div>' +
+      '<h3>' + tr('Reputation') + '</h3>' +
       Object.keys(FACTIONS).map((k) => {
         const v = d.rep[k];
-        return '<div class="repRow"><span>' + esc(FACTIONS[k].name) + '</span>' +
+        return '<div class="repRow"><span>' + esc(tr(FACTIONS[k].name)) + '</span>' +
           '<div class="bar"><i style="width:' + v + '%;background:' + FACTIONS[k].color + '"></i></div>' +
           '<b>' + Math.round(v) + '</b></div>';
       }).join('') +
-      '<h3>Records</h3>' +
-      '<div class="cGrid">' + row2('Flights flown', s.flights) +
-      row2('Block time', fmtTime(s.blockTime)) +
-      row2('Landings', s.landings) +
-      row2('Smooth landings', s.perfect) +
-      row2('Flights lost', s.crashes) +
-      row2('Best grade', s.bestGrade || '—') +
-      row2('Best single flight', fmtMoney(s.bestPay)) +
-      row2('Cheats used', s.cheats) + '</div>' +
-      '</div><div><h3>Licences and ratings</h3><p class="licList">' +
-      (licences.length ? licences.map(esc).join(' · ') : 'none yet') + '</p>' +
-      '<h3>Unlocked by your courses</h3><ul class="unlocks">' +
-      unlockLine(fx.hint, 'Advanced systems — checklist hints and more time') +
-      unlockLine(fx.ifr, 'Instrument rating — you may fly into low cloud and use the ILS') +
-      unlockLine(fx.hazmat, 'Dangerous goods contracts') +
-      unlockLine(fx.payloadTol > 1, 'Weight and balance — 15 % more payload before you are over weight') +
-      unlockLine(fx.iceFactor < 1, 'De-icing — ice builds ' + Math.round((1 - fx.iceFactor) * 100) + ' % slower') +
-      unlockLine(fx.medevac, 'Medevac and search and rescue contracts') +
-      unlockLine(fx.forecast, 'Full weather reports at both ends, and better fuel planning') +
-      unlockLine(fx.mountain, 'Mountain and adverse weather routes') +
-      unlockLine(fx.widebody, 'Widebody procedures — the Nordjet 320') +
-      unlockLine(fx.remote, 'Remote strips and ice fields for every type') +
+      '<h3>' + tr('Records') + '</h3>' +
+      '<div class="cGrid">' + row2(tr('Flights flown'), s.flights) +
+      row2(tr('Block time'), fmtTime(s.blockTime)) +
+      row2(tr('Landings'), s.landings) +
+      row2(tr('Smooth landings'), s.perfect) +
+      row2(tr('Flights lost'), s.crashes) +
+      row2(tr('Best grade'), s.bestGrade || '—') +
+      row2(tr('Best single flight'), fmtMoney(s.bestPay)) +
+      row2(tr('Cheats used'), s.cheats) + '</div>' +
+      '</div><div><h3>' + tr('Licences and ratings') + '</h3><p class="licList">' +
+      (licences.length ? licences.map(esc).join(' · ') : tr('none yet')) + '</p>' +
+      '<h3>' + tr('Unlocked by your courses') + '</h3><ul class="unlocks">' +
+      unlockLine(fx.hint, tr('Advanced systems — checklist hints and more time')) +
+      unlockLine(fx.ifr, tr('Instrument rating — you may fly into low cloud and use the ILS')) +
+      unlockLine(fx.hazmat, tr('Dangerous goods contracts')) +
+      unlockLine(fx.payloadTol > 1, tr('Weight and balance — 15 % more payload before you are over weight')) +
+      unlockLine(fx.iceFactor < 1, tr('De-icing — ice builds {p} % slower', { p: Math.round((1 - fx.iceFactor) * 100) })) +
+      unlockLine(fx.medevac, tr('Medevac and search and rescue contracts')) +
+      unlockLine(fx.forecast, tr('Full weather reports at both ends, and better fuel planning')) +
+      unlockLine(fx.mountain, tr('Mountain and adverse weather routes')) +
+      unlockLine(fx.widebody, tr('Widebody procedures — the Nordjet 320')) +
+      unlockLine(fx.remote, tr('Remote strips and ice fields for every type')) +
       '</ul>' +
-      '<h3>Log</h3><ul class="log">' + (log || '<li>Nothing yet.</li>') + '</ul>' +
-      '<div class="btnRow"><button class="btn" data-act="backtitle">Title screen</button>' +
-      '<button class="btn danger" data-act="wipe">Delete career</button></div>' +
+      '<h3>' + tr('Log') + '</h3><ul class="log">' + (log || '<li>' + tr('Nothing yet.') + '</li>') + '</ul>' +
+      '<div class="btnRow"><button class="btn" data-act="backtitle">' + tr('Title screen') + '</button>' +
+      '<button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>' +
       '</div></div>';
   },
 
@@ -416,17 +419,17 @@ const UI = {
     const from = World.byId[c.fromId], to = World.byId[c.toId];
     const setup = Career.flightSetup(c, { seed: 0 });
     const w = (x, a) => {
-      const wind = Math.round(x.speed) + ' kt from ' + String(Math.round(x.dir)).padStart(3, '0') + '°' +
-        (x.gust > 2 ? ', gusting ' + Math.round(x.speed + x.gust) : '');
+      const wind = tr('{v} kt from {d}°', { v: Math.round(x.speed), d: String(Math.round(x.dir)).padStart(3, '0') }) +
+        (x.gust > 2 ? ', ' + tr('gusting {v}', { v: Math.round(x.speed + x.gust) }) : '');
       const cross = Math.abs(Math.sin((x.dir - a.hdgDeg) * DEG) * x.speed);
-      return '<tr><td>Runway in use</td><td>' + a.rwyName + ' · ' + a.rwyLen + ' m</td></tr>' +
-        '<tr><td>Wind</td><td>' + wind + (cross > 4 ? ' · crosswind ' + Math.round(cross) + ' kt' : '') + '</td></tr>' +
+      return '<tr><td>' + tr('Runway in use') + '</td><td>' + a.rwyName + ' · ' + a.rwyLen + ' m</td></tr>' +
+        '<tr><td>' + tr('Wind') + '</td><td>' + wind + (cross > 4 ? ' · ' + tr('crosswind {v} kt', { v: Math.round(cross) }) : '') + '</td></tr>' +
         '<tr><td>QNH</td><td>' + x.qnh + ' hPa</td></tr>' +
-        '<tr><td>Visibility</td><td>' + (x.vis / 1000).toFixed(1) + ' km</td></tr>' +
-        '<tr><td>Cloud</td><td>base ' + fmtAlt(x.cloudBase) + ' ft, tops ' + fmtAlt(x.cloudTop) + ' ft</td></tr>' +
-        '<tr><td>Temperature</td><td>' + Math.round(x.temp) + ' °C' + (x.snow ? ' · snow' : x.precip === 'rain' ? ' · rain' : '') + '</td></tr>' +
-        (x.icing ? '<tr><td>ICING</td><td>expected in cloud — anti-ice K</td></tr>' : '') +
-        (x.stormy ? '<tr><td>WIND</td><td>stormy — expect turbulence and shear</td></tr>' : '');
+        '<tr><td>' + tr('Visibility') + '</td><td>' + (x.vis / 1000).toFixed(1) + ' km</td></tr>' +
+        '<tr><td>' + tr('Cloud') + '</td><td>' + tr('base {b} ft, tops {t} ft', { b: fmtAlt(x.cloudBase), t: fmtAlt(x.cloudTop) }) + '</td></tr>' +
+        '<tr><td>' + tr('Temperature') + '</td><td>' + Math.round(x.temp) + ' °C' + (x.snow ? ' · ' + tr('snow') : x.precip === 'rain' ? ' · ' + tr('rain') : '') + '</td></tr>' +
+        (x.icing ? '<tr><td>' + tr('ICING') + '</td><td>' + tr('expected in cloud — anti-ice K') + '</td></tr>' : '') +
+        (x.stormy ? '<tr><td>' + tr('WIND') + '</td><td>' + tr('stormy — expect turbulence and shear') + '</td></tr>' : '');
     };
     this.panel(
       '<h2 class="clientHead">' + clientLogo(c, true) + esc(c.client) + '</h2>' +
@@ -436,26 +439,26 @@ const UI = {
       '<h3>' + flagImg(from) + esc(from.name) + ' · ' + from.id + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
       '<h3>' + flagImg(to) + esc(to.name) + ' · ' + to.id + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
       '<p class="fineprint">' + (setup.weather.arr.vis < 3000
-        ? 'Low visibility at ' + to.id + ' — fly the ILS, the autopilot can couple to it down to 200 ft.'
-        : 'Visibility is good for the approach at ' + to.id + '.') + '</p>' +
+        ? tr('Low visibility at {id} — fly the ILS, the autopilot can couple to it down to 200 ft.', { id: to.id })
+        : tr('Visibility is good for the approach at {id}.', { id: to.id })) + '</p>' +
       '</div><div>' +
-      '<h3>The job</h3><div class="cGrid">' +
-      row2('Aircraft', esc(ac.name) + ' · ' + ac.klass) +
-      row2('Load', loadText(c)) +
-      row2('Distance', c.distanceNm + ' nm') +
-      row2('En route', 'about ' + c.blockMin + ' min at 1× — use the autopilot and time acceleration') +
-      row2('Deadline', Career.difficulty.id === 'easy' ? 'none' : fmtTime(c.deadline) + ' of real time') +
-      row2('Fuel', 'plan ' + c.fuelKg + ' kg · on board ' + Math.round(setup.blockFuel) + ' kg') +
-      row2('Reputation', '+' + c.repGain + ' ' + FACTIONS[c.faction].short) +
-      row2('Lease', '−' + fmtMoney(ac.rent)) +
+      '<h3>' + tr('The job') + '</h3><div class="cGrid">' +
+      row2(tr('Aircraft'), esc(ac.name) + ' · ' + esc(tr(ac.klass))) +
+      row2(tr('Load'), loadText(c)) +
+      row2(tr('Distance'), c.distanceNm + ' nm') +
+      row2(tr('En route'), tr('about {m} min at 1× — use the autopilot and time acceleration', { m: c.blockMin })) +
+      row2(tr('Deadline'), Career.difficulty.id === 'easy' ? tr('none') : tr('{t} of real time', { t: fmtTime(c.deadline) })) +
+      row2(tr('Fuel'), tr('plan {p} kg · on board {b} kg', { p: c.fuelKg, b: Math.round(setup.blockFuel) })) +
+      row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
+      row2(tr('Lease'), '−' + fmtMoney(ac.rent)) +
       '</div>' +
-      '<h3>How you start</h3>' +
+      '<h3>' + tr('How you start') + '</h3>' +
       '<label class="check"><input type="radio" name="startMode" value="gate"' + (this.skipPushback ? '' : ' checked') + '> ' +
-      'At the gate — push back, start the engines, taxi out</label>' +
+      tr('At the gate — push back, start the engines, taxi out') + '</label>' +
       '<label class="check"><input type="radio" name="startMode" value="pushback"' + (this.skipPushback ? ' checked' : '') + '> ' +
-      'After pushback — the tug has taken you to the holding point, +' + fmtMoney(CONTRACTS.PUSHBACK_BONUS) + ' from the client</label>' +
-      '<div class="btnRow"><button class="btn default" data-act="fly">Fly it</button>' +
-      '<button class="btn" data-act="tab" data-v="dispatch">Back to the board</button></div>' +
+      tr('After pushback — the tug has taken you to the holding point, +{bonus} from the client', { bonus: fmtMoney(CONTRACTS.PUSHBACK_BONUS) }) + '</label>' +
+      '<div class="btnRow"><button class="btn default" data-act="fly">' + tr('Fly it') + '</button>' +
+      '<button class="btn" data-act="tab" data-v="dispatch">' + tr('Back to the board') + '</button></div>' +
       '</div></div>');
   },
 
@@ -467,39 +470,39 @@ const UI = {
     const gradeCls = 'grade' + (result.grade === 'A+' || result.grade === 'A' ? ' top' : result.grade === 'F' || result.grade === 'E' ? ' bad' : '');
     const body =
       '<div class="debriefTop">' +
-      '<div class="' + gradeCls + '">' + (failed ? 'LOST' : result.grade) + '</div>' +
-      '<div class="debriefTitle">' + (failed ? esc(Game.failure ? Game.failure.text : 'The flight was lost')
-        : 'Flight complete · ' + result.contract.fromId + ' → ' + result.contract.toId) + '</div>' +
+      '<div class="' + gradeCls + '">' + (failed ? tr('LOST') : result.grade) + '</div>' +
+      '<div class="debriefTitle">' + (failed ? esc(Game.failure ? Game.failure.text : tr('The flight was lost'))
+        : tr('Flight complete · {from} → {to}', { from: result.contract.fromId, to: result.contract.toId })) + '</div>' +
       '</div>' +
       (failed ? '' :
-        '<div class="cols"><div><h3>Touchdown</h3><div class="cGrid">' +
-        row2('Vertical speed', (landed ? landed.fpm : 0) + ' fpm') +
-        row2('Speed', (landed ? landed.ias : 0) + ' kt (Vref ' + (landed ? landed.vref : 0) + ')') +
-        row2('From the threshold', (landed ? landed.fromThr : 0) + ' m') +
-        row2('Off the centreline', (landed ? Math.abs(landed.offset) : 0) + ' m') +
-        row2('Bank / crab', (landed ? Math.round(landed.bank) + '° / ' + Math.abs(landed.crab) + '°' : '—')) +
-        row2('Surface', landed ? landed.surf : '—') +
-        '</div></div><div><h3>In the log</h3><ul class="unlocks">' +
-        '<li>Block time ' + fmtTime(result.blockSec) + ' · real time ' + fmtTime(result.realSec) + (result.onTime ? ' · on time' : ' · late') + '</li>' +
-        '<li>Fuel used ' + Math.round(result.fuelUsed) + ' kg (plan ' + result.contract.fuelKg + ' kg)</li>' +
-        '<li>Checklists: ' + result.handled + ' worked, ' + result.mishandled + ' mishandled</li>' +
-        '<li>Damage ' + Math.round(result.damage * 100) + ' %</li>' +
-        (result.cheated ? '<li class="need">Cheats used — no pay, no reputation, no records</li>' : '') +
+        '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3><div class="cGrid">' +
+        row2(tr('Vertical speed'), (landed ? landed.fpm : 0) + ' fpm') +
+        row2(tr('Speed'), (landed ? landed.ias : 0) + ' kt (Vref ' + (landed ? landed.vref : 0) + ')') +
+        row2(tr('From the threshold'), (landed ? landed.fromThr : 0) + ' m') +
+        row2(tr('Off the centreline'), (landed ? Math.abs(landed.offset) : 0) + ' m') +
+        row2(tr('Bank / crab'), (landed ? Math.round(landed.bank) + '° / ' + Math.abs(landed.crab) + '°' : '—')) +
+        row2(tr('Surface'), landed ? esc(tr(landed.surf)) : '—') +
+        '</div></div><div><h3>' + tr('In the log') + '</h3><ul class="unlocks">' +
+        '<li>' + tr('Block time {b} · real time {r}', { b: fmtTime(result.blockSec), r: fmtTime(result.realSec) }) + ' · ' + tr(result.onTime ? 'on time' : 'late') + '</li>' +
+        '<li>' + tr('Fuel used {kg} kg (plan {p} kg)', { kg: Math.round(result.fuelUsed), p: result.contract.fuelKg }) + '</li>' +
+        '<li>' + tr('Checklists: {a} worked, {b} mishandled', { a: result.handled, b: result.mishandled }) + '</li>' +
+        '<li>' + tr('Damage {p} %', { p: Math.round(result.damage * 100) }) + '</li>' +
+        (result.cheated ? '<li class="need">' + tr('Cheats used — no pay, no reputation, no records') + '</li>' : '') +
         '</ul></div></div>') +
-      '<h3>Invoice</h3><table class="money">' +
-      p.lines.map((l) => '<tr><td>' + esc(l.label) + '</td><td class="' + (l.value < 0 ? 'neg' : '') + '">' +
+      '<h3>' + tr('Invoice') + '</h3><table class="money">' +
+      p.lines.map((l) => '<tr><td>' + esc(tr(l.label, l.args)) + '</td><td class="' + (l.value < 0 ? 'neg' : '') + '">' +
         (l.value < 0 ? '−' : '') + fmtMoney(Math.abs(l.value)) + '</td></tr>').join('') +
-      '<tr class="total"><td>' + (p.total < 0 ? 'Cost to you' : 'Paid to you') + '</td><td>' +
+      '<tr class="total"><td>' + tr(p.total < 0 ? 'Cost to you' : 'Paid to you') + '</td><td>' +
       (p.total < 0 ? '−' : '') + fmtMoney(Math.abs(p.total)) + '</td></tr>' +
       '</table>' +
-      (p.rep ? '<p class="repGain">Reputation with ' + esc(FACTIONS[result.contract.faction].name) +
+      (p.rep ? '<p class="repGain">' + tr('Reputation with {who}', { who: esc(tr(FACTIONS[result.contract.faction].name)) }) +
         ': <b>' + (p.rep > 0 ? '+' : '') + p.rep.toFixed(1) + '</b></p>' : '') +
-      (p.bankrupt ? '<p class="need">Your balance is below −50 000 kr. The operator certificate has been revoked — this career is over.</p>' : '') +
+      (p.bankrupt ? '<p class="need">' + tr('Your balance is below −50 000 kr. The operator certificate has been revoked — this career is over.') + '</p>' : '') +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="btnRow">' +
-      (p.bankrupt ? '<button class="btn default" data-act="gameover">Start again</button>'
-        : failed ? '<button class="btn default" data-act="retry">Try again</button><button class="btn" data-act="ops">Back to ops</button>'
-          : '<button class="btn default" data-act="ops">Next flight</button>') +
+      (p.bankrupt ? '<button class="btn default" data-act="gameover">' + tr('Start again') + '</button>'
+        : failed ? '<button class="btn default" data-act="retry">' + tr('Try again') + '</button><button class="btn" data-act="ops">' + tr('Back to ops') + '</button>'
+          : '<button class="btn default" data-act="ops">' + tr('Next flight') + '</button>') +
       '</div>';
     this.panel(body, 'debrief');
   },
@@ -508,27 +511,27 @@ const UI = {
   showPause() {
     const fl = Game.flight;
     this.panel(
-      '<h2>Paused</h2>' +
+      '<h2>' + tr('Paused') + '</h2>' +
       '<p class="lead">' + (fl ? esc(fl.contract.client) + ' · ' + fl.contract.fromId + ' → ' + fl.contract.toId : '') + '</p>' +
-      '<div class="btnRow"><button class="btn default" data-act="resume">Resume</button>' +
-      '<button class="btn" data-act="restart">Restart this flight</button>' +
-      '<button class="btn" data-act="howto2">Controls</button>' +
-      '<button class="btn" data-act="ops">Abandon, back to ops</button></div>' +
+      '<div class="btnRow"><button class="btn default" data-act="resume">' + tr('Resume') + '</button>' +
+      '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
+      '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
+      '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
       '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + '</div>' +
-      '<p class="fineprint">Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.</p>', 'narrow');
+      '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
   // aviation units (ft, kt, nm) or metric (m, km/h, km)
   unitChips() {
     const u = Career.settings.units === 'metric' ? 'metric' : 'aviation';
-    return '<div class="setGroup"><span>Units</span>' +
-      '<button class="chip' + (u === 'aviation' ? ' on' : '') + '" data-act="units" data-v="aviation" title="feet, knots, nautical miles">ft · kt · nm</button>' +
-      '<button class="chip' + (u === 'metric' ? ' on' : '') + '" data-act="units" data-v="metric" title="metres, km/h, kilometres">m · km/h · km</button></div>';
+    return '<div class="setGroup"><span>' + tr('Units') + '</span>' +
+      '<button class="chip' + (u === 'aviation' ? ' on' : '') + '" data-act="units" data-v="aviation" title="' + esc(tr('feet, knots, nautical miles')) + '">ft · kt · nm</button>' +
+      '<button class="chip' + (u === 'metric' ? ' on' : '') + '" data-act="units" data-v="metric" title="' + esc(tr('metres, km/h, kilometres')) + '">m · km/h · km</button></div>';
   },
 
   // ---------- quiz ----------
-  // Four questions from the course's pool, the options shuffled; in the language picked on
-  // the Training tab (English, Russian or Swedish).
+  // Four questions from the course's pool, the options shuffled; in the game's language
+  // (English, Russian or Swedish).
   // A hint can be shown before answering, and after each answer the explanation follows.
   showQuiz(courseId) {
     const course = COURSES.find((c) => c.id === courseId);
@@ -541,7 +544,7 @@ const UI = {
     this.quiz = { course, questions, index: 0, correct: 0, hint: false, answer: null };
     this.renderQuiz();
   },
-  quizLang() { return QUIZ_TEXT[Career.settings.quizLang] ? Career.settings.quizLang : 'en'; },
+  quizLang() { return QUIZ_TEXT[I18N.lang] ? I18N.lang : 'en'; },
   renderQuiz() {
     const q = this.quiz;
     if (!q) return;
@@ -646,9 +649,10 @@ const UI = {
       case 'quizNext':
         if (this.quiz) { this.quiz.index++; this.quiz.answer = null; this.quiz.hint = false; this.renderQuiz(); }
         break;
-      case 'quizLang':
-        Career.settings.quizLang = v; Career.saveSettings();
-        this.showOps();
+      case 'lang':
+        Career.settings.lang = v; Career.saveSettings();
+        I18N.set(v);
+        this.refresh();
         break;
       case 'quizdone': this.quiz = null; this.tab = 'training'; this.showOps(); break;
       case 'quitquiz': this.quiz = null; this.tab = 'training'; this.showOps(); break;
@@ -687,7 +691,15 @@ const UI = {
 
 function loadText(c) {
   const kg = Math.round(c.payloadKg).toLocaleString('sv-SE');
-  return c.type === 'pax' ? c.pax + ' passengers · ' + kg + ' kg' : kg + ' ' + esc(c.payloadLabel) + (c.pax ? ' · ' + c.pax + ' on board' : '');
+  return c.type === 'pax' ? tr('{n} passengers · {kg} kg', { n: c.pax, kg })
+    : kg + ' ' + esc(tr(c.payloadLabel)) + (c.pax ? ' · ' + tr('{n} on board', { n: c.pax }) : '');
+}
+// a career log line in the language of the day (old saves: the English text)
+function logText(l) {
+  if (!l.tpl) return l.text;
+  const args = {};
+  for (const k in l.args) args[k] = typeof l.args[k] === 'string' ? tr(l.args[k]) : l.args[k];
+  return tr(l.tpl, args);
 }
 function row2(k, v) { return '<div class="row2"><span>' + esc(k) + '</span><b>' + v + '</b></div>'; }
 function keyRow(k, d) { return '<li><kbd>' + esc(k) + '</kbd> ' + esc(d) + '</li>'; }

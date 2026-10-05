@@ -13,7 +13,7 @@ const SETTINGS_KEY = 'worldaviation.settings.v1';
 
 const Career = {
   data: null,
-  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', quizLang: 'en' },
+  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', lang: '' },
 
   // ---------- persistence ----------
   loadSettings() {
@@ -22,6 +22,13 @@ const Career = {
       if (raw) Object.assign(this.settings, JSON.parse(raw));
       delete this.settings.unit;
     } catch (err) { /* first run */ }
+    // the game's language: picked on the title screen; the first time the old exam language or the browser's
+    if (!LANGS[this.settings.lang]) {
+      const q = this.settings.quizLang;
+      this.settings.lang = q && q !== 'en' && LANGS[q] ? q : I18N.guess();
+    }
+    delete this.settings.quizLang;
+    I18N.set(this.settings.lang);
     Units.metric = this.settings.units === 'metric';
     return this.settings;
   },
@@ -74,7 +81,7 @@ const Career = {
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
     };
-    this.data.log.push({ text: 'Operator certificate granted to ' + this.data.pilot.airline + '. Base: Stockholm Arlanda.', day: 0 });
+    this.data.log.push(logLine('Operator certificate granted to {airline}. Base: Stockholm Arlanda.', { airline: this.data.pilot.airline }, 0));
     this.save();
     this.generateContracts();
     return this.data;
@@ -114,7 +121,7 @@ const Career = {
     if (!st || !st.available || !st.afford) return false;
     this.data.money -= rg.cost;
     this.data.regions.push(rg.id);
-    this.data.log.unshift({ text: 'Traffic rights: ' + rg.name, day: this.data.log.length });
+    this.data.log.unshift(logLine('Traffic rights: {region}', { region: rg.name }, this.data.log.length));
     this.save();
     this.generateContracts();
     return true;
@@ -340,13 +347,13 @@ const Career = {
     const base = c.pay;
     const gradeBonus = Math.round(c.pay * (gm - 1));
     lines.push({ label: 'Contract', value: base });
-    if (gradeBonus) lines.push({ label: 'Landing grade ' + result.grade, value: gradeBonus });
+    if (gradeBonus) lines.push({ label: 'Landing grade {g}', args: { g: result.grade }, value: gradeBonus });
     if (result.onTime) lines.push({ label: 'On time', value: Math.round(base * 0.08) });
     if (result.pushbackSkipped) lines.push({ label: 'No tug needed', value: CONTRACTS.PUSHBACK_BONUS });
     // the lease runs per block hour (at least one), and the fuel burnt is paid for
     const hours = Math.max(1, result.blockSec / 3600);
-    lines.push({ label: 'Aircraft lease (' + ac.name + ', ' + hours.toFixed(1) + ' h)', value: -Math.round(ac.rent * hours) });
-    lines.push({ label: 'Fuel burnt (' + Math.round(result.fuelUsed) + ' kg)', value: -Math.round(result.fuelUsed * CONTRACTS.FUEL_RATE) });
+    lines.push({ label: 'Aircraft lease ({ac}, {h} h)', args: { ac: ac.name, h: hours.toFixed(1) }, value: -Math.round(ac.rent * hours) });
+    lines.push({ label: 'Fuel burnt ({kg} kg)', args: { kg: Math.round(result.fuelUsed) }, value: -Math.round(result.fuelUsed * CONTRACTS.FUEL_RATE) });
     if (result.damage > 0.02) {
       const dmg = -Math.round(c.pay * result.damage * 0.7);
       lines.push({ label: 'Repairs and downtime', value: dmg });
@@ -379,7 +386,7 @@ const Career = {
     if (total > d.stats.bestPay) d.stats.bestPay = total;
     d.lastTo = c.toId;
     if (c.toId === d.base) d.lastTo = d.base;
-    d.log.unshift({ text: dayLabel(c, result), day: d.log.length });
+    d.log.unshift(dayLabel(c, result, d.log.length));
     d.log = d.log.slice(0, 24);
     const bankrupt = d.money < CONTRACTS.START_DEBT_LIMIT;
     this.generateContracts();
@@ -394,7 +401,7 @@ const Career = {
       const cost = Math.round(result.contract.pay * 0.12);
       d.money -= cost;
       d.rep[result.contract.faction] = clamp((d.rep[result.contract.faction] || 0) - 1.5, 0, 100);
-      d.log.unshift({ text: 'Flight ' + result.contract.fromId + ' → ' + result.contract.toId + ' lost: ' + result.reason, day: d.log.length });
+      d.log.unshift(logLine('Flight {from} → {to} lost: {reason}', { from: result.contract.fromId, to: result.contract.toId, reason: result.reason }, d.log.length));
       d.log = d.log.slice(0, 24);
       this.save();
       return { lines: [{ label: 'Recovery, investigation and the client', value: -cost }], total: -cost, rep: -1.5, bankrupt: d.money < CONTRACTS.START_DEBT_LIMIT };
@@ -422,9 +429,16 @@ function contractDifficulty(distNm, type, to) {
   return Math.round(d * 10) / 10;
 }
 
-function dayLabel(c, result) {
-  return c.fromId + ' → ' + c.toId + ' · ' + c.type + ' · grade ' + result.grade +
-    (result.onTime ? ' · on time' : ' · late');
+function dayLabel(c, result, day) {
+  return logLine(result.onTime ? '{from} → {to} · {type} · grade {g} · on time' : '{from} → {to} · {type} · grade {g} · late',
+    { from: c.fromId, to: c.toId, type: PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type, g: result.grade }, day);
+}
+
+// A log entry: the English template and its values, so the Career tab shows it in the language
+// of the day (the values are translated too, where they are names from the tables); `text` is
+// the English line, for old saves and anything else that reads the log.
+function logLine(tpl, args, day) {
+  return { text: tpl.replace(/\{(\w+)\}/g, (all, k) => args[k]), tpl, args, day };
 }
 
 function hashStr(s) {

@@ -6,7 +6,7 @@ Developer/agent spec for the `world-aviation` project. Repo-wide conventions liv
 
 A career flight simulator in the browser: you are a Swedish commercial pilot (EASA ATPL) flying out of **Stockholm Arlanda** for a small Swedish operator. The career starts with Swedish domestic flying, then Scandinavia and the North Atlantic, then — region by region — the whole world: Europe, the Middle East and Africa, the Americas, Asia and the Pacific. Every flight is a full cockpit-view departure-and-arrival between real airports — push back from the gate, start the engines, taxi, take off, handle whatever the weather and the aeroplane throw at you, land, and taxi to the gate. You earn money, reputation and licences, fly bigger aircraft (up to the Airbus A350 and the Boeing 747-8F), and take contracts from passenger airlines, freight companies and remote operators.
 
-Everything in-game is English. The sim is arcade-leaning but built on real forces (lift/drag/thrust, stall, weight, wind, icing, fuel burn, pressure altitude) rather than on fake "up = up" controls.
+The game speaks **English, Russian or Swedish**, picked at the top of the title screen (see Language below); English is the source text. The sim is arcade-leaning but built on real forces (lift/drag/thrust, stall, weight, wind, icing, fuel burn, pressure altitude) rather than on fake "up = up" controls.
 
 ## Tech stack
 
@@ -45,11 +45,11 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
 
 ## Screens
 
-1. **Title** — Continue / New career, difficulty (Easy / Medium / Hard), Graphics, How to fly, sound, reset career.
+1. **Title** — the language (English / Русский / Svenska) at the top, Continue / New career, difficulty (Easy / Medium / Hard), Graphics, sound, units, How to fly, reset career.
 2. **Ops (career hub)** — four tabs:
    - **Dispatch** — the contract board (3–5 offers), each with client, route, load, payout, requirements.
    - **Hangar** — the aircraft ladder, specs, lease/buy, "which aircraft is selected".
-   - **Training** — the technology tree (see below) with branches and tiers, and the exam language switch (English / Русский / Svenska): the tab itself — branch names, course names, descriptions, effects, statuses and buttons — is shown in the chosen language (`QUIZ_TEXT`, `COURSE_TEXT` in `data/quizzes.js`), and the exams then run in it.
+   - **Training** — the technology tree (see below) with branches and tiers, in the game's language: branch names, course names, descriptions, effects, statuses and buttons (`QUIZ_TEXT`, `COURSE_TEXT` in `data/quizzes.js`); the exams run in it too.
    - **Career** — money, reputation with the three client factions, licences, block time, landings, records, cheat count.
 3. **Briefing** — route map, runway in use at both ends, distance, block time, payload, fuel plan, weather at departure/arrival/cruise altitude, NOTAM-style hints, and the two start options:
    - **At the gate** — full sequence: doors closed, push back by tug, engine start, taxi.
@@ -60,7 +60,7 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
 5. **Debrief** — landing grade, touchdown data (vertical speed, speed vs Vref, distance from the threshold, centreline offset, bank and crab), the log, the invoice, the reputation change, the difficulty choice and "Next flight".
 6. **Failure** — crash (terrain, ditching, wing or nose strike, gear-up landing, gear collapse), runway excursion, landing back at the departure. Shows the cause and the cost; "Try again" (the same contract) or "Back to ops", with the difficulty choice.
 7. **Pause** (Esc) — resume (Esc / Space / Enter), restart the flight, controls, abandon to Ops, the difficulty choice.
-8. **Quiz** — a training course's exam (`data/quizzes.js`): four questions drawn from a pool of five, three options each (shuffled), pass mark 3/4. Written for a school pupil: plain words, one clearly right answer. A **Hint** button shows a clue before answering; after each answer the right option is marked and the same text explains it, then **Next**. The exam runs straight away in the language picked on the Training tab (English, Russian or Swedish, remembered as `settings.quizLang`; there is no switch on the exam screen itself); the rest of the game stays English.
+8. **Quiz** — a training course's exam (`data/quizzes.js`): four questions drawn from a pool of five, three options each (shuffled), pass mark 3/4. Written for a school pupil: plain words, one clearly right answer. A **Hint** button shows a clue before answering; after each answer the right option is marked and the same text explains it, then **Next**. The exam runs in the game's language (English, Russian or Swedish, picked on the title screen).
 
 ## Flight model
 
@@ -268,6 +268,7 @@ world-aviation/
 ├── lib/
 │   └── three.min.js        three.js r147 (UMD), vendored
 ├── core/
+│   ├── i18n.js             the game's language: tr() looks the English text up in data/lang-*.js, LANGS, I18N
 │   ├── utils.js            math, noise, RNG, geodesy, the per-flight projection (Theatre), formatting
 │   ├── input.js            keyboard, touch joystick/throttle/buttons, fullscreen
 │   └── audio.js            synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts
@@ -277,6 +278,8 @@ world-aviation/
 │   ├── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
 │   ├── emergencies.js      the emergencies and their QRH checklists
 │   ├── quizzes.js          the course exams in English, Russian and Swedish, with hints; the Training tab's words and the course texts in Russian and Swedish
+│   ├── lang-ru.js          every other text of the game in Russian (TEXT_RU: English text → translation)
+│   ├── lang-sv.js          the same in Swedish (TEXT_SV)
 │   └── geodata.js          the world's coastlines, inland water and mountain ranges ([lon, lat])
 ├── art/
 │   ├── flags.js            national flags (Canvas 2D), and small flag images for the screens
@@ -302,6 +305,16 @@ world-aviation/
 ├── manifest.webmanifest
 └── screenshot.png
 ```
+
+## Language
+
+`settings.lang`: `en`, `ru` or `sv`, picked with the chips at the top of the title screen and remembered (the first time: the browser's language if it is Russian or Swedish, else English; an old `settings.quizLang` is taken over). Everything the player reads switches: the screens, the briefing and the debrief, the HUD strip, the prompts, the messages and warnings, the QRH checklists (titles, steps, the why, the results), the ILS words, the map hints, the touch buttons and the controls card (`data-i18n` in `index.html`), the aircraft, regions, client groups and payloads, the courses and the exams.
+
+- The English text stays in the code and is the key: `tr('Taxi to {gate}', { gate })` (`core/i18n.js`) looks it up in `TEXT_RU` / `TEXT_SV` (`data/lang-ru.js`, `data/lang-sv.js`) and fills in the `{name}` values; a text with no entry is shown in English. Data tables (aircraft, regions, emergencies…) stay English and are passed through `tr()` where they are shown.
+- The units stay as they are in every language (`ft`, `kt`, `nm`, `fpm`, `kg`), so `Units.text` still converts them, and so do the keys in `<kbd>` (the touch prompts swap them for the button names, in the same language).
+- The career log and the invoice keep the English template and its values (`logLine` in `career.js`), so they are shown in the language of the day; old saves show their English text.
+- Stay English on purpose: the airport, city and airline names, the instruments and annunciator labels (as in a real cockpit), the spoken callouts and the debug cheat banners.
+- Adding a text: write it in English through `tr()`, add the same key to both tables. The check: every key used in the code and the data has an entry in both tables, with the same `{params}`.
 
 ## Units
 

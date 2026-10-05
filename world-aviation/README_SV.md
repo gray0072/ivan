@@ -68,7 +68,11 @@ Varje flygplats känns igen från cockpit: namnet med stora bokstäver på termi
 
 ## Prov
 
-Varje kurs slutar med ett kort prov: fyra frågor, tre rätt för godkänt. De är skrivna med enkla ord — en skolelev kan klura ut dem — med en knapp för **Ledtråd** och en förklaring efter varje svar, och de kan göras på **engelska, ryska eller svenska** (välj språk på fliken Training — kursernas namn och beskrivningar byter också språk, proven går sedan direkt på det, och valet sparas).
+Varje kurs slutar med ett kort prov: fyra frågor, tre rätt för godkänt. De är skrivna med enkla ord — en skolelev kan klura ut dem — med en knapp för **Ledtråd** och en förklaring efter varje svar, och de går på spelets språk — **engelska, ryska eller svenska**.
+
+## Språk
+
+Hela spelet — menyerna, genomgångarna och rapporterna, uppmaningarna och meddelandena under flygningen, nödchecklistorna, pekknapparna, kurserna och proven — finns på **engelska, ryska och svenska**. Välj språk högst upp på startskärmen; valet sparas (första gången följer spelet webbläsarens språk). Namnen på flygplatser, städer och flygbolag, texterna på instrumenten och de talade utropen är kvar som i en riktig cockpit.
 
 ## Enheter och kartan
 
@@ -84,4 +88,4 @@ Under inflygningen visar **ILS** en liten magentafärgad bana på RUNWAY-skalan 
 
 ## Teknik
 
-Ren HTML + CSS + vanilla JavaScript uppdelad i mappar efter ansvar: `core/` (hjälpfunktioner, styrning, ljud), `data/` (flygplatser, länder, flygbolag, prov, kustlinjer), `art/` (flaggor, stadssymboler, flygbolagens emblem), `sim/` (världen, terrängen, flygdynamiken, systemen), `render/` (3D-modellerna, flygplatserna och scenen) och `ui/` (instrument, cockpit, HUD, skärmar), med `game.js` och `career.js` överst – inget byggsteg. 3D-världen använder three.js (medföljer som `lib/three.min.js`), cockpit och instrument är Canvas 2D och ljudet syntetiseras med Web Audio API.
+Ren HTML + CSS + vanilla JavaScript uppdelad i mappar efter ansvar: `core/` (hjälpfunktioner, språk, styrning, ljud), `data/` (flygplatser, länder, flygbolag, prov, ryska och svenska texter, kustlinjer), `art/` (flaggor, stadssymboler, flygbolagens emblem), `sim/` (världen, terrängen, flygdynamiken, systemen), `render/` (3D-modellerna, flygplatserna och scenen) och `ui/` (instrument, cockpit, HUD, skärmar), med `game.js` och `career.js` överst – inget byggsteg. 3D-världen använder three.js (medföljer som `lib/three.min.js`), cockpit och instrument är Canvas 2D och ljudet syntetiseras med Web Audio API.
