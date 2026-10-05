@@ -34,6 +34,23 @@ A gallery of small, self-contained browser games and experiments, deployed as a 
 - **Start/restart buttons must work everywhere.** Any overlay button (e.g. "Start", "Play Again") must stay tappable on Android/iOS (plain `<button>` elements already are — don't intercept touch events on top of them) and must also be triggerable by **Space** or **Enter** on desktop, via a global `keydown` listener that clicks whichever button is currently visible in the overlay.
 - **JS and CSS live in separate files — always.** Never inline `<script>`/`<style>` blocks or `style=`/`onclick=` attributes in a project's `index.html` — put CSS in a `styles.css` and JS in one or more `.js` files (split JS into multiple files by concern/module when it grows large enough to benefit from it; `index.html` just references them). This still satisfies "no build step" and "self-contained" — the extra files live in the same project folder and are plain `<link>`/`<script src>` references, no bundler involved.
 - **Game constants live in their own file.** Every gameplay tuning value — sizes, speeds, counts, timings, probabilities, hit shapes, difficulty tables, stage lists — goes into `constants.js` in the project folder, as top-level `const`s with a short comment on units or meaning. It is loaded via `<script src>` before the files that use it; game logic files must not declare their own gameplay constants (purely visual constants of an art/render module, like colour palettes or decoration cell sizes, may stay in that module). Runtime state (arrays of entities, the player object, scores) stays in the logic files.
+- **Code is organised into folders by meaning.** Once a project has more than a handful of JS files, the project root keeps only the entry points — `index.html`, `styles.css`, `constants.js`, the main loop (`game.js` / `app.js`) and at most a top-level state module (e.g. a career or progress file) — plus the docs, icons, manifest and screenshot, which always stay in the root. Everything else goes into subfolders named after their role (`world-aviation/` is the reference layout):
+  - `lib/` — vendored third-party libraries (e.g. `three.min.js`), never edited by hand;
+  - `core/` — shared plumbing with no game rules: math/utils, input, audio, storage, speech;
+  - `data/` — static content as plain declarations, no logic: levels, maps, airports, item and character lists, texts, quizzes and their translations, geographic shapes;
+  - `art/` — procedural drawings used by the renderer and the screens (sprites, flags, emblems, silhouettes);
+  - `sim/` (or `logic/`) — game rules and simulation: the world, physics, systems, enemies — no drawing, no DOM;
+  - `render/` — drawing the world (Canvas 2D / WebGL scene, models);
+  - `ui/` — what sits on top: HUD, instruments, overlays and the screens (menus, briefings, results, pause, dialogs);
+  - feature folders when they fit the game better, with one file per kind of thing (`fun-training/`: `tasks/`, `scenes/`, `characters/`, `items/wear/<slot>.js`).
+
+  Rules that go with it:
+  - **Data is separate from code.** Big tables and content lists live in `data/` (tuning numbers still go to `constants.js`), so adding an airport, a level or a quiz question never means touching logic.
+  - **Every screen and every self-contained feature gets its own file** once it grows beyond a few dozen lines; one file, one concern. Split a file that passes about 1 000 lines.
+  - **Logic doesn't draw.** `sim/` and the state modules only change state; `render/` and `ui/` read it and draw it, so the logic can run headless (e.g. in Node for long tests).
+  - **Every file starts with a short header comment** saying what it is and what it is used by.
+  - **Plain scripts, not ES modules,** so the game still opens from `file://`: each file defines its globals, and `index.html` loads them in dependency order — `lib/`, `constants.js`, `data/`, `core/`, `sim/`, `art/`, `render/`, `ui/`, the main loop last.
+  - When files move, update the file tree in the game's `SPEC.md`, the root `SPEC.md` and the READMEs in the same change.
 - **Version query strings on asset links.** Every `<link>`/`<script src>` referencing a local CSS/JS file must include a `?v=N` query string (e.g. `styles.css?v=2`), and that version must be bumped whenever the referenced file changes, so players don't need to clear their browser cache to see updates.
 
 ## Project folder layout
@@ -50,7 +67,8 @@ Each project folder must contain:
 ├── index.html        # markup only, links to the CSS/JS files below (versioned query strings)
 ├── styles.css         # all CSS for the project
 ├── constants.js       # game tuning constants (loaded before the game logic)
-├── game.js            # JS (split into multiple .js files as needed)
+├── game.js            # main loop; the rest of the JS goes into subfolders by role
+├── core/, data/, sim/, render/, ui/, …  # see "Code is organised into folders by meaning"
 ├── README.md          # player-facing docs, in English
 ├── README_RU.md        # player-facing docs, in Russian
 ├── README_SV.md        # player-facing docs, in Swedish
@@ -77,7 +95,7 @@ Each project folder must contain:
 - No Playwright/Puppeteer is installed. Drive a page in headless Chrome over raw CDP: spawn `C:/Program Files/Google/Chrome/Application/chrome.exe --headless=new --remote-debugging-port=N --user-data-dir=<temp>`, fetch `http://127.0.0.1:N/json`, open the page's websocket and send `Runtime.evaluate`, `Page.captureScreenshot`, `Input.dispatchKeyEvent`, `Emulation.setDeviceMetricsOverride` / `setTouchEmulationEnabled` (phone, `pointer: coarse`). Node 20 needs `node --experimental-websocket` for the global `WebSocket`. Pages open fine from `file:///D:/Projects/my/ivan/<game>/index.html`.
 - Stop Chrome with `taskkill /PID <pid> /T /F` — killing only the main process leaves the GPU/renderer children running.
 - Headless Chrome renders WebGL in software (SwiftShader): 5–20 fps and 100 % CPU. Keep browser runs short (boot, a few screenshots, about a minute) and never run several in parallel.
-- Long gameplay tests (e.g. whole `world-aviation` flights) run in Node instead: load the game's logic files (constants, data/airports, data/countries, data/airlines, utils, geodata, terrain, world, audio, flight, systems, career, input, game) into a `vm` context with stub `HUD` / `Scene3D` / `UI` / DOM objects, replace `Input.axes` with a bot, and call `Game.frame(1 / 30)` in a plain loop under `os.setPriority(BELOW_NORMAL)` with a wall-clock limit. A gate-to-gate flight takes 7–25 s that way.
+- Long gameplay tests (e.g. whole `world-aviation` flights) run in Node instead: load the game's logic files (constants, data/airports, data/countries, data/airlines, core/utils, data/geodata, sim/terrain, sim/world, core/audio, sim/flight, sim/systems, career, core/input, game) into a `vm` context with stub `HUD` / `Scene3D` / `UI` / DOM objects, replace `Input.axes` with a bot, and call `Game.frame(1 / 30)` in a plain loop under `os.setPriority(BELOW_NORMAL)` with a wall-clock limit. A gate-to-gate flight takes 7–25 s that way.
 - Headless Chrome on this machine has speech voices: Microsoft en-GB (George, Hazel, Susan), Microsoft Bengt sv-SE, plus online Google voices (incl. Russian).
 
 ## Docs to keep in sync

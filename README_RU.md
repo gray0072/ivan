@@ -105,7 +105,8 @@ npx serve .        # или просто открой любой index.html в �
 │   └── screenshot.png
 ├── world-aviation/
 │   ├── SPEC.md                 # spec of this game
-│   ├── index.html, styles.css, *.js, three.min.js
+│   ├── index.html, styles.css, constants.js, game.js, career.js
+│   ├── lib/, core/, data/, art/, sim/, render/, ui/
 │   ├── README.md / README_RU.md / README_SV.md
 │   ├── icon.svg
 │   └── screenshot.png

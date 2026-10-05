@@ -103,8 +103,14 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html            # markup only, links versioned CSS/JS
 │   ├── styles.css
-│   ├── three.min.js          # three.js r147 (UMD), vendored
-│   ├── *.js                  # constants, utils, geodata, terrain, world, audio, flight, systems, models, scene3d, instruments, cockpit, hud, career, input, ui, game
+│   ├── constants.js, game.js, career.js  # tuning, main loop and phase machine, the career
+│   ├── lib/                  # three.min.js — three.js r147 (UMD), vendored
+│   ├── core/                 # utils, input, audio
+│   ├── data/                 # airports, countries, airlines, quizzes, geodata (coastlines, mountains)
+│   ├── art/                  # flags, landmarks (city symbols), airline emblems
+│   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems
+│   ├── render/               # three.js: aircraft models, airport3d, scene3d
+│   ├── ui/                   # instruments, cockpit, hud, ui (screens)
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest

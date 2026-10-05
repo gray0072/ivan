@@ -12,11 +12,11 @@ Everything in-game is English. The sim is arcade-leaning but built on real force
 
 HTML5 + CSS3 + vanilla ES2017 JavaScript, no build step, no package manager.
 
-The 3D world is rendered with **three.js** (r147, the UMD build), **vendored into the project folder** as `three.min.js` and loaded with a plain `<script src>` tag — no CDN, no bundler, no ES modules, so the folder still works offline, from `file://`, and when copied out of the repo on its own. It is a single vendored file, not a dependency the repo has to install. `WEBGL` is required for the flight view; if WebGL is unavailable the game says so and offers the rest of the career screens.
+The 3D world is rendered with **three.js** (r147, the UMD build), **vendored into the project folder** as `lib/three.min.js` and loaded with a plain `<script src>` tag — no CDN, no bundler, no ES modules, so the folder still works offline, from `file://`, and when copied out of the repo on its own. It is a single vendored file, not a dependency the repo has to install. `WEBGL` is required for the flight view; if WebGL is unavailable the game says so and offers the rest of the career screens.
 
 Rendering layout:
 
-- **`three.min.js`** (vendored, ~594 KB) — WebGL renderer, scene, camera, lighting.
+- **`lib/three.min.js`** (vendored, ~594 KB) — WebGL renderer, scene, camera, lighting.
 - **WebGL canvas** — the world: sky dome shader, terrain mesh, sea, runways and taxiways (canvas-generated textures with real markings), buildings, trees, clouds, aircraft, other traffic.
 - **Canvas 2D overlay** — the cockpit: window frame, glareshield, the full instrument panel (airspeed, attitude, altimeter, HSI, VSI, engine gauges, warning lights), windshield effects (rain, frost, fog, lightning) and the HUD. A 2D overlay keeps the gauges crisp and cheap and lets the cockpit frame be drawn on top of the 3D scene.
 - **Web Audio API** — synthesized sounds, no audio files; spoken callouts with `speechSynthesis` where the browser has it.
@@ -253,32 +253,38 @@ world-aviation/
 ├── index.html              markup only, versioned <link>/<script> tags
 ├── styles.css
 ├── constants.js            world, aircraft, difficulties, emergencies, courses, the views, tuning
+├── game.js                 main loop, phase machine, wiring, self-test mode
+├── career.js               save/load, contracts, courses, unlocks, payout, reputation
+├── lib/
+│   └── three.min.js        three.js r147 (UMD), vendored
+├── core/
+│   ├── utils.js            math, noise, RNG, geodesy, the per-flight projection (Theatre), formatting
+│   ├── input.js            keyboard, touch joystick/throttle/buttons, fullscreen
+│   └── audio.js            synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts
 ├── data/
 │   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)
 │   ├── countries.js        each country's flag and its local "welcome"
 │   ├── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
-│   └── quizzes.js          the course exams in English, Russian and Swedish, with hints
+│   ├── quizzes.js          the course exams in English, Russian and Swedish, with hints
+│   └── geodata.js          the world's coastlines, inland water and mountain ranges ([lon, lat])
 ├── art/
 │   ├── flags.js            national flags (Canvas 2D), and small flag images for the screens
 │   ├── landmarks.js        the city symbols: about 100 landmark silhouettes
 │   └── emblems.js          the airlines' fin art and logos
-├── utils.js                math, noise, RNG, geodesy, the per-flight projection (Theatre), formatting
-├── geodata.js              the world's coastlines, inland water and mountain ranges ([lon, lat])
-├── terrain.js              the heightmap of a flight's area, airport flattening and corridors, biome colours
-├── models.js               3D aircraft models and liveries built from each type's dimensions and look, in an airline's colours
-├── airport3d.js            an airport in 3D: runway and ground textures, lights and PAPI, buildings, flags, banners, signs
-├── scene3d.js              three.js scene: sky, terrain, sea, lighting, the views, follow mesh, airports in view
-├── world.js                airports (static data, and placed and laid out for a flight), taxi routing, weather
-├── flight.js               flight dynamics, ground handling, phases of the flight
-├── systems.js              engines, fuel, hydraulics, ice, pressurisation, emergencies, QRH checklists
-├── instruments.js          airspeed, attitude, altimeter, HSI, VSI, engine gauges, warnings
-├── cockpit.js              cockpit frame, windshield effects
-├── hud.js                  HUD, banners, checklist panel, map, messages
-├── career.js               save/load, contracts, courses, unlocks, payout, reputation
-├── audio.js                synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts
-├── input.js                keyboard, touch joystick/throttle/buttons, fullscreen
-├── ui.js                   title, ops hub, briefing, debrief, failure, pause, quiz screens
-├── game.js                 main loop, phase machine, wiring, self-test mode
+├── sim/
+│   ├── world.js            airports (static data, and placed and laid out for a flight), taxi routing, weather
+│   ├── terrain.js          the heightmap of a flight's area, airport flattening and corridors, biome colours
+│   ├── flight.js           flight dynamics, ground handling, phases of the flight
+│   └── systems.js          engines, fuel, hydraulics, ice, pressurisation, emergencies, QRH checklists
+├── render/
+│   ├── models.js           3D aircraft models and liveries built from each type's dimensions and look, in an airline's colours
+│   ├── airport3d.js        an airport in 3D: runway and ground textures, lights and PAPI, buildings, flags, banners, signs
+│   └── scene3d.js          three.js scene: sky, terrain, sea, lighting, the views, follow mesh, airports in view
+├── ui/
+│   ├── instruments.js      airspeed, attitude, altimeter, HSI, VSI, engine gauges, warnings
+│   ├── cockpit.js          cockpit frame, windshield effects
+│   ├── hud.js              HUD, banners, checklist panel, map, messages
+│   └── ui.js               title, ops hub, briefing, debrief, failure, pause, quiz screens
 ├── README.md / README_RU.md / README_SV.md
 ├── icon.svg / icon-maskable.svg
 ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png

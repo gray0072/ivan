@@ -85,4 +85,4 @@ On the approach the **ILS** shows a little magenta runway on the RUNWAY scale wh
 
 ## Tech stack
 
-Plain HTML + CSS + vanilla JavaScript split by concern (`flight.js`, `systems.js`, `world.js`, `geodata.js`, `terrain.js`, `models.js`, `airport3d.js`, `scene3d.js`, `instruments.js`, `game.js`, …), with the airports, countries and airlines in `data/` and the flags, city symbols and airline emblems drawn by `art/`, no build step. The 3D world uses three.js (vendored as `three.min.js`), the cockpit and instruments are Canvas 2D, and the sound is synthesized with the Web Audio API.
+Plain HTML + CSS + vanilla JavaScript split by concern into folders — `core/` (helpers, input, sound), `data/` (airports, countries, airlines, exams, coastlines), `art/` (flags, city symbols, airline emblems), `sim/` (the world, terrain, flight dynamics, systems), `render/` (the 3D models, airports and scene) and `ui/` (instruments, cockpit, HUD, screens), with `game.js` and `career.js` on top — no build step. The 3D world uses three.js (vendored as `lib/three.min.js`), the cockpit and instruments are Canvas 2D, and the sound is synthesized with the Web Audio API.

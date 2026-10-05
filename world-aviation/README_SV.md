@@ -84,4 +84,4 @@ Under inflygningen visar **ILS** en liten magentafärgad bana på RUNWAY-skalan 
 
 ## Teknik
 
-Ren HTML + CSS + vanilla JavaScript uppdelad efter ansvar (`flight.js`, `systems.js`, `world.js`, `geodata.js`, `terrain.js`, `models.js`, `airport3d.js`, `scene3d.js`, `instruments.js`, `game.js`, …; flygplatser, länder och flygbolag i `data/`, flaggor, stadssymboler och emblem ritas av `art/`), inget byggsteg. 3D-världen använder three.js (medföljer som `three.min.js`), cockpit och instrument är Canvas 2D och ljudet syntetiseras med Web Audio API.
+Ren HTML + CSS + vanilla JavaScript uppdelad i mappar efter ansvar: `core/` (hjälpfunktioner, styrning, ljud), `data/` (flygplatser, länder, flygbolag, prov, kustlinjer), `art/` (flaggor, stadssymboler, flygbolagens emblem), `sim/` (världen, terrängen, flygdynamiken, systemen), `render/` (3D-modellerna, flygplatserna och scenen) och `ui/` (instrument, cockpit, HUD, skärmar), med `game.js` och `career.js` överst – inget byggsteg. 3D-världen använder three.js (medföljer som `lib/three.min.js`), cockpit och instrument är Canvas 2D och ljudet syntetiseras med Web Audio API.

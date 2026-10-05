@@ -105,7 +105,8 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 │   └── screenshot.png
 ├── world-aviation/
 │   ├── SPEC.md                 # spec of this game
-│   ├── index.html, styles.css, *.js, three.min.js
+│   ├── index.html, styles.css, constants.js, game.js, career.js
+│   ├── lib/, core/, data/, art/, sim/, render/, ui/
 │   ├── README.md / README_RU.md / README_SV.md
 │   ├── icon.svg
 │   └── screenshot.png
