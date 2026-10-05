@@ -56,10 +56,16 @@ Pengarna är svenska kronor. Varje uppdrag betalar för sträckan och lasten, pl
 - **Utbildning** — 16 kurser i fyra grenar (Allmänt, Passagerare, Frakt, Bush & SAR). Varje kurs slutar med ett kort prov (3 av 4 rätt) och låser upp flygplan, uppdragstyper eller verkliga fördelar: tips i checklistorna, mer tid vid nödsituationer, långsammare isbildning.
 - **Karriär** — anseende hos tre kundgrupper, certifikat, rekord och loggboken. Under −50 000 kr dras drifttillståndet in och karriären är slut.
 
+## Flygbolag och flygplatser
+
+Kunderna är riktiga flygbolag: SAS, Norwegian, Finnair och Widerøe hemma, sedan Lufthansa, British Airways, KLM, Emirates, Qatar Airways, Delta, Qantas och ett 75-tal till — passagerarbolag, fraktbolag (DHL, FedEx, UPS, Cargolux, West Atlantic) och bushflyg och ambulansflyg. Varje bolag har sin logga på uppdragstavlan, och ditt flygplan flyger i färgerna hos bolaget som hyrt det, med namnet på flygkroppen och emblemet på fenan. Hemmabolagen står vid gaterna och har sina loggor på hangarerna.
+
+Varje flygplats känns igen från cockpit: namnet med stora bokstäver på terminaltaket, en "Welcome"-banderoll med stadens symbol (Tre kronor i Stockholm, Big Ben, Eiffeltornet, Burj Khalifa, operahuset i Sydney…), landets flagga och stadens flagga på taket och över tornet — de vajar i vinden, liksom vindstruten. Banorna har betongändar med fogar, däckmärken, vägrenar och blast pads, kant- och centrumljus, inflygningsljus med löpande blixtljus och en fungerande PAPI (två vita, två röda: på glidbanan); taxibanorna har vägrenar och kantlinjer, plattan har betongplattor och uppställningsmarkeringar, och runt fältet finns väg, parkering och ringväg.
+
 ## Grafik
 
 **Auto** (standard) väljer Medium på mobiler och High i övrigt och sänker nivån om bildfrekvensen faller; **Low**, **Medium** och **High** styr terrängens detaljer, siktavståndet, molnen och träden.
 
 ## Teknik
 
-Ren HTML + CSS + vanilla JavaScript uppdelad efter ansvar (`flight.js`, `systems.js`, `world.js`, `geodata.js`, `terrain.js`, `models.js`, `scene3d.js`, `instruments.js`, `game.js`, …), inget byggsteg. 3D-världen använder three.js (medföljer som `three.min.js`), cockpit och instrument är Canvas 2D och ljudet syntetiseras med Web Audio API.
+Ren HTML + CSS + vanilla JavaScript uppdelad efter ansvar (`flight.js`, `systems.js`, `world.js`, `geodata.js`, `terrain.js`, `models.js`, `airport3d.js`, `scene3d.js`, `instruments.js`, `game.js`, …; flygplatser, länder och flygbolag i `data/`, flaggor, stadssymboler och emblem ritas av `art/`), inget byggsteg. 3D-världen använder three.js (medföljer som `three.min.js`), cockpit och instrument är Canvas 2D och ljudet syntetiseras med Web Audio API.

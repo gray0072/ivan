@@ -433,6 +433,11 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 }
 .contract.sel { border-color: #6fb1e8; }
 .cHead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cHead b { flex: 1; }
+img.logo { width: 28px; height: 28px; border-radius: 6px; flex: none; }
+img.logo.big { width: 40px; height: 40px; border-radius: 8px; vertical-align: middle; margin-right: 10px; }
+img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,0.25); }
+.clientHead { display: flex; align-items: center; }
 .tag { padding: 2px 8px; border-radius: 20px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; background: #26323f; color: #b9c8d6; }
 .tag.pax { background: #1d3a55; color: #a9d3f5; }
 .tag.cargo { background: #4a3a1c; color: #f0d59a; }

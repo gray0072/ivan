@@ -1,0 +1,194 @@
+'use strict';
+
+// ============================================================
+// World Aviation — the airports and the regions of the career
+// Real airports (lat/lon, elevation, the runway in use and its
+// length), the regions their traffic rights are sold in, and each
+// airport's look: its city symbol, its colour and the airlines
+// based there (parked at its gates, painted on its hangars).
+// ============================================================
+
+// ---------- Airports ----------
+// lat/lon are real; each flight's world is a compressed projection around the route (WORLD.SCALE).
+// RWY is the designator of the runway in use (its heading / 10, so 1 = 010°, 19 = 190°) and LEN
+// its length in metres; departures and arrivals both use this direction. REGION: see REGIONS.
+const AIRPORTS = [
+  // ---- Sweden: where the career starts
+  { id: 'ARN', name: 'Stockholm Arlanda', city: 'Stockholm', country: 'Sweden', region: 'sweden', lat: 59.652, lon: 17.919, elev: 42, rwy: 1, rwyLen: 3300, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'BMA', name: 'Stockholm Bromma', city: 'Stockholm', country: 'Sweden', region: 'sweden', lat: 59.354, lon: 17.940, elev: 14, rwy: 12, rwyLen: 1668, aptClass: ['pax'], terminal: 'small' },
+  { id: 'GOT', name: 'Gothenburg Landvetter', city: 'Gothenburg', country: 'Sweden', region: 'sweden', lat: 57.663, lon: 12.280, elev: 154, rwy: 21, rwyLen: 3299, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'MMX', name: 'Malmö', city: 'Malmö', country: 'Sweden', region: 'sweden', lat: 55.536, lon: 13.376, elev: 72, rwy: 17, rwyLen: 2800, aptClass: ['pax', 'cargo'], terminal: 'small' },
+  { id: 'VBY', name: 'Visby', city: 'Visby', country: 'Sweden', region: 'sweden', lat: 57.663, lon: 18.346, elev: 42, rwy: 3, rwyLen: 2000, aptClass: ['pax', 'bush'], terminal: 'small' },
+  { id: 'VXO', name: 'Växjö', city: 'Växjö', country: 'Sweden', region: 'sweden', lat: 56.929, lon: 14.728, elev: 186, rwy: 1, rwyLen: 2100, aptClass: ['pax'], terminal: 'small' },
+  { id: 'KLR', name: 'Kalmar', city: 'Kalmar', country: 'Sweden', region: 'sweden', lat: 56.685, lon: 16.288, elev: 5, rwy: 16, rwyLen: 2302, aptClass: ['pax', 'bush'], terminal: 'tiny' },
+  { id: 'RNB', name: 'Ronneby', city: 'Ronneby', country: 'Sweden', region: 'sweden', lat: 56.266, lon: 15.265, elev: 59, rwy: 1, rwyLen: 2331, aptClass: ['pax', 'bush'], terminal: 'tiny' },
+  { id: 'OSD', name: 'Östersund', city: 'Östersund', country: 'Sweden', region: 'sweden', lat: 63.194, lon: 14.500, elev: 376, rwy: 12, rwyLen: 2500, aptClass: ['pax', 'bush', 'cargo'], terminal: 'tiny', arctic: true, mountainous: true },
+  { id: 'SDL', name: 'Sundsvall-Timrå', city: 'Sundsvall', country: 'Sweden', region: 'sweden', lat: 62.528, lon: 17.444, elev: 5, rwy: 16, rwyLen: 2000, aptClass: ['pax', 'cargo'], terminal: 'tiny' },
+  { id: 'UME', name: 'Umeå', city: 'Umeå', country: 'Sweden', region: 'sweden', lat: 63.792, lon: 20.283, elev: 7, rwy: 14, rwyLen: 2302, aptClass: ['pax', 'cargo'], terminal: 'small', arctic: true },
+  { id: 'LLA', name: 'Luleå', city: 'Luleå', country: 'Sweden', region: 'sweden', lat: 65.544, lon: 22.122, elev: 20, rwy: 14, rwyLen: 3350, aptClass: ['pax', 'cargo'], terminal: 'small', arctic: true },
+  { id: 'KRN', name: 'Kiruna', city: 'Kiruna', country: 'Sweden', region: 'sweden', lat: 67.822, lon: 20.337, elev: 459, rwy: 21, rwyLen: 2502, aptClass: ['pax', 'cargo', 'bush'], terminal: 'tiny', arctic: true },
+  // ---- Scandinavia and the North Atlantic
+  { id: 'OSL', name: 'Oslo Gardermoen', city: 'Oslo', country: 'Norway', region: 'nordic', lat: 60.194, lon: 11.100, elev: 208, rwy: 1, rwyLen: 3600, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'TRF', name: 'Sandefjord Torp', city: 'Sandefjord', country: 'Norway', region: 'nordic', lat: 59.187, lon: 10.259, elev: 87, rwy: 18, rwyLen: 2989, aptClass: ['pax', 'cargo'], terminal: 'small' },
+  { id: 'SVG', name: 'Stavanger Sola', city: 'Stavanger', country: 'Norway', region: 'nordic', lat: 58.877, lon: 5.638, elev: 9, rwy: 18, rwyLen: 2556, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'BGO', name: 'Bergen Flesland', city: 'Bergen', country: 'Norway', region: 'nordic', lat: 60.293, lon: 5.218, elev: 51, rwy: 17, rwyLen: 2990, aptClass: ['pax', 'cargo'], terminal: 'medium', mountainous: true },
+  { id: 'AES', name: 'Ålesund Vigra', city: 'Ålesund', country: 'Norway', region: 'nordic', lat: 62.563, lon: 6.120, elev: 21, rwy: 7, rwyLen: 2314, aptClass: ['pax'], terminal: 'small', mountainous: true },
+  { id: 'SOG', name: 'Sogndal Haukåsen', city: 'Sogndal', country: 'Norway', region: 'nordic', lat: 61.156, lon: 7.138, elev: 497, rwy: 6, rwyLen: 1230, aptClass: ['pax', 'bush'], terminal: 'tiny', mountainous: true },
+  { id: 'TRD', name: 'Trondheim Værnes', city: 'Trondheim', country: 'Norway', region: 'nordic', lat: 63.458, lon: 10.924, elev: 17, rwy: 9, rwyLen: 2999, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'BOO', name: 'Bodø', city: 'Bodø', country: 'Norway', region: 'nordic', lat: 67.269, lon: 14.365, elev: 13, rwy: 7, rwyLen: 2794, aptClass: ['pax', 'cargo'], terminal: 'small', mountainous: true },
+  { id: 'EVE', name: 'Harstad/Narvik Evenes', city: 'Harstad', country: 'Norway', region: 'nordic', lat: 68.491, lon: 16.678, elev: 26, rwy: 17, rwyLen: 2810, aptClass: ['pax'], terminal: 'tiny', mountainous: true },
+  { id: 'TOS', name: 'Tromsø', city: 'Tromsø', country: 'Norway', region: 'nordic', lat: 69.683, lon: 18.919, elev: 9, rwy: 19, rwyLen: 2447, aptClass: ['pax', 'cargo'], terminal: 'small', arctic: true, mountainous: true },
+  { id: 'ALF', name: 'Alta', city: 'Alta', country: 'Norway', region: 'nordic', lat: 69.976, lon: 23.372, elev: 3, rwy: 11, rwyLen: 2253, aptClass: ['pax', 'cargo'], terminal: 'tiny', arctic: true },
+  { id: 'KKN', name: 'Kirkenes Høybuktmoen', city: 'Kirkenes', country: 'Norway', region: 'nordic', lat: 69.726, lon: 29.891, elev: 86, rwy: 5, rwyLen: 2115, aptClass: ['pax', 'cargo'], terminal: 'tiny', arctic: true },
+  { id: 'VAW', name: 'Vardø Svartnes', city: 'Vardø', country: 'Norway', region: 'nordic', lat: 70.355, lon: 31.045, elev: 13, rwy: 15, rwyLen: 1185, aptClass: ['bush'], terminal: 'tiny', arctic: true },
+  { id: 'RET', name: 'Røst', city: 'Røst', country: 'Norway', region: 'nordic', lat: 67.528, lon: 12.104, elev: 3, rwy: 3, rwyLen: 880, aptClass: ['bush'], terminal: 'tiny' },
+  { id: 'LYR', name: 'Longyearbyen Svalbard', city: 'Longyearbyen', country: 'Svalbard', region: 'nordic', lat: 78.246, lon: 15.466, elev: 29, rwy: 10, rwyLen: 2483, aptClass: ['pax', 'bush'], terminal: 'tiny', arctic: true, mountainous: true },
+  { id: 'HEL', name: 'Helsinki Vantaa', city: 'Helsinki', country: 'Finland', region: 'nordic', lat: 60.317, lon: 24.963, elev: 55, rwy: 4, rwyLen: 3440, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'OUL', name: 'Oulu', city: 'Oulu', country: 'Finland', region: 'nordic', lat: 64.930, lon: 25.355, elev: 14, rwy: 12, rwyLen: 2500, aptClass: ['pax', 'cargo'], terminal: 'small', arctic: true },
+  { id: 'RVN', name: 'Rovaniemi', city: 'Rovaniemi', country: 'Finland', region: 'nordic', lat: 66.565, lon: 25.830, elev: 196, rwy: 3, rwyLen: 3000, aptClass: ['pax', 'cargo', 'bush'], terminal: 'tiny', arctic: true },
+  { id: 'CPH', name: 'Copenhagen Kastrup', city: 'Copenhagen', country: 'Denmark', region: 'nordic', lat: 55.618, lon: 12.656, elev: 5, rwy: 22, rwyLen: 3600, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'AAL', name: 'Aalborg', city: 'Aalborg', country: 'Denmark', region: 'nordic', lat: 57.093, lon: 9.849, elev: 3, rwy: 8, rwyLen: 2550, aptClass: ['pax'], terminal: 'small' },
+  { id: 'KEF', name: 'Reykjavík Keflavík', city: 'Reykjavík', country: 'Iceland', region: 'nordic', lat: 63.985, lon: -22.605, elev: 52, rwy: 1, rwyLen: 3054, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'FAE', name: 'Vágar', city: 'Tórshavn', country: 'Faroe Islands', region: 'nordic', lat: 62.064, lon: -7.277, elev: 85, rwy: 12, rwyLen: 1799, aptClass: ['pax', 'bush'], terminal: 'tiny', mountainous: true },
+  { id: 'SFJ', name: 'Kangerlussuaq', city: 'Kangerlussuaq', country: 'Greenland', region: 'nordic', lat: 67.012, lon: -50.712, elev: 50, rwy: 9, rwyLen: 2810, aptClass: ['pax', 'cargo', 'bush'], terminal: 'tiny', arctic: true, mountainous: true },
+  // ---- Europe
+  { id: 'LHR', name: 'London Heathrow', city: 'London', country: 'United Kingdom', region: 'europe', lat: 51.470, lon: -0.454, elev: 25, rwy: 27, rwyLen: 3902, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'MAN', name: 'Manchester', city: 'Manchester', country: 'United Kingdom', region: 'europe', lat: 53.354, lon: -2.275, elev: 78, rwy: 23, rwyLen: 3048, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'EDI', name: 'Edinburgh', city: 'Edinburgh', country: 'United Kingdom', region: 'europe', lat: 55.950, lon: -3.373, elev: 41, rwy: 6, rwyLen: 2556, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'DUB', name: 'Dublin', city: 'Dublin', country: 'Ireland', region: 'europe', lat: 53.421, lon: -6.270, elev: 74, rwy: 28, rwyLen: 3110, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'AMS', name: 'Amsterdam Schiphol', city: 'Amsterdam', country: 'Netherlands', region: 'europe', lat: 52.309, lon: 4.764, elev: 1, rwy: 18, rwyLen: 3800, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'BRU', name: 'Brussels', city: 'Brussels', country: 'Belgium', region: 'europe', lat: 50.901, lon: 4.484, elev: 56, rwy: 25, rwyLen: 3638, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'CDG', name: 'Paris Charles de Gaulle', city: 'Paris', country: 'France', region: 'europe', lat: 49.010, lon: 2.548, elev: 119, rwy: 27, rwyLen: 4200, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'NCE', name: 'Nice Côte d’Azur', city: 'Nice', country: 'France', region: 'europe', lat: 43.658, lon: 7.216, elev: 4, rwy: 4, rwyLen: 2960, aptClass: ['pax'], terminal: 'medium', mountainous: true },
+  { id: 'FRA', name: 'Frankfurt', city: 'Frankfurt', country: 'Germany', region: 'europe', lat: 50.033, lon: 8.570, elev: 111, rwy: 25, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'MUC', name: 'Munich', city: 'Munich', country: 'Germany', region: 'europe', lat: 48.354, lon: 11.786, elev: 453, rwy: 26, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'BER', name: 'Berlin Brandenburg', city: 'Berlin', country: 'Germany', region: 'europe', lat: 52.362, lon: 13.501, elev: 48, rwy: 25, rwyLen: 3600, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'HAM', name: 'Hamburg', city: 'Hamburg', country: 'Germany', region: 'europe', lat: 53.630, lon: 9.988, elev: 16, rwy: 23, rwyLen: 3666, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'ZRH', name: 'Zurich', city: 'Zurich', country: 'Switzerland', region: 'europe', lat: 47.458, lon: 8.548, elev: 432, rwy: 14, rwyLen: 3300, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'GVA', name: 'Geneva', city: 'Geneva', country: 'Switzerland', region: 'europe', lat: 46.238, lon: 6.109, elev: 430, rwy: 22, rwyLen: 3900, aptClass: ['pax'], terminal: 'medium', mountainous: true },
+  { id: 'VIE', name: 'Vienna', city: 'Vienna', country: 'Austria', region: 'europe', lat: 48.110, lon: 16.570, elev: 183, rwy: 29, rwyLen: 3500, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'PRG', name: 'Prague', city: 'Prague', country: 'Czechia', region: 'europe', lat: 50.101, lon: 14.260, elev: 380, rwy: 24, rwyLen: 3715, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'WAW', name: 'Warsaw Chopin', city: 'Warsaw', country: 'Poland', region: 'europe', lat: 52.166, lon: 20.967, elev: 110, rwy: 29, rwyLen: 3690, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'RIX', name: 'Riga', city: 'Riga', country: 'Latvia', region: 'europe', lat: 56.924, lon: 23.971, elev: 11, rwy: 18, rwyLen: 3200, aptClass: ['pax'], terminal: 'small' },
+  { id: 'TLL', name: 'Tallinn', city: 'Tallinn', country: 'Estonia', region: 'europe', lat: 59.413, lon: 24.833, elev: 40, rwy: 26, rwyLen: 3480, aptClass: ['pax'], terminal: 'small' },
+  { id: 'BUD', name: 'Budapest', city: 'Budapest', country: 'Hungary', region: 'europe', lat: 47.437, lon: 19.255, elev: 151, rwy: 31, rwyLen: 3707, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'FCO', name: 'Rome Fiumicino', city: 'Rome', country: 'Italy', region: 'europe', lat: 41.800, lon: 12.239, elev: 5, rwy: 16, rwyLen: 3900, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'MXP', name: 'Milan Malpensa', city: 'Milan', country: 'Italy', region: 'europe', lat: 45.630, lon: 8.723, elev: 234, rwy: 35, rwyLen: 3920, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'MAD', name: 'Madrid Barajas', city: 'Madrid', country: 'Spain', region: 'europe', lat: 40.472, lon: -3.561, elev: 610, rwy: 36, rwyLen: 4350, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'BCN', name: 'Barcelona El Prat', city: 'Barcelona', country: 'Spain', region: 'europe', lat: 41.297, lon: 2.078, elev: 4, rwy: 25, rwyLen: 3352, aptClass: ['pax'], terminal: 'big' },
+  { id: 'PMI', name: 'Palma de Mallorca', city: 'Palma', country: 'Spain', region: 'europe', lat: 39.552, lon: 2.739, elev: 8, rwy: 24, rwyLen: 3270, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'LIS', name: 'Lisbon', city: 'Lisbon', country: 'Portugal', region: 'europe', lat: 38.781, lon: -9.136, elev: 114, rwy: 3, rwyLen: 3805, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'ATH', name: 'Athens', city: 'Athens', country: 'Greece', region: 'europe', lat: 37.936, lon: 23.947, elev: 94, rwy: 3, rwyLen: 4000, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'IST', name: 'Istanbul', city: 'Istanbul', country: 'Turkey', region: 'europe', lat: 41.262, lon: 28.742, elev: 99, rwy: 35, rwyLen: 3750, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  // ---- The Middle East and Africa
+  { id: 'TLV', name: 'Tel Aviv Ben Gurion', city: 'Tel Aviv', country: 'Israel', region: 'mideast', lat: 32.011, lon: 34.887, elev: 41, rwy: 30, rwyLen: 3112, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'CAI', name: 'Cairo', city: 'Cairo', country: 'Egypt', region: 'mideast', lat: 30.122, lon: 31.406, elev: 116, rwy: 5, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'DXB', name: 'Dubai', city: 'Dubai', country: 'United Arab Emirates', region: 'mideast', lat: 25.253, lon: 55.364, elev: 19, rwy: 30, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'DOH', name: 'Doha Hamad', city: 'Doha', country: 'Qatar', region: 'mideast', lat: 25.273, lon: 51.608, elev: 4, rwy: 16, rwyLen: 4850, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'CMN', name: 'Casablanca', city: 'Casablanca', country: 'Morocco', region: 'mideast', lat: 33.367, lon: -7.590, elev: 200, rwy: 35, rwyLen: 3720, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'ADD', name: 'Addis Ababa Bole', city: 'Addis Ababa', country: 'Ethiopia', region: 'mideast', lat: 8.978, lon: 38.799, elev: 2334, rwy: 7, rwyLen: 3800, aptClass: ['pax', 'cargo'], terminal: 'medium', mountainous: true },
+  { id: 'NBO', name: 'Nairobi', city: 'Nairobi', country: 'Kenya', region: 'mideast', lat: -1.319, lon: 36.928, elev: 1624, rwy: 6, rwyLen: 4117, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'JNB', name: 'Johannesburg', city: 'Johannesburg', country: 'South Africa', region: 'mideast', lat: -26.139, lon: 28.246, elev: 1694, rwy: 3, rwyLen: 4418, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'CPT', name: 'Cape Town', city: 'Cape Town', country: 'South Africa', region: 'mideast', lat: -33.965, lon: 18.602, elev: 46, rwy: 1, rwyLen: 3201, aptClass: ['pax'], terminal: 'medium', mountainous: true },
+  { id: 'LOS', name: 'Lagos', city: 'Lagos', country: 'Nigeria', region: 'mideast', lat: 6.577, lon: 3.321, elev: 41, rwy: 18, rwyLen: 3900, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  // ---- The Americas
+  { id: 'JFK', name: 'New York JFK', city: 'New York', country: 'United States', region: 'americas', lat: 40.640, lon: -73.779, elev: 4, rwy: 31, rwyLen: 4423, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'BOS', name: 'Boston Logan', city: 'Boston', country: 'United States', region: 'americas', lat: 42.364, lon: -71.005, elev: 6, rwy: 22, rwyLen: 3073, aptClass: ['pax'], terminal: 'big' },
+  { id: 'ORD', name: 'Chicago O’Hare', city: 'Chicago', country: 'United States', region: 'americas', lat: 41.978, lon: -87.905, elev: 204, rwy: 28, rwyLen: 3962, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'ATL', name: 'Atlanta', city: 'Atlanta', country: 'United States', region: 'americas', lat: 33.637, lon: -84.428, elev: 313, rwy: 27, rwyLen: 3624, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'MIA', name: 'Miami', city: 'Miami', country: 'United States', region: 'americas', lat: 25.795, lon: -80.287, elev: 2, rwy: 9, rwyLen: 3962, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'DFW', name: 'Dallas/Fort Worth', city: 'Dallas', country: 'United States', region: 'americas', lat: 32.897, lon: -97.038, elev: 185, rwy: 17, rwyLen: 4085, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'DEN', name: 'Denver', city: 'Denver', country: 'United States', region: 'americas', lat: 39.856, lon: -104.674, elev: 1655, rwy: 16, rwyLen: 4877, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'LAX', name: 'Los Angeles', city: 'Los Angeles', country: 'United States', region: 'americas', lat: 33.942, lon: -118.408, elev: 38, rwy: 25, rwyLen: 3685, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'SFO', name: 'San Francisco', city: 'San Francisco', country: 'United States', region: 'americas', lat: 37.619, lon: -122.375, elev: 4, rwy: 28, rwyLen: 3618, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'SEA', name: 'Seattle–Tacoma', city: 'Seattle', country: 'United States', region: 'americas', lat: 47.449, lon: -122.309, elev: 132, rwy: 16, rwyLen: 3627, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'ANC', name: 'Anchorage', city: 'Anchorage', country: 'United States', region: 'americas', lat: 61.174, lon: -149.996, elev: 46, rwy: 7, rwyLen: 3780, aptClass: ['pax', 'cargo'], terminal: 'medium', arctic: true, mountainous: true },
+  { id: 'HNL', name: 'Honolulu', city: 'Honolulu', country: 'United States', region: 'americas', lat: 21.319, lon: -157.922, elev: 4, rwy: 8, rwyLen: 3753, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'YYZ', name: 'Toronto Pearson', city: 'Toronto', country: 'Canada', region: 'americas', lat: 43.677, lon: -79.625, elev: 173, rwy: 23, rwyLen: 3389, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'YUL', name: 'Montréal Trudeau', city: 'Montréal', country: 'Canada', region: 'americas', lat: 45.470, lon: -73.741, elev: 36, rwy: 24, rwyLen: 3353, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'YVR', name: 'Vancouver', city: 'Vancouver', country: 'Canada', region: 'americas', lat: 49.195, lon: -123.184, elev: 4, rwy: 26, rwyLen: 3505, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'MEX', name: 'Mexico City', city: 'Mexico City', country: 'Mexico', region: 'americas', lat: 19.436, lon: -99.072, elev: 2230, rwy: 5, rwyLen: 3900, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'CUN', name: 'Cancún', city: 'Cancún', country: 'Mexico', region: 'americas', lat: 21.037, lon: -86.877, elev: 6, rwy: 12, rwyLen: 3500, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'BOG', name: 'Bogotá El Dorado', city: 'Bogotá', country: 'Colombia', region: 'americas', lat: 4.702, lon: -74.147, elev: 2548, rwy: 13, rwyLen: 3800, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'LIM', name: 'Lima', city: 'Lima', country: 'Peru', region: 'americas', lat: -12.022, lon: -77.114, elev: 34, rwy: 16, rwyLen: 3507, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'GRU', name: 'São Paulo Guarulhos', city: 'São Paulo', country: 'Brazil', region: 'americas', lat: -23.432, lon: -46.469, elev: 750, rwy: 9, rwyLen: 3700, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'GIG', name: 'Rio de Janeiro Galeão', city: 'Rio de Janeiro', country: 'Brazil', region: 'americas', lat: -22.810, lon: -43.250, elev: 9, rwy: 10, rwyLen: 4000, aptClass: ['pax'], terminal: 'medium', mountainous: true },
+  { id: 'EZE', name: 'Buenos Aires Ezeiza', city: 'Buenos Aires', country: 'Argentina', region: 'americas', lat: -34.822, lon: -58.536, elev: 20, rwy: 11, rwyLen: 3300, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'SCL', name: 'Santiago', city: 'Santiago', country: 'Chile', region: 'americas', lat: -33.393, lon: -70.786, elev: 474, rwy: 17, rwyLen: 3800, aptClass: ['pax', 'cargo'], terminal: 'medium', mountainous: true },
+  // ---- Asia and the Pacific
+  { id: 'DEL', name: 'Delhi Indira Gandhi', city: 'Delhi', country: 'India', region: 'asia', lat: 28.556, lon: 77.100, elev: 237, rwy: 28, rwyLen: 4430, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'BOM', name: 'Mumbai', city: 'Mumbai', country: 'India', region: 'asia', lat: 19.089, lon: 72.868, elev: 11, rwy: 27, rwyLen: 3448, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'BKK', name: 'Bangkok Suvarnabhumi', city: 'Bangkok', country: 'Thailand', region: 'asia', lat: 13.690, lon: 100.750, elev: 2, rwy: 19, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'SIN', name: 'Singapore Changi', city: 'Singapore', country: 'Singapore', region: 'asia', lat: 1.364, lon: 103.991, elev: 7, rwy: 2, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'KUL', name: 'Kuala Lumpur', city: 'Kuala Lumpur', country: 'Malaysia', region: 'asia', lat: 2.746, lon: 101.710, elev: 21, rwy: 32, rwyLen: 4124, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'CGK', name: 'Jakarta Soekarno–Hatta', city: 'Jakarta', country: 'Indonesia', region: 'asia', lat: -6.126, lon: 106.656, elev: 10, rwy: 25, rwyLen: 3660, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'HKG', name: 'Hong Kong', city: 'Hong Kong', country: 'China', region: 'asia', lat: 22.308, lon: 113.918, elev: 9, rwy: 25, rwyLen: 3800, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'PVG', name: 'Shanghai Pudong', city: 'Shanghai', country: 'China', region: 'asia', lat: 31.143, lon: 121.805, elev: 4, rwy: 35, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'PEK', name: 'Beijing Capital', city: 'Beijing', country: 'China', region: 'asia', lat: 40.080, lon: 116.585, elev: 35, rwy: 36, rwyLen: 3800, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'ICN', name: 'Seoul Incheon', city: 'Seoul', country: 'South Korea', region: 'asia', lat: 37.463, lon: 126.440, elev: 7, rwy: 33, rwyLen: 3750, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'HND', name: 'Tokyo Haneda', city: 'Tokyo', country: 'Japan', region: 'asia', lat: 35.553, lon: 139.781, elev: 6, rwy: 34, rwyLen: 3000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'TPE', name: 'Taipei Taoyuan', city: 'Taipei', country: 'Taiwan', region: 'asia', lat: 25.078, lon: 121.233, elev: 33, rwy: 5, rwyLen: 3660, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'MNL', name: 'Manila', city: 'Manila', country: 'Philippines', region: 'asia', lat: 14.509, lon: 121.020, elev: 23, rwy: 6, rwyLen: 3737, aptClass: ['pax'], terminal: 'big' },
+  { id: 'SYD', name: 'Sydney', city: 'Sydney', country: 'Australia', region: 'asia', lat: -33.946, lon: 151.177, elev: 6, rwy: 34, rwyLen: 3962, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'MEL', name: 'Melbourne', city: 'Melbourne', country: 'Australia', region: 'asia', lat: -37.669, lon: 144.841, elev: 132, rwy: 16, rwyLen: 3657, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'PER', name: 'Perth', city: 'Perth', country: 'Australia', region: 'asia', lat: -31.940, lon: 115.967, elev: 20, rwy: 21, rwyLen: 3444, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'AKL', name: 'Auckland', city: 'Auckland', country: 'New Zealand', region: 'asia', lat: -37.008, lon: 174.792, elev: 7, rwy: 23, rwyLen: 3635, aptClass: ['pax', 'cargo'], terminal: 'big' }
+];
+
+// ---------- Regions ----------
+// The career opens the world a region at a time: traffic rights are bought in the Network tab
+// once the operator has the reputation (the best of the three client groups) and the flights.
+const REGIONS = [
+  { id: 'sweden', name: 'Sweden', cost: 0, rep: 0, flights: 0,
+    blurb: 'Domestic flying out of Arlanda: from Malmö and the islands to Kiruna above the Arctic Circle.' },
+  { id: 'nordic', name: 'Scandinavia & the North Atlantic', cost: 20000, rep: 5, flights: 3,
+    blurb: 'Norway’s fjords and mountain strips, Finland, Denmark, Iceland, the Faroes, Greenland and Svalbard.' },
+  { id: 'europe', name: 'Europe', cost: 90000, rep: 15, flights: 10,
+    blurb: 'The busy hubs — London, Paris, Frankfurt, Amsterdam — the Alps, the Mediterranean and the Baltic.' },
+  { id: 'mideast', name: 'Middle East & Africa', cost: 250000, rep: 28, flights: 18,
+    blurb: 'Desert hubs in the Gulf, Cairo and Casablanca, and high, hot airfields from Addis Ababa to Johannesburg.' },
+  { id: 'americas', name: 'The Americas', cost: 400000, rep: 38, flights: 25,
+    blurb: 'Across the North Atlantic to New York, Chicago and the west coast, Mexico City at 7 300 ft and the Andes.' },
+  { id: 'asia', name: 'Asia & the Pacific', cost: 600000, rep: 50, flights: 32,
+    blurb: 'Delhi, Bangkok, Singapore, Hong Kong, Tokyo — and on to Sydney and Auckland at the far side of the world.' }
+];
+
+
+// ---------- The look of each airport ----------
+// [the city symbol on its banner and flag (art/landmarks.js), the airport's colour]
+// Together with the national flag and the name on the roof they make every airport
+// recognisable from the cockpit.
+const AIRPORT_LOOK = {
+  ARN: ['crowns', '#005b99'], BMA: ['cityHall', '#8c2f1b'], GOT: ['lion', '#0a5f8a'], MMX: ['turningTorso', '#2c7a52'],
+  VBY: ['cityWall', '#9a6a1c'], VXO: ['glass', '#1f7c8c'], KLR: ['castle', '#5b3a8c'], RNB: ['tulip', '#b8336a'],
+  OSD: ['lakeMonster', '#1b6d4f'], SDL: ['bridge', '#3c5aa6'], UME: ['birch', '#4a7a2a'], LLA: ['church', '#a1352b'],
+  KRN: ['reindeer', '#2d4f7c'],
+  OSL: ['viking', '#9e1b32'], TRF: ['whale', '#1d4e89'], SVG: ['oilRig', '#c05a12'], BGO: ['bryggen', '#b5371c'],
+  AES: ['fish', '#21618c'], SOG: ['fjord', '#2a6f5c'], TRD: ['cathedral', '#5a4b8a'], BOO: ['eagle', '#3b5f2c'],
+  EVE: ['mountain', '#2a5d8f'], TOS: ['arcticCathedral', '#1a4f7a'], ALF: ['aurora', '#0f6b5c'], KKN: ['crab', '#b3361d'],
+  VAW: ['starFort', '#4b5d6b'], RET: ['puffin', '#d06a12'], LYR: ['polarBear', '#2f6690'],
+  HEL: ['dome', '#1c4f9c'], OUL: ['salmon', '#c0392b'], RVN: ['santa', '#c8102e'],
+  CPH: ['mermaid', '#00704a'], AAL: ['tower', '#8a1c2b'], KEF: ['volcano', '#b2361b'], FAE: ['sheep', '#2b6e3f'],
+  SFJ: ['muskox', '#6b4a2b'],
+  LHR: ['bigBen', '#24356b'], MAN: ['bee', '#c99700'], EDI: ['castleRock', '#3f3a6b'], DUB: ['harp', '#11734b'],
+  AMS: ['canalHouses', '#d4501f'], BRU: ['atomium', '#3b5ba5'], CDG: ['eiffel', '#1e3a8a'], NCE: ['palm', '#0a84a8'],
+  FRA: ['skyline', '#00539f'], MUC: ['pretzel', '#1b6ec2'], BER: ['gate', '#c8102e'], HAM: ['anchor', '#b30d1e'],
+  ZRH: ['alps', '#0a5ba8'], GVA: ['fountain', '#c41e3a'], VIE: ['ferrisWheel', '#a3192c'], PRG: ['spires', '#8a2a2a'],
+  WAW: ['siren', '#c8102e'], RIX: ['rooster', '#7a2734'], TLL: ['towers', '#00539b'], BUD: ['parliament', '#9c2a2a'],
+  FCO: ['colosseum', '#a8461d'], MXP: ['duomo', '#3a4a7a'], MAD: ['bear', '#c0392b'], BCN: ['sagrada', '#c8501e'],
+  PMI: ['sun', '#e08a00'], LIS: ['tram', '#e3a300'], ATH: ['parthenon', '#1f5da8'], IST: ['mosque', '#c8102e'],
+  TLV: ['beach', '#1f78b4'], CAI: ['pyramids', '#b8860b'], DXB: ['burj', '#9a7b2c'], DOH: ['dhow', '#6b1238'],
+  CMN: ['minaret', '#127a4c'], ADD: ['lion', '#2b8a3e'], NBO: ['giraffe', '#b0521b'], JNB: ['elephant', '#8a6a2a'],
+  CPT: ['tableMountain', '#1b6a9c'], LOS: ['palm', '#1d8a4a'],
+  JFK: ['liberty', '#2a7a6b'], BOS: ['lighthouse', '#1f3f7a'], ORD: ['skyline', '#2b6cb0'], ATL: ['peach', '#e0702a'],
+  MIA: ['palm', '#e0478b'], DFW: ['star', '#1f3f7a'], DEN: ['mountain', '#2f5f8f'], LAX: ['hollywood', '#d9822b'],
+  SFO: ['goldenGate', '#c0362c'], SEA: ['spaceNeedle', '#1b6d4f'], ANC: ['moose', '#365f91'], HNL: ['hibiscus', '#d6336c'],
+  YYZ: ['cnTower', '#c8102e'], YUL: ['maple', '#d52b1e'], YVR: ['orca', '#14506b'], MEX: ['eagle', '#0b6b3a'],
+  CUN: ['pyramidStep', '#00a3a3'], BOG: ['coffee', '#7a4a1e'], LIM: ['llama', '#b5462b'], GRU: ['skyline', '#1d8a4a'],
+  GIG: ['christ', '#0a7c4a'], EZE: ['obelisk', '#3a8dde'], SCL: ['andes', '#c8102e'],
+  DEL: ['tajMahal', '#e07b00'], BOM: ['arch', '#a0522d'], BKK: ['wat', '#c99a06'], SIN: ['merlion', '#d0103a'],
+  KUL: ['twinTowers', '#1a4e8a'], CGK: ['monas', '#c8102e'], HKG: ['junk', '#b3191e'], PVG: ['pearlTower', '#7a2a8c'],
+  PEK: ['templeHeaven', '#1d4e89'], ICN: ['koreanGate', '#0047a0'], HND: ['fuji', '#bc002d'], TPE: ['taipei101', '#2a8a5a'],
+  MNL: ['sun', '#0038a8'], SYD: ['opera', '#0b5ea8'], MEL: ['tram', '#3f7d3a'], PER: ['blackSwan', '#1b1b1b'],
+  AKL: ['kiwi', '#3b3b3b']
+};

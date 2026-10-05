@@ -9,8 +9,8 @@
 //   - a near terrain mesh that follows the aeroplane and is
 //     rebuilt (heights, normals, colours) on the CPU when the
 //     aeroplane has moved far enough
-//   - a sea plane, airports (runway/taxiway texture + buildings),
-//     trees and a cloud layer around the player
+//   - a sea plane, airports (airport3d.js), trees and a cloud
+//     layer around the player
 // The cockpit itself is drawn in 2D on a canvas over the top.
 // ============================================================
 
@@ -21,7 +21,7 @@ const Scene3D = {
   farMesh: null, nearMesh: null, water: null,
   clouds: [], cloudGroup: null, cloudTex: null,
   trees: null, treeTex: null,
-  airports3D: new Map(),          // id -> {group, tex, canvas}
+  airports3D: new Map(),          // id -> the airport's 3D record (Airport3D.build)
   ownAircraft: null,
   w: 0, h: 0, dpr: 1,
   camMode: 'cockpit',
@@ -274,135 +274,13 @@ const Scene3D = {
     this.treeKey = null;
   },
 
-  // ---------- airports ----------
-  // Ground texture (grass, taxiways, apron) on one plane, the runway on its own
-  // finely textured plane, boxes for the buildings and parked aeroplanes.
-  // Planes are rotated by -heading so canvas "up" points down the runway.
+  // ---------- airports (airport3d.js) ----------
   buildAirport(a) {
     if (this.airports3D.has(a.id)) return this.airports3D.get(a.id);
-    const L = LAYOUT;
-    const group = new THREE.Group();
-    const rotY = -a.hdg;
-
-    // --- the ground plane: t from -half-700 to half+700, across from -500 to TERMINAL+400
-    const tMin = -a.half - 700, tMax = a.half + 700;
-    const aMin = -500, aMax = L.TERMINAL + 400;
-    const A = tMax - tMin, B = aMax - aMin;
-    const ch = 2048, cw = Math.round(ch * B / A / 4) * 4;
-    const cv = document.createElement('canvas');
-    cv.width = cw; cv.height = ch;
-    const g = cv.getContext('2d');
-    const sx = cw / B, sy = ch / A;
-    const P = (t, across) => [(across - aMin) * sx, (tMax - t) * sy];
-    g.fillStyle = a.arctic ? '#7d876f' : '#5f6e47';
-    g.fillRect(0, 0, cw, ch);
-    const rng = makeRng(hashStr(a.id));
-    for (let i = 0; i < 2600; i++) {
-      const v = rng.range(-18, 18);
-      g.fillStyle = 'rgba(' + (95 + v | 0) + ',' + (112 + v | 0) + ',' + (72 + v * 0.5 | 0) + ',0.35)';
-      g.fillRect(rng.range(0, cw), rng.range(0, ch), rng.range(2, 9), rng.range(2, 9));
-    }
-    // a lighter mown strip around the runway
-    g.fillStyle = 'rgba(150,170,110,0.22)';
-    let p0 = P(a.half + 120, -120), p1 = P(-a.half - 120, 120);
-    g.fillRect(p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]);
-    // apron
-    const r = a.apronRect;
-    p0 = P(r.t1, r.a0); p1 = P(r.t0, r.a1);
-    g.fillStyle = '#7b7f83';
-    g.fillRect(p0[0], p0[1], p1[0] - p0[0], p1[1] - p0[1]);
-    // taxiways
-    const line = (s, width, style) => {
-      const q0 = P(World.local(a, s.x1, s.z1).t, World.local(a, s.x1, s.z1).across);
-      const q1 = P(World.local(a, s.x2, s.z2).t, World.local(a, s.x2, s.z2).across);
-      g.strokeStyle = style; g.lineWidth = width;
-      g.beginPath(); g.moveTo(q0[0], q0[1]); g.lineTo(q1[0], q1[1]); g.stroke();
-    };
-    g.lineCap = 'round';
-    for (const s of a.twySegs) line(s, (s.w + 4) * sx, '#6a6e72');
-    for (const s of a.twySegs) line(s, 1, 'rgba(236,206,74,0.8)');
-    // the holding point: two solid and two dashed yellow lines across the connector
-    const hold = a.nodes.hold;
-    for (let k = 0; k < 4; k++) {
-      const off = -6 + k * 3;
-      const q0 = P(hold.t - 14, hold.across + off), q1 = P(hold.t + 14, hold.across + off);
-      g.strokeStyle = 'rgba(244,214,70,1)'; g.lineWidth = Math.max(1.5, 0.6 * sx);
-      g.setLineDash(k < 2 ? [] : [4, 3]);
-      g.beginPath(); g.moveTo(q0[0], q0[1]); g.lineTo(q1[0], q1[1]); g.stroke();
-    }
-    g.setLineDash([]);
-    // gate stands: a lead-in line and a stop bar
-    for (const gate of a.gates) {
-      const q0 = P(gate.t, L.APRON_LANE), q1 = P(gate.t, L.STAND + 10);
-      g.strokeStyle = 'rgba(244,214,70,0.8)'; g.lineWidth = 1;
-      g.beginPath(); g.moveTo(q0[0], q0[1]); g.lineTo(q1[0], q1[1]); g.stroke();
-      const b0 = P(gate.t - 8, L.STAND + 4), b1 = P(gate.t + 8, L.STAND + 4);
-      g.lineWidth = Math.max(2, 1.2 * sx);
-      g.beginPath(); g.moveTo(b0[0], b0[1]); g.lineTo(b1[0], b1[1]); g.stroke();
-      g.fillStyle = 'rgba(255,255,255,0.85)';
-      g.font = 'bold ' + Math.round(9 * sx) + 'px sans-serif';
-      g.textAlign = 'center'; g.textBaseline = 'middle';
-      const n = P(gate.t, L.STAND - 18);
-      g.fillText(String(gate.number), n[0], n[1]);
-    }
-    const tex = new THREE.CanvasTexture(cv);
-    tex.encoding = THREE.sRGBEncoding;
-    tex.anisotropy = this.maxAniso;
-    const geo = new THREE.PlaneGeometry(B, A);
-    geo.rotateX(-Math.PI / 2);
-    geo.rotateY(rotY);
-    const ground = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
-    const c = World.at(a, (tMin + tMax) / 2, (aMin + aMax) / 2);
-    ground.position.set(c.x, a.elev + 0.05, c.z);
-    group.add(ground);
-
-    // --- the runway
-    const rtex = makeRunwayTexture(a, this.maxAniso);
-    const rgeo = new THREE.PlaneGeometry(RWY_HALF_WIDTH * 2 + 8, a.rwyLen + 60);
-    rgeo.rotateX(-Math.PI / 2);
-    rgeo.rotateY(rotY);
-    const runway = new THREE.Mesh(rgeo, new THREE.MeshLambertMaterial({ map: rtex }));
-    runway.position.set(a.x, a.elev + 0.12, a.z);
-    group.add(runway);
-
-    // --- buildings
-    for (const b of a.buildings) {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.acrossSize, b.h, b.along),
-        new THREE.MeshLambertMaterial({ color: buildingColor(b.kind) }));
-      mesh.position.set(b.x, a.elev + b.h / 2, b.z);
-      mesh.rotation.y = rotY;
-      group.add(mesh);
-      if (b.kind === 'tower') {
-        const cab = new THREE.Mesh(new THREE.BoxGeometry(20, 7, 20), new THREE.MeshLambertMaterial({ color: 0x2c3a46 }));
-        cab.position.set(b.x, a.elev + b.h + 3.5, b.z);
-        cab.rotation.y = rotY;
-        group.add(cab);
-      }
-      if (b.kind === 'terminal') {
-        const glass = new THREE.Mesh(new THREE.BoxGeometry(1, b.h * 0.45, b.along * 0.96),
-          new THREE.MeshLambertMaterial({ color: 0x31475a }));
-        const gp = World.at(a, b.t, b.across - b.acrossSize / 2 - 0.3);
-        glass.position.set(gp.x, a.elev + b.h * 0.55, gp.z);
-        glass.rotation.y = rotY;
-        group.add(glass);
-      }
-    }
-    // parked aeroplanes at the gates (hidden where the player parks): the types this airport sees
-    const parked = [];
-    const kinds = a.terminal === 'big' ? ['A320NEO', 'B738', 'A359', 'NJ320', 'RJ84'] :
-      a.terminal === 'medium' ? ['B738', 'A320NEO', 'RJ84', 'VIKNA19'] :
-        a.terminal === 'small' ? ['RJ84', 'VIKNA19', 'SKARV27'] : ['VIKNA19', 'FROST12'];
-    const pick = hashStr(a.id);
-    for (const gate of a.gates) {
-      const type = AIRCRAFT.find((x) => x.id === kinds[(pick + gate.index) % kinds.length]);
-      const plane = AircraftModels.build(type);
-      plane.position.set(gate.standX, a.elev + aircraftDims(type).gearH, gate.standZ);
-      plane.rotation.y = Math.PI - gate.parkHdg * DEG;
-      group.add(plane);
-      parked.push(plane);
-    }
-    this.scene.add(group);
-    const rec = { group, tex, rtex, a, parked };
+    const rec = Airport3D.build(a, {
+      aniso: this.maxAniso, maxTex: this.renderer.capabilities.maxTextureSize, hi: this.qualityName !== 'low'
+    });
+    this.scene.add(rec.group);
     this.airports3D.set(a.id, rec);
     this.applyGates(rec);
     return rec;
@@ -600,11 +478,18 @@ const Scene3D = {
         if (!this.airports3D.has(a.id)) this.buildAirport(a);
       } else if (d > 90000 && this.airports3D.has(a.id)) this.dropAirport(a.id);
     }
+    // flags and windsocks in the surface wind, the PAPI, the approach flasher
+    for (const rec of this.airports3D.values()) {
+      const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
+      if (d < 30000) Airport3D.update(rec, this.time, eye, fl.windAt(rec.a.elev + 10));
+    }
     // ---- own aircraft for the chase and wing views
-    if (!this.ownAircraft || this.ownAircraftId !== fl.ac.id) {
+    const airline = fl.contract && fl.contract.airline && AIRLINE_BY_CODE[fl.contract.airline] ? fl.contract.airline : null;
+    const ownKey = fl.ac.id + '|' + airline;
+    if (!this.ownAircraft || this.ownAircraftId !== ownKey) {
       if (this.ownAircraft) this.scene.remove(this.ownAircraft);
-      this.ownAircraft = AircraftModels.build(fl.ac);
-      this.ownAircraftId = fl.ac.id;
+      this.ownAircraft = AircraftModels.build(fl.ac, { airline });
+      this.ownAircraftId = ownKey;
       this.scene.add(this.ownAircraft);
     }
     this.ownAircraft.visible = this.camMode !== 'cockpit';
@@ -625,12 +510,7 @@ const Scene3D = {
     const rec = this.airports3D.get(id);
     if (!rec) return;
     this.scene.remove(rec.group);
-    rec.group.traverse((o) => {
-      if (o.geometry) o.geometry.dispose();
-      if (o.material) o.material.dispose();
-    });
-    if (rec.tex) rec.tex.dispose();
-    if (rec.rtex) rec.rtex.dispose();
+    Airport3D.dispose(rec);
     this.airports3D.delete(id);
   },
 
@@ -640,16 +520,6 @@ const Scene3D = {
 
   flash() { this.lightning = 1; }
 };
-
-function buildingColor(kind) {
-  switch (kind) {
-    case 'terminal': return 0xb9bfc4;
-    case 'tower': return 0xd8d8d2;
-    case 'hangar': return 0x8f979c;
-    case 'fuel': return 0xc8c9bd;
-    default: return 0xa8a49a;
-  }
-}
 
 // ---------- procedural textures ----------
 function makeTreeTexture() {
@@ -694,69 +564,4 @@ function makeCloudTexture() {
   const t = new THREE.CanvasTexture(cv);
   t.encoding = THREE.sRGBEncoding;
   return t;
-}
-
-// The runway surface: 128 px across, 4096 px along. Canvas top is the far end.
-function makeRunwayTexture(a, aniso) {
-  const W = RWY_HALF_WIDTH * 2 + 8, Lm = a.rwyLen + 60;
-  const cw = 128, ch = 4096;
-  const cv = document.createElement('canvas');
-  cv.width = cw; cv.height = ch;
-  const g = cv.getContext('2d');
-  const sx = cw / W, sy = ch / Lm;
-  const X = (across) => (across + W / 2) * sx;
-  const Y = (t) => (Lm / 2 - t) * sy;                 // t from the runway middle
-  const rect = (t0, t1, a0, a1) => g.fillRect(X(a0), Y(t1), (a1 - a0) * sx, (t1 - t0) * sy);
-  g.fillStyle = '#4b4e52';
-  g.fillRect(0, 0, cw, ch);
-  const rng = makeRng(hashStr(a.id + 'rwy'));
-  for (let i = 0; i < 5000; i++) {
-    const v = rng.range(-14, 14) | 0;
-    g.fillStyle = 'rgba(' + (75 + v) + ',' + (78 + v) + ',' + (82 + v) + ',0.5)';
-    g.fillRect(rng.range(0, cw), rng.range(0, ch), rng.range(1, 3), rng.range(1, 6));
-  }
-  // rubber deposits in the touchdown zone
-  g.fillStyle = 'rgba(28,28,30,0.35)';
-  rect(-a.half + 200, -a.half + 700, -6, 6);
-  const h = a.half;
-  g.fillStyle = '#e9e9e6';
-  // edge lines
-  rect(-h, h, -RWY_HALF_WIDTH + 0.5, -RWY_HALF_WIDTH + 1.4);
-  rect(-h, h, RWY_HALF_WIDTH - 1.4, RWY_HALF_WIDTH - 0.5);
-  // centreline
-  for (let t = -h + 120; t < h - 120; t += 50) rect(t, t + 30, -0.45, 0.45);
-  // threshold piano keys and the designators at both ends
-  for (const end of [-1, 1]) {
-    const t0 = end * (h - 6);
-    for (let i = 0; i < 8; i++) {
-      const acr = 3 + i * 2.4;
-      for (const side of [-1, 1]) {
-        if (end < 0) rect(t0, t0 + 30, side * acr - 0.9, side * acr + 0.9);
-        else rect(t0 - 30, t0, side * acr - 0.9, side * acr + 0.9);
-      }
-    }
-    // touchdown zone bars and the aiming point
-    for (const d of [150, 300, 450, 600]) {
-      const t = end < 0 ? -h + d : h - d - 22;
-      const big = d === 300;
-      for (const side of [-1, 1]) {
-        if (big) rect(t, t + 45, side * 6, side * 15);
-        else rect(t, t + 22, side * 4, side * 5.8), rect(t, t + 22, side * 7.6, side * 9.4);
-      }
-    }
-    const label = end < 0 ? a.rwyName : a.rwyOpposite;
-    const tt = end < 0 ? -h + 48 : h - 48;
-    g.save();
-    g.translate(X(0), Y(tt));
-    if (end > 0) g.rotate(Math.PI);
-    g.scale(1, sy / sx * 2.6);                        // the digits are 2.6x longer than they are wide
-    g.font = 'bold ' + Math.round(11 * sx) + 'px Arial, sans-serif';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(label, 0, 0);
-    g.restore();
-  }
-  const tex = new THREE.CanvasTexture(cv);
-  tex.encoding = THREE.sRGBEncoding;
-  tex.anisotropy = aniso || 4;
-  return tex;
 }

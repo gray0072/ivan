@@ -53,7 +53,7 @@ const Career = {
     d.lastTo = d.lastTo || d.base;
     d.season = d.season === undefined ? Math.floor(rand.next() * 12) : d.season;
     d.regions = d.regions || ['sweden'];
-    if (!d.contracts.length || d.contracts.some((c) => !c.blockFuel)) this.generateContracts();
+    if (!d.contracts.length || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
 
   new(opts) {
@@ -248,6 +248,8 @@ const Career = {
     if ((type === 'pax') && ac.seats < 6) type = 'mail';
     if (forceType) type = forceType;
 
+    const client = pickAirline(faction, from, to, rng);
+
     let pax = 0, payloadKg = 0;
     const usable = Math.max(0, Math.min(ac.payloadKg, ac.mtow - ac.emptyKg - ac.fuelCapKg * 0.55));
     if (type === 'pax') {
@@ -283,7 +285,7 @@ const Career = {
 
     return {
       id: from.id + '-' + to.id + '-' + type + '-' + Math.round(pay),
-      client: pickClientName(faction, rng),
+      client: client.name, airline: client.code,
       faction, type, urgent,
       fromId: from.id, toId: to.id,
       pax, payloadKg, payloadLabel: pt.label,
@@ -415,15 +417,6 @@ function contractDifficulty(distNm, type, to) {
   if (to.arctic) d += 0.5;
   if (type === 'hazmat' || type === 'medevac') d += 0.4;
   return Math.round(d * 10) / 10;
-}
-
-function pickClientName(faction, rng) {
-  const names = {
-    pax: ['Fjordflyg Regional', 'Skagen Air', 'Nordväg Airlines', 'Skandinavian Link'],
-    cargo: ['Bulk & Ice Cargo', 'Norrland Freight', 'Havstrand Logistik', 'Vasa Cargo'],
-    bush: ['Lappland Flyg', 'Sarek Air Service', 'Norrskär Rescue', 'Vindmark Charter']
-  };
-  return rng.pick(names[faction]);
 }
 
 function dayLabel(c, result) {

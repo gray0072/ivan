@@ -57,10 +57,16 @@ Money is in Swedish kronor. Each contract pays for the distance and the load, pl
 - **Training** — 16 courses in four branches (General, Passenger, Cargo, Bush & SAR). Each ends in a short exam (3 of 4 right) and unlocks aircraft, contract types or real advantages: checklist hints, more time in emergencies, slower icing.
 - **Career** — reputation with three client groups, licences, records and the log. Below −50 000 kr the operator certificate is revoked and the career is over.
 
+## Airlines and airports
+
+The clients are real airlines: SAS, Norwegian, Finnair and Widerøe at home, then Lufthansa, British Airways, KLM, Emirates, Qatar Airways, Delta, Qantas and about 75 more — passenger airlines, cargo carriers (DHL, FedEx, UPS, Cargolux, West Atlantic) and bush and air ambulance operators. Each has its logo on the contract board, and your aeroplane flies in the colours of the airline that hired it, titles on the fuselage and the emblem on the fin; the home carriers stand at the gates and have their logos on the hangars.
+
+Every airport is recognisable from the cockpit: its name in big letters on the terminal roof, a "Welcome" banner with the city's landmark (the Three Crowns of Stockholm, Big Ben, the Eiffel Tower, the Burj Khalifa, the Sydney Opera House…), the national flag and the city flag on the roof and over the tower — they stream with the wind, like the windsock. Runways have concrete ends with joints, tyre marks, shoulders and blast pads, edge and centreline lights, approach lights with a running flasher and a working PAPI (two white, two red: on the glide path); taxiways have shoulders and edge lines, the apron has concrete slabs and stand markings, and a road, a car park and a perimeter road surround the field.
+
 ## Graphics
 
 **Auto** (the default) picks Medium on phones and High elsewhere and steps down if the frame rate drops; **Low**, **Medium** and **High** set the terrain detail, draw distance, clouds and trees.
 
 ## Tech stack
 
-Plain HTML + CSS + vanilla JavaScript split by concern (`flight.js`, `systems.js`, `world.js`, `geodata.js`, `terrain.js`, `models.js`, `scene3d.js`, `instruments.js`, `game.js`, …), no build step. The 3D world uses three.js (vendored as `three.min.js`), the cockpit and instruments are Canvas 2D, and the sound is synthesized with the Web Audio API.
+Plain HTML + CSS + vanilla JavaScript split by concern (`flight.js`, `systems.js`, `world.js`, `geodata.js`, `terrain.js`, `models.js`, `airport3d.js`, `scene3d.js`, `instruments.js`, `game.js`, …), with the airports, countries and airlines in `data/` and the flags, city symbols and airline emblems drawn by `art/`, no build step. The 3D world uses three.js (vendored as `three.min.js`), the cockpit and instruments are Canvas 2D, and the sound is synthesized with the Web Audio API.

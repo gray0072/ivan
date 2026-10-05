@@ -32,7 +32,13 @@ Weather follows the latitude, the hemisphere (seasons are reversed in the south)
 
 World axes: x = east, y = up, z = south at the centre of the projection; headings are clockwise from the projection's north.
 
-Airports are all built from one template around the runway in use (`LAYOUT` in `constants.js`): the runway is flown in its designator's direction for both take-off and landing (the surface wind is always within 70° of it), a parallel taxiway on the right with three exits and the holding point at the runway start, an apron lane with the gate stands (nose-in towards the terminal), a terminal, a tower, hangars and a fuel farm. The runway has its own finely textured mesh (edge and centre lines, threshold piano keys, designators, touchdown zone and aiming point markings); taxiways, the apron, the hold lines and the stand lead-in lines are painted on a ground texture.
+Airports are all built from one template around the runway in use (`LAYOUT` in `constants.js`): the runway is flown in its designator's direction for both take-off and landing (the surface wind is always within 70° of it), a parallel taxiway on the right with three exits and the holding point at the runway start, an apron lane with the gate stands (nose-in towards the terminal), a terminal, a tower, hangars, a fuel farm and a cargo shed.
+
+`airport3d.js` builds them in the airport's own frame (x across towards the terminal, z = −t down the runway):
+
+- **The runway** has its own fine texture (up to 256 × 8192): asphalt with grain, repair patches and crack sealing, concrete ends with slab joints, rubber and tyre streaks in the touchdown zone, paved shoulders, 60 m blast pads with yellow chevrons, and the markings (edge and centre lines, threshold bar and piano keys, designators, touchdown zone bars, the aiming point at 400 m on long runways). Lights are `THREE.Points` of a fixed pixel size: white edge lights (yellow over the last 600 m), centreline lights (red/white, then red at the end), green threshold and red end bars, an approach light system to 900 m with a crossbar at 300 m and a sequenced flasher running towards the threshold, blue taxiway edge lights. The **PAPI** (four lights left of the runway, 300 m in) is live: each light is white when the eye is above its angle (3.5° / 3.17° / 2.83° / 2.5°) and red below, so on the glide path it shows two and two.
+- **The ground texture** (4096 px along on Medium/High, 2048 on Low) has grass with mowing stripes and a lighter runway strip, taxiways with sandy shoulders, a yellow edge line round the outside of the network and a centreline, the apron in concrete slabs with a service road, stands with lead-in line, stop bar, red safety box, stand number and an oil stain, the landside road with lane lines, a kerb and zebra crossings, the car park full of cars, trees, the perimeter road and the fence. Its edges fade out into the terrain. Both planes are cut into cells of 60–100 m: the logarithmic depth buffer needs small triangles near the eye, or the terrain shows through.
+- **The look of each airport** (`AIRPORT_LOOK` in `data/airports.js`: a city symbol and a colour; the country's flag and greeting in `data/countries.js`): the airport's name in big letters on the terminal roof (facing the apron and the road), the roof slab and the tower band in the airport's colour, a "Welcome to <city>" banner with the city symbol, the local greeting and a flag strip on both fronts of the terminal, three flagpoles on the roof (country, city flag = the symbol on the airport colour, country) and a flag over the tower. The flags and the windsock turn downwind and stream or droop with the surface wind. The hangars carry the home airlines' logos, the cargo shed a cargo carrier's, and the parked aeroplanes at the gates wear the home airlines' liveries (`airlinesAt` in `data/airlines.js`). Also a localiser array past the far end, a glideslope mast, a red runway holding sign and yellow exit signs.
 
 ## Screens
 
@@ -138,7 +144,7 @@ Also offered in the pause, debrief and failure dialogs (pre-selected), remembere
 
 Currency: **Swedish kronor (SEK, kr)**. You are based at **Stockholm Arlanda (ARN)**, your home base for the whole career.
 
-**The network.** 114 real airports in six regions (`AIRPORTS` and `REGIONS` in `constants.js`). A new operator holds the traffic rights for **Sweden** only (13 airports, Malmö to Kiruna). The **Network** tab sells the rights to the other regions once the operator has the reputation (the best of the three client groups) and the flights:
+**The network.** 114 real airports in six regions (`AIRPORTS` and `REGIONS` in `data/airports.js`). A new operator holds the traffic rights for **Sweden** only (13 airports, Malmö to Kiruna). The **Network** tab sells the rights to the other regions once the operator has the reputation (the best of the three client groups) and the flights:
 
 | Region | Airports | Reputation | Flights | Price |
 | --- | --- | --- | --- | --- |
@@ -149,7 +155,7 @@ Currency: **Swedish kronor (SEK, kr)**. You are based at **Stockholm Arlanda (AR
 | The Americas | New York, Chicago, the west coast, Mexico City, the Andes, Brazil, … (23) | 38 | 25 | 400 000 kr |
 | Asia & the Pacific | Delhi, Bangkok, Singapore, Hong Kong, Tokyo, Sydney, Auckland, … (17) | 50 | 32 | 600 000 kr |
 
-At Arlanda the board offers flights to the open regions within the aircraft's range; away from base it offers the flight home (if it is within range) and onward legs (towards home first). One leg is at most 4 500 nm, so the far side of the world is reached in legs. Three client factions, each with a 0–100 reputation: **Fjordflyg & Skagen Air (passenger)**, **Bulk & Ice Cargo (cargo)**, **Lappland Flyg (bush & SAR)**. Reputation gates contracts, aircraft and course tiers (0 / 15 / 35 / 60).
+At Arlanda the board offers flights to the open regions within the aircraft's range; away from base it offers the flight home (if it is within range) and onward legs (towards home first). One leg is at most 4 500 nm, so the far side of the world is reached in legs. Three client groups, each with a 0–100 reputation: **Passenger airlines**, **Cargo carriers**, **Bush & air ambulance operators** (the clients themselves are real airlines, see below). Reputation gates contracts, aircraft and course tiers (0 / 15 / 35 / 60).
 
 Aircraft (ten types, leased per sector; each with its real length, span and fuselage diameter and different mass, speeds, `Vs`, payload, fuel burn, range, crosswind limit, runway length and allowed surfaces). The fictional Nordic types sit next to real Boeing and Airbus airliners; ranges are real (Vikna 19 700 nm … A350 8 000 nm):
 
@@ -168,7 +174,9 @@ Aircraft (ten types, leased per sector; each with its real length, span and fuse
 
 Contracts are only offered to airports whose runway is at least 90 % of the type's take-off distance (Arlanda's 3 300 m runway takes every type).
 
-Every aircraft is drawn by `models.js` from its dimensions and its `look` (low or high wing, engines under the wings / on the rear fuselage / turboprops, T-tail, winglets, hump, fixed gear, base and accent colours): a fuselage of cross-sections with a drooping nose and a tail cone whose top line stays level while the belly sweeps up, a canvas livery (windows, cheatline, cockpit glass, cargo door on freighters), tapered swept wings with dihedral, fin and tailplane, nacelles with fans and exhaust cones, spinning propellers (blurred into a disc at speed), and retractable gear with bogies on the big jets. The same models stand at the other gates — airliners at the big airports, turboprops at the small ones.
+**Airlines.** `data/airlines.js` holds about 85 real airlines with their livery (body, belly, cheatlines, titles, fin and engine colours, a coloured nose) and their emblem (`art/emblems.js` draws simplified versions: the SAS letters, the Lufthansa crane, the KLM crown, the Emirates flag, the Qantas kangaroo, …), the client groups they belong to, their hubs and the regions they work in. Cargo divisions (`like`) borrow the parent airline's paint. A contract's client is picked by `pickAirline`: an airline of that group based at either end of the route (weight 6), else one from either country (2), else one working in both regions (1). The contract stores the airline's code; the board and the briefing show its logo, and the player's aeroplane is painted in its colours for that flight.
+
+Every aircraft is drawn by `models.js` from its dimensions and its `look` (low or high wing, engines under the wings / on the rear fuselage / turboprops, T-tail, winglets, hump, fixed gear, base and accent colours): a fuselage of cross-sections with a drooping nose and a tail cone whose top line stays level while the belly sweeps up, a canvas livery (windows, cheatline, cockpit glass, cargo door on freighters), tapered swept wings with dihedral, fin and tailplane, nacelles with fans and exhaust cones, spinning propellers (blurred into a disc at speed), and retractable gear with bogies on the big jets. In an airline's colours (`build(ac, { airline })`) the canvas also gets the belly, nose, cheatlines, the fin colour running into the tail cone and the titles on both sides (drawn upside down and backwards on the right side, where the canvas runs the other way), and the fin gets two transparent decals clipped to its outline with the airline's fin art, each drawn to read the right way round. The same models stand at the other gates in the home airlines' colours — airliners at the big airports, turboprops at the small ones.
 
 Tree: 4 tiers × 3 branches + a general branch, 13 courses, each with a price, prerequisites, a 4–5 question quiz (pass 3/4) and real effects (unlocks, stat bonuses, procedural unlocks, reputation gates):
 
@@ -215,12 +223,21 @@ world-aviation/
 ├── SPEC.md
 ├── index.html              markup only, versioned <link>/<script> tags
 ├── styles.css
-├── constants.js            world, airports and regions, aircraft, difficulties, emergencies, courses, tuning
+├── constants.js            world, aircraft, difficulties, emergencies, courses, tuning
+├── data/
+│   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)
+│   ├── countries.js        each country's flag and its local "welcome"
+│   └── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
+├── art/
+│   ├── flags.js            national flags (Canvas 2D), and small flag images for the screens
+│   ├── landmarks.js        the city symbols: about 100 landmark silhouettes
+│   └── emblems.js          the airlines' fin art and logos
 ├── utils.js                math, noise, RNG, geodesy, the per-flight projection (Theatre), formatting
 ├── geodata.js              the world's coastlines, inland water and mountain ranges ([lon, lat])
 ├── terrain.js              the heightmap of a flight's area, airport flattening and corridors, biome colours
-├── models.js               3D aircraft models and liveries built from each type's dimensions and look
-├── scene3d.js              three.js scene: sky, terrain, sea, lighting, camera modes, follow mesh, airports
+├── models.js               3D aircraft models and liveries built from each type's dimensions and look, in an airline's colours
+├── airport3d.js            an airport in 3D: runway and ground textures, lights and PAPI, buildings, flags, banners, signs
+├── scene3d.js              three.js scene: sky, terrain, sea, lighting, camera modes, follow mesh, airports in view
 ├── world.js                airports (static data, and placed and laid out for a flight), taxi routing, weather
 ├── flight.js               flight dynamics, ground handling, phases of the flight
 ├── systems.js              engines, fuel, hydraulics, ice, pressurisation, emergencies, QRH checklists

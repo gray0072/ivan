@@ -8,7 +8,8 @@
 //     slightly drooping nose, a constant cabin, and a tail cone whose
 //     top line stays level while the belly sweeps up to the tail
 //   - a canvas livery wrapped around it: windows, cheatline, belly,
-//     cockpit glass
+//     cockpit glass; in an airline's colours (data/airlines.js) also
+//     its titles, and its emblem on both sides of the fin
 //   - tapered, swept wings with dihedral, a swept fin and tailplane
 //     (or a T-tail), winglets
 //   - engines under the wings (2 or 4), on the rear fuselage, or
@@ -20,12 +21,15 @@
 // ============================================================
 
 const AircraftModels = {
-  liveries: new Map(),       // aircraft id -> canvas texture
+  liveries: new Map(),       // aircraft id | airline code -> canvas texture
+  finArt: new Map(),         // the same -> the two fin decal textures
 
+  // opts.airline: an airline code, to paint the aeroplane in its colours
   build(ac, opts) {
     opts = opts || {};
     const d = aircraftDims(ac);
-    const look = ac.look || {};
+    const al = opts.airline ? AIRLINE_BY_CODE[opts.airline] : null;
+    const look = al ? Object.assign({}, ac.look, { base: al.livery.body, color: al.livery.tail }) : (ac.look || {});
     const L = d.len, R = d.radius, S = d.span;
     const jet = ac.engineType === 'jet';
     const g = new THREE.Group();
@@ -36,12 +40,13 @@ const AircraftModels = {
     const col = (hex) => new THREE.Color(hex).convertSRGBToLinear();
     const base = new THREE.MeshLambertMaterial({ color: col(look.base || '#f3f5f7') });
     const paint = new THREE.MeshLambertMaterial({ color: col(look.color || '#1f5fa0') });
+    const eng = al ? new THREE.MeshLambertMaterial({ color: col(al.livery.engine) }) : base;
     const dark = new THREE.MeshLambertMaterial({ color: 0x23282e });
     const grey = new THREE.MeshLambertMaterial({ color: 0x9aa3ab });
 
     // ---- fuselage
     const body = fuselageGeometry(L, R);
-    const skin = new THREE.MeshLambertMaterial({ map: this.livery(ac, d) });
+    const skin = new THREE.MeshLambertMaterial({ map: this.livery(ac, d, al) });
     g.add(new THREE.Mesh(body.geo, skin));
     if (look.hump) {
       // the 747 upper deck: blended into the nose, its roof sloping down into the fuselage further back
@@ -96,6 +101,7 @@ const AircraftModels = {
     const fin = new THREE.Mesh(finGeometry(finRoot, finTip, finH, finSweep, Math.max(0.12, finRoot * 0.09)), paint);
     fin.position.set(0, finY, finZ);
     g.add(fin);
+    if (al) this.finDecals(g, ac, al, finRoot, finTip, finH, finSweep, Math.max(0.12, finRoot * 0.09), finY, finZ);
     const tSemi = S * (jet ? 0.19 : 0.21), tRoot = finRoot * 0.75, tTip = tRoot * 0.42;
     const tail = wingGeometry(tSemi, tRoot, tTip, (jet ? 32 : 6) * DEG, tRoot * 0.08);
     const tTop = look.tail === 't';
@@ -116,7 +122,7 @@ const AircraftModels = {
       const dia = d.fus * (look.engines === 'wing4' ? 0.42 : look.bigFans ? 0.56 : 0.5);
       const stations = look.engines === 'wing4' ? [0.3, 0.6] : [0.33];
       for (const f of stations) for (const side of [1, -1]) {
-        const n = jetNacelle(dia, dia * (look.engines === 'wing4' ? 2.0 : 1.75), base, dark, paint, look.flatNacelles);
+        const n = jetNacelle(dia, dia * (look.engines === 'wing4' ? 2.0 : 1.75), eng, dark, paint, look.flatNacelles);
         n.position.set(side * spanAt(f), yAt(f) - thick * 0.5 - dia * 0.62, leAt(f) + dia * 0.75);
         g.add(n);
         const py = new THREE.Mesh(new THREE.BoxGeometry(dia * 0.14, dia * 0.5, dia * 1.6), metal);
@@ -126,7 +132,7 @@ const AircraftModels = {
     } else if (look.engines === 'rear2') {
       const dia = d.fus * 0.48;
       for (const side of [1, -1]) {
-        const n = jetNacelle(dia, dia * 2.1, base, dark, paint);
+        const n = jetNacelle(dia, dia * 2.1, eng, dark, paint);
         n.position.set(side * (R + dia * 0.75), R * 0.35, -L * 0.24);
         g.add(n);
         const py = new THREE.Mesh(new THREE.BoxGeometry(dia * 0.9, dia * 0.16, dia * 1.1), metal);
@@ -226,9 +232,11 @@ const AircraftModels = {
   },
 
   // the paint scheme: a canvas wrapped around the fuselage (x = along, nose at the right; y = around, top at 0)
-  livery(ac, d) {
-    if (this.liveries.has(ac.id)) return this.liveries.get(ac.id);
-    const look = ac.look || {};
+  livery(ac, d, al) {
+    const key = ac.id + '|' + (al ? al.code : '');
+    if (this.liveries.has(key)) return this.liveries.get(key);
+    const look = al ? Object.assign({}, ac.look, { base: al.livery.body, color: al.livery.tail }) : (ac.look || {});
+    const lv = al ? al.livery : null;
     const W = 1024, H = 256;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
@@ -238,18 +246,39 @@ const AircraftModels = {
     const yAt = (deg) => deg / 360 * H;                 // angle from the top of the fuselage
     g.fillStyle = look.base || '#f3f5f7';
     g.fillRect(0, 0, W, H);
-    // belly
-    g.fillStyle = 'rgba(150,160,170,0.55)';
-    g.fillRect(0, yAt(118), W, yAt(124));
     const color = look.color || '#1f5fa0';
-    // cheatline below the windows on both sides, and a bold tail sweep at the back
-    g.fillStyle = color;
-    for (const c of [100, 260]) g.fillRect(W * 0.04, yAt(c - 3), W * 0.9, yAt(5));
-    g.globalAlpha = 0.9;
-    g.beginPath();
-    g.moveTo(0, 0); g.lineTo(W * 0.2, 0); g.lineTo(W * 0.12, H); g.lineTo(0, H);
-    g.closePath(); g.fill();
-    g.globalAlpha = 1;
+    if (!lv) {
+      // belly
+      g.fillStyle = 'rgba(150,160,170,0.55)';
+      g.fillRect(0, yAt(118), W, yAt(124));
+      // cheatline below the windows on both sides, and a bold tail sweep at the back
+      g.fillStyle = color;
+      for (const c of [100, 260]) g.fillRect(W * 0.04, yAt(c - 3), W * 0.9, yAt(5));
+      g.globalAlpha = 0.9;
+      g.beginPath();
+      g.moveTo(0, 0); g.lineTo(W * 0.2, 0); g.lineTo(W * 0.12, H); g.lineTo(0, H);
+      g.closePath(); g.fill();
+      g.globalAlpha = 1;
+    } else {
+      // an airline's paint: the belly below the cheatline, a coloured nose, the cheatline,
+      // the fin colour running into the top of the tail cone, and the titles
+      g.fillStyle = lv.belly || 'rgba(150,160,170,0.45)';
+      g.fillRect(0, yAt(lv.belly ? 104 : 118), W, yAt(lv.belly ? 152 : 124));
+      if (lv.nose) {
+        g.fillStyle = lv.nose;
+        g.beginPath(); g.moveTo(W, 0); g.lineTo(W * 0.9, 0); g.bezierCurveTo(W * 0.95, H * 0.3, W * 0.95, H * 0.7, W * 0.9, H); g.lineTo(W, H); g.fill();
+      }
+      if (lv.cheat) lv.cheat.forEach((c, i) => {
+        g.fillStyle = c;
+        for (const a of [98 + i * 4, 258 - i * 4]) g.fillRect(W * 0.03, yAt(a), W * 0.92, yAt(3.2));
+      });
+      if (lv.tail !== lv.body) {
+        g.fillStyle = lv.tail;
+        g.beginPath(); g.moveTo(0, 0); g.lineTo(W * 0.17, 0); g.lineTo(W * 0.1, yAt(40)); g.lineTo(0, yAt(60)); g.fill();
+        g.beginPath(); g.moveTo(0, H); g.lineTo(W * 0.17, H); g.lineTo(W * 0.1, yAt(320)); g.lineTo(0, yAt(300)); g.fill();
+      }
+      this.titles(g, al, W, H, L, d.radius, !!look.freighter);
+    }
     // passenger windows
     if (!look.freighter) {
       g.fillStyle = '#1d2733';
@@ -278,8 +307,83 @@ const AircraftModels = {
     const tex = new THREE.CanvasTexture(cv);
     tex.encoding = THREE.sRGBEncoding;
     tex.anisotropy = 4;
-    this.liveries.set(ac.id, tex);
+    this.liveries.set(key, tex);
     return tex;
+  },
+
+  // the airline's titles on both sides, above the windows (on the right side, -x, the canvas
+  // runs upside down and backwards)
+  titles(g, al, W, H, L, R, freighter) {
+    const lv = al.livery;
+    const pxAlong = W / L, pxAround = H / (TAU * R);
+    const hM = Math.min(1.4, Math.max(0.45, R * (freighter ? 0.62 : 0.42)));     // letter height, metres
+    const size = hM * pxAround;
+    const text = al.title || al.name;
+    const font = lv.titleFont === 'serif' ? 'bold ' + size + 'px Georgia, serif'
+      : lv.titleFont ? 'bold ' + size + 'px Arial, sans-serif'
+        : '900 ' + size + 'px Arial, sans-serif';
+    const cx = W * 0.6, maxW = W * (freighter ? 0.6 : 0.5);
+    for (const side of [1, -1]) {
+      const cy = (side > 0 ? (freighter ? 62 : 58) : (freighter ? 298 : 302)) / 360 * H;
+      g.save();
+      g.translate(cx, cy);
+      if (side < 0) g.scale(-1, -1);
+      g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle';
+      const sx = pxAlong / pxAround;                           // letters as wide in metres as they are tall
+      const tw = g.measureText(text).width * sx;
+      g.scale(sx * Math.min(1, maxW / tw), 1);
+      if (lv.titleFont === 'fedex') {
+        const w1 = g.measureText('Fed').width, w2 = g.measureText('Ex').width;
+        g.textAlign = 'left';
+        g.fillStyle = '#4d148c'; g.fillText('Fed', -(w1 + w2) / 2, 0);
+        g.fillStyle = '#ff6200'; g.fillText('Ex', -(w1 + w2) / 2 + w1, 0);
+      } else {
+        g.fillStyle = lv.title;
+        g.fillText(text, 0, 0);
+      }
+      g.restore();
+    }
+  },
+
+  // The emblem on the fin: one transparent decal on each side, each drawn so that it reads
+  // the right way round, clipped to the fin's outline.
+  finDecals(group, ac, al, rootC, tipC, h, sweep, thick, finY, finZ) {
+    const key = ac.id + '|' + al.code;
+    const tipLe = -h * Math.tan(sweep);
+    const zMax = 0, zMin = Math.min(-rootC, tipLe - tipC), span = zMax - zMin;
+    let tex = this.finArt.get(key);
+    if (!tex) {
+      tex = [1, -1].map((side) => {
+        const H = 256, W = Math.min(512, Math.max(64, Math.round(H * span / h / 4) * 4));
+        const cv = document.createElement('canvas');
+        cv.width = W; cv.height = H;
+        const g = cv.getContext('2d');
+        // side +1 (+x): the canvas runs from the leading edge towards the tail; side -1 the other way
+        const U = (z) => (side > 0 ? (zMax - z) : (z - zMin)) / span * W;
+        const V = (y) => (1 - y / h) * H;
+        const poly = [[0, 0], [tipLe, h], [tipLe - tipC, h], [-rootC, 0]];
+        g.beginPath();
+        poly.forEach(([z, y], i) => (i ? g.lineTo(U(z), V(y)) : g.moveTo(U(z), V(y))));
+        g.closePath(); g.clip();
+        const yc = h * 0.5, f = yc / h;
+        const le = tipLe * f, te = -rootC + (tipLe - tipC + rootC) * f;
+        const chord = Math.abs(le - te);
+        const rM = Math.min(chord * 0.4, h * 0.36);
+        Emblems.draw(g, al, { w: W, h: H, cx: U((le + te) / 2), cy: V(yc), r: rM / h * H });
+        const t = new THREE.CanvasTexture(cv);
+        t.encoding = THREE.sRGBEncoding;
+        t.anisotropy = 4;
+        return t;
+      });
+      this.finArt.set(key, tex);
+    }
+    [1, -1].forEach((side, i) => {
+      const geo = new THREE.PlaneGeometry(span, h);
+      geo.rotateY(side * Math.PI / 2);
+      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex[i], transparent: true, alphaTest: 0.4 }));
+      m.position.set(side * (thick / 2 + 0.03), finY + h / 2, finZ + (zMin + zMax) / 2);
+      group.add(m);
+    });
   }
 };
 

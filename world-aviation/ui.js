@@ -229,10 +229,10 @@ const UI = {
       const from = World.byId[c.fromId], to = World.byId[c.toId];
       const need = this.requirement(c);
       return '<div class="contract' + (this.selContract === c.id ? ' sel' : '') + '">' +
-        '<div class="cHead"><b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
+        '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
         FACTIONS[c.faction].short + '</span></div>' +
         '<div class="cRoute"><b>' + c.fromId + ' → ' + c.toId + '</b>' +
-        '<span>' + esc(from.city) + ' → ' + esc(to.city) + '</span></div>' +
+        '<span>' + flagImg(from) + esc(from.city) + ' → ' + flagImg(to) + esc(to.city) + '</span></div>' +
         '<div class="cGrid">' +
         row2('Load', loadText(c)) +
         row2('Distance', c.distanceNm + ' nm') +
@@ -422,12 +422,12 @@ const UI = {
         (x.stormy ? '<tr><td>WIND</td><td>stormy — expect turbulence and shear</td></tr>' : '');
     };
     this.panel(
-      '<h2>' + esc(c.client) + '</h2>' +
+      '<h2 class="clientHead">' + clientLogo(c, true) + esc(c.client) + '</h2>' +
       '<div class="briefTop"><div class="bigRoute">' + c.fromId + ' → ' + c.toId + '</div>' +
       '<div class="bigPay">' + fmtMoney(c.pay) + '</div></div>' +
       '<div class="briefCols"><div>' +
-      '<h3>' + esc(from.name) + ' · ' + from.id + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
-      '<h3>' + esc(to.name) + ' · ' + to.id + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
+      '<h3>' + flagImg(from) + esc(from.name) + ' · ' + from.id + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
+      '<h3>' + flagImg(to) + esc(to.name) + ' · ' + to.id + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
       '<p class="fineprint">' + (setup.weather.arr.vis < 3000
         ? 'Low visibility at ' + to.id + ' — fly the ILS, the autopilot can couple to it down to 200 ft.'
         : 'Visibility is good for the approach at ' + to.id + '.') + '</p>' +
@@ -647,4 +647,13 @@ function unlockLine(on, text) { return '<li class="' + (on ? 'ok' : '') + '">' +
 function vs0Of(a, kg) {
   const cl = a.clMaxClean + a.flaps[a.flaps.length - 1].cl;
   return Math.sqrt(2 * kg * SIM.GRAVITY / (SIM.RHO_SL * a.wingArea * cl)) / KTS;
+}
+
+// the client airline's logo (art/emblems.js) and an airport's national flag (art/flags.js)
+function clientLogo(c, big) {
+  if (!c.airline || !AIRLINE_BY_CODE[c.airline]) return '';
+  return '<img class="logo' + (big ? ' big' : '') + '" src="' + Emblems.url(c.airline) + '" alt="">';
+}
+function flagImg(apt) {
+  return '<img class="flag" src="' + Flags.url(apt.country) + '" alt="" title="' + esc(apt.country) + '">';
 }
