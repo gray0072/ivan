@@ -298,6 +298,8 @@ const TEXT_RU = {
   'Night flight': 'Ночной полёт',
   'Dawn flight': 'Полёт на рассвете',
   'In the dark the runway is its lights, the PAPI and your landing lights: harder, and paid more.': 'В темноте полоса — это её огни, PAPI и ваши посадочные фары: сложнее, и платят больше.',
+  'ARRIVAL, LOCAL TIME': 'ПРИЛЁТ, МЕСТНОЕ ВРЕМЯ',
+  'OUTSIDE AIR': 'ЗА БОРТОМ',
   'LOCAL TIME': 'МЕСТНОЕ ВРЕМЯ',
   'Your controls — gear, flaps, land and brake below {v} kt': 'Управляете вы — шасси, закрылки, посадка и торможение до {v} kt',
   'practice: land, then idle <kbd>0</kbd> and brake <kbd>B</kbd> below {v} kt': 'тренировка: сядьте, затем малый газ <kbd>0</kbd> и тормоз <kbd>B</kbd> до {v} kt',

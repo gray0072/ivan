@@ -109,11 +109,19 @@ const HUD = {
     const left = res ? Math.max(0, res.deadline - fl.realElapsed) : 0;
     const late = res && fl.realElapsed > res.deadline;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);
+    // the clock at the departure; the expected arrival (the block time still to fly, by the
+    // progress along the route) on the arrival's clock; the air outside at this height
+    const clock = (fl.env.hour0 || 12) * 3600 + fl.elapsed;
+    const dep = World.byId[c.fromId], arr = World.byId[c.toId];
+    const eta = ((clock + c.blockMin * 60 * (1 - fl.progress()) + (utcOffset(arr) - utcOffset(dep)) * 3600) % 86400 + 86400) % 86400;
+    const oat = Math.round(fl.env.temp - WEATHER.LAPSE_RATE * (fl.st.pos.y - (fl.env.tempElev || 0)));
     const html =
       '<div class="stripRow"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
       '<div class="stripRow"><span>' + tr('PAY') + '</span><b>' + fmtMoney(c.pay) + '</b></div>' +
-      '<div class="stripRow"><span>' + tr('LOCAL TIME') + '</span><span>' + fmtClock(((fl.env.hour0 || 12) * 3600 + fl.elapsed) % 86400) + '</span></div>' +
+      '<div class="stripRow"><span>' + tr('LOCAL TIME') + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
+      '<div class="stripRow"><span>' + tr('ARRIVAL, LOCAL TIME') + '</span><span>' + fmtClock(eta) + '</span></div>' +
+      '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +
       (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
         (late ? 'bad' : (left < 60 ? 'warn' : 'good')) + '">' + fmtTime(late ? fl.realElapsed - res.deadline : left) + '</b></div>' : '');
     if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
@@ -283,7 +291,11 @@ const HUD = {
     const st = fl.st;
     const show = this.bigScreen() && this.miniWanted && !this.mapOpen && !helpOpen && !st.onGround &&
       fl.phase !== 'TAKEOFF' && !(sys && sys.checklist) && !(fl.phase === 'APPROACH' && fl.altAgl() < 1000 * FT);
-    if (cv.hidden === show) cv.hidden = !show;
+    if (cv.hidden === show) {
+      cv.hidden = !show;
+      // the checklist card (or its result, which stays a while) moves down under the map
+      cv.parentElement.classList.toggle('miniOn', show);
+    }
     if (!show) return;
     const now = performance.now();
     if (now - (this.miniT || 0) < 1000 / CONTROLS.MINIMAP_FPS) return;

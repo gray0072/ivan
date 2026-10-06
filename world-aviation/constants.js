@@ -516,6 +516,7 @@ const WEATHER = {
   QNH_RANGE: [975, 1035],
   WIND_OFF_RUNWAY_MAX: 70,      // degrees the surface wind may be off the runway heading
   SNOW_TEMP_THRESHOLD: 1,
+  LAPSE_RATE: 0.0065,           // deg C the air cools per metre of height (standard atmosphere)
   ICING_TEMP_MIN: -20, ICING_TEMP_MAX: 1,   // airframe icing in cloud or precipitation, deg C
   ICING_RATE: 0.012,            // ice fraction per second
   STORM_CHANCE_HARD: 0.3

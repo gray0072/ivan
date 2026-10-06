@@ -298,6 +298,8 @@ const TEXT_SV = {
   'Night flight': 'Nattflygning',
   'Dawn flight': 'Flygning i gryningen',
   'In the dark the runway is its lights, the PAPI and your landing lights: harder, and paid more.': 'I mörker syns banan bara som sina ljus, PAPI och dina landningsstrålkastare: svårare, och bättre betalt.',
+  'ARRIVAL, LOCAL TIME': 'ANKOMST, LOKAL TID',
+  'OUTSIDE AIR': 'UTETEMPERATUR',
   'LOCAL TIME': 'LOKAL TID',
   'Your controls — gear, flaps, land and brake below {v} kt': 'Du har kontrollen — landställ, klaffar, landa och bromsa under {v} kt',
   'practice: land, then idle <kbd>0</kbd> and brake <kbd>B</kbd> below {v} kt': 'träning: landa, sedan tomgång <kbd>0</kbd> och broms <kbd>B</kbd> under {v} kt',

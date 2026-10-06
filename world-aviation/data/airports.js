@@ -12,6 +12,7 @@
 // lat/lon are real; each flight's world is a projection around the route (WORLD.SCALE).
 // RWY is the designator of the runway in use (its heading / 10, so 1 = 010°, 19 = 190°) and LEN
 // its length in metres; departures and arrivals both use this direction. REGION: see REGIONS.
+// TZ (UTC offset, hours) only where the airport's zone differs from its country's (COUNTRIES).
 const AIRPORTS = [
   // ---- Sweden: where the career starts
   { id: 'ARN', name: 'Stockholm Arlanda', city: 'Stockholm', country: 'Sweden', region: 'sweden', lat: 59.652, lon: 17.919, elev: 42, rwy: 1, rwyLen: 3300, aptClass: ['pax', 'cargo'], terminal: 'big' },
@@ -94,21 +95,21 @@ const AIRPORTS = [
   // ---- The Americas
   { id: 'JFK', name: 'New York JFK', city: 'New York', country: 'United States', region: 'americas', lat: 40.640, lon: -73.779, elev: 4, rwy: 31, rwyLen: 4423, aptClass: ['pax', 'cargo'], terminal: 'big' },
   { id: 'BOS', name: 'Boston Logan', city: 'Boston', country: 'United States', region: 'americas', lat: 42.364, lon: -71.005, elev: 6, rwy: 22, rwyLen: 3073, aptClass: ['pax'], terminal: 'big' },
-  { id: 'ORD', name: 'Chicago O’Hare', city: 'Chicago', country: 'United States', region: 'americas', lat: 41.978, lon: -87.905, elev: 204, rwy: 28, rwyLen: 3962, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'ORD', name: 'Chicago O’Hare', city: 'Chicago', country: 'United States', tz: -6, region: 'americas', lat: 41.978, lon: -87.905, elev: 204, rwy: 28, rwyLen: 3962, aptClass: ['pax', 'cargo'], terminal: 'big' },
   { id: 'ATL', name: 'Atlanta', city: 'Atlanta', country: 'United States', region: 'americas', lat: 33.637, lon: -84.428, elev: 313, rwy: 27, rwyLen: 3624, aptClass: ['pax', 'cargo'], terminal: 'big' },
   { id: 'MIA', name: 'Miami', city: 'Miami', country: 'United States', region: 'americas', lat: 25.795, lon: -80.287, elev: 2, rwy: 9, rwyLen: 3962, aptClass: ['pax', 'cargo'], terminal: 'big' },
-  { id: 'DFW', name: 'Dallas/Fort Worth', city: 'Dallas', country: 'United States', region: 'americas', lat: 32.897, lon: -97.038, elev: 185, rwy: 17, rwyLen: 4085, aptClass: ['pax', 'cargo'], terminal: 'big' },
-  { id: 'DEN', name: 'Denver', city: 'Denver', country: 'United States', region: 'americas', lat: 39.856, lon: -104.674, elev: 1655, rwy: 16, rwyLen: 4877, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
-  { id: 'LAX', name: 'Los Angeles', city: 'Los Angeles', country: 'United States', region: 'americas', lat: 33.942, lon: -118.408, elev: 38, rwy: 25, rwyLen: 3685, aptClass: ['pax', 'cargo'], terminal: 'big' },
-  { id: 'SFO', name: 'San Francisco', city: 'San Francisco', country: 'United States', region: 'americas', lat: 37.619, lon: -122.375, elev: 4, rwy: 28, rwyLen: 3618, aptClass: ['pax', 'cargo'], terminal: 'big' },
-  { id: 'SEA', name: 'Seattle–Tacoma', city: 'Seattle', country: 'United States', region: 'americas', lat: 47.449, lon: -122.309, elev: 132, rwy: 16, rwyLen: 3627, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
-  { id: 'ANC', name: 'Anchorage', city: 'Anchorage', country: 'United States', region: 'americas', lat: 61.174, lon: -149.996, elev: 46, rwy: 7, rwyLen: 3780, aptClass: ['pax', 'cargo'], terminal: 'medium', arctic: true, mountainous: true },
-  { id: 'HNL', name: 'Honolulu', city: 'Honolulu', country: 'United States', region: 'americas', lat: 21.319, lon: -157.922, elev: 4, rwy: 8, rwyLen: 3753, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'DFW', name: 'Dallas/Fort Worth', city: 'Dallas', country: 'United States', tz: -6, region: 'americas', lat: 32.897, lon: -97.038, elev: 185, rwy: 17, rwyLen: 4085, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'DEN', name: 'Denver', city: 'Denver', country: 'United States', tz: -7, region: 'americas', lat: 39.856, lon: -104.674, elev: 1655, rwy: 16, rwyLen: 4877, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'LAX', name: 'Los Angeles', city: 'Los Angeles', country: 'United States', tz: -8, region: 'americas', lat: 33.942, lon: -118.408, elev: 38, rwy: 25, rwyLen: 3685, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'SFO', name: 'San Francisco', city: 'San Francisco', country: 'United States', tz: -8, region: 'americas', lat: 37.619, lon: -122.375, elev: 4, rwy: 28, rwyLen: 3618, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'SEA', name: 'Seattle–Tacoma', city: 'Seattle', country: 'United States', tz: -8, region: 'americas', lat: 47.449, lon: -122.309, elev: 132, rwy: 16, rwyLen: 3627, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'ANC', name: 'Anchorage', city: 'Anchorage', country: 'United States', tz: -9, region: 'americas', lat: 61.174, lon: -149.996, elev: 46, rwy: 7, rwyLen: 3780, aptClass: ['pax', 'cargo'], terminal: 'medium', arctic: true, mountainous: true },
+  { id: 'HNL', name: 'Honolulu', city: 'Honolulu', country: 'United States', tz: -10, region: 'americas', lat: 21.319, lon: -157.922, elev: 4, rwy: 8, rwyLen: 3753, aptClass: ['pax', 'cargo'], terminal: 'medium' },
   { id: 'YYZ', name: 'Toronto Pearson', city: 'Toronto', country: 'Canada', region: 'americas', lat: 43.677, lon: -79.625, elev: 173, rwy: 23, rwyLen: 3389, aptClass: ['pax', 'cargo'], terminal: 'big' },
   { id: 'YUL', name: 'Montréal Trudeau', city: 'Montréal', country: 'Canada', region: 'americas', lat: 45.470, lon: -73.741, elev: 36, rwy: 24, rwyLen: 3353, aptClass: ['pax'], terminal: 'medium' },
-  { id: 'YVR', name: 'Vancouver', city: 'Vancouver', country: 'Canada', region: 'americas', lat: 49.195, lon: -123.184, elev: 4, rwy: 26, rwyLen: 3505, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
+  { id: 'YVR', name: 'Vancouver', city: 'Vancouver', country: 'Canada', tz: -8, region: 'americas', lat: 49.195, lon: -123.184, elev: 4, rwy: 26, rwyLen: 3505, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
   { id: 'MEX', name: 'Mexico City', city: 'Mexico City', country: 'Mexico', region: 'americas', lat: 19.436, lon: -99.072, elev: 2230, rwy: 5, rwyLen: 3900, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
-  { id: 'CUN', name: 'Cancún', city: 'Cancún', country: 'Mexico', region: 'americas', lat: 21.037, lon: -86.877, elev: 6, rwy: 12, rwyLen: 3500, aptClass: ['pax'], terminal: 'medium' },
+  { id: 'CUN', name: 'Cancún', city: 'Cancún', country: 'Mexico', tz: -5, region: 'americas', lat: 21.037, lon: -86.877, elev: 6, rwy: 12, rwyLen: 3500, aptClass: ['pax'], terminal: 'medium' },
   { id: 'BOG', name: 'Bogotá El Dorado', city: 'Bogotá', country: 'Colombia', region: 'americas', lat: 4.702, lon: -74.147, elev: 2548, rwy: 13, rwyLen: 3800, aptClass: ['pax', 'cargo'], terminal: 'big', mountainous: true },
   { id: 'LIM', name: 'Lima', city: 'Lima', country: 'Peru', region: 'americas', lat: -12.022, lon: -77.114, elev: 34, rwy: 16, rwyLen: 3507, aptClass: ['pax', 'cargo'], terminal: 'medium' },
   { id: 'GRU', name: 'São Paulo Guarulhos', city: 'São Paulo', country: 'Brazil', region: 'americas', lat: -23.432, lon: -46.469, elev: 750, rwy: 9, rwyLen: 3700, aptClass: ['pax', 'cargo'], terminal: 'big' },
@@ -131,7 +132,7 @@ const AIRPORTS = [
   { id: 'MNL', name: 'Manila', city: 'Manila', country: 'Philippines', region: 'asia', lat: 14.509, lon: 121.020, elev: 23, rwy: 6, rwyLen: 3737, aptClass: ['pax'], terminal: 'big' },
   { id: 'SYD', name: 'Sydney', city: 'Sydney', country: 'Australia', region: 'asia', lat: -33.946, lon: 151.177, elev: 6, rwy: 34, rwyLen: 3962, aptClass: ['pax', 'cargo'], terminal: 'big' },
   { id: 'MEL', name: 'Melbourne', city: 'Melbourne', country: 'Australia', region: 'asia', lat: -37.669, lon: 144.841, elev: 132, rwy: 16, rwyLen: 3657, aptClass: ['pax', 'cargo'], terminal: 'big' },
-  { id: 'PER', name: 'Perth', city: 'Perth', country: 'Australia', region: 'asia', lat: -31.940, lon: 115.967, elev: 20, rwy: 21, rwyLen: 3444, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'PER', name: 'Perth', city: 'Perth', country: 'Australia', tz: 8, region: 'asia', lat: -31.940, lon: 115.967, elev: 20, rwy: 21, rwyLen: 3444, aptClass: ['pax', 'cargo'], terminal: 'medium' },
   { id: 'AKL', name: 'Auckland', city: 'Auckland', country: 'New Zealand', region: 'asia', lat: -37.008, lon: 174.792, elev: 7, rwy: 23, rwyLen: 3635, aptClass: ['pax', 'cargo'], terminal: 'big' }
 ];
 

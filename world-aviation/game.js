@@ -601,6 +601,7 @@ const Game = {
     env.surfaceWind = { dir: w.dir, speed: w.speed };
     env.turb = w.turbulence;
     env.qnh = w.qnh; env.temp = w.temp; env.vis = w.vis;
+    env.tempElev = this.flight.arrival.elev;       // the height the temperature was measured at
     env.cloudBase = this.flight.arrival.elev + w.cloudBase;
     env.cloudTop = this.flight.arrival.elev + w.cloudTop;
     env.precip = w.precip; env.snowy = w.snow;
@@ -913,6 +914,7 @@ const Game = {
     env.turb = dep.turbulence;
     env.qnh = dep.qnh;
     env.temp = dep.temp;
+    env.tempElev = s.from.elev;
     env.vis = dep.vis;
     env.cloudBase = s.from.elev + dep.cloudBase;
     env.cloudTop = s.from.elev + dep.cloudTop;

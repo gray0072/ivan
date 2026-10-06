@@ -209,6 +209,12 @@ function fmtDuration(min) {
   const h = Math.floor(min / 60), m = min % 60;
   return h > 0 ? tr('{h} h {m} min', { h, m: String(m).padStart(2, '0') }) : tr('{m} min', { m });
 }
+// an airport's offset from UTC in hours: its own tz, else its country's (data/countries.js)
+function utcOffset(a) {
+  if (a.tz !== undefined) return a.tz;
+  const c = typeof COUNTRIES !== 'undefined' && COUNTRIES[a.country];
+  return c && c.tz !== undefined ? c.tz : 0;
+}
 function fmtClock(sec) {
   sec = Math.max(0, Math.floor(sec));
   const h = Math.floor(sec / 3600) % 24, m = Math.floor(sec / 60) % 60;
