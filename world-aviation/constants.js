@@ -542,6 +542,18 @@ const VIEW = {
 };
 
 // ---------- Controls and screen layout ----------
+// The practice landing (the briefing's "Practice the landing"): it starts on the final at the
+// destination, the autopilot holds the glide path for a moment, then you land and brake below
+// SIM.ROLLOUT_EXIT_KT. A paid simulator session with no penalties.
+const PRACTICE = {
+  START_NM: 3,                 // how far out on the final it starts
+  AP_SECONDS: 5,               // the autopilot flies it this long (real seconds), then hands over
+  MAX_AGL_FT: 3000,            // climbing above this (or flying 2 nm further out) ends it: no landing
+  FEE_LEASE_SHARE: 0.05,       // the fee: this share of the aircraft's hourly lease ...
+  FEE_MIN: 100,                // ... and at least this much (SEK)
+  REP: { 'A+': 0.5, A: 0.4, B: 0.2, C: 0.1 }   // reputation by grade; per contract only the best grade counts
+};
+
 const CONTROLS = {
   THROTTLE_CURVE: 1.8,         // thrust = lever position ^ this: the low end of the lever is finer (taxi power)
   THROTTLE_KEY_RATE: 0.45,     // lever travel per second with Z / X

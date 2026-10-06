@@ -323,6 +323,33 @@ const Career = {
 
   contractById(id) { return (this.data.contracts || []).find((c) => c.id === id); },
 
+  // ---------- the practice landing ----------
+  // a simulator session in the selected aircraft: a share of its hourly lease
+  practiceFee(ac) {
+    ac = ac || this.aircraft();
+    return Math.max(PRACTICE.FEE_MIN, Math.round(ac.rent * PRACTICE.FEE_LEASE_SHARE / 10) * 10);
+  },
+  payPractice() {
+    const fee = this.practiceFee();
+    this.data.money -= fee;
+    this.save();
+    return fee;
+  },
+  // the reputation a practice landing earns with the contract's client group: only what beats
+  // this contract's best practice so far, so repeating a landing does not farm it
+  practiceReward(contract, grade, cheated) {
+    const want = cheated ? 0 : (PRACTICE.REP[grade] || 0);
+    const c = this.contractById(contract.id) || contract;
+    const gain = Math.round(Math.max(0, want - (c.practiceRep || 0)) * 10) / 10;
+    if (gain > 0) {
+      c.practiceRep = want;
+      const f = c.faction;
+      this.data.rep[f] = clamp(Math.round(((this.data.rep[f] || 0) + gain) * 10) / 10, 0, 100);
+    }
+    this.save();
+    return gain;
+  },
+
   // ---------- flying it ----------
   flightSetup(contract, opts) {
     const ac = this.aircraft();

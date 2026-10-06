@@ -125,6 +125,7 @@ const Game = {
       if (fl.phase === 'PUSHBACK') this.updatePushback(dt);
       const simDt = fl.update(dt);
       sys.update(simDt);
+      if (this.practice) this.updatePractice(dt);
       this.updatePhase(dt);
       this.updateGuidance();
     }
@@ -462,13 +463,23 @@ const Game = {
       const need = [];
       if (st.flapsTarget < fl.ac.flaps.length && nm < 8) need.push(tr('flaps <kbd>F</kbd>'));
       if (st.gearTarget < 1 && nm < 7) need.push(tr('<b>gear down</b> <kbd>G</kbd>'));
-      HUD.setPrompt('<b>' + tr('Approach · runway {rwy}', { rwy: arr.rwyName }) + '</b> · ' + nm.toFixed(1) + ' nm · Vref ' + Math.round(fl.vRef()) + ' kt' +
-        (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>' + tr('autopilot flies the ILS down to 200 ft') : '')));
+      const head = '<b>' + tr('Approach · runway {rwy}', { rwy: arr.rwyName }) + '</b> · ' + nm.toFixed(1) + ' nm · Vref ' + Math.round(fl.vRef()) + ' kt';
+      if (this.practice) {
+        HUD.setPrompt(head + '<br>' + (this.practice.handed
+          ? tr('practice: land, then idle <kbd>0</kbd> and brake <kbd>B</kbd> below {v} kt', { v: SIM.ROLLOUT_EXIT_KT })
+          : tr('practice: the autopilot holds the glide path for {s} s, then it is yours', { s: PRACTICE.AP_SECONDS })));
+      } else {
+        HUD.setPrompt(head + (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>' + tr('autopilot flies the ILS down to 200 ft') : '')));
+      }
       if (nm < 1.5 && fl.altAgl() < 90 && st.gearTarget < 1) fl.warn('TOOLOWGEAR', tr('TOO LOW — GEAR'));
       // over the runway and still flying at its far end: go around and try again
       const loc = World.local(arr, st.pos.x, st.pos.z);
       const overRunway = Math.abs(loc.across) < 400 && loc.t > -arr.half && loc.t < arr.half;
       if (overRunway && !st.onGround) fl.overRunway = true;
+      if (this.practice && ((fl.overRunway && !st.onGround && loc.t > arr.half - 150) || nm > PRACTICE.START_NM + 2 || fl.altAgl() > PRACTICE.MAX_AGL_FT * FT)) {
+        this.endPractice(false, tr('No landing — you flew away from the runway'));
+        return;
+      }
       if (fl.overRunway && !st.onGround && loc.t > arr.half - 150) {
         fl.warn('GOAROUND', tr('Go around — climb, and fly the approach again'));
         fl.overRunway = false; fl.locCaptured = false; fl.ap.gs = false;
@@ -479,11 +490,13 @@ const Game = {
       HUD.setPrompt('<b>' + tr('Touchdown') + ' ' + (fl.landed ? fl.landed.fpm + ' fpm' : '') + '</b><br>' +
         tr('idle <kbd>0</kbd>, brakes <kbd>B</kbd>, spoiler <kbd>/</kbd> — slow below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
       if (!st.onGround && fl.altAgl() > 15) {
-        // touch-and-go: the next landing is the one that counts
+        // touch-and-go: the next landing is the one that counts (a practice is over)
+        if (this.practice) { this.endPractice(false, tr('You took off again — the landing did not hold')); return; }
         fl.landed = null;
         fl.setPhase('APPROACH');
       } else if (st.onGround && speed < SIM.ROLLOUT_EXIT_KT) {
-        this.beginTaxiIn();
+        if (this.practice) this.endPractice(true);
+        else this.beginTaxiIn();
       }
     } else if (p === 'EXIT') {
       const gate = this.arrivalGate;
@@ -739,27 +752,10 @@ const Game = {
     switch (digit) {
       case 1: st.fuel = fl.ac.fuelCapKg; text = 'full fuel tanks'; break;
       case 2: this.systems.noEmergencies = true; this.systems.queue = []; text = 'emergencies disabled for this flight'; break;
-      case 3: {
-        const a = fl.arrival;
-        const dist = 12 * NM;
-        const p = World.at(a, -a.half - dist, 0);
-        const spd = Math.min(fl.vRef() * 1.35, fl.ac.flaps[1].vfe - 15) * KTS;
-        st.pos.x = p.x; st.pos.z = p.z;
-        st.pos.y = a.elev + 15 + dist * Math.tan(SIM.GLIDESLOPE_DEG * DEG) + st.gearH;
-        st.hdg = a.hdg; st.pitch = 0.03; st.roll = 0;
-        st.pitchRate = 0; st.rollRate = 0; st.yawRate = 0;
-        st.vel.x = hdgX(a.hdg) * spd; st.vel.z = hdgZ(a.hdg) * spd; st.vel.y = 0;
-        st.onGround = false; st.wasAirborne = true; st.parkingBrake = false;
-        st.gearTarget = 0; st.gear = 0; st.flaps = st.flapsTarget = 2; st.throttle = 0.5;
-        for (const e of this.systems.engines) if (!e.failed) { e.running = true; e.startPhase = 'idle'; e.n1 = 0.6; e.n2 = 0.8; }
-        fl.ap.on = true; fl.ap.nav = true; fl.ap.alt = Math.round((st.pos.y) / FT / 100) * 100; fl.ap.vsI = 0;
-        fl.locCaptured = true;
-        this.applyArrivalWeather();
-        fl.setPhase('APPROACH');
-        Scene3D.warmup(fl);
-        text = '12 nm final for ' + a.id + ' runway ' + a.rwyName;
+      case 3:
+        this.placeOnFinal(12, false);
+        text = '12 nm final for ' + fl.arrival.id + ' runway ' + fl.arrival.rwyName;
         break;
-      }
       case 4: Career.data.money += 10000; Career.save(); text = '+10 000 kr'; break;
       case 5: st.damage = 0; text = 'aircraft repaired'; break;
       case 6:
@@ -768,6 +764,65 @@ const Game = {
       default: return;
     }
     HUD.showBanner('Cheat: ' + text + ' — this flight will not be paid', 'cheat', 2600);
+  },
+
+  // On the final approach to the arrival runway, `nm` out on the glide path, the autopilot
+  // flying the ILS: clean and fast (the final-approach cheat, 12 nm), or configured to land
+  // (the practice landing: gear down, landing flaps, Vref + 5)
+  placeOnFinal(nm, landing) {
+    const fl = this.flight, st = fl.st, a = fl.arrival;
+    const dist = nm * NM;
+    const p = World.at(a, -a.half - dist, 0);
+    const flaps = fl.ac.flaps.length;
+    const spd = (landing ? fl.vRef() + 5 : Math.min(fl.vRef() * 1.35, fl.ac.flaps[1].vfe - 15)) * KTS;
+    st.pos.x = p.x; st.pos.z = p.z;
+    st.pos.y = a.elev + 15 + dist * Math.tan(SIM.GLIDESLOPE_DEG * DEG) + st.gearH;
+    st.hdg = a.hdg; st.pitch = landing ? 0 : 0.03; st.roll = 0;
+    st.pitchRate = 0; st.rollRate = 0; st.yawRate = 0;
+    st.vel.x = hdgX(a.hdg) * spd; st.vel.z = hdgZ(a.hdg) * spd;
+    st.vel.y = landing ? -spd * Math.sin(SIM.GLIDESLOPE_DEG * DEG) : 0;
+    st.onGround = false; st.wasAirborne = true; st.parkingBrake = false;
+    st.gearTarget = st.gear = landing ? 1 : 0;
+    st.flaps = st.flapsTarget = landing ? flaps : 2;
+    st.throttle = landing ? 0.45 : 0.5;
+    for (const e of this.systems.engines) if (!e.failed) { e.running = true; e.startPhase = 'idle'; e.n1 = 0.6; e.n2 = 0.8; }
+    fl.ap.on = true; fl.ap.nav = true; fl.ap.alt = Math.round((st.pos.y) / FT / 100) * 100; fl.ap.vsI = 0;
+    fl.locCaptured = true;
+    if (landing) fl.ap.gs = true;
+    this.applyArrivalWeather();
+    fl.setPhase('APPROACH');
+    Scene3D.warmup(fl);
+  },
+
+  // ---------- the practice landing ----------
+  // Started from the briefing: on the final at the destination, the autopilot holds the glide
+  // path for PRACTICE.AP_SECONDS, then you land and brake below SIM.ROLLOUT_EXIT_KT. A paid
+  // simulator session: no damage bills, no lost reputation, and a good landing earns a little.
+  updatePractice(dt) {
+    const pr = this.practice, fl = this.flight;
+    if (pr.handed) return;
+    pr.t += dt;
+    if (pr.t >= PRACTICE.AP_SECONDS) {
+      pr.handed = true;
+      fl.ap.on = false;
+      fl.warn('AP', tr('Your controls — land and brake below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
+    }
+  },
+  endPractice(ok, reason) {
+    if (this.mode !== 'flying') return;
+    const fl = this.flight;
+    ok = ok && !!fl.landed;
+    this.mode = 'practice';
+    Input.active = false;
+    el('hud').hidden = true;
+    if (HUD.mapOpen) HUD.closeMap();
+    const grade = ok ? this.gradeLanding(fl.landed, fl, Career.difficulty) : '';
+    const rep = ok ? Career.practiceReward(this.contract, grade, this.cheated) : 0;
+    this.result = { practice: true, ok, grade, reason: reason || '', landed: ok ? fl.landed : null, rep, fee: this.practice.fee,
+      contract: this.contract, cheated: this.cheated };
+    Audio2.update(0, null, null);
+    UI.showPracticeResult(this.result);
+    Audio2.cue(ok && (grade === 'A+' || grade === 'A') ? 'good' : ok ? 'click' : 'bad');
   },
 
   // ---------- starting and ending flights ----------
@@ -809,7 +864,10 @@ const Game = {
     this.debriefShown = false;
     this.arrivalGate = s.to.gates[0];
     this.arrivalRoute = null;
-    this.res = { deadline: contract.deadline };
+    // a practice landing has no deadline
+    this.practice = opts.practice ? { t: 0, handed: false, fee: opts.fee || 0 } : null;
+    this.flight.practice = !!this.practice;
+    this.res = this.practice ? null : { deadline: contract.deadline };
 
     // weather into the flight environment
     const env = this.flight.env;
@@ -833,6 +891,11 @@ const Game = {
       responseFactor: fx.responseFactor * fx.responseFactor2, iceFactor: fx.iceFactor, hint: fx.hint
     });
     this.fuel0 = s.blockFuel;
+    if (this.practice) {
+      this.systems.noEmergencies = true;
+      this.systems.queue = [];
+      this.placeOnFinal(PRACTICE.START_NM, true);
+    }
 
     Scene3D.setFlightGates(s.skipPushback ? [this.arrivalGate] : [s.gate, this.arrivalGate]);
     Scene3D.warmup(this.flight);
@@ -902,6 +965,8 @@ const Game = {
   },
 
   failFlight(f) {
+    // a practice that goes wrong costs nothing more than its fee
+    if (this.practice) { this.endPractice(false, f.text); return; }
     this.failure = f;
     HUD.setPrompt('');
     this.finishFlight(true);

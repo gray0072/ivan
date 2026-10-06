@@ -421,6 +421,7 @@ const UI = {
     this.selContract = c.id;
     const from = World.byId[c.fromId], to = World.byId[c.toId];
     const setup = Career.flightSetup(c, { seed: 0 });
+    const fee = Career.practiceFee();
     const w = (x, a) => {
       const wind = tr('{v} kt from {d}°', { v: Math.round(x.speed), d: String(Math.round(x.dir)).padStart(3, '0') }) +
         (x.gust > 2 ? ', ' + tr('gusting {v}', { v: Math.round(x.speed + x.gust) }) : '');
@@ -462,8 +463,42 @@ const UI = {
       tr('After pushback — the tug has taken you to the holding point: about 5 minutes less on the ground, no procedure bonus') + '</label>' +
       '<p class="fineprint">' + tr('The full procedure is the real routine of the job; take the short start when you just want to fly. Your choice is remembered.') + '</p>' +
       '<div class="btnRow"><button class="btn default" data-act="fly">' + tr('Fly it') + '</button>' +
+      '<button class="btn" data-act="practice"' + (Career.data.money < fee ? ' disabled' : '') + '>' +
+      tr('Practice the landing · {fee}', { fee: fmtMoney(fee) }) + '</button>' +
       '<button class="btn" data-act="tab" data-v="dispatch">' + tr('Back to the board') + '</button></div>' +
+      '<p class="fineprint">' + tr('Practice the landing: you start {nm} nm out on the final at {id}, the autopilot holds the glide path for {s} s, then you land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
+        { nm: PRACTICE.START_NM, id: to.id, s: PRACTICE.AP_SECONDS, v: SIM.ROLLOUT_EXIT_KT, who: esc(tr(FACTIONS[c.faction].name)) }) + '</p>' +
       '</div></div>');
+  },
+
+  // ---------- the practice landing's result ----------
+  showPracticeResult(r) {
+    Input.active = false;
+    const c = r.contract;
+    const gradeCls = 'grade' + (!r.ok ? ' bad' : r.grade === 'A+' || r.grade === 'A' ? ' top' : r.grade === 'F' || r.grade === 'E' ? ' bad' : '');
+    const best = c.practiceRep || 0;
+    const repLine = r.rep > 0
+      ? tr('Reputation with {who}', { who: esc(tr(FACTIONS[c.faction].name)) }) + ': <b>+' + r.rep.toFixed(1) + '</b>'
+      : !r.ok ? tr('No penalty: a practice costs only its fee.')
+        : !PRACTICE.REP[r.grade] ? tr('Grade C or better earns a little reputation.')
+          : tr('No new reputation: a practice on this contract already earned it (a better grade earns more).');
+    this.panel(
+      '<div class="debriefTop">' +
+      '<div class="' + gradeCls + '">' + (r.ok ? r.grade : '—') + '</div>' +
+      '<div class="debriefTitle">' + tr('Practice landing · {id} runway {rwy}', { id: c.toId, rwy: Game.flight ? Game.flight.arrival.rwyName : '' }) +
+      (r.ok ? '' : '<br>' + esc(r.reason)) + '</div>' +
+      '</div>' +
+      (r.ok ? '<h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(r.landed) : '') +
+      '<p class="repGain">' + repLine + '</p>' +
+      (r.cheated ? '<p class="need">' + tr('Cheats used — no pay, no reputation, no records') + '</p>' : '') +
+      '<p class="fineprint">' + tr('Practice fee {fee}', { fee: fmtMoney(r.fee) }) +
+      (best ? ' · ' + tr('best practice on this contract: +{r} reputation', { r: best.toFixed(1) }) : '') + '</p>' +
+      '<div class="btnRow">' +
+      '<button class="btn default" data-act="practice"' + (Career.data.money < Career.practiceFee() ? ' disabled' : '') + '>' +
+      tr('Try again · {fee}', { fee: fmtMoney(Career.practiceFee()) }) + '</button>' +
+      '<button class="btn" data-act="brief">' + tr('Back to the briefing') + '</button>' +
+      '<button class="btn" data-act="fly">' + tr('Fly it for real') + '</button>' +
+      '</div>', 'narrow');
   },
 
   // ---------- debrief ----------
@@ -479,14 +514,8 @@ const UI = {
         : tr('Flight complete · {from} → {to}', { from: result.contract.fromId, to: result.contract.toId })) + '</div>' +
       '</div>' +
       (failed ? '' :
-        '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3><div class="cGrid">' +
-        row2(tr('Vertical speed'), (landed ? landed.fpm : 0) + ' fpm') +
-        row2(tr('Speed'), (landed ? landed.ias : 0) + ' kt (Vref ' + (landed ? landed.vref : 0) + ')') +
-        row2(tr('From the threshold'), (landed ? landed.fromThr : 0) + ' m') +
-        row2(tr('Off the centreline'), (landed ? Math.abs(landed.offset) : 0) + ' m') +
-        row2(tr('Bank / crab'), (landed ? Math.round(landed.bank) + '° / ' + Math.abs(landed.crab) + '°' : '—')) +
-        row2(tr('Surface'), landed ? esc(tr(landed.surf)) : '—') +
-        '</div></div><div><h3>' + tr('In the log') + '</h3><ul class="unlocks">' +
+        '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(landed) +
+        '</div><div><h3>' + tr('In the log') + '</h3><ul class="unlocks">' +
         '<li>' + tr('Block time {b} · real time {r}', { b: fmtTime(result.blockSec), r: fmtTime(result.realSec) }) + ' · ' + tr(result.onTime ? 'on time' : 'late') + '</li>' +
         '<li>' + tr('Fuel used {kg} kg (plan {p} kg)', { kg: Math.round(result.fuelUsed), p: result.contract.fuelKg }) + '</li>' +
         '<li>' + tr('Checklists: {a} worked, {b} mishandled', { a: result.handled, b: result.mishandled }) + '</li>' +
@@ -679,13 +708,28 @@ const UI = {
         Game.launch(c, { skipPushback: Career.skipPushback });
         break;
       }
+      case 'practice': {
+        // from the briefing or the practice result: the same contract, a new paid session
+        const c = Career.contractById(this.selContract) || this.lastContract;
+        if (!c) { this.showOps(); break; }
+        if (Career.data.money < Career.practiceFee()) break;
+        this.lastContract = c;
+        const fee = Career.payPractice();
+        enterFullscreen();
+        Game.mode = 'ops';
+        Game.launch(c, { practice: true, fee });
+        break;
+      }
+      case 'brief': this.showBriefing(this.selContract); break;
       case 'retry':
         if (this.lastContract) { enterFullscreen(); Game.launch(this.lastContract, { skipPushback: Career.skipPushback }); }
         break;
       case 'ops': Game.abortToOps(); break;
       case 'resume': Game.pause(); break;
       case 'restart':
-        if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
+        // a practice restarts as a practice (a new session, paid again)
+        if (Game.contract && Game.practice) { this.selContract = Game.contract.id; this.action('practice'); }
+        else if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
         break;
       case 'gameover': Career.reset(); Game.mode = 'menu'; this.showTitle(); break;
       default: break;
@@ -695,6 +739,7 @@ const UI = {
   // re-render whichever screen is showing (after a setting changed)
   refresh() {
     if (Game.mode === 'paused') this.showPause();
+    else if (Game.mode === 'practice' && Game.result) this.showPracticeResult(Game.result);
     else if ((Game.mode === 'debrief' || Game.mode === 'failed') && Game.result) this.showDebrief(Game.result, Game.mode === 'failed');
     else if (this.screen.dataset.view === 'newcareer' && el('pilotName')) {
       const pn = el('pilotName').value;
@@ -703,6 +748,18 @@ const UI = {
     } else this.showTitle();
   }
 };
+
+// the touchdown numbers, in the debrief and after a practice landing
+function touchdownGrid(landed) {
+  return '<div class="cGrid">' +
+    row2(tr('Vertical speed'), (landed ? landed.fpm : 0) + ' fpm') +
+    row2(tr('Speed'), (landed ? landed.ias : 0) + ' kt (Vref ' + (landed ? landed.vref : 0) + ')') +
+    row2(tr('From the threshold'), (landed ? landed.fromThr : 0) + ' m') +
+    row2(tr('Off the centreline'), (landed ? Math.abs(landed.offset) : 0) + ' m') +
+    row2(tr('Bank / crab'), (landed ? Math.round(landed.bank) + '° / ' + Math.abs(landed.crab) + '°' : '—')) +
+    row2(tr('Surface'), landed ? esc(tr(landed.surf)) : '—') +
+    '</div>';
+}
 
 function loadText(c) {
   const kg = Math.round(c.payloadKg).toLocaleString('sv-SE');

@@ -21,6 +21,8 @@ Open [index.html](index.html) in a browser — no build step, no server required
 5. **Approach**: flaps and gear down, land by hand from 200 ft (60 m) at Vref, brake, and slow below 35 kt (65 km/h).
 6. **Taxi in** along the arrow, stop in the parking box at your gate and set the parking brake (**Space**). The engines shut down and the debrief shows your grade and the invoice.
 
+Before a flight you can **practise the landing** for a small fee (a share of the hourly lease): you start 3 nm out on the final at the destination, the autopilot holds the glide path for 5 seconds, then you land and brake below 35 kt. A good landing earns a little reputation with the client (A+ the most, C the least; only your best practice on each contract counts); a bad one costs nothing more than the fee. Then try again, go back to the briefing or fly it for real.
+
 Starting **at the gate** and flying the whole ground routine yourself pays a bonus: +6 % of the contract and a little reputation. When you just want to fly, start **after pushback** — the tug has already taken you to the holding point: about 5 minutes less on the ground (and less lease on long flights), but no bonus. The game remembers which start you prefer.
 
 ## Controls
