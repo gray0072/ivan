@@ -186,7 +186,7 @@ const Scene3D = {
       for (let i = 0; i < vw; i++) {
         const k = j * vw + i;
         const x = x0 + i * cell, z = z0 + j * cell;
-        const h = Terrain.farHeight(x, z);
+        const h = Terrain.farVertexHeight(x, z, cell);
         heights[k] = h;
         pos[k * 3] = x; pos[k * 3 + 1] = h; pos[k * 3 + 2] = z;
       }

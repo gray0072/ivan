@@ -165,6 +165,21 @@ const Terrain = {
     return h > 1 ? Math.max(1, h - 30) : h;
   },
 
+  // A vertex of the far mesh (cells of `cell` metres). It is under the ground at its own spot,
+  // but a big triangle between a low coastal field and the hills around it can still pass over
+  // the airport (Kalmar: 2 m over the apron, hiding it). So every vertex of a triangle that
+  // can reach an airport's ground goes under that field's elevation (never into the sea).
+  farVertexHeight(x, z, cell) {
+    let h = this.farHeight(x, z);
+    if (h <= 0.5 || !TERRAIN.aptList) return h;
+    for (const a of TERRAIN.aptList) {
+      const r = a.rwyLen / 2 + 2000 + cell * 1.5;
+      const dx = x - a.x, dz = z - a.z;
+      if (dx * dx + dz * dz < r * r) h = Math.min(h, Math.max(0.5, a.elev - 30));
+    }
+    return h;
+  },
+
   normalAt(x, z, out) {
     const d = 45;
     const hx = this.heightAt(x + d, z) - this.heightAt(x - d, z);

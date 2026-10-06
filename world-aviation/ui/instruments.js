@@ -95,7 +95,8 @@ const Instruments = {
       ctx.fillStyle = '#6f7b88';
       ctx.font = '500 ' + Math.max(7, Math.round(r * 0.1)) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(sub, lx, ly + r * 0.13);
+      // a long unit goes on two lines ("fpm" over "×1000")
+      String(sub).split('\n').forEach((s, i) => ctx.fillText(s, lx, ly + r * (0.13 + i * 0.12)));
     }
     ctx.restore();
   },
@@ -335,7 +336,7 @@ const Instruments = {
     const vmax = metric ? 10 : 2000;
     const majors = metric ? [2, 4, 6, 8, 10] : [500, 1000, 1500, 2000];
     const minor = metric ? 1 : 250;
-    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm ×1000', { x: -0.5, y: -0.04 });
+    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm\n×1000', { x: -0.55, y: -0.1 });
     ctx.save();
     ctx.translate(x, y);
     const ang = (s) => -clamp(s, -vmax, vmax) / vmax * 150 * DEG;
