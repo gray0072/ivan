@@ -674,3 +674,6 @@ table.money tr.total td { font-weight: 800; font-size: 16px; border-bottom: 0; p
 .quizNote.good { border-color: #4ac47f; }
 .quizNote.bad { border-color: #e8b13a; }
 
+
+/* the mouse cursor, hidden in fullscreen while it is still (core/cursor.js) */
+html.cursor-hidden, html.cursor-hidden * { cursor: none !important; }

@@ -369,3 +369,6 @@ canvas {
   #overlay .btn { padding: 10px 22px; font-size: 17px; }
   #banner { font-size: 22px; top: 70px; }
 }
+
+/* the mouse cursor, hidden in fullscreen while it is still (core/cursor.js) */
+html.cursor-hidden, html.cursor-hidden * { cursor: none !important; }

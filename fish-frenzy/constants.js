@@ -217,3 +217,5 @@ const AUTO_GFX_WARMUP = 0.6;     // s of frames skipped after a start, a resume 
 const AUTO_GFX_LOW_FPS = 45;     // average below this → one level down
 const AUTO_GFX_HIGH_FPS = 57;    // average above this for AUTO_GFX_UP_WINDOWS checks in a row → one level up
 const AUTO_GFX_UP_WINDOWS = 4;
+
+const CURSOR_HIDE_MS = 3000;    // ms the mouse must stay still in fullscreen before the cursor hides (core/cursor.js)

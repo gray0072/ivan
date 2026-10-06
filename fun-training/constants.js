@@ -352,3 +352,5 @@ const QUALITY_WINDOW = 2;        // s of lesson frames averaged per check
 const QUALITY_LOW_FPS = 45;      // average below this → one level down
 const QUALITY_HIGH_FPS = 57;     // average above this for QUALITY_UP_WINDOWS checks → one level up
 const QUALITY_UP_WINDOWS = 4;
+
+const CURSOR_HIDE_MS = 3000;    // ms the mouse must stay still in fullscreen before the cursor hides (core/cursor.js)

@@ -67,7 +67,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── styles.css
 │   ├── constants.js          # game tuning constants (sizes, speeds, counts, timings, hit shapes)
 │   ├── game.js               # world, difficulty, update loop; hands its state to render/render.js each frame
-│   ├── core/                 # utils, audio, input (keyboard, touch joystick/boost zones, fullscreen), quality (Auto graphics)
+│   ├── core/                 # utils, audio, input (keyboard, touch joystick/boost zones, fullscreen), quality (Auto graphics), cursor (hidden in fullscreen while still)
 │   ├── sim/                  # demo.js — demo-mode pilot (createDemoPilot)
 │   ├── render/               # render.js (canvas, fish, jellyfish, gulls, effects), scenery.js (background)
 │   ├── ui/                   # fireworks.js — fireworks show for the max-size dialog
@@ -84,7 +84,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── index.html            # markup only, links versioned CSS/JS
 │   ├── styles.css
 │   ├── constants.js, progress.js, app.js  # tuning, levels and stars, screens and the main loop
-│   ├── core/                 # storage, audio, speech, nav (keyboard / TV-remote focus), quality
+│   ├── core/                 # storage, audio, speech, nav (keyboard / TV-remote focus), quality, cursor (hidden in fullscreen while still)
 │   ├── ui/                   # stars, lesson, muncher (pause dialog), room
 │   ├── tasks/                # task types (tasks.js dispatcher, math.js, scale.js, read.js + words.js)
 │   ├── scenes/               # fx.js shared drawing helpers + processes (flower, zombies, railway, balloon, campfire, panda)
@@ -103,7 +103,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── styles.css
 │   ├── constants.js, game.js, career.js  # tuning, main loop and phase machine, the career
 │   ├── lib/                  # three.min.js — three.js r147 (UMD), vendored
-│   ├── core/                 # i18n (the game's language), utils, input, audio
+│   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio
 │   ├── data/                 # airports, countries, airlines, emergencies, quizzes, lang-ru / lang-sv (translations), geodata (coastlines, mountains)
 │   ├── art/                  # flags, landmarks (city symbols), airline emblems
 │   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems

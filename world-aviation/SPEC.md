@@ -247,6 +247,8 @@ Keyboard:
 
 Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider (a thrust lever: thrust = position^1.8, so the lower half gives fine control of taxi power; the knob shows the thrust in % and follows the autothrottle and the keys when the thumb is off it), and the top right has fifteen buttons in four columns (four rows, clear of the throttle slider even on a 390 px tall landscape phone, and narrow enough to leave room for the messages between them and the contract strip): Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot, Time +, view, map, spoiler, NAV (back to the programme), Time − and Ice (anti-ice). In a QRH checklist the lit switch is tapped (or Go); the other steps are worked with the real controls. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
 
+Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_HIDE_MS` (3 s) and comes back as soon as the mouse moves, clicks or scrolls (`core/cursor.js`).
+
 ## Views
 
 **C** / **Shift+C** (touch: **View**) cycle through `VIEW.MODES` (`scene3d.js` `placeCamera`); the views riding with the aeroplane are in its own axes, scaled to its length, span and fuselage:
@@ -296,6 +298,7 @@ world-aviation/
 │   ├── i18n.js             the game's language: tr() looks the English text up in data/lang-*.js, LANGS, I18N
 │   ├── utils.js            math, noise, RNG, geodesy, the per-flight projection (Theatre), formatting
 │   ├── input.js            keyboard, touch joystick/throttle/buttons, fullscreen
+│   ├── cursor.js           hides the mouse cursor in fullscreen while it is still
 │   └── audio.js            synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts
 ├── data/
 │   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)

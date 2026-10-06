@@ -593,3 +593,5 @@ const PALETTE = {
   sun: '#fff6d8',
   fogDay: '#c3d6e6'
 };
+
+const CURSOR_HIDE_MS = 3000;    // ms the mouse must stay still in fullscreen before the cursor hides (core/cursor.js)

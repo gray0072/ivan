@@ -1062,3 +1062,6 @@ button.cell[disabled] { cursor: default; }
 .an-jump { transform-origin: bottom center; animation: anJump 1.6s ease-in-out infinite; }
 @keyframes anJump { 0%, 60%, 100% { transform: translateY(0) scaleY(1); } 70% { transform: translateY(0) scaleY(0.88); } 82% { transform: translateY(-12px) scaleY(1.05); } }
 .an-d1 { animation-delay: -0.4s; } .an-d2 { animation-delay: -0.9s; } .an-d3 { animation-delay: -1.4s; } .an-d4 { animation-delay: -2s; }
+
+/* the mouse cursor, hidden in fullscreen while it is still (core/cursor.js) */
+html.cursor-hidden, html.cursor-hidden * { cursor: none !important; }

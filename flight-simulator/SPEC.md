@@ -14,4 +14,5 @@ First-person arcade flight game.
 - Fly to a highlighted target airport, descend, align with the runway heading, and land within the runway bounds for points; missing the runway at zero altitude crashes the game
 - Instrument panel: airspeed gauge, artificial horizon (mirrors bank/pitch), altimeter
 - Terrain color/texture varies by world region and blends smoothly while flying
+- Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_HIDE_MS` (3 s) and comes back as soon as the mouse moves, clicks or scrolls
 - Cockpit framing (canopy pillars, windshield header) fixed on screen; clouds stay level and do not rotate with aircraft bank
