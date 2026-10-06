@@ -84,8 +84,9 @@ const HUD = {
     const c = fl.contract;
     if (!c) { this.strip.hidden = true; return; }
     this.strip.hidden = false;
-    // the route, the airports with their countries and the expected flight time: built once a
-    // flight (the flags are images), the live figures under it whenever they change
+    // the route, the airports with their countries, the pay and the planned flight time: built
+    // once a flight (the flags are images); the actual flight time and the live figures under it
+    // whenever they change
     const key = c.id + '|' + I18N.lang + '|' + Units.metric + '|' + !!fl.practice;
     if (this.stripKey !== key) {
       this.stripKey = key;
@@ -101,7 +102,8 @@ const HUD = {
         apt(c.fromId) + apt(c.toId) +
         '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
         '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
-        '<div class="stripRow"><span>' + tr('FLIGHT TIME') + '</span><span>' + fmtDuration(c.blockMin) + '</span></div>' +
+        '<div class="stripRow"><span>' + tr('PAY') + '</span><b>' + fmtMoney(c.pay) + '</b></div>' +
+        '<div class="stripRow"><span>' + tr('FLIGHT TIME, PLAN') + '</span><span>' + fmtDuration(c.blockMin) + '</span></div>' +
         '<div class="stripLive"></div>';
       this.stripLive = this.strip.querySelector('.stripLive');
       this.stripLiveHtml = '';
@@ -116,9 +118,9 @@ const HUD = {
     const eta = ((clock + c.blockMin * 60 * (1 - fl.progress()) + (utcOffset(arr) - utcOffset(dep)) * 3600) % 86400 + 86400) % 86400;
     const oat = Math.round(fl.env.temp - WEATHER.LAPSE_RATE * (fl.st.pos.y - (fl.env.tempElev || 0)));
     const html =
+      '<div class="stripRow"><span>' + tr('FLIGHT TIME, ACTUAL') + '</span><span>' + (fl.elapsed < 60 ? tr('{m} min', { m: 0 }) : fmtDuration(Math.floor(fl.elapsed / 60))) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
-      '<div class="stripRow"><span>' + tr('PAY') + '</span><b>' + fmtMoney(c.pay) + '</b></div>' +
       '<div class="stripRow"><span>' + tr('LOCAL TIME') + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('ARRIVAL, LOCAL TIME') + '</span><span>' + fmtClock(eta) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +

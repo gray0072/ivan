@@ -431,7 +431,8 @@ const TEXT_RU = {
   // ---------- HUD ----------
   '{n} pax': '{n} пасс.',
   'FUEL': 'ТОПЛИВО',
-  'FLIGHT TIME': 'ВРЕМЯ ПОЛЁТА',
+  'FLIGHT TIME, PLAN': 'ВРЕМЯ ПОЛЁТА, ПЛАН',
+  'FLIGHT TIME, ACTUAL': 'ВРЕМЯ ПОЛЁТА, ФАКТ',
   '{h} h {m} min': '{h} ч {m} мин',
   '{m} min': '{m} мин',
   'PAY': 'ОПЛАТА',

@@ -431,7 +431,8 @@ const TEXT_SV = {
   // ---------- HUD ----------
   '{n} pax': '{n} pass.',
   'FUEL': 'BRÄNSLE',
-  'FLIGHT TIME': 'FLYGTID',
+  'FLIGHT TIME, PLAN': 'FLYGTID, PLAN',
+  'FLIGHT TIME, ACTUAL': 'FLYGTID, FAKTISK',
   '{h} h {m} min': '{h} h {m} min',
   '{m} min': '{m} min',
   'PAY': 'BETALNING',
