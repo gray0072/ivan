@@ -92,6 +92,15 @@ const Career = {
     return this.data;
   },
 
+  // how this pilot starts a flight: at the gate (the full ground procedure) or after pushback;
+  // remembered in the career, so it is the pilot's habit
+  get skipPushback() { return !!(this.data && this.data.skipPushback); },
+  setSkipPushback(v) {
+    if (!this.data) return;
+    this.data.skipPushback = !!v;
+    this.save();
+  },
+
   reset() {
     try { localStorage.removeItem(CAREER_KEY); } catch (err) { /* ignore */ }
     this.data = null;
@@ -354,7 +363,8 @@ const Career = {
     lines.push({ label: 'Contract', value: base });
     if (gradeBonus) lines.push({ label: 'Landing grade {g}', args: { g: result.grade }, value: gradeBonus });
     if (result.onTime) lines.push({ label: 'On time', value: Math.round(base * 0.08) });
-    if (result.pushbackSkipped) lines.push({ label: 'No tug needed', value: CONTRACTS.PUSHBACK_BONUS });
+    const fullGround = !result.pushbackSkipped && !result.noClearance;
+    if (fullGround) lines.push({ label: 'Full ground procedure', value: Math.round(base * CONTRACTS.FULL_GROUND_BONUS) });
     // the lease runs per block hour (at least one), and the fuel burnt is paid for
     const hours = Math.max(1, result.blockSec / 3600);
     lines.push({ label: 'Aircraft lease ({ac}, {h} h)', args: { ac: ac.name, h: hours.toFixed(1) }, value: -Math.round(ac.rent * hours) });
@@ -375,6 +385,7 @@ const Career = {
     let rep = c.repGain * (0.6 + 0.4 * gm);
     if (result.mishandled > 0) rep -= result.mishandled * 0.8;
     if (result.onTime) rep += 0.4;
+    if (fullGround) rep += CONTRACTS.FULL_GROUND_REP;
     if (this.has('gen4')) rep += 0.5;
     rep -= (result.repPenalty || 0) / 10;
     rep = Math.max(0, Math.round(rep * 10) / 10);

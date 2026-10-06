@@ -21,7 +21,7 @@ Open [index.html](index.html) in a browser — no build step, no server required
 5. **Approach**: flaps and gear down, land by hand from 200 ft (60 m) at Vref, brake, and slow below 35 kt (65 km/h).
 6. **Taxi in** along the arrow, stop in the parking box at your gate and set the parking brake (**Space**). The engines shut down and the debrief shows your grade and the invoice.
 
-You can also start a contract **after pushback** — the tug has already taken you to the holding point and the client pays a ground-handling bonus.
+Starting **at the gate** and flying the whole ground routine yourself pays a bonus: +6 % of the contract and a little reputation. When you just want to fly, start **after pushback** — the tug has already taken you to the holding point: about 5 minutes less on the ground (and less lease on long flights), but no bonus. The game remembers which start you prefer.
 
 ## Controls
 

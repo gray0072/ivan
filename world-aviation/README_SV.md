@@ -21,7 +21,7 @@ En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du ä
 5. **Inflygning**: klaffar och landställ ute, landa för hand från 200 fot (60 m) i Vref, bromsa och sakta ner under 35 knop (65 km/h).
 6. **Taxa in** efter pilen, stanna i parkeringsrutan vid din gate och dra åt parkeringsbromsen (**Mellanslag**). Motorerna stängs av och genomgången visar betyget och fakturan.
 
-Du kan också börja ett uppdrag **efter pushback** — bogserbilen har redan tagit dig till väntepunkten och kunden betalar en bonus för markhanteringen.
+Att börja **vid gaten** och själv flyga hela markrutinen ger en bonus: +6 % av uppdraget och lite rykte. När du bara vill flyga börjar du **efter pushback** — bogserbilen har redan tagit dig till väntepunkten: ungefär 5 minuter mindre på marken (och mindre leasing på långa flygningar), men ingen bonus. Spelet kommer ihåg hur du helst börjar.
 
 ## Kontroller
 

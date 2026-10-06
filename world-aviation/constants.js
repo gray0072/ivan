@@ -474,7 +474,11 @@ const CONTRACTS = {
   PAYLOAD_FEE_NM: 650,           // load fee = kg x PAYLOAD rate x nm / this
   FACTION_MULT: { pax: 1.0, cargo: 1.05, bush: 1.2 },
   URGENT_MULT: 2.1,
-  PUSHBACK_BONUS: 1200,
+  // starting at the gate and flying the whole ground procedure yourself (push back, start, taxi
+  // out) pays this share of the contract and this much reputation; starting after pushback
+  // saves those minutes on the ground (and their lease) but earns neither
+  FULL_GROUND_BONUS: 0.06,
+  FULL_GROUND_REP: 0.3,
   GROUND_ALLOWANCE_S: 480,       // pushback, start, taxi out and taxi in, real seconds
   APPROACH_ALLOWANCE_S: 300,     // the approach, flown at 1x, real seconds
   CRUISE_ACCEL_EXPECTED: 6,      // the time acceleration the schedule assumes en route (short legs)

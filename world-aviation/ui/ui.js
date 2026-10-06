@@ -9,7 +9,7 @@
 // ============================================================
 
 const UI = {
-  screen: null, tab: 'dispatch', selContract: null, skipPushback: false, quiz: null, lastContract: null,
+  screen: null, tab: 'dispatch', selContract: null, quiz: null, lastContract: null,
 
   init() {
     this.screen = el('screen');
@@ -79,7 +79,7 @@ const UI = {
       });
     });
     this.screen.querySelectorAll('input[name="startMode"]').forEach((r) => {
-      r.addEventListener('change', () => { UI.skipPushback = r.value === 'pushback' && r.checked; });
+      r.addEventListener('change', () => { if (r.checked) Career.setSkipPushback(r.value === 'pushback'); });
     });
     const first = this.screen.querySelector('.default:not([disabled])') || this.screen.querySelector('button');
     if (first && !isCoarsePointer()) first.focus({ preventScroll: true });
@@ -455,10 +455,11 @@ const UI = {
       row2(tr('Lease'), '−' + fmtMoney(ac.rent)) +
       '</div>' +
       '<h3>' + tr('How you start') + '</h3>' +
-      '<label class="check"><input type="radio" name="startMode" value="gate"' + (this.skipPushback ? '' : ' checked') + '> ' +
-      tr('At the gate — push back, start the engines, taxi out') + '</label>' +
-      '<label class="check"><input type="radio" name="startMode" value="pushback"' + (this.skipPushback ? ' checked' : '') + '> ' +
-      tr('After pushback — the tug has taken you to the holding point, +{bonus} from the client', { bonus: fmtMoney(CONTRACTS.PUSHBACK_BONUS) }) + '</label>' +
+      '<label class="check"><input type="radio" name="startMode" value="gate"' + (Career.skipPushback ? '' : ' checked') + '> ' +
+      tr('At the gate — push back, start the engines, taxi out: +{bonus} and reputation for the full ground procedure', { bonus: fmtMoney(Math.round(c.pay * CONTRACTS.FULL_GROUND_BONUS)) }) + '</label>' +
+      '<label class="check"><input type="radio" name="startMode" value="pushback"' + (Career.skipPushback ? ' checked' : '') + '> ' +
+      tr('After pushback — the tug has taken you to the holding point: about 5 minutes less on the ground, no procedure bonus') + '</label>' +
+      '<p class="fineprint">' + tr('The full procedure is the real routine of the job; take the short start when you just want to fly. Your choice is remembered.') + '</p>' +
       '<div class="btnRow"><button class="btn default" data-act="fly">' + tr('Fly it') + '</button>' +
       '<button class="btn" data-act="tab" data-v="dispatch">' + tr('Back to the board') + '</button></div>' +
       '</div></div>');
@@ -674,16 +675,16 @@ const UI = {
         if (!c) { this.showOps(); break; }
         this.lastContract = c;
         enterFullscreen();
-        Game.launch(c, { skipPushback: this.skipPushback });
+        Game.launch(c, { skipPushback: Career.skipPushback });
         break;
       }
       case 'retry':
-        if (this.lastContract) { enterFullscreen(); Game.launch(this.lastContract, { skipPushback: this.skipPushback }); }
+        if (this.lastContract) { enterFullscreen(); Game.launch(this.lastContract, { skipPushback: Career.skipPushback }); }
         break;
       case 'ops': Game.abortToOps(); break;
       case 'resume': Game.pause(); break;
       case 'restart':
-        if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: this.skipPushback }); }
+        if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
         break;
       case 'gameover': Career.reset(); Game.mode = 'menu'; this.showTitle(); break;
       default: break;
