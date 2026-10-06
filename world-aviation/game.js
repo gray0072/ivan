@@ -103,11 +103,7 @@ const Game = {
         st.elevator = approach(st.elevator, ax.pitch, rate.elevator * dt);
         st.aileron = approach(st.aileron, ax.roll, rate.aileron * dt);
         // on the ground the arrows / the stick steer the nosewheel too
-        const steerIn = st.onGround && !ax.rudder ? ax.roll : ax.rudder;
-        const assist = steerIn ? null : this.taxiAssist(dt);
-        if (steerIn) this.handsOff = 0;
-        if (assist === null) st.rudder = approach(st.rudder, steerIn, rate.rudder * dt);
-        else st.rudder = approach(st.rudder, assist, CONTROLS.TAXI_ASSIST_RATE * dt);
+        st.rudder = approach(st.rudder, st.onGround && !ax.rudder ? ax.roll : ax.rudder, rate.rudder * dt);
       } else if (Math.abs(ax.pitch) > 0.5 || Math.abs(ax.roll) > 0.5) {
         fl.ap.on = false;
         fl.warn('AP', tr('Autopilot disconnected — you have control'));
@@ -438,7 +434,7 @@ const Game = {
         : tr('<b>Positive climb</b> · gear up <kbd>G</kbd>'));
       if (!st.onGround && fl.altAgl() > 150) {
         fl.setPhase('CLIMB');
-        fl.ap.alt = this.cruiseAltFt();
+        fl.ap.alt = this.cruiseAltFt(); fl.ap.altSet = false;
         fl.info(tr('Climb to {alt} ft — engage the autopilot <kbd>Y</kbd>', { alt: fmtAltFt(fl.ap.alt) }));
       }
     } else if (p === 'CLIMB') {
@@ -492,7 +488,7 @@ const Game = {
       if (fl.overRunway && !st.onGround && loc.t > arr.half - 150) {
         fl.warn('GOAROUND', tr('Go around — climb, and fly the approach again'));
         fl.overRunway = false; fl.locCaptured = false; fl.ap.gs = false;
-        fl.ap.alt = Math.round((arr.elev + 2500 * FT) / FT / 100) * 100;
+        fl.ap.alt = Math.round((arr.elev + 2500 * FT) / FT / 100) * 100; fl.ap.altSet = false;
         fl.setPhase('DESCENT');
       }
     } else if (p === 'ROLLOUT') {
@@ -563,7 +559,7 @@ const Game = {
   startDescent() {
     const fl = this.flight, arr = fl.arrival;
     fl.setPhase('DESCENT');
-    fl.ap.alt = Math.round((arr.elev + 2500 * FT) / FT / 100) * 100;
+    fl.ap.alt = Math.round((arr.elev + 2500 * FT) / FT / 100) * 100; fl.ap.altSet = false;
     this.applyArrivalWeather();
     fl.info(tr('Top of descent — {id} runway {rwy}, descend to {alt} ft', { id: arr.id, rwy: arr.rwyName, alt: fmtAltFt(fl.ap.alt) }));
   },
@@ -627,17 +623,6 @@ const Game = {
     g.dist = (p === 'TAXI_OUT' || p === 'EXIT' || p === 'ROLLOUT') && g.remaining ? g.remaining : Math.hypot(target.x - st.pos.x, target.z - st.pos.z);
   },
 
-  // The taxi assist on the easy difficulty: with your hands off the steering it brings you back
-  // to the taxi line (the tiller towards the guidance arrow), but only a moment after you let
-  // go, and gently, so a turn you have just made is not snatched back. null: not steering.
-  taxiAssist(dt) {
-    const fl = this.flight, st = fl.st, g = fl.guidance;
-    this.handsOff = (this.handsOff || 0) + dt;
-    if (!Career.difficulty.taxiAssist || !st.onGround || !g || !g.visible || fl.groundSpeedKt() <= 1) return null;
-    if (this.handsOff < CONTROLS.TAXI_ASSIST_DELAY_S) return null;
-    return clamp(wrapDeg(g.bearing - fl.headingDeg()) * 0.05, -0.8, 0.8);
-  },
-
   // ---------- actions ----------
   action(name, arg) {
     if (name === 'cheat') { this.cheat(arg); return; }
@@ -655,7 +640,10 @@ const Game = {
         if (fl.ap.on) {
           fl.ap.vsI = 0;
           if (!fl.ap.nav) fl.ap.hdg = Math.round(fl.headingDeg());
-          if (fl.phase === 'TAKEOFF' || fl.phase === 'CLIMB') fl.ap.alt = Math.max(fl.ap.alt, this.cruiseAltFt());
+          // the altitude the flight plan wants now (the cruise level, or 2 500 ft over the arrival
+          // after the top of descent), not wherever the aeroplane happens to be; an altitude the
+          // pilot or a checklist chose stays (on the approach the glideslope takes over anyway)
+          if (!fl.ap.altSet && fl.phase !== 'APPROACH') fl.ap.alt = this.programAltFt();
         }
         fl.info(tr('Autopilot') + ' ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + Units.alt(fl.ap.alt) : tr('off')));
         Audio2.cue('click');
@@ -683,8 +671,8 @@ const Game = {
         fl.info(tr(st.parkingBrake ? 'Parking brake set' : 'Parking brake released'));
         Audio2.cue('parkbrake', st.parkingBrake);
         break;
-      case 'altUp': fl.ap.alt = Math.min(fl.ap.alt + 500, 41000); fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
-      case 'altDown': fl.ap.alt = Math.max(1000, fl.ap.alt - 500); fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
+      case 'altUp': fl.ap.alt = Math.min(fl.ap.alt + 500, 41000); fl.ap.altSet = true; fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
+      case 'altDown': fl.ap.alt = Math.max(1000, fl.ap.alt - 500); fl.ap.altSet = true; fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
       case 'hdgUp': case 'hdgDown':
         if (fl.ap.nav) { fl.ap.nav = false; fl.ap.hdg = Math.round(fl.headingDeg()); }
         fl.ap.hdg = (fl.ap.hdg + (name === 'hdgUp' ? 5 : 355)) % 360;
@@ -694,7 +682,7 @@ const Game = {
         // back on the programme: NAV along the route and the altitude for this phase of the flight
         if (st.onGround) { fl.info(tr('NAV: the autopilot flies the route once you are in the air')); break; }
         fl.ap.nav = true; fl.locCaptured = false;
-        fl.ap.alt = this.programAltFt();
+        fl.ap.alt = this.programAltFt(); fl.ap.altSet = false;
         if (!fl.ap.on) { fl.ap.on = true; fl.ap.vsI = 0; }
         fl.info(tr('Autopilot back on the programme — NAV to {id} · ALT {alt} ft', { id: fl.arrival.id, alt: fmtAltFt(fl.ap.alt) }));
         Audio2.cue('click');

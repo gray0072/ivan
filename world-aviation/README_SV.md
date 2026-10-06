@@ -50,7 +50,7 @@ Varje flygning drar sina problem: motorbrand eller motorbortfall, bränsleläcka
 
 Väljs på startskärmen och i paus- och genomgångsdialogerna, och sparas mellan besöken:
 
-- **Easy** — halva vinden och lätt turbulens, ett problem åt gången, checklistan förklarar varför varje steg görs och ger 50 % mer tid, generös landningsbedömning, inga deadlines och en taxihjälp som håller dig på linjen (en stund efter att du släppt styrningen för den mjukt tillbaka dig till linjen).
+- **Easy** — halva vinden och lätt turbulens, ett problem åt gången, checklistan förklarar varför varje steg görs och ger 50 % mer tid, generös landningsbedömning och inga deadlines.
 - **Medium** — riktig vind och turbulens, ibland två problem under en flygning, checklistor utan förklaringar, vanliga deadlines och bedömning.
 - **Hard** — stark vind och kraftig turbulens, två problem varje flygning, 25 % mindre tid på checklistorna, korta deadlines, sträng bedömning och mer skador.
 

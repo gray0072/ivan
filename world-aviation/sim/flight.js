@@ -94,7 +94,8 @@ const Flight = {
     this.ap = {
       on: false, nav: true, gs: false,
       alt: Math.round((this.world.elev + 3000) / FT / 100) * 100,     // feet
-      hdg: this.world.hdgDeg, vsI: 0
+      hdg: this.world.hdgDeg, vsI: 0,
+      altSet: false     // the pilot (or a checklist) chose the altitude: engaging keeps it
     };
     this.startGate = opts.gate || this.world.gates[0];
     if (opts.skipPushback) { this.placeAtHold(); this.setPhase('ENGINE_START'); }

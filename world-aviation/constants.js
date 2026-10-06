@@ -118,7 +118,7 @@ const DIFFICULTY = {
     qrhTimeFactor: 1.5, emergencyOverlap: 0,
     qrhHint: true,
     deadlineFactor: 2.0, touchdownTolerance: 0.35, gradeBonus: 0.15,
-    fuelPenaltyFactor: 0.5, damageFactor: 0.6, taxiAssist: true,
+    fuelPenaltyFactor: 0.5, damageFactor: 0.6,
     description: 'Calm weather, one problem at a time with a long grace period, checklists come with hints, generous landing grading and no deadlines.'
   },
   medium: {
@@ -127,7 +127,7 @@ const DIFFICULTY = {
     qrhTimeFactor: 1.0, emergencyOverlap: 1,
     qrhHint: false,
     deadlineFactor: 1.0, touchdownTolerance: 0.25, gradeBonus: 0,
-    fuelPenaltyFactor: 1.0, damageFactor: 1.0, taxiAssist: false,
+    fuelPenaltyFactor: 1.0, damageFactor: 1.0,
     description: 'Real wind and turbulence, problems may overlap, standard deadlines and standard grading.'
   },
   hard: {
@@ -136,7 +136,7 @@ const DIFFICULTY = {
     qrhTimeFactor: 0.75, emergencyOverlap: 2,
     qrhHint: false,
     deadlineFactor: 0.8, touchdownTolerance: 0.2, gradeBonus: -0.1,
-    fuelPenaltyFactor: 1.6, damageFactor: 1.5, taxiAssist: false,
+    fuelPenaltyFactor: 1.6, damageFactor: 1.5,
     description: 'Storm season: strong wind and severe turbulence, failures with no warning, two problems at once, short deadlines and strict grading.'
   }
 };
@@ -574,10 +574,6 @@ const CONTROLS = {
   // the hydraulic actuators: how fast each control surface follows the stick, in full
   // deflections per second (a key press does not throw a surface to its stop at once)
   SURFACE_RATE: { aileron: 2.0, elevator: 1.6, rudder: 1.2 },
-  // the taxi assist (easy): after you let go of the steering it waits this long (s) before it
-  // steers you back to the line, and then turns the tiller no faster than this (full per second)
-  TAXI_ASSIST_DELAY_S: 1.5,
-  TAXI_ASSIST_RATE: 0.5,
   MINIMAP_MIN_W: 1100,         // the mini map in the corner: desktop windows at least this wide ...
   MINIMAP_MIN_H: 640,          // ... and this tall
   MINIMAP_FPS: 6               // the mini map is redrawn this often

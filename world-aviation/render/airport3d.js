@@ -670,12 +670,36 @@ function groundBox(a) {
 
 // the landside roads as [t, across] polylines: in front of the terminal and out to the
 // motorway, and the branch along the runway
+// (the corners are arcs, so the asphalt, its lines and the cars all go round the same curve)
 function landsideRoads(a) {
   const r = a.apronRect, roadA = LAYOUT.TERMINAL + 52, box = groundBox(a);
   return [
     [[r.t0 - 220, roadA], [r.t1 + 120, roadA], [r.t1 + 260, roadA + 140], [r.t1 + 260, box.aMax + 20]],
     [[r.t0 - 220, roadA], [box.tMin - 20, roadA + 60]]
-  ];
+  ].map((pts) => roundPolyline(pts, 45, 10));
+}
+
+// a polyline with every inner corner replaced by an arc of radius `rad` metres (smaller where
+// the legs are short), drawn as `steps` short pieces
+function roundPolyline(pts, rad, steps) {
+  const out = [pts[0]];
+  for (let i = 1; i + 1 < pts.length; i++) {
+    const p = pts[i - 1], c = pts[i], q = pts[i + 1];
+    const l0 = Math.hypot(c[0] - p[0], c[1] - p[1]), l1 = Math.hypot(q[0] - c[0], q[1] - c[1]);
+    const u = [(p[0] - c[0]) / l0, (p[1] - c[1]) / l0], v = [(q[0] - c[0]) / l1, (q[1] - c[1]) / l1];
+    const turn = Math.acos(clamp(-(u[0] * v[0] + u[1] * v[1]), -1, 1));   // how far the road turns
+    if (turn < 0.02) { out.push(c); continue; }
+    // the arc starts and ends this far from the corner, along each leg
+    const cut = Math.min(rad * Math.tan(turn / 2), l0 * 0.45, l1 * 0.45);
+    const a0 = [c[0] + u[0] * cut, c[1] + u[1] * cut], a1 = [c[0] + v[0] * cut, c[1] + v[1] * cut];
+    // a quadratic curve through the corner is close enough to an arc at these angles
+    for (let k = 0; k <= steps; k++) {
+      const s = k / steps, m = 1 - s;
+      out.push([m * m * a0[0] + 2 * m * s * c[0] + s * s * a1[0], m * m * a0[1] + 2 * m * s * c[1] + s * s * a1[1]]);
+    }
+  }
+  out.push(pts[pts.length - 1]);
+  return out;
 }
 
 function makeGroundCanvas(a, id, ch) {

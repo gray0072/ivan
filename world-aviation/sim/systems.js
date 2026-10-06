@@ -340,6 +340,7 @@ const Systems = {
       const ft = step.kind === 'setAlt' ? step.value : Math.round((fl.st.pos.y / FT + step.value) / 100) * 100;
       const floor = Math.round((fl.arrival.elev + 600) / FT / 100) * 100;
       fl.ap.alt = Math.max(floor, Math.min(fl.ap.alt, ft));
+      fl.ap.altSet = true;            // chosen for the emergency: <kbd>N</kbd> goes back to the programme
       if (!fl.ap.on && !fl.st.onGround) { fl.ap.on = true; fl.ap.vsI = 0; }
       fl.info(tr('Autopilot ALT {alt} ft — descending', { alt: fmtAltFt(fl.ap.alt) }));
     }

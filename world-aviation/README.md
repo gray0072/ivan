@@ -50,7 +50,7 @@ Every flight draws its problems: engine fire or failure, a fuel leak, icing, win
 
 Chosen on the title screen and in the pause and debrief dialogs, remembered between visits:
 
-- **Easy** — half the wind and light turbulence, one problem at a time, checklists explain why each step is done and give 50 % more time, generous landing grading, no deadlines, and a taxi assist that keeps you on the line (it steers you back to the line a moment after you let go of the steering, and gently).
+- **Easy** — half the wind and light turbulence, one problem at a time, checklists explain why each step is done and give 50 % more time, generous landing grading and no deadlines.
 - **Medium** — real wind and turbulence, sometimes two problems in one flight, checklists without the explanations, standard deadlines and grading.
 - **Hard** — strong wind and severe turbulence, two problems every flight, 25 % less time on the checklists, short deadlines, strict grading and more damage.
 
