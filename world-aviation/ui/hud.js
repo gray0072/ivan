@@ -46,6 +46,8 @@ const HUD = {
 
   // ---------- messages ----------
   push(msg) {
+    // the warning's cause is put right: take it off the screen now
+    if (msg.id === 'clear') { this.messages = this.messages.filter((m) => m.kind !== msg.clear); return; }
     const now = performance.now();
     const last = this.messages[this.messages.length - 1];
     if (last && last.text === msg.text && now - last.t < 3000) return;
@@ -284,12 +286,25 @@ const HUD = {
     const from = fl.world, to = fl.arrival;
     const p0 = { x: from.x, z: from.z }, p1 = { x: to.x, z: to.z };
     const st = fl.st;
-    // fit departure, arrival and the aeroplane
-    const pad = mini ? 12000 : 20000;
-    const minX = Math.min(p0.x, p1.x, st.pos.x) - pad;
-    const maxX = Math.max(p0.x, p1.x, st.pos.x) + pad;
-    const minZ = Math.min(p0.z, p1.z, st.pos.z) - pad;
-    const maxZ = Math.max(p0.z, p1.z, st.pos.z) + pad;
+    // What the map frames. The big map: departure, arrival and the aeroplane. The mini map
+    // follows the flight: the whole route for the first half, then only the aeroplane, the
+    // arrival and its final approach, so the map zooms in as you get closer and the runway
+    // and its arrow stay big enough to read; it glides from one framing to the next.
+    const fin = World.at(to, -to.half - 12 * NM, 0);
+    const pts = [p1, st.pos];
+    if (!mini || fl.distToDestNm() > fl.routeNm() * 0.5) pts.push(p0);
+    if (mini) pts.push(fin);
+    const bx0 = Math.min(...pts.map((p) => p.x)), bx1 = Math.max(...pts.map((p) => p.x));
+    const bz0 = Math.min(...pts.map((p) => p.z)), bz1 = Math.max(...pts.map((p) => p.z));
+    const pad = mini ? Math.max(3000, Math.max(bx1 - bx0, bz1 - bz0) * 0.12) : 20000;
+    const want = [bx0 - pad, bx1 + pad, bz0 - pad, bz1 + pad];
+    let b = want;
+    if (mini) {
+      const cur = this.miniBox && this.miniBoxFlight === fl ? this.miniBox : want;
+      b = cur.map((v, i) => v + (want[i] - v) * 0.15);
+      this.miniBox = b; this.miniBoxFlight = fl;
+    }
+    const [minX, maxX, minZ, maxZ] = b;
     const sc = Math.min(w / (maxX - minX), h / (maxZ - minZ));
     const X = (x) => (x - minX) * sc + (w - (maxX - minX) * sc) / 2;
     const Y = (z) => (z - minZ) * sc + (h - (maxZ - minZ) * sc) / 2;      // north (-z) is up

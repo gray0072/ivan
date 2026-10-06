@@ -402,6 +402,13 @@ const Game = {
         tr(sys.started ? 'engines starting' : 'you can start the engines now — <kbd>Enter</kbd>'));
     } else if (p === 'ENGINE_START') {
       const all = sys.runningCount() === fl.ac.engines;
+      // started at the holding point (after pushback): no taxi, the next thing is the clearance
+      const hold = apt.nodes.hold;
+      if (all && Math.hypot(st.pos.x - hold.x, st.pos.z - hold.z) < 30) {
+        fl.setPhase('HOLD_SHORT');
+        fl.info(tr('Holding point runway {rwy} — stop and wait for the clearance', { rwy: apt.rwyName }));
+        return;
+      }
       // the engines running and the parking brake off (Space / Park): off you go
       if (all && !st.parkingBrake) {
         fl.setPhase('TAXI_OUT');
@@ -452,7 +459,7 @@ const Game = {
         (this.res && fl.realElapsed > this.res.deadline * 0.75 ? ' · <b class="bad">' + tr('running late') + '</b>' : ''));
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'DESCENT') {
-      HUD.setPrompt(tr('<b>Descent</b> to {alt} ft · {nm} nm to runway {rwy}', { alt: fmtAltFt(fl.ap.alt), nm: Math.round(fl.distToRunwayNm()), rwy: arr.rwyName }));
+      HUD.setPrompt(tr('<b>Descent</b> to {alt} ft · {nm} nm to runway {rwy}', { alt: fmtAltFt(fl.ap.alt), nm: Math.round(fl.distToRunwayNm()), rwy: arr.rwyName }) + this.spoilerHint());
       fl.navTarget();                                   // keeps the localiser capture up to date
       if (fl.locCaptured && fl.distToRunwayNm() < SIM.APPROACH_NM) {
         fl.setPhase('APPROACH');
@@ -461,21 +468,22 @@ const Game = {
     } else if (p === 'APPROACH') {
       const nm = fl.distToRunwayNm();
       const need = [];
-      if (st.flapsTarget < fl.ac.flaps.length && nm < 8) need.push(tr('flaps <kbd>F</kbd>'));
+      if (st.flapsTarget < fl.ac.flaps.length && nm < 8) need.push(this.landingFlapsText());
       if (st.gearTarget < 1 && nm < 7) need.push(tr('<b>gear down</b> <kbd>G</kbd>'));
       const head = '<b>' + tr('Approach · runway {rwy}', { rwy: arr.rwyName }) + '</b> · ' + nm.toFixed(1) + ' nm · Vref ' + Math.round(fl.vRef()) + ' kt';
       if (this.practice) {
         // the gear and the flaps are part of the practice
         const cfg = [];
         if (st.gearTarget < 1) cfg.push(tr('<b>gear down</b> <kbd>G</kbd>'));
-        if (st.flapsTarget < fl.ac.flaps.length) cfg.push(tr('flaps <kbd>F</kbd>'));
+        if (st.flapsTarget < fl.ac.flaps.length) cfg.push(this.landingFlapsText());
         HUD.setPrompt(head + '<br>' + (!this.practice.handed
           ? tr('practice: the autopilot holds the glide path for {s} s, then it is yours', { s: PRACTICE.AP_SECONDS })
           : cfg.length ? cfg.join(' · ') + ' · ' + tr('slow to Vref')
             : tr('practice: land, then idle <kbd>0</kbd> and brake <kbd>B</kbd> below {v} kt', { v: SIM.ROLLOUT_EXIT_KT })));
       } else {
-        HUD.setPrompt(head + (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>' + tr('autopilot flies the ILS down to 200 ft') : '')));
+        HUD.setPrompt(head + (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>' + tr('autopilot flies the ILS down to 200 ft') : '')) + this.spoilerHint());
       }
+      if (st.spoiler && !st.onGround && fl.altAgl() < 150) fl.warn('SPOILERLAND', tr('Spoiler in for the landing — <kbd>/</kbd>'));
       if (nm < 1.5 && fl.altAgl() < 90 && st.gearTarget < 1) fl.warn('TOOLOWGEAR', tr('TOO LOW — GEAR'));
       // over the runway and still flying at its far end: go around and try again
       const loc = World.local(arr, st.pos.x, st.pos.z);
@@ -493,7 +501,7 @@ const Game = {
       }
     } else if (p === 'ROLLOUT') {
       HUD.setPrompt('<b>' + tr('Touchdown') + ' ' + (fl.landed ? fl.landed.fpm + ' fpm' : '') + '</b><br>' +
-        tr('idle <kbd>0</kbd>, brakes <kbd>B</kbd>, spoiler <kbd>/</kbd> — slow below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
+        tr('idle <kbd>0</kbd>, spoiler <kbd>/</kbd> (it puts the weight on the wheels), brakes <kbd>B</kbd> — slow below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
       if (!st.onGround && fl.altAgl() > 15) {
         // touch-and-go: the next landing is the one that counts (a practice is over)
         if (this.practice) { this.endPractice(false, tr('You took off again — the landing did not hold')); return; }
@@ -504,6 +512,7 @@ const Game = {
         else this.beginTaxiIn();
       }
     } else if (p === 'EXIT') {
+      if (st.spoiler && !this.spoilerTold) { this.spoilerTold = true; fl.info(tr('Off the runway — spoiler in <kbd>/</kbd>')); }
       const gate = this.arrivalGate;
       const d = Math.hypot(st.pos.x - gate.standX, st.pos.z - gate.standZ);
       const align = Math.abs(wrapDeg(fl.headingDeg() - gate.parkHdg));
@@ -535,6 +544,29 @@ const Game = {
     }
   },
 
+  // When the spoiler (the speed brake) helps, and when it has to go in: high on the descent it
+  // gets you down, too fast on the approach it slows you, and it is in before the landing
+  // (on the runway it goes out again, to put the weight on the wheels).
+  spoilerHint() {
+    const fl = this.flight, st = fl.st, arr = fl.arrival;
+    if (st.onGround) return '';
+    if (fl.phase === 'DESCENT') {
+      const high = (st.pos.y - arr.elev) / FT > fl.distToRunwayNm() * 320 + 2500;
+      if (high && !st.spoiler) return '<br>' + tr('<b>high</b> — spoiler <kbd>/</kbd> to come down faster');
+      if (!high && st.spoiler) return '<br>' + tr('on the profile — spoiler in <kbd>/</kbd>');
+      return '';
+    }
+    if (st.spoiler) return '<br>' + tr('<b>spoiler in</b> <kbd>/</kbd> before the landing');
+    if (st.ias / KTS > fl.vRef() + 40 && fl.distToRunwayNm() < 12) return '<br>' + tr('<b>fast</b> — idle and spoiler <kbd>/</kbd> to slow down');
+    return '';
+  },
+
+  // the landing takes full flaps, a step at a time: where they are, where they go, and the
+  // speed under which the next step comes out
+  landingFlapsText() {
+    const fl = this.flight, n = fl.st.flapsTarget, full = fl.ac.flaps.length;
+    return tr('flaps {n} → {full} (full), the next below {v} kt <kbd>F</kbd>', { n, full, v: fl.ac.flaps[n].vfe });
+  },
   takeoffFlaps() { return this.flight.ac.flaps.length >= 5 ? 2 : 1; },
   cruiseAltFt() {
     const fl = this.flight;
@@ -843,6 +875,7 @@ const Game = {
   startFlight(contract, opts) {
     opts = opts || {};
     this.contract = contract;
+    this.spoilerTold = false;
     this.setup = Career.flightSetup(contract, { seed: opts.seed || 0, skipPushback: opts.skipPushback });
     const s = this.setup;
     // the flight's own world: projection, terrain, airports laid out

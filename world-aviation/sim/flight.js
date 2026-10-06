@@ -135,16 +135,18 @@ const Flight = {
     const spd = this.st.ias / KTS;
     if (n > this.st.flapsTarget && f && spd > f.vfe + 4) {
       this.warn('SPEED', tr('Flaps {n} inhibited above Vfe {v} kt', { n, v: f.vfe }));
+      this.flapReject = { n, vfe: f.vfe };
       return;
     }
     this.st.flapsTarget = n;
   },
   setGear(down) {
     const st = this.st;
-    if (!down && st.onGround) { this.warn('GEAR', tr('Gear lever locked — weight on wheels')); return; }
-    if (down && st.gearFailed) { st.gearSelected = true; this.warn('GEAR', tr('Gear will not extend — work the checklist')); return; }
+    if (!down && st.onGround) { this.warn('GEAR', tr('Gear lever locked — weight on wheels')); this.gearReject = 'ground'; return; }
+    if (down && st.gearFailed) { st.gearSelected = true; this.warn('GEAR', tr('Gear will not extend — work the checklist')); this.gearReject = 'failed'; return; }
     if (down && st.ias / KTS > this.ac.vlo + 5) {
       this.warn('GEAR', tr('Gear inhibited above Vlo {v} kt', { v: this.ac.vlo }));
+      this.gearReject = 'vlo';
       return;
     }
     st.gearTarget = down ? 1 : 0;
@@ -437,8 +439,13 @@ const Flight = {
       // pitch: elevator plus static stability pulling the nose to the trim angle of attack. The trim
       // follows the angle of attack being flown (faster with the autopilot), like an automatic trim,
       // so a heavy jet at a slow speed is not fighting its own stability — but never into the stall.
+      // Not by hand low on the approach, though: there the trim stays where the approach left it,
+      // so a pull in the flare (or a little too early) is given back when the stick is let go
+      // and the nose comes down onto the glide path again, instead of being held up there while
+      // the aeroplane floats past the runway and stalls.
       const trimTo = clamp(st.alpha, -2 * DEG, (SIM.STALL_WARN_AOA_DEG - 2) * DEG);
-      st.trimAlpha = approach(st.trimAlpha, trimTo, (this.ap.on ? 1.5 : 0.6) * DEG * dt);
+      const flare = !this.ap.on && this.phase === 'APPROACH' && this.altAgl() < SIM.FLARE_TRIM_HOLD_M;
+      if (!flare) st.trimAlpha = approach(st.trimAlpha, trimTo, (this.ap.on ? 1.5 : 0.6) * DEG * dt);
       // scaled like the elevator, so a heavy jet's nose is as easy to hold as a light aircraft's
       const stability = -(st.alpha - st.trimAlpha) * 2.4 * qn * ac.pitchRate;
       // the elevator loses authority as the nose comes up, so it cannot be flown into a zoom
@@ -512,6 +519,23 @@ const Flight = {
       st.damage = Math.min(1, st.damage + dt * 0.004);
     }
     if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', tr('Gear overspeed — gear up <kbd>G</kbd>'));
+
+    // a warning about a state goes off the screen the moment the state is put right
+    const fr = this.flapReject, gr = this.gearReject;
+    const live = {
+      STALL: st.stallWarn,
+      OVERSPEED: ias > ac.vne,
+      FLAPSPEED: st.flaps > 0.5 && ias > this.flapVfeNow() + 10,
+      GEARSPEED: st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround,
+      SPOILERLAND: st.spoiler > 0.5 && !st.onGround,
+      SPEED: !!fr && st.flapsTarget < fr.n && ias > fr.vfe + 4,
+      GEAR: gr === 'ground' ? st.onGround : gr === 'failed' ? !!st.gearFailed : gr === 'vlo' ? st.gearTarget < 1 && ias > ac.vlo + 5 : false
+    };
+    const was = this.liveWarn || {};
+    for (const id in live) if (was[id] && !live[id]) this.events.push({ id: 'clear', clear: id, t: this.realElapsed });
+    if (!live.SPEED) this.flapReject = null;
+    if (!live.GEAR) this.gearReject = null;
+    this.liveWarn = live;
   },
 
   // the limit speed of the flaps that are out right now (flaps up: no limit)
@@ -563,7 +587,8 @@ const Flight = {
     const g = SIM.GRAVITY;
     const sys = this.systems;
     const brakeFactor = sys ? sys.brakeFactor : 1;
-    let decel = surf.roll * g + surf.brake * st.brakes * brakeFactor * g;
+    // the spoiler out on the ground dumps the lift and puts the weight on the wheels: the brakes bite harder
+    let decel = surf.roll * g + surf.brake * st.brakes * brakeFactor * (1 + SIM.SPOILER_BRAKE_GAIN * st.spoiler) * g;
     if (st.parkingBrake) decel = Math.max(decel, 3.5);
     vf -= Math.sign(vf) * Math.min(Math.abs(vf), decel * dt);
     if (st.parkingBrake && Math.abs(vf) < 0.4) vf = 0;

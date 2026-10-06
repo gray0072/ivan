@@ -169,7 +169,7 @@ const UI = {
       keyRow('F / V', tr('flaps down / up')) +
       keyRow('B', tr('wheel brakes (hold)')) +
       keyRow('Space', tr('parking brake')) +
-      keyRow('/', tr('spoiler')) +
+      keyRow('/', tr('spoiler: a speed brake in the air, in before the landing, out after touchdown so the brakes bite')) +
       keyRow('K', tr('engine and wing anti-ice')) +
       keyRow('Y', tr('autopilot on / off')) +
       keyRow('N', tr('autopilot NAV: fly the route and the ILS')) +
@@ -193,6 +193,7 @@ const UI = {
       '<li>' + tr('Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×64 on the autopilot.') + '</li>' +
       '<li>' + tr('When a warning sounds, a checklist opens: do the lit step with the control shown next to it — Enter (Go) for its switches, the real controls (0, K, G, /, Y…) for the rest. The clock is running.') + '</li>' +
       '<li>' + tr('Flaps and gear down on the approach, land by hand from 200 ft, brake, and leave the runway below 35 kt.') + '</li>' +
+      '<li>' + tr('The <b>spoiler</b> (/) is a speed brake: out when you are too high or too fast on the descent, in again before the landing. After touchdown put it out with idle and the brakes — it puts the weight on the wheels, so they stop you sooner.') + '</li>' +
       '<li>' + tr('Taxi to your gate, stop in the parking box and set the parking brake.') + '</li>' +
       '</ul></div></div>' +
       '<div class="btnRow"><button class="btn default" data-act="back">' + tr('Got it') + '</button></div>');

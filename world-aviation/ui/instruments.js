@@ -267,9 +267,10 @@ const Instruments = {
       ctx.stroke();
       if (major && r > 40) ctx.fillText(String(i / 5), Math.cos(a) * r * 0.62, Math.sin(a) * r * 0.62);
     }
-    // selected altitude bug on the rim
+    // selected altitude bug on the rim, on the short (thousands) needle's scale: one turn is
+    // 10 000 ft (or m), so the bug sits where the short needle will be when it gets there
     const sel = Units.metric ? fl.ap.alt * FT : fl.ap.alt;
-    const sa = (sel % 1000) / 1000 * TAU - Math.PI / 2;
+    const sa = (sel % 10000) / 10000 * TAU - Math.PI / 2;
     ctx.fillStyle = '#e65cf0';
     ctx.beginPath();
     ctx.moveTo(Math.cos(sa) * r * 0.93, Math.sin(sa) * r * 0.93);
