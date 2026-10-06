@@ -537,7 +537,7 @@ const Scene3D = {
       }
     }
     // never below the ground
-    const gEye = Terrain.heightAt(eye.x, eye.z) + minAgl;
+    const gEye = Terrain.surfaceAt(eye.x, eye.z) + minAgl;
     if (eye.y < gEye) eye.y = gEye;
     const cam = this.camera;
     cam.position.copy(eye);

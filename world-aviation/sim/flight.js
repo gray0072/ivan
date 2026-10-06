@@ -160,7 +160,8 @@ const Flight = {
   info(text) { this.events.push({ id: 'info', text, t: this.realElapsed }); },
 
   // ---------- derived values ----------
-  groundHeight() { return Terrain.heightAt(this.st.pos.x, this.st.pos.z); },
+  // the surface under the aeroplane: the ground, or the water (not the sea bed under it)
+  groundHeight() { return Terrain.surfaceAt(this.st.pos.x, this.st.pos.z); },
   altAgl() { return this.st.pos.y - this.st.gearH - this.groundHeight(); },
   density(alt) { return SIM.RHO_SL * Math.pow(1 - 2.25577e-5 * Math.max(0, alt), 4.2559); },
   weight() {
@@ -772,7 +773,7 @@ const Flight = {
     for (let d = 0; d <= SIM.MSA_LOOKAHEAD_M; d += 1000) {
       for (const side of [-1500, 0, 1500]) {
         const x = st.pos.x + fx * d - fz * side, z = st.pos.z + fz * d + fx * side;
-        top = Math.max(top, Terrain.heightAt(x, z));
+        top = Math.max(top, Terrain.surfaceAt(x, z));
       }
     }
     return top + SIM.MSA_MARGIN_M;
@@ -782,7 +783,7 @@ const Flight = {
   terrainAhead() {
     const st = this.st, k = SIM.GPWS_LOOKAHEAD_S;
     const gx = st.pos.x + st.vel.x * k, gz = st.pos.z + st.vel.z * k;
-    const ground = Math.max(Terrain.heightAt(gx, gz), Terrain.heightAt((st.pos.x + gx) / 2, (st.pos.z + gz) / 2));
+    const ground = Math.max(Terrain.surfaceAt(gx, gz), Terrain.surfaceAt((st.pos.x + gx) / 2, (st.pos.z + gz) / 2));
     return st.pos.y - st.gearH + st.vel.y * k * 0.5 - ground;
   },
 

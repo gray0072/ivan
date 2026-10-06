@@ -159,6 +159,10 @@ const Terrain = {
     return h;
   },
 
+  // What an aeroplane can hit: the ground, or the water over the sea and lake beds (the beds
+  // are below sea level, under the water plane the renderer draws at the surface)
+  surfaceAt(x, z) { return Math.max(this.heightAt(x, z), WORLD.SEA_LEVEL); },
+
   // The far mesh sits a little under the real ground so the near mesh always wins
   farHeight(x, z) {
     const h = this.flattenAirports(x, z, this.rawAt(x, z));
