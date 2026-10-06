@@ -30,7 +30,7 @@ Starting **at the gate** and flying the whole ground routine yourself pays a bon
 ## Controls
 
 - **↑ ↓** or **W S** — pitch (↓ pulls the nose up) · **← →** or **A D** — roll, and steering on the ground · **Q E** — rudder
-- **Z X** or **− +** — throttle · **1**…**9** — 10 %…90 % · **0** — idle
+- **Z X** or **− +** — throttle · **1**…**8** — 10 %…80 % · **9** — full power · **0** — idle
 - **Enter** — the next step on the ground: push back, engine start, take-off clearance
 - **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **/** spoiler · **K** anti-ice
 - **Y** autopilot · **N** back to the programme (NAV along the route and the planned altitude, after you changed the heading or the altitude) · **, .** selected altitude · **; '** selected heading (HDG mode)

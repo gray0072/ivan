@@ -162,7 +162,7 @@ const UI = {
       keyRow('← / → · A / D', tr('roll — and steering on the ground')) +
       keyRow('Q / E', tr('rudder')) +
       keyRow('Z / X · − / +', tr('throttle down / up')) +
-      keyRow('1 … 9, 0', tr('throttle to 10 % … 90 %, idle')) +
+      keyRow('1 … 9, 0', tr('throttle to 10 % … 80 %, full power, idle')) +
       keyRow('Enter', tr('push back, start the engines, take-off clearance')) +
       keyRow('Space', tr('parking brake — release it to taxi')) +
       keyRow('G', tr('landing gear')) +

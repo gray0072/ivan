@@ -30,7 +30,7 @@ Att börja **vid gaten** och själv flyga hela markrutinen ger en bonus: +6 % av
 ## Kontroller
 
 - **↑ ↓** eller **W S** — tippning (↓ lyfter nosen) · **← →** eller **A D** — roll, och styrning på marken · **Q E** — sidroder
-- **Z X** eller **− +** — gas · **1**…**9** — 10 %…90 % · **0** — tomgång
+- **Z X** eller **− +** — gas · **1**…**8** — 10 %…80 % · **9** — full gas · **0** — tomgång
 - **Enter** — nästa steg på marken: pushback, motorstart, startklarering
 - **G** landställ · **F / V** klaffar ut / in · **B** bromsar (håll) · **Mellanslag** parkeringsbroms · **/** spoiler · **K** avisning
 - **Y** autopilot · **N** tillbaka till programmet (NAV längs rutten och planerad höjd — efter att du ändrat kurs eller höjd) · **, .** vald höjd · **; '** vald kurs (HDG-läge)

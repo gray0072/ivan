@@ -234,7 +234,7 @@ Keyboard:
 - **← / →** or **A / D** — roll (aileron)
 - **Q / E** — rudder (ground steering on the nosewheel)
 - **Z / X** — throttle down / up (also **− / +**, **PageDown / PageUp**)
-- **1 … 9** — throttle to 10 % … 90 % instantly · **0** — idle
+- **1 … 8** — throttle to 10 % … 80 % instantly · **9** — full power (the take-off) · **0** — idle
 - **Enter** — the next ground step: push back, start the engines, take-off clearance
 - **G** — landing gear (locked with weight on wheels and above Vlo) · **F** — flaps extend one notch (not above that notch's Vfe) · **V** — flaps retract · **B** — wheel brakes (hold) · **Space** — parking brake (releasing it with the engines running starts the taxi) · **/** — spoiler · **K** — engine and wing anti-ice
 - **← / →** also steer the nosewheel on the ground (the rudder keys do too)

@@ -66,7 +66,8 @@ const Input = {
       case ';': case ':': this.fire('hdgDown'); break;
       case "'": case '"': this.fire('hdgUp'); break;
       default:
-        if (/^[1-9]$/.test(k)) this.fire('throttlePreset', parseInt(k, 10) / 10);
+        // 1-8: 10-80 %, 9: full power (the take-off), 0: idle
+        if (/^[1-9]$/.test(k)) this.fire('throttlePreset', k === '9' ? 1 : parseInt(k, 10) / 10);
         else if (k === '0') this.fire('throttlePreset', 0);
     }
   },
