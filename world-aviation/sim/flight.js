@@ -274,7 +274,7 @@ const Flight = {
     if (tr.length > 2400) this.track = tr.filter((p, i) => i % 2 === 0 || i === tr.length - 1);
   },
 
-  // The fastest step allowed now: up to x64 on the autopilot in any phase; flying by hand it
+  // The fastest step allowed now: up to x128 on the autopilot in any phase; flying by hand it
   // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down or in a checklist.
   timeAccelMax() {
     if (this.st.onGround || (this.systems && this.systems.checklist)) return 1;

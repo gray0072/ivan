@@ -17,7 +17,7 @@ En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du ä
 1. **Vid gaten** trycker du **Enter** — bogserbilen trycker ut dig på plattan. Starta motorerna (**Enter**) och se N1 och EGT stiga.
 2. **Taxning**: **mellanslag** släpper parkeringsbromsen (på mobilen: **Park**); lite gas (**1**–**3**), styr med **← →**, bromsa med **B** och följ den gula pilen till väntepunkten.
 3. Vid **väntepunkten** fäller du startklaffar (**F**) och begär startklarering (**Enter**). Linjera upp, full gas (**9**), dra (**↓**) vid Vr, landställ upp (**G**).
-4. **Autopiloten** (**Y**): i NAV-läge flyger den rutten, ansluter till slutlig inflygning och följer ILS-glidbanan ner till 200 fot (60 m). **T** snabbar upp tiden, **R** saktar ner den: med autopiloten upp till ×64, när du flyger för hand ×2 över 1 000 fot, ×4 över 3 000, ×8 över 6 000, ×16 över 8 000, ×32 över 9 000 och ×64 över 10 000 fot.
+4. **Autopiloten** (**Y**): i NAV-läge flyger den rutten, ansluter till slutlig inflygning och följer ILS-glidbanan ner till 200 fot (60 m). **T** snabbar upp tiden, **R** saktar ner den: med autopiloten upp till ×128, när du flyger för hand ×2 över 1 000 fot, ×4 över 3 000, ×8 över 6 000, ×16 över 8 000, ×32 över 9 000 och ×64 över 10 000 fot.
 5. **Inflygning**: klaffar och landställ ute, landa för hand från 200 fot (60 m) i Vref, bromsa och sakta ner under 35 knop (65 km/h).
 6. **Taxa in** efter pilen, stanna i parkeringsrutan vid din gate och dra åt parkeringsbromsen (**Mellanslag**). Motorerna stängs av och genomgången visar betyget och fakturan.
 
@@ -59,7 +59,7 @@ Väljs på startskärmen och i paus- och genomgångsdialogerna, och sparas mella
 Pengarna är svenska kronor. Varje uppdrag betalar för sträckan och lasten, plus bonusar för landningsbetyget, punktlighet och hanterade nödsituationer, minus leasingen av planet (per flygtimme), det förbrukade bränslet, reparationer och avdrag.
 
 - **Nätverk** — världen öppnas en region i taget: **Sverige** (där du börjar), **Skandinavien och Nordatlanten** (Norges fjordar, Finland, Danmark, Island, Grönland, Svalbard), **Europa**, **Mellanöstern och Afrika**, **Amerika** och **Asien och Stilla havet** — 114 riktiga flygplatser. Trafikrättigheterna till varje region kräver anseende och flygningar och kostar pengar. Från Arlanda visar tavlan de öppna regionerna; borta visar den flygningen hem och vidare sträckor, så att andra sidan jorden nås i etapper på upp till 4 500 nm (8 300 km).
-- **Långdistans** — med autopiloten går tidsaccelerationen upp till ×64; Stockholm–New York tar ungefär tio minuter i verklig tid.
+- **Långdistans** — med autopiloten går tidsaccelerationen upp till ×128 över en värld i verklig storlek; Stockholm–New York tar ungefär tio minuter i verklig tid.
 - **Hangar** — tio flygplan, från 19-sitsiga turbopropen Vikna 19 och bushplanet Frostwing till **Boeing 737-800**, **Airbus A320neo**, **Airbus A350-900** och den fyrmotoriga fraktaren **Boeing 747-8F**, alla med egen vikt, egna farter, egen räckvidd, egna krav på banan och egen 3D-modell.
 - **Utbildning** — 16 kurser i fyra grenar (Allmänt, Passagerare, Frakt, Bush & SAR). Varje kurs slutar med ett kort prov (3 av 4 rätt) och låser upp flygplan, uppdragstyper eller verkliga fördelar: tips i checklistorna, mer tid vid nödsituationer, långsammare isbildning.
 - Fliken **Hangar** visar hur många typer du får flyga; en guldprick på **Utbildning** eller **Nätverk** betyder att en kurs eller trafikrättigheter väntar på dig just nu.

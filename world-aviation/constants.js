@@ -25,7 +25,7 @@ const CURRENCY = { code: 'SEK', symbol: 'kr', name: 'Swedish krona', locale: 'sv
 
 // ---------- World geometry ----------
 const WORLD = {
-  SCALE: 0.45,                 // horizontal compression: game metres per real metre
+  SCALE: 1,                    // game metres per real metre: the world at its real size
   SEA_LEVEL: 0,
   // every flight builds the terrain of its own part of the world (see Theatre in utils.js)
   MARGIN_KM: 500,              // real km of world around the route
@@ -41,16 +41,16 @@ const SIM = {
   MAX_FRAME_DT: 0.25,          // never simulate more than this per frame
   GRAVITY: 9.80665,
   RHO_SL: 1.225,               // sea level air density, kg/m^3
-  TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64],   // T one step faster, R one step slower
-  TIME_ACCEL_CHEAT: 128,       // the Alt+6 cheat
+  TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64, 128],   // T one step faster, R one step slower
+  TIME_ACCEL_CHEAT: 256,       // the Alt+6 cheat
   TIME_ACCEL_MIN_ALT_M: 150,   // time acceleration only above this height AGL
-  TIME_ACCEL_AP_MAX: 64,       // with the autopilot engaged: up to x64 in any phase
+  TIME_ACCEL_AP_MAX: 128,      // with the autopilot engaged: up to x128 in any phase
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
     { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],
   TAKEOFF_NO_CLEARANCE_KT: 50, // rolling faster than this before the clearance counts as a take-off without one
   NO_CLEARANCE_FINE: 0.05,     // ... and costs this share of the contract pay
-  MAX_STEPS_PER_FRAME: 160,    // physics steps per rendered frame at most
+  MAX_STEPS_PER_FRAME: 300,    // physics steps per rendered frame at most (x128 at 25 fps)
   CRUISE_ALT_MIN: 2500,
   CRUISE_ALT_MAX: 11300,
   FUEL_BURN_TAXI_PER_ENGINE: 22,  // kg/h per engine while taxiing
@@ -165,8 +165,8 @@ const AIRCRAFT = [
       { notch: 5, cl: 0.88, cd: 0.130, vfe: 104 }
     ],
     gearCd: 0.016, rollRate: 1.0, pitchRate: 1.0, yawRate: 1.0,
-    takeoffDist: 720, crosswindLimit: 22, maxRangeNm: 700, surfaces: ['asphalt', 'grass'],
-    rent: 2400, price: 0, bonus: 1.0, unlock: null,
+    takeoffDist: 720, crosswindLimit: 22, maxRangeNm: 650, surfaces: ['asphalt', 'grass'],
+    rent: 1100, price: 0, bonus: 1.0, unlock: null,
     dims: { len: 17.6, span: 17.7, fus: 1.95 },
     look: { wing: 'low', engines: 'prop2', tail: 't', base: '#f3f5f7', color: '#1f5fa0' },
     propRpmIdle: 0.62, propRpmCruise: 0.88
@@ -189,7 +189,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.020, rollRate: 1.05, pitchRate: 0.85, yawRate: 1.1,
     takeoffDist: 1150, crosswindLimit: 28, maxRangeNm: 1600, surfaces: ['asphalt'],
-    rent: 7200, price: 0, bonus: 1.15, unlock: 'pax1',
+    rent: 3200, price: 0, bonus: 1.15, unlock: 'pax1',
     dims: { len: 29.0, span: 26.3, fus: 2.7 },
     look: { wing: 'low', engines: 'rear2', tail: 't', base: '#f3f5f7', color: '#0f7a6a', sweep: 26 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -212,7 +212,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.018, rollRate: 0.9, pitchRate: 0.9, yawRate: 0.95,
     takeoffDist: 1050, crosswindLimit: 18, maxRangeNm: 1000, surfaces: ['asphalt', 'grass'],
-    rent: 4600, price: 0, bonus: 1.2, unlock: 'cargo2',
+    rent: 2100, price: 0, bonus: 1.2, unlock: 'cargo2',
     dims: { len: 23.6, span: 29.0, fus: 2.7 },
     look: { wing: 'high', engines: 'prop2', tail: 'low', base: '#e6e9ec', color: '#d9921f', freighter: true },
     propRpmIdle: 0.58, propRpmCruise: 0.85
@@ -234,8 +234,8 @@ const AIRCRAFT = [
       { notch: 5, cl: 0.84, cd: 0.120, vfe: 88 }
     ],
     gearCd: 0.014, rollRate: 1.15, pitchRate: 1.15, yawRate: 1.2,
-    takeoffDist: 380, crosswindLimit: 16, maxRangeNm: 750, surfaces: ['asphalt', 'grass', 'ice'],
-    rent: 1900, price: 0, bonus: 1.35, unlock: 'bush1',
+    takeoffDist: 380, crosswindLimit: 16, maxRangeNm: 500, surfaces: ['asphalt', 'grass', 'ice'],
+    rent: 900, price: 0, bonus: 1.35, unlock: 'bush1',
     dims: { len: 15.8, span: 19.8, fus: 1.75 },
     look: { wing: 'high', engines: 'prop2', tail: 'low', base: '#f4f1e8', color: '#d64534', fixedGear: true },
     propRpmIdle: 0.6, propRpmCruise: 0.9
@@ -247,7 +247,7 @@ const AIRCRAFT = [
     engines: 2, engineType: 'jet', thrust: 215000,
     wingArea: 123, clMaxClean: 1.4, clMaxFlap: 2.05, cd0: 0.024, kInd: 0.04,
     cruiseAlt: 11300, cruiseTas: 448, climbRate: 12,
-    fuelCapKg: 12000, fuelFlowCruise: 1050, fuelFlowIdle: 105,
+    fuelCapKg: 19000, fuelFlowCruise: 1050, fuelFlowIdle: 105,
     vne: 480, vr: 155, vsRatio: 1.22, vrefAdd: 6, vlo: 250,
     flaps: [
       { notch: 1, cl: 0.12, cd: 0.006, vfe: 230 },
@@ -257,8 +257,8 @@ const AIRCRAFT = [
       { notch: 5, cl: 0.84, cd: 0.120, vfe: 175 }
     ],
     gearCd: 0.022, rollRate: 0.85, pitchRate: 0.65, yawRate: 0.85,
-    takeoffDist: 1900, crosswindLimit: 32, maxRangeNm: 3000, surfaces: ['asphalt'],
-    rent: 21000, price: 0, bonus: 1.25, unlock: 'pax4',
+    takeoffDist: 1900, crosswindLimit: 32, maxRangeNm: 2600, surfaces: ['asphalt'],
+    rent: 9400, price: 0, bonus: 1.25, unlock: 'pax4',
     dims: { len: 37.6, span: 35.8, fus: 3.95 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#3b4fa8', sweep: 25 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -270,7 +270,7 @@ const AIRCRAFT = [
     engines: 2, engineType: 'jet', thrust: 540000,
     wingArea: 288, clMaxClean: 1.35, clMaxFlap: 2.0, cd0: 0.022, kInd: 0.038,
     cruiseAlt: 11300, cruiseTas: 466, climbRate: 9,
-    fuelCapKg: 26000, fuelFlowCruise: 2400, fuelFlowIdle: 190,
+    fuelCapKg: 73000, fuelFlowCruise: 2400, fuelFlowIdle: 190,
     vne: 490, vr: 160, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
     flaps: [
       { notch: 1, cl: 0.10, cd: 0.005, vfe: 260 },
@@ -280,8 +280,8 @@ const AIRCRAFT = [
       { notch: 5, cl: 0.80, cd: 0.115, vfe: 200 }
     ],
     gearCd: 0.024, rollRate: 0.75, pitchRate: 0.55, yawRate: 0.7,
-    takeoffDist: 2400, crosswindLimit: 30, maxRangeNm: 4900, surfaces: ['asphalt'],
-    rent: 38000, price: 0, bonus: 1.3, unlock: 'cargo4',
+    takeoffDist: 2400, crosswindLimit: 30, maxRangeNm: 4000, surfaces: ['asphalt'],
+    rent: 17100, price: 0, bonus: 1.3, unlock: 'cargo4',
     dims: { len: 63.7, span: 64.8, fus: 6.2 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 31, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -304,8 +304,8 @@ const AIRCRAFT = [
       { notch: 5, cl: 0.80, cd: 0.120, vfe: 175 }
     ],
     gearCd: 0.022, rollRate: 0.85, pitchRate: 0.65, yawRate: 0.85,
-    takeoffDist: 2000, crosswindLimit: 33, maxRangeNm: 2900, surfaces: ['asphalt'],
-    rent: 22000, price: 0, bonus: 1.25, unlock: 'pax2',
+    takeoffDist: 2000, crosswindLimit: 33, maxRangeNm: 2450, surfaces: ['asphalt'],
+    rent: 9900, price: 0, bonus: 1.25, unlock: 'pax2',
     dims: { len: 39.5, span: 35.8, fus: 3.76 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#b3282d', sweep: 25, winglets: true, flatNacelles: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -327,8 +327,8 @@ const AIRCRAFT = [
       { notch: 5, cl: 0.84, cd: 0.120, vfe: 177 }
     ],
     gearCd: 0.022, rollRate: 0.85, pitchRate: 0.65, yawRate: 0.85,
-    takeoffDist: 1950, crosswindLimit: 33, maxRangeNm: 3400, surfaces: ['asphalt'],
-    rent: 23000, price: 0, bonus: 1.25, unlock: 'pax3',
+    takeoffDist: 1950, crosswindLimit: 33, maxRangeNm: 2550, surfaces: ['asphalt'],
+    rent: 10400, price: 0, bonus: 1.25, unlock: 'pax3',
     dims: { len: 37.6, span: 35.8, fus: 3.95 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#14325c', sweep: 25, winglets: true, bigFans: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -351,7 +351,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.024, rollRate: 0.7, pitchRate: 0.5, yawRate: 0.65,
     takeoffDist: 2600, crosswindLimit: 35, maxRangeNm: 8000, surfaces: ['asphalt'],
-    rent: 52000, price: 0, bonus: 1.35, unlock: 'pax4',
+    rent: 23400, price: 0, bonus: 1.35, unlock: 'pax4',
     dims: { len: 66.8, span: 64.8, fus: 5.96 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#1d6b5a', sweep: 31, winglets: true, bigFans: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -374,7 +374,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.026, rollRate: 0.6, pitchRate: 0.45, yawRate: 0.6,
     takeoffDist: 3100, crosswindLimit: 30, maxRangeNm: 4400, surfaces: ['asphalt'],
-    rent: 75000, price: 0, bonus: 1.4, unlock: 'cargo4',
+    rent: 33800, price: 0, bonus: 1.4, unlock: 'cargo4',
     dims: { len: 76.3, span: 68.4, fus: 6.5 },
     look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 37, hump: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -491,14 +491,14 @@ const CONTRACTS = {
   APPROACH_ALLOWANCE_S: 300,     // the approach, flown at 1x, real seconds
   CRUISE_ACCEL_EXPECTED: 6,      // the time acceleration the schedule assumes en route (short legs)
   CRUISE_ACCEL_PER_NM: 1 / 30,   // ... and more on long legs (per game nm), up to
-  CRUISE_ACCEL_MAX: 40,
+  CRUISE_ACCEL_MAX: 90,
   MAX_NM: 4500,                  // the longest contract, real nm (further: fly there in legs)
   TIME_ALLOWANCE_FACTOR: 1.3,    // deadline slack on top of the block time
   FUEL_RESERVE_FACTOR: 1.45,     // block fuel = trip fuel x this + taxi fuel
   FUEL_TAXI_KG_PER_ENGINE: 25,
   REP_PER_FLIGHT: 1.2,
   REP_PERFECT_LANDING: 1.0,
-  FUEL_RATE: 9.5,                // SEK per kg of block fuel
+  FUEL_RATE: 4.3,                // SEK per kg of fuel burnt
   START_MONEY: 48000,
   START_DEBT_LIMIT: -50000,
   GRADE_MULT: { 'A+': 1.35, A: 1.22, B: 1.08, C: 0.95, D: 0.75, E: 0.55, F: 0.4 }

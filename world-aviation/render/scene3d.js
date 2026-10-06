@@ -243,6 +243,7 @@ const Scene3D = {
       geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array((n + 1) * (n + 1) * 3), 3));
       this.nearCol = geo.attributes.color.array;
       this.nearN = n;
+      this.nearOx = this.nearOz = null;    // a new mesh: its origin is set by the next build
       this.nearHs = new Float32Array((n + 1) * (n + 1));
       this.nearBuild = null;
     }
@@ -275,11 +276,21 @@ const Scene3D = {
     }
     const bld = this.nearBuild;
     if (!bld) return;
+    // The mesh's vertices are kept relative to a local origin (moved every 100 km), so they keep
+    // their precision on the GPU however far from the middle of the world the flight goes. When
+    // the origin moves, the whole mesh is rebuilt at once, so no row is drawn from the old one.
+    const ox = Math.round(bld.cx / 100000) * 100000, oz = Math.round(bld.cz / 100000) * 100000;
+    if (ox !== this.nearOx || oz !== this.nearOz) {
+      this.nearOx = ox; this.nearOz = oz;
+      this.nearMesh.position.set(ox, 0, oz);
+      bld.row = 0;
+      bld.full = true;
+    }
     const w = bld.rows, cell = bld.cell;
     const x0 = bld.cx - bld.half, z0 = bld.cz - bld.half;
     const hs = this.nearHs, pos = this.nearPos, nor = this.nearNor, col = this.nearCol;
     const taper = { cx: bld.cx, cz: bld.cz, half: bld.half };   // fade into the far mesh at the edge
-    const budget = Math.ceil(w / 4);
+    const budget = bld.full ? w : Math.ceil(w / 4);
     const c = [0, 0, 0];
     let done = 0;
     while (bld.row < w && done < budget) {
@@ -289,11 +300,12 @@ const Scene3D = {
       done++;
     }
     // write the rows that are ready, plus their neighbours for the normals
-    const jStart = Math.max(0, bld.row - budget - 1), jEnd = Math.min(w - 1, bld.row);
+    const jStart = bld.full ? 0 : Math.max(0, bld.row - budget - 1), jEnd = Math.min(w - 1, bld.row);
+    bld.full = false;
     for (let j = jStart; j <= jEnd; j++) {
       for (let i = 0; i < w; i++) {
         const k = j * w + i;
-        pos[k * 3] = x0 + i * cell; pos[k * 3 + 1] = hs[k]; pos[k * 3 + 2] = z0 + j * cell;
+        pos[k * 3] = x0 + i * cell - ox; pos[k * 3 + 1] = hs[k]; pos[k * 3 + 2] = z0 + j * cell - oz;
         const hl = hs[j * w + Math.max(0, i - 1)], hr = hs[j * w + Math.min(w - 1, i + 1)];
         const hd = hs[Math.max(0, j - 1) * w + i], hu = hs[Math.min(w - 1, j + 1) * w + i];
         const nx = hl - hr, ny = 2 * cell, nz = hd - hu;

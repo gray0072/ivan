@@ -9,7 +9,7 @@
 // ============================================================
 
 // ---------- Airports ----------
-// lat/lon are real; each flight's world is a compressed projection around the route (WORLD.SCALE).
+// lat/lon are real; each flight's world is a projection around the route (WORLD.SCALE).
 // RWY is the designator of the runway in use (its heading / 10, so 1 = 010°, 19 = 190°) and LEN
 // its length in metres; departures and arrivals both use this direction. REGION: see REGIONS.
 const AIRPORTS = [

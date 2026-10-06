@@ -414,7 +414,7 @@ const HUD = {
       g.fillText(tr('{d} to {id}', { d: Units.dist(fl.distToDestNm()), id: to.id }), w - 8, h - 8);
       return;
     }
-    // scale bar, in real nautical miles (the world is drawn compressed by WORLD.SCALE)
+    // scale bar, in real nautical miles (world metres are WORLD.SCALE real metres)
     const pxPerUnit = sc * WORLD.SCALE * (Units.metric ? 1000 : NM);     // real km or nm
     const len = [10, 25, 50, 100, 250, 500, 1000, 2000].find((v) => v * pxPerUnit > 60) || 2000;
     g.strokeStyle = '#8d99a6'; g.lineWidth = 2;

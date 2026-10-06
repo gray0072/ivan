@@ -305,7 +305,7 @@ const Career = {
     if (payloadKg > usable) payloadKg = Math.round(usable);
 
     const pt = PAYLOAD[type];
-    // the world is compressed: what you actually fly is WORLD.SCALE of the real distance
+    // what you actually fly (WORLD.SCALE of the real distance; 1 = the world at its real size)
     const gameNm = distNm * WORLD.SCALE;
     const airSec = gameNm / (ac.cruiseTas * 0.85) * 3600 + 240;                 // simulated seconds airborne
     const accel = clamp(gameNm * CONTRACTS.CRUISE_ACCEL_PER_NM, CONTRACTS.CRUISE_ACCEL_EXPECTED, CONTRACTS.CRUISE_ACCEL_MAX);
