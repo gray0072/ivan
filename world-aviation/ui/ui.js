@@ -163,7 +163,8 @@ const UI = {
       keyRow('Q / E', tr('rudder')) +
       keyRow('Z / X · − / +', tr('throttle down / up')) +
       keyRow('1 … 9, 0', tr('throttle to 10 % … 90 %, idle')) +
-      keyRow('Enter', tr('push back, start the engines, taxi, take-off clearance')) +
+      keyRow('Enter', tr('push back, start the engines, take-off clearance')) +
+      keyRow('Space', tr('parking brake — release it to taxi')) +
       keyRow('G', tr('landing gear')) +
       keyRow('F / V', tr('flaps down / up')) +
       keyRow('B', tr('wheel brakes (hold)')) +
@@ -187,7 +188,7 @@ const UI = {
       '<li>' + tr('Both thumbs work at once, so you can fly and work a checklist together.') + '</li>' +
       '</ul>' +
       '<h3>' + tr('How a flight goes') + '</h3><ul>' +
-      '<li>' + tr('At the gate press Enter for the push back, start the engines, release the brake and taxi along the arrow to the holding point.') + '</li>' +
+      '<li>' + tr('At the gate press Enter for the push back and to start the engines, release the parking brake with Space and taxi along the arrow to the holding point.') + '</li>' +
       '<li>' + tr('Set take-off flaps, ask for the clearance, line up, full power, rotate at Vr, gear up.') + '</li>' +
       '<li>' + tr('Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×64 on the autopilot.') + '</li>' +
       '<li>' + tr('When a warning sounds, a checklist opens: do the lit step with the control shown next to it — Enter (Go) for its switches, the real controls (0, K, G, /, Y…) for the rest. The clock is running.') + '</li>' +

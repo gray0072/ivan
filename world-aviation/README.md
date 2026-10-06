@@ -15,7 +15,7 @@ Open [index.html](index.html) in a browser — no build step, no server required
 ## A flight
 
 1. **At the gate** press **Enter** — the tug pushes you back onto the apron. Start the engines (**Enter**) and watch N1 and EGT come up.
-2. **Taxi**: **Enter** releases the parking brake; a little power (**1**–**3**), steer with **← →**, brake with **B**, and follow the yellow arrow to the holding point.
+2. **Taxi**: **Space** releases the parking brake (on a phone: **Park**); a little power (**1**–**3**), steer with **← →**, brake with **B**, and follow the yellow arrow to the holding point.
 3. At the **holding point** set the take-off flaps (**F**) and ask for the clearance (**Enter**). Line up, full power (**9**), pull back (**↓**) at Vr, gear up (**G**).
 4. **Autopilot** (**Y**): in NAV mode it flies the route, joins the final approach and follows the ILS glideslope down to 200 ft (60 m). **T** speeds up time, **R** slows it down: with the autopilot on up to ×64, flying by hand ×2 above 1 000 ft, ×4 above 3 000, ×8 above 6 000, ×16 above 8 000, ×32 above 9 000 and ×64 above 10 000 ft.
 5. **Approach**: flaps and gear down, land by hand from 200 ft (60 m) at Vref, brake, and slow below 35 kt (65 km/h).
@@ -27,12 +27,12 @@ Starting **at the gate** and flying the whole ground routine yourself pays a bon
 
 - **↑ ↓** or **W S** — pitch (↓ pulls the nose up) · **← →** or **A D** — roll, and steering on the ground · **Q E** — rudder
 - **Z X** or **− +** — throttle · **1**…**9** — 10 %…90 % · **0** — idle
-- **Enter** — the next step on the ground: push back, start, taxi, take-off clearance
+- **Enter** — the next step on the ground: push back, engine start, take-off clearance
 - **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **/** spoiler · **K** anti-ice
 - **Y** autopilot · **N** back to the programme (NAV along the route and the planned altitude, after you changed the heading or the altitude) · **, .** selected altitude · **; '** selected heading (HDG mode)
 - **T / R** time faster / slower · **C / Shift+C** next / previous view: cockpit, chase, front looking back, wing, tail fin, landing gear, top down, tower / fly-by · **M** moving map (on a big screen: mini map, big map, off) · **I** instrument lights · **H** controls card · **Esc** pause
 
-**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground (the nosewheel and the control surfaces are hydraulic: they follow your thumb smoothly, not at once). The **slider on the right edge** is the throttle — its lower half gives fine control of low power for taxiing. The hint text sits on the left; tap it to fold it to one line. The buttons at the top right are **Go** (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, **Time +** / **Time −**, view, map (tap anywhere on the map to close it), spoiler, NAV (back to the programme), anti-ice (Ice) and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
+**On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground (the nosewheel and the control surfaces are hydraulic: they follow your thumb smoothly, not at once). The **slider on the right edge** is the throttle — its lower half gives fine control of low power for taxiing. The hint text sits on the left; tap it to fold it to one line. The buttons at the top right are **Go** (push back, start, take-off clearance), gear, flaps, brakes, parking brake (**Park** — release it to taxi), autopilot, **Time +** / **Time −**, view, map (tap anywhere on the map to close it), spoiler, NAV (back to the programme), anti-ice (Ice) and the menu. Both thumbs work at the same time, so you can fly and work a checklist together.
 
 The controls work in any keyboard layout (the keys are read by their place on the keyboard).
 

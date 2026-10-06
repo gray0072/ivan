@@ -401,8 +401,14 @@ const Game = {
         tr(sys.started ? 'engines starting' : 'you can start the engines now — <kbd>Enter</kbd>'));
     } else if (p === 'ENGINE_START') {
       const all = sys.runningCount() === fl.ac.engines;
+      // the engines running and the parking brake off (Space / Park): off you go
+      if (all && !st.parkingBrake) {
+        fl.setPhase('TAXI_OUT');
+        fl.info(tr('Taxi to holding point runway {rwy} — follow the arrow', { rwy: apt.rwyName }));
+        return;
+      }
       HUD.setPrompt(tr(all
-        ? '<b>Engines running</b><br>press <kbd>Enter</kbd> to release the parking brake and taxi'
+        ? '<b>Engines running</b><br>release the parking brake <kbd>Space</kbd> and taxi'
         : sys.started ? '<b>Starting</b> · watch the N1 and EGT gauges' : '<b>Start the engines</b><br>press <kbd>Enter</kbd>'));
     } else if (p === 'TAXI_OUT') {
       const g = fl.guidance;
@@ -428,7 +434,7 @@ const Game = {
       if (!st.onGround && fl.altAgl() > 150) {
         fl.setPhase('CLIMB');
         fl.ap.alt = this.cruiseAltFt();
-        fl.info(tr('Climb to {alt} ft — engage the autopilot with Y', { alt: fmtAltFt(fl.ap.alt) }));
+        fl.info(tr('Climb to {alt} ft — engage the autopilot <kbd>Y</kbd>', { alt: fmtAltFt(fl.ap.alt) }));
       }
     } else if (p === 'CLIMB') {
       HUD.setPrompt(tr('<b>Climb</b> to {alt} ft', { alt: fmtAltFt(fl.ap.alt) }) +
@@ -436,7 +442,7 @@ const Game = {
         (!fl.ap.on ? ' · ' + tr('autopilot <kbd>Y</kbd>') : ''));
       if (Math.abs(st.pos.y / FT - fl.ap.alt) < 300) {
         fl.setPhase('CRUISE');
-        fl.info(tr('Cruise · time acceleration: T faster, R slower'));
+        fl.info(tr('Cruise · time acceleration: <kbd>T</kbd> faster, <kbd>R</kbd> slower'));
       }
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'CRUISE') {
@@ -655,7 +661,7 @@ const Game = {
       case 'hdgUp': case 'hdgDown':
         if (fl.ap.nav) { fl.ap.nav = false; fl.ap.hdg = Math.round(fl.headingDeg()); }
         fl.ap.hdg = (fl.ap.hdg + (name === 'hdgUp' ? 5 : 355)) % 360;
-        fl.info(tr('Heading {h}° (HDG mode — N, or NAV on the touch screen, goes back to the programme)', { h: String(fl.ap.hdg).padStart(3, '0') }));
+        fl.info(tr('Heading {h}° (HDG mode — <kbd>N</kbd> goes back to the programme)', { h: String(fl.ap.hdg).padStart(3, '0') }));
         break;
       case 'nav':
         // back on the programme: NAV along the route and the altitude for this phase of the flight
@@ -695,9 +701,7 @@ const Game = {
     } else if (p === 'PUSHBACK' || (p === 'ENGINE_START' && sys.runningCount() < fl.ac.engines)) {
       if (!sys.started) sys.startEngines();
     } else if (p === 'ENGINE_START') {
-      st.parkingBrake = false;
-      fl.setPhase('TAXI_OUT');
-      fl.info(tr('Taxi to holding point runway {rwy} — follow the arrow', { rwy: fl.world.rwyName }));
+      fl.warn('BRAKE', tr('Release the parking brake to taxi — <kbd>Space</kbd>'));
     } else if (p === 'HOLD_SHORT') {
       const w = fl.env.surfaceWind;
       st.parkingBrake = false;

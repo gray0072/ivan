@@ -84,6 +84,8 @@ kbd {
 }
 #messages .msg.warn { color: #ffb8a4; border: 1px solid rgba(255, 122, 92, 0.35); }
 #messages .msg.info { color: #a9c6dd; }
+#messages kbd { font: 700 11px ui-monospace, monospace; padding: 0 4px; border-radius: 4px; border: 1px solid #4a5868; background: #0f151c; color: #cfe0ef; }
+#messages b { color: #ffd97a; }
 
 #prompt {
   max-width: 100%;

@@ -66,7 +66,7 @@ const HUD = {
     if (key !== this.msgKey) {
       this.msgKey = key;
       this.msgBox.innerHTML = this.messages.map((m) =>
-        '<div class="msg ' + (m.kind === 'info' ? 'info' : 'warn') + '">' + esc(Units.text(m.text)) + '</div>').join('');
+        '<div class="msg ' + (m.kind === 'info' ? 'info' : 'warn') + '">' + keysHtml(Units.text(m.text)) + '</div>').join('');
     }
     // fade the old ones out
     const nodes = this.msgBox.children;
@@ -418,10 +418,17 @@ function esc(s) {
 const TOUCH_KEYS = [
   ['<kbd>Enter</kbd>', 'Go', 1], ['<kbd>Space</kbd>', 'Park', 1], ['<kbd>G</kbd>', 'Gear', 1],
   ['<kbd>F</kbd>', 'Flap +', 1], ['<kbd>V</kbd>', 'Flap −', 1], ['<kbd>B</kbd>', 'Brake', 1],
-  ['<kbd>Y</kbd>', 'AP', 1], ['<kbd>T</kbd>', 'Time +', 1], ['<kbd>R</kbd>', 'Time −', 1], ['<kbd>9</kbd>', 'throttle slider up'],
+  ['<kbd>Y</kbd>', 'AP', 1], ['<kbd>N</kbd>', 'NAV', 1], ['<kbd>K</kbd>', 'Ice', 1], ['<kbd>M</kbd>', 'Map', 1], ['<kbd>C</kbd>', 'View', 1],
+  ['<kbd>T</kbd>', 'Time +', 1], ['<kbd>R</kbd>', 'Time −', 1], ['<kbd>9</kbd>', 'throttle slider up'],
   ['<kbd>0</kbd>', 'throttle slider down'], ['<kbd>1</kbd>–<kbd>3</kbd>', 'a little throttle'],
   ['<kbd>←</kbd><kbd>→</kbd>', 'the stick'], ['<kbd>↓</kbd>', 'stick down'], ['<kbd>/</kbd>', 'Spoiler', 1]
 ];
+// a message is plain text with the keys in <kbd>: escaped, the keys kept (on a touch screen
+// swapped for the button names)
+function keysHtml(text) {
+  const html = esc(text).replace(/&lt;kbd&gt;(.*?)&lt;\/kbd&gt;/g, '<kbd>$1</kbd>');
+  return Input.isCoarse ? touchPrompt(html) : html;
+}
 function touchPrompt(html) {
   for (const [k, t, btn] of TOUCH_KEYS) html = html.split(k).join(btn ? '<b>' + tr(t) + '</b>' : tr(t));
   return html.replace(/<kbd>[^<]*<\/kbd>/g, '');

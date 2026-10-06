@@ -320,8 +320,8 @@ const Flight = {
     const max = this.timeAccelMax();
     const next = SIM.TIME_ACCEL_MANUAL.find((t) => t.max > max);
     return next
-      ? tr('By hand: time x{n} above {ft} ft AGL — the autopilot (Y) allows up to x{ap}', { n: next.max, ft: next.aglFt, ap: SIM.TIME_ACCEL_AP_MAX })
-      : tr('By hand time x{n} is the most — the autopilot (Y) allows up to x{ap}', { n: max, ap: SIM.TIME_ACCEL_AP_MAX });
+      ? tr('By hand: time x{n} above {ft} ft AGL — the autopilot <kbd>Y</kbd> allows up to x{ap}', { n: next.max, ft: next.aglFt, ap: SIM.TIME_ACCEL_AP_MAX })
+      : tr('By hand time x{n} is the most — the autopilot <kbd>Y</kbd> allows up to x{ap}', { n: max, ap: SIM.TIME_ACCEL_AP_MAX });
   },
 
   // body axes from the Euler angles
@@ -509,7 +509,7 @@ const Flight = {
       this.warn('FLAPSPEED', tr('Flap overspeed — retract the flaps or slow down'));
       st.damage = Math.min(1, st.damage + dt * 0.004);
     }
-    if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', tr('Gear overspeed — gear up (G)'));
+    if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', tr('Gear overspeed — gear up <kbd>G</kbd>'));
   },
 
   // the limit speed of the flaps that are out right now (flaps up: no limit)

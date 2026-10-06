@@ -15,7 +15,7 @@ En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du ä
 ## En flygning
 
 1. **Vid gaten** trycker du **Enter** — bogserbilen trycker ut dig på plattan. Starta motorerna (**Enter**) och se N1 och EGT stiga.
-2. **Taxning**: **Enter** släpper parkeringsbromsen; lite gas (**1**–**3**), styr med **← →**, bromsa med **B** och följ den gula pilen till väntepunkten.
+2. **Taxning**: **mellanslag** släpper parkeringsbromsen (på mobilen: **Park**); lite gas (**1**–**3**), styr med **← →**, bromsa med **B** och följ den gula pilen till väntepunkten.
 3. Vid **väntepunkten** fäller du startklaffar (**F**) och begär startklarering (**Enter**). Linjera upp, full gas (**9**), dra (**↓**) vid Vr, landställ upp (**G**).
 4. **Autopiloten** (**Y**): i NAV-läge flyger den rutten, ansluter till slutlig inflygning och följer ILS-glidbanan ner till 200 fot (60 m). **T** snabbar upp tiden, **R** saktar ner den: med autopiloten upp till ×64, när du flyger för hand ×2 över 1 000 fot, ×4 över 3 000, ×8 över 6 000, ×16 över 8 000, ×32 över 9 000 och ×64 över 10 000 fot.
 5. **Inflygning**: klaffar och landställ ute, landa för hand från 200 fot (60 m) i Vref, bromsa och sakta ner under 35 knop (65 km/h).
@@ -27,12 +27,12 @@ Att börja **vid gaten** och själv flyga hela markrutinen ger en bonus: +6 % av
 
 - **↑ ↓** eller **W S** — tippning (↓ lyfter nosen) · **← →** eller **A D** — roll, och styrning på marken · **Q E** — sidroder
 - **Z X** eller **− +** — gas · **1**…**9** — 10 %…90 % · **0** — tomgång
-- **Enter** — nästa steg på marken: pushback, start, taxning, startklarering
+- **Enter** — nästa steg på marken: pushback, motorstart, startklarering
 - **G** landställ · **F / V** klaffar ut / in · **B** bromsar (håll) · **Mellanslag** parkeringsbroms · **/** spoiler · **K** avisning
 - **Y** autopilot · **N** tillbaka till programmet (NAV längs rutten och planerad höjd — efter att du ändrat kurs eller höjd) · **, .** vald höjd · **; '** vald kurs (HDG-läge)
 - **T / R** tiden snabbare / långsammare · **C / Shift+C** nästa / föregående vy: cockpit, bakifrån, framifrån bakåt, vinge, fena, landställ, ovanifrån, torn / förbiflygning · **M** karta (på en stor skärm: minikarta, stor karta, ingen karta) · **I** instrumentbelysning · **H** kontrollkort · **Esc** paus
 
-**På mobil eller surfplatta** går spelet till helskärm när du startar (där webbläsaren tillåter det). **Vänstra halvan** av skärmen är en flytande joystick — den dyker upp där tummen landar: dra nedåt för att lyfta nosen, åt sidorna för att rolla och för att styra på marken (noshjulet och rodren är hydrauliska: de följer tummen mjukt, inte på en gång). **Reglaget vid högra kanten** är gasen — dess nedre halva ger fin kontroll över låg dragkraft vid taxning. Tipstexten sitter till vänster; tryck på den för att fälla ihop den till en rad. Knapparna uppe till höger är **Go** (pushback, start, taxning, klarering), landställ, klaffar, bromsar, parkeringsbroms, autopilot, **Time +** / **Time −**, vy, karta (tryck var som helst på kartan för att stänga den), spoiler, NAV (tillbaka till programmet), avisning (Ice) och menyn. Båda tummarna fungerar samtidigt, så du kan flyga och arbeta en checklista på en gång.
+**På mobil eller surfplatta** går spelet till helskärm när du startar (där webbläsaren tillåter det). **Vänstra halvan** av skärmen är en flytande joystick — den dyker upp där tummen landar: dra nedåt för att lyfta nosen, åt sidorna för att rolla och för att styra på marken (noshjulet och rodren är hydrauliska: de följer tummen mjukt, inte på en gång). **Reglaget vid högra kanten** är gasen — dess nedre halva ger fin kontroll över låg dragkraft vid taxning. Tipstexten sitter till vänster; tryck på den för att fälla ihop den till en rad. Knapparna uppe till höger är **Go** (pushback, start, startklarering), landställ, klaffar, bromsar, parkeringsbroms (**Park** — släpp den för att taxa), autopilot, **Time +** / **Time −**, vy, karta (tryck var som helst på kartan för att stänga den), spoiler, NAV (tillbaka till programmet), avisning (Ice) och menyn. Båda tummarna fungerar samtidigt, så du kan flyga och arbeta en checklista på en gång.
 
 Kontrollerna fungerar med alla tangentbordslayouter (tangenterna läses efter sin plats, inte efter bokstaven).
 
