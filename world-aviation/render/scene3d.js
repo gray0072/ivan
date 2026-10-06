@@ -4,13 +4,18 @@
 // World Aviation — the 3D world (three.js, WebGL)
 //
 // One renderer, one scene, one camera:
-//   - a sky dome with a vertical gradient and a sun disc
+//   - a sky dome with a vertical gradient, the sun, the moon and
+//     the stars, following the time of day (the flight's clock)
 //   - a far terrain mesh over the flight's part of the world
 //   - a near terrain mesh that follows the aeroplane and is
 //     rebuilt (heights, normals, colours) on the CPU when the
 //     aeroplane has moved far enough
 //   - a sea plane, airports (airport3d.js), trees and a cloud
 //     layer around the player
+//   - the light of the hour: sunlight or moonlight, the sky's glow,
+//     dusk colours; at night the aircraft lights and the pool of the
+//     landing lights on the ground ahead
+//   - the pushback tug at the nose during the push back
 // The cockpit itself is drawn in 2D on a canvas over the top.
 // ============================================================
 
@@ -51,7 +56,21 @@ const Scene3D = {
     this.scene.add(this.sun.target);
 
     this.buildSky();
+    this.buildStars();
     this.buildWater();
+    // the landing lights' pool on the ground ahead, at night
+    this.landingPool = new THREE.Mesh(
+      (() => { const g = new THREE.PlaneGeometry(1, 1, 4, 4); g.rotateX(-Math.PI / 2); return g; })(),
+      new THREE.MeshBasicMaterial({
+        map: new THREE.CanvasTexture(glowCanvas()), color: 0xfff1d6, transparent: true, opacity: 0, depthWrite: false,
+        blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -6
+      }));
+    this.landingPool.visible = false;
+    this.scene.add(this.landingPool);
+    // the pushback tug, at the nose while the tug pushes
+    this.tug = Apron3D.makeTug();
+    this.tug.visible = false;
+    this.scene.add(this.tug);
     this.treeTex = makeTreeTexture();
     this.cloudTex = makeCloudTexture();
   },
@@ -67,6 +86,10 @@ const Scene3D = {
         bot: { value: new THREE.Color(0xc3d6e6) },
         ground: { value: new THREE.Color(0x93a49a) },
         sunDir: { value: new THREE.Vector3(0.4, 0.35, -0.85).normalize() },
+        moonDir: { value: new THREE.Vector3(0, 1, 0) },
+        moonAmt: { value: 0 },
+        glow: { value: new THREE.Color(0xf0a060) },
+        warm: { value: 0 },
         flash: { value: 0 }
       },
       vertexShader: `
@@ -77,8 +100,8 @@ const Scene3D = {
           gl_Position = p.xyww;
         }`,
       fragmentShader: `
-        uniform vec3 top, mid, bot, ground, sunDir;
-        uniform float flash;
+        uniform vec3 top, mid, bot, ground, sunDir, moonDir, glow;
+        uniform float flash, moonAmt, warm;
         varying vec3 vDir;
         void main() {
           float y = normalize(vDir).y;
@@ -88,9 +111,20 @@ const Scene3D = {
           } else {
             c = mix(bot, ground, clamp(-y * 6.0, 0.0, 1.0));
           }
-          float s = max(dot(normalize(vDir), normalize(sunDir)), 0.0);
-          c += vec3(1.0, 0.92, 0.75) * pow(s, 220.0) * 1.2;          // the sun disc
-          c += vec3(1.0, 0.9, 0.7) * pow(s, 12.0) * 0.16;            // the glow around it
+          vec3 d = normalize(vDir);
+          float s = max(dot(d, normalize(sunDir)), 0.0);
+          float up = smoothstep(-0.02, 0.01, y);                    // nothing of the sky shows below the horizon
+          float sunUp = smoothstep(-0.06, 0.0, sunDir.y);
+          c += vec3(1.0, 0.92, 0.75) * pow(s, 220.0) * 1.2 * up * sunUp;   // the sun disc
+          c += vec3(1.0, 0.9, 0.7) * pow(s, 12.0) * 0.16 * sunUp;          // the glow around it
+          // dusk and dawn: the horizon glows on the sun's side
+          vec2 hs = normalize(sunDir.xz + vec2(1e-5));
+          float side = max(dot(normalize(d.xz + vec2(1e-5)), hs), 0.0);
+          c += glow * warm * pow(side, 3.0) * (1.0 - smoothstep(0.0, 0.35, abs(y))) * 0.75;
+          // the moon: a disc and a soft halo
+          float m = dot(d, normalize(moonDir));
+          c += vec3(0.92, 0.94, 1.0) * smoothstep(0.99986, 0.99992, m) * moonAmt * up;
+          c += vec3(0.5, 0.6, 0.8) * pow(max(m, 0.0), 300.0) * 0.2 * moonAmt;
           c += vec3(0.7, 0.75, 0.85) * flash;                        // lightning
           gl_FragColor = vec4(c, 1.0);
         }`
@@ -99,6 +133,27 @@ const Scene3D = {
     this.sky.frustumCulled = false;
     this.sky.renderOrder = -1000;
     this.scene.add(this.sky);
+  },
+
+  // the stars: points on the upper half of the dome, fading in as it gets dark
+  buildStars() {
+    const n = 1400, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+    const rng = makeRng(424242);
+    for (let i = 0; i < n; i++) {
+      const y = rng.range(0.02, 1), a = rng.range(0, TAU), r = Math.sqrt(1 - y * y);
+      pos.set([Math.cos(a) * r, y, Math.sin(a) * r], i * 3);
+      const b = 0.35 + Math.pow(rng.next(), 3) * 0.65, tint = rng.range(-0.08, 0.08);
+      col.set([b * (1 + tint), b, b * (1 - tint)], i * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    this.stars = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 1.8, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, fog: false
+    }));
+    this.stars.frustumCulled = false;
+    this.stars.renderOrder = -999;
+    this.scene.add(this.stars);
   },
 
   buildWater() {
@@ -295,7 +350,11 @@ const Scene3D = {
   },
   applyGates(rec) {
     const used = this.flightGates || [];
-    rec.a.gates.forEach((gate, i) => { rec.parked[i].visible = used.indexOf(gate) < 0; });
+    rec.a.gates.forEach((gate, i) => {
+      const inUse = used.indexOf(gate) >= 0;
+      rec.parked[i].visible = !inUse;
+      Apron3D.setGate(rec, i, inUse);            // no vehicles there, the bridge retracted
+    });
   },
 
   // ---------- clouds and trees ----------
@@ -502,29 +561,55 @@ const Scene3D = {
     this.aircraftY = st.pos.y;
     this.lastGround = fl.groundHeight();
 
-    // ---- sun and sky
-    const sunAz = env.sunAz !== undefined ? env.sunAz : 200 * DEG;
-    const sunEl = (env.sunEl !== undefined ? env.sunEl : 0.38);
-    const sd = new THREE.Vector3(Math.sin(sunAz) * Math.cos(sunEl), Math.sin(sunEl), Math.cos(sunAz) * Math.cos(sunEl));
-    this.sun.position.copy(eye).addScaledVector(sd, 50000);
+    // ---- the hour: the sun, the moon (full, opposite the sun), the stars
+    const hour = ((env.hour0 !== undefined ? env.hour0 : 13) + fl.elapsed / 3600) % 24;
+    const sun = sunAt(hour);
+    const sd = new THREE.Vector3(sun.x, sun.y, sun.z);
+    const md = sd.clone().negate();
+    const day = smoothstep(-0.12, 0.2, sun.el);                         // how much sunlight
+    const dark = 1 - smoothstep(-0.16, 0.03, sun.el);                   // 1 at night: lights on
+    const warm = smoothstep(-0.14, 0.0, sun.el) * (1 - smoothstep(0.05, 0.4, sun.el));   // dusk colours
+    this.dark = dark;
+    const lit = day > 0.05 ? sd : md;                                   // the light comes from the moon at night
+    this.sun.position.copy(eye).addScaledVector(lit, 50000);
     this.sun.target.position.copy(eye);
-    this.sky.material.uniforms.sunDir.value.copy(sd);
+    const u = this.sky.material.uniforms;
+    u.sunDir.value.copy(sd);
+    u.moonDir.value.copy(md);
+    u.moonAmt.value = dark * smoothstep(-0.02, 0.1, md.y);
+    u.warm.value = warm;
     this.sky.position.copy(this.camera.position);      // the dome travels with the eye
     this.sky.scale.setScalar(300000);
+    this.stars.position.copy(this.camera.position);
+    this.stars.scale.setScalar(290000);
+    this.stars.material.opacity = dark * 0.95 * clamp((env.vis - 2000) / 8000, 0, 1);
 
-    // ---- fog and light from the weather
+    // ---- the sky's colours, the fog and the light: day, dusk and night mixed by the hour
     const vis = clamp(env.vis, 400, this.quality.drawFar);
-    const fogCol = new THREE.Color(env.night ? 0x1a2436 : 0xc3d6e6);
-    if (env.sunset) fogCol.setHex(0xd9b48c);
-    this.scene.fog.color.copy(fogCol);
+    const mixSky = (dayHex, duskHex, nightHex, out) => {
+      out.setHex(nightHex).lerp(SKY_TMP.setHex(dayHex), day);
+      return out.lerp(SKY_TMP.setHex(duskHex), warm * 0.75);
+    };
+    const fogCol = mixSky(0xc3d6e6, 0xe8a777, 0x0e1626, this.scene.fog.color);
     this.scene.fog.density = 2.6 / vis;
-    this.sky.material.uniforms.bot.value.copy(fogCol);
-    this.sky.material.uniforms.ground.value.setHex(env.snowy ? 0xd8dee2 : 0x93a49a);
-    this.sky.material.uniforms.flash.value = this.lightning;
+    u.bot.value.copy(fogCol);
+    mixSky(0x8fb9dd, 0xc98a6e, 0x0a1428, u.mid.value);
+    mixSky(0x2b6fb5, 0x34477e, 0x02050d, u.top.value);
+    u.ground.value.setHex(env.snowy ? 0xd8dee2 : 0x93a49a).multiplyScalar(0.12 + 0.88 * day);
+    u.flash.value = this.lightning;
     if (this.lightning > 0) this.lightning = Math.max(0, this.lightning - dt * 3);
     const dim = clamp(1 - fl.st.pos.y / 20000, 0.55, 1);
-    this.sun.intensity = (env.night ? 0.25 : 1.15) * dim;
-    this.hemi.intensity = (env.night ? 0.5 : 0.95) * dim;
+    this.sun.color.setHex(0xfff4dd).lerp(SKY_TMP.setHex(0xffa060), warm);
+    if (day <= 0.05) this.sun.color.setHex(0x9fb4d8);
+    this.sun.intensity = (day > 0.05 ? 1.15 * day : 0.3 * dark) * dim;
+    this.hemi.color.setHex(0x30406a).lerp(SKY_TMP.setHex(0xdceaf6), day);
+    this.hemi.groundColor.setHex(0x161a1e).lerp(SKY_TMP.setHex(0x4d5b46), day);
+    this.hemi.intensity = (0.3 + 0.65 * day) * dim;
+    // the clouds take the light of the hour
+    if (this.cloudGroup) {
+      const cc = SKY_TMP2.setHex(0x3a4250).lerp(SKY_TMP.setHex(0xffffff), day).lerp(SKY_TMP.setHex(0xffc8a0), warm * 0.6);
+      for (const c of this.clouds) c.material.color.copy(cc);
+    }
     this.water.material.opacity = 0.9;
     this.water.material.color.setHex(env.snowy && st.pos.y < 400 ? 0x8fa4ad : 0x2c4f66);
 
@@ -549,7 +634,7 @@ const Scene3D = {
     // flags and windsocks in the surface wind, the PAPI, the approach flasher
     for (const rec of this.airports3D.values()) {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
-      if (d < 30000) Airport3D.update(rec, this.time, eye, fl.windAt(rec.a.elev + 10));
+      if (d < 30000) Airport3D.update(rec, this.time, eye, fl.windAt(rec.a.elev + 10), dark, env.vis);
     }
     // ---- own aircraft for the chase and wing views
     const airline = fl.contract && fl.contract.airline && AIRLINE_BY_CODE[fl.contract.airline] ? fl.contract.airline : null;
@@ -572,9 +657,67 @@ const Scene3D = {
       if (sys) for (const e of sys.engines) n1 += e.n1 / sys.engines.length;
       AircraftModels.animate(this.ownAircraft, {
         gear: st.gear, propSpeed: n1 * 0.9, flaps: st.flaps / Math.max(1, fl.ac.flaps.length),
-        aileron: st.aileron, elevator: st.elevator, rudder: st.rudder, spoiler: st.spoiler ? 1 : 0
+        aileron: st.aileron, elevator: st.elevator, rudder: st.rudder, spoiler: st.spoiler ? 1 : 0,
+        lights: this.lightsFor(fl, sys), time: this.time, dark
       });
     }
+    this.updateLandingPool(fl, sys, ax, dark);
+    this.updateTug(fl, ax);
+  },
+
+  // the own aircraft's lights, as a crew would have them: the navigation lights and the beacon
+  // once the engines run, the strobes on the runway and in the air, the landing lights with the
+  // gear down (low down, and on the runway), a taxi light when taxiing
+  lightsFor(fl, sys) {
+    const st = fl.st, p = fl.phase;
+    const running = sys && sys.runningCount() > 0;
+    const onRunway = p === 'TAKEOFF' || p === 'ROLLOUT';
+    return {
+      nav: running || this.dark > 0.3,
+      beacon: running,
+      strobe: !st.onGround || onRunway,
+      landing: st.gear > 0.9 && (onRunway || (!st.onGround && fl.altAgl() < 3000)),
+      taxi: st.onGround && running && (p === 'TAXI_OUT' || p === 'HOLD_SHORT' || p === 'EXIT')
+    };
+  },
+
+  // the landing (or taxi) lights on the ground ahead: a soft pool where their beam meets the
+  // ground, seen from the cockpit too; only in the dark
+  updateLandingPool(fl, sys, ax, dark) {
+    const pool = this.landingPool, st = fl.st;
+    const L = this.lightsFor(fl, sys);
+    const on = (L.landing || L.taxi) && dark > 0.05;
+    if (!on) { pool.visible = false; return; }
+    const d = fl.dims;
+    // the beam: from under the nose, 7 degrees below the aeroplane's nose
+    const dip = (L.landing ? 7 : 12) * DEG;
+    const dir = new THREE.Vector3(ax.nose.x * Math.cos(dip) - ax.up.x * Math.sin(dip), ax.nose.y * Math.cos(dip) - ax.up.y * Math.sin(dip),
+      ax.nose.z * Math.cos(dip) - ax.up.z * Math.sin(dip));
+    const p0 = new THREE.Vector3(st.pos.x + ax.nose.x * d.len * 0.4, st.pos.y - d.fus * 0.5, st.pos.z + ax.nose.z * d.len * 0.4);
+    const gy = fl.groundHeight();
+    if (dir.y > -0.01) { pool.visible = false; return; }
+    const t = (p0.y - gy) / -dir.y;
+    const reach = L.landing ? 1400 : 120;
+    if (t > reach) { pool.visible = false; return; }
+    pool.visible = true;
+    const w = clamp(t * 0.32, 10, 260);
+    pool.position.set(p0.x + dir.x * t, gy + 0.35, p0.z + dir.z * t);
+    pool.rotation.y = Math.atan2(ax.nose.x, ax.nose.z);
+    pool.scale.set(w, 1, clamp(w / Math.max(0.12, -dir.y), w, w * 6));
+    pool.material.opacity = dark * (L.landing ? 0.65 : 0.5) * (1 - smoothstep(reach * 0.6, reach, t));
+  },
+
+  // the pushback tug: at the nose gear from the gate to the end of the push back
+  updateTug(fl, ax) {
+    const tug = this.tug, st = fl.st, p = fl.phase;
+    tug.visible = p === 'GATE' || p === 'PUSHBACK';
+    if (!tug.visible) return;
+    const d = fl.dims;
+    const nx = ax.nose.x, nz = ax.nose.z, l = Math.hypot(nx, nz) || 1;
+    const fx = nx / l, fz = nz / l;
+    const gx = st.pos.x + fx * d.len * 0.38, gz = st.pos.z + fz * d.len * 0.38;     // the nose gear
+    tug.position.set(gx + fx * 6.0, fl.groundHeight(), gz + fz * 6.0);
+    tug.rotation.y = Math.atan2(-fx, -fz);                                          // facing the aeroplane
   },
 
   dropAirport(id) {
@@ -591,6 +734,8 @@ const Scene3D = {
 
   flash() { this.lightning = 1; }
 };
+
+const SKY_TMP = new THREE.Color(), SKY_TMP2 = new THREE.Color();
 
 // ---------- procedural textures ----------
 function makeTreeTexture() {

@@ -456,6 +456,13 @@ const UI = {
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
       row2(tr('Lease'), '−' + fmtMoney(ac.rent)) +
       '</div>' +
+      '<h3>' + tr('Departure time') + '</h3>' +
+      '<div class="setGroup todPick">' + Object.keys(TIME_OF_DAY).map((k) => {
+        const d = TIME_OF_DAY[k];
+        return '<button class="chip' + (Career.timeOfDay === k ? ' on' : '') + '" data-act="tod" data-v="' + k + '">' +
+          esc(tr(d.name)) + ' ' + fmtClock(d.hour * 3600) + (d.bonus ? ' · +' + fmtMoney(Math.round(c.pay * d.bonus)) : '') + '</button>';
+      }).join('') + '</div>' +
+      '<p class="fineprint">' + tr('In the dark the runway is its lights, the PAPI and your landing lights: harder, and paid more.') + '</p>' +
       '<h3>' + tr('How you start') + '</h3>' +
       '<label class="check"><input type="radio" name="startMode" value="gate"' + (Career.skipPushback ? '' : ' checked') + '> ' +
       tr('At the gate — push back, start the engines, taxi out: +{bonus} and reputation for the full ground procedure', { bonus: fmtMoney(Math.round(c.pay * CONTRACTS.FULL_GROUND_BONUS)) }) + '</label>' +
@@ -466,7 +473,7 @@ const UI = {
       '<button class="btn" data-act="practice"' + (Career.data.money < fee ? ' disabled' : '') + '>' +
       tr('Practice the landing · {fee}', { fee: fmtMoney(fee) }) + '</button>' +
       '<button class="btn" data-act="tab" data-v="dispatch">' + tr('Back to the board') + '</button></div>' +
-      '<p class="fineprint">' + tr('Practice the landing: you start {nm} nm out on the final at {id}, the autopilot holds the glide path for {s} s, then you land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
+      '<p class="fineprint">' + tr('Practice the landing: you start {nm} nm out on the final at {id}, clean (gear and flaps up), the autopilot holds the glide path for {s} s, then you lower the gear and the flaps, land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
         { nm: PRACTICE.START_NM, id: to.id, s: PRACTICE.AP_SECONDS, v: SIM.ROLLOUT_EXIT_KT, who: esc(tr(FACTIONS[c.faction].name)) }) + '</p>' +
       '</div></div>');
   },
@@ -721,6 +728,7 @@ const UI = {
         break;
       }
       case 'brief': this.showBriefing(this.selContract); break;
+      case 'tod': Career.setTimeOfDay(v); this.showBriefing(this.selContract); break;
       case 'retry':
         if (this.lastContract) { enterFullscreen(); Game.launch(this.lastContract, { skipPushback: Career.skipPushback }); }
         break;

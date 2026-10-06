@@ -657,6 +657,15 @@ const Flight = {
         return { type: 'taxiway', roll: 0.018, brake: 0.5 * g, onPavement: true, allowed: true };
       }
     }
+    // the paved fillets where taxiways meet (World.buildFillets)
+    for (const f of a.fillets || []) {
+      const p = f.world;
+      for (let i = 0; i + 1 < p.length; i++) {
+        if (pointSegDist(x, z, p[i].x, p[i].z, p[i + 1].x, p[i + 1].z) < f.w / 2 + 5) {
+          return { type: 'taxiway', roll: 0.018, brake: 0.5 * g, onPavement: true, allowed: true };
+        }
+      }
+    }
     if (a.arctic && snow) return { type: 'ice', roll: 0.04, brake: 0.18, onPavement: false, allowed: ac.surfaces.includes('ice') };
     return { type: 'grass', roll: 0.07, brake: 0.35, onPavement: false, allowed: ac.surfaces.includes('grass') };
   },

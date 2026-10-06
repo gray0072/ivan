@@ -434,6 +434,9 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 /* the language picker at the top of the title screen */
 .langPick { justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
 .langPick .chip { padding: 5px 12px; font-size: 13px; }
+/* the departure time on the briefing */
+.todPick { flex-wrap: wrap; }
+.todPick .chip { white-space: nowrap; }
 .setGroup span { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8296a8; margin-right: 4px; }
 .chip {
   padding: 6px 12px;

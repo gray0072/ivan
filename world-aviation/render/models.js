@@ -258,6 +258,29 @@ const AircraftModels = {
       }
     }
     if (!look.fixedGear) g.userData.gear = gear;
+
+    // ---- the lights (points of a fixed pixel size, off until animate() switches them on):
+    // navigation red on the left wingtip, green on the right, white on the tail; the red
+    // beacon on top and under the belly; white strobes on the wingtips; the landing lights
+    // in the wing roots and the taxi light on the nose gear
+    const tips = [1, -1].map((side) => [side * (R * 0.8 + semi * Math.cos(dihedral)), wingY + semi * Math.sin(dihedral), wingZ - semi * Math.tan(sweep) - tipC * 0.3]);
+    const lightSet = (pts, colours) => {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pts.flat(), 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colours.flat(), 3));
+      const p = new THREE.Points(geo, new THREE.PointsMaterial({ size: 4, sizeAttenuation: false, vertexColors: true, fog: true }));
+      p.visible = false;
+      g.add(p);
+      return p;
+    };
+    const RED = [1, 0.12, 0.08], GREEN = [0.2, 1, 0.35], WHITE = [1, 1, 0.95];
+    g.userData.lights = {
+      nav: lightSet([tips[0], tips[1], [0, R * 0.75, -L / 2 - 0.2]], [RED, GREEN, WHITE]),
+      beacon: lightSet([[0, R + 0.15, -L * 0.05], [0, -R - 0.15, L * 0.05]], [RED, RED]),
+      strobe: lightSet([[tips[0][0], tips[0][1], tips[0][2] - tipC * 0.3], [tips[1][0], tips[1][1], tips[1][2] - tipC * 0.3]], [WHITE, WHITE]),
+      landing: lightSet([[R * 0.8 + semi * 0.15, wingY, leAt(0.15) + 0.2], [-(R * 0.8 + semi * 0.15), wingY, leAt(0.15) + 0.2],
+        [0, -R * 0.9, noseZ + 0.4]], [WHITE, WHITE, WHITE])
+    };
     return g;
   },
 
@@ -285,6 +308,21 @@ const AircraftModels = {
     for (const p of s.rudder) p.rotation.x = clamp(st.rudder || 0, -1, 1) * 0.4;
     const sp = clamp(st.spoiler || 0, 0, 1);
     for (const p of s.spoiler) { p.visible = sp > 0.02; p.rotation.x = sp * 0.85; }
+    // the lights (st.lights from Scene3D.lightsFor): the beacon flashes once a second, the
+    // strobes twice in quick succession every 1.2 s; bigger in the dark
+    const Lt = model.userData.lights, on = st.lights;
+    if (Lt) {
+      const tm = st.time || 0, dk = st.dark || 0;
+      Lt.nav.visible = !!(on && on.nav);
+      Lt.beacon.visible = !!(on && on.beacon) && tm % 1 < 0.14;
+      const sp2 = tm % 1.2;
+      Lt.strobe.visible = !!(on && on.strobe) && (sp2 < 0.05 || (sp2 > 0.12 && sp2 < 0.17));
+      Lt.landing.visible = !!(on && (on.landing || on.taxi));
+      Lt.nav.material.size = 2.5 + 3 * dk;
+      Lt.beacon.material.size = 3 + 4 * dk;
+      Lt.strobe.material.size = 4 + 6 * dk;
+      Lt.landing.material.size = 3 + 8 * dk;
+    }
   },
 
   // the paint scheme: a canvas wrapped around the fuselage (x = along, nose at the right; y = around, top at 0)

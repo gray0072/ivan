@@ -465,9 +465,14 @@ const Game = {
       if (st.gearTarget < 1 && nm < 7) need.push(tr('<b>gear down</b> <kbd>G</kbd>'));
       const head = '<b>' + tr('Approach · runway {rwy}', { rwy: arr.rwyName }) + '</b> · ' + nm.toFixed(1) + ' nm · Vref ' + Math.round(fl.vRef()) + ' kt';
       if (this.practice) {
-        HUD.setPrompt(head + '<br>' + (this.practice.handed
-          ? tr('practice: land, then idle <kbd>0</kbd> and brake <kbd>B</kbd> below {v} kt', { v: SIM.ROLLOUT_EXIT_KT })
-          : tr('practice: the autopilot holds the glide path for {s} s, then it is yours', { s: PRACTICE.AP_SECONDS })));
+        // the gear and the flaps are part of the practice
+        const cfg = [];
+        if (st.gearTarget < 1) cfg.push(tr('<b>gear down</b> <kbd>G</kbd>'));
+        if (st.flapsTarget < fl.ac.flaps.length) cfg.push(tr('flaps <kbd>F</kbd>'));
+        HUD.setPrompt(head + '<br>' + (!this.practice.handed
+          ? tr('practice: the autopilot holds the glide path for {s} s, then it is yours', { s: PRACTICE.AP_SECONDS })
+          : cfg.length ? cfg.join(' · ') + ' · ' + tr('slow to Vref')
+            : tr('practice: land, then idle <kbd>0</kbd> and brake <kbd>B</kbd> below {v} kt', { v: SIM.ROLLOUT_EXIT_KT })));
       } else {
         HUD.setPrompt(head + (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>' + tr('autopilot flies the ILS down to 200 ft') : '')));
       }
@@ -767,28 +772,28 @@ const Game = {
   },
 
   // On the final approach to the arrival runway, `nm` out on the glide path, the autopilot
-  // flying the ILS: clean and fast (the final-approach cheat, 12 nm), or configured to land
-  // (the practice landing: gear down, landing flaps, Vref + 5)
-  placeOnFinal(nm, landing) {
+  // flying the ILS, gear up: with take-off flaps and level (the final-approach cheat, 12 nm),
+  // or clean and already descending on the glide path (the practice landing: the gear, the
+  // flaps and the speed are the pilot's job)
+  placeOnFinal(nm, practice) {
     const fl = this.flight, st = fl.st, a = fl.arrival;
     const dist = nm * NM;
     const p = World.at(a, -a.half - dist, 0);
-    const flaps = fl.ac.flaps.length;
-    const spd = (landing ? fl.vRef() + 5 : Math.min(fl.vRef() * 1.35, fl.ac.flaps[1].vfe - 15)) * KTS;
+    st.gearTarget = st.gear = 0;
+    st.flaps = st.flapsTarget = practice ? 0 : 2;
+    const spd = (practice ? Math.max(fl.vRef() + 25, fl.vsNow() * 1.4) : Math.min(fl.vRef() * 1.35, fl.ac.flaps[1].vfe - 15)) * KTS;
     st.pos.x = p.x; st.pos.z = p.z;
     st.pos.y = a.elev + 15 + dist * Math.tan(SIM.GLIDESLOPE_DEG * DEG) + st.gearH;
-    st.hdg = a.hdg; st.pitch = landing ? 0 : 0.03; st.roll = 0;
+    st.hdg = a.hdg; st.pitch = practice ? 0 : 0.03; st.roll = 0;
     st.pitchRate = 0; st.rollRate = 0; st.yawRate = 0;
     st.vel.x = hdgX(a.hdg) * spd; st.vel.z = hdgZ(a.hdg) * spd;
-    st.vel.y = landing ? -spd * Math.sin(SIM.GLIDESLOPE_DEG * DEG) : 0;
+    st.vel.y = practice ? -spd * Math.sin(SIM.GLIDESLOPE_DEG * DEG) : 0;
     st.onGround = false; st.wasAirborne = true; st.parkingBrake = false;
-    st.gearTarget = st.gear = landing ? 1 : 0;
-    st.flaps = st.flapsTarget = landing ? flaps : 2;
-    st.throttle = landing ? 0.45 : 0.5;
+    st.throttle = practice ? 0.4 : 0.5;
     for (const e of this.systems.engines) if (!e.failed) { e.running = true; e.startPhase = 'idle'; e.n1 = 0.6; e.n2 = 0.8; }
     fl.ap.on = true; fl.ap.nav = true; fl.ap.alt = Math.round((st.pos.y) / FT / 100) * 100; fl.ap.vsI = 0;
     fl.locCaptured = true;
-    if (landing) fl.ap.gs = true;
+    if (practice) fl.ap.gs = true;
     this.applyArrivalWeather();
     fl.setPhase('APPROACH');
     Scene3D.warmup(fl);
@@ -805,7 +810,7 @@ const Game = {
     if (pr.t >= PRACTICE.AP_SECONDS) {
       pr.handed = true;
       fl.ap.on = false;
-      fl.warn('AP', tr('Your controls — land and brake below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
+      fl.warn('AP', tr('Your controls — gear, flaps, land and brake below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
     }
   },
   endPractice(ok, reason) {
@@ -882,8 +887,9 @@ const Game = {
     env.cloudTop = s.from.elev + dep.cloudTop;
     env.precip = dep.precip;
     env.snowy = dep.snow;
-    env.sunAz = (dep.dir * DEG + Math.PI) % TAU;
-    env.sunEl = clamp(0.18 + 0.5 * Math.max(0, Math.sin((Career.data.season + 1) / 12 * TAU)), 0.1, 0.9);
+    // the time of day: the departure's local hour, the clock runs on with the flight (Scene3D)
+    this.setup.timeOfDay = Career.timeOfDay;
+    env.hour0 = TIME_OF_DAY[this.setup.timeOfDay].hour;
 
     const fx = s.fx;
     this.systems = Systems.init(this.flight, {
@@ -930,7 +936,7 @@ const Game = {
       contract: this.contract, grade, failed, onTime, mishandled,
       handled: sys.checklistDone.length,
       damage: clamp(fl.st.damage, 0, 1), fuelUsed: this.fuel0 - fl.st.fuel,
-      blockSec: fl.elapsed, realSec: fl.realElapsed, pushbackSkipped: this.setup.skipPushback,
+      blockSec: fl.elapsed, realSec: fl.realElapsed, pushbackSkipped: this.setup.skipPushback, timeOfDay: this.setup.timeOfDay,
       cheated: this.cheated, cheatsUsed: this.cheatsUsed,
       moneyFactor: fl.moneyFactor || 1, repPenalty: (fl.pendingRepPenalty || 0) + (fl.noClearance ? 5 : 0),
       noClearance: !!fl.noClearance

@@ -202,6 +202,48 @@ const World = {
         a.twySegs.push({ x1: n.x, z1: n.z, x2: e.to.x, z2: e.to.z, w: e.width, kind: e.kind });
       }
     }
+    a.fillets = this.buildFillets(a);
+  },
+
+  // Where two taxi lines meet at an angle (a corner, a T, the stands off the apron lane) the
+  // pavement gets a fillet and the centreline a curve: an arc tangent to both lines, so the
+  // turns are round, as on a real airfield. Each fillet: its arc as [t, across] points and as
+  // world points, the pavement width, and whether it is on the apron (already paved).
+  buildFillets(a) {
+    const out = [];
+    const TAXI = ['taxi', 'connector', 'apron', 'stand'];
+    for (const n of a.nodeList) {
+      const es = n.edges.filter((e) => TAXI.indexOf(e.kind) >= 0);
+      for (let i = 0; i < es.length; i++) for (let j = i + 1; j < es.length; j++) {
+        const e1 = es[i], e2 = es[j];
+        const l1 = Math.hypot(e1.to.t - n.t, e1.to.across - n.across), l2 = Math.hypot(e2.to.t - n.t, e2.to.across - n.across);
+        if (l1 < 1 || l2 < 1) continue;
+        const u = [(e1.to.t - n.t) / l1, (e1.to.across - n.across) / l1];
+        const v = [(e2.to.t - n.t) / l2, (e2.to.across - n.across) / l2];
+        const ang = Math.acos(clamp(u[0] * v[0] + u[1] * v[1], -1, 1));
+        if (ang < 25 * DEG || ang > 155 * DEG) continue;           // nearly straight on, or a hairpin
+        const apron = e1.kind === 'apron' || e1.kind === 'stand' || e2.kind === 'apron' || e2.kind === 'stand';
+        const half = Math.tan(ang / 2);
+        const R = Math.min(apron ? LAYOUT.FILLET_STAND_R : LAYOUT.FILLET_R, 0.45 * Math.min(l1, l2) * half);
+        const d = R / half;                                        // from the node to where the arc meets each line
+        const bis = [u[0] + v[0], u[1] + v[1]], bl = Math.hypot(bis[0], bis[1]);
+        const cDist = R / Math.sin(ang / 2);
+        const c = [n.t + bis[0] / bl * cDist, n.across + bis[1] / bl * cDist];
+        const p1 = [n.t + u[0] * d, n.across + u[1] * d], p2 = [n.t + v[0] * d, n.across + v[1] * d];
+        const a1 = Math.atan2(p1[1] - c[1], p1[0] - c[0]);
+        let da = Math.atan2(p2[1] - c[1], p2[0] - c[0]) - a1;
+        while (da > Math.PI) da -= TAU;
+        while (da < -Math.PI) da += TAU;
+        const steps = Math.max(4, Math.ceil(Math.abs(da) / (8 * DEG)));
+        const pts = [];
+        for (let k = 0; k <= steps; k++) {
+          const q = a1 + da * k / steps;
+          pts.push([c[0] + Math.cos(q) * R, c[1] + Math.sin(q) * R]);
+        }
+        out.push({ pts, world: pts.map(([t, ac]) => this.at(a, t, ac)), w: Math.min(e1.width, e2.width), apron });
+      }
+    }
+    return out;
   },
 
   buildBuildings(a) {

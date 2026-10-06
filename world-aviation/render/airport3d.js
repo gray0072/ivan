@@ -23,6 +23,8 @@
 //     home airlines' logos on the hangars, and their aeroplanes at the
 //     gates (data/airports.js, data/airlines.js, art/)
 //   - a windsock, the localiser array, the glideslope mast, signs
+//   - the stands' bridges and vehicles, floodlights and traffic: apron3d.js
+//   - at night (update's dark): lit windows, letters and banners
 // ============================================================
 
 const RWY_SHOULDER = 7.5;          // paved shoulder outside the runway edge line, metres
@@ -34,7 +36,8 @@ const Airport3D = {
     const L = LAYOUT;
     const look = AIRPORT_LOOK[a.id] || ['star', '#2a5d8f'];
     const id = { symbol: look[0], color: look[1], airlines: airlinesAt(a) };
-    const rec = { a, id, textures: [], flags: [], parked: [], frame: null, group: null };
+    // night: materials that light up after dark ({ mat, color, k }: emissive = color x dark x k)
+    const rec = { a, id, textures: [], flags: [], parked: [], night: [], frame: null, group: null };
 
     const group = new THREE.Group();
     const frame = new THREE.Group();
@@ -75,8 +78,11 @@ const Airport3D = {
       a.terminal === 'medium' ? ['B738', 'A320NEO', 'RJ84', 'VIKNA19'] :
         a.terminal === 'small' ? ['RJ84', 'VIKNA19', 'SKARV27'] : ['VIKNA19', 'FROST12'];
     const pick = hashStr(a.id);
+    const types = a.gates.map((gate) => AIRCRAFT.find((x) => x.id === kinds[(pick + gate.index) % kinds.length]));
+    // the life round the stands: bridges, vehicles, floodlights, traffic (apron3d.js)
+    Apron3D.build(a, rec, at, tex, types);
     for (const gate of a.gates) {
-      const type = AIRCRAFT.find((x) => x.id === kinds[(pick + gate.index) % kinds.length]);
+      const type = types[gate.index];
       const al = id.airlines.length ? id.airlines[gate.index % id.airlines.length] : null;
       const plane = AircraftModels.build(type, { airline: al ? al.code : null });
       plane.position.set(gate.standX, a.elev + aircraftDims(type).gearH, gate.standZ);
@@ -104,11 +110,20 @@ const Airport3D = {
       Y.strip(p.t, p.across, q.t, q.across, CL);
       Y.dot(p.t, p.across, CL / 2); Y.dot(q.t, q.across, CL / 2);
     }
+    // the curves where the lines meet: round turns instead of right angles
+    for (const f of a.fillets || []) Y.poly(f.pts, CL);
     this.buildTaxiEdges(a, Y);
-    // the stands: the lead-in line and the stop bar
+    // the stands: the lead-in line on to the stop bar, and the red safety box round the
+    // parked aeroplane (the stand number is a plate: standPlates)
+    const Rd = markBatch(0.155);
     for (const gate of a.gates) {
       Y.strip(gate.t, L.APRON_LANE, gate.t, L.STAND + 12, 0.4);
       Y.strip(gate.t - 8, L.STAND + 4, gate.t + 8, L.STAND + 4, 1.0);
+      Y.dot(gate.t, L.STAND + 12, 0.2);
+      const box = [[gate.t - 34, L.STAND - 36], [gate.t - 34, L.STAND + 16], [gate.t + 34, L.STAND + 16], [gate.t + 34, L.STAND - 36]];
+      Rd.poly(box, 0.3);
+      // the equipment restraint line: dashed red along the service road side
+      Rd.poly([[gate.t - 30, L.STAND + 14.5], [gate.t + 30, L.STAND + 14.5]], 0.25, 1.5, 1.5);
     }
     // the runway holding position: two solid and two dashed lines across the connector
     const hold = a.nodes.hold;
@@ -136,12 +151,16 @@ const Airport3D = {
     for (const tc of [r.t0 + (r.t1 - r.t0) * 0.3, r.t0 + (r.t1 - r.t0) * 0.7]) {
       for (let k = -8; k <= 8; k += 1.6) W.strip(tc + k + 0.4, roadA - 9.6, tc + k + 0.4, roadA + 9.6, 0.8);
     }
+    // the tail-of-stand road between the apron's airside edge and the apron lane
+    const ta = roadAcross(a);
+    for (const d of [-6, 6]) W.strip(r.t0, ta + d, r.t1, ta + d, 0.3);
+    for (let t = r.t0; t + 4 <= r.t1; t += 8) W.strip(t, ta, t + 4, ta, 0.25);
     // the apron service road between the stands and the building
     W.strip(r.t0, L.STAND + 18.2, r.t1, L.STAND + 18.2, 0.4);
     W.strip(r.t0, L.STAND + 31.8, r.t1, L.STAND + 31.8, 0.4);
     for (let t = r.t0; t + 4.5 <= r.t1; t += 9) W.strip(t, L.STAND + 25, t + 4.5, L.STAND + 25, 0.4);
 
-    for (const [b, color] of [[Y, '#f2c832'], [W, '#e9e8e2']]) {
+    for (const [b, color] of [[Y, '#f2c832'], [W, '#e9e8e2'], [Rd, '#c8282a']]) {
       if (!b.pos.length) continue;
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
@@ -164,6 +183,13 @@ const Airport3D = {
       const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
       return { t1: p.t, a1: p.across, t2: q.t, a2: q.across, r: s.w / 2 };
     });
+    // the fillets are pavement too: their outer edge is the curved edge line of the inner corner
+    for (const f of a.fillets || []) {
+      if (f.apron) continue;
+      for (let i = 0; i + 1 < f.pts.length; i++) {
+        segs.push({ t1: f.pts[i][0], a1: f.pts[i][1], t2: f.pts[i + 1][0], a2: f.pts[i + 1][1], r: f.w / 2 });
+      }
+    }
     const r = a.apronRect;
     const rects = [
       [-a.half - RWY_BLAST, a.half + RWY_BLAST, -RWY_HALF_WIDTH - RWY_SHOULDER, RWY_HALF_WIDTH + RWY_SHOULDER],
@@ -246,16 +272,36 @@ const Airport3D = {
         if (Math.abs(across) > RWY_HALF_WIDTH + 6) add(p.t + nt * d - na * sd * (s.w / 2 + 1), across, 0.35, B);
       }
     }
+    // green taxiway centreline lights, every 30 m, round the curves too
+    const Gc = [0.25, 1, 0.45];
+    const greenLine = (pts) => {
+      let carry = 0;
+      for (let i = 0; i + 1 < pts.length; i++) {
+        const p = pts[i], q = pts[i + 1], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        let d = carry;
+        for (; d < len; d += 30) {
+          const t = p[0] + (q[0] - p[0]) * d / len, ac = p[1] + (q[1] - p[1]) * d / len;
+          if (Math.abs(ac) > RWY_HALF_WIDTH + 4) add(t, ac, 0.25, Gc);
+        }
+        carry = d - len;
+      }
+    };
+    for (const s of a.twySegs) {
+      if (s.kind !== 'taxi' && s.kind !== 'connector') continue;
+      const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
+      greenLine([[p.t, p.across], [q.t, q.across]]);
+    }
+    for (const f of a.fillets || []) if (!f.apron) greenLine(f.pts);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    const mat = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: false, vertexColors: true, fog: true });
+    const mat = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: false, vertexColors: true, fog: false });
     rec.lights = at(new THREE.Points(geo, mat), 0, 0);
 
     // the sequenced flasher ("the rabbit") running towards the threshold
     const fgeo = new THREE.BufferGeometry();
     fgeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 1, 0], 3));
-    rec.flasher = at(new THREE.Points(fgeo, new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, color: 0xffffff, fog: true })), -h - 900, 0);
+    rec.flasher = at(new THREE.Points(fgeo, new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, color: 0xffffff, fog: false })), -h - 900, 0);
 
     // PAPI: four lights left of the runway 300 m in; their colour depends on the eye (update)
     const pgeo = new THREE.BufferGeometry();
@@ -268,7 +314,7 @@ const Airport3D = {
     }
     pgeo.setAttribute('position', new THREE.Float32BufferAttribute(ppos, 3));
     pgeo.setAttribute('color', new THREE.Float32BufferAttribute(pcol, 3));
-    rec.papiPoints = at(new THREE.Points(pgeo, new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: true, fog: true })), 0, 0);
+    rec.papiPoints = at(new THREE.Points(pgeo, new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: true, fog: false })), 0, 0);
     const housing = new THREE.MeshLambertMaterial({ color: 0x2a2d30 });
     for (const p of rec.papi) at(new THREE.Mesh(new THREE.BoxGeometry(2, 0.9, 1.2), housing), p.t, p.across, 0.45);
   },
@@ -282,7 +328,9 @@ const Airport3D = {
       else if (b.kind === 'tower') {
         at(new THREE.Mesh(new THREE.CylinderGeometry(5, 6.5, b.h, 12), lambert(0xd8d8d2)), b.t, b.across, b.h / 2);
         at(new THREE.Mesh(new THREE.CylinderGeometry(7.5, 7.5, 2.2, 12), new THREE.MeshLambertMaterial({ color: colour })), b.t, b.across, b.h + 0.6);
-        at(new THREE.Mesh(new THREE.CylinderGeometry(10, 8, 6, 12), lambert(0x2c3a46)), b.t, b.across, b.h + 4.7);
+        const cab = lambert(0x2c3a46);
+        rec.night.push({ mat: cab, color: new THREE.Color(0x9fd0e8), k: 0.5 });
+        at(new THREE.Mesh(new THREE.CylinderGeometry(10, 8, 6, 12), cab), b.t, b.across, b.h + 4.7);
         at(new THREE.Mesh(new THREE.CylinderGeometry(10.6, 10.6, 1, 12), lambert(0xe6e6e0)), b.t, b.across, b.h + 8.2);
         this.flag(rec, at, tex, a.country, null, b.t, b.across, b.h + 8.7, 14, 9);
       } else if (b.kind === 'hangar') {
@@ -295,6 +343,10 @@ const Airport3D = {
       } else {
         const m = at(new THREE.Mesh(cellBox(b.acrossSize, b.h, b.along), lambert(0xa8a49a)), b.t, b.across, b.h / 2);
         m.userData.kind = b.kind;
+        // the office windows along the top of the front, lit at night
+        const win = lambert(0x3a4550);
+        rec.night.push({ mat: win, color: new THREE.Color(0xfff0c8), k: 0.5 });
+        at(new THREE.Mesh(cellBox(0.3, 1.4, b.along * 0.85), win), b.t, b.across - b.acrossSize / 2 - 0.15, b.h - 2);
         const cargo = AIRLINES.filter((x) => x.kinds.indexOf('cargo') >= 0 && (x.hubs.indexOf(a.id) >= 0 || x.regions.indexOf(a.region) >= 0));
         if (cargo.length) this.logoBoard(rec, at, tex, cargo[hashStr(a.id) % cargo.length], b.t, b.across - b.acrossSize / 2 - 0.2, b.h * 0.55, Math.min(b.along * 0.8, 60), b.h * 0.6);
       }
@@ -307,7 +359,14 @@ const Airport3D = {
     // the roof: an overhanging slab in the airport's colour, the glass front underneath
     at(new THREE.Mesh(cellBox(b.acrossSize + 8, 1.6, b.along + 8),
       new THREE.MeshLambertMaterial({ color: new THREE.Color(id.color).convertSRGBToLinear() })), b.t, b.across - 2, h + 0.8);
-    at(new THREE.Mesh(cellBox(0.6, h * 0.62, b.along * 0.98), lambert(0x2e4558)), b.t, front - 0.3, h * 0.36);
+    // the glass front, lit from inside at night
+    const glass = lambert(0x2e4558);
+    rec.night.push({ mat: glass, color: new THREE.Color(0xffd9a0), k: 0.55 });
+    at(new THREE.Mesh(cellBox(0.6, h * 0.62, b.along * 0.98), glass), b.t, front - 0.3, h * 0.36);
+    // and a row of windows on the road side
+    const back2 = lambert(0x34495c);
+    rec.night.push({ mat: back2, color: new THREE.Color(0xffe2b0), k: 0.45 });
+    at(new THREE.Mesh(cellBox(0.4, h * 0.3, b.along * 0.9), back2), b.t, back + 0.2, h * 0.55);
     for (let t = b.t - b.along / 2 + 12; t < b.t + b.along / 2; t += 12) {
       at(new THREE.Mesh(new THREE.BoxGeometry(0.8, h * 0.62, 0.6), lambert(0xd9dde0)), t, front - 0.6, h * 0.36);
     }
@@ -316,10 +375,13 @@ const Airport3D = {
     const lh = clamp(b.along * 0.9 / (name.length * 0.78), 7, h > 18 ? 24 : 16);
     const lw = Math.min(b.along * 0.92, name.length * lh * 0.8);
     const lt = tex(makeLettersCanvas(name, id.color), 8);
+    // (lit at night)
+    const letters = new THREE.MeshLambertMaterial({ map: lt, emissiveMap: lt, emissive: 0x000000, transparent: true, alphaTest: 0.35, side: THREE.FrontSide });
+    rec.night.push({ mat: letters, color: new THREE.Color(0xffffff), k: 0.9 });
     for (const side of [-1, 1]) {
       const geo = new THREE.PlaneGeometry(lw, lh);
       geo.rotateY(side * Math.PI / 2);
-      at(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: lt, transparent: true, alphaTest: 0.35, side: THREE.FrontSide })),
+      at(new THREE.Mesh(geo, letters),
         b.t, (side < 0 ? front + 4 : back - 4) + side * 0.6, h + 1.6 + lh / 2);
       // the frame the letters stand on
       at(new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, lw * 0.96), lambert(0x6c7378)), b.t, side < 0 ? front + 4 : back - 4, h + 2.2);
@@ -328,13 +390,15 @@ const Airport3D = {
     const bh = Math.max(8, h * 0.62), bw = Math.min(b.along * 0.45, bh * 3.2);
     const bt = b.t - b.along / 2 + bw / 2 + 6;
     const banner = tex(makeBannerCanvas(a, id), 8);
+    const bannerMat = new THREE.MeshLambertMaterial({ map: banner, emissiveMap: banner, emissive: 0x000000 });
+    rec.night.push({ mat: bannerMat, color: new THREE.Color(0xffffff), k: 0.7 });
     const bgeo = new THREE.PlaneGeometry(bw, bh);
     bgeo.rotateY(-Math.PI / 2);
-    at(new THREE.Mesh(bgeo, new THREE.MeshLambertMaterial({ map: banner })), bt, front - 1.5, h - bh / 2 - 0.4);
+    at(new THREE.Mesh(bgeo, bannerMat), bt, front - 1.5, h - bh / 2 - 0.4);
     // and the same on the road side
     const bgeo2 = new THREE.PlaneGeometry(bw, bh);
     bgeo2.rotateY(Math.PI / 2);
-    at(new THREE.Mesh(bgeo2, new THREE.MeshLambertMaterial({ map: banner })), b.t, back + 0.3, h - bh / 2 - 0.4);
+    at(new THREE.Mesh(bgeo2, bannerMat), b.t, back + 0.6, h - bh / 2 - 0.4);
     // three flagpoles on the roof at the other end: the country, the city, the country
     const ft = b.t + b.along / 2 - 22;
     for (let i = 0; i < 3; i++) {
@@ -345,15 +409,22 @@ const Airport3D = {
   hangar(a, b, rec, at, tex, lambert, al) {
     const w = b.acrossSize, len = b.along, h = b.h;
     at(new THREE.Mesh(cellBox(w, h, len), lambert(0x9aa2a8)), b.t, b.across, h / 2);
-    const roof = new THREE.CylinderGeometry(len / 2, len / 2, w, 20, 1, false, 0, Math.PI);
+    // the arched roof: a half cylinder lying across (its axis from the doors to the back), the
+    // arch up; its end caps stand on top of the front and back walls, never in them (a cap in
+    // a wall's plane flickered against it), and it is cut into rings for the log depth buffer
+    const roof = new THREE.CylinderGeometry(len / 2, len / 2, w, 24, Math.max(1, Math.ceil(w / 12)), false, 0, Math.PI);
     roof.rotateZ(Math.PI / 2);
-    roof.rotateX(Math.PI / 2);
     const rm = at(new THREE.Mesh(roof, lambert(0x7d868c)), b.t, b.across, h);
     rm.scale.set(1, 0.32, 1);
     // the doors and the operator's logo above them
     const front = b.across - w / 2;
-    at(new THREE.Mesh(new THREE.BoxGeometry(0.4, h * 0.82, len * 0.9), lambert(0x5d666c)), b.t, front - 0.2, h * 0.41);
-    if (al) this.logoBoard(rec, at, tex, al, b.t, front - 0.5, h + len * 0.08, len * 0.7, len * 0.14);
+    at(new THREE.Mesh(cellBox(0.4, h * 0.82, len * 0.9), lambert(0x5d666c)), b.t, front - 0.2, h * 0.41);
+    // the lamps over the doors, lit at night
+    const lamp = lambert(0x50565b);
+    rec.night.push({ mat: lamp, color: new THREE.Color(0xfff2d0), k: 0.9 });
+    at(new THREE.Mesh(cellBox(0.3, 0.5, len * 0.85), lamp), b.t, front - 0.6, h * 0.86);
+    // (on the arch's front end, low enough for its corners to stay on it)
+    if (al) this.logoBoard(rec, at, tex, al, b.t, front - 0.5, h + len * 0.055, len * 0.45, len * 0.09);
   },
 
   // a board with an airline's emblem and name, facing the runway
@@ -390,16 +461,15 @@ const Airport3D = {
       g.fillStyle = city.color; g.fillRect(0, 0, 192, 128);
       Landmarks.draw(g, city.symbol, 50, 18, 92, '#ffffff', city.color);
     } else Flags.draw(g, country, 0, 0, 192, 128);
-    const geo = new THREE.PlaneGeometry(fw, fh, 10, 1);
-    geo.translate(fw / 2, 0, 0);
+    // the cloth: its hoist edge on the pole (just outside it), the top at the pole's top; it
+    // is bent vertex by vertex in update(), so the hoist edge never leaves the pole
+    const geo = new THREE.PlaneGeometry(fw, fh, 12, 4);
+    geo.translate(fw / 2 + 0.22, -fh / 2, 0);
     const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex(cv, 4), side: THREE.DoubleSide }));
     const holder = new THREE.Group();
-    const droop = new THREE.Group();
-    mesh.position.set(0, -fh / 2, 0);
-    droop.add(mesh);
-    holder.add(droop);
+    holder.add(mesh);
     at(holder, t, across, y + pole - 0.2);
-    rec.flags.push({ holder, droop, geo, base: geo.attributes.position.array.slice(), fw, phase: (t + across) * 0.07 });
+    rec.flags.push({ holder, geo, base: geo.attributes.position.array.slice(), fw, phase: (t + across) * 0.07 });
   },
 
   // ---------- windsock, ILS aerials, signs ----------
@@ -450,23 +520,36 @@ const Airport3D = {
   },
 
   // ---------- per frame: flags and the windsock in the wind, the PAPI, the flasher ----------
-  update(rec, time, eye, wind) {
+  update(rec, time, eye, wind, dark, vis) {
     const a = rec.a;
+    // the lights shine through haze much further than the ground shows (they draw without
+    // fog), but not without end: out to 2.5 times the visibility; a little bigger at night
+    const far = Math.hypot(eye.x - a.x, eye.z - a.z) - a.half;
+    const seen = far < Math.max(5000, (vis || 20000) * 2.5);
+    for (const p of [rec.lights, rec.flasher, rec.papiPoints]) if (p) p.visible = seen;
+    if (rec.lights) rec.lights.material.size = 2.6 + 1.4 * (dark || 0);
     // the wind in the airport's frame: x across, z = -t
     const wx = wind.x * a.perX + wind.z * a.perZ;
     const wz = -(wind.x * a.dirX + wind.z * a.dirZ);
     const spd = Math.hypot(wx, wz);
     const yaw = Math.atan2(-wz, wx);
     const strength = clamp(spd / 8, 0, 1);
+    // A flag: in a light wind the cloth hangs down along the pole, in a strong one it streams
+    // out; each point bends down by the droop angle about the hoist edge (so that edge stays on
+    // the pole and the cloth stays on the downwind side of it), and a wave runs along it that
+    // grows towards the fly end
+    const droop = (1 - strength) * 1.25, cd = Math.cos(droop), sd = Math.sin(droop);
     for (const f of rec.flags) {
       if (spd > 0.3) f.holder.rotation.y = yaw;
-      f.droop.rotation.z = -(1 - strength) * 1.25;
       const p = f.geo.attributes.position.array, b = f.base;
       for (let i = 0; i < p.length; i += 3) {
-        const x = b[i] / f.fw;
-        p[i + 2] = Math.sin(b[i] * 0.9 - time * (3 + spd * 0.6) + f.phase) * x * f.fw * (0.05 + 0.06 * strength);
+        const x = b[i] - 0.22, k = x / f.fw;
+        p[i] = 0.22 + x * cd;
+        p[i + 1] = b[i + 1] - x * sd;
+        p[i + 2] = Math.sin(x * 0.9 - time * (3 + spd * 0.6) + f.phase) * k * f.fw * (0.05 + 0.06 * strength);
       }
       f.geo.attributes.position.needsUpdate = true;
+      f.geo.computeVertexNormals();
     }
     if (rec.windsock) {
       if (spd > 0.3) rec.windsock.holder.rotation.y = yaw;
@@ -481,9 +564,11 @@ const Airport3D = {
       if (ang > p.angle) c.setXYZ(i, 1, 1, 0.92); else c.setXYZ(i, 1, 0.08, 0.06);
     });
     c.needsUpdate = true;
+    // the apron: traffic, floodlights, lit windows (apron3d.js)
+    Apron3D.update(rec, time, dark || 0);
     // the flasher: 28 steps out at 30 m, twice a second, towards the threshold
     const k = Math.floor((time * 2 % 1) * 30);
-    rec.flasher.visible = k < 28;
+    rec.flasher.visible = seen && k < 28;
     rec.flasher.position.z = -(-a.half - 900 + k * 30);
   },
 
@@ -671,6 +756,8 @@ function makeGroundCanvas(a, id, ch) {
     const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
     return { path: line([[p.t, p.across], [q.t, q.across]]), w: s.w };
   });
+  // and the fillets in the corners (World.buildFillets)
+  for (const f of a.fillets || []) if (!f.apron) segPaths.push({ path: line(f.pts), w: f.w });
   for (const s of segPaths) asphalt(s.path, s.w + 15, '#8a8574');
   for (const s of segPaths) asphalt(s.path, s.w, '#65696d');
   for (let i = 0; i < 1600; i++) {          // a little texture on the pavement
@@ -692,19 +779,11 @@ function makeGroundCanvas(a, id, ch) {
   g.fillStyle = 'rgba(60,62,64,0.5)'; rect(r.t0, r.t1, L.STAND + 18, L.STAND + 32);
   // (the service road lines, the yellow centrelines, the stand lead-in lines, stop bars and
   // the holding position lines are thin strips of geometry: Airport3D.buildMarkings)
-  // the stands: red safety box, an oil stain, the stand number
+  // the stands: an oil stain (the red safety box and the stand number are geometry, sharp)
   for (const gate of a.gates) {
     g.fillStyle = 'rgba(30,30,28,0.2)';
     const st = P(gate.t, L.STAND - 12);
     g.beginPath(); g.ellipse(st[0], st[1], px(3), px(5), 0, 0, TAU); g.fill();
-    g.strokeStyle = 'rgba(206,40,36,0.55)'; g.lineWidth = px(0.3, 1);
-    g.stroke(line([[gate.t - 34, L.STAND - 36], [gate.t - 34, L.STAND + 16], [gate.t + 34, L.STAND + 16], [gate.t + 34, L.STAND - 36]]));
-    const n = P(gate.t + 14, L.STAND + 8);
-    g.fillStyle = '#f4ce3a'; g.fillRect(n[0] - px(4), n[1] - px(4), px(8), px(8));
-    g.fillStyle = '#111111';
-    g.font = 'bold ' + Math.round(px(6.5)) + 'px Arial, sans-serif';
-    g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(String(gate.number), n[0], n[1] + px(0.4));
   }
   // fade the edges out, so the airport's grass blends into the terrain around it
   g.globalCompositeOperation = 'destination-out';

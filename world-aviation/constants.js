@@ -101,6 +101,8 @@ const LAYOUT = {
   TERMINAL: 470,               // terminal building centre
   APRON_START: 0.3,            // where the apron starts, fraction of the runway length
   GATE_SPACING: 80,
+  FILLET_R: 38,                // the centreline radius where taxiways meet at an angle
+  FILLET_STAND_R: 30,          // ... and where a stand's lead-in leaves the apron lane
   CORRIDOR_LEN: 32000,         // approach / departure corridors cut into the terrain, metres from the runway ends
   CORRIDOR_HALF_WIDTH: 1200,   // plus 12 % of the distance, then 2.5 km to blend into the terrain
   APPROACH_SLOPE_DEG: 2.4,     // the ground stays under this slope before the threshold (the glideslope is 3°)
@@ -542,6 +544,18 @@ const VIEW = {
 };
 
 // ---------- Controls and screen layout ----------
+// The time of day, chosen on the briefing: the departure's local solar time (the clock runs
+// on with the flight). The sun follows a generic path (equinox, latitude SKY_LATITUDE_DEG):
+// up at 6, highest (40°) at noon, down at 18. Flying in the dark is harder and pays more:
+// `bonus` is a share of the contract.
+const TIME_OF_DAY = {
+  day: { name: 'Day', hour: 13, bonus: 0 },
+  dusk: { name: 'Dusk', hour: 17.7, bonus: 0.05 },
+  night: { name: 'Night', hour: 23, bonus: 0.15 },
+  dawn: { name: 'Dawn', hour: 6.3, bonus: 0.05 }
+};
+const SKY_LATITUDE_DEG = 50;
+
 // The practice landing (the briefing's "Practice the landing"): it starts on the final at the
 // destination, the autopilot holds the glide path for a moment, then you land and brake below
 // SIM.ROLLOUT_EXIT_KT. A paid simulator session with no penalties.

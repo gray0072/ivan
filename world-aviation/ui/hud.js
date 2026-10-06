@@ -93,6 +93,7 @@ const HUD = {
       '<div class="stripRow"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
       '<div class="stripRow"><span>' + tr('PAY') + '</span><b>' + fmtMoney(c.pay) + '</b></div>' +
+      '<div class="stripRow"><span>' + tr('LOCAL TIME') + '</span><span>' + fmtClock(((fl.env.hour0 || 12) * 3600 + fl.elapsed) % 86400) + '</span></div>' +
       (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
         (late ? 'bad' : (left < 60 ? 'warn' : 'good')) + '">' + fmtTime(late ? fl.realElapsed - res.deadline : left) + '</b></div>' : '');
   },

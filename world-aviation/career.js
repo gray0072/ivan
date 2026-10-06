@@ -101,6 +101,14 @@ const Career = {
     this.save();
   },
 
+  // the departure time this pilot flies at (TIME_OF_DAY): remembered in the career too
+  get timeOfDay() { const v = this.data && this.data.timeOfDay; return TIME_OF_DAY[v] ? v : 'day'; },
+  setTimeOfDay(v) {
+    if (!this.data || !TIME_OF_DAY[v]) return;
+    this.data.timeOfDay = v;
+    this.save();
+  },
+
   reset() {
     try { localStorage.removeItem(CAREER_KEY); } catch (err) { /* ignore */ }
     this.data = null;
@@ -392,6 +400,8 @@ const Career = {
     if (result.onTime) lines.push({ label: 'On time', value: Math.round(base * 0.08) });
     const fullGround = !result.pushbackSkipped && !result.noClearance;
     if (fullGround) lines.push({ label: 'Full ground procedure', value: Math.round(base * CONTRACTS.FULL_GROUND_BONUS) });
+    const tod = TIME_OF_DAY[result.timeOfDay];
+    if (tod && tod.bonus) lines.push({ label: tod.name + ' flight', value: Math.round(base * tod.bonus) });
     // the lease runs per block hour (at least one), and the fuel burnt is paid for
     const hours = Math.max(1, result.blockSec / 3600);
     lines.push({ label: 'Aircraft lease ({ac}, {h} h)', args: { ac: ac.name, h: hours.toFixed(1) }, value: -Math.round(ac.rent * hours) });
