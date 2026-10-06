@@ -128,27 +128,14 @@ const Flight = {
 
   // ---------- controls ----------
   setThrottle(t) { this.st.throttle = clamp(t, 0, 1); },
+  // the levers always move: out too fast, the overspeed warnings (and the damage) follow
   setFlaps(n) {
-    const ac = this.ac;
-    n = clamp(Math.round(n), 0, ac.flaps.length);
-    const f = ac.flaps[n - 1];
-    const spd = this.st.ias / KTS;
-    if (n > this.st.flapsTarget && f && spd > f.vfe + 4) {
-      this.warn('SPEED', tr('Flaps {n} inhibited above Vfe {v} kt', { n, v: f.vfe }));
-      this.flapReject = { n, vfe: f.vfe };
-      return;
-    }
-    this.st.flapsTarget = n;
+    this.st.flapsTarget = clamp(Math.round(n), 0, this.ac.flaps.length);
   },
   setGear(down) {
     const st = this.st;
     if (!down && st.onGround) { this.warn('GEAR', tr('Gear lever locked — weight on wheels')); this.gearReject = 'ground'; return; }
     if (down && st.gearFailed) { st.gearSelected = true; this.warn('GEAR', tr('Gear will not extend — work the checklist')); this.gearReject = 'failed'; return; }
-    if (down && st.ias / KTS > this.ac.vlo + 5) {
-      this.warn('GEAR', tr('Gear inhibited above Vlo {v} kt', { v: this.ac.vlo }));
-      this.gearReject = 'vlo';
-      return;
-    }
     st.gearTarget = down ? 1 : 0;
   },
   toggleSpoiler() { this.st.spoiler = this.st.spoiler > 0.5 ? 0 : 1; },
@@ -518,22 +505,20 @@ const Flight = {
       this.warn('FLAPSPEED', tr('Flap overspeed — retract the flaps or slow down'));
       st.damage = Math.min(1, st.damage + dt * 0.004);
     }
-    if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', tr('Gear overspeed — gear up <kbd>G</kbd>'));
+    if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', tr('Gear overspeed — slow down below {v} kt', { v: ac.vlo }));
 
     // a warning about a state goes off the screen the moment the state is put right
-    const fr = this.flapReject, gr = this.gearReject;
+    const gr = this.gearReject;
     const live = {
       STALL: st.stallWarn,
       OVERSPEED: ias > ac.vne,
       FLAPSPEED: st.flaps > 0.5 && ias > this.flapVfeNow() + 10,
       GEARSPEED: st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround,
       SPOILERLAND: st.spoiler > 0.5 && !st.onGround,
-      SPEED: !!fr && st.flapsTarget < fr.n && ias > fr.vfe + 4,
-      GEAR: gr === 'ground' ? st.onGround : gr === 'failed' ? !!st.gearFailed : gr === 'vlo' ? st.gearTarget < 1 && ias > ac.vlo + 5 : false
+      GEAR: gr === 'ground' ? st.onGround : gr === 'failed' ? !!st.gearFailed : false
     };
     const was = this.liveWarn || {};
     for (const id in live) if (was[id] && !live[id]) this.events.push({ id: 'clear', clear: id, t: this.realElapsed });
-    if (!live.SPEED) this.flapReject = null;
     if (!live.GEAR) this.gearReject = null;
     this.liveWarn = live;
   },

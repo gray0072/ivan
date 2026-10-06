@@ -38,6 +38,7 @@ const HUD = {
   reset() {
     this.messages = [];
     this.checklistKey = '';
+    this.stripKey = '';
     this.hideBanner();
     if (this.checklistBox) { this.checklistBox.hidden = true; this.checklistBox.innerHTML = ''; }
     if (this.msgBox) this.msgBox.innerHTML = '';
@@ -83,21 +84,39 @@ const HUD = {
     const c = fl.contract;
     if (!c) { this.strip.hidden = true; return; }
     this.strip.hidden = false;
+    // the route, the airports with their countries and the expected flight time: built once a
+    // flight (the flags are images), the live figures under it whenever they change
+    const key = c.id + '|' + I18N.lang + '|' + Units.metric + '|' + !!fl.practice;
+    if (this.stripKey !== key) {
+      this.stripKey = key;
+      const apt = (id) => {
+        const a = World.byId[id];
+        return '<div class="stripApt">' + (typeof flagImg === 'function' ? flagImg(a) : '') + '<b>' + a.id + '</b> ' + esc(a.name) +
+          ' · <span>' + esc(tr(a.country)) + '</span></div>';
+      };
+      this.strip.innerHTML =
+        (fl.practice ? '<div class="stripRow big"><span class="good">' + tr('PRACTICE LANDING') + '</span></div>' : '') +
+        '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + esc(tr(PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type).toUpperCase()) + '</span></div>' +
+        '<div class="stripRow big">' + c.fromId + ' → ' + c.toId + '</div>' +
+        apt(c.fromId) + apt(c.toId) +
+        '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
+        '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
+        '<div class="stripRow"><span>' + tr('FLIGHT TIME') + '</span><span>' + fmtDuration(c.blockMin) + '</span></div>' +
+        '<div class="stripLive"></div>';
+      this.stripLive = this.strip.querySelector('.stripLive');
+      this.stripLiveHtml = '';
+    }
     const left = res ? Math.max(0, res.deadline - fl.realElapsed) : 0;
     const late = res && fl.realElapsed > res.deadline;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);
-    this.strip.innerHTML =
-      (fl.practice ? '<div class="stripRow big"><span class="good">' + tr('PRACTICE LANDING') + '</span></div>' : '') +
-      '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + esc(tr(PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type).toUpperCase()) + '</span></div>' +
-      '<div class="stripRow big">' + c.fromId + ' → ' + c.toId + '</div>' +
-      '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
-      '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
+    const html =
       '<div class="stripRow"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
       '<div class="stripRow"><span>' + tr('PAY') + '</span><b>' + fmtMoney(c.pay) + '</b></div>' +
       '<div class="stripRow"><span>' + tr('LOCAL TIME') + '</span><span>' + fmtClock(((fl.env.hour0 || 12) * 3600 + fl.elapsed) % 86400) + '</span></div>' +
       (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
         (late ? 'bad' : (left < 60 ? 'warn' : 'good')) + '">' + fmtTime(late ? fl.realElapsed - res.deadline : left) + '</b></div>' : '');
+    if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
   },
 
   // ---------- phase prompt ----------

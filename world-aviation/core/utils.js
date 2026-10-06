@@ -203,6 +203,12 @@ function fmtTime(sec) {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
     : `${m}:${String(s).padStart(2, '0')}`;
 }
+// a flight's length in minutes: "50 min", "1 h 05 min"
+function fmtDuration(min) {
+  min = Math.max(1, Math.round(min));
+  const h = Math.floor(min / 60), m = min % 60;
+  return h > 0 ? tr('{h} h {m} min', { h, m: String(m).padStart(2, '0') }) : tr('{m} min', { m });
+}
 function fmtClock(sec) {
   sec = Math.max(0, Math.floor(sec));
   const h = Math.floor(sec / 3600) % 24, m = Math.floor(sec / 60) % 60;

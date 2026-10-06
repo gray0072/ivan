@@ -561,11 +561,12 @@ const Game = {
     return '';
   },
 
-  // the landing takes full flaps, a step at a time: where they are, where they go, and the
-  // speed under which the next step comes out
+  // the flaps to set now: the furthest step the speed allows, at least the next one
   landingFlapsText() {
-    const fl = this.flight, n = fl.st.flapsTarget, full = fl.ac.flaps.length;
-    return tr('flaps {n} → {full} (full), the next below {v} kt <kbd>F</kbd>', { n, full, v: fl.ac.flaps[n].vfe });
+    const fl = this.flight, flaps = fl.ac.flaps, ias = fl.st.ias / KTS;
+    let n = fl.st.flapsTarget + 1;
+    while (n < flaps.length && flaps[n].vfe + 5 >= ias) n++;
+    return tr('<b>flaps {n}</b> <kbd>F</kbd>', { n });
   },
   takeoffFlaps() { return this.flight.ac.flaps.length >= 5 ? 2 : 1; },
   cruiseAltFt() {

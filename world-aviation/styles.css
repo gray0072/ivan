@@ -64,6 +64,8 @@ kbd {
   line-height: 1.5;
 }
 #strip .stripRow { display: flex; justify-content: space-between; gap: 12px; }
+#strip .stripApt { max-width: 280px; color: #c9d6e2; }
+#strip .stripApt span { color: #8fa3b6; }
 #strip .stripRow.big { font-size: 16px; font-weight: 700; letter-spacing: 0.4px; }
 #strip b { color: #ffd97a; }
 #strip .good { color: #7de08a; }
