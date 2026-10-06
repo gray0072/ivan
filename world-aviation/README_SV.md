@@ -50,7 +50,7 @@ Varje flygning drar sina problem: motorbrand eller motorbortfall, bränsleläcka
 
 Väljs på startskärmen och i paus- och genomgångsdialogerna, och sparas mellan besöken:
 
-- **Easy** — halva vinden och lätt turbulens, ett problem åt gången, checklistan förklarar varför varje steg görs och ger 50 % mer tid, generös landningsbedömning, inga deadlines och en taxihjälp som håller dig på linjen.
+- **Easy** — halva vinden och lätt turbulens, ett problem åt gången, checklistan förklarar varför varje steg görs och ger 50 % mer tid, generös landningsbedömning, inga deadlines och en taxihjälp som håller dig på linjen (en stund efter att du släppt styrningen för den mjukt tillbaka dig till linjen).
 - **Medium** — riktig vind och turbulens, ibland två problem under en flygning, checklistor utan förklaringar, vanliga deadlines och bedömning.
 - **Hard** — stark vind och kraftig turbulens, två problem varje flygning, 25 % mindre tid på checklistorna, korta deadlines, sträng bedömning och mer skador.
 
@@ -62,6 +62,7 @@ Pengarna är svenska kronor. Varje uppdrag betalar för sträckan och lasten, pl
 - **Långdistans** — med autopiloten går tidsaccelerationen upp till ×64; Stockholm–New York tar ungefär tio minuter i verklig tid.
 - **Hangar** — tio flygplan, från 19-sitsiga turbopropen Vikna 19 och bushplanet Frostwing till **Boeing 737-800**, **Airbus A320neo**, **Airbus A350-900** och den fyrmotoriga fraktaren **Boeing 747-8F**, alla med egen vikt, egna farter, egen räckvidd, egna krav på banan och egen 3D-modell.
 - **Utbildning** — 16 kurser i fyra grenar (Allmänt, Passagerare, Frakt, Bush & SAR). Varje kurs slutar med ett kort prov (3 av 4 rätt) och låser upp flygplan, uppdragstyper eller verkliga fördelar: tips i checklistorna, mer tid vid nödsituationer, långsammare isbildning.
+- Fliken **Hangar** visar hur många typer du får flyga; en guldprick på **Utbildning** eller **Nätverk** betyder att en kurs eller trafikrättigheter väntar på dig just nu.
 - **Karriär** — anseende hos tre kundgrupper, certifikat, rekord och loggboken. Under −50 000 kr vill ingen längre hyra ut ett flygplan till dig och karriären är slut.
 
 ## Flygbolag och flygplatser

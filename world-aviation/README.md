@@ -50,7 +50,7 @@ Every flight draws its problems: engine fire or failure, a fuel leak, icing, win
 
 Chosen on the title screen and in the pause and debrief dialogs, remembered between visits:
 
-- **Easy** — half the wind and light turbulence, one problem at a time, checklists explain why each step is done and give 50 % more time, generous landing grading, no deadlines, and a taxi assist that keeps you on the line.
+- **Easy** — half the wind and light turbulence, one problem at a time, checklists explain why each step is done and give 50 % more time, generous landing grading, no deadlines, and a taxi assist that keeps you on the line (it steers you back to the line a moment after you let go of the steering, and gently).
 - **Medium** — real wind and turbulence, sometimes two problems in one flight, checklists without the explanations, standard deadlines and grading.
 - **Hard** — strong wind and severe turbulence, two problems every flight, 25 % less time on the checklists, short deadlines, strict grading and more damage.
 
@@ -63,6 +63,7 @@ Money is in Swedish kronor. Each contract pays for the distance and the load, pl
 
 - **Hangar** — ten aircraft, from the 19-seat Vikna 19 turboprop and the Frostwing bush plane to the **Boeing 737-800**, the **Airbus A320neo**, the **Airbus A350-900** and the four-engine **Boeing 747-8F** freighter, each with its own weight, speeds, range, runway needs and its own 3D model.
 - **Training** — 16 courses in four branches (General, Passenger, Cargo, Bush & SAR). Each ends in a short exam (3 of 4 right) and unlocks aircraft, contract types or real advantages: checklist hints, more time in emergencies, slower icing.
+- The **Hangar** tab shows how many types you may fly; a gold dot on **Training** or **Network** means a course or traffic rights are ready for you right now.
 - **Career** — reputation with three client groups, licences, records and the log. Below −50 000 kr nobody will lease you an aeroplane any more and the career is over.
 
 ## Airlines and airports

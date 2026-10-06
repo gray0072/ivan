@@ -217,11 +217,29 @@ const UI = {
         '<span class="rep" title="' + esc(tr(FACTIONS[k].name)) + '"><i style="background:' + FACTIONS[k].color + '"></i>' +
         Math.round(d.rep[k]) + '</span>').join('') +
       '</div></div>' +
-      '<div class="tabs">' + tabs.map((t) =>
-        '<button class="tab' + (this.tab === t ? ' on' : '') + '" data-act="tab" data-v="' + t + '">' +
-        tr(t.charAt(0).toUpperCase() + t.slice(1)) + '</button>').join('') +
+      '<div class="tabs">' + tabs.map((t) => {
+        const b = this.tabBadge(t);
+        return '<button class="tab' + (this.tab === t ? ' on' : '') + '" data-act="tab" data-v="' + t + '"' +
+          (b ? ' title="' + esc(b.title) + '"' : '') + '>' + tr(t.charAt(0).toUpperCase() + t.slice(1)) + (b ? b.html : '') + '</button>';
+      }).join('') +
       '<button class="tab" data-act="backtitle">' + tr('Menu') + '</button></div>' +
       '<div class="tabBody">' + body + '</div>');
+  },
+
+  // what a tab shows next to its name: the hangar counts the types you may lease; training and
+  // the network get a gold dot when there is something you can do there right now
+  tabBadge(t) {
+    if (t === 'hangar') {
+      const n = AIRCRAFT.filter((a) => Career.unlocked(a)).length;
+      return { html: '<span class="tabCount">' + n + '</span>', title: tr('Aircraft types available: {n} of {m}', { n, m: AIRCRAFT.length }) };
+    }
+    if (t === 'training' && COURSES.some((c) => Career.courseState(c).available && Career.canAfford(c))) {
+      return { html: '<i class="tabDot"></i>', title: tr('A course is open to you') };
+    }
+    if (t === 'network' && REGIONS.some((rg) => { const st = Career.regionState(rg); return st.available && st.afford; })) {
+      return { html: '<i class="tabDot"></i>', title: tr('Traffic rights ready to buy') };
+    }
+    return null;
   },
 
   tabBody() {

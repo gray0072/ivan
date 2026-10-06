@@ -103,7 +103,11 @@ const Game = {
         st.elevator = approach(st.elevator, ax.pitch, rate.elevator * dt);
         st.aileron = approach(st.aileron, ax.roll, rate.aileron * dt);
         // on the ground the arrows / the stick steer the nosewheel too
-        st.rudder = approach(st.rudder, st.onGround && !ax.rudder ? ax.roll : ax.rudder, rate.rudder * dt);
+        const steerIn = st.onGround && !ax.rudder ? ax.roll : ax.rudder;
+        const assist = steerIn ? null : this.taxiAssist(dt);
+        if (steerIn) this.handsOff = 0;
+        if (assist === null) st.rudder = approach(st.rudder, steerIn, rate.rudder * dt);
+        else st.rudder = approach(st.rudder, assist, CONTROLS.TAXI_ASSIST_RATE * dt);
       } else if (Math.abs(ax.pitch) > 0.5 || Math.abs(ax.roll) > 0.5) {
         fl.ap.on = false;
         fl.warn('AP', tr('Autopilot disconnected — you have control'));
@@ -621,12 +625,17 @@ const Game = {
     g.visible = true;
     g.bearing = bearingDeg(st.pos.x, st.pos.z, target.x, target.z);
     g.dist = (p === 'TAXI_OUT' || p === 'EXIT' || p === 'ROLLOUT') && g.remaining ? g.remaining : Math.hypot(target.x - st.pos.x, target.z - st.pos.z);
+  },
 
-    // the taxi assist on the easy difficulty keeps you on the line
-    if (Career.difficulty.taxiAssist && st.onGround && fl.groundSpeedKt() > 1 && !Input.axes().rudder && !Input.axes().roll) {
-      const rel = wrapDeg(g.bearing - fl.headingDeg());
-      st.rudder = clamp(rel * 0.05, -0.8, 0.8);
-    }
+  // The taxi assist on the easy difficulty: with your hands off the steering it brings you back
+  // to the taxi line (the tiller towards the guidance arrow), but only a moment after you let
+  // go, and gently, so a turn you have just made is not snatched back. null: not steering.
+  taxiAssist(dt) {
+    const fl = this.flight, st = fl.st, g = fl.guidance;
+    this.handsOff = (this.handsOff || 0) + dt;
+    if (!Career.difficulty.taxiAssist || !st.onGround || !g || !g.visible || fl.groundSpeedKt() <= 1) return null;
+    if (this.handsOff < CONTROLS.TAXI_ASSIST_DELAY_S) return null;
+    return clamp(wrapDeg(g.bearing - fl.headingDeg()) * 0.05, -0.8, 0.8);
   },
 
   // ---------- actions ----------
@@ -648,7 +657,7 @@ const Game = {
           if (!fl.ap.nav) fl.ap.hdg = Math.round(fl.headingDeg());
           if (fl.phase === 'TAKEOFF' || fl.phase === 'CLIMB') fl.ap.alt = Math.max(fl.ap.alt, this.cruiseAltFt());
         }
-        fl.info(tr('Autopilot') + ' ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + fmtAltFt(fl.ap.alt) : tr('off')));
+        fl.info(tr('Autopilot') + ' ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + Units.alt(fl.ap.alt) : tr('off')));
         Audio2.cue('click');
         break;
       case 'timeFaster': fl.changeTimeAccel(1); break;

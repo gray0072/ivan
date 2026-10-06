@@ -18,7 +18,7 @@ Rendering layout:
 
 - **`lib/three.min.js`** (vendored, ~594 KB) — WebGL renderer, scene, camera, lighting.
 - **WebGL canvas** — the world: sky dome shader, terrain mesh, sea, runways and taxiways (canvas-generated textures with real markings), buildings, trees, clouds, aircraft, other traffic.
-- **Canvas 2D overlay** — the cockpit: window frame, glareshield, the full instrument panel (airspeed, attitude, altimeter, HSI, VSI, engine gauges, warning lights), windshield effects (rain, frost, fog, lightning) and the HUD. A 2D overlay keeps the gauges crisp and cheap and lets the cockpit frame be drawn on top of the 3D scene.
+- **Canvas 2D overlay** — the cockpit: window frame, glareshield, the full instrument panel (airspeed, attitude, altimeter, HSI, VSI, engine gauges, warning lights), windshield effects (rain, snow, frost, fog, lightning) and the HUD. Rain and snow are particles in the air ahead of the cockpit (world metres around the eye, seen through the cockpit camera): they drift with the wind and fall, and the aeroplane flies through them, so parked the snow drifts down past the glass and at speed it streams out of the point the aeroplane is flying at; each particle is drawn as the streak it makes in a short exposure (`PRECIP_FX` in `ui/cockpit.js`). A 2D overlay keeps the gauges crisp and cheap and lets the cockpit frame be drawn on top of the 3D scene.
 - **Web Audio API** — synthesized sounds, no audio files; spoken callouts with `speechSynthesis` where the browser has it.
 
 Terrain: every flight builds a heightmap of its own part of the world (see below) and one near-field mesh that follows the aircraft (110–420 m cells depending on the quality preset and the height, heights and normals rebuilt on the CPU when the aircraft has moved far enough), so the ground stays detailed under the wheels without a huge vertex count. The far mesh sits 30 m under the real ground and the near mesh fades into it at its edge, so they never fight; the renderer uses a logarithmic depth buffer for the same reason.
@@ -49,8 +49,9 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
 ## Screens
 
 1. **Title** — the language (English / Русский / Svenska) at the top, Continue / New career, difficulty (Easy / Medium / Hard), Graphics, sound, units, How to fly, reset career.
-2. **Ops (career hub)** — four tabs:
+2. **Ops (career hub)** — five tabs. Next to its name the **Hangar** tab shows how many aircraft types are unlocked (a small count; the tooltip says "of N"), and **Training** and **Network** get a pulsing gold dot when there is something to do there right now — a course that is open and affordable, traffic rights you qualify for and can pay for — so a dot always means an action, never just "something exists".
    - **Dispatch** — the contract board (3–5 offers), each with client, route, load, payout, requirements.
+   - **Network** — the regions of the world and their traffic rights (reputation, flights, price).
    - **Hangar** — the aircraft ladder, specs, lease/buy, "which aircraft is selected".
    - **Training** — the technology tree (see below) with branches and tiers, in the game's language: branch names, course names, descriptions, effects, statuses and buttons (`QUIZ_TEXT`, `COURSE_TEXT` in `data/quizzes.js`); the exams run in it too.
    - **Career** — money, reputation with the three client factions, licences, block time, landings, records, cheat count.
@@ -170,7 +171,7 @@ Chosen on the title screen and changeable in settings; applies to every flight o
 
 Also offered in the pause, debrief and failure dialogs (pre-selected), remembered in `localStorage`; a change applies from the next flight or the restart.
 
-- **Easy** — wind ×0.5, turbulence light, one emergency per flight, checklist hints (why each step) and ×1.5 time, generous landing grading, no deadlines, taxi assist (the nosewheel follows the guidance arrow while the player does not steer).
+- **Easy** — wind ×0.5, turbulence light, one emergency per flight, checklist hints (why each step) and ×1.5 time, generous landing grading, no deadlines, taxi assist (the nosewheel follows the guidance arrow while the player does not steer — it takes over `CONTROLS.TAXI_ASSIST_DELAY_S` after the player lets go and turns the tiller no faster than `TAXI_ASSIST_RATE`, so a turn just made is not snatched back).
 - **Medium** — wind ×1.0, moderate turbulence, one or two emergencies, checklists without hints and with normal time, standard deadlines and grading.
 - **Hard** — wind ×1.5, severe turbulence, two emergencies every flight, ×0.75 checklist time, deadlines ×0.8, strict grading, ×1.5 damage from mishandled emergencies.
 
@@ -346,7 +347,7 @@ The view ahead stays clear for the landing. A left column (`#hudLeft`) holds the
 
 ## Units
 
-`settings.units`: `aviation` (ft, kt, nm, fpm — the default) or `metric` (m, km/h, km, m/s), chosen on the title screen and in the pause. Everything inside the game stays in aviation units; `Units` in `utils.js` converts where things are shown: `Units.text` rewrites every "<number> ft|kt|nm|fpm" in prompts, messages, banners, checklists and the HTML screens; the instruments draw metric scales (airspeed in km/h, altimeter one turn = 1 000 m, VSI ±10 m/s). Metric values are rounded to sensible numbers: altitudes to 10 m (50 m above 1 000 m), speeds to 5 km/h, distances to 1 km (0.1 km under 10 km), vertical speed to 0.1 m/s.
+`settings.units`: `aviation` (ft, kt, nm, fpm — the default) or `metric` (m, km/h, km, m/s), chosen on the title screen and in the pause. Everything inside the game stays in aviation units; `Units` in `utils.js` converts where things are shown: `Units.text` rewrites every "<number> ft|kt|nm|fpm" in prompts, messages, banners, checklists and the HTML screens; the instruments draw metric scales (airspeed in km/h, altimeter one turn = 1 000 m, VSI ±10 m/s), and each gauge's name and unit sit where its dial has no ticks (the altimeter's under the 0, the VSI's in the gap on the left). Text built in code always carries its unit (`Units.alt` / `spd` / `dist`), never a bare number. Metric values are rounded to sensible numbers: altitudes to 10 m (50 m above 1 000 m), speeds to 5 km/h, distances to 1 km (0.1 km under 10 km), vertical speed to 0.1 m/s.
 
 ## The map
 

@@ -70,7 +70,10 @@ const Instruments = {
   },
 
   // ---------- helpers ----------
-  bezel(ctx, x, y, r, label, sub) {
+  // the case and the face; the name and the unit go where the dial has no ticks: `at` is their
+  // centre as a fraction of the radius (default: the bottom of the face)
+  bezel(ctx, x, y, r, label, sub, at) {
+    const lx = x + (at ? at.x : 0) * r, ly = y + (at ? at.y : 0.82) * r;
     ctx.save();
     const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.1, x, y, r);
     g.addColorStop(0, '#23282f');
@@ -86,13 +89,13 @@ const Instruments = {
       ctx.fillStyle = '#8d99a6';
       ctx.font = '600 ' + Math.round(r * 0.14) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(label, x, y + r * 0.82);
+      ctx.fillText(label, lx, ly);
     }
     if (sub) {
       ctx.fillStyle = '#6f7b88';
-      ctx.font = '500 ' + Math.round(r * 0.1) + 'px system-ui, sans-serif';
+      ctx.font = '500 ' + Math.max(7, Math.round(r * 0.1)) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(sub, x, y + r * 0.95);
+      ctx.fillText(sub, lx, ly + r * 0.13);
     }
     ctx.restore();
   },
@@ -104,7 +107,7 @@ const Instruments = {
     const st = fl.st, ac = fl.ac;
     const k = Units.metric ? 1.852 : 1;
     const v = st.ias / KTS * k;
-    this.bezel(ctx, x, y, r, 'AIRSPEED', Units.metric ? 'km/h' : 'kt');
+    this.bezel(ctx, x, y, r, 'AIRSPEED', Units.metric ? 'km/h' : 'kt', { x: 0, y: 0.7 });
     ctx.save();
     ctx.beginPath(); ctx.arc(x, y, r * 0.93, 0, TAU); ctx.clip();
     ctx.translate(x, y);
@@ -246,7 +249,7 @@ const Instruments = {
   alt(ctx, x, y, r, fl) {
     const st = fl.st;
     const ft = Units.metric ? st.pos.y : st.pos.y / FT;          // the dial's unit: ft, or m
-    this.bezel(ctx, x, y, r, 'ALT', Units.metric ? 'm' : 'ft');
+    this.bezel(ctx, x, y, r, 'ALT', Units.metric ? 'm' : 'ft', { x: 0, y: -0.33 });
     ctx.save();
     ctx.translate(x, y);
     ctx.strokeStyle = '#c8d2dc';
@@ -272,16 +275,15 @@ const Instruments = {
     ctx.lineTo(Math.cos(sa + 0.07) * r * 0.99, Math.sin(sa + 0.07) * r * 0.99);
     ctx.lineTo(Math.cos(sa - 0.07) * r * 0.99, Math.sin(sa - 0.07) * r * 0.99);
     ctx.closePath(); ctx.fill();
-    // digital window
+    // digital window, between the hub and the 4 / 5 / 6 so it hides none of them
     ctx.fillStyle = '#05070a';
     ctx.strokeStyle = '#4c5561';
     ctx.lineWidth = 1;
-    roundRect(ctx, -r * 0.42, r * 0.2, r * 0.84, r * 0.3, 3);
+    roundRect(ctx, -r * 0.35, r * 0.11, r * 0.7, r * 0.27, 3);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#7de08a';
-    ctx.font = '700 ' + Math.round(r * 0.22) + 'px ui-monospace, monospace';
     ctx.font = '700 ' + Math.round(r * 0.19) + 'px ui-monospace, monospace';
-    ctx.fillText(String(Math.round(ft / 10) * 10), 0, r * 0.355);
+    ctx.fillText(String(Math.round(ft / 10) * 10), 0, r * 0.245);
     // needles: thousands (short, wide) and hundreds (long)
     const needle = (a, len, wid, col) => {
       ctx.save();
@@ -333,7 +335,7 @@ const Instruments = {
     const vmax = metric ? 10 : 2000;
     const majors = metric ? [2, 4, 6, 8, 10] : [500, 1000, 1500, 2000];
     const minor = metric ? 1 : 250;
-    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm ×1000');
+    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm ×1000', { x: -0.5, y: -0.04 });
     ctx.save();
     ctx.translate(x, y);
     const ang = (s) => -clamp(s, -vmax, vmax) / vmax * 150 * DEG;
@@ -355,8 +357,9 @@ const Instruments = {
         ctx.fillText(txt, Math.cos(a) * r * 0.56, Math.sin(a) * r * 0.56);
       }
     }
-    ctx.fillText('UP', -r * 0.22, -r * 0.3);
-    ctx.fillText('DN', -r * 0.22, r * 0.3);
+    ctx.font = '600 ' + Math.max(7, Math.round(r * 0.15)) + 'px system-ui, sans-serif';
+    ctx.fillText('UP', -r * 0.18, -r * 0.22);
+    ctx.fillText('DN', -r * 0.18, r * 0.22);
     ctx.rotate(ang(v));
     pointer(ctx, r * 0.84, r * 0.05, r * 0.12, '#f5f7fa');
     ctx.fillStyle = '#0e1116';

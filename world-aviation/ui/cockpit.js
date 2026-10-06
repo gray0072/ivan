@@ -8,17 +8,10 @@
 
 const Cockpit = {
   t: 0,
-  drops: [],
-  flakes: [],
+  parts: null,        // the rain or snow particles around the eye (see precipitation())
+  partsKind: null,
 
-  init() {
-    for (let i = 0; i < 90; i++) {
-      this.drops.push({ x: Math.random(), y: Math.random(), v: 0.6 + Math.random() * 1.4, l: 8 + Math.random() * 22 });
-    }
-    for (let i = 0; i < 70; i++) {
-      this.flakes.push({ x: Math.random(), y: Math.random(), v: 0.1 + Math.random() * 0.4, r: 1 + Math.random() * 2.4, w: Math.random() * TAU });
-    }
-  },
+  init() { this.parts = null; },
 
   panelTop(h) {
     return h - Math.min(h * (h < 560 ? 0.34 : 0.30), h < 560 ? 210 : 250);
@@ -41,7 +34,7 @@ const Cockpit = {
 
     if (!inside) { ctx.restore(); return; }
     // ---- weather on the glass
-    this.weather(ctx, w, top, fl, dt);
+    this.weather(ctx, w, h, top, fl, dt);
 
     // ---- the cockpit structure
     ctx.fillStyle = '#191d23';
@@ -117,7 +110,7 @@ const Cockpit = {
     ctx.restore();
   },
 
-  weather(ctx, w, top, fl, dt) {
+  weather(ctx, w, h, top, fl, dt) {
     const env = fl.env;
     const inCloud = Scene3D.inCloud || 0;
     // cloud whiteout
@@ -161,32 +154,106 @@ const Cockpit = {
       }
       ctx.restore();
     }
-    // precipitation
-    const speed = clamp(fl.st.tas / 200, 0.2, 2.2);
-    if (env.precip === 'rain') {
-      ctx.strokeStyle = 'rgba(206,224,240,0.5)';
-      ctx.lineWidth = 1.1;
-      ctx.beginPath();
-      for (const d of this.drops) {
-        d.y += (d.v * 0.55 * (0.4 + speed)) * dt;
-        d.x += d.v * 0.09 * dt;
-        if (d.y > 1) { d.y -= 1; d.x = Math.random(); }
-        if (d.x > 1) d.x -= 1;
-        const x = d.x * w, y = d.y * top;
-        ctx.moveTo(x, y);
-        ctx.lineTo(x - d.l * 0.18, y + d.l);
+    this.precipitation(ctx, w, h, top, fl, dt);
+  },
+
+  // Rain and snow are particles in the air ahead of the cockpit, kept in world metres relative
+  // to the eye: they drift with the wind and fall, and the aeroplane flies through them. Parked,
+  // snow drifts gently down past the glass; at 200 km/h it streams out of the point you are
+  // flying at, the nearest flakes as long streaks. Each one is drawn as the streak it makes in
+  // a short exposure, through the cockpit camera.
+  precipitation(ctx, w, h, top, fl, dt) {
+    const fx = PRECIP_FX[fl.env.precip];
+    const cam = Scene3D.camera;
+    if (!fx || !cam) { this.parts = null; return; }
+    dt = Math.min(dt, 0.1);
+    cam.updateMatrixWorld();
+    const e = cam.matrixWorld.elements;
+    const Rx = e[0], Ry = e[1], Rz = e[2], Ux = e[4], Uy = e[5], Uz = e[6], Fx = -e[8], Fy = -e[9], Fz = -e[10];
+    const tanV = Math.tan(cam.fov * DEG / 2), tanH = tanV * w / h, f = h / 2 / tanV;
+    const near = fx.near, D = fx.depth;
+    // the air past the aeroplane: the wind less our own velocity, and the fall
+    const st = fl.st, wind = fl.windAt(st.pos.y);
+    const ux = wind.x - st.vel.x, uy = wind.y - st.vel.y - fx.fall, uz = wind.z - st.vel.z;
+    const vx = ux * Rx + uy * Ry + uz * Rz, vy = ux * Ux + uy * Uy + uz * Uz, vz = ux * Fx + uy * Fy + uz * Fz;
+    // new particles come in where the air comes from: mostly the far end at speed, the top
+    // when parked, a side in a crosswind (each face weighted by the flow through it)
+    const wFar = Math.max(0, -vz) * 4 * tanH * tanV, wTop = Math.max(0, -vy) * tanH, wBot = Math.max(0, vy) * tanH;
+    const wLeft = Math.max(0, vx) * tanV, wRight = Math.max(0, -vx) * tanV, wAny = 0.05;
+    const wSum = wFar + wTop + wBot + wLeft + wRight + wAny;
+    // (`fill`: anywhere in the view, to fill it when the weather starts)
+    const place = (p, fill) => {
+      let face = 'any';
+      if (!fill) {
+        let k = Math.random() * wSum;
+        face = (k -= wFar) < 0 ? 'far' : (k -= wTop) < 0 ? 'top' : (k -= wBot) < 0 ? 'bottom'
+          : (k -= wLeft) < 0 ? 'left' : (k -= wRight) < 0 ? 'right' : 'any';
       }
-      ctx.stroke();
-      // wiper sweep area stays a little clearer
-    } else if (env.precip === 'snow') {
-      ctx.fillStyle = 'rgba(240,246,252,0.75)';
-      for (const f of this.flakes) {
-        f.y += f.v * (0.5 + speed) * dt;
-        f.x += Math.sin(this.t * 1.6 + f.w) * 0.02 * dt;
-        if (f.y > 1) { f.y -= 1; f.x = Math.random(); }
-        const x = f.x * w, y = f.y * top;
-        ctx.beginPath(); ctx.arc(x, y, f.r, 0, TAU); ctx.fill();
+      const lz = face === 'far' ? D * (0.9 + 0.1 * Math.random())
+        : near + (D - near) * (face === 'any' ? Math.cbrt(Math.random()) : Math.sqrt(Math.random()));
+      let lx = (Math.random() * 2 - 1) * lz * tanH, ly = (Math.random() * 2 - 1) * lz * tanV;
+      if (face === 'top') ly = lz * tanV;
+      else if (face === 'bottom') ly = -lz * tanV;
+      else if (face === 'left') lx = -lz * tanH;
+      else if (face === 'right') lx = lz * tanH;
+      p.x = Rx * lx + Ux * ly + Fx * lz; p.y = Ry * lx + Uy * ly + Fy * lz; p.z = Rz * lx + Uz * ly + Fz * lz;
+    };
+    if (!this.parts || this.partsKind !== fl.env.precip) {
+      this.partsKind = fl.env.precip;
+      this.parts = [];
+      for (let i = 0; i < fx.count; i++) {
+        const p = { x: 0, y: 0, z: 0, s: 0.6 + Math.random() * 0.8, w: Math.random() * TAU };
+        place(p, true);
+        this.parts.push(p);
       }
     }
+    // a few sizes, one path each
+    const paths = [[], [], [], []];
+    const sh = fx.shutter, cx = w / 2, cy = h / 2;
+    for (const p of this.parts) {
+      p.x += ux * dt; p.y += uy * dt; p.z += uz * dt;
+      if (fx.flutter) {
+        p.x += Math.sin(this.t * 1.7 + p.w) * fx.flutter * dt;
+        p.z += Math.cos(this.t * 1.3 + p.w) * fx.flutter * dt;
+      }
+      let lx = p.x * Rx + p.y * Ry + p.z * Rz, ly = p.x * Ux + p.y * Uy + p.z * Uz, lz = p.x * Fx + p.y * Fy + p.z * Fz;
+      if (lz < near || lz > D * 1.05 || Math.abs(lx) > lz * tanH + 0.3 || Math.abs(ly) > lz * tanV + 0.3) {
+        place(p, false);
+        lx = p.x * Rx + p.y * Ry + p.z * Rz; ly = p.x * Ux + p.y * Uy + p.z * Uz; lz = p.x * Fx + p.y * Fy + p.z * Fz;
+      }
+      const px = fx.size * p.s * f / lz;
+      if (px < 0.3) continue;
+      const sx = cx + lx / lz * f, sy = cy - ly / lz * f;
+      if (sy < -20 || sy > top + 20) continue;
+      // where it was a moment ago: the streak
+      const tz = Math.max(0.3, lz - vz * sh);
+      const tx = cx + (lx - vx * sh) / tz * f, ty = cy - (ly - vy * sh) / tz * f;
+      const b = px < 0.8 ? 0 : px < 1.5 ? 1 : px < 2.6 ? 2 : 3;
+      paths[b].push(tx, ty, sx + 0.01, sy);
+    }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, 0, w, top + 14); ctx.clip();
+    ctx.lineCap = 'round';
+    for (let b = 0; b < 4; b++) {
+      const seg = paths[b];
+      if (!seg.length) continue;
+      ctx.strokeStyle = fx.color + (fx.alpha * [0.45, 0.65, 0.85, 0.95][b]) + ')';
+      ctx.lineWidth = fx.width[b];
+      ctx.beginPath();
+      for (let i = 0; i < seg.length; i += 4) { ctx.moveTo(seg[i], seg[i + 1]); ctx.lineTo(seg[i + 2], seg[i + 3]); }
+      ctx.stroke();
+    }
+    ctx.restore();
   }
+};
+
+// how rain and snow look (visual only): how many particles, how deep the cloud of them goes in
+// front of the eye and where the glass is (m), how fast they fall (m/s), how big they are (m),
+// the exposure their streaks show (s), a little sideways flutter for snow (m/s), the colour,
+// and the line width of each size class (px)
+const PRECIP_FX = {
+  snow: { count: 480, depth: 16, near: 0.9, fall: 1.1, size: 0.016, shutter: 0.016, flutter: 0.35,
+    color: 'rgba(240,246,252,', alpha: 0.9, width: [0.8, 1.4, 2.2, 3.4] },
+  rain: { count: 420, depth: 18, near: 0.9, fall: 8.5, size: 0.014, shutter: 0.035, flutter: 0,
+    color: 'rgba(206,224,240,', alpha: 0.6, width: [0.6, 0.9, 1.2, 1.6] }
 };

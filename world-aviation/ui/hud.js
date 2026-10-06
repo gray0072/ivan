@@ -226,7 +226,7 @@ const HUD = {
     elx.querySelector('svg').style.transform = 'rotate(' + rel + 'deg)';
     elx.classList.toggle('near', guide.dist < 90);
     const d = guide.dist;
-    elx.querySelector('b').textContent = d >= NM * 2 ? Math.round(d / NM) + ' nm' : d > 999 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
+    elx.querySelector('b').textContent = d >= NM * 2 ? Units.dist(d / NM) : d > 999 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
   },
 
   // ---------- map ----------
@@ -334,11 +334,11 @@ const HUD = {
     g.beginPath(); g.moveTo(X(p0.x), Y(p0.z)); g.lineTo(X(p1.x), Y(p1.z)); g.stroke();
     g.setLineDash([]);
     // the track flown so far: yellow on the ground, green in the air, up to the aeroplane
-    const tr = fl.track || [];
+    const track = fl.track || [];
     g.lineWidth = 2.5;
     g.lineJoin = 'round'; g.lineCap = 'round';
-    for (let i = 1; i <= tr.length; i++) {
-      const a = tr[i - 1], b = i < tr.length ? tr[i] : { x: st.pos.x, z: st.pos.z, air: !st.onGround };
+    for (let i = 1; i <= track.length; i++) {
+      const a = track[i - 1], b = i < track.length ? track[i] : { x: st.pos.x, z: st.pos.z, air: !st.onGround };
       g.strokeStyle = a.air || b.air ? '#54d68a' : '#ffd54a';
       g.beginPath(); g.moveTo(X(a.x), Y(a.z)); g.lineTo(X(b.x), Y(b.z)); g.stroke();
     }
