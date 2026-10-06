@@ -18,7 +18,8 @@ Rendering layout:
 
 - **`lib/three.min.js`** (vendored, ~594 KB) — WebGL renderer, scene, camera, lighting.
 - **WebGL canvas** — the world: sky dome shader, terrain mesh, sea, runways and taxiways (canvas-generated textures with real markings), buildings, trees, clouds, aircraft, other traffic.
-- **Canvas 2D overlay** — the cockpit: window frame, glareshield, the full instrument panel (airspeed, attitude, altimeter, HSI, VSI, engine gauges, warning lights), windshield effects (rain, snow, frost, fog, lightning) and the HUD. Rain and snow are particles in the air ahead of the cockpit (world metres around the eye, seen through the cockpit camera): they drift with the wind and fall, and the aeroplane flies through them, so parked the snow drifts down past the glass and at speed it streams out of the point the aeroplane is flying at; each particle is drawn as the streak it makes in a short exposure (`PRECIP_FX` in `ui/cockpit.js`). A 2D overlay keeps the gauges crisp and cheap and lets the cockpit frame be drawn on top of the 3D scene.
+- **Canvas 2D overlay** — the cockpit: window frame, glareshield, the full instrument panel (airspeed, attitude, altimeter, HSI, VSI, engine gauges, warning lights), windshield effects (rain, snow, frost, fog, lightning) and the HUD; the rain and snow also fall in every outside view (moving with the camera: past the chase camera like past the cockpit, straight down past the tower). Rain and snow are particles in the air ahead of the cockpit (world metres around the eye, seen through the cockpit camera): they drift with the wind and fall, and the aeroplane flies through them, so parked the snow drifts down past the glass and at speed it streams out of the point the aeroplane is flying at; each particle is drawn as the streak it makes in a short exposure (`PRECIP_FX` in `ui/cockpit.js`). The particles move with the camera's own velocity, measured from its movement, so any view works.
+- **Lights on the ground at night** (`render/lights3d.js`, built with the far terrain for each flight, faded in after dusk): the real towns and cities of `data/cities.js` — a bright white core, streets running out of it, sodium orange around, the size from the population; strings of road lights between neighbouring cities and from each airport to its city; villages over the land within 160 km of the route (fewer in the Arctic, the deserts and the mountains, each from its own cell's dice so they stay put). One `THREE.Points` object of fixed pixel size, `QUALITY.groundLights` points (14 000 / 32 000 / 60 000): half for the cities, a fifth for the roads, the rest for the villages. A 2D overlay keeps the gauges crisp and cheap and lets the cockpit frame be drawn on top of the 3D scene.
 - **Web Audio API** — synthesized sounds, no audio files; spoken callouts with `speechSynthesis` where the browser has it.
 
 Terrain: every flight builds a heightmap of its own part of the world (see below) and one near-field mesh that follows the aircraft (110–420 m cells depending on the quality preset and the height, heights and normals rebuilt on the CPU when the aircraft has moved far enough), so the ground stays detailed under the wheels without a huge vertex count. The far mesh sits 30 m under the real ground and the near mesh fades into it at its edge, so they never fight; that holds at its vertices, so every far vertex whose triangles can reach an airport's ground also goes under that field's elevation (`Terrain.farVertexHeight`) — otherwise a 4–6 km triangle between a low coastal field and the hills around it passes over the apron and hides it (Kalmar); the renderer uses a logarithmic depth buffer for the same reason.
@@ -50,7 +51,7 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
 
 1. **Title** — the language (English / Русский / Svenska) at the top, Continue / New career, difficulty (Easy / Medium / Hard), Graphics, sound, units, How to fly, reset career.
 2. **Ops (career hub)** — five tabs. Next to its name the **Hangar** tab shows how many aircraft types are unlocked (a small count; the tooltip says "of N"), and **Training** and **Network** get a pulsing gold dot when there is something to do there right now — a course that is open and affordable, traffic rights you qualify for and can pay for — so a dot always means an action, never just "something exists".
-   - **Dispatch** — the contract board (3–5 offers), each with client, route, load, payout, requirements.
+   - **Dispatch** — the contract board: 6 offers at the start, one more for every region opened after Sweden and for every 15 flights flown, up to 10 (`CONTRACTS.OFFERS`, `OFFERS_PER_FLIGHTS`, `OFFERS_MAX`), each with client, route, load, payout, requirements.
    - **Network** — the regions of the world and their traffic rights (reputation, flights, price).
    - **Hangar** — the aircraft ladder, specs, lease/buy, "which aircraft is selected".
    - **Training** — the technology tree (see below) with branches and tiers, in the game's language: branch names, course names, descriptions, effects, statuses and buttons (`QUIZ_TEXT`, `COURSE_TEXT` in `data/quizzes.js`); the exams run in it too.
@@ -304,7 +305,8 @@ world-aviation/
 │   ├── quizzes.js          the course exams in English, Russian and Swedish, with hints; the Training tab's words and the course texts in Russian and Swedish
 │   ├── lang-ru.js          every other text of the game in Russian (TEXT_RU: English text → translation)
 │   ├── lang-sv.js          the same in Swedish (TEXT_SV)
-│   └── geodata.js          the world's coastlines, inland water and mountain ranges ([lon, lat])
+│   ├── geodata.js          the world's coastlines, inland water and mountain ranges ([lon, lat])
+│   └── cities.js           about 300 real towns and cities (lat, lon, people) for the lights at night
 ├── art/
 │   ├── flags.js            national flags (Canvas 2D), and small flag images for the screens
 │   ├── landmarks.js        the city symbols: about 100 landmark silhouettes
@@ -318,6 +320,7 @@ world-aviation/
 │   ├── models.js           3D aircraft models and liveries built from each type's dimensions and look, in an airline's colours
 │   ├── airport3d.js        an airport in 3D: runway and ground textures, lights and PAPI, buildings, flags, banners, signs
 │   ├── apron3d.js          life on the apron: jet bridges, vehicles, stand plates, floodlights, traffic, the pushback tug
+│   ├── lights3d.js         the lights on the ground at night: cities, roads, villages
 │   └── scene3d.js          three.js scene: sky, terrain, sea, lighting, the views, follow mesh, airports in view
 ├── ui/
 │   ├── instruments.js      airspeed, attitude, altimeter, HSI, VSI, engine gauges, warnings

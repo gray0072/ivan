@@ -317,6 +317,7 @@ const Scene3D = {
   // a new flight's world: new far terrain, no old airports, a fresh near mesh
   setTheatre() {
     this.buildFarTerrain();
+    GroundLights.build(this.scene, this.quality);
     for (const id of Array.from(this.airports3D.keys())) this.dropAirport(id);
     this.nearBuild = null;
     this.treeKey = null;
@@ -450,6 +451,7 @@ const Scene3D = {
     this.quality = q;
     this.resize();
     this.buildFarTerrain();
+    GroundLights.build(this.scene, this.quality);
     this.buildNearTerrain();
     this.buildTrees();
     this.buildClouds();
@@ -570,6 +572,7 @@ const Scene3D = {
     const dark = 1 - smoothstep(-0.16, 0.03, sun.el);                   // 1 at night: lights on
     const warm = smoothstep(-0.14, 0.0, sun.el) * (1 - smoothstep(0.05, 0.4, sun.el));   // dusk colours
     this.dark = dark;
+    GroundLights.update(dark);
     const lit = day > 0.05 ? sd : md;                                   // the light comes from the moon at night
     this.sun.position.copy(eye).addScaledVector(lit, 50000);
     this.sun.target.position.copy(eye);

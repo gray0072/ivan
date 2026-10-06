@@ -67,7 +67,8 @@ const Career = {
     d.lastTo = d.lastTo || d.base;
     d.season = d.season === undefined ? Math.floor(rand.next() * 12) : d.season;
     d.regions = d.regions || ['sweden'];
-    if (!d.contracts.length || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
+    // (a board from before it grew to six offers is dealt again)
+    if (d.contracts.length < 5 || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
 
   new(opts) {
@@ -210,6 +211,13 @@ const Career = {
     return true;
   },
 
+  // the size of the contract board: it grows with the network and the experience
+  offerCount() {
+    const d = this.data;
+    return Math.min(CONTRACTS.OFFERS_MAX, CONTRACTS.OFFERS + Math.max(0, d.regions.length - 1) +
+      Math.floor(d.stats.flights / CONTRACTS.OFFERS_PER_FLIGHTS));
+  },
+
   generateContracts() {
     if (!this.data) return;
     const rng = rand;
@@ -220,11 +228,12 @@ const Career = {
     const away = from !== home;
     const all = World.list.filter((a) => this.legOk(from, a, ac));
     const picks = [];
+    const offers = this.offerCount();
     if (!away) {
       // from the base: anywhere open, each destination at most twice
       const used = {};
       let guard = 0;
-      while (picks.length < CONTRACTS.OFFERS && all.length && guard++ < 200) {
+      while (picks.length < offers && all.length && guard++ < 200) {
         const dest = rng.pick(all);
         if ((used[dest.id] = (used[dest.id] || 0) + 1) > 2) continue;
         picks.push(dest);
@@ -237,13 +246,12 @@ const Career = {
         geoDistanceNm(p.lat, p.lon, home.lat, home.lon) - geoDistanceNm(q.lat, q.lon, home.lat, home.lon));
       const pool = homeOk ? onward : onward.slice(0, Math.max(3, Math.ceil(onward.length / 2)));
       let guard = 0;
-      while (picks.length < CONTRACTS.OFFERS && pool.length && guard++ < 50) {
+      while (picks.length < offers && pool.length && guard++ < 50) {
         const dest = rng.pick(pool);
         if (picks.indexOf(dest) < 0) picks.push(dest);
       }
     }
-    const offers = picks.map((dest) => this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx));
-    this.data.contracts = offers.filter(Boolean);
+    this.data.contracts = picks.map((dest) => this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx)).filter(Boolean);
     // never leave a pilot with nothing to fly: fall back to a light mail run
     if (!this.data.contracts.length && all.length) {
       const dest = away && all.indexOf(home) >= 0 ? home : all[0];

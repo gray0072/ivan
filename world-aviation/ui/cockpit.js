@@ -32,7 +32,8 @@ const Cockpit = {
     const wide = w > 900;
     const frame = 0.055 * h + (wide ? 26 : 12);   // how thick the window frame is
 
-    if (!inside) { ctx.restore(); return; }
+    // outside, only the rain or snow in the air around the camera (no glass, no frame)
+    if (!inside) { this.precipitation(ctx, w, h, top, fl, dt); ctx.restore(); return; }
     // ---- weather on the glass
     this.weather(ctx, w, h, top, fl, dt);
 
@@ -173,8 +174,17 @@ const Cockpit = {
     const tanV = Math.tan(cam.fov * DEG / 2), tanH = tanV * w / h, f = h / 2 / tanV;
     const near = fx.near, D = fx.depth;
     // the air past the aeroplane: the wind less our own velocity, and the fall
-    const st = fl.st, wind = fl.windAt(st.pos.y);
-    const ux = wind.x - st.vel.x, uy = wind.y - st.vel.y - fx.fall, uz = wind.z - st.vel.z;
+    // the camera's own velocity from its movement (the aeroplane's in the cockpit and the chase
+    // views, nothing from the tower); a jump to another view is not a movement
+    const p = cam.position, last = this.camLast || (this.camLast = p.clone());
+    const cv = this.camVel || (this.camVel = { x: 0, y: 0, z: 0 });
+    if (dt > 0) {
+      const vx = (p.x - last.x) / dt, vy = (p.y - last.y) / dt, vz = (p.z - last.z) / dt;
+      if (Math.hypot(vx, vy, vz) < 600) { cv.x = vx; cv.y = vy; cv.z = vz; }
+      last.copy(p);
+    }
+    const wind = fl.windAt(p.y);
+    const ux = wind.x - cv.x, uy = wind.y - cv.y - fx.fall, uz = wind.z - cv.z;
     const vx = ux * Rx + uy * Ry + uz * Rz, vy = ux * Ux + uy * Uy + uz * Uz, vz = ux * Fx + uy * Fy + uz * Fz;
     // new particles come in where the air comes from: mostly the far end at speed, the top
     // when parked, a side in a crosswind (each face weighted by the flow through it)

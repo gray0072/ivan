@@ -471,7 +471,11 @@ const COURSES = [
 // ---------- Contract generation ----------
 // All money is Swedish kronor (SEK).
 const CONTRACTS = {
-  OFFERS: 4,
+  // how many contracts the board offers: this many at the start, one more for every region
+  // opened after the first and for every OFFERS_PER_FLIGHTS flights flown, up to OFFERS_MAX
+  OFFERS: 6,
+  OFFERS_PER_FLIGHTS: 15,
+  OFFERS_MAX: 10,
   BASE_PAY_PER_NM: 58,           // SEK per real nautical mile, before the payload fee
   PAYLOAD_FEE_NM: 650,           // load fee = kg x PAYLOAD rate x nm / this
   FACTION_MULT: { pax: 1.0, cargo: 1.05, bush: 1.2 },
@@ -517,9 +521,9 @@ const WEATHER = {
 
 // ---------- Camera / rendering presets ----------
 const QUALITY = {
-  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280 },
-  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600 },
-  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560 }
+  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000 },
+  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000 },
+  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000 }
 };
 
 const VIEW = {
