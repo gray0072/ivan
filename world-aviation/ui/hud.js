@@ -55,6 +55,12 @@ const HUD = {
   render() {
     if (!this.msgBox) return;
     const now = performance.now();
+    // touch screens: the messages fit between the left column and the buttons, whatever their width
+    if (Input.isCoarse && this.box && (this.btnN = (this.btnN || 0) + 1) % 30 === 1) {
+      const tb = el('touchButtons');
+      this.buttonsW = tb ? tb.offsetWidth : 0;
+      if (this.buttonsW) this.box.style.setProperty('--buttonsW', this.buttonsW + 'px');
+    }
     this.messages = this.messages.filter((m) => now - m.t < 7000);
     const key = this.messages.map((m) => m.t).join(',');
     if (key !== this.msgKey) {
@@ -75,10 +81,6 @@ const HUD = {
     const c = fl.contract;
     if (!c) { this.strip.hidden = true; return; }
     this.strip.hidden = false;
-    // touch screens: the prompt sits right under the strip, whatever its height
-    if (Input.isCoarse && this.box && (this.stripN = (this.stripN || 0) + 1) % 30 === 1) {
-      this.box.style.setProperty('--stripH', this.strip.offsetHeight + 'px');
-    }
     const left = res ? Math.max(0, res.deadline - fl.realElapsed) : 0;
     const late = res && fl.realElapsed > res.deadline;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);

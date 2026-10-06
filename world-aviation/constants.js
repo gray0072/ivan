@@ -58,6 +58,8 @@ const SIM = {
   FLAP_TRANSIT_S: 2.5,         // seconds per flap notch
   BRAKE_RAMP_S: 0.35,          // seconds for the wheel brakes to reach full pressure
   NOSEWHEEL_MAX_STEER_DEG: 38,
+  NOSEWHEEL_STEER_RATE_DEG: 22, // degrees per second the hydraulic nosewheel steering turns at
+  GROUND_YAW_ACCEL: 0.9,       // rad/s² at most: how fast the turn rate on the ground builds up (the aeroplane's inertia)
   ENGINE_IDLE_N1: 0.22,        // N1 at idle, thrust scales from here to 100 %
   PUSHBACK_S: 14,              // how long the tug takes
   CRASH_BANK_DEG: 25,          // a wing on the ground at more bank than this is a crash
@@ -518,6 +520,12 @@ const VIEW = {
   FOV_DEG: 68,
   // the pilot's eye in the aircraft's own axes: x = right, y = up, z = forward (metres, an 18 m aeroplane)
   COCKPIT_EYE: { x: 0, y: 1.6, z: 5.5 },
+  // the captain's seat: this far left of the centreline, as a fraction of the fuselage diameter
+  // (about 0.5 m in an airliner), so the centre window post is off to the right, not ahead
+  COCKPIT_SEAT_X: -0.14,
+  // the centre post seen from that seat: how far ahead of the eye it is (as a fraction of the
+  // fuselage diameter), so it sits about 30 degrees to the right
+  CENTRE_POST_AHEAD: 0.24,
   // the views C (and Shift+C) cycle through, and their names
   MODES: ['cockpit', 'chase', 'front', 'wing', 'tail', 'gear', 'top', 'tower'],
   NAMES: {
@@ -533,6 +541,9 @@ const VIEW = {
 const CONTROLS = {
   THROTTLE_CURVE: 1.8,         // thrust = lever position ^ this: the low end of the lever is finer (taxi power)
   THROTTLE_KEY_RATE: 0.45,     // lever travel per second with Z / X
+  // the hydraulic actuators: how fast each control surface follows the stick, in full
+  // deflections per second (a key press does not throw a surface to its stop at once)
+  SURFACE_RATE: { aileron: 2.0, elevator: 1.6, rudder: 1.2 },
   MINIMAP_MIN_W: 1100,         // the mini map in the corner: desktop windows at least this wide ...
   MINIMAP_MIN_H: 640,          // ... and this tall
   MINIMAP_FPS: 6               // the mini map is redrawn this often

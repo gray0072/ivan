@@ -32,6 +32,8 @@ const TEXT_SV = {
   'Sound': 'Ljud',
   'On': 'På',
   'Off': 'Av',
+  'Landing aid': 'Landningshjälp',
+  'the ILS scales and the dotted glide path on the approach': 'ILS-skalorna och den prickade glidbanan under inflygningen',
   'Units': 'Enheter',
   'feet, knots, nautical miles': 'fot, knop, nautiska mil',
   'metres, km/h, kilometres': 'meter, km/h, kilometer',

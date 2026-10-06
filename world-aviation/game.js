@@ -98,11 +98,12 @@ const Game = {
     if (!paused) {
       // controls (the autopilot flies the surfaces when it is engaged)
       if (!fl.ap.on) {
-        st.elevator = ax.pitch;
-        st.aileron = ax.roll;
-        st.rudder = ax.rudder;
+        // the surfaces follow the stick at their actuators' rate
+        const rate = CONTROLS.SURFACE_RATE;
+        st.elevator = approach(st.elevator, ax.pitch, rate.elevator * dt);
+        st.aileron = approach(st.aileron, ax.roll, rate.aileron * dt);
         // on the ground the arrows / the stick steer the nosewheel too
-        if (st.onGround && !ax.rudder) st.rudder = ax.roll;
+        st.rudder = approach(st.rudder, st.onGround && !ax.rudder ? ax.roll : ax.rudder, rate.rudder * dt);
       } else if (Math.abs(ax.pitch) > 0.5 || Math.abs(ax.roll) > 0.5) {
         fl.ap.on = false;
         fl.warn('AP', tr('Autopilot disconnected — you have control'));
@@ -173,17 +174,31 @@ const Game = {
 
   // The ILS, shown so that it reads at a glance: the localiser scale (magenta) carries a
   // little runway that sits where the runway is, the glideslope scale (cyan) a triangle that
-  // sits where the glide path is, and a line of plain words says what to do. Drawn high on
-  // the windscreen in the cockpit, and to the right of the aeroplane in the outside views.
+  // sits where the glide path is, and a line of plain words says what to do. Off the view
+  // ahead: on a desktop on the right, past the centre window post (on the left while the
+  // checklist fills the right side); on a phone high in the middle, between the buttons.
+  // The landing aid setting turns it off.
   drawIls(ctx, w, h, fl) {
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
+    if (Career.settings.landingAid === false) return;
     if (fl.distToRunwayNm() > SIM.APPROACH_NM + 4 || fl.navFailed) return;
     const d = fl.ilsDeviation();
     if (d.along > 0) return;
     const top = Cockpit.panelTop(h);
-    const R = Math.min(110, w * 0.16), V = Math.min(70, h * 0.1);
     const inside = this.camMode === 'cockpit';
-    const cx = inside ? w / 2 : w - R - 110, cy = inside ? top * 0.5 : top * 0.56;
+    const side = !Input.isCoarse;
+    const R = side ? Math.min(90, w * 0.08) : Math.min(110, w * 0.12), V = Math.min(70, h * 0.1);
+    let cx = inside ? w / 2 : w - R - 110, cy = inside ? top * 0.5 : top * 0.56;
+    if (side) {
+      const cb = el('checklist'), qrh = cb && !cb.hidden;
+      cy = top * 0.56;
+      // the glide path scale and its label reach about R + 70 to the right of the centre
+      cx = qrh ? R + 70 : Math.min(w - R - 80, Math.max(inside ? Cockpit.postX(w, h) + R + 70 : 0, w - R - 110));
+    } else if (inside) {
+      // between the left column (strip and prompt) and the buttons
+      const left = Math.min(300, w * 0.34) + 20, right = w - (HUD.buttonsW || 232) - 16;
+      cx = (left + right) / 2;
+    }
     const LOC = '#e65cf0', GS = '#4fd8ff';
     const loc = clamp(-d.locDeg / 2.5, -1, 1);       // + : the runway is to the right
     const gs = clamp(-d.gsDeg / 0.7, -1, 1);         // + : the glide path is above you
@@ -231,8 +246,11 @@ const Game = {
     else words.push([tr(gs > 0 ? 'LOW ▲ descend less' : 'HIGH ▼ descend more'), GS]);
     ctx.font = '700 12px system-ui, sans-serif';
     const both = Math.abs(d.locDeg) < 0.6 && Math.abs(d.gsDeg) < 0.25;
-    if (both) say(tr('ON THE CENTRELINE AND THE GLIDE PATH'), cx, ly + 30, '#54d68a');
-    else words.forEach(([t, c], i) => say(t, cx, ly + 28 + i * 15, c));
+    // the words stay on the screen however long they are in the game's language
+    const at = (t) => clamp(cx, ctx.measureText(t).width / 2 + 12, w - ctx.measureText(t).width / 2 - 12);
+    const all = tr('ON THE CENTRELINE AND THE GLIDE PATH');
+    if (both) say(all, at(all), ly + 30, '#54d68a');
+    else words.forEach(([t, c], i) => say(t, at(t), ly + 28 + i * 15, c));
     ctx.restore();
   },
 
@@ -243,6 +261,7 @@ const Game = {
   drawApproachPath(ctx, w, h, fl) {
     const p = fl.phase;
     if (fl.st.onGround || fl.navFailed || !(p === 'DESCENT' || p === 'APPROACH' || p === 'CRUISE')) return;
+    if (Career.settings.landingAid === false) return;
     const nm = fl.distToRunwayNm();
     if (nm > 30) return;
     const a = fl.arrival, cam = Scene3D.camera;

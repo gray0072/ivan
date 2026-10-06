@@ -24,6 +24,13 @@ const Cockpit = {
     return h - Math.min(h * (h < 560 ? 0.34 : 0.30), h < 560 ? 210 : 250);
   },
 
+  // where the centre window post is on the screen: the captain's eye is VIEW.COCKPIT_SEAT_X to
+  // the left of it and VIEW.CENTRE_POST_AHEAD in front, seen through the camera's field of view
+  postX(w, h) {
+    const tanH = Math.tan(VIEW.FOV_DEG * DEG / 2) * w / Math.max(1, h);
+    return w / 2 * (1 + (-VIEW.COCKPIT_SEAT_X / VIEW.CENTRE_POST_AHEAD) / tanH);
+  },
+
   draw(ctx, w, h, dpr, fl, sys, dt, inside) {
     this.t += dt;
     const top = this.panelTop(h);
@@ -56,10 +63,14 @@ const Cockpit = {
     ctx.fillStyle = '#1b2027';
     ctx.fillRect(0, 0, pillarW, top + 12);
     ctx.fillRect(w - pillarW, 0, pillarW, top + 12);
-    // centre post (a twin cockpit has one)
-    const postW = Math.max(2, w * 0.008);
+    // the centre post: you sit in the captain's (left) seat, so it is off to the right, leaning
+    // in towards the top as the windscreen slopes back
+    const postW = Math.max(3, w * 0.012), px = this.postX(w, h), lean = w * 0.012;
     ctx.fillStyle = '#1b2027';
-    ctx.fillRect(w / 2 - postW / 2, frame * 0.5, postW, top - frame * 0.5);
+    ctx.beginPath();
+    ctx.moveTo(px - postW / 2 + lean, frame * 0.5); ctx.lineTo(px + postW / 2 + lean, frame * 0.5);
+    ctx.lineTo(px + postW * 0.7, top + 12); ctx.lineTo(px - postW * 0.7, top + 12);
+    ctx.closePath(); ctx.fill();
 
     // side rails with a highlight
     ctx.strokeStyle = '#39424c';
@@ -73,7 +84,7 @@ const Cockpit = {
     if (wide) {
       ctx.fillStyle = '#242a31';
       for (const s of [-1, 1]) {
-        const vx = w / 2 + s * w * 0.22 - postW * 2;
+        const vx = px + lean + s * postW * 2;
         ctx.beginPath();
         ctx.moveTo(vx, frame * 0.9);
         ctx.lineTo(vx + s * w * 0.16, frame * 1.0);

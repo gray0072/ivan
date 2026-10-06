@@ -540,7 +540,7 @@ function liftingSurface(def, mat, surf, side) {
     return geo;
   };
   const cut = def.cut;
-  grp.add(new THREE.Mesh(loft([ring(0, 0, cut, P), ring(1, 0, cut, P)], false), mat));
+  grp.add(new THREE.Mesh(loft([ring(0, 0, cut, P), ring(1, 0, cut, P)], true), mat));        // closed at the root too: a high wing's root shows above the body
   // the rounded tip: sections past the tip whose chord and thickness shrink on a quarter circle
   if (!def.noCap) {
     const cap = [ring(1, 0, 1, P)];
@@ -551,7 +551,7 @@ function liftingSurface(def, mat, surf, side) {
       const c = def.tipC * s, le = tipLe - def.tipC * (1 - s) * 0.35, t = def.tTip * s;
       cap.push(ring(0, 0, 1, (f, x, sg) => [def.semi + capLen * e, sg * t * yt(x) * (sg > 0 ? up : lo), le - x * c]));
     }
-    grp.add(new THREE.Mesh(loft(cap, false), mat));
+    grp.add(new THREE.Mesh(loft(cap, true), mat));
   }
   // the pieces behind the hinge line
   for (const pc of def.pieces) {
@@ -605,16 +605,29 @@ function finGeometry(rootC, tipC, h, sweep, thick) {
   return geo;
 }
 
+// the dark inside of a cowling (the tube's back faces) and the fan face, seen from both ends
+const insideMats = new Map();
+function nacelleInside(dark, side) {
+  const key = dark.uuid + side;
+  if (!insideMats.has(key)) { const m = dark.clone(); m.side = side; insideMats.set(key, m); }
+  return insideMats.get(key);
+}
+
 // A turbofan: the cowling, a dark intake, the fan face and the exhaust cone
 function jetNacelle(dia, len, skin, dark, paint, flat) {
   const n = new THREE.Group();
   const cowl = new THREE.Mesh(new THREE.CylinderGeometry(dia * 0.5, dia * 0.42, len, 20, 1, true), skin);
   cowl.rotation.x = Math.PI / 2;
   n.add(cowl);
+  // the open tube has an inside too: dark, seen through the intake and the exhaust (one-sided
+  // faces would leave the far wall of the cowling missing, and the engine half see-through)
+  const liner = new THREE.Mesh(cowl.geometry, nacelleInside(dark, THREE.BackSide));
+  liner.rotation.x = Math.PI / 2;
+  n.add(liner);
   const lip = new THREE.Mesh(new THREE.TorusGeometry(dia * 0.47, dia * 0.05, 8, 20), paint);
   lip.position.z = len / 2;
   n.add(lip);
-  const fan = new THREE.Mesh(new THREE.CircleGeometry(dia * 0.46, 20), dark);
+  const fan = new THREE.Mesh(new THREE.CircleGeometry(dia * 0.46, 20), nacelleInside(dark, THREE.DoubleSide));
   fan.position.z = len / 2 - dia * 0.12;
   n.add(fan);
   const cone = new THREE.Mesh(new THREE.ConeGeometry(dia * 0.24, dia * 0.6, 14), dark);

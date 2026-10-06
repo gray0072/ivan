@@ -59,7 +59,7 @@ const Flight = {
       vel: { x: 0, y: 0, z: 0 },
       hdg: this.world.hdg, pitch: 0, roll: 0,
       rollRate: 0, pitchRate: 0, yawRate: 0, turnRate: 0, trimAlpha: 3.2 * DEG,
-      elevator: 0, aileron: 0, rudder: 0, throttle: 0,
+      elevator: 0, aileron: 0, rudder: 0, steer: 0, throttle: 0,
       flaps: 0, flapsTarget: 0,
       gear: 1, gearTarget: 1,
       spoiler: 0, brakes: 0, brakeInput: 0, parkingBrake: true,
@@ -547,11 +547,13 @@ const Flight = {
     // steering: the nosewheel at low speed, the rudder as the speed builds
     const wb = this.dims.len * 0.38;
     const steerMax = SIM.NOSEWHEEL_MAX_STEER_DEG * DEG * clamp(1 - speed / 26, 0.06, 1);
-    const steer = st.rudder * steerMax;
+    // the hydraulic steering turns the nosewheel at its own pace, so a turn builds up gently
+    st.steer = approach(st.steer || 0, st.rudder * steerMax, SIM.NOSEWHEEL_STEER_RATE_DEG * DEG * dt);
+    const steer = st.steer;
     // the rudder and the fin only bite with some speed over the ground; a parked aeroplane does not weathervane
     const aero = st.parkingBrake ? 0 : smoothstep(2, 15, speed);
     const yaw = vf * Math.tan(steer) / wb + (st.rudder * maxYaw * 0.8 + st.beta * 1.2) * qn * aero;
-    st.yawRate = approach(st.yawRate, yaw, 2.5 * dt);
+    st.yawRate = approach(st.yawRate, yaw, SIM.GROUND_YAW_ACCEL * dt);
     st.turnRate = st.yawRate;
     st.hdg = wrapRad(st.hdg + st.yawRate * dt);
 

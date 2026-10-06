@@ -123,7 +123,7 @@ const UI = {
       '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + qualBtns + '</div>' +
       '<div class="setGroup"><span>' + tr('Sound') + '</span>' +
       '<button class="chip' + (s.sound ? ' on' : '') + '" data-act="sound">' + tr(s.sound ? 'On' : 'Off') + '</button></div>' +
-      this.unitChips() +
+      this.unitChips() + this.aidChip() +
       '</div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
@@ -519,7 +519,7 @@ const UI = {
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
       '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + this.aidChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
@@ -529,6 +529,14 @@ const UI = {
     return '<div class="setGroup"><span>' + tr('Units') + '</span>' +
       '<button class="chip' + (u === 'aviation' ? ' on' : '') + '" data-act="units" data-v="aviation" title="' + esc(tr('feet, knots, nautical miles')) + '">ft · kt · nm</button>' +
       '<button class="chip' + (u === 'metric' ? ' on' : '') + '" data-act="units" data-v="metric" title="' + esc(tr('metres, km/h, kilometres')) + '">m · km/h · km</button></div>';
+  },
+
+  // the landing aid: the ILS scales with plain words and the dotted glide path on the approach
+  aidChip() {
+    const on = Career.settings.landingAid !== false;
+    return '<div class="setGroup"><span>' + tr('Landing aid') + '</span>' +
+      '<button class="chip' + (on ? ' on' : '') + '" data-act="landingAid" title="' + esc(tr('the ILS scales and the dotted glide path on the approach')) + '">' +
+      tr(on ? 'On' : 'Off') + '</button></div>';
   },
 
   // ---------- quiz ----------
@@ -621,6 +629,10 @@ const UI = {
       case 'units':
         Career.settings.units = v; Career.saveSettings();
         Units.metric = v === 'metric';
+        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        break;
+      case 'landingAid':
+        Career.settings.landingAid = Career.settings.landingAid === false; Career.saveSettings();
         if (Game.mode === 'paused') this.showPause(); else this.showTitle();
         break;
       case 'howto': this.backTo = 'title'; this.showHowTo(); break;

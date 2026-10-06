@@ -32,6 +32,8 @@ const TEXT_RU = {
   'Sound': 'Звук',
   'On': 'Вкл',
   'Off': 'Выкл',
+  'Landing aid': 'Посадочный помощник',
+  'the ILS scales and the dotted glide path on the approach': 'шкалы ILS и пунктир глиссады на заходе',
   'Units': 'Единицы',
   'feet, knots, nautical miles': 'футы, узлы, морские мили',
   'metres, km/h, kilometres': 'метры, км/ч, километры',

@@ -13,7 +13,7 @@ const SETTINGS_KEY = 'worldaviation.settings.v1';
 
 const Career = {
   data: null,
-  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', lang: '' },
+  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', lang: '', landingAid: true },
 
   // ---------- persistence ----------
   loadSettings() {

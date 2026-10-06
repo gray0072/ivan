@@ -473,7 +473,7 @@ const Scene3D = {
       }
       default: {          // the cockpit
         const k = L / 18, o = VIEW.COCKPIT_EYE;
-        eye = P(o.x * k, o.y * k, o.z * k);
+        eye = P(o.x * k + VIEW.COCKPIT_SEAT_X * d.fus, o.y * k, o.z * k);
         look = new THREE.Vector3(eye.x + ax.nose.x - ax.up.x * 0.06, eye.y + ax.nose.y - ax.up.y * 0.06, eye.z + ax.nose.z - ax.up.z * 0.06);
       }
     }
