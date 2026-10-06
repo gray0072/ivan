@@ -2,7 +2,7 @@
 
 *[Read in English](README.md)* · *[Читать на русском](README_RU.md)*
 
-En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du är en svensk trafikpilot med EASA ATPL och ett litet flygbolag med bas på **Stockholm Arlanda**. Du börjar med inrikesflyg i Sverige — Göteborg, Malmö, Visby, Kiruna norr om polcirkeln — vinner sedan Skandinavien och Nordatlanten och, region för region, hela världen: London och Paris, Dubai och Johannesburg, New York och Mexico City, Tokyo och Sydney. Varje flygning går från gate till gate: pushback, motorstart, taxning, start, väder och fel, landning och parkering vid gaten.
+En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du är en svensk trafikpilot med EASA ATPL och bas på **Stockholm Arlanda**. Du börjar med inrikesflyg i Sverige — Göteborg, Malmö, Visby, Kiruna norr om polcirkeln — vinner sedan Skandinavien och Nordatlanten och, region för region, hela världen: London och Paris, Dubai och Johannesburg, New York och Mexico City, Tokyo och Sydney. Varje flygning går från gate till gate: pushback, motorstart, taxning, start, väder och fel, landning och parkering vid gaten.
 
 ![Skärmbild](screenshot.png)
 
@@ -58,7 +58,7 @@ Pengarna är svenska kronor. Varje uppdrag betalar för sträckan och lasten, pl
 - **Långdistans** — med autopiloten går tidsaccelerationen upp till ×64; Stockholm–New York tar ungefär tio minuter i verklig tid.
 - **Hangar** — tio flygplan, från 19-sitsiga turbopropen Vikna 19 och bushplanet Frostwing till **Boeing 737-800**, **Airbus A320neo**, **Airbus A350-900** och den fyrmotoriga fraktaren **Boeing 747-8F**, alla med egen vikt, egna farter, egen räckvidd, egna krav på banan och egen 3D-modell.
 - **Utbildning** — 16 kurser i fyra grenar (Allmänt, Passagerare, Frakt, Bush & SAR). Varje kurs slutar med ett kort prov (3 av 4 rätt) och låser upp flygplan, uppdragstyper eller verkliga fördelar: tips i checklistorna, mer tid vid nödsituationer, långsammare isbildning.
-- **Karriär** — anseende hos tre kundgrupper, certifikat, rekord och loggboken. Under −50 000 kr dras drifttillståndet in och karriären är slut.
+- **Karriär** — anseende hos tre kundgrupper, certifikat, rekord och loggboken. Under −50 000 kr vill ingen längre hyra ut ett flygplan till dig och karriären är slut.
 
 ## Flygbolag och flygplatser
 

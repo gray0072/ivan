@@ -14,11 +14,10 @@
 const CAREER = {
   HOME_BASE: 'ARN',
   PILOT_NAME_DEFAULT: 'Sven Ekman',
-  AIRLINE_DEFAULT: 'Svea Flyg',
   PILOT_LICENSE: 'EASA ATPL',
   PILOT_COUNTRY: 'Sweden',
   PILOT_CITY: 'Stockholm',
-  INTRO: 'You are a Swedish commercial pilot with an EASA ATPL and a job that nobody wanted: a small operator out of Stockholm Arlanda and one leased turboprop. Start with Sweden, win Scandinavia, then buy the traffic rights to the rest of the world, one region at a time.'
+  INTRO: 'You are a Swedish commercial pilot with an EASA ATPL, based at Stockholm Arlanda with one leased turboprop. Start with Sweden, win Scandinavia, then buy the traffic rights to the rest of the world, one region at a time.'
 };
 
 // Money is in Swedish kronor.

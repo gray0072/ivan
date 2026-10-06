@@ -4,7 +4,7 @@ Developer/agent spec for the `world-aviation` project. Repo-wide conventions liv
 
 ## Idea
 
-A career flight simulator in the browser: you are a Swedish commercial pilot (EASA ATPL) flying out of **Stockholm Arlanda** for a small Swedish operator. The career starts with Swedish domestic flying, then Scandinavia and the North Atlantic, then — region by region — the whole world: Europe, the Middle East and Africa, the Americas, Asia and the Pacific. Every flight is a full cockpit-view departure-and-arrival between real airports — push back from the gate, start the engines, taxi, take off, handle whatever the weather and the aeroplane throw at you, land, and taxi to the gate. You earn money, reputation and licences, fly bigger aircraft (up to the Airbus A350 and the Boeing 747-8F), and take contracts from passenger airlines, freight companies and remote operators.
+A career flight simulator in the browser: you are a Swedish commercial pilot (EASA ATPL) flying out of **Stockholm Arlanda**. You are only the pilot — there is no company of your own: the clients are real airlines. The career starts with Swedish domestic flying, then Scandinavia and the North Atlantic, then — region by region — the whole world: Europe, the Middle East and Africa, the Americas, Asia and the Pacific. Every flight is a full cockpit-view departure-and-arrival between real airports — push back from the gate, start the engines, taxi, take off, handle whatever the weather and the aeroplane throw at you, land, and taxi to the gate. You earn money, reputation and licences, fly bigger aircraft (up to the Airbus A350 and the Boeing 747-8F), and take contracts from passenger airlines, freight companies and remote operators.
 
 The game speaks **English, Russian or Swedish**, picked at the top of the title screen (see Language below); English is the source text. The sim is arcade-leaning but built on real forces (lift/drag/thrust, stall, weight, wind, icing, fuel burn, pressure altitude) rather than on fake "up = up" controls.
 
@@ -155,7 +155,7 @@ Also offered in the pause, debrief and failure dialogs (pre-selected), remembere
 
 Currency: **Swedish kronor (SEK, kr)**. You are based at **Stockholm Arlanda (ARN)**, your home base for the whole career.
 
-**The network.** 114 real airports in six regions (`AIRPORTS` and `REGIONS` in `data/airports.js`). A new operator holds the traffic rights for **Sweden** only (13 airports, Malmö to Kiruna). The **Network** tab sells the rights to the other regions once the operator has the reputation (the best of the three client groups) and the flights:
+**The network.** 114 real airports in six regions (`AIRPORTS` and `REGIONS` in `data/airports.js`). A new career holds the traffic rights for **Sweden** only (13 airports, Malmö to Kiruna). The **Network** tab sells the rights to the other regions once the pilot has the reputation (the best of the three client groups) and the flights:
 
 | Region | Airports | Reputation | Flights | Price |
 | --- | --- | --- | --- | --- |
@@ -196,11 +196,11 @@ Tree: 4 tiers × 3 branches + a general branch, 13 courses, each with a price, p
 - **Cargo** — Dangerous Goods · Weight & Balance · Arctic Ground Handling · Heavy Freighter Ops
 - **Bush & SAR** — Short Field Ops · De-icing & Winter Survival · Medevac & SAR Contracts · Seaplane & Remote Bases
 
-Contracts: distance × rate × faction + load × the payload type's rate × distance / 650 (+ urgent, weather and route bonuses); the debrief adds the landing-grade bonus, on time (+8 %), no tug needed, emergencies handled (+6 % each), and subtracts the aircraft lease (per block hour, at least one hour), the fuel burnt (9.5 kr/kg), repairs (damage × 70 % of the pay), mishandled checklists, medical diversion costs, a take-off without a clearance (−5 %) and lateness (−12 %). A new board is generated after each flight, after a course, after buying traffic rights and when the aircraft or the difficulty changes. The fuel plan is the trip fuel for the compressed distance; the block fuel loaded is 1.45 × that plus taxi fuel. The deadline is in **real seconds**: ground allowance (480 s) + approach (300 s) + the airborne time at the expected time acceleration (×6 on short legs, rising with the distance up to ×40), × 1.3 slack × the difficulty factor. Below −50 000 kr the career ends ("operator certificate revoked").
+Contracts: distance × rate × faction + load × the payload type's rate × distance / 650 (+ urgent, weather and route bonuses); the debrief adds the landing-grade bonus, on time (+8 %), no tug needed, emergencies handled (+6 % each), and subtracts the aircraft lease (per block hour, at least one hour), the fuel burnt (9.5 kr/kg), repairs (damage × 70 % of the pay), mishandled checklists, medical diversion costs, a take-off without a clearance (−5 %) and lateness (−12 %). A new board is generated after each flight, after a course, after buying traffic rights and when the aircraft or the difficulty changes. The fuel plan is the trip fuel for the compressed distance; the block fuel loaded is 1.45 × that plus taxi fuel. The deadline is in **real seconds**: ground allowance (480 s) + approach (300 s) + the airborne time at the expected time acceleration (×6 on short legs, rising with the distance up to ×40), × 1.3 slack × the difficulty factor. Below −50 000 kr the career ends (nobody will lease you an aeroplane any more).
 
 Aircraft are leased per sector: any unlocked type can be selected in the hangar.
 
-The new-career dialog lets you set the pilot's name (default **Sven Ekman**) and the operator's name (default **Svea Flyg**); both are shown on the career page and in the debrief.
+The new-career dialog asks only for the pilot's name (default **Sven Ekman**); it is shown on the title screen, in the ops header, on the career page and in the log. Older saves lose their operator name on load.
 
 ## Controls
 
@@ -218,7 +218,7 @@ Keyboard:
 - **T / R** — time faster / slower (above 500 ft AGL: up to ×64 with the autopilot in CMD, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft) · **M** — moving map (north up; on a large desktop window it cycles mini map → big map → off) · **C** — the next view, **Shift+C** — the previous one (see Views) · **I** — instrument lights · **H** — controls card · **Esc** — pause
 - The keys are read by their place on the keyboard (`e.code`), not by the character they type, so the controls work in any layout (Russian, Swedish, …).
 - The cheats use **Alt + digit** so they cannot fire in normal play.
-- Overlay buttons (title, ops, briefing, debrief, pause) are pressed with Space / Enter, the arrow keys move between them.
+- Overlay buttons (title, ops, briefing, debrief, pause) are pressed with Space / Enter, the arrow keys move between them (a button in the same row or column always wins over a nearer one off to the side, so → from Continue career goes to New career, not down to the difficulty chips).
 
 Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nosewheel steering on the ground; its ring appears where the finger lands), the right edge has a vertical throttle slider (a thrust lever: thrust = position^1.8, so the lower half gives fine control of taxi power; the knob shows the thrust in % and follows the autothrottle and the keys when the thumb is off it), and the top right has fifteen buttons in five columns (three rows, clear of the throttle slider even on a 400 px tall landscape phone such as the Poco X6 Pro): Go (the Enter step), gear, menu, flap +, flap −, brakes (toggle), parking brake, autopilot, Time +, view, map, spoiler, NAV (back to the programme), Time − and Ice (anti-ice). In a QRH checklist the lit switch is tapped (or Go); the other steps are worked with the real controls. All multi-touch, so you can fly and work a checklist at the same time. Fullscreen is requested by the Continue / Start flying / Fly it buttons on coarse-pointer devices.
 

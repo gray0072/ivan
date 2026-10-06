@@ -2,7 +2,7 @@
 
 *[Читать на русском](README_RU.md)* · *[Läs på svenska](README_SV.md)*
 
-A cockpit-view flight simulator and airline career in the browser. You are a Swedish commercial pilot with an EASA ATPL and a small operator based at **Stockholm Arlanda**. You start with Swedish domestic flights — Gothenburg, Malmö, Visby, Kiruna above the Arctic Circle — then win Scandinavia and the North Atlantic, and region by region the whole world: London and Paris, Dubai and Johannesburg, New York and Mexico City, Tokyo and Sydney. Every flight goes from gate to gate: push back, start the engines, taxi, take off, cope with the weather and with whatever breaks, land, and park at the gate.
+A cockpit-view flight simulator and airline career in the browser. You are a Swedish commercial pilot with an EASA ATPL, based at **Stockholm Arlanda**. You start with Swedish domestic flights — Gothenburg, Malmö, Visby, Kiruna above the Arctic Circle — then win Scandinavia and the North Atlantic, and region by region the whole world: London and Paris, Dubai and Johannesburg, New York and Mexico City, Tokyo and Sydney. Every flight goes from gate to gate: push back, start the engines, taxi, take off, cope with the weather and with whatever breaks, land, and park at the gate.
 
 ![Screenshot](screenshot.png)
 
@@ -59,7 +59,7 @@ Money is in Swedish kronor. Each contract pays for the distance and the load, pl
 
 - **Hangar** — ten aircraft, from the 19-seat Vikna 19 turboprop and the Frostwing bush plane to the **Boeing 737-800**, the **Airbus A320neo**, the **Airbus A350-900** and the four-engine **Boeing 747-8F** freighter, each with its own weight, speeds, range, runway needs and its own 3D model.
 - **Training** — 16 courses in four branches (General, Passenger, Cargo, Bush & SAR). Each ends in a short exam (3 of 4 right) and unlocks aircraft, contract types or real advantages: checklist hints, more time in emergencies, slower icing.
-- **Career** — reputation with three client groups, licences, records and the log. Below −50 000 kr the operator certificate is revoked and the career is over.
+- **Career** — reputation with three client groups, licences, records and the log. Below −50 000 kr nobody will lease you an aeroplane any more and the career is over.
 
 ## Airlines and airports
 

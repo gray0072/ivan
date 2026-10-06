@@ -40,10 +40,13 @@ const UI = {
         if (b === from) continue;
         const r = b.getBoundingClientRect();
         const bx = r.left + r.width / 2, by = r.top + r.height / 2;
-        const along = (bx - fx) * dx + (by - fy) * dy;
-        if (along <= 1) continue;
-        const cross = Math.abs((bx - fx) * dy - (by - fy) * dx);
-        const s = along + cross * 2;
+        if ((bx - fx) * dx + (by - fy) * dy <= 1) continue;
+        // edge-to-edge gap along the arrow, and the gap across it (0 when the
+        // two buttons share a row / column); buttons in the same row or column
+        // always win over closer ones off to the side
+        const gapAlong = Math.max(0, dx > 0 ? r.left - f.right : dx < 0 ? f.left - r.right : dy > 0 ? r.top - f.bottom : f.top - r.bottom);
+        const gapCross = Math.max(0, dx ? Math.max(r.top - f.bottom, f.top - r.bottom) : Math.max(r.left - f.right, f.left - r.right));
+        const s = gapAlong + gapCross * 3 + (gapCross > 0 ? 1e5 : 0);
         if (s < score) { score = s; best = b; }
       }
       (best || from).focus();
@@ -110,9 +113,9 @@ const UI = {
       '<h1 class="logo">World Aviation</h1>' +
       '<p class="tagline">' + tr('A Swedish pilot, one leased turboprop — and the whole world to win, one region at a time.') + '</p>' +
       '<div class="cardRow">' +
-      (has ? '<button class="bigBtn default" data-act="continue">' + tr('Continue career') + '<small>' + esc(Career.data.pilot.airline) + ' · ' +
+      (has ? '<button class="bigBtn default" data-act="continue">' + tr('Continue career') + '<small>' + esc(Career.data.pilot.name) + ' · ' +
         fmtMoney(Career.data.money) + '</small></button>' +
-        '<button class="bigBtn" data-act="newcareer">' + tr('New career') + '<small>' + tr('different pilot, new certificate') + '</small></button>'
+        '<button class="bigBtn" data-act="newcareer">' + tr('New career') + '<small>' + tr('different pilot, fresh start') + '</small></button>'
         : '<button class="bigBtn default" data-act="newcareer">' + tr('Start your career') + '<small>' + tr('based at Stockholm Arlanda') + '</small></button>') +
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
@@ -133,10 +136,9 @@ const UI = {
   showNewCareer() {
     this.panel(
       '<h2>' + tr('New career') + '</h2>' +
-      '<p class="lead">' + tr('You have an EASA ATPL, one leased turboprop and a fresh operator certificate out of Stockholm Arlanda. Fill this in:') + '</p>' +
+      '<p class="lead">' + tr('You have an EASA ATPL, one leased turboprop and a base at Stockholm Arlanda. What is your name?') + '</p>' +
       '<div class="form">' +
       '<label>' + tr('Pilot name') + '<input id="pilotName" value="' + esc(CAREER.PILOT_NAME_DEFAULT) + '" maxlength="24"></label>' +
-      '<label>' + tr('Operator name') + '<input id="airlineName" value="' + esc(CAREER.AIRLINE_DEFAULT) + '" maxlength="24"></label>' +
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="btnRow"><button class="btn default" data-act="startcareer">' + tr('Start flying') + '</button>' +
@@ -146,7 +148,7 @@ const UI = {
 
   confirmWipe() {
     this.panel(
-      '<h2>' + tr('Delete this career?') + '</h2><p class="lead">' + tr('The certificate, the money, the reputation and every course you have passed will be gone.') + '</p>' +
+      '<h2>' + tr('Delete this career?') + '</h2><p class="lead">' + tr('The money, the reputation and every course you have passed will be gone.') + '</p>' +
       '<div class="btnRow"><button class="btn danger" data-act="wipeyes">' + tr('Delete it') + '</button>' +
       '<button class="btn default" data-act="back">' + tr('Keep it') + '</button></div>', 'narrow');
   },
@@ -205,8 +207,8 @@ const UI = {
     const body = this.tabBody();
     this.panel(
       '<div class="opsHead">' +
-      '<div><div class="opsWho">' + esc(d.pilot.airline) + '</div>' +
-      '<div class="opsSub">' + esc(d.pilot.name) + ' · ' + CAREER.PILOT_LICENSE + ' · ' + tr('base {id}', { id: d.base }) +
+      '<div><div class="opsWho">' + esc(d.pilot.name) + '</div>' +
+      '<div class="opsSub">' + CAREER.PILOT_LICENSE + ' · ' + tr('base {id}', { id: d.base }) +
       (d.lastTo && d.lastTo !== d.base ? ' · ' + tr('now at {id}', { id: d.lastTo }) : '') + '</div></div>' +
       '<div class="opsMoney">' + fmtMoney(d.money) + '</div>' +
       '<div class="opsReps">' +
@@ -281,7 +283,7 @@ const UI = {
         '<p class="acBlurb">' + apts.map((a) => a.id).join(' · ') + '</p>' +
         '<div class="cFoot">' + status + btn + '</div></div>';
     }).join('');
-    return '<div class="hint">' + tr('Your operator starts with Swedish domestic flying out of Arlanda. Each region of the world needs traffic rights: earn the reputation and the flights, then buy them. A leg may be up to {nm} nm — further than that, fly there in legs and the board offers onward flights.',
+    return '<div class="hint">' + tr('You start with Swedish domestic flying out of Arlanda. Each region of the world needs traffic rights: earn the reputation and the flights, then buy them. A leg may be up to {nm} nm — further than that, fly there in legs and the board offers onward flights.',
       { nm: CONTRACTS.MAX_NM.toLocaleString('en-US') }) + '</div><div class="cards">' + cards + '</div>';
   },
 
@@ -369,7 +371,7 @@ const UI = {
     const log = (d.log || []).map((l) => '<li>' + esc(logText(l)) + '</li>').join('');
     return '<div class="careerCols"><div>' +
       '<h3>' + tr('Pilot') + '</h3>' +
-      '<div class="cGrid">' + row2(tr('Name'), esc(d.pilot.name)) + row2(tr('Operator'), esc(d.pilot.airline)) +
+      '<div class="cGrid">' + row2(tr('Name'), esc(d.pilot.name)) +
       row2(tr('Licence'), CAREER.PILOT_LICENSE) + row2(tr('Home base'), World.byId[d.base].name) +
       row2(tr('Balance'), fmtMoney(d.money)) + row2(tr('Difficulty'), esc(tr(Career.difficulty.name))) + '</div>' +
       '<h3>' + tr('Reputation') + '</h3>' +
@@ -497,7 +499,7 @@ const UI = {
       '</table>' +
       (p.rep ? '<p class="repGain">' + tr('Reputation with {who}', { who: esc(tr(FACTIONS[result.contract.faction].name)) }) +
         ': <b>' + (p.rep > 0 ? '+' : '') + p.rep.toFixed(1) + '</b></p>' : '') +
-      (p.bankrupt ? '<p class="need">' + tr('Your balance is below −50 000 kr. The operator certificate has been revoked — this career is over.') + '</p>' : '') +
+      (p.bankrupt ? '<p class="need">' + tr('Your balance is below −50 000 kr. Nobody will lease you an aeroplane any more — this career is over.') + '</p>' : '') +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="btnRow">' +
       (p.bankrupt ? '<button class="btn default" data-act="gameover">' + tr('Start again') + '</button>'
@@ -594,9 +596,8 @@ const UI = {
       case 'newcareer': this.showNewCareer(); break;
       case 'startcareer': {
         const pilot = (el('pilotName') || {}).value || '';
-        const airline = (el('airlineName') || {}).value || '';
-        reseed(hashStr(pilot + airline) ^ Date.now());
-        Career.new({ pilot, airline });
+        reseed(hashStr(pilot) ^ Date.now());
+        Career.new({ pilot });
         enterFullscreen();
         this.tab = 'dispatch';
         this.showOps();
@@ -682,9 +683,9 @@ const UI = {
     if (Game.mode === 'paused') this.showPause();
     else if ((Game.mode === 'debrief' || Game.mode === 'failed') && Game.result) this.showDebrief(Game.result, Game.mode === 'failed');
     else if (this.screen.dataset.view === 'newcareer' && el('pilotName')) {
-      const pn = el('pilotName').value, an = el('airlineName').value;
+      const pn = el('pilotName').value;
       this.showNewCareer();
-      el('pilotName').value = pn; el('airlineName').value = an;
+      el('pilotName').value = pn;
     } else this.showTitle();
   }
 };

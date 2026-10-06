@@ -57,7 +57,12 @@ const Career = {
     d.selected = d.selected || 'VIKNA19';
     d.contracts = d.contracts || [];
     d.stats = d.stats || { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 };
-    d.pilot = d.pilot || { name: CAREER.PILOT_NAME_DEFAULT, airline: CAREER.AIRLINE_DEFAULT };
+    d.pilot = { name: (d.pilot && d.pilot.name) || CAREER.PILOT_NAME_DEFAULT };   // older saves also had an operator name
+    for (const l of d.log || []) {
+      if (l.tpl === 'Operator certificate granted to {airline}. Base: Stockholm Arlanda.') {
+        l.tpl = '{name} starts flying. Base: Stockholm Arlanda.'; l.args = { name: d.pilot.name }; l.text = logLine(l.tpl, l.args).text;
+      }
+    }
     d.base = d.base || CAREER.HOME_BASE;
     d.lastTo = d.lastTo || d.base;
     d.season = d.season === undefined ? Math.floor(rand.next() * 12) : d.season;
@@ -67,7 +72,7 @@ const Career = {
 
   new(opts) {
     this.data = {
-      pilot: { name: (opts.pilot || '').trim() || CAREER.PILOT_NAME_DEFAULT, airline: (opts.airline || '').trim() || CAREER.AIRLINE_DEFAULT },
+      pilot: { name: (opts.pilot || '').trim() || CAREER.PILOT_NAME_DEFAULT },
       money: CONTRACTS.START_MONEY,
       rep: { pax: 0, cargo: 0, bush: 0 },
       courses: ['gen1'],
@@ -81,7 +86,7 @@ const Career = {
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
     };
-    this.data.log.push(logLine('Operator certificate granted to {airline}. Base: Stockholm Arlanda.', { airline: this.data.pilot.airline }, 0));
+    this.data.log.push(logLine('{name} starts flying. Base: Stockholm Arlanda.', { name: this.data.pilot.name }, 0));
     this.save();
     this.generateContracts();
     return this.data;
