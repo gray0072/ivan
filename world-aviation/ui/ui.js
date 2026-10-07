@@ -332,6 +332,7 @@ const UI = {
         '<p class="acBlurb">' + esc(tr(a.blurb)) + '</p>' +
         '<div class="cGrid">' +
         row2(tr(a.seats < 10 ? 'Crew / payload' : 'Seats / payload'), a.seats + ' · ' + Math.round(a.payloadKg / 100) / 10 + ' t') +
+        row2(tr('Weight: max take-off / empty'), fmtTonnes(a.mtow) + ' t · ' + fmtTonnes(a.emptyKg) + ' t') +
         row2(tr('Length / span'), a.dims.len + ' m · ' + a.dims.span + ' m') +
         row2(tr('Runway needed'), a.takeoffDist + ' m') +
         row2(tr('Cruise'), a.cruiseTas + ' kt') +
@@ -421,7 +422,7 @@ const UI = {
       unlockLine(fx.medevac, tr('Medevac and search and rescue contracts')) +
       unlockLine(fx.forecast, tr('Full weather reports at both ends, and better fuel planning')) +
       unlockLine(fx.mountain, tr('Mountain and adverse weather routes')) +
-      unlockLine(fx.widebody, tr('Widebody procedures — the Nordjet 320')) +
+      unlockLine(fx.widebody, tr('Widebody procedures — the Airbus A350-900')) +
       unlockLine(fx.remote, tr('Remote strips and ice fields for every type')) +
       '</ul>' +
       '<h3>' + tr('Log') + '</h3><ul class="log">' + (log || '<li>' + tr('Nothing yet.') + '</li>') + '</ul>' +
@@ -472,6 +473,7 @@ const UI = {
       row2(tr('En route'), tr('about {m} min at 1× — use the autopilot and time acceleration', { m: c.blockMin })) +
       row2(tr('Deadline'), Career.difficulty.id === 'easy' ? tr('none') : tr('{t} of real time', { t: fmtTime(c.deadline) })) +
       row2(tr('Fuel'), tr('plan {p} kg · on board {b} kg', { p: c.fuelKg, b: Math.round(setup.blockFuel) })) +
+      row2(tr('Take-off weight'), tr('{w} t · max {m} t', { w: fmtTonnes(ac.emptyKg + c.payloadKg + setup.blockFuel), m: fmtTonnes(ac.mtow) })) +
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
       row2(tr('Lease'), '−' + fmtMoney(ac.rent)) +
       '</div>' +

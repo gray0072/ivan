@@ -121,6 +121,8 @@ const HUD = {
       '<div class="stripRow"><span>' + tr('FLIGHT TIME, ACTUAL') + '</span><span>' + (fl.elapsed < 60 ? tr('{m} min', { m: 0 }) : fmtDuration(Math.floor(fl.elapsed / 60))) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
+      '<div class="stripRow"><span>' + tr('WEIGHT') + '</span><span class="' + (fl.weight() > fl.ac.mtow ? 'bad' : '') + '">' +
+        fmtTonnes(fl.weight()) + ' / ' + fmtTonnes(fl.ac.mtow) + ' t</span></div>' +
       '<div class="stripRow"><span>' + tr('DEPARTURE, LOCAL TIME') + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('ARRIVAL, LOCAL TIME') + '</span><span>' + fmtClock(eta) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +

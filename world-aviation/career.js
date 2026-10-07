@@ -53,9 +53,12 @@ const Career = {
     const d = this.data;
     d.rep = d.rep || { pax: 0, cargo: 0, bush: 0 };
     d.courses = d.courses || ['gen1'];
-    d.aircraft = d.aircraft || ['VIKNA19'];
-    d.selected = d.selected || 'VIKNA19';
+    // the fictional types of older versions became the real ones closest to them
+    const renamed = { VIKNA19: 'B1900D', RJ84: 'CRJ200', SKARV27: 'F27F', FROST12: 'DHC6', NJ320: 'A320', BL600F: 'B763F' };
+    d.aircraft = (d.aircraft || ['B1900D']).map((id) => renamed[id] || id);
+    d.selected = renamed[d.selected] || d.selected || 'B1900D';
     d.contracts = d.contracts || [];
+    for (const c of d.contracts) if (renamed[c.aircraftId]) c.aircraftId = renamed[c.aircraftId];
     d.stats = d.stats || { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 };
     d.pilot = { name: (d.pilot && d.pilot.name) || CAREER.PILOT_NAME_DEFAULT };   // older saves also had an operator name
     for (const l of d.log || []) {
@@ -77,8 +80,8 @@ const Career = {
       money: CONTRACTS.START_MONEY,
       rep: { pax: 0, cargo: 0, bush: 0 },
       courses: ['gen1'],
-      aircraft: ['VIKNA19'],
-      selected: 'VIKNA19',
+      aircraft: ['B1900D'],
+      selected: 'B1900D',
       contracts: [],
       base: CAREER.HOME_BASE,
       lastTo: CAREER.HOME_BASE,
@@ -289,8 +292,15 @@ const Career = {
 
     const client = pickAirline(faction, from, to, rng);
 
+    // what you actually fly (WORLD.SCALE of the real distance; 1 = the world at its real size)
+    const gameNm = distNm * WORLD.SCALE;
+    const airSec = gameNm / (ac.cruiseTas * 0.85) * 3600 + 240;                 // simulated seconds airborne
+    const taxiKg = CONTRACTS.FUEL_TAXI_KG_PER_ENGINE * ac.engines;
+    const fuelKg = Math.round(ac.fuelFlowCruise * ac.engines * airSec / 3600 * 0.85 + taxiKg);
+    // the load leaves room under the maximum take-off weight for the trip fuel with a margin
+    const minFuel = Math.min(ac.fuelCapKg, Math.round(fuelKg * CONTRACTS.FUEL_MIN_FACTOR));
     let pax = 0, payloadKg = 0;
-    const usable = Math.max(0, Math.min(ac.payloadKg, ac.mtow - ac.emptyKg - ac.fuelCapKg * 0.55));
+    const usable = Math.max(0, Math.min(ac.payloadKg, ac.mtow - ac.emptyKg - ac.fuelCapKg * 0.55, ac.mtow - ac.emptyKg - minFuel));
     if (type === 'pax') {
       const maxPax = Math.floor(usable / 103);
       pax = Math.max(1, Math.round(Math.min(ac.seats, maxPax) * rng.range(CONTRACTS_PAX_FILL[0], CONTRACTS_PAX_FILL[1])));
@@ -305,9 +315,6 @@ const Career = {
     if (payloadKg > usable) payloadKg = Math.round(usable);
 
     const pt = PAYLOAD[type];
-    // what you actually fly (WORLD.SCALE of the real distance; 1 = the world at its real size)
-    const gameNm = distNm * WORLD.SCALE;
-    const airSec = gameNm / (ac.cruiseTas * 0.85) * 3600 + 240;                 // simulated seconds airborne
     const accel = clamp(gameNm * CONTRACTS.CRUISE_ACCEL_PER_NM, CONTRACTS.CRUISE_ACCEL_EXPECTED, CONTRACTS.CRUISE_ACCEL_MAX);
     const realSec = CONTRACTS.GROUND_ALLOWANCE_S + CONTRACTS.APPROACH_ALLOWANCE_S + airSec / accel;
     const deadline = realSec * CONTRACTS.TIME_ALLOWANCE_FACTOR * this.difficulty.deadlineFactor;
@@ -317,9 +324,8 @@ const Career = {
     if (type === 'pax' && this.has('gen2')) pay *= 1.08;        // weather planning paid
     if (fx.mountain && (to.mountainous || from.mountainous)) pay *= 1.15;
     pay = Math.round(pay / 10) * 10;
-    const taxiKg = CONTRACTS.FUEL_TAXI_KG_PER_ENGINE * ac.engines;
-    const fuelKg = Math.round(ac.fuelFlowCruise * ac.engines * airSec / 3600 * 0.85 + taxiKg);
-    const blockFuel = Math.min(ac.fuelCapKg, Math.round(fuelKg * CONTRACTS.FUEL_RESERVE_FACTOR + taxiKg));
+    // as much as the tanks and the maximum take-off weight allow
+    const blockFuel = Math.min(ac.fuelCapKg, ac.mtow - ac.emptyKg - payloadKg, Math.round(fuelKg * CONTRACTS.FUEL_RESERVE_FACTOR + taxiKg));
     const repGain = urgent ? 3.2 : (distNm > 400 ? 2.2 : 1.2) + (payloadKg / 6000);
 
     return {

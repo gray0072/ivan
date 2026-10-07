@@ -225,6 +225,8 @@ function fmtDist(m) {
   return (m / 1000).toFixed(m < 20000 ? 2 : 1) + ' km';
 }
 function fmtAlt(m) { return Math.round(m / FT / 10) * 10; }
+// a mass in tonnes to 0.1 t, without the unit: 7766 kg -> "7.8"
+function fmtTonnes(kg) { return (kg / 1000).toFixed(1); }
 
 // ---------- Units ----------
 // Everything inside the game is in aviation units (ft, kt, nm, fpm). With the metric setting the
