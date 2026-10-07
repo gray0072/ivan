@@ -45,8 +45,8 @@ const SIM = {
   TIME_ACCEL_CHEAT: 256,       // the Alt+6 cheat
   TIME_ACCEL_MIN_ALT_M: 150,   // time acceleration only above this height AGL
   TIME_ACCEL_AP_MAX: 128,      // with the autopilot engaged: up to x128 in any phase
-  TIME_ACCEL_X1_NM: 20,        // closing on the arrival the time is back at x1 this far out ...
-  TIME_ACCEL_SLOWDOWN_S: 2,    // ... slowing one step every this many real seconds
+  TIME_ACCEL_X1_NM: 2.7,       // closing on the arrival the time is back at x1 this far out (5 km) ...
+  TIME_ACCEL_SLOWDOWN_S: 3,    // ... slowing one step every this many real seconds
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
     { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],
