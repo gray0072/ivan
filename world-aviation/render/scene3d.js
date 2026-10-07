@@ -649,7 +649,7 @@ const Scene3D = {
     // flags and windsocks in the surface wind, the PAPI, the approach flasher
     for (const rec of this.airports3D.values()) {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
-      if (d < 30000) Airport3D.update(rec, this.time, eye, fl.windAt(rec.a.elev + 10), dark, env.vis);
+      if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis);
     }
     // ---- own aircraft for the chase and wing views
     const airline = fl.contract && fl.contract.airline && AIRLINE_BY_CODE[fl.contract.airline] ? fl.contract.airline : null;

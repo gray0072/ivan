@@ -81,6 +81,7 @@ const AIRPORTS = [
   { id: 'LIS', name: 'Lisbon', city: 'Lisbon', country: 'Portugal', region: 'europe', lat: 38.781, lon: -9.136, elev: 114, rwy: 3, rwyLen: 3805, aptClass: ['pax'], terminal: 'medium' },
   { id: 'ATH', name: 'Athens', city: 'Athens', country: 'Greece', region: 'europe', lat: 37.936, lon: 23.947, elev: 94, rwy: 3, rwyLen: 4000, aptClass: ['pax'], terminal: 'medium' },
   { id: 'IST', name: 'Istanbul', city: 'Istanbul', country: 'Turkey', region: 'europe', lat: 41.262, lon: 28.742, elev: 99, rwy: 35, rwyLen: 3750, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'AYT', name: 'Antalya', city: 'Antalya', country: 'Turkey', region: 'europe', lat: 36.899, lon: 30.801, elev: 54, rwy: 36, rwyLen: 3400, aptClass: ['pax'], terminal: 'big', mountainous: true },
   // ---- The Middle East and Africa
   { id: 'TLV', name: 'Tel Aviv Ben Gurion', city: 'Tel Aviv', country: 'Israel', region: 'mideast', lat: 32.011, lon: 34.887, elev: 41, rwy: 30, rwyLen: 3112, aptClass: ['pax', 'cargo'], terminal: 'medium' },
   { id: 'CAI', name: 'Cairo', city: 'Cairo', country: 'Egypt', region: 'mideast', lat: 30.122, lon: 31.406, elev: 116, rwy: 5, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
@@ -178,6 +179,7 @@ const AIRPORT_LOOK = {
   WAW: ['siren', '#c8102e'], RIX: ['rooster', '#7a2734'], TLL: ['towers', '#00539b'], BUD: ['parliament', '#9c2a2a'],
   FCO: ['colosseum', '#a8461d'], MXP: ['duomo', '#3a4a7a'], MAD: ['bear', '#c0392b'], BCN: ['sagrada', '#c8501e'],
   PMI: ['sun', '#e08a00'], LIS: ['tram', '#e3a300'], ATH: ['parthenon', '#1f5da8'], IST: ['mosque', '#c8102e'],
+  AYT: ['hadriansGate', '#0a8aa8'],
   TLV: ['beach', '#1f78b4'], CAI: ['pyramids', '#b8860b'], DXB: ['burj', '#9a7b2c'], DOH: ['dhow', '#6b1238'],
   CMN: ['minaret', '#127a4c'], ADD: ['lion', '#2b8a3e'], NBO: ['giraffe', '#b0521b'], JNB: ['elephant', '#8a6a2a'],
   CPT: ['tableMountain', '#1b6a9c'], LOS: ['palm', '#1d8a4a'],

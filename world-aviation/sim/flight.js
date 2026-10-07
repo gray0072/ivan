@@ -196,6 +196,21 @@ const Flight = {
   stallMargin() { return this.st.ias / KTS - this.vsNow(); },
 
   // ---------- the wind at this moment ----------
+  // the wind on an airfield's flags and windsock: the surface wind and its gusts, the same
+  // wherever the aeroplane is and whichever way it turns (windAt follows the aeroplane)
+  surfaceWindNow() {
+    const e = this.env;
+    const toward = windTowardHeading(e.surfaceWind.dir) * DEG;
+    let vx = hdgX(toward) * e.surfaceWind.speed * KTS, vz = hdgZ(toward) * e.surfaceWind.speed * KTS;
+    if (e.turb > 0) {
+      const t = this.simTime;
+      const g = (fbm(t * 0.7, 0, 2) - 0.5) * 2, g2 = (fbm(t * 0.55 + 31, 0, 2) - 0.5) * 2;
+      const amp = e.turb * 7 * KTS * 0.25;
+      vx += (g * 0.7 + g2 * 0.3) * amp;
+      vz += (g2 * 0.7 - g * 0.3) * amp;
+    }
+    return { x: vx, y: 0, z: vz };
+  },
   windAt(alt) {
     const e = this.env;
     const agl = Math.max(0, alt - this.groundHeight());

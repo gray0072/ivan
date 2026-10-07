@@ -130,6 +130,14 @@ const LAYOUT = {
   DEPARTURE_SLOPE_DEG: 3.5,    // and under this one past the far end of the runway
   TAXI_KT: 15                  // comfortable taxi speed, knots
 };
+// the buildings behind the terminal, beyond the car park, by the terminal's size:
+// [t from the apron's middle, across (from the runway centreline), along, across size, height] in metres, kind
+const LANDSIDE = {
+  tiny: [],
+  small: [[40, 700, 50, 26, 13, 'office']],
+  medium: [[-80, 705, 110, 50, 13, 'carpark'], [40, 698, 44, 22, 34, 'hotel'], [110, 700, 54, 28, 17, 'office']],
+  big: [[-150, 705, 140, 50, 16, 'carpark'], [-30, 698, 50, 24, 46, 'hotel'], [60, 700, 64, 30, 28, 'office'], [150, 700, 56, 30, 38, 'office']]
+};
 
 // ---------- Difficulty ----------
 const DIFFICULTY = {

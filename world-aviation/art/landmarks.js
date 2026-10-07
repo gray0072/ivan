@@ -567,6 +567,14 @@ const LANDMARK_SYMBOLS = {
     for (const x of [10, 86]) { d.r(x, 30, 5, 62); d.p('M' + (x - 1) + ' 30 C' + (x - 1) + ' 24 ' + (x + 6) + ' 24 ' + (x + 6) + ' 30 Z'); }
     for (const x of [28, 66]) d.p('M' + x + ' 56 C' + x + ' 48 ' + (x + 6) + ' 46 ' + (x + 6) + ' 56 Z');
   },
+  hadriansGate(d) {
+    // Antalya: Hadrian's Gate, three arches between four piers, a frieze on top
+    d.r(4, 26, 92, 8); d.r(10, 18, 80, 8); d.r(4, 88, 92, 4);
+    d.r(8, 34, 84, 54);
+    for (const x of [14, 40, 66]) d.b('M' + x + ' 88 V56 C' + x + ' 42 ' + (x + 20) + ' 42 ' + (x + 20) + ' 56 V88 Z');
+    for (let i = 0; i < 11; i++) d.rb(9 + i * 8, 29, 3, 3);
+    for (const x of [8, 34, 60, 86]) d.rb(x + 2.5, 40, 1, 46);
+  },
   arch(d) {
     d.r(10, 30, 80, 62); d.r(16, 18, 14, 14); d.r(70, 18, 14, 14);
     d.p('M16 18 C16 10 30 10 30 18 Z'); d.p('M70 18 C70 10 84 10 84 18 Z');

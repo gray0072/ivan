@@ -24,6 +24,7 @@
 //     gates (data/airports.js, data/airlines.js, art/)
 //   - a windsock, the localiser array, the glideslope mast, signs
 //   - the stands' bridges and vehicles, floodlights and traffic: apron3d.js
+//   - the terminal's signs, the offices, hotel and car park behind it: landside3d.js
 //   - at night (update's dark): lit windows, letters and banners
 // ============================================================
 
@@ -71,6 +72,7 @@ const Airport3D = {
     this.buildLights(a, rec, at);
     this.buildMarkings(a, at);
     this.buildBuildings(a, rec, at, tex, lambert, id);
+    Landside3D.build(a, rec, at, tex);
     this.buildEquipment(a, rec, at, tex, lambert);
 
     // ---- parked aeroplanes at the gates (hidden where the player parks): the home airlines'
@@ -454,17 +456,25 @@ const Airport3D = {
   flag(rec, at, tex, country, city, t, across, y, pole, fw) {
     const fh = fw * 2 / 3;
     at(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, pole, 6), new THREE.MeshLambertMaterial({ color: 0xe8e8e8 })), t, across, y + pole / 2);
-    const cv = document.createElement('canvas');
-    cv.width = 192; cv.height = 128;
-    const g = cv.getContext('2d');
+    const src = document.createElement('canvas');
+    src.width = 192; src.height = 128;
+    const g = src.getContext('2d');
     if (city) {
       g.fillStyle = city.color; g.fillRect(0, 0, 192, 128);
       Landmarks.draw(g, city.symbol, 50, 18, 92, '#ffffff', city.color);
     } else Flags.draw(g, country, 0, 0, 192, 128);
+    // (a power-of-two texture, so it is mipmapped everywhere: a flag far off or edge-on
+    // stays steady instead of shimmering while the view turns)
+    const cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 128;
+    cv.getContext('2d').drawImage(src, 0, 0, 256, 128);
     // the cloth: its hoist edge on the pole (just outside it), the top at the pole's top; it
-    // is bent vertex by vertex in update(), so the hoist edge never leaves the pole
+    // is bent vertex by vertex in update(), so the hoist edge never leaves the pole. Its
+    // bounding sphere holds every shape the wind can give it (centred on the hoist's top),
+    // or a drooping flag would be culled as a streaming one and blink at the edges of the view
     const geo = new THREE.PlaneGeometry(fw, fh, 12, 4);
     geo.translate(fw / 2 + 0.22, -fh / 2, 0);
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0.22, 0, 0), Math.hypot(fw, fh) * 1.05 + 0.5);
     const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex(cv, 4), side: THREE.DoubleSide }));
     const holder = new THREE.Group();
     holder.add(mesh);
@@ -759,6 +769,12 @@ function makeGroundCanvas(a, id, ch) {
       rect(t, t + 0.25, row, row + 5); rect(t, t + 0.25, row + 6, row + 11);
       for (const off of [0.4, 6.4]) if (rng.chance(0.62)) { g.fillStyle = rng.pick(carCols); rect(t + 0.5, t + 2.3, row + off, row + off + 4.4); }
     }
+  }
+  // the forecourt of the buildings behind the car park (landside3d.js)
+  if (a.landside && a.landside.length) {
+    const t0 = Math.min(...a.landside.map((b) => b.t - b.along / 2)), t1 = Math.max(...a.landside.map((b) => b.t + b.along / 2));
+    const a0 = Math.min(...a.landside.map((b) => b.across - b.acrossSize / 2)), a1 = Math.max(...a.landside.map((b) => b.across + b.acrossSize / 2));
+    g.fillStyle = '#6a6d6f'; rect(t0 - 10, t1 + 10, a0 - 10, a1 + 8);
   }
   // trees along the landside road
   for (let t = r.t0 - 200; t < r.t1 + 100; t += 14) {

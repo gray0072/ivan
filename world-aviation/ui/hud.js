@@ -118,11 +118,12 @@ const HUD = {
     const left = res ? Math.max(0, res.deadline - fl.realElapsed) : 0;
     const late = res && fl.realElapsed > res.deadline;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);
-    // the clock at the departure; the expected arrival (the block time still to fly, by the
-    // progress along the route) on the arrival's clock; the air outside at this height
+    // the time now at both ends of the route: the departure's clock, running on with the flight,
+    // and the same moment on the arrival's clock — whole hours apart, the difference of the two
+    // airports' UTC offsets; the air outside at this height
     const clock = (fl.env.hour0 || 12) * 3600 + fl.elapsed;
     const dep = World.byId[c.fromId], arr = World.byId[c.toId];
-    const eta = ((clock + c.blockMin * 60 * (1 - fl.progress()) + (utcOffset(arr) - utcOffset(dep)) * 3600) % 86400 + 86400) % 86400;
+    const arrClock = ((clock + (utcOffset(arr) - utcOffset(dep)) * 3600) % 86400 + 86400) % 86400;
     const oat = Math.round(fl.env.temp - WEATHER.LAPSE_RATE * (fl.st.pos.y - (fl.env.tempElev || 0)));
     const html =
       '<div class="stripRow"><span>' + tr('FLIGHT TIME, ACTUAL') + '</span><span>' + (fl.elapsed < 60 ? tr('{m} min', { m: 0 }) : fmtDuration(Math.floor(fl.elapsed / 60))) + '</span></div>' +
@@ -130,8 +131,8 @@ const HUD = {
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
       '<div class="stripRow"><span>' + tr('WEIGHT') + '</span><span class="' + (fl.weight() > fl.ac.mtow ? 'bad' : '') + '">' +
         fmtTonnes(fl.weight()) + ' / ' + fmtTonnes(fl.ac.mtow) + ' t</span></div>' +
-      '<div class="stripRow"><span>' + tr('DEPARTURE, LOCAL TIME') + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
-      '<div class="stripRow"><span>' + tr('ARRIVAL, LOCAL TIME') + '</span><span>' + fmtClock(eta) + '</span></div>' +
+      '<div class="stripRow"><span>' + tr('LOCAL TIME, {id}', { id: dep.id }) + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
+      '<div class="stripRow"><span>' + tr('LOCAL TIME, {id}', { id: arr.id }) + '</span><span>' + fmtClock(arrClock) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +
       (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow key"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
         (late ? 'bad' : (left < 60 ? 'warn' : 'good')) + '">' + fmtTime(late ? fl.realElapsed - res.deadline : left) + '</b></div>' : '');

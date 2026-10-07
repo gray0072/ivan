@@ -264,6 +264,12 @@ const World = {
     put(a.apronT1 + 160, L.STAND, 60, 60, 10, 'fuel');
     put(a.apronT1 + 270, L.STAND + 20, 110, 60, 9, 'warehouse');
     a.buildings = b;
+    // the landside behind the terminal, beyond its car park (render/landside3d.js): the bigger
+    // the airport, the more there is — offices, a hotel, a multi-storey car park
+    a.landside = (LANDSIDE[term] || []).map(([dt, across, along, acrossSize, h, kind]) => {
+      const p = this.at(a, a.apronT + dt, across);
+      return { x: p.x, z: p.z, t: a.apronT + dt, across, along, acrossSize, h, kind };
+    });
   },
 
   // which runway exit to take: the first one still ahead of t

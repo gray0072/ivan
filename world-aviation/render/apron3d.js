@@ -222,25 +222,36 @@ const Apron3D = {
       at(gm, 0, 0, 0);
       rec.gateKits.push(gm);
 
-      // the jet bridge: docked to the front door, or retracted along the terminal
+      // the jet bridge: docked to the front door, or retracted: folded back along the
+      // terminal, between the glass and the service road, clear of both
       if (bridges) {
         const rot = [front - 4, gate.t + 14];
         const docked = jetBridge(rot, [doorAcross, gate.t + R + 0.25], sill);
-        const parked = jetBridge(rot, [front - 16, gate.t + 25], 3.6);
+        const parked = jetBridge(rot, [front - 5, gate.t + 36], 3.8);
         at(docked, 0, 0, 0); at(parked, 0, 0, 0);
         rec.bridges.push({ docked, parked });
       }
     });
 
-    // ---- floodlight masts: along the terminal side and the airside edge of the apron
+    // ---- floodlight masts: along the airside edge of the apron, and on the terminal side
+    // halfway between the stands (clear of the bridges and the wings), just outside the roof's
+    // overhang with the lamp head turned along the building, so they never go through the roof
     const masts = [];
-    for (let t = r.t0 + 30; t <= r.t1 - 30; t += 110) masts.push([t, front - 5], [t + 55, r.a0 + 6]);
+    for (let t = r.t0 + 85; t <= r.t1 - 30; t += 110) masts.push([t, r.a0 + 6, false]);
+    const termA = front - 7.5;
+    for (let i = 0; i <= a.gates.length; i++) {
+      // (the first one a little nearer its stand, clear of the welcome banner)
+      const t = i === 0 ? a.gates[0].t - 30 : i < a.gates.length ? a.gates[i].t - L.GATE_SPACING / 2 : a.gates[i - 1].t + L.GATE_SPACING / 2;
+      masts.push([t, termA, true]);
+    }
     const mk = kit();
     const lamps = [];
-    for (const [t, ac] of masts) {
+    for (const [t, ac, along] of masts) {
       const [x, z] = P(t, ac);
-      mk.cyl(0.25, 0.4, 26, 8, x, 13, z, '#9aa0a4').box(4.2, 1.2, 1.6, x, 26.2, z, '#3a3f44');
-      for (let i = -1; i <= 1; i++) lamps.push(x + i * 1.3, 25.5, z);
+      mk.cyl(0.25, 0.4, 26, 8, x, 13, z, '#9aa0a4');
+      if (along) mk.box(1.2, 1.2, 4.2, x, 26.2, z, '#3a3f44');
+      else mk.box(4.2, 1.2, 1.6, x, 26.2, z, '#3a3f44');
+      for (let i = -1; i <= 1; i++) lamps.push(x + (along ? 0 : i * 1.3), 25.5, z + (along ? i * 1.3 : 0));
     }
     at(mk.mesh(), 0, 0, 0);
     const lgeo = new THREE.BufferGeometry();
@@ -255,7 +266,7 @@ const Apron3D = {
     for (const [t, ac] of masts) {
       const g = new THREE.PlaneGeometry(150, 150, 6, 6);
       g.rotateX(-Math.PI / 2);
-      at(new THREE.Mesh(g, pool), t, ac + (ac < L.STAND ? 35 : -40), 0.3);
+      at(new THREE.Mesh(g, pool), t, ac + (ac < L.STAND ? 35 : -45), 0.3);
     }
 
     // ---- traffic: the tail-of-stand road and the landside roads
