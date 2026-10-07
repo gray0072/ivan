@@ -45,6 +45,8 @@ const SIM = {
   TIME_ACCEL_CHEAT: 256,       // the Alt+6 cheat
   TIME_ACCEL_MIN_ALT_M: 150,   // time acceleration only above this height AGL
   TIME_ACCEL_AP_MAX: 128,      // with the autopilot engaged: up to x128 in any phase
+  TIME_ACCEL_X1_NM: 20,        // closing on the arrival the time is back at x1 this far out ...
+  TIME_ACCEL_SLOWDOWN_S: 2,    // ... slowing one step every this many real seconds
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
     { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],
@@ -78,8 +80,23 @@ const SIM = {
   YAW_RATE_MAX: 8 * Math.PI / 180,
   GLIDESLOPE_DEG: 3,
   DESCENT_START_NM: 45,        // top of descent, nm from the arrival (at least: 3 nm per 1 000 ft to lose)
+  DESCENT_NM_PER_KFT: 3.2,     // the descent profile: nm flown per 1 000 ft lost ...
+  DESCENT_END_NM: 12,          // ... down to 2 500 ft over the arrival this far out
   APPROACH_NM: 19,             // the approach phase starts on the localiser inside this distance
+  FLAPS_PROMPT_NM: 15,         // on the approach the prompt asks for the flaps from here (whenever the next step fits the speed) ...
+  GEAR_PROMPT_NM: 8,           // ... and for the gear from here
   LOC_TIME_S: 22,              // the localiser closes a cross-track error with this time constant
+  LOC_TURN_MARGIN: 1.25,       // the localiser intercept plans its turn on this many times the autopilot's turn radius
+  AP_ROLL_IN_S: 3,             // ... after this long rolling into the bank (for a roll rate of AP_ROLL_IN_REF; slower types take longer)
+  AP_ROLL_IN_REF: 0.85,
+  LOC_MIN_EST_NM: 5,           // the localiser is captured only where the turn onto it ends at least this far out
+  AP_BANK_DEG: 25,             // the autopilot's bank in a turn
+  AP_DESCENT_SPEED_GAIN: 0.6,  // m/s less descent per kt over the speed target (an idle descent pitches for speed)
+  AP_SLOW_BELOW_FT: 10000,     // below this height over the arrival the descent speed is at most AP_SLOW_KT
+  AP_SLOW_KT: 250,
+  AP_IDLE_DESCENT_M: 100,      // more than this above the selected altitude the autopilot descends at idle thrust
+  AP_SPEEDBRAKE_HIGH_FT: 500,  // the autopilot puts the speed brake out this far above the descent profile while still fast
+  GS_CAPTURE_ABOVE_DEG: 0.35,  // the glideslope is captured from below, or from at most this far above it
   FINAL_FIX_NM: 10,            // the autopilot NAV mode joins the extended centreline here
   MSA_LOOKAHEAD_M: 20000,      // the autopilot keeps clear of the terrain this far ahead
   MSA_MARGIN_M: 450,           // by this much
@@ -567,8 +584,8 @@ const SKY_LATITUDE_DEG = 50;
 // destination, the autopilot holds the glide path for a moment, then you land and brake below
 // SIM.ROLLOUT_EXIT_KT. A paid simulator session with no penalties.
 const PRACTICE = {
-  START_NM: 3,                 // how far out on the final it starts
-  AP_SECONDS: 5,               // the autopilot flies it this long (real seconds), then hands over
+  HANDOVER_NM: 3,              // how far out on the final the autopilot hands over to the pilot ...
+  AP_SECONDS: 10,              // ... after flying the glide path this long (seconds of flight): the start is that much further out
   MAX_AGL_FT: 3000,            // climbing above this (or flying 2 nm further out) ends it: no landing
   FEE_LEASE_SHARE: 0.05,       // the fee: this share of the aircraft's hourly lease ...
   FEE_MIN: 100,                // ... and at least this much (SEK)

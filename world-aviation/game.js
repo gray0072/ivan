@@ -125,7 +125,7 @@ const Game = {
       if (fl.phase === 'PUSHBACK') this.updatePushback(dt);
       const simDt = fl.update(dt);
       sys.update(simDt);
-      if (this.practice) this.updatePractice(dt);
+      if (this.practice) this.updatePractice(simDt);
       this.updatePhase(dt);
       this.updateGuidance();
     }
@@ -468,8 +468,9 @@ const Game = {
     } else if (p === 'APPROACH') {
       const nm = fl.distToRunwayNm();
       const need = [];
-      if (st.flapsTarget < fl.ac.flaps.length && nm < 8) need.push(this.landingFlapsText());
-      if (st.gearTarget < 1 && nm < 7) need.push(tr('<b>gear down</b> <kbd>G</kbd>'));
+      // configured before the glideslope: the flaps step by step as the speed allows, then the gear
+      if (st.flapsTarget < fl.ac.flaps.length && nm < SIM.FLAPS_PROMPT_NM && this.nextFlapFits()) need.push(this.landingFlapsText());
+      if (st.gearTarget < 1 && nm < SIM.GEAR_PROMPT_NM) need.push(tr('<b>gear down</b> <kbd>G</kbd>'));
       const head = '<b>' + tr('Approach · runway {rwy}', { rwy: arr.rwyName }) + '</b> · ' + nm.toFixed(1) + ' nm · Vref ' + Math.round(fl.vRef()) + ' kt';
       if (this.practice) {
         // the gear and the flaps are part of the practice
@@ -489,7 +490,7 @@ const Game = {
       const loc = World.local(arr, st.pos.x, st.pos.z);
       const overRunway = Math.abs(loc.across) < 400 && loc.t > -arr.half && loc.t < arr.half;
       if (overRunway && !st.onGround) fl.overRunway = true;
-      if (this.practice && ((fl.overRunway && !st.onGround && loc.t > arr.half - 150) || nm > PRACTICE.START_NM + 2 || fl.altAgl() > PRACTICE.MAX_AGL_FT * FT)) {
+      if (this.practice && ((fl.overRunway && !st.onGround && loc.t > arr.half - 150) || nm > this.practice.startNm + 2 || fl.altAgl() > PRACTICE.MAX_AGL_FT * FT)) {
         this.endPractice(false, tr('No landing — you flew away from the runway'));
         return;
       }
@@ -551,7 +552,8 @@ const Game = {
     const fl = this.flight, st = fl.st, arr = fl.arrival;
     if (st.onGround) return '';
     if (fl.phase === 'DESCENT') {
-      const high = (st.pos.y - arr.elev) / FT > fl.distToRunwayNm() * 320 + 2500;
+      if (fl.ap.on) return '';                          // the autopilot works the speed brake itself
+      const high = fl.aboveProfileFt() > 0;
       if (high && !st.spoiler) return '<br>' + tr('<b>high</b> — spoiler <kbd>/</kbd> to come down faster');
       if (!high && st.spoiler) return '<br>' + tr('on the profile — spoiler in <kbd>/</kbd>');
       return '';
@@ -561,6 +563,11 @@ const Game = {
     return '';
   },
 
+  // the next flap step fits the speed now (or it is the last few miles: then it is asked for anyway)
+  nextFlapFits() {
+    const fl = this.flight, f = fl.ac.flaps[fl.st.flapsTarget];
+    return !f || fl.st.ias / KTS <= f.vfe + 5 || fl.distToRunwayNm() < SIM.GEAR_PROMPT_NM;
+  },
   // the flaps to set now: the furthest step the speed allows, at least the next one
   landingFlapsText() {
     const fl = this.flight, flaps = fl.ac.flaps, ias = fl.st.ias / KTS;
@@ -576,11 +583,11 @@ const Game = {
     const ft = clamp(nm * 120, 6000, fl.ac.cruiseAlt / FT * (nm > 250 ? 0.92 : 0.55));
     return Math.round((Math.max(ft, (Math.max(fl.world.elev, fl.arrival.elev) + 1500) / FT)) / 500) * 500;
   },
-  // how far out the descent starts: 3 nm per 1 000 ft to lose, at least DESCENT_START_NM
+  // how far out the descent starts: on the descent profile (Flight.aboveProfileFt), at least DESCENT_START_NM
   descentNm() {
     const fl = this.flight;
     const lose = fl.st.pos.y / FT - (fl.arrival.elev / FT + 2500);
-    return Math.max(SIM.DESCENT_START_NM, lose / 1000 * 3.2 + 12);
+    return Math.max(SIM.DESCENT_START_NM, lose / 1000 * SIM.DESCENT_NM_PER_KFT + SIM.DESCENT_END_NM);
   },
   // the altitude the flight plan wants now: the cruise level until the top of descent, then
   // 2 500 ft above the arrival for the approach
@@ -806,13 +813,19 @@ const Game = {
   // flying the ILS, gear up: with take-off flaps and level (the final-approach cheat, 12 nm),
   // or clean and already descending on the glide path (the practice landing: the gear, the
   // flaps and the speed are the pilot's job)
+  // (the practice starts as far out as it flies in PRACTICE.AP_SECONDS on the autopilot, so it
+  // hands over PRACTICE.HANDOVER_NM out)
   placeOnFinal(nm, practice) {
     const fl = this.flight, st = fl.st, a = fl.arrival;
-    const dist = nm * NM;
-    const p = World.at(a, -a.half - dist, 0);
     st.gearTarget = st.gear = 0;
     st.flaps = st.flapsTarget = practice ? 0 : 2;
     const spd = (practice ? Math.max(fl.vRef() + 25, fl.vsNow() * 1.4) : Math.min(fl.vRef() * 1.35, fl.ac.flaps[1].vfe - 15)) * KTS;
+    if (practice) {
+      nm = PRACTICE.HANDOVER_NM + spd * Math.cos(SIM.GLIDESLOPE_DEG * DEG) * PRACTICE.AP_SECONDS / NM;
+      this.practice.startNm = nm;
+    }
+    const dist = nm * NM;
+    const p = World.at(a, -a.half - dist, 0);
     st.pos.x = p.x; st.pos.z = p.z;
     st.pos.y = a.elev + 15 + dist * Math.tan(SIM.GLIDESLOPE_DEG * DEG) + st.gearH;
     st.hdg = a.hdg; st.pitch = practice ? 0 : 0.03; st.roll = 0;
@@ -933,7 +946,7 @@ const Game = {
     if (this.practice) {
       this.systems.noEmergencies = true;
       this.systems.queue = [];
-      this.placeOnFinal(PRACTICE.START_NM, true);
+      this.placeOnFinal(0, true);
     }
 
     Scene3D.setFlightGates(s.skipPushback ? [this.arrivalGate] : [s.gate, this.arrivalGate]);

@@ -138,7 +138,8 @@ const Flight = {
     if (down && st.gearFailed) { st.gearSelected = true; this.warn('GEAR', tr('Gear will not extend — work the checklist')); this.gearReject = 'failed'; return; }
     st.gearTarget = down ? 1 : 0;
   },
-  toggleSpoiler() { this.st.spoiler = this.st.spoiler > 0.5 ? 0 : 1; },
+  // the pilot's spoiler lever (from then on it is the pilot's, not the autopilot's)
+  toggleSpoiler() { this.st.spoiler = this.st.spoiler > 0.5 ? 0 : 1; if (this.ap) this.ap.spoiler = false; },
 
   warn(id, text) {
     if (this.events.some((e) => e.id === id && this.realElapsed - e.t < 6)) return;
@@ -262,14 +263,35 @@ const Flight = {
   },
 
   // The fastest step allowed now: up to x128 on the autopilot in any phase; flying by hand it
-  // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down or in a checklist.
+  // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down or in a checklist,
+  // and closing on the arrival it comes down by itself (approachAccelMax).
   timeAccelMax() {
+    this.approachCapped = false;
     if (this.st.onGround || (this.systems && this.systems.checklist)) return 1;
     const agl = this.altAgl();
     if (agl < SIM.TIME_ACCEL_MIN_ALT_M) return 1;
-    if (this.ap.on) return SIM.TIME_ACCEL_AP_MAX;
     let max = 1;
-    for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
+    if (this.ap.on) max = SIM.TIME_ACCEL_AP_MAX;
+    else for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
+    const near = this.approachAccelMax();
+    if (near < max) { max = near; this.approachCapped = true; }
+    return max;
+  },
+  // Closing on the arrival, the time slows down one step at a time, a step every
+  // TIME_ACCEL_SLOWDOWN_S real seconds, and is back at x1 TIME_ACCEL_X1_NM out: at every step the
+  // distance left must hold that many seconds at each of the steps below it.
+  approachAccelMax() {
+    if (!this.arrival) return SIM.TIME_ACCEL_STEPS[SIM.TIME_ACCEL_STEPS.length - 1];
+    const left = (this.distToRunwayNm() - SIM.TIME_ACCEL_X1_NM) * NM;
+    if (left <= 0) return 1;
+    const gs = Math.max(30, Math.hypot(this.st.vel.x, this.st.vel.z));
+    const steps = SIM.TIME_ACCEL_STEPS;
+    let need = 0, max = 1;
+    for (let i = 1; i < steps.length; i++) {
+      need += gs * steps[i - 1] * SIM.TIME_ACCEL_SLOWDOWN_S;
+      if (need > left) break;
+      max = steps[i];
+    }
     return max;
   },
   timeAccelTop() {
@@ -287,7 +309,10 @@ const Flight = {
     // the conditions got stricter (the autopilot is off, lower down, an emergency): step down to what is allowed
     if (this.timeAccelIndex > top) this.timeAccelIndex = top;
     e.timeAccel = this.cheatAccel ? SIM.TIME_ACCEL_CHEAT : SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
-    if (e.timeAccel < was) this.info(tr('TIME x{n}', { n: e.timeAccel }) + (e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height') : ''));
+    if (e.timeAccel < was) {
+      this.info(tr('TIME x{n}', { n: e.timeAccel }) + (this.approachCapped ? ' — ' + tr('approaching {id}', { id: this.arrival.id })
+        : e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height') : ''));
+    }
     return e.timeAccel;
   },
   // dir = +1 (T, faster) or -1 (R, slower)
@@ -307,6 +332,7 @@ const Flight = {
       return tr('Time acceleration only in the air, above {alt} ft', { alt: fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) });
     }
     if (this.systems && this.systems.checklist) return tr('Work the checklist first — time runs at x1');
+    if (this.approachCapped) return tr('Approaching {id} — the time slows down by itself, x1 from {nm} out', { id: this.arrival.id, nm: Units.dist(SIM.TIME_ACCEL_X1_NM) });
     if (this.ap.on) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_AP_MAX });
     const max = this.timeAccelMax();
     const next = SIM.TIME_ACCEL_MANUAL.find((t) => t.max > max);
@@ -721,37 +747,81 @@ const Flight = {
     return total > 0 ? clamp(1 - this.distToDestNm() / total, 0, 1) : 1;
   },
   // Where the NAV mode steers, like a real procedure: to an initial approach fix on the
-  // extended centreline (FINAL_FIX_NM + 5 nm out), then down the localiser. The localiser is
-  // captured at an intercept angle under 60°, or at the fix itself; an aeroplane pointing
-  // the wrong way first turns onto a fixed 45° intercept heading towards the centreline.
+  // extended centreline (FINAL_FIX_NM + 5 nm out), then down the localiser.
+  // The turn onto the localiser is anticipated: at every distance from the centreline there is
+  // a steepest closing angle from which a turn of the autopilot's radius at this speed (with a
+  // margin, after a few seconds of rolling in) still rolls out on the line (locInterceptDeg).
+  // The localiser is captured, near the approach, the moment the aeroplane's closing angle
+  // reaches it, and from then on the commanded track follows it down to the line, so even a
+  // fast jet turning in from the side or from behind does not swing through the centreline.
+  // An aeroplane on the runway side of the fix heading out first flies to an entry point beside
+  // the fix, from where the turn back onto the final fits.
   navTarget() {
     const a = this.arrival, st = this.st;
     const iafD = (SIM.FINAL_FIX_NM + 5) * NM;
-    const iaf = World.at(a, -a.half - iafD, 0);
     const loc = World.local(a, st.pos.x, st.pos.z);
     const before = -(loc.t + a.half);                 // metres before the threshold
-    const off = wrapDeg(this.trackDeg() - a.hdgDeg);
+    const v = Math.max(40, Math.hypot(st.vel.x, st.vel.z));
+    // over the ground the turn is as wide as the fastest it gets: now, or on the final with the
+    // wind along the runway (a tailwind on the final widens it a lot)
+    const w = this.windAt(st.pos.y);
+    const turnR = this.apTurnRadius(Math.max(v, st.tas + w.x * a.dirX + w.z * a.dirZ));
+    const side = loc.across >= 0 ? 1 : -1;
+    // the track's angle towards the centreline: 0 = along the final, 90 = straight at it, 180 = outbound
+    const closing = wrapDeg(-wrapDeg(this.trackDeg() - a.hdgDeg) * side);
+    const lim = this.locIntercept(Math.abs(loc.across), v, turnR);
+    const limit = lim.deg;
+    // the closing angle to fly: the limit, but never more than straight at the line, unless already
+    // turning in from further round (outbound), where it only ever comes down
+    const want = Math.min(limit, Math.max(90, closing - 20));
+    // on the turn's circle, the bank that flies it, so the autopilot does not lag behind the curve
+    const onCircle = lim.circle && want === limit;
+    const turnIn = (h) => onCircle ? Math.sign(wrapDeg(a.hdgDeg - h)) * Math.atan(v * v / (SIM.GRAVITY * turnR)) : 0;
     if (!this.locCaptured) {
-      const turnR = st.tas * st.tas / (SIM.GRAVITY * Math.tan(25 * DEG));
+      const iaf = World.at(a, -a.half - iafD, 0);
       const nearIaf = Math.hypot(st.pos.x - iaf.x, st.pos.z - iaf.z) < Math.max(1.5 * NM, turnR * 1.2);
-      const inCone = before > 2 * NM && before < iafD + 3 * NM && Math.abs(loc.across) < Math.max(1200, before * 0.3);
-      if (nearIaf || (inCone && Math.abs(off) < 60)) {
+      // (far enough out that the turn ends established on the final)
+      const inZone = before > SIM.LOC_MIN_EST_NM * NM + turnR && before < iafD + 3 * NM &&
+        Math.abs(loc.across) < Math.max(1200, before * 0.3, turnR * 2.5);
+      if (nearIaf || (inZone && closing >= limit - 3) || (inZone && Math.abs(loc.across) < 150 && Math.abs(closing) < 20)) {
         this.locCaptured = true;
         this.info(tr('Localiser captured — runway {rwy}', { rwy: a.rwyName }));
       }
     }
     if (this.locCaptured) {
-      if (Math.abs(off) > 75) {
-        const side = loc.across >= 0 ? 1 : -1;
-        return { hdg: (a.hdgDeg - side * 45 + 360) % 360, onFinal: true };
-      }
-      // a track that closes the cross-track error with a fixed time constant (the autopilot flies
-      // this as a track, so the wind drift is taken out too)
-      const v = Math.max(40, Math.hypot(st.vel.x, st.vel.z));
-      const corr = clamp(Math.asin(clamp(-loc.across / (SIM.LOC_TIME_S * v), -0.6, 0.6)) * RAD, -35, 35);
-      return { hdg: (a.hdgDeg + corr + 360) % 360, onFinal: true };
+      // the autopilot flies this as a track, so the wind drift is taken out too
+      const hdg = (a.hdgDeg - side * want + 720) % 360;
+      return { hdg, onFinal: true, bank: turnIn(hdg) };
     }
-    return { hdg: bearingDeg(st.pos.x, st.pos.z, iaf.x, iaf.z), onFinal: false };
+    // to the fix; from the runway side, heading out, to the entry point beside it instead
+    let p = World.at(a, -a.half - iafD, 0);
+    if (Math.abs(wrapDeg(bearingDeg(st.pos.x, st.pos.z, p.x, p.z) - a.hdgDeg)) > 100) {
+      p = World.at(a, -a.half - iafD, side * turnR * 1.9);
+      if (Math.hypot(st.pos.x - p.x, st.pos.z - p.z) < turnR * 1.5) {
+        this.locCaptured = true;
+        this.info(tr('Localiser captured — runway {rwy}', { rwy: a.rwyName }));
+        const hdg = (a.hdgDeg - side * want + 720) % 360;
+        return { hdg, onFinal: true, bank: turnIn(hdg) };
+      }
+    }
+    return { hdg: bearingDeg(st.pos.x, st.pos.z, p.x, p.z), onFinal: false };
+  },
+  // the turn the localiser intercept plans on at this ground speed (m): the autopilot's turn
+  // radius with the safety margin, plus the way flown while rolling into the bank (longer for a
+  // heavy that rolls slowly)
+  apTurnRadius(v) {
+    return v * v / (SIM.GRAVITY * Math.tan(SIM.AP_BANK_DEG * DEG)) * SIM.LOC_TURN_MARGIN +
+      v * SIM.AP_ROLL_IN_S * SIM.AP_ROLL_IN_REF / this.ac.rollRate;
+  },
+  // The steepest closing angle (deg, 0…180) at `across` metres from the centreline: no steeper
+  // than the turn can still take out (a circle of radius turnR), and close to the line no
+  // steeper than closing the gap in LOC_TIME_S seconds (a smooth, damped join).
+  // {deg, circle: the turn's circle is what limits it}
+  locIntercept(across, v, turnR) {
+    const circle = Math.acos(clamp(1 - across / turnR, -1, 1)) * RAD;
+    const gentle = Math.asin(clamp(across / (SIM.LOC_TIME_S * v), 0, 1)) * RAD;
+    const g = gentle < 89.9 ? gentle : 180;
+    return circle < g ? { deg: circle, circle: true } : { deg: g, circle: false };
   },
   // inside the arrival's cleared approach corridor (see Terrain.flattenAirports)?
   onCorridor() {
@@ -798,34 +868,83 @@ const Flight = {
     return st.pos.y - st.gearH + st.vel.y * k * 0.5 - ground;
   },
 
+  // How far above the descent profile, ft: DESCENT_NM_PER_KFT nm per 1 000 ft, down to 2 500 ft
+  // over the arrival DESCENT_END_NM out, where the localiser and the glideslope take over
+  aboveProfileFt() {
+    const profile = Math.max(0, this.distToRunwayNm() - SIM.DESCENT_END_NM) / SIM.DESCENT_NM_PER_KFT * 1000 + 2500;
+    return (this.st.pos.y - this.arrival.elev) / FT - profile;
+  },
+  // the autopilot works the speed brake on the descent; the pilot's lever is left alone
+  apSpeedBrake(out) {
+    const st = this.st, ap = this.ap;
+    if (out && !st.spoiler) {
+      st.spoiler = 1; ap.spoiler = true;
+      this.info(tr('Autopilot: speed brake out — high on the descent'));
+    } else if (!out && ap.spoiler) {
+      ap.spoiler = false;
+      if (st.spoiler) { st.spoiler = 0; this.info(tr('Autopilot: speed brake in')); }
+    }
+  },
+  // The autopilot's speed (IAS, kt). A constant indicated speed low down (the cruise speed's IAS
+  // at the cruise level), the cruise TAS higher up. From the top of descent it slows in steps,
+  // like a real arrival: 250 kt below 10 000 ft, then down towards the approach speed as the
+  // runway gets closer (Vref + 50 at 20 nm, so the first flaps can go out on the localiser),
+  // Vref + 30 on the approach and Vref + 5 in the last 5 nm. Never faster than the flaps and the
+  // gear allow, never slower than 1.35 × the stall speed.
+  apSpeedTarget() {
+    const st = this.st, ac = this.ac;
+    const sigma = this.density(st.pos.y) / SIM.RHO_SL;
+    const cruiseIas = ac.cruiseTas * Math.sqrt(this.density(ac.cruiseAlt) / SIM.RHO_SL);
+    let target = Math.min(ac.cruiseTas * Math.sqrt(sigma), cruiseIas, ac.vne * 0.9);
+    const nm = this.distToRunwayNm(), vref = this.vRef();
+    if (this.phase === 'DESCENT') {
+      if (st.pos.y - this.arrival.elev < SIM.AP_SLOW_BELOW_FT * FT) target = Math.min(target, SIM.AP_SLOW_KT);
+      target = Math.min(target, vref + 50 + Math.max(0, nm - 20) * 6);
+    }
+    if (this.phase === 'APPROACH') target = Math.min(target, vref + (nm < 5 ? 5 : 30));
+    target = Math.min(target, this.flapVfeNow() - 8, st.gear > 0.05 ? ac.vlo : 999);
+    return Math.max(target, this.vsNow() * 1.35, this.phase === 'APPROACH' ? vref : 0);
+  },
+
   // ---------- autopilot ----------
   // HDG / NAV laterally (NAV flies to the final fix and captures the localiser),
   // ALT hold or G/S vertically, and an autothrottle on the speed.
   updateAutopilot(dt) {
     const st = this.st, ap = this.ap, ac = this.ac;
-    if (!ap.on) { ap.lastIas = undefined; return; }
+    if (!ap.on) { ap.lastIas = undefined; this.apSpeedBrake(false); return; }
     if (st.onGround) { ap.on = false; return; }
     const ias = st.ias / KTS;
 
     // lateral
-    let onFinal = false;
+    let onFinal = false, bankFF = 0;
     if (ap.nav && !this.navFailed) {
       const n = this.navTarget();
       ap.hdg = Math.round(n.hdg);
       onFinal = n.onFinal;
+      bankFF = n.bank || 0;
     }
     // on the localiser the command is a track, so fly the track (the heading crabs into the wind)
     const hdgErr = wrapDeg(ap.hdg - (onFinal ? this.trackDeg() : this.headingDeg()));
-    const bankT = clamp(hdgErr * 1.2, -25, 25) * DEG;
+    const bankT = clamp(hdgErr * 1.2 + bankFF * RAD, -SIM.AP_BANK_DEG, SIM.AP_BANK_DEG) * DEG;
     st.aileron = clamp((bankT - st.roll) * 2.2 - st.rollRate * 0.8, -1, 1);
     st.rudder = 0;
 
+    // the speed to fly (the autothrottle below, and the pitch in an idle descent)
+    const spdT = this.apSpeedTarget();
+    ap.speed = spdT;
+    // high on the descent and still fast: the speed brake goes out, and in again on the profile
+    if (this.phase === 'DESCENT') {
+      const above = this.aboveProfileFt();
+      if (above > SIM.AP_SPEEDBRAKE_HIGH_FT && ias > spdT - 5) this.apSpeedBrake(true);
+      else if (above < 0) this.apSpeedBrake(false);
+    } else this.apSpeedBrake(false);
+
     // vertical
-    let vsT;
+    let vsT, idleDescent = false;
     const ils = this.ilsDeviation();
     // the glideslope is captured from below (or when already on it), never chased up from far below
     const corridor = onFinal && this.onCorridor();
-    if (corridor && (ap.gs || (ils.along < 0 && ils.gsDeg > -0.25 && ils.dist < (SIM.FINAL_FIX_NM + 4) * NM))) {
+    if (corridor && (ap.gs || (ils.along < 0 && ils.gsDeg > -0.25 && ils.gsDeg < SIM.GS_CAPTURE_ABOVE_DEG && ils.dist < (SIM.FINAL_FIX_NM + 4) * NM))) {
       if (!ap.gs) { ap.gs = true; this.info(tr('Glideslope captured')); }
       const gsV = -st.tas * Math.sin(SIM.GLIDESLOPE_DEG * DEG);
       vsT = gsV + (ils.targetAlt - (st.pos.y - st.gearH)) * 0.12;
@@ -846,6 +965,12 @@ const Flight = {
         this.info(tr('Terrain ahead — the autopilot holds {alt} ft', { alt: fmtAltFt(Math.ceil(target / FT / 100) * 100) }));
       }
       vsT = clamp((target - st.pos.y) * 0.05, -11, ac.climbRate);
+      // a descent like a real autopilot's: the thrust at idle and the speed on the elevator, so
+      // when the aeroplane is faster than it should be the descent gets shallower (down to level
+      // flight) until the drag has taken the extra speed off
+      idleDescent = target - st.pos.y < -SIM.AP_IDLE_DESCENT_M;
+      const over = ias - spdT;
+      if (vsT < 0 && over > 0) vsT = Math.min(vsT + over * SIM.AP_DESCENT_SPEED_GAIN, 0.5);
     }
     // never trade the last of the speed for height
     const vs = this.vsNow();
@@ -855,22 +980,15 @@ const Flight = {
     st.elevator = clamp(e * 0.09 + ap.vsI * 0.02 - st.pitchRate * 1.5, -0.8, 0.8);
 
     // autothrottle
-    // a constant indicated speed low down (the cruise speed's IAS at the cruise level), the cruise TAS higher up
-    const sigma = this.density(st.pos.y) / SIM.RHO_SL;
-    const cruiseIas = ac.cruiseTas * Math.sqrt(this.density(ac.cruiseAlt) / SIM.RHO_SL);
-    let target = Math.min(ac.cruiseTas * Math.sqrt(sigma), cruiseIas, ac.vne * 0.9);
-    if (this.phase === 'DESCENT') target = Math.min(target, this.vRef() + 70);
-    if (this.phase === 'APPROACH') target = Math.min(target, this.vRef() + (this.distToRunwayNm() < 5 ? 5 : 30));
-    target = Math.min(target, this.flapVfeNow() - 8, st.gear > 0.05 ? ac.vlo : 999);
-    target = Math.max(target, vs * 1.35, this.phase === 'APPROACH' ? this.vRef() : 0);
-    ap.speed = target;
+    const target = spdT;
     // A smooth loop: the speed error moves the thrust levers, the speed trend (smoothed) damps
     // them, so they lead the slow engines instead of hunting between idle and full; the levers
     // move at most 12 % a second, like a real autothrottle.
     if (ap.lastIas === undefined) { ap.lastIas = ias; ap.accF = 0; }
     ap.accF += ((ias - ap.lastIas) / dt - ap.accF) * Math.min(1, dt / 1.5);
     ap.lastIas = ias;
-    const want = (target - ias) * 0.03 - ap.accF * 0.35 - (e < -4 ? 0.3 : 0);
+    const want = idleDescent && ias > target - 10 ? -1                // idle in the descent (thrust only if far too slow)
+      : (target - ias) * 0.03 - ap.accF * 0.35 - (e < -4 ? 0.3 : 0);
     st.throttle = clamp(st.throttle + clamp(want, -1, 1) * 0.12 * dt, 0, 1);
     if (st.stallWarn) { ap.on = false; this.warn('AP', tr('Autopilot disconnect — stall warning')); }
   }

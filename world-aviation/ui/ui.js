@@ -492,8 +492,8 @@ const UI = {
       '<button class="btn" data-act="practice"' + (Career.data.money < fee ? ' disabled' : '') + '>' +
       tr('Practice the landing · {fee}', { fee: fmtMoney(fee) }) + '</button>' +
       '<button class="btn" data-act="tab" data-v="dispatch">' + tr('Back to the board') + '</button></div>' +
-      '<p class="fineprint">' + tr('Practice the landing: you start {nm} nm out on the final at {id}, clean (gear and flaps up), the autopilot holds the glide path for {s} s, then you lower the gear and the flaps, land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
-        { nm: PRACTICE.START_NM, id: to.id, s: PRACTICE.AP_SECONDS, v: SIM.ROLLOUT_EXIT_KT, who: esc(tr(FACTIONS[c.faction].name)) }) + '</p>' +
+      '<p class="fineprint">' + tr('Practice the landing: you start on the final at {id}, clean (gear and flaps up), the autopilot holds the glide path for {s} s and hands over {nm} nm out, then you lower the gear and the flaps, land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
+        { nm: PRACTICE.HANDOVER_NM, id: to.id, s: PRACTICE.AP_SECONDS, v: SIM.ROLLOUT_EXIT_KT, who: esc(tr(FACTIONS[c.faction].name)) }) + '</p>' +
       '</div></div>');
   },
 
