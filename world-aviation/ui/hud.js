@@ -30,6 +30,7 @@ const HUD = {
     try { this.miniWanted = localStorage.getItem('worldAviation.miniMap') !== 'off'; } catch (e) { /* storage blocked */ }
     // on a touch screen a tap folds the prompt to its first line, and opens it again
     if (this.prompt) this.prompt.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.togglePrompt(); });
+    if (this.strip) this.strip.addEventListener('pointerdown', (e) => { if (!Input.isCoarse) return; e.stopPropagation(); this.stripOpen = !this.stripOpen; });
     // and a tap anywhere on the big map closes it (it covers the buttons, the Map one too)
     const mo = el('mapOverlay');
     if (mo) mo.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); this.closeMap(); });
@@ -58,11 +59,14 @@ const HUD = {
   render() {
     if (!this.msgBox) return;
     const now = performance.now();
-    // touch screens: the messages fit between the left column and the buttons, whatever their width
+    // touch screens: the messages fit between the left column and the buttons, whatever their
+    // size; held upright the HUD starts under the buttons and the thrust lever sits on the panel
     if (Input.isCoarse && this.box && (this.btnN = (this.btnN || 0) + 1) % 30 === 1) {
-      const tb = el('touchButtons');
+      const tb = el('touchButtons'), root = document.documentElement.style;
       this.buttonsW = tb ? tb.offsetWidth : 0;
-      if (this.buttonsW) this.box.style.setProperty('--buttonsW', this.buttonsW + 'px');
+      if (this.buttonsW) root.setProperty('--buttonsW', this.buttonsW + 'px');
+      if (tb && tb.offsetHeight) root.setProperty('--buttonsH', tb.offsetHeight + 'px');
+      root.setProperty('--panelH', Math.round(window.innerHeight - Cockpit.panelTop(window.innerHeight)) + 'px');
     }
     this.messages = this.messages.filter((m) => now - m.t < 7000);
     const key = this.messages.map((m) => m.t).join(',');
@@ -83,6 +87,9 @@ const HUD = {
     if (!this.strip) return;
     const c = fl.contract;
     if (!c) { this.strip.hidden = true; return; }
+    // a phone folds the strip to the route, the fuel and the time left, so the prompt under it
+    // stays off the panel (a tap opens it)
+    this.strip.classList.toggle('compact', Input.isCoarse && !this.stripOpen);
     this.strip.hidden = false;
     // the route, the airports with their countries, the pay and the planned flight time: built
     // once a flight (the flags are images); the actual flight time and the live figures under it
@@ -98,7 +105,7 @@ const HUD = {
       this.strip.innerHTML =
         (fl.practice ? '<div class="stripRow big"><span class="good">' + tr('PRACTICE LANDING') + '</span></div>' : '') +
         '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + esc(tr(PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type).toUpperCase()) + '</span></div>' +
-        '<div class="stripRow big">' + c.fromId + ' → ' + c.toId + '</div>' +
+        '<div class="stripRow big route">' + c.fromId + ' → ' + c.toId + '</div>' +
         apt(c.fromId) + apt(c.toId) +
         '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
         '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
@@ -119,14 +126,14 @@ const HUD = {
     const oat = Math.round(fl.env.temp - WEATHER.LAPSE_RATE * (fl.st.pos.y - (fl.env.tempElev || 0)));
     const html =
       '<div class="stripRow"><span>' + tr('FLIGHT TIME, ACTUAL') + '</span><span>' + (fl.elapsed < 60 ? tr('{m} min', { m: 0 }) : fmtDuration(Math.floor(fl.elapsed / 60))) + '</span></div>' +
-      '<div class="stripRow"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
+      '<div class="stripRow key"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
       '<div class="stripRow"><span>' + tr('WEIGHT') + '</span><span class="' + (fl.weight() > fl.ac.mtow ? 'bad' : '') + '">' +
         fmtTonnes(fl.weight()) + ' / ' + fmtTonnes(fl.ac.mtow) + ' t</span></div>' +
       '<div class="stripRow"><span>' + tr('DEPARTURE, LOCAL TIME') + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('ARRIVAL, LOCAL TIME') + '</span><span>' + fmtClock(eta) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +
-      (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
+      (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow key"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
         (late ? 'bad' : (left < 60 ? 'warn' : 'good')) + '">' + fmtTime(late ? fl.realElapsed - res.deadline : left) + '</b></div>' : '');
     if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
   },
@@ -162,6 +169,23 @@ const HUD = {
     if (ms) this.bannerTimer = setTimeout(() => this.hideBanner(), ms);
   },
   hideBanner() { if (this.banner) this.banner.hidden = true; },
+
+  // ---------- the touch buttons ----------
+  // the switches that stay set light up on their buttons (so the phone's panel can leave them
+  // out): the autopilot and its NAV mode, the gear down, the spoiler, the parking brake, the anti-ice
+  updateButtons(fl, sys) {
+    if (!Input.isCoarse) return;
+    if (!this.litBtns) {
+      this.litBtns = {};
+      document.querySelectorAll('#touchButtons [data-act]').forEach((b) => { this.litBtns[b.getAttribute('data-act')] = b; });
+    }
+    const st = fl.st;
+    const on = { ap: fl.ap.on, nav: fl.ap.on && fl.ap.nav, gear: st.gearTarget >= 1, spoiler: st.spoiler, parkBrake: st.parkingBrake, antiIce: sys && sys.antiIce };
+    for (const k in on) {
+      const b = this.litBtns[k];
+      if (b && b.classList.contains('lit') !== !!on[k]) b.classList.toggle('lit', !!on[k]);
+    }
+  },
 
   // ---------- QRH checklist ----------
   // The emergency, what it is, and its steps top to bottom. Each step shows the control that

@@ -14,8 +14,13 @@ const Cockpit = {
   init() { this.parts = null; },
 
   panelTop(h) {
+    // a phone held upright: a taller panel for the gauges two by two and the thrust lever
+    if (this.portrait(window.innerWidth, h)) return h - Math.min(h * 0.42, 360);
     return h - Math.min(h * (h < 560 ? 0.34 : 0.30), h < 560 ? 210 : 250);
   },
+
+  // a touch screen held upright (the panel, the buttons and the HUD lay out differently)
+  portrait(w, h) { return Input.isCoarse && h > w; },
 
   // where the centre window post is on the screen: the captain's eye is VIEW.COCKPIT_SEAT_X to
   // the left of it and VIEW.CENTRE_POST_AHEAD in front, seen through the camera's field of view

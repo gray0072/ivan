@@ -67,6 +67,8 @@ const SIM = {
   CRASH_BANK_DEG: 25,          // a wing on the ground at more bank than this is a crash
   SPOILER_BRAKE_GAIN: 0.35,    // the spoiler out on the ground: the wheel brakes this much stronger
   FLARE_TRIM_HOLD_M: 150,      // by hand on the approach below this height (AGL) the pitch trim stays put
+  RADIO_ALT_MAX_FT: 2500,      // the radio altitude (height above the ground) shows in the attitude indicator below this
+  DECISION_HEIGHT_FT: 200,     // ... and turns amber below this on the way down to land
   CRASH_PITCH_DEG: -6,         // nose-first ground contact below this pitch is a crash
   AIRPORT_RADIUS_M: 2200,      // ground contact further than this from a runway is off-airport
   PARK_RADIUS_M: 18,           // the parking box at the gate

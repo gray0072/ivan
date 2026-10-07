@@ -84,6 +84,7 @@ const Game = {
       if (fe) fe.textContent = Math.round(this.fps) + ' fps · ' + Scene3D.quality.name;
     }
     if (this.mode === 'flying') this.frame(dt);
+    else if (Audio2.t) Audio2.update(0, null, null);   // no engine, wind or wheel sound outside a flight
     else if (this.mode === 'paused' && this.flight) {
       Scene3D.render();
       this.draw2d(0);
@@ -134,12 +135,14 @@ const Game = {
     Scene3D.update(dt, fl, sys);
     Scene3D.render();
     this.draw2d(dt);
-    Audio2.update(dt, fl, sys);
+    // a flight that ended in this frame (a practice landing, the debrief) is already silenced: keep it so
+    Audio2.update(dt, this.mode === 'flying' ? fl : null, sys);
 
     // messages and panels
     while (fl.events.length) HUD.push(fl.events.shift());
     HUD.render();
     HUD.updateStrip(fl, sys, this.res);
+    HUD.updateButtons(fl, sys);
     HUD.updateChecklist(sys, this.hintOn());
     HUD.updateGuidance(fl, dt);
     if (HUD.mapOpen) HUD.drawMap(fl, sys);
@@ -187,10 +190,15 @@ const Game = {
     if (d.along > 0) return;
     const top = Cockpit.panelTop(h);
     const inside = this.camMode === 'cockpit';
-    const side = !Input.isCoarse;
-    const R = side ? Math.min(90, w * 0.08) : Math.min(110, w * 0.12), V = Math.min(70, h * 0.1);
+    const side = !Input.isCoarse, upright = Cockpit.portrait(w, h);
+    const R = side ? Math.min(90, w * 0.08) : upright ? w * 0.1 : Math.min(110, w * 0.12), V = upright ? 40 : Math.min(70, h * 0.1);
     let cx = inside ? w / 2 : w - R - 110, cy = inside ? top * 0.5 : top * 0.56;
-    if (side) {
+    if (upright) {
+      // a phone held upright: on the right between the messages under the buttons and the
+      // heading strip, clear of the strip and the prompt on the left
+      cx = w * 0.7;
+      cy = top - 150;
+    } else if (side) {
       const cb = el('checklist'), qrh = cb && !cb.hidden;
       cy = top * 0.56;
       // the glide path scale and its label reach about R + 70 to the right of the centre

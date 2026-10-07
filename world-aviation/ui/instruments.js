@@ -3,10 +3,14 @@
 // ============================================================
 // World Aviation — the instrument panel, drawn with Canvas 2D on
 // the overlay canvas: airspeed tape with V-speeds, attitude
-// indicator, altimeter with the selected altitude bug, heading
+// indicator with the radio altitude, altimeter with the selected altitude bug, heading
 // indicator with the route, VSI, engine gauges and the warning
 // lights. Everything is vector-drawn so it stays sharp at any size.
 // ============================================================
+
+// on a phone the touch thrust lever (#throttleZone in styles.css: 62 px wide, 8 px from the
+// edge) covers the right edge of the panel: the gauges keep out of this many pixels
+const PHONE_THROTTLE_W = 78;
 
 const Instruments = {
   ctx: null, w: 0, h: 0, dpr: 1, bright: 1,
@@ -49,7 +53,34 @@ const Instruments = {
       this.config(ctx, cfgX, top + 10, cfgW, panelH - 20, fl, sys);
       this.warnings(ctx, warnX, top + 10, warnW, panelH - 20, sys, fl);
       this.hsi(ctx, cx, top - 22, Math.min(w * 0.5, 460), 24, fl, sys);
+    } else if (Cockpit.portrait(w, h)) {
+      // a phone held upright: the configuration on one line, the four gauges two by two, and
+      // the right edge left to the thrust lever (the touch slider sits over it)
+      const lineH = 20;
+      this.configLine(ctx, 8, top + 6, w - 16, lineH, fl, sys);
+      const x0 = 6, x1 = w - PHONE_THROTTLE_W, y0 = top + 10 + lineH, y1 = h - 6;
+      const r = Math.min((x1 - x0) / 4.3, (y1 - y0) / 4.3, 92);
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, d = r * 1.08;
+      this.asi(ctx, cx - d, cy - d, r, fl);
+      this.adi(ctx, cx + d, cy - d, r, fl);
+      this.alt(ctx, cx - d, cy + d, r, fl);
+      this.vsi(ctx, cx + d, cy + d, r, fl);
+      this.hsi(ctx, w / 2, top - 18, Math.min(w * 0.62, 420), 22, fl, sys);
+    } else if (Input.isCoarse) {
+      // a phone on its side: the thrust lever on the right edge, so no VSI (the climb rate is a
+      // number next to the altimeter), and the configuration keeps what the buttons do not show
+      const cfgW = 124;
+      const c0 = 6 + cfgW + 6, c1 = w - PHONE_THROTTLE_W;
+      const r = Math.min(panelH * 0.43, (c1 - c0) / 7.3, 90);
+      const cx = c0 + (c1 - c0) / 2 - 0.48 * r;
+      this.asi(ctx, cx - 2.1 * r, y, r, fl);
+      this.adi(ctx, cx, y, r, fl);
+      this.alt(ctx, cx + 2.1 * r, y, r, fl);
+      this.vsBox(ctx, cx + 3.6 * r, y, r * 0.95, fl);
+      this.config(ctx, 6, top + 6, cfgW, panelH - 12, fl, sys, true);
+      this.hsi(ctx, w / 2, top - 18, Math.min(w * 0.62, 420), 22, fl, sys);
     } else {
+      // a small window on a computer
       const cfgW = 124;
       const c0 = 6 + cfgW + 6, c1 = w - 6;
       const r = Math.min(panelH * 0.43, (c1 - c0) / 7.6, 90);
@@ -243,6 +274,44 @@ const Instruments = {
     ctx.beginPath();
     ctx.moveTo(0, -r * 0.86); ctx.lineTo(-r * 0.05, -r * 0.76); ctx.lineTo(r * 0.05, -r * 0.76);
     ctx.closePath(); ctx.fill();
+    ctx.restore();
+    this.radioAlt(ctx, x, y, r, fl);
+  },
+
+  // The radio altitude: the height of the wheels above the ground or the water right below,
+  // where the eye is on the approach — under the aircraft symbol, like on a real PFD. It
+  // appears below RADIO_ALT_MAX_FT in the air (the altimeter stays barometric, above the sea),
+  // counts in finer steps close to the ground and turns amber below the decision height on
+  // the way down to land.
+  radioAlt(ctx, x, y, r, fl) {
+    const st = fl.st;
+    if (st.onGround) return;
+    const agl = Math.max(0, fl.altAgl());
+    if (agl / FT > SIM.RADIO_ALT_MAX_FT) return;
+    let v;
+    if (Units.metric) v = agl >= 20 ? Math.round(agl / 5) * 5 : Math.round(agl);
+    else {
+      const ft = agl / FT;
+      v = ft >= 50 ? Math.round(ft / 10) * 10 : ft >= 10 ? Math.round(ft / 5) * 5 : Math.round(ft);
+    }
+    const landing = (fl.phase === 'APPROACH' || fl.phase === 'DESCENT') && st.vel.y < 0;
+    const minimums = landing && agl / FT < SIM.DECISION_HEIGHT_FT;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = 'rgba(5,7,10,0.88)';
+    ctx.strokeStyle = minimums ? '#ffb340' : '#4c5561';
+    ctx.lineWidth = minimums ? Math.max(1.5, r * 0.025) : 1;
+    roundRect(ctx, -r * 0.36, r * 0.36, r * 0.72, r * 0.26, 3);
+    ctx.fill(); ctx.stroke();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#8d99a6';
+    ctx.font = '600 ' + Math.max(7, Math.round(r * 0.11)) + 'px system-ui, sans-serif';
+    ctx.fillText('RA', -r * 0.32, r * 0.49);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = minimums ? '#ffb340' : '#7de08a';
+    ctx.font = '700 ' + Math.round(r * 0.19) + 'px ui-monospace, monospace';
+    ctx.fillText(String(v), r * 0.32, r * 0.495);
     ctx.restore();
   },
 
@@ -486,24 +555,88 @@ const Instruments = {
   },
 
   // ---------- configuration ----------
-  config(ctx, x, y, w, h, fl, sys) {
+  // What a phone shows of it: the throttle is on the slider, the brakes, the spoiler, the
+  // anti-ice and the autopilot light up on their buttons, the route is on the map and the strip
+  phoneConfig(fl) {
+    const st = fl.st;
+    return [
+      ['FLAPS', st.flaps === st.flapsTarget ? String(st.flaps) : Math.round(st.flaps) + '>' + st.flapsTarget,
+        st.flaps > fl.ac.flaps.length - 3 ? '#e8b13a' : '#dfe7ee'],
+      ['GEAR', st.gear >= 1 ? 'DOWN' : st.gear <= 0 ? 'UP' : Math.round(st.gear * 100) + '%',
+        st.gear >= 1 ? '#7de08a' : st.gear <= 0 ? '#c8d2dc' : '#e8b13a'],
+      ['AP', (fl.ap.on ? (fl.ap.gs ? 'G/S' : fl.ap.nav ? 'NAV' : 'HDG') : 'off') + ' x' + fl.env.timeAccel, fl.ap.on ? '#7de08a' : '#c8d2dc'],
+      ['ICE', fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
+        fl.env.iceAmount > 0.2 ? '#ff7a5c' : fl.env.iceAmount > 0.02 ? '#e8b13a' : '#c8d2dc']
+    ];
+  },
+
+  // the phone's configuration on one line across the panel (held upright)
+  configLine(ctx, x, y, w, h, fl) {
+    const items = this.phoneConfig(fl);
+    const cell = w / items.length;
+    ctx.save();
+    ctx.fillStyle = 'rgba(14,18,24,0.72)';
+    roundRect(ctx, x, y, w, h, 5); ctx.fill();
+    ctx.strokeStyle = '#3c444e'; ctx.stroke();
+    ctx.textBaseline = 'middle';
+    items.forEach(([label, value, color], i) => {
+      const cx = x + cell * i + cell / 2;
+      ctx.fillStyle = '#8d99a6';
+      ctx.font = '600 9px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(label, cx - 2, y + h / 2);
+      ctx.fillStyle = color;
+      ctx.font = '700 11px ui-monospace, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(value, cx + 2, y + h / 2);
+    });
+    ctx.restore();
+  },
+
+  // the climb rate as a number, where a phone on its side has no room for the VSI
+  vsBox(ctx, x, y, r, fl) {
+    const metric = Units.metric;
+    const v = metric ? Math.round(fl.st.vs * 10) / 10 : Math.round(fl.st.vs / FPM / 10) * 10;
+    const w = r * 0.9, h = r * 0.62;
+    ctx.save();
+    ctx.fillStyle = 'rgba(5,7,10,0.88)';
+    ctx.strokeStyle = '#4c5561';
+    ctx.lineWidth = 1;
+    roundRect(ctx, x - w / 2, y - h / 2, w, h, 4); ctx.fill(); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#8d99a6';
+    ctx.font = '600 ' + Math.max(8, Math.round(r * 0.15)) + 'px system-ui, sans-serif';
+    ctx.fillText('V/S ' + (metric ? 'm/s' : 'fpm'), x, y - h * 0.25);
+    ctx.fillStyle = Math.abs(v) < (metric ? 0.5 : 100) ? '#dfe7ee' : '#7de08a';
+    ctx.font = '700 ' + Math.max(9, Math.round(r * 0.22)) + 'px ui-monospace, monospace';
+    ctx.fillText((v > 0 ? '↑' : v < 0 ? '↓' : '') + Math.abs(v), x, y + h * 0.18);
+    ctx.restore();
+  },
+
+  config(ctx, x, y, w, h, fl, sys, phone) {
     const st = fl.st;
     ctx.save();
     ctx.fillStyle = 'rgba(14,18,24,0.72)';
     roundRect(ctx, x, y, w, h, 6); ctx.fill();
     ctx.strokeStyle = '#3c444e'; ctx.stroke();
+    const step = phone ? 22 : 17;
     const line = (i, label, value, color) => {
-      const yy = y + 10 + i * 17;
+      const yy = y + (phone ? 14 : 10) + i * step;
       if (yy > y + h - 8) return;
       ctx.fillStyle = '#8d99a6';
-      ctx.font = '600 10px system-ui, sans-serif';
+      ctx.font = '600 ' + (phone ? 11 : 10) + 'px system-ui, sans-serif';
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.fillText(label, x + 8, yy);
       ctx.fillStyle = color || '#dfe7ee';
-      ctx.font = '700 11px ui-monospace, monospace';
+      ctx.font = '700 ' + (phone ? 13 : 11) + 'px ui-monospace, monospace';
       ctx.textAlign = 'right';
       ctx.fillText(value, x + w - 8, yy);
     };
+    if (phone) {
+      this.phoneConfig(fl).forEach(([label, value, color], i) => line(i, label, value, color));
+      ctx.restore();
+      return;
+    }
     const brakeTxt = st.parkingBrake ? 'PARK' : st.brakes > 0.02 ? Math.round(st.brakes * 100) + '%' : '-';
     line(0, 'THROTTLE', Math.round(st.throttle * 100) + '%');
     line(1, 'FLAPS', st.flaps === st.flapsTarget ? String(st.flaps) : Math.round(st.flaps) + '>' + st.flapsTarget,

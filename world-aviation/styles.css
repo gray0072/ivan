@@ -374,6 +374,39 @@ kbd {
   #touchButtons { gap: 5px; }
   #taxiArrow { top: 24%; }
 }
+@media (pointer: coarse) {
+  /* the switches that stay set light up on their buttons (green: on; red: the parking brake
+     and the spoiler, which must come off before going) */
+  #touchButtons button.lit { border-color: #7de08a; color: #d8f7df; box-shadow: inset 0 -3px 0 #7de08a; }
+  #touchButtons button[data-act="parkBrake"].lit, #touchButtons button[data-act="spoiler"].lit {
+    border-color: #ff7a5c; color: #ffd9cf; box-shadow: inset 0 -3px 0 #ff7a5c;
+  }
+  /* the strip opens and folds with a tap; folded it keeps the route, the fuel and the time left */
+  #strip { pointer-events: auto; touch-action: none; }
+  #strip.compact > :not(.big):not(.stripLive), #strip.compact .stripLive .stripRow:not(.key) { display: none; }
+  #strip.compact .stripRow.route::after { content: " ▸"; color: #8d99a6; font-size: 11px; }
+}
+/* a phone held upright: the buttons across the top, the strip and the prompt under them on the
+   left, the messages on the right, the thrust lever on the right of the panel (the gauges keep
+   out of it, PHONE_THROTTLE_W in ui/instruments.js) */
+@media (pointer: coarse) and (orientation: portrait) {
+  #touchButtons { left: calc(8px + env(safe-area-inset-left)); gap: 5px; }
+  #touchButtons button { min-width: 0; min-height: 36px; padding: 6px 2px; }
+  #hud #hudLeft { top: calc(var(--buttonsH, 170px) + 16px + env(safe-area-inset-top)); width: 54vw; }
+  #hud #strip { min-width: 0; width: 100%; box-sizing: border-box; }
+  #messages {
+    top: calc(var(--buttonsH, 170px) + 16px + env(safe-area-inset-top));
+    left: calc(54vw + 16px);
+    right: calc(8px + env(safe-area-inset-right));
+  }
+  #messages .msg:nth-last-child(n+3) { display: none; }
+  #checklist {
+    top: calc(var(--buttonsH, 170px) + 14px + env(safe-area-inset-top));
+    right: calc(6px + env(safe-area-inset-right)); width: auto;
+    max-height: calc(100vh - var(--buttonsH, 170px) - var(--panelH, 350px) - 30px);
+  }
+  #throttleZone { bottom: calc(10px + env(safe-area-inset-bottom)); height: calc(var(--panelH, 350px) - 40px); }
+}
 
 /* ---------- screens ---------- */
 #screen {

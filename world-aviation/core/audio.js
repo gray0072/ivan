@@ -118,6 +118,8 @@ const Audio2 = {
     const set = (param, value, tc) => param.setTargetAtTime(value, now, tc || 0.08);
     if (!fl) {
       for (const k of ['fanG', 'roarG', 'rumG', 'buzzG', 'windG', 'rollG', 'brakeG', 'squealG', 'hydG', 'shakeG']) set(v[k].gain, 0, 0.08);
+      // the flight is over: its callouts still in the queue go too
+      if (this.t && window.speechSynthesis) window.speechSynthesis.cancel();
       this.t = null;
       return;
     }
