@@ -225,6 +225,7 @@ const UI = {
       }).join('') +
       '<button class="tab" data-act="backtitle">' + tr('Menu') + '</button></div>' +
       '<div class="tabBody">' + body + '</div>');
+    if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
 
   // what a tab shows next to its name: the hangar counts the types you may lease; training and
@@ -321,23 +322,36 @@ const UI = {
     return null;
   },
 
+  // The hangar: a card per type, lightest first, each with its picture (render/preview3d.js),
+  // its key figures in tiles and the rest in rows
   hangarBody() {
     const d = Career.data;
     const cards = AIRCRAFT.slice().sort((x, y) => x.mtow - y.mtow).map((a) => {
       const locked = !Career.unlocked(a);
       const sel = d.selected === a.id;
       const course = a.unlock ? COURSES.find((c) => c.id === a.unlock) : null;
-      return '<div class="acCard' + (sel ? ' sel' : '') + '">' +
-        '<div class="acHead"><b>' + esc(a.name) + '</b><span class="tag">' + esc(tr(a.klass)) + '</span></div>' +
+      const crew = a.seats < 10;
+      const tile = (v, k) => '<div class="acStat"><b>' + v + '</b><span>' + esc(k) + '</span></div>';
+      return '<div class="acCard plane' + (sel ? ' sel' : '') + (locked ? ' locked' : '') + '">' +
+        '<div class="acPic loading" style="--glow:' + hexAlpha((a.look && a.look.color) || '#6fb1e8', 0.42) + '">' +
+        '<img data-ac="' + a.id + '" alt="' + esc(a.name) + '">' +
+        '<span class="tag">' + esc(tr(a.klass)) + '</span>' +
+        '<span class="acMtow" title="' + esc(tr('Weight: max take-off / empty')) + '">' + Math.round(a.mtow / 1000) + ' t</span>' +
+        (sel ? '<span class="acBadge sel">✓ ' + tr('Selected') + '</span>'
+          : locked ? '<span class="acBadge lock">🔒 ' + esc(this.courseText(course).name) + '</span>' : '') +
+        '</div><div class="acMain">' +
+        '<div class="acHead"><b>' + esc(a.name) + '</b></div>' +
         '<p class="acBlurb">' + esc(tr(a.blurb)) + '</p>' +
-        '<div class="cGrid">' +
-        row2(tr(a.seats < 10 ? 'Crew / payload' : 'Seats / payload'), a.seats + ' · ' + Math.round(a.payloadKg / 100) / 10 + ' t') +
+        '<div class="acStats">' +
+        tile(a.seats, tr(crew ? 'crew' : 'seats')) +
+        tile(Math.round(a.payloadKg / 100) / 10 + ' t', tr('payload')) +
+        tile(a.maxRangeNm + ' nm', tr('range')) +
+        tile(a.cruiseTas + ' kt', tr('cruise')) +
+        '</div><div class="cGrid">' +
         row2(tr('Weight: max take-off / empty'), fmtTonnes(a.mtow) + ' t · ' + fmtTonnes(a.emptyKg) + ' t') +
         row2(tr('Length / span'), a.dims.len + ' m · ' + a.dims.span + ' m') +
         row2(tr('Runway needed'), a.takeoffDist + ' m') +
-        row2(tr('Cruise'), a.cruiseTas + ' kt') +
         row2(tr('Stall speed'), tr('{v} kt, full flaps, max weight', { v: Math.round(vs0Of(a, a.mtow)) })) +
-        row2(tr('Range'), a.maxRangeNm + ' nm') +
         row2(tr('Crosswind limit'), a.crosswindLimit + ' kt') +
         row2(tr('Surfaces'), a.surfaces.map((x) => tr(x)).join(', ')) +
         row2(tr('Lease per block hour'), fmtMoney(a.rent)) +
@@ -346,10 +360,10 @@ const UI = {
           ? '<div class="cFoot"><span class="need">' + tr('Locked — pass {course}', { course: esc(this.courseText(course).name) }) + '</span></div>'
           : '<div class="cFoot"><span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
             (sel ? '' : '<button class="btn" data-act="selectAc" data-v="' + a.id + '">' + tr('Select') + '</button>') + '</div>') +
-        '</div>';
+        '</div></div>';
     }).join('');
     return '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') +
-      '</div><div class="cards">' + cards + '</div>';
+      '</div><div class="cards planes">' + cards + '</div>';
   },
 
   // The course tree, in the game's language (the exams run in it too)
@@ -422,7 +436,11 @@ const UI = {
       unlockLine(fx.medevac, tr('Medevac and search and rescue contracts')) +
       unlockLine(fx.forecast, tr('Full weather reports at both ends, and better fuel planning')) +
       unlockLine(fx.mountain, tr('Mountain and adverse weather routes')) +
-      unlockLine(fx.widebody, tr('Widebody procedures — the Airbus A350-900')) +
+      unlockLine(fx.turboprop, tr('Regional turboprops — the ATR 72-600, and +10 % on short legs in a turboprop')) +
+      unlockLine(fx.fbw, tr('Fly-by-wire jets — the Embraer E195-E2 and the Airbus A220-300')) +
+      unlockLine(fx.widebody, tr('Widebody procedures — the Airbus A350-900, the Boeing 777-300ER and the Airbus A380')) +
+      unlockLine(fx.etops, tr('ETOPS — the Airbus A330-300 and the Boeing 787-9, and +10 % on long legs in a twin')) +
+      unlockLine(fx.outsize, tr('Outsize cargo — the Antonov An-124, onto gravel and ice')) +
       unlockLine(fx.remote, tr('Remote strips and ice fields for every type')) +
       '</ul>' +
       '<h3>' + tr('Log') + '</h3><ul class="log">' + (log || '<li>' + tr('Nothing yet.') + '</li>') + '</ul>' +
@@ -805,6 +823,11 @@ function logText(l) {
 function row2(k, v) { return '<div class="row2"><span>' + esc(k) + '</span><b>' + v + '</b></div>'; }
 function keyRow(k, d) { return '<li><kbd>' + esc(k) + '</kbd> ' + esc(d) + '</li>'; }
 function unlockLine(on, text) { return '<li class="' + (on ? 'ok' : '') + '">' + (on ? '✓ ' : '· ') + esc(text) + '</li>'; }
+// '#rrggbb' as rgba() with the given opacity
+function hexAlpha(hex, alpha) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + alpha + ')';
+}
 function vs0Of(a, kg) {
   const cl = a.clMaxClean + a.flaps[a.flaps.length - 1].cl;
   return Math.sqrt(2 * kg * SIM.GRAVITY / (SIM.RHO_SL * a.wingArea * cl)) / KTS;

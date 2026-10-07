@@ -74,9 +74,9 @@ const Airport3D = {
     this.buildEquipment(a, rec, at, tex, lambert);
 
     // ---- parked aeroplanes at the gates (hidden where the player parks): the home airlines'
-    const kinds = a.terminal === 'big' ? ['A320NEO', 'B738', 'A359', 'A320', 'CRJ200'] :
-      a.terminal === 'medium' ? ['B738', 'A320NEO', 'CRJ200', 'B1900D'] :
-        a.terminal === 'small' ? ['CRJ200', 'B1900D', 'F27F'] : ['B1900D', 'DHC6'];
+    const kinds = a.terminal === 'big' ? ['A320NEO', 'B738', 'A359', 'A320', 'B789', 'B77W', 'BCS3', 'A333', 'E295', 'CRJ200'] :
+      a.terminal === 'medium' ? ['B738', 'A320NEO', 'E295', 'CRJ200', 'BCS3', 'AT76', 'B1900D'] :
+        a.terminal === 'small' ? ['CRJ200', 'AT76', 'B1900D', 'F27F'] : ['B1900D', 'DHC6'];
     const pick = hashStr(a.id);
     const types = a.gates.map((gate) => AIRCRAFT.find((x) => x.id === kinds[(pick + gate.index) % kinds.length]));
     // the life round the stands: bridges, vehicles, floodlights, traffic (apron3d.js)

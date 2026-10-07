@@ -164,10 +164,34 @@ const DIFFICULTY = {
 
 // ---------- Aircraft ----------
 // Thrust is the total of all engines in newtons at sea level static, full throttle.
-// dims: real length, wingspan and fuselage diameter (m); look: how models.js draws it.
+// dims: real length, wingspan and fuselage diameter (m; the width of a tall or double-deck body);
+// look: how models.js draws it.
 // FLAPS: cl/cd deltas and the maximum speed each setting may be extended at.
+// Listed by maximum take-off weight, lightest first (the hangar shows them in this order).
 const AIRCRAFT = [
-  // ---- turboprops and the regional jet
+  {
+    id: 'DHC6', name: 'DHC-6 Twin Otter', klass: 'Bush turboprop', branch: 'bush',
+    blurb: 'The legendary bush twin: fixed gear on wheels, skis or floats and a 400-metre strip. Hauls fish, mail and medevacs to places with no roads.',
+    seats: 19, payloadKg: 1900, mtow: 5670, emptyKg: 3363,
+    engines: 2, engineType: 'prop', thrust: 31000,
+    wingArea: 39, clMaxClean: 1.5, clMaxFlap: 2.4, cd0: 0.040, kInd: 0.055,
+    cruiseAlt: 3000, cruiseTas: 170, climbRate: 5.0,
+    fuelCapKg: 1150, fuelFlowCruise: 130, fuelFlowIdle: 24,
+    vne: 210, vr: 65, vsRatio: 1.20, vrefAdd: 8, vlo: 95,
+    flaps: [
+      { notch: 1, cl: 0.14, cd: 0.008, vfe: 100 },
+      { notch: 2, cl: 0.30, cd: 0.020, vfe: 88 },
+      { notch: 3, cl: 0.48, cd: 0.040, vfe: 96 },
+      { notch: 4, cl: 0.66, cd: 0.072, vfe: 92 },
+      { notch: 5, cl: 0.84, cd: 0.120, vfe: 88 }
+    ],
+    gearCd: 0.014, rollRate: 1.15, pitchRate: 1.15, yawRate: 1.2,
+    takeoffDist: 370, crosswindLimit: 16, maxRangeNm: 650, surfaces: ['asphalt', 'grass', 'ice'],
+    rent: 1000, price: 0, bonus: 1.35, unlock: 'bush1',
+    dims: { len: 15.77, span: 19.81, fus: 1.75 },
+    look: { wing: 'high', engines: 'prop2', tail: 'low', base: '#f4f1e8', color: '#d64534', fixedGear: true },
+    propRpmIdle: 0.6, propRpmCruise: 0.9
+  },
   {
     id: 'B1900D', name: 'Beechcraft 1900D', klass: 'Turboprop', branch: 'start',
     blurb: 'The 19-seat commuter workhorse: a stand-up cabin, two PT6 turboprops and a T-tail. Noisy, forgiving, and happy on gravel and grass.',
@@ -190,29 +214,6 @@ const AIRCRAFT = [
     dims: { len: 17.63, span: 17.67, fus: 1.95 },
     look: { wing: 'low', engines: 'prop2', tail: 't', base: '#f3f5f7', color: '#1f5fa0' },
     propRpmIdle: 0.62, propRpmCruise: 0.88
-  },
-  {
-    id: 'CRJ200', name: 'Bombardier CRJ200', klass: 'Regional jet', branch: 'pax',
-    blurb: 'The 50-seat regional jet: two engines on the tail, a T-tail and a narrow tube. Climbs well, flies fast, hates ice and crosswinds.',
-    seats: 50, payloadKg: 5500, mtow: 23133, emptyKg: 13835,
-    engines: 2, engineType: 'jet', thrust: 78000,
-    wingArea: 48.35, clMaxClean: 1.42, clMaxFlap: 2.1, cd0: 0.026, kInd: 0.042,
-    cruiseAlt: 10500, cruiseTas: 430, climbRate: 13,
-    fuelCapKg: 6490, fuelFlowCruise: 650, fuelFlowIdle: 70,
-    vne: 440, vr: 140, vsRatio: 1.24, vrefAdd: 8, vlo: 220,
-    flaps: [
-      { notch: 1, cl: 0.12, cd: 0.006, vfe: 230 },
-      { notch: 2, cl: 0.30, cd: 0.018, vfe: 230 },
-      { notch: 3, cl: 0.50, cd: 0.038, vfe: 185 },
-      { notch: 4, cl: 0.68, cd: 0.070, vfe: 185 },
-      { notch: 5, cl: 0.85, cd: 0.120, vfe: 165 }
-    ],
-    gearCd: 0.020, rollRate: 1.05, pitchRate: 0.85, yawRate: 1.1,
-    takeoffDist: 1900, crosswindLimit: 27, maxRangeNm: 1700, surfaces: ['asphalt'],
-    rent: 3200, price: 0, bonus: 1.15, unlock: 'pax1',
-    dims: { len: 26.77, span: 21.21, fus: 2.69 },
-    look: { wing: 'low', engines: 'rear2', tail: 't', base: '#f3f5f7', color: '#0f7a6a', sweep: 25 },
-    propRpmIdle: 0.0, propRpmCruise: 0.0
   },
   {
     id: 'F27F', name: 'Fokker F27-600F', klass: 'Freighter turboprop', branch: 'cargo',
@@ -238,29 +239,97 @@ const AIRCRAFT = [
     propRpmIdle: 0.58, propRpmCruise: 0.85
   },
   {
-    id: 'DHC6', name: 'DHC-6 Twin Otter', klass: 'Bush turboprop', branch: 'bush',
-    blurb: 'The legendary bush twin: fixed gear on wheels, skis or floats and a 400-metre strip. Hauls fish, mail and medevacs to places with no roads.',
-    seats: 19, payloadKg: 1900, mtow: 5670, emptyKg: 3363,
-    engines: 2, engineType: 'prop', thrust: 31000,
-    wingArea: 39, clMaxClean: 1.5, clMaxFlap: 2.4, cd0: 0.040, kInd: 0.055,
-    cruiseAlt: 3000, cruiseTas: 170, climbRate: 5.0,
-    fuelCapKg: 1150, fuelFlowCruise: 130, fuelFlowIdle: 24,
-    vne: 210, vr: 65, vsRatio: 1.20, vrefAdd: 8, vlo: 95,
+    id: 'AT76', name: 'ATR 72-600', klass: 'Regional turboprop', branch: 'pax',
+    blurb: 'Europe\'s island-hopper: 70 seats under a high wing, two PW127 turboprops with six-blade propellers and a T-tail. Sips fuel on the short legs where a jet never reaches its cruise.',
+    seats: 70, payloadKg: 7500, mtow: 23000, emptyKg: 13500,
+    engines: 2, engineType: 'prop', thrust: 100000,
+    wingArea: 61, clMaxClean: 1.6, clMaxFlap: 2.7, cd0: 0.038, kInd: 0.045,
+    cruiseAlt: 6700, cruiseTas: 275, climbRate: 6.5,
+    fuelCapKg: 5000, fuelFlowCruise: 350, fuelFlowIdle: 45,
+    vne: 300, vr: 105, vsRatio: 1.22, vrefAdd: 5, vlo: 180,
     flaps: [
-      { notch: 1, cl: 0.14, cd: 0.008, vfe: 100 },
-      { notch: 2, cl: 0.30, cd: 0.020, vfe: 88 },
-      { notch: 3, cl: 0.48, cd: 0.040, vfe: 96 },
-      { notch: 4, cl: 0.66, cd: 0.072, vfe: 92 },
-      { notch: 5, cl: 0.84, cd: 0.120, vfe: 88 }
+      { notch: 1, cl: 0.18, cd: 0.009, vfe: 185 },
+      { notch: 2, cl: 0.38, cd: 0.022, vfe: 180 },
+      { notch: 3, cl: 0.60, cd: 0.044, vfe: 170 },
+      { notch: 4, cl: 0.85, cd: 0.080, vfe: 160 },
+      { notch: 5, cl: 1.10, cd: 0.135, vfe: 150 }
     ],
-    gearCd: 0.014, rollRate: 1.15, pitchRate: 1.15, yawRate: 1.2,
-    takeoffDist: 370, crosswindLimit: 16, maxRangeNm: 650, surfaces: ['asphalt', 'grass', 'ice'],
-    rent: 1000, price: 0, bonus: 1.35, unlock: 'bush1',
-    dims: { len: 15.77, span: 19.81, fus: 1.75 },
-    look: { wing: 'high', engines: 'prop2', tail: 'low', base: '#f4f1e8', color: '#d64534', fixedGear: true },
-    propRpmIdle: 0.6, propRpmCruise: 0.9
+    gearCd: 0.017, rollRate: 0.95, pitchRate: 0.95, yawRate: 1.0,
+    takeoffDist: 1370, crosswindLimit: 30, maxRangeNm: 825, surfaces: ['asphalt'],
+    rent: 3600, price: 0, bonus: 1.15, unlock: 'paxtp',
+    dims: { len: 27.17, span: 27.05, fus: 2.57 },
+    look: { wing: 'high', engines: 'prop2', tail: 't', base: '#f3f5f7', color: '#2f8f4e', blades: 6 },
+    propRpmIdle: 0.6, propRpmCruise: 0.82
   },
-  // ---- Boeing and Airbus
+  {
+    id: 'CRJ200', name: 'Bombardier CRJ200', klass: 'Regional jet', branch: 'pax',
+    blurb: 'The 50-seat regional jet: two engines on the tail, a T-tail and a narrow tube. Climbs well, flies fast, hates ice and crosswinds.',
+    seats: 50, payloadKg: 5500, mtow: 23133, emptyKg: 13835,
+    engines: 2, engineType: 'jet', thrust: 78000,
+    wingArea: 48.35, clMaxClean: 1.42, clMaxFlap: 2.1, cd0: 0.026, kInd: 0.042,
+    cruiseAlt: 10500, cruiseTas: 430, climbRate: 13,
+    fuelCapKg: 6490, fuelFlowCruise: 650, fuelFlowIdle: 70,
+    vne: 440, vr: 140, vsRatio: 1.24, vrefAdd: 8, vlo: 220,
+    flaps: [
+      { notch: 1, cl: 0.12, cd: 0.006, vfe: 230 },
+      { notch: 2, cl: 0.30, cd: 0.018, vfe: 230 },
+      { notch: 3, cl: 0.50, cd: 0.038, vfe: 185 },
+      { notch: 4, cl: 0.68, cd: 0.070, vfe: 185 },
+      { notch: 5, cl: 0.85, cd: 0.120, vfe: 165 }
+    ],
+    gearCd: 0.020, rollRate: 1.05, pitchRate: 0.85, yawRate: 1.1,
+    takeoffDist: 1900, crosswindLimit: 27, maxRangeNm: 1700, surfaces: ['asphalt'],
+    rent: 3200, price: 0, bonus: 1.15, unlock: 'pax1',
+    dims: { len: 26.77, span: 21.21, fus: 2.69 },
+    look: { wing: 'low', engines: 'rear2', tail: 't', base: '#f3f5f7', color: '#0f7a6a', sweep: 25 },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    id: 'E295', name: 'Embraer E195-E2', klass: 'Regional jet', branch: 'pax',
+    blurb: 'The biggest E-Jet: 132 seats, a new long wing, geared turbofans with huge quiet fans and closed-loop fly-by-wire. Brazil\'s answer to the small narrowbodies.',
+    seats: 132, payloadKg: 16100, mtow: 61500, emptyKg: 35700,
+    engines: 2, engineType: 'jet', thrust: 204000,
+    wingArea: 103, clMaxClean: 1.42, clMaxFlap: 2.1, cd0: 0.023, kInd: 0.039,
+    cruiseAlt: 11000, cruiseTas: 447, climbRate: 12,
+    fuelCapKg: 13700, fuelFlowCruise: 1000, fuelFlowIdle: 85,
+    vne: 470, vr: 140, vsRatio: 1.22, vrefAdd: 6, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.12, cd: 0.006, vfe: 230 },
+      { notch: 2, cl: 0.30, cd: 0.018, vfe: 215 },
+      { notch: 3, cl: 0.50, cd: 0.038, vfe: 200 },
+      { notch: 4, cl: 0.68, cd: 0.070, vfe: 180 },
+      { notch: 5, cl: 0.84, cd: 0.120, vfe: 165 }
+    ],
+    gearCd: 0.021, rollRate: 0.95, pitchRate: 0.75, yawRate: 0.95,
+    takeoffDist: 1970, crosswindLimit: 30, maxRangeNm: 2600, surfaces: ['asphalt'],
+    rent: 7400, price: 0, bonus: 1.2, unlock: 'paxfbw',
+    dims: { len: 41.5, span: 35.12, fus: 3.01 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#b5265f', sweep: 26, fan: 0.62 },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    id: 'BCS3', name: 'Airbus A220-300', klass: 'Narrowbody jet', branch: 'pax',
+    blurb: 'Born as the Bombardier CSeries: 140 seats five abreast, big windows, side-sticks and geared turbofans. Quiet, frugal, and it flies further than its size suggests.',
+    seats: 140, payloadKg: 18700, mtow: 70900, emptyKg: 37100,
+    engines: 2, engineType: 'jet', thrust: 210000,
+    wingArea: 112.3, clMaxClean: 1.42, clMaxFlap: 2.1, cd0: 0.022, kInd: 0.039,
+    cruiseAlt: 11300, cruiseTas: 447, climbRate: 12,
+    fuelCapKg: 17500, fuelFlowCruise: 1000, fuelFlowIdle: 85,
+    vne: 470, vr: 140, vsRatio: 1.22, vrefAdd: 6, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.12, cd: 0.006, vfe: 230 },
+      { notch: 2, cl: 0.30, cd: 0.018, vfe: 210 },
+      { notch: 3, cl: 0.50, cd: 0.038, vfe: 200 },
+      { notch: 4, cl: 0.68, cd: 0.070, vfe: 185 },
+      { notch: 5, cl: 0.84, cd: 0.120, vfe: 170 }
+    ],
+    gearCd: 0.021, rollRate: 0.9, pitchRate: 0.7, yawRate: 0.9,
+    takeoffDist: 1890, crosswindLimit: 30, maxRangeNm: 3400, surfaces: ['asphalt'],
+    rent: 8200, price: 0, bonus: 1.22, unlock: 'paxfbw',
+    dims: { len: 38.7, span: 35.1, fus: 3.7 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#0f8fa8', sweep: 25, fan: 0.56 },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
   {
     id: 'A320', name: 'Airbus A320-200', klass: 'Narrowbody jet', branch: 'pax',
     blurb: 'The classic A320 that put fly-by-wire on every short-haul route: 168 seats, a side-stick, and wingtip fences instead of sharklets.',
@@ -282,29 +351,6 @@ const AIRCRAFT = [
     rent: 9400, price: 0, bonus: 1.25, unlock: 'pax3',
     dims: { len: 37.57, span: 34.1, fus: 3.95 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#3b4fa8', sweep: 25 },
-    propRpmIdle: 0.0, propRpmCruise: 0.0
-  },
-  {
-    id: 'B763F', name: 'Boeing 767-300F', klass: 'Widebody freighter', branch: 'cargo',
-    blurb: 'Fifty-two tonnes of freight on the main deck and in the holds, two big fans and a cruise that eats the horizon.',
-    seats: 2, payloadKg: 52000, mtow: 186880, emptyKg: 86180,
-    engines: 2, engineType: 'jet', thrust: 536000,
-    wingArea: 283.3, clMaxClean: 1.35, clMaxFlap: 2.0, cd0: 0.022, kInd: 0.038,
-    cruiseAlt: 11300, cruiseTas: 459, climbRate: 9,
-    fuelCapKg: 72600, fuelFlowCruise: 2600, fuelFlowIdle: 190,
-    vne: 490, vr: 160, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
-    flaps: [
-      { notch: 1, cl: 0.10, cd: 0.005, vfe: 250 },
-      { notch: 2, cl: 0.26, cd: 0.016, vfe: 240 },
-      { notch: 3, cl: 0.46, cd: 0.036, vfe: 220 },
-      { notch: 4, cl: 0.64, cd: 0.066, vfe: 210 },
-      { notch: 5, cl: 0.80, cd: 0.115, vfe: 180 }
-    ],
-    gearCd: 0.024, rollRate: 0.75, pitchRate: 0.55, yawRate: 0.7,
-    takeoffDist: 2800, crosswindLimit: 30, maxRangeNm: 3250, surfaces: ['asphalt'],
-    rent: 17100, price: 0, bonus: 1.3, unlock: 'cargo4',
-    dims: { len: 54.94, span: 47.57, fus: 5.03 },
-    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 31, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
   },
   {
@@ -354,6 +400,75 @@ const AIRCRAFT = [
     propRpmIdle: 0.0, propRpmCruise: 0.0
   },
   {
+    id: 'B763F', name: 'Boeing 767-300F', klass: 'Widebody freighter', branch: 'cargo',
+    blurb: 'Fifty-two tonnes of freight on the main deck and in the holds, two big fans and a cruise that eats the horizon.',
+    seats: 2, payloadKg: 52000, mtow: 186880, emptyKg: 86180,
+    engines: 2, engineType: 'jet', thrust: 536000,
+    wingArea: 283.3, clMaxClean: 1.35, clMaxFlap: 2.0, cd0: 0.022, kInd: 0.038,
+    cruiseAlt: 11300, cruiseTas: 459, climbRate: 9,
+    fuelCapKg: 72600, fuelFlowCruise: 2600, fuelFlowIdle: 190,
+    vne: 490, vr: 160, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.005, vfe: 250 },
+      { notch: 2, cl: 0.26, cd: 0.016, vfe: 240 },
+      { notch: 3, cl: 0.46, cd: 0.036, vfe: 220 },
+      { notch: 4, cl: 0.64, cd: 0.066, vfe: 210 },
+      { notch: 5, cl: 0.80, cd: 0.115, vfe: 180 }
+    ],
+    gearCd: 0.024, rollRate: 0.75, pitchRate: 0.55, yawRate: 0.7,
+    takeoffDist: 2800, crosswindLimit: 30, maxRangeNm: 3250, surfaces: ['asphalt'],
+    rent: 17100, price: 0, bonus: 1.3, unlock: 'cargo4',
+    dims: { len: 54.94, span: 47.57, fus: 5.03 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 31, freighter: true },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    id: 'A333', name: 'Airbus A330-300', klass: 'Widebody jet', branch: 'pax',
+    blurb: 'The widebody that taught twins to cross oceans: 300 seats, two Trent 700s, winglets and the A320\'s cockpit scaled up. Steady, roomy and everywhere.',
+    seats: 300, payloadKg: 45600, mtow: 242000, emptyKg: 129400,
+    engines: 2, engineType: 'jet', thrust: 632000,
+    wingArea: 361.6, clMaxClean: 1.35, clMaxFlap: 2.0, cd0: 0.022, kInd: 0.038,
+    cruiseAlt: 11300, cruiseTas: 470, climbRate: 9,
+    fuelCapKg: 109000, fuelFlowCruise: 2900, fuelFlowIdle: 250,
+    vne: 490, vr: 150, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.005, vfe: 240 },
+      { notch: 2, cl: 0.26, cd: 0.016, vfe: 215 },
+      { notch: 3, cl: 0.46, cd: 0.036, vfe: 196 },
+      { notch: 4, cl: 0.64, cd: 0.066, vfe: 186 },
+      { notch: 5, cl: 0.80, cd: 0.115, vfe: 180 }
+    ],
+    gearCd: 0.024, rollRate: 0.72, pitchRate: 0.52, yawRate: 0.68,
+    takeoffDist: 2500, crosswindLimit: 35, maxRangeNm: 6350, surfaces: ['asphalt'],
+    rent: 20500, price: 0, bonus: 1.32, unlock: 'paxetops',
+    dims: { len: 63.66, span: 60.3, fus: 5.64 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#8a1f3d', sweep: 30, winglets: true, fan: 0.52 },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    id: 'B789', name: 'Boeing 787-9 Dreamliner', klass: 'Widebody jet', branch: 'pax',
+    blurb: 'Half of it is carbon fibre: 296 seats, raked wingtips that bend up in flight, bigger windows, more humid air, and the range to link almost any two cities.',
+    seats: 296, payloadKg: 52600, mtow: 254000, emptyKg: 128900,
+    engines: 2, engineType: 'jet', thrust: 660000,
+    wingArea: 377, clMaxClean: 1.35, clMaxFlap: 2.0, cd0: 0.020, kInd: 0.036,
+    cruiseAlt: 11900, cruiseTas: 488, climbRate: 10,
+    fuelCapKg: 101000, fuelFlowCruise: 2700, fuelFlowIdle: 230,
+    vne: 495, vr: 155, vsRatio: 1.2, vrefAdd: 5, vlo: 270,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.005, vfe: 250 },
+      { notch: 2, cl: 0.26, cd: 0.016, vfe: 230 },
+      { notch: 3, cl: 0.46, cd: 0.036, vfe: 200 },
+      { notch: 4, cl: 0.64, cd: 0.066, vfe: 185 },
+      { notch: 5, cl: 0.80, cd: 0.115, vfe: 170 }
+    ],
+    gearCd: 0.024, rollRate: 0.72, pitchRate: 0.52, yawRate: 0.68,
+    takeoffDist: 2800, crosswindLimit: 38, maxRangeNm: 7565, surfaces: ['asphalt'],
+    rent: 21800, price: 0, bonus: 1.35, unlock: 'paxetops',
+    dims: { len: 62.81, span: 60.12, fus: 5.77 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#1e5aa8', sweep: 32, fan: 0.58, dihedral: 7 },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
     id: 'A359', name: 'Airbus A350-900', klass: 'Widebody jet', branch: 'pax',
     blurb: 'Carbon-fibre widebody with 315 seats. Heavy, long-legged and smooth — it needs a long runway and a careful flare.',
     seats: 315, payloadKg: 53000, mtow: 280000, emptyKg: 142000,
@@ -377,6 +492,52 @@ const AIRCRAFT = [
     propRpmIdle: 0.0, propRpmCruise: 0.0
   },
   {
+    id: 'B77W', name: 'Boeing 777-300ER', klass: 'Widebody jet', branch: 'pax',
+    blurb: 'The long-range Triple Seven: 396 seats, two GE90-115B engines — the most powerful in airline service — on six-wheel main gear, and the legs to fly half way round the world nonstop.',
+    seats: 396, payloadKg: 69000, mtow: 351500, emptyKg: 167800,
+    engines: 2, engineType: 'jet', thrust: 1026000,
+    wingArea: 436.8, clMaxClean: 1.35, clMaxFlap: 2.05, cd0: 0.021, kInd: 0.037,
+    cruiseAlt: 10700, cruiseTas: 490, climbRate: 10,
+    fuelCapKg: 145500, fuelFlowCruise: 3700, fuelFlowIdle: 280,
+    vne: 495, vr: 165, vsRatio: 1.2, vrefAdd: 5, vlo: 270,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.005, vfe: 255 },
+      { notch: 2, cl: 0.26, cd: 0.016, vfe: 235 },
+      { notch: 3, cl: 0.46, cd: 0.036, vfe: 215 },
+      { notch: 4, cl: 0.64, cd: 0.066, vfe: 195 },
+      { notch: 5, cl: 0.80, cd: 0.115, vfe: 170 }
+    ],
+    gearCd: 0.026, rollRate: 0.65, pitchRate: 0.48, yawRate: 0.62,
+    takeoffDist: 2950, crosswindLimit: 38, maxRangeNm: 7370, surfaces: ['asphalt'],
+    rent: 27600, price: 0, bonus: 1.38, unlock: 'pax4',
+    dims: { len: 73.86, span: 64.8, fus: 6.19 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#24477a', sweep: 31.6, fan: 0.6, mainRows: 3 },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    id: 'A124', name: 'Antonov An-124 Ruslan', klass: 'Outsize freighter', branch: 'cargo',
+    blurb: 'The biggest freighter you can hire: a nose that lifts, a ramp at the tail and 120 tonnes of turbines, locomotives or helicopters inside — on 24 wheels that take it onto gravel and ice.',
+    seats: 6, payloadKg: 120000, mtow: 392000, emptyKg: 178000,
+    engines: 4, engineType: 'jet', thrust: 918000,
+    wingArea: 628, clMaxClean: 1.4, clMaxFlap: 2.2, cd0: 0.025, kInd: 0.04,
+    cruiseAlt: 10000, cruiseTas: 450, climbRate: 7,
+    fuelCapKg: 212000, fuelFlowCruise: 3000, fuelFlowIdle: 230,
+    vne: 470, vr: 155, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.006, vfe: 250 },
+      { notch: 2, cl: 0.28, cd: 0.018, vfe: 220 },
+      { notch: 3, cl: 0.48, cd: 0.040, vfe: 200 },
+      { notch: 4, cl: 0.66, cd: 0.072, vfe: 185 },
+      { notch: 5, cl: 0.82, cd: 0.125, vfe: 170 }
+    ],
+    gearCd: 0.034, rollRate: 0.55, pitchRate: 0.42, yawRate: 0.55,
+    takeoffDist: 2800, crosswindLimit: 30, maxRangeNm: 3800, surfaces: ['asphalt', 'grass', 'ice'],
+    rent: 36000, price: 0, bonus: 1.5, unlock: 'cargo5',
+    dims: { len: 68.96, span: 73.3, fus: 7.3 },
+    look: { wing: 'high', engines: 'wing4', tail: 'low', base: '#e9ecef', color: '#1f4fa0', sweep: 32, dihedral: -3, tall: 1.1, mainRows: 5, freighter: true },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
     id: 'B748F', name: 'Boeing 747-8F', klass: 'Widebody freighter', branch: 'cargo',
     blurb: 'The Queen of the Skies as a freighter: four engines, a nose that swings up, and 134 tonnes in the hold.',
     seats: 3, payloadKg: 134000, mtow: 447700, emptyKg: 197000,
@@ -397,6 +558,29 @@ const AIRCRAFT = [
     rent: 33800, price: 0, bonus: 1.4, unlock: 'cargo4',
     dims: { len: 76.3, span: 68.4, fus: 6.5 },
     look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 37, hump: true, freighter: true },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    id: 'A388', name: 'Airbus A380-800', klass: 'Double-deck jet', branch: 'pax',
+    blurb: 'The superjumbo: two full decks from nose to tail, 525 seats, four engines and a wing you could park seventy cars on. Gentle in the air, but it wants the longest runways in the world.',
+    seats: 525, payloadKg: 84000, mtow: 575000, emptyKg: 277000,
+    engines: 4, engineType: 'jet', thrust: 1240000,
+    wingArea: 845, clMaxClean: 1.4, clMaxFlap: 2.1, cd0: 0.021, kInd: 0.036,
+    cruiseAlt: 11300, cruiseTas: 488, climbRate: 8,
+    fuelCapKg: 254000, fuelFlowCruise: 2950, fuelFlowIdle: 230,
+    vne: 495, vr: 155, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.005, vfe: 263 },
+      { notch: 2, cl: 0.26, cd: 0.016, vfe: 222 },
+      { notch: 3, cl: 0.46, cd: 0.036, vfe: 220 },
+      { notch: 4, cl: 0.64, cd: 0.066, vfe: 196 },
+      { notch: 5, cl: 0.80, cd: 0.115, vfe: 182 }
+    ],
+    gearCd: 0.030, rollRate: 0.55, pitchRate: 0.42, yawRate: 0.55,
+    takeoffDist: 2900, crosswindLimit: 35, maxRangeNm: 8000, surfaces: ['asphalt'],
+    rent: 39000, price: 0, bonus: 1.45, unlock: 'pax4',
+    dims: { len: 72.72, span: 79.75, fus: 7.14 },
+    look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#f3f5f7', color: '#6a2c82', sweep: 33.5, fan: 0.47, tall: 1.18, decks: 2, bodyRows: 3 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
   }
 ];
@@ -451,15 +635,24 @@ const COURSES = [
   { id: 'pax1', branch: 'pax', tier: 1, name: 'Regional Jet Ops', cost: 2600, requires: ['gen1'], rep: 0,
     blurb: 'Jet handling for the CRJ200: high rotation thrust, higher stall speeds, pressurised climb profiles.',
     effect: 'Unlocks the Bombardier CRJ200 and regional jet contracts.', course: 'pax' },
+  { id: 'paxtp', branch: 'pax', tier: 1, name: 'Regional Turboprops', cost: 2400, requires: ['gen1'], rep: 0,
+    blurb: 'The ATR 72 on short hops: propeller handling, feathering, de-icing boots and six sectors a day.',
+    effect: 'Unlocks the ATR 72-600; +10% pay on legs under 300 nm in a turboprop.', course: 'pax' },
   { id: 'pax2', branch: 'pax', tier: 2, name: 'Instrument Rating (IFR)', cost: 7500, requires: ['pax1'], rep: 15,
     blurb: 'Flying the approach when you cannot see the runway: ILS, NDB, circling and a missed approach flown well.',
     effect: 'Unlocks the Boeing 737-800, low-visibility and IMC contracts.', course: 'pax' },
+  { id: 'paxfbw', branch: 'pax', tier: 2, name: 'Fly-by-Wire Jets', cost: 9000, requires: ['pax1'], rep: 15,
+    blurb: 'Side-sticks, flight computers and envelope protection: how a modern jet flies, and what is left when its computers degrade.',
+    effect: 'Unlocks the Embraer E195-E2 and the Airbus A220-300.', course: 'pax' },
   { id: 'pax3', branch: 'pax', tier: 3, name: 'Mountain & Adverse Weather', cost: 16000, requires: ['pax2'], rep: 35,
     blurb: 'Bergen in the rain, Tromsø in January: terrain, windshear, downdrafts and steep approaches.',
     effect: 'Unlocks the Airbus A320-200 and A320neo, mountain and arctic passenger routes, +15% payout on adverse-weather contracts.', course: 'pax' },
   { id: 'pax4', branch: 'pax', tier: 4, name: 'Widebody Procedures', cost: 34000, requires: ['pax3'], rep: 60,
     blurb: 'Two hundred tonnes of aeroplane: longer checklists, heavier landings, higher Vref and hot-and-high limits.',
-    effect: 'Unlocks the Airbus A350-900 and the long-haul contracts.', course: 'pax' },
+    effect: 'Unlocks the Airbus A350-900, the Boeing 777-300ER, the Airbus A380 and the long-haul contracts.', course: 'pax' },
+  { id: 'paxetops', branch: 'pax', tier: 4, name: 'ETOPS & Ocean Crossings', cost: 30000, requires: ['pax3'], rep: 60,
+    blurb: 'Two engines over the ocean: diversion times, alternates, the drift-down and the fuel for the worst case.',
+    effect: 'Unlocks the Airbus A330-300 and the Boeing 787-9; +10% pay on legs over 1 500 nm in a twin-engine jet.', course: 'pax' },
   // Cargo
   { id: 'cargo1', branch: 'cargo', tier: 1, name: 'Dangerous Goods', cost: 2200, requires: ['gen1'], rep: 0,
     blurb: 'Class 3 flammable liquids, lithium batteries and the paperwork that comes with them.',
@@ -473,6 +666,9 @@ const COURSES = [
   { id: 'cargo4', branch: 'cargo', tier: 4, name: 'Heavy Freighter Ops', cost: 32000, requires: ['cargo3'], rep: 60,
     blurb: 'Main-deck loading, fifty tonnes of freight and the most demanding schedules in the north.',
     effect: 'Unlocks the Boeing 767-300F, the Boeing 747-8F and ultra-long contracts.', course: 'cargo' },
+  { id: 'cargo5', branch: 'cargo', tier: 5, name: 'Outsize Cargo', cost: 48000, requires: ['cargo4'], rep: 80,
+    blurb: 'Turbines, helicopters and locomotives: the An-124\'s lifting nose, kneeling gear, roof cranes and tie-downs for loads that fit nothing else.',
+    effect: 'Unlocks the Antonov An-124 Ruslan: 120 tonnes onto long gravel and ice runways.', course: 'cargo' },
   // Bush & SAR
   { id: 'bush1', branch: 'bush', tier: 1, name: 'Short Field Ops', cost: 2000, requires: ['gen1'], rep: 0,
     blurb: 'Take-off and landing in half the distance, on grass, gravel and sand.',
@@ -502,6 +698,10 @@ const CONTRACTS = {
   PAYLOAD_FEE_NM: 650,           // load fee = kg x PAYLOAD rate x nm / this
   FACTION_MULT: { pax: 1.0, cargo: 1.05, bush: 1.2 },
   URGENT_MULT: 2.1,
+  TURBOPROP_SHORT_NM: 300,       // Regional Turboprops: legs shorter than this (real nm) in a turboprop
+  TURBOPROP_SHORT_MULT: 1.1,     // ... pay this much more
+  ETOPS_NM: 1500,                // ETOPS & Ocean Crossings: legs longer than this in a twin-engine jet
+  ETOPS_MULT: 1.1,               // ... pay this much more
   // starting at the gate and flying the whole ground procedure yourself (push back, start, taxi
   // out) pays this share of the contract and this much reputation; starting after pushback
   // saves those minutes on the ground (and their lease) but earns neither

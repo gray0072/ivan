@@ -120,7 +120,7 @@ const Career = {
 
   // one remembered choice, set on the title screen and in every restart dialog
   get difficulty() { return DIFFICULTY[this.settings.difficulty] || DIFFICULTY.medium; },
-  aircraft() { return AIRCRAFT.find((a) => a.id === this.data.selected) || AIRCRAFT[0]; },
+  aircraft() { return AIRCRAFT.find((a) => a.id === this.data.selected) || AIRCRAFT.find((a) => !a.unlock); },
   owns(id) { return this.data.aircraft.indexOf(id) >= 0; },
   unlocked(ac) { return !ac.unlock || this.has(ac.unlock); },
   // aircraft are leased per sector: any unlocked type can be selected
@@ -198,7 +198,11 @@ const Career = {
       payloadTol: d.courses.indexOf('cargo2') >= 0 ? 1.15 : 1,
       mountain: d.courses.indexOf('pax3') >= 0,
       widebody: d.courses.indexOf('pax4') >= 0,
-      remote: d.courses.indexOf('bush4') >= 0
+      remote: d.courses.indexOf('bush4') >= 0,
+      turboprop: d.courses.indexOf('paxtp') >= 0,
+      fbw: d.courses.indexOf('paxfbw') >= 0,
+      etops: d.courses.indexOf('paxetops') >= 0,
+      outsize: d.courses.indexOf('cargo5') >= 0
     };
   },
 
@@ -323,6 +327,8 @@ const Career = {
     if (urgent) pay *= CONTRACTS.URGENT_MULT;
     if (type === 'pax' && this.has('gen2')) pay *= 1.08;        // weather planning paid
     if (fx.mountain && (to.mountainous || from.mountainous)) pay *= 1.15;
+    if (fx.turboprop && ac.engineType === 'prop' && distNm < CONTRACTS.TURBOPROP_SHORT_NM) pay *= CONTRACTS.TURBOPROP_SHORT_MULT;
+    if (fx.etops && ac.engineType === 'jet' && ac.engines === 2 && distNm > CONTRACTS.ETOPS_NM) pay *= CONTRACTS.ETOPS_MULT;
     pay = Math.round(pay / 10) * 10;
     // as much as the tanks and the maximum take-off weight allow
     const blockFuel = Math.min(ac.fuelCapKg, ac.mtow - ac.emptyKg - payloadKg, Math.round(fuelKg * CONTRACTS.FUEL_RESERVE_FACTOR + taxiKg));

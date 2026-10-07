@@ -15,10 +15,14 @@
 //     T-tail), winglets
 //   - moving control surfaces: flaps, ailerons, spoilers, elevators
 //     and the rudder, hinged on their real hinge lines
-//   - engines under the wings (2 or 4), on the rear fuselage, or
-//     turboprops with spinning propellers
-//   - landing gear that folds away (jets inwards, turboprops forwards
-//     into the engine nacelles)
+//   - engines under the wings (2 or 4, under a low or a high wing), on
+//     the rear fuselage, or turboprops with spinning propellers (four or
+//     six blades)
+//   - landing gear that folds away (jets inwards, turboprops and high
+//     wings forwards), with bogies of two to five rows on the big jets
+//   - a tall body (look.tall: its height over its width) that grows
+//     upwards from the same belly; with look.decks = 2 two rows of
+//     windows and the cockpit between them
 //
 // Model axes: +z = nose, +y = up, +x = left wing. The origin is the
 // centre of gravity, and the wheels touch y = -gearH.
@@ -35,6 +39,8 @@ const AircraftModels = {
     const al = opts.airline ? AIRLINE_BY_CODE[opts.airline] : null;
     const look = al ? Object.assign({}, ac.look, { base: al.livery.body, color: al.livery.tail }) : (ac.look || {});
     const L = d.len, R = d.radius, S = d.span;
+    const hk = look.tall || 1;                                     // body height over width
+    const top = R * (2 * hk - 1);                                  // the roof above the axis
     const jet = ac.engineType === 'jet';
     const g = new THREE.Group();
     g.userData = { gear: [], props: [], surf: { flap: [], aileron: [], spoiler: [], elevator: [], rudder: [] } };
@@ -50,14 +56,14 @@ const AircraftModels = {
     const grey = new THREE.MeshLambertMaterial({ color: 0x9aa3ab });
 
     // ---- fuselage
-    const body = fuselageGeometry(L, R);
+    const body = fuselageGeometry(L, R, hk);
     const skin = new THREE.MeshLambertMaterial({ map: this.livery(ac, d, al) });
     g.add(new THREE.Mesh(body.geo, skin));
     if (look.hump) {
       // the 747 upper deck: blended into the nose, its roof sloping down into the fuselage further back
       const hump = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 16), base);
-      hump.scale.set(R * 0.74, R * 0.62, L * 0.24);
-      hump.position.set(0, R * 0.36, L * 0.25);
+      hump.scale.set(R * 0.74, R * 0.9, L * 0.22);                 // its roof 1.4 R above the axis
+      hump.position.set(0, R * 0.5, L * 0.26);
       g.add(hump);
     }
 
@@ -70,7 +76,8 @@ const AircraftModels = {
     const thick = rootC * (jet ? 0.1 : 0.13);                      // for placing the engines and the gear
     const wingY = high ? R * 0.82 : -R * 0.55;
     const wingZ = L * (jet ? 0.08 : 0.1) + rootC * 0.45;           // leading edge at the root
-    const dihedral = (high ? 1 : jet ? 5 : 4) * DEG;
+    // the wing's dihedral (the 787's flexes up, the An-124's droops)
+    const dihedral = (look.dihedral !== undefined ? look.dihedral : high ? 1 : jet ? 5 : 4) * DEG;
     const wingDef = {
       semi, rootC, tipC, sweep, tRoot: rootC * (jet ? 0.12 : 0.15), tTip: tipC * (jet ? 0.09 : 0.12), cut: jet ? 0.76 : 0.72,
       pieces: [{ kind: 'flap', f0: 0, f1: 0.6 }, { f0: 0.6, f1: 0.64 }, { kind: 'aileron', f0: 0.64, f1: 0.94 }, { f0: 0.94, f1: 1 }],
@@ -106,7 +113,7 @@ const AircraftModels = {
     const finH = jet ? R * 2.1 + L * 0.06 : R * 1.6 + L * 0.06;
     const finSweep = (jet ? 38 : 30) * DEG;
     const finZ = -L * 0.5 + finRoot + L * 0.015;                   // fin leading edge at the root
-    const finY = R * 0.62;
+    const finY = R * 0.62 + (top - R) * 0.8;                       // a double deck's roof runs higher into the tail
     // the fin is a lifting surface stood on end (its span up), with the rudder behind it
     const finT = finRoot * 0.08;
     const fin = liftingSurface({
@@ -117,12 +124,13 @@ const AircraftModels = {
     fin.position.set(0, finY, finZ);
     g.add(fin);
     if (al) this.finDecals(g, ac, al, finRoot, finTip, finH, finSweep, finT * 1.02, finY, finZ);
-    const tSemi = S * (jet ? 0.19 : 0.21), tRoot = finRoot * 0.75, tTip = tRoot * 0.42;
+    const tTop = look.tail === 't';
+    // the tailplane's half span (real ones: 0.15 of the wing span on a T-tail, about 0.17-0.2 below)
+    const tSemi = S * (tTop ? 0.15 : jet ? 0.19 : 0.17), tRoot = finRoot * 0.75, tTip = tRoot * 0.42;
     const tailDef = {
       semi: tSemi, rootC: tRoot, tipC: tTip, sweep: (jet ? 32 : 6) * DEG, tRoot: tRoot * 0.1, tTip: tTip * 0.09, cut: 0.68, sym: true,
       pieces: [{ kind: 'elevator', f0: 0, f1: 0.96 }, { f0: 0.96, f1: 1 }]
     };
-    const tTop = look.tail === 't';
     for (const side of [1, -1]) {
       const m = liftingSurface(tailDef, tTop ? paint : metal, surf, side);
       if (tTop) m.position.set(0, finY + finH - 0.1, finZ - finH * Math.tan(finSweep) - finTip * 0.05);
@@ -138,14 +146,20 @@ const AircraftModels = {
     const leAt = (f) => wingZ - semi * f * Math.tan(sweep);         // leading edge z there
     const yAt = (f) => wingY + semi * f * Math.sin(dihedral);
     if (look.engines === 'wing2' || look.engines === 'wing4') {
-      const dia = d.fus * (look.engines === 'wing4' ? 0.42 : look.bigFans ? 0.56 : 0.5);
+      const dia = d.fus * (look.fan || (look.engines === 'wing4' ? 0.42 : look.bigFans ? 0.56 : 0.5));
       const stations = look.engines === 'wing4' ? [0.3, 0.6] : [0.33];
       for (const f of stations) for (const side of [1, -1]) {
+        // hung below the wing; a big fan that would come too close to the ground is pulled up
+        // level with the wing and forwards out of it, as the real ones are
+        let ny = yAt(f) - thick * 0.5 - dia * 0.62;
+        const lift = Math.max(0, -d.gearH + dia * 0.65 - ny);
+        ny += lift;
+        const nz = leAt(f) + dia * 0.75 + lift * 1.2;
         const n = jetNacelle(dia, dia * (look.engines === 'wing4' ? 2.0 : 1.75), eng, dark, paint, look.flatNacelles);
-        n.position.set(side * spanAt(f), yAt(f) - thick * 0.5 - dia * 0.62, leAt(f) + dia * 0.75);
+        n.position.set(side * spanAt(f), ny, nz);
         g.add(n);
         const py = new THREE.Mesh(new THREE.BoxGeometry(dia * 0.14, dia * 0.5, dia * 1.6), metal);
-        py.position.set(side * spanAt(f), yAt(f) - thick * 0.5 - dia * 0.18, leAt(f) + dia * 0.1);
+        py.position.set(side * spanAt(f), ny + dia * 0.44, nz - dia * 0.65);
         g.add(py);
       }
     } else if (look.engines === 'rear2') {
@@ -182,11 +196,12 @@ const AircraftModels = {
         spin.position.set(side * spanAt(f), ny, front + dia * 0.35);
         g.add(spin);
         const prop = new THREE.Group();
-        for (let b = 0; b < 4; b++) {
+        const nb = look.blades || 4;
+        for (let b = 0; b < nb; b++) {
           const blade = new THREE.Mesh(new THREE.BoxGeometry(propR * 0.11, propR, propR * 0.02), dark);
           blade.position.y = propR / 2;
           const arm = new THREE.Group();
-          arm.rotation.z = b * Math.PI / 2;
+          arm.rotation.z = b * TAU / nb;
           blade.rotation.y = 0.35;
           arm.add(blade);
           prop.add(arm);
@@ -195,7 +210,7 @@ const AircraftModels = {
           new THREE.MeshBasicMaterial({ color: 0x2a2f35, transparent: true, opacity: 0.0, depthWrite: false, side: THREE.DoubleSide }));
         prop.add(disc);
         prop.position.set(side * spanAt(f), ny, front + dia * 0.15);
-        prop.userData = { disc, blades: prop.children.slice(0, 4), side };
+        prop.userData = { disc, blades: prop.children.slice(0, nb), side };
         g.add(prop);
         g.userData.props.push(prop);
       }
@@ -227,9 +242,10 @@ const AircraftModels = {
       const leg = new THREE.Mesh(new THREE.CylinderGeometry(legR, legR * 1.2, len, 8), grey);
       leg.position.y = -len / 2;
       pivot.add(leg);
-      // a torque link and the axle beam, so the leg reads as a leg
-      const axle = new THREE.Mesh(new THREE.BoxGeometry(legR * 2, legR * 2, Math.max(legR * 3, Math.abs(wheels[wheels.length - 1][1]) + legR * 2)), grey);
-      axle.position.set(0, -len, wheels[wheels.length - 1][1] / 2);
+      // a torque link and the axle beam from the first row of wheels to the last, so the leg reads as a leg
+      const z0 = wheels[0][1], z1 = wheels[wheels.length - 1][1];
+      const axle = new THREE.Mesh(new THREE.BoxGeometry(legR * 2, legR * 2, Math.max(legR * 3, Math.abs(z1 - z0) + legR * 2)), grey);
+      axle.position.set(0, -len, (z0 + z1) / 2);
       pivot.add(axle);
       for (const [ox, oz] of wheels) {
         const w = wheel();
@@ -241,21 +257,22 @@ const AircraftModels = {
     };
     const big = S > 50;
     const FWD = ['x', -Math.PI / 2];                                   // the foot swings forwards and up
+    // a bogie: pairs of wheels in rows, two with the leg at the front row, more (the 777's
+    // main gear and the A380's body gear have three, the An-124's five) with the leg in the middle
+    const bogie = (rows) => {
+      const w = [];
+      for (let r = 0; r < rows; r++) for (const off of [-wheelR * 0.45, wheelR * 0.45]) w.push([off, -wheelR * 2.3 * (r - (rows > 2 ? (rows - 1) / 2 : 0))]);
+      return w;
+    };
     addLeg(0, noseZ, R * 0.75, big ? [[-wheelR * 0.4, 0], [wheelR * 0.4, 0]] : [[0, 0]], FWD);
     for (const side of [1, -1]) {
-      const pair = big ? [-wheelR * 0.45, wheelR * 0.45] : [0];
-      const wheels = [];
-      for (const off of pair) wheels.push([off, 0]);
-      if (big) for (const off of pair) wheels.push([off, -wheelR * 2.3]);   // bogies: a second row behind the first
-      const top = propGear ? propGear.top : high ? R * 0.5 : R * 0.7;
-      addLeg(side * mainX, mainZ, top, wheels, propGear || high ? FWD : ['z', -side * Math.PI / 2]);
+      const wheels = big ? bogie(look.mainRows || 2) : [[0, 0]];
+      const legTop = propGear ? propGear.top : high ? R * 0.5 : R * 0.7;
+      addLeg(side * mainX, mainZ, legTop, wheels, propGear || high ? FWD : ['z', -side * Math.PI / 2]);
     }
-    if (look.engines === 'wing4' || look.hump) {
-      // the 747's body gear between the wing gear
-      for (const side of [1, -1]) {
-        addLeg(side * R * 0.35, mainZ - L * 0.04, R * 0.9,
-          [[-wheelR * 0.45, 0], [wheelR * 0.45, 0], [-wheelR * 0.45, -wheelR * 2.3], [wheelR * 0.45, -wheelR * 2.3]], FWD);
-      }
+    if ((look.engines === 'wing4' && !high) || look.hump) {
+      // the 747's and the A380's body gear between the wing gear
+      for (const side of [1, -1]) addLeg(side * R * 0.35, mainZ - L * 0.04, R * 0.9, bogie(look.bodyRows || 2), FWD);
     }
     if (!look.fixedGear) g.userData.gear = gear;
 
@@ -276,7 +293,7 @@ const AircraftModels = {
     const RED = [1, 0.12, 0.08], GREEN = [0.2, 1, 0.35], WHITE = [1, 1, 0.95];
     g.userData.lights = {
       nav: lightSet([tips[0], tips[1], [0, R * 0.75, -L / 2 - 0.2]], [RED, GREEN, WHITE]),
-      beacon: lightSet([[0, R + 0.15, -L * 0.05], [0, -R - 0.15, L * 0.05]], [RED, RED]),
+      beacon: lightSet([[0, top + 0.15, -L * 0.05], [0, -R - 0.15, L * 0.05]], [RED, RED]),
       strobe: lightSet([[tips[0][0], tips[0][1], tips[0][2] - tipC * 0.3], [tips[1][0], tips[1][1], tips[1][2] - tipC * 0.3]], [WHITE, WHITE]),
       landing: lightSet([[R * 0.8 + semi * 0.15, wingY, leAt(0.15) + 0.2], [-(R * 0.8 + semi * 0.15), wingY, leAt(0.15) + 0.2],
         [0, -R * 0.9, noseZ + 0.4]], [WHITE, WHITE, WHITE])
@@ -341,13 +358,17 @@ const AircraftModels = {
     g.fillStyle = look.base || '#f3f5f7';
     g.fillRect(0, 0, W, H);
     const color = look.color || '#1f5fa0';
+    // a double deck: the main deck windows lower down, the upper deck's above them, the cockpit
+    // between the two, and the cheatline and the belly pushed down (by `lo` degrees) below them
+    const dd = look.decks === 2;
+    const rows = dd ? [65, 104] : [78], lo = dd ? 16 : 0, ck = dd ? 22 : 0;
     if (!lv) {
       // belly
       g.fillStyle = 'rgba(150,160,170,0.55)';
-      g.fillRect(0, yAt(118), W, yAt(124));
+      g.fillRect(0, yAt(118 + lo), W, yAt(124 - 2 * lo));
       // cheatline below the windows on both sides, and a bold tail sweep at the back
       g.fillStyle = color;
-      for (const c of [100, 260]) g.fillRect(W * 0.04, yAt(c - 3), W * 0.9, yAt(5));
+      for (const c of [100 + lo, 260 - lo]) g.fillRect(W * 0.04, yAt(c - 3), W * 0.9, yAt(5));
       g.globalAlpha = 0.9;
       g.beginPath();
       g.moveTo(0, 0); g.lineTo(W * 0.2, 0); g.lineTo(W * 0.12, H); g.lineTo(0, H);
@@ -357,33 +378,36 @@ const AircraftModels = {
       // an airline's paint: the belly below the cheatline, a coloured nose, the cheatline,
       // the fin colour running into the top of the tail cone, and the titles
       g.fillStyle = lv.belly || 'rgba(150,160,170,0.45)';
-      g.fillRect(0, yAt(lv.belly ? 104 : 118), W, yAt(lv.belly ? 152 : 124));
+      g.fillRect(0, yAt((lv.belly ? 104 : 118) + lo), W, yAt((lv.belly ? 152 : 124) - 2 * lo));
       if (lv.nose) {
         g.fillStyle = lv.nose;
         g.beginPath(); g.moveTo(W, 0); g.lineTo(W * 0.9, 0); g.bezierCurveTo(W * 0.95, H * 0.3, W * 0.95, H * 0.7, W * 0.9, H); g.lineTo(W, H); g.fill();
       }
       if (lv.cheat) lv.cheat.forEach((c, i) => {
         g.fillStyle = c;
-        for (const a of [98 + i * 4, 258 - i * 4]) g.fillRect(W * 0.03, yAt(a), W * 0.92, yAt(3.2));
+        for (const a of [98 + i * 4 + lo, 258 - i * 4 - lo]) g.fillRect(W * 0.03, yAt(a), W * 0.92, yAt(3.2));
       });
       if (lv.tail !== lv.body) {
         g.fillStyle = lv.tail;
         g.beginPath(); g.moveTo(0, 0); g.lineTo(W * 0.17, 0); g.lineTo(W * 0.1, yAt(40)); g.lineTo(0, yAt(60)); g.fill();
         g.beginPath(); g.moveTo(0, H); g.lineTo(W * 0.17, H); g.lineTo(W * 0.1, yAt(320)); g.lineTo(0, yAt(300)); g.fill();
       }
-      this.titles(g, al, W, H, L, d.radius, !!look.freighter);
+      this.titles(g, al, W, H, L, d.radius, !!look.freighter, dd);
     }
     // passenger windows
     if (!look.freighter) {
       g.fillStyle = '#1d2733';
-      const x0 = W * 0.27, x1 = W * 0.86;
       const pitch = Math.max(3, 0.53 * px), ww = Math.max(1.6, 0.24 * px);
-      for (const c of [78, 282]) {
-        for (let x = x0; x < x1; x += pitch) g.fillRect(x, yAt(c - 4), ww, yAt(6));
-      }
-      // doors
-      g.strokeStyle = 'rgba(60,70,80,0.6)'; g.lineWidth = 1;
-      for (const fx of [0.25, 0.86]) for (const c of [86, 274]) g.strokeRect(W * fx, yAt(c - 14), Math.max(4, 0.85 * px), yAt(26));
+      rows.forEach((row, i) => {
+        // the upper deck ends further forward and further back than the main deck
+        const x0 = W * (i < rows.length - 1 ? 0.33 : 0.27), x1 = W * (i < rows.length - 1 ? 0.84 : 0.86);
+        for (const c of [row, 360 - row]) {
+          for (let x = x0; x < x1; x += pitch) g.fillRect(x, yAt(c - 4), ww, yAt(6));
+        }
+        // doors
+        g.strokeStyle = 'rgba(60,70,80,0.6)'; g.lineWidth = 1;
+        for (const fx of [x0 / W - 0.02, x1 / W]) for (const c of [row + 8, 352 - row]) g.strokeRect(W * fx, yAt(c - 14), Math.max(4, 0.85 * px), yAt(26));
+      });
     } else {
       g.strokeStyle = 'rgba(60,70,80,0.6)'; g.lineWidth = 1.5;
       g.strokeRect(W * 0.62, yAt(60), Math.max(10, 3.4 * px), yAt(40));          // main deck cargo door
@@ -391,13 +415,13 @@ const AircraftModels = {
     // cockpit glass at the nose
     g.fillStyle = '#1a2430';
     const cx = W * (1 - Math.min(0.09, 2.6 / L));
-    for (const c of [62, 298]) g.fillRect(cx, yAt(c - 12), Math.max(6, 1.5 * px), yAt(16));
+    for (const c of [62 + ck, 298 - ck]) g.fillRect(cx, yAt(c - 12), Math.max(6, 1.5 * px), yAt(16));
     g.beginPath();
-    g.moveTo(cx + 1.4 * px, yAt(330)); g.lineTo(cx + 2.4 * px, yAt(345)); g.lineTo(cx + 2.4 * px, H);
-    g.lineTo(cx + 1.4 * px, H); g.closePath(); g.fill();
+    g.moveTo(cx + 1.4 * px, yAt(330 - ck)); g.lineTo(cx + 2.4 * px, yAt(345 - ck)); g.lineTo(cx + 2.4 * px, yAt(360 - ck));
+    g.lineTo(cx + 1.4 * px, yAt(360 - ck)); g.closePath(); g.fill();
     g.beginPath();
-    g.moveTo(cx + 1.4 * px, yAt(30)); g.lineTo(cx + 2.4 * px, yAt(15)); g.lineTo(cx + 2.4 * px, 0);
-    g.lineTo(cx + 1.4 * px, 0); g.closePath(); g.fill();
+    g.moveTo(cx + 1.4 * px, yAt(30 + ck)); g.lineTo(cx + 2.4 * px, yAt(15 + ck)); g.lineTo(cx + 2.4 * px, yAt(ck));
+    g.lineTo(cx + 1.4 * px, yAt(ck)); g.closePath(); g.fill();
     const tex = new THREE.CanvasTexture(cv);
     tex.encoding = THREE.sRGBEncoding;
     tex.anisotropy = 4;
@@ -406,8 +430,8 @@ const AircraftModels = {
   },
 
   // the airline's titles on both sides, above the windows (on the right side, -x, the canvas
-  // runs upside down and backwards)
-  titles(g, al, W, H, L, R, freighter) {
+  // runs upside down and backwards); dd: a double-deck body
+  titles(g, al, W, H, L, R, freighter, dd) {
     const lv = al.livery;
     const pxAlong = W / L, pxAround = H / (TAU * R);
     const hM = Math.min(1.4, Math.max(0.45, R * (freighter ? 0.62 : 0.42)));     // letter height, metres
@@ -418,7 +442,8 @@ const AircraftModels = {
         : '900 ' + size + 'px Arial, sans-serif';
     const cx = W * 0.6, maxW = W * (freighter ? 0.6 : 0.5);
     for (const side of [1, -1]) {
-      const cy = (side > 0 ? (freighter ? 62 : 58) : (freighter ? 298 : 302)) / 360 * H;
+      const a = dd ? 40 : freighter ? 62 : 58;                // above the windows (a double deck: above the upper deck's)
+      const cy = (side > 0 ? a : 360 - a) / 360 * H;
       g.save();
       g.translate(cx, cy);
       if (side < 0) g.scale(-1, -1);
@@ -482,7 +507,9 @@ const AircraftModels = {
 };
 
 // The fuselage: rings of vertices along z. u = along the body (tail 0 → nose 1), v = around (top 0).
-function fuselageGeometry(L, R) {
+// hk > 1 makes a double-deck body: each ring hk times as tall as it is wide, grown upwards from its belly.
+function fuselageGeometry(L, R, hk) {
+  hk = hk || 1;
   const N = 56, SEG = 24;
   const noseLen = Math.min(L * 0.14, R * 2.8), tailLen = L * 0.3;
   const zNose = L / 2, zTail = -L / 2;
@@ -509,7 +536,7 @@ function fuselageGeometry(L, R) {
     for (let j = 0; j <= SEG; j++) {
       const th = j / SEG * TAU;
       // round from the top towards -x (the right side), so the triangles face outwards
-      pos.push(-Math.sin(th) * r, c.y + Math.cos(th) * r, z);
+      pos.push(-Math.sin(th) * r, c.y + (Math.cos(th) * hk + hk - 1) * r, z);
       uv.push((z - zTail) / L, 1 - j / SEG);
     }
   }

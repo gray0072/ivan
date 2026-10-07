@@ -598,6 +598,55 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .acHead { display: flex; justify-content: space-between; align-items: center; }
 .acBlurb { font-size: 12px; color: #9fb0c3; margin: 6px 0 8px; }
 
+/* the hangar's aircraft cards: a picture on top (render/preview3d.js), the key figures in tiles */
+.cards.planes { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.acCard.plane { padding: 0; overflow: hidden; display: flex; flex-direction: column;
+  transition: border-color 0.2s, box-shadow 0.25s, transform 0.25s; }
+.acCard.plane.sel { box-shadow: 0 0 0 1px #6fb1e8, 0 10px 30px rgba(60, 140, 220, 0.22); }
+.acPic { position: relative; aspect-ratio: 2 / 1; overflow: hidden;
+  background:
+    radial-gradient(ellipse 62% 30% at 50% 74%, rgba(255, 255, 255, 0.07), transparent 70%),
+    radial-gradient(ellipse 75% 75% at 50% 62%, var(--glow, rgba(111, 177, 232, 0.4)), transparent 72%),
+    linear-gradient(180deg, #2a4058 0%, #18283a 58%, #0f1822 100%); }
+.acPic::before { content: ''; position: absolute; left: 0; right: 0; top: 64%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(190, 215, 240, 0.14), transparent); }
+.acPic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  transition: transform 0.4s ease, opacity 0.45s ease, filter 0.3s; }
+.acPic.loading img { opacity: 0; }
+.acPic.loading::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.07) 50%, transparent 70%);
+  background-size: 200% 100%; animation: acShimmer 1.4s linear infinite; }
+@keyframes acShimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.acCard.locked .acPic img { filter: grayscale(0.85) brightness(0.72); }
+.acPic .tag, .acMtow, .acBadge { position: absolute; background: rgba(9, 15, 22, 0.62);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.acPic .tag { left: 10px; top: 10px; }
+.acMtow { right: 10px; top: 9px; padding: 2px 9px; border-radius: 20px; font: 700 12px ui-monospace, monospace; color: #e6eef6; }
+.acBadge { left: 10px; bottom: 10px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.acBadge.sel { background: rgba(29, 79, 122, 0.85); color: #d4ecff; }
+.acBadge.lock { color: #ffc2a8; }
+.acMain { padding: 10px 14px 12px; display: flex; flex-direction: column; flex: 1; }
+.acCard.plane .acHead b { font-size: 16px; }
+.acStats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 2px 0 10px; }
+.acStat { padding: 6px 4px 5px; border: 1px solid rgba(140, 170, 200, 0.12); border-radius: 8px; background: #0f161e; text-align: center; min-width: 0; }
+.acStat b { display: block; font-size: 14px; color: #e8f0f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acStat span { display: block; font-size: 10px; color: #7f93a6; text-transform: uppercase; letter-spacing: 0.5px; }
+.acCard.plane .cGrid { grid-template-columns: 1fr; gap: 2px; }
+.acCard.plane .cFoot { margin-top: auto; padding-top: 10px; }
+@media (hover: hover) {
+  .acCard.plane:hover { transform: translateY(-2px); border-color: rgba(140, 190, 235, 0.4); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35); }
+  .acCard.plane.sel:hover { border-color: #6fb1e8; }
+  .acCard.plane:hover .acPic img { transform: scale(1.045); }
+}
+@media (max-width: 400px) {
+  .cards.planes { grid-template-columns: 1fr; }
+  .acStats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .acPic.loading::after { animation: none; }
+  .acCard.plane, .acPic img { transition: none; }
+}
+
 .branches { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
 .branch { display: flex; flex-direction: column; gap: 8px; }
 .course { padding: 10px 12px; border: 1px solid rgba(140, 170, 200, 0.16); border-radius: 10px; background: #131b24; }
