@@ -506,7 +506,7 @@ const UI = {
       '<label class="check"><input type="radio" name="startMode" value="gate"' + (Career.skipPushback ? '' : ' checked') + '> ' +
       tr('At the gate — push back, start the engines, taxi out: +{bonus} and reputation for the full ground procedure', { bonus: fmtMoney(Math.round(c.pay * CONTRACTS.FULL_GROUND_BONUS)) }) + '</label>' +
       '<label class="check"><input type="radio" name="startMode" value="pushback"' + (Career.skipPushback ? ' checked' : '') + '> ' +
-      tr('After pushback — the tug has taken you to the holding point: about 5 minutes less on the ground, no procedure bonus') + '</label>' +
+      tr('At the runway — at the holding point, the engines running, cleared for take-off: about 5 minutes less on the ground, no procedure bonus') + '</label>' +
       '<p class="fineprint">' + tr('The full procedure is the real routine of the job; take the short start when you just want to fly. Your choice is remembered.') + '</p>' +
       '<div class="btnRow"><button class="btn default" data-act="fly">' + tr('Fly it') + '</button>' +
       '<button class="btn" data-act="practice"' + (Career.data.money < fee ? ' disabled' : '') + '>' +

@@ -128,7 +128,7 @@ const Game = {
       sys.update(simDt);
       if (this.practice) this.updatePractice(simDt);
       this.updatePhase(dt);
-      this.updateGuidance();
+      Guidance.update(this);
     }
 
     Scene3D.camMode = this.camMode;
@@ -410,13 +410,6 @@ const Game = {
         tr(sys.started ? 'engines starting' : 'you can start the engines now — <kbd>Enter</kbd>'));
     } else if (p === 'ENGINE_START') {
       const all = sys.runningCount() === fl.ac.engines;
-      // started at the holding point (after pushback): no taxi, the next thing is the clearance
-      const hold = apt.nodes.hold;
-      if (all && Math.hypot(st.pos.x - hold.x, st.pos.z - hold.z) < 30) {
-        fl.setPhase('HOLD_SHORT');
-        fl.info(tr('Holding point runway {rwy} — stop and wait for the clearance', { rwy: apt.rwyName }));
-        return;
-      }
       // the engines running and the parking brake off (Space / Park): off you go
       if (all && !st.parkingBrake) {
         fl.setPhase('TAXI_OUT');
@@ -442,10 +435,21 @@ const Game = {
       HUD.setPrompt('<b>' + tr('Holding point runway {rwy}', { rwy: apt.rwyName }) + '</b>' + (speed > 2 ? ' · <b>' + tr('stop here') + '</b>' : '') +
         '<br>' + tr('set flaps {n} <kbd>F</kbd>, then <kbd>Enter</kbd> for the take-off clearance', { n: this.takeoffFlaps() }));
     } else if (p === 'TAKEOFF') {
-      const vr = Math.round(fl.vr());
+      // on the ground the steps still to do, in order, the next one in bold: the take-off
+      // flaps, onto the runway and lined up on the centreline, full power and rotate at Vr
+      let steps = '';
+      if (st.onGround) {
+        const vr = Math.round(fl.vr());
+        const loc = World.local(apt, st.pos.x, st.pos.z);
+        const lined = Math.abs(loc.across) < SIM.LINEUP_ACROSS_M && Math.abs(wrapDeg(fl.headingDeg() - apt.hdgDeg)) < SIM.LINEUP_HDG_DEG;
+        const todo = [];
+        if (st.flapsTarget < this.takeoffFlaps() && st.ias / KTS < fl.vr()) todo.push(tr('flaps {n} <kbd>F</kbd>', { n: this.takeoffFlaps() }));
+        if (!lined && speed < 40) todo.push(tr('taxi onto the runway and line up — follow the arrow'));
+        todo.push(tr('full power <kbd>9</kbd>, rotate at Vr {vr} kt — pull back <kbd>↓</kbd>', { vr }));
+        steps = todo.map((t, i) => (i ? t : '<b>' + t + '</b>')).join(' · ');
+      }
       HUD.setPrompt(st.onGround
-        ? '<b>' + tr('Runway {rwy}', { rwy: apt.rwyName }) + ' · ' + tr(fl.noClearance ? 'no clearance!' : 'cleared for take-off') + '</b><br>' +
-          tr('line up, full power <kbd>9</kbd>, rotate at Vr {vr} kt — pull back <kbd>↓</kbd>', { vr }) + (st.flapsTarget < 1 ? ' · <b>' + tr('flaps!') + '</b>' : '')
+        ? '<b>' + tr('Runway {rwy}', { rwy: apt.rwyName }) + ' · ' + tr(fl.noClearance ? 'no clearance!' : 'cleared for take-off') + '</b><br>' + steps
         : tr('<b>Positive climb</b> · gear up <kbd>G</kbd>'));
       if (!st.onGround && fl.altAgl() > 150) {
         fl.setPhase('CLIMB');
@@ -625,51 +629,10 @@ const Game = {
   beginTaxiIn() {
     const fl = this.flight, a = fl.arrival, st = fl.st;
     const loc = World.local(a, st.pos.x, st.pos.z);
-    const exit = World.exitAhead(a, loc.t);
+    const exit = Guidance.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
     this.arrivalRoute = World.findRoute(a, exit, this.arrivalGate.node);
     fl.setPhase('EXIT');
     fl.info(tr('Leave the runway at the next exit and taxi to {gate}', { gate: gateName(this.arrivalGate) }));
-  },
-
-  // ---------- guidance ----------
-  updateGuidance() {
-    const fl = this.flight, st = fl.st;
-    if (!fl.guidance) fl.guidance = { visible: false, bearing: 0, dist: 0, remaining: 0 };
-    const g = fl.guidance;
-    g.visible = false;
-    let target = null;
-    const p = fl.phase;
-    const look = Math.max(30, fl.dims.len * 0.65);         // pure pursuit: a carrot ahead on the taxi line
-    if (p === 'TAXI_OUT' || p === 'ENGINE_START') {
-      const prog = World.routeProgress(fl.world, fl.route, st.pos.x, st.pos.z, look);
-      if (prog && p === 'TAXI_OUT') { target = prog.carrot; g.remaining = prog.remaining; g.deviation = prog.deviation; }
-    } else if (p === 'HOLD_SHORT') {
-      target = fl.world.nodes.hold;
-      if (Math.hypot(target.x - st.pos.x, target.z - st.pos.z) < 12) target = null;
-    } else if (p === 'TAKEOFF' && st.onGround) {
-      // onto the runway at the line-up point, then straight down the centreline
-      const a = fl.world;
-      const loc = World.local(a, st.pos.x, st.pos.z);
-      const start = a.nodes.rwyStart;
-      if (Math.abs(loc.across) > 12 && loc.t < start.t + 40) target = World.at(a, start.t + 15, 0);
-      else target = World.at(a, Math.max(loc.t, start.t) + 300, 0);
-    } else if ((p === 'EXIT' || p === 'ROLLOUT') && this.arrivalRoute) {
-      const prog = World.routeProgress(fl.arrival, this.arrivalRoute, st.pos.x, st.pos.z, look);
-      if (prog) {
-        // into the stand: aim at the stop bar itself for the last few metres
-        target = prog.remaining < look * 0.6 ? this.arrivalRoute[this.arrivalRoute.length - 1] : prog.carrot;
-        g.remaining = prog.remaining; g.deviation = prog.deviation;
-      }
-    } else if (!st.onGround && !fl.ap.on && !fl.navFailed && (p === 'DESCENT' || p === 'APPROACH' || p === 'CRUISE')) {
-      g.visible = true;
-      g.bearing = fl.navTarget().hdg;
-      g.dist = fl.distToRunwayNm() * NM;
-      return;
-    }
-    if (!target) return;
-    g.visible = true;
-    g.bearing = bearingDeg(st.pos.x, st.pos.z, target.x, target.z);
-    g.dist = (p === 'TAXI_OUT' || p === 'EXIT' || p === 'ROLLOUT') && g.remaining ? g.remaining : Math.hypot(target.x - st.pos.x, target.z - st.pos.z);
   },
 
   // ---------- actions ----------
@@ -767,14 +730,18 @@ const Game = {
     } else if (p === 'ENGINE_START') {
       fl.warn('BRAKE', tr('Release the parking brake to taxi — <kbd>Space</kbd>'));
     } else if (p === 'HOLD_SHORT') {
-      const w = fl.env.surfaceWind;
       st.parkingBrake = false;
       fl.setPhase('TAKEOFF');
-      fl.info(tr('Tower: wind {d}° {v} kt, runway {rwy} cleared for take-off',
-        { d: String(Math.round(w.dir)).padStart(3, '0'), v: Math.round(w.speed), rwy: fl.world.rwyName }));
+      this.takeoffClearance();
     } else if (p === 'TAXI_OUT') {
       fl.warn('HOLD', tr('Taxi to the holding point first'));
     }
+  },
+
+  takeoffClearance() {
+    const fl = this.flight, w = fl.env.surfaceWind;
+    fl.info(tr('Tower: wind {d}° {v} kt, runway {rwy} cleared for take-off',
+      { d: String(Math.round(w.dir)).padStart(3, '0'), v: Math.round(w.speed), rwy: fl.world.rwyName }));
   },
 
   // Enter, the Go button or a tap on step i of the open checklist: the current step's switch
@@ -955,6 +922,11 @@ const Game = {
       this.systems.noEmergencies = true;
       this.systems.queue = [];
       this.placeOnFinal(0, true);
+    } else if (s.skipPushback) {
+      // the short start pays no procedure bonus, so it skips the formalities: the engines are
+      // running and the tower has already cleared you — flaps, line up, full power
+      this.systems.runEngines();
+      this.takeoffClearance();
     }
 
     Scene3D.setFlightGates(s.skipPushback ? [this.arrivalGate] : [s.gate, this.arrivalGate]);

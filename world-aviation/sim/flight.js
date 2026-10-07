@@ -98,7 +98,8 @@ const Flight = {
       altSet: false     // the pilot (or a checklist) chose the altitude: engaging keeps it
     };
     this.startGate = opts.gate || this.world.gates[0];
-    if (opts.skipPushback) { this.placeAtHold(); this.setPhase('ENGINE_START'); }
+    // the short start: at the holding point, the engines running (Game), brakes off, cleared for take-off
+    if (opts.skipPushback) { this.placeAtHold(); this.st.parkingBrake = false; this.setPhase('TAKEOFF'); }
     else { this.placeAtGate(this.startGate); this.setPhase('GATE'); }
     this.st.fuel = opts.blockFuel || ac.fuelCapKg * 0.75;
     this.updateAxes();

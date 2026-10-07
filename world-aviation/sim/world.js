@@ -272,12 +272,6 @@ const World = {
     });
   },
 
-  // which runway exit to take: the first one still ahead of t
-  exitAhead(a, t) {
-    for (const n of a.exits) if (n.t > t + 30) return n;
-    return a.exits[a.exits.length - 1];
-  },
-
   // Dijkstra over the airport node graph
   findRoute(a, startNode, endNode) {
     if (!startNode || !endNode) return [];
@@ -308,25 +302,38 @@ const World = {
 
   // Where am I on this route, and where do I steer next? `look` (metres) adds a carrot: the
   // point that far ahead along the route line, so following it keeps you on the line.
+  // The leg you are on is remembered on the route (route.seg) and moves on in order: onto the
+  // next leg once that one is nearer and this one mostly behind you (past its end, or near it),
+  // back one leg only when the previous one is much nearer. So a later leg that passes close by
+  // (the apron lane beside the taxiway) never takes over, and at a corner, even one you missed
+  // a little, the carrot is already on the next leg.
   routeProgress(a, route, x, z, look) {
     if (!route || route.length < 2) return null;
-    let bestSeg = 0, bestT = 0, bestD2 = Infinity, total = 0, acc = 0;
+    let total = 0;
     const lens = [];
     for (let i = 0; i < route.length - 1; i++) {
       const l = Math.hypot(route[i + 1].x - route[i].x, route[i + 1].z - route[i].z);
       lens.push(l); total += l;
     }
-    for (let i = 0; i < route.length - 1; i++) {
+    const proj = (i) => {
       const p1 = route[i], p2 = route[i + 1];
       const dx = p2.x - p1.x, dz = p2.z - p1.z;
-      const len2 = dx * dx + dz * dz || 1;
-      let t = ((x - p1.x) * dx + (z - p1.z) * dz) / len2;
-      t = clamp(t, 0, 1);
+      const t = clamp(((x - p1.x) * dx + (z - p1.z) * dz) / (dx * dx + dz * dz || 1), 0, 1);
       const cx = p1.x + t * dx, cz = p1.z + t * dz;
-      const d2 = (x - cx) * (x - cx) + (z - cz) * (z - cz);
-      if (d2 < bestD2) { bestD2 = d2; bestSeg = i; bestT = t; }
-      acc += lens[i];
+      return { t, d2: (x - cx) * (x - cx) + (z - cz) * (z - cz), toEnd: (1 - t) * lens[i] };
+    };
+    const last = route.length - 2;
+    let seg = clamp(route.seg || 0, 0, last), cur = proj(seg);
+    while (seg < last) {
+      const nxt = proj(seg + 1);
+      if (nxt.d2 <= cur.d2 && (cur.t > 0.5 || cur.toEnd < 40)) { seg++; cur = nxt; } else break;
     }
+    if (seg > 0) {
+      const prev = proj(seg - 1);
+      if (prev.t < 1 && prev.d2 < cur.d2 * 0.25) { seg--; cur = prev; }
+    }
+    route.seg = seg;
+    const bestSeg = seg, bestT = cur.t, bestD2 = cur.d2;
     let done = 0;
     for (let i = 0; i < bestSeg; i++) done += lens[i];
     done += lens[bestSeg] * bestT;
@@ -348,6 +355,7 @@ const World = {
       target: tgt,
       final: nextIdx === route.length - 1,
       distToTarget: Math.hypot(tgt.x - x, tgt.z - z),
+      closest: { x: route[bestSeg].x + bestT * (route[bestSeg + 1].x - route[bestSeg].x), z: route[bestSeg].z + bestT * (route[bestSeg + 1].z - route[bestSeg].z) },
       totalLength: total
     };
   },

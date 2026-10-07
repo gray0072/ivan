@@ -103,7 +103,15 @@ const SIM = {
   MSA_LOOKAHEAD_M: 20000,      // the autopilot keeps clear of the terrain this far ahead
   MSA_MARGIN_M: 450,           // by this much
   GPWS_LOOKAHEAD_S: 25,        // TERRAIN — PULL UP when the ground this many seconds ahead is too close
-  ROLLOUT_EXIT_KT: 35          // below this the landing roll becomes the taxi-in
+  ROLLOUT_EXIT_KT: 35,         // below this the landing roll becomes the taxi-in
+  // the guidance arrow on the ground (sim/guidance.js)
+  LINEUP_ACROSS_M: 6,          // lined up: this close to the runway centreline ...
+  LINEUP_HDG_DEG: 10,          // ... and within this of the runway heading
+  REROUTE_DEVIATION_M: 25,     // this far off the taxi route with it behind you: a missed turn, a new route from here
+  EXIT_DECEL_MS2: 1.5,         // braking assumed to slow down for a runway exit ...
+  EXIT_TURN_M: 25,             // ... plus the room for the turn itself
+  EXIT_MIN_LEAD_M: 30,         // an exit nearer than this ahead is never the one to take
+  EXIT_COMMIT_DEG: 20          // turned this far off the runway heading: you are taking this exit, it stays
 };
 
 // ---------- Airport layout (metres) ----------

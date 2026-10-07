@@ -85,6 +85,14 @@ const Systems = {
   },
 
   // ---------- engine control ----------
+  // the short start: the engines already turning at idle, nothing to start
+  runEngines() {
+    for (const e of this.engines) {
+      if (e.failed) continue;
+      e.running = true; e.startPhase = 'idle'; e.shuttingDown = false;
+      e.n1 = SIM.ENGINE_IDLE_N1; e.n2 = 0.62; e.egt = 420;
+    }
+  },
   startEngines() {
     let started = 0;
     for (const e of this.engines) {

@@ -15,7 +15,7 @@ En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du ä
 ## En flygning
 
 1. **Vid gaten** trycker du **Enter** — bogserbilen trycker ut dig på plattan. Starta motorerna (**Enter**) och se N1 och EGT stiga.
-2. **Taxning**: **mellanslag** släpper parkeringsbromsen (på mobilen: **Park**); lite gas (**1**–**3**), styr med **← →**, bromsa med **B** och följ den gula pilen till väntepunkten.
+2. **Taxning**: **mellanslag** släpper parkeringsbromsen (på mobilen: **Park**); lite gas (**1**–**3**), styr med **← →**, bromsa med **B** och följ den gula pilen till väntepunkten. Pilen pekar redan längs nästa sträcka när du närmar dig en sväng; missar du en hittar den en ny väg framåt, och efter landningen visar den den första avfarten du ännu hinner ta.
 3. Vid **väntepunkten** fäller du startklaffar (**F**) och begär startklarering (**Enter**). Linjera upp, full gas (**9**), dra (**↓**) vid Vr, landställ upp (**G**).
 4. **Autopiloten** (**Y**): i NAV-läge flyger den rutten, saktar in under nedstigningen (och fäller själv ut luftbromsen när den ligger för högt), svänger in på slutlig inflygning utan att skjuta över centrumlinjen och följer ILS-glidbanan ner till 200 fot (60 m). **T** snabbar upp tiden, **R** saktar ner den: med autopiloten upp till ×128, när du flyger för hand ×2 över 1 000 fot, ×4 över 3 000, ×8 över 6 000, ×16 över 8 000, ×32 över 9 000 och ×64 över 10 000 fot. Nära destinationen saktar tiden ner av sig själv, ett steg var tredje sekund, och är tillbaka på ×1 5 km ut.
 5. **Inflygning**: klaffar och landställ ute, landa för hand från 200 fot (60 m) i Vref, bromsa och sakta ner under 35 knop (65 km/h).
@@ -25,7 +25,7 @@ Välj **avgångstid** på genomgången — dag, skymning, natt eller gryning; sk
 
 Före en flygning kan du **träna landningen** för en liten avgift (en del av timleasingen): du börjar på finalen vid destinationen, rent — landställ och klaffar uppe — autopiloten håller glidbanan i 10 sekunder och lämnar över 3 nm ut, sedan fäller du ut landställ och klaffar, landar och bromsar under 35 knop. En bra landning ger lite rykte hos kunden (mest för A+, minst för C; bara din bästa träning på varje uppdrag räknas); ett misslyckande kostar inget mer än avgiften. Sedan kan du försöka igen, gå tillbaka till genomgången eller flyga på riktigt.
 
-Att börja **vid gaten** och själv flyga hela markrutinen ger en bonus: +6 % av uppdraget och lite rykte. När du bara vill flyga börjar du **efter pushback** — bogserbilen har redan tagit dig till väntepunkten: ungefär 5 minuter mindre på marken (och mindre leasing på långa flygningar), men ingen bonus. Spelet kommer ihåg hur du helst börjar.
+Att börja **vid gaten** och själv flyga hela markrutinen ger en bonus: +6 % av uppdraget och lite rykte. När du bara vill flyga börjar du **vid banan** — på väntepunkten med motorerna igång och startklareringen redan given: sätt klaffarna, kör upp på banan och starta. Ungefär 5 minuter mindre på marken (och mindre leasing på långa flygningar), men ingen bonus. Spelet kommer ihåg hur du helst börjar.
 
 ## Kontroller
 
