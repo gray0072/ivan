@@ -1,12 +1,12 @@
 'use strict';
 
-// All drawing of the game world onto the main canvas. game.js owns the state and hands it over every frame
+// All drawing of the game world onto the main canvas. The state lives in sim/; game.js hands it over every frame
 // as a `view` (entity arrays, the camera helpers and the screen size); the scenery layers live in scenery.js.
 
 // Graphics presets, best first (the order Auto steps through). maxPixels = cap on the canvas backing store;
 // sunRays / vignette / foodGlow = decorative layers; flat = solid fills instead of per-object gradients, no gloss,
 // motes or sand ripples; seaweed = draw the seaweed; crowd = share of the extra fish, jellyfish and plankton a
-// big screen gets over a phone (see screenMul in game.js)
+// big screen gets over a phone (see screenMul in sim/spawn.js)
 const GRAPHICS = {
   high: { label: 'High', maxPixels: 2560 * 1440, sunRays: true, vignette: true, foodGlow: true, flat: false, seaweed: true, crowd: 1 },
   medium: { label: 'Medium', maxPixels: 1600 * 900, sunRays: false, vignette: false, foodGlow: false, flat: false, seaweed: true, crowd: 1 },

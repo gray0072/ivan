@@ -68,11 +68,12 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── index.html           # markup only, links versioned CSS/JS
 │   ├── styles.css
 │   ├── constants.js          # game tuning constants (sizes, speeds, counts, timings, hit shapes)
-│   ├── game.js               # world, difficulty, update loop; hands its state to render/render.js each frame
-│   ├── core/                 # utils, audio, input (keyboard, touch joystick/boost zones, fullscreen), quality (Auto graphics), cursor (hidden in fullscreen while still), update (picks up a new deploy)
-│   ├── sim/                  # demo.js — demo-mode pilot (createDemoPilot)
+│   ├── game.js               # main loop: graphics setting, flow between the screens, per-frame update; hands the state to render/render.js
+│   ├── data/                 # milestones.js — Sea King / max size milestone texts and record keys
+│   ├── core/                 # utils, events (bus from the logic to sounds and messages), audio, input (keyboard, touch joystick/boost zones, fullscreen), quality (Auto graphics), cursor (hidden in fullscreen while still), update (picks up a new deploy)
+│   ├── sim/                  # state, fish (stages, growth, sizes, hit shapes), camera, spawn, effects, leaps, jellyfish, gulls, npc (bot brain), player, records, demo (demo-mode pilot)
 │   ├── render/               # render.js (canvas, fish, jellyfish, gulls, effects), scenery.js (background)
-│   ├── ui/                   # fireworks.js — fireworks show for the max-size dialog
+│   ├── ui/                   # overlay (panels, banner), menu (records table), dialogs (milestone, game over), hud, sounds (game events → sounds), fireworks
 │   ├── README.md
 │   ├── README_RU.md
 │   ├── README_SV.md

@@ -54,20 +54,40 @@ fish-frenzy/
 ├── index.html          markup only, versioned <link>/<script> tags
 ├── styles.css
 ├── constants.js        tuning: difficulty, sizes, speeds, counts, timings, hit shapes, stages
-├── game.js             world, NPCs, jellyfish, gulls, leaps, the flow and the screens, update loop
+├── game.js             main loop: renderer and graphics setting, the flow (start, demo, pause, milestones,
+│                       game over, test cheat), the per-frame update that runs sim/ in order
+├── data/
+│   └── milestones.js   Sea King / max size milestones: dialog texts and record storage keys
 ├── core/
 │   ├── utils.js        math helpers, canvasScale, frameLimiter
+│   ├── events.js       GameEvents: the event bus the logic reports through (on / emit)
 │   ├── audio.js        Web Audio sound effects
 │   ├── input.js        keyboard, split-screen touch joystick and boost zones, fullscreen
 │   ├── quality.js      Auto graphics (createAutoGraphics): preset from the device and the frame rate
 │   ├── cursor.js       hides the mouse cursor in fullscreen while it is still
 │   └── update.js       picks up a new deploy, reloading only on the start screen
-├── sim/
+├── sim/                no drawing, no DOM, no sound: what happens is emitted as game events
+│   ├── state.js        shared state: screen size, difficulty, run flags, the player, every entity list
+│   ├── fish.js         depth, stages, growth from meals, length/weight and size text, speed/turning, hit shapes
+│   ├── camera.js       zoom by size, worldToScreen, what is on/off screen
+│   ├── spawn.js        population counts for the screen and zoom, spawning off-screen, culling, resetWorld
+│   ├── effects.js      burst particles, bubbles, splashes, gull feathers
+│   ├── leaps.js        leaping out of the water and the ballistic flight back
+│   ├── jellyfish.js    drift, bell-and-tentacles hit shape, sting size
+│   ├── gulls.js        seagulls: flight, snatching / scaring / being eaten by a leaping fish
+│   ├── npc.js          NPC speed and dash, the bot brain, NPC movement, stings and meals
+│   ├── player.js       the player's swimming, dash and stamina, and everything it eats or is hurt by
+│   ├── records.js      localStorage records: milestone times and the biggest size per difficulty
 │   └── demo.js         the demo-mode pilot (createDemoPilot)
 ├── render/
 │   ├── render.js       the canvas, graphics presets, fish, jellyfish, gulls, food, effects, touch controls
 │   └── scenery.js      stateless background: sky, islands, surface, light rays, sand, seaweed, rocks
 ├── ui/
+│   ├── overlay.js      the overlay with the panels, showPanel / hideOverlay, the banner
+│   ├── menu.js         start screen records table, description toggle, "Clear records"
+│   ├── dialogs.js      milestone dialog and the game over screen
+│   ├── hud.js          size, stage and the bars, the FPS counter
+│   ├── sounds.js       game events → sounds; the only file that plays them
 │   └── fireworks.js    the fireworks show above the max-size dialog
 ├── README.md / README_RU.md
 ├── icon.svg / icon-maskable.svg
