@@ -11,12 +11,13 @@
 
 const Filters = {
   // ---------- the contract board ----------
-  // type: a client group (pax / cargo / bush) or all; sort: the board's own order or a figure,
-  // dir: 1 up, -1 down (each sort starts the way that is usually wanted: the best pay first,
-  // the easiest and the nearest first). The board offers only what the selected type may fly
-  // (Career.generateContracts), so there is nothing to hide by that
+  // type: a client group (pax / cargo / bush) or all; sort: a figure, dir: 1 up, -1 down (each
+  // sort starts the way that is usually wanted: the newest destinations, the best pay, the
+  // easiest and the nearest first; a tie keeps the board's order). Novelty: how many times the
+  // pilot has flown to the destination (Career.visitsTo). The board offers only what the
+  // selected type may fly (Career.generateContracts), so there is nothing to hide by that
   BOARD_SORTS: {
-    none: { name: 'As offered' },
+    novelty: { name: 'Novelty', dir: 1, key: (c) => Career.visitsTo(c.toId) },
     rep: { name: 'Reputation', dir: -1, key: (c) => c.repGain },
     pay: { name: 'Pay', dir: -1, key: (c) => c.pay },
     difficulty: { name: 'Difficulty', dir: 1, key: (c) => c.difficulty },
@@ -26,7 +27,7 @@ const Filters = {
     const s = Career.settings;
     const b = s.board || (s.board = {});
     if (b.type !== 'all' && !FACTIONS[b.type]) b.type = 'all';
-    if (!this.BOARD_SORTS[b.sort]) b.sort = 'none';
+    if (!this.BOARD_SORTS[b.sort]) { b.sort = 'novelty'; b.dir = 0; }   // (also the old 'as offered')
     if (b.dir !== 1 && b.dir !== -1) b.dir = this.BOARD_SORTS[b.sort].dir || 1;
     delete b.flyable;                                   // an older 'only what I can fly' toggle
     return b;
@@ -36,7 +37,7 @@ const Filters = {
     const b = this.board();
     let list = contracts.filter((c) => b.type === 'all' || c.faction === b.type);
     const sort = this.BOARD_SORTS[b.sort];
-    if (sort.key) list = list.map((c, i) => [c, i]).sort((p, q) => (sort.key(p[0]) - sort.key(q[0])) * b.dir || p[1] - q[1]).map((p) => p[0]);
+    list = list.map((c, i) => [c, i]).sort((p, q) => (sort.key(p[0]) - sort.key(q[0])) * b.dir || p[1] - q[1]).map((p) => p[0]);
     return list;
   },
   boardBar() {

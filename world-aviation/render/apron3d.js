@@ -26,6 +26,10 @@
 
 const APRON_FLOOD = 0xffe3b8;      // the colour of the floodlights
 const MAST_CLEAR = 52;             // a floodlight mast from a taxilane centreline, metres (ICAO code F: 50.5)
+// the apron traffic gives way to the player's aeroplane (Apron3D.update): the ground it covers is
+// its circle (half its length or span) plus GIVE_WAY_PAD, now and where it will be over the next
+// GIVE_WAY_AHEAD_S seconds; a vehicle stops GIVE_WAY_GAP metres short of that ground
+const GIVE_WAY_PAD = 8, GIVE_WAY_AHEAD_S = 8, GIVE_WAY_GAP = 30;
 
 // A kit of boxes and cylinders in vertex colours, merged into one mesh. Parts are placed
 // in the current frame; push(x, y, z, ry) starts a frame (turned by ry about y) and pop()
@@ -325,9 +329,11 @@ const Apron3D = {
   },
 
   // per frame: the traffic moves, and at night (dark 0..1) the lights come on. own: the
-  // player's aeroplane in the airport's frame ({ t, across, r }: r about half its size) — the
-  // apron traffic gives way to it: a vehicle that would drive into it, or under its wings,
-  // stops and waits until it has passed
+  // player's aeroplane in the airport's frame ({ t, across, r, vt, va }: r about half its size,
+  // its velocity along and across) — the apron traffic gives way to it: a vehicle whose road
+  // ahead runs into the ground the aeroplane covers now or in the next few seconds stops well
+  // short of it and waits; one already on that ground drives on and clears it, so none is left
+  // standing across the aeroplane's way
   update(rec, time, dark, own) {
     const a = rec.a;
     const r = a.apronRect;
@@ -339,15 +345,12 @@ const Apron3D = {
         const len = r.t1 - r.t0 - 40;
         if (v.s === undefined) v.s = v.phase * 2 * len;
         const pos = (s) => {
+          s %= 2 * len;
           const out = s < len;
           return { out, t: out ? r.t0 + 20 + s : r.t1 - 20 - (s - len), across: v.lane + (out ? 3 : -3) };   // keeping right
         };
         let p = pos(v.s);
-        let go = true;
-        if (own) {
-          const ahead = (own.t - p.t) * (p.out ? 1 : -1);
-          go = !(Math.abs(own.across - p.across) < own.r + 14 && ahead > -own.r * 0.4 && ahead < own.r + 30);
-        }
+        const go = !own || !this.blocked(own, v.s, pos);
         if (go) {
           v.s = (v.s + dt * v.speed) % (2 * len);
           p = pos(v.s);
@@ -369,6 +372,22 @@ const Apron3D = {
     if (rec.poolMat) rec.poolMat.opacity = dark * 0.3;
     if (rec.lamps) rec.lamps.visible = dark > 0.15;
     for (const n of rec.night || []) n.mat.emissive.copy(n.color).multiplyScalar(dark * n.k);
+  },
+
+  // Must a vehicle at s on the tail-of-stand road (pos(s) → { t, across }) wait for the
+  // aeroplane? Yes when its road from just ahead of it to GIVE_WAY_GAP further meets the ground
+  // the aeroplane covers now or soon, and it is not on that ground already.
+  blocked(own, s, pos) {
+    const R = own.r + GIVE_WAY_PAD;
+    const inside = (q) => {
+      for (let k = 0; k <= GIVE_WAY_AHEAD_S; k += 2) {
+        if (Math.hypot(q.t - (own.t + own.vt * k), q.across - (own.across + own.va * k)) < R) return true;
+      }
+      return false;
+    };
+    if (inside(pos(s))) return false;
+    for (let d = 3; d <= GIVE_WAY_GAP + 3; d += 3) if (inside(pos(s + d))) return true;
+    return false;
   },
 
   // the pushback tug for the player's own departure, in world coordinates (Scene3D moves it)

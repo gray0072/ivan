@@ -830,6 +830,7 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .diff.hard { background: #4a1f1c; color: #f5b0a4; }
 .need { color: #ff9c7a; font-size: 12px; }
 .ok { color: #7de08a; font-size: 12px; }
+.row2 .newDest { color: #7de08a; }
 
 .check { display: block; margin: 12px 0 0; font-size: 13px; color: #b3c4d4; }
 .check input { margin-right: 6px; }

@@ -264,10 +264,12 @@ const Scene3D = {
     };
   },
 
-  updateNearTerrain(px, pz, altAgl, force) {
+  // minCell: at the fastest time steps the cells are as big as it takes for a rebuild (four
+  // frames) to finish before the aeroplane has flown out of it
+  updateNearTerrain(px, pz, altAgl, force, minCell) {
     this.buildNearTerrain();
     const b = this.nearBuild;
-    const cellNow = clamp(this.quality.nearCell + (altAgl || 0) * 0.04, this.quality.nearCell, 420);
+    const cellNow = Math.max(minCell || 0, clamp(this.quality.nearCell + (altAgl || 0) * 0.04, this.quality.nearCell, 420));
     if (force || !b) {
       this.startNearBuild(px, pz, cellNow);
     } else {
@@ -699,7 +701,10 @@ const Scene3D = {
     this.water.material.color.setHex(env.snowy && st.pos.y < 400 ? 0x8fa4ad : 0x2c4f66);
 
     // ---- terrain follow
-    this.updateNearTerrain(st.pos.x, st.pos.z, Math.max(0, st.pos.y - (this.lastGround || 0)), false);
+    // (cells a power of two times 420 m, so they do not change with every frame's length)
+    const flown = Math.hypot(st.vel.x, st.vel.z) * env.timeAccel * Math.min(dt, SIM.MAX_FRAME_DT) * 1.6;
+    const minCell = flown > 420 ? 420 * Math.pow(2, Math.ceil(Math.log2(flown / 420))) : 0;
+    this.updateNearTerrain(st.pos.x, st.pos.z, Math.max(0, st.pos.y - (this.lastGround || 0)), false, minCell);
     // ---- clouds
     const wind = fl.windAt(st.pos.y);
     this.updateClouds(st.pos.x, st.pos.z, env.cloudBase, env.cloudTop, wind.x * 30, wind.z * 30);
@@ -712,14 +717,15 @@ const Scene3D = {
     // ---- airports in view
     for (const a of World.airports) {
       const d = Math.hypot(a.x - st.pos.x, a.z - st.pos.z);
+      // (none built on the way at the fastest time steps: it would be gone again in a second)
       if (d < 46000) {
-        if (!this.airports3D.has(a.id)) this.buildAirport(a);
+        if (!this.airports3D.has(a.id) && (env.timeAccel < SIM.TIME_ACCEL_COAST_FROM || a === fl.arrival)) this.buildAirport(a);
       } else if (d > 90000 && this.airports3D.has(a.id)) this.dropAirport(a.id);
     }
     // flags and windsocks in the surface wind, the PAPI, the approach flasher
     // (the apron traffic gives way to the own aeroplane while it is on the ground)
     const dims = fl.dims;
-    const own = fl.st.onGround ? { pos: st.pos, r: Math.max(dims.len, dims.span) / 2 } : null;
+    const own = fl.st.onGround ? { pos: st.pos, vel: st.vel, r: Math.max(dims.len, dims.span) / 2 } : null;
     for (const rec of this.airports3D.values()) {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
       if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis, own);

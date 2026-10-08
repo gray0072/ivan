@@ -17,7 +17,7 @@
 // The liveries and emblems are simplified drawings of the real ones.
 // ============================================================
 
-const ALL_REGIONS = ['sweden', 'nordic', 'europe', 'mideast', 'americas', 'asia'];
+const ALL_REGIONS = ['sweden', 'nordic', 'europe', 'russia', 'mideast', 'americas', 'asia'];
 
 const AIRLINES = [
   // ---- Sweden and the Nordic countries
@@ -130,6 +130,31 @@ const AIRLINES = [
     hubs: ['IST'], regions: ALL_REGIONS,
     livery: { body: '#ffffff', title: '#c8102e', tail: '#c8102e', engine: '#ffffff' },
     emblem: ['turkish'] },
+  // ---- Russia
+  { code: 'SU', name: 'Aeroflot', title: 'AEROFLOT', kinds: ['pax'], country: 'Russia',
+    hubs: ['SVO', 'LED', 'KGD', 'AER', 'KZN', 'SVX', 'OVB', 'KJA', 'IKT', 'VVO', 'MMK', 'ARH'], regions: ALL_REGIONS,
+    livery: { body: '#ffffff', belly: '#c3c8cf', title: '#02458d', tail: '#ffffff', engine: '#02458d' },
+    emblem: ['aeroflot'] },
+  { code: 'S7', name: 'S7 Airlines', title: 'S7 airlines', kinds: ['pax'], country: 'Russia',
+    hubs: ['OVB', 'IKT', 'SVO', 'KJA', 'AER'], regions: ['russia', 'europe', 'asia'],
+    livery: { body: '#a3c93a', belly: '#ffffff', title: '#ffffff', tail: '#a3c93a', engine: '#a3c93a', titleFont: 'plain' },
+    emblem: ['text', 'S7', '#ffffff'] },
+  { code: 'U6', name: 'Ural Airlines', title: 'URAL AIRLINES', kinds: ['pax'], country: 'Russia',
+    hubs: ['SVX', 'SVO', 'AER', 'KZN'], regions: ['russia', 'europe', 'asia', 'mideast'],
+    livery: { body: '#ffffff', cheat: ['#c8102e'], title: '#c8102e', tail: '#002d72', engine: '#ffffff' },
+    emblem: ['bird', '#ffffff', '#c8102e'] },
+  { code: 'DP', name: 'Pobeda', title: 'pobeda', kinds: ['pax'], country: 'Russia',
+    hubs: ['SVO', 'LED', 'KZN', 'AER', 'KGD', 'MMK', 'ARH'], regions: ['russia', 'europe'],
+    livery: { body: '#ffffff', title: '#1e4fa0', tail: '#1e4fa0', engine: '#ffffff', titleFont: 'lower' },
+    emblem: ['text', 'P', '#ffffff', { size: 1.0 }] },
+  { code: 'R3', name: 'Yakutia Airlines', title: 'YAKUTIA', kinds: ['pax'], country: 'Russia',
+    hubs: ['YKS', 'NSK', 'PKC'], regions: ['russia'],
+    livery: { body: '#ffffff', title: '#00609c', tail: '#00609c', engine: '#ffffff' },
+    emblem: ['bird', '#ffffff', '#f2c500'] },
+  { code: 'HZ', name: 'Aurora', title: 'AURORA', kinds: ['pax'], country: 'Russia',
+    hubs: ['VVO', 'PKC', 'DYR'], regions: ['russia', 'asia'],
+    livery: { body: '#ffffff', title: '#1b2a5c', tail: '#1b2a5c', engine: '#ffffff' },
+    emblem: ['aurora'] },
   // ---- the Middle East and Africa
   { code: 'LY', name: 'El Al Israel Airlines', title: 'EL AL', kinds: ['pax'], country: 'Israel',
     hubs: ['TLV'], regions: ['europe', 'americas', 'mideast'],
@@ -322,6 +347,11 @@ const AIRLINES = [
     livery: { body: '#ffffff', title: '#002f6c', tail: '#002f6c', engine: '#ffffff' },
     emblem: ['globe', '#ffffff', '#f2a900'] },
 
+  { code: 'RU', name: 'AirBridgeCargo', title: 'AirBridgeCargo', kinds: ['cargo'], country: 'Russia',
+    hubs: ['SVO', 'KJA', 'OVB'], regions: ['russia', 'europe', 'asia', 'americas'],
+    livery: { body: '#ffffff', title: '#0d3b84', tail: '#0d3b84', engine: '#ffffff', titleFont: 'plain' },
+    emblem: ['text', 'ABC', '#ffffff'] },
+
   // ---- bush flying and air ambulance
   { code: 'KAX', name: 'Kallax Flyg', title: 'KALLAX FLYG', kinds: ['bush'], country: 'Sweden',
     hubs: ['LLA', 'KRN', 'UME'], regions: ['sweden', 'nordic'],
@@ -362,7 +392,19 @@ const AIRLINES = [
   { code: 'MAF', name: 'Mission Aviation Fellowship', title: 'MAF', kinds: ['bush'], country: 'United Kingdom',
     hubs: ['NBO', 'CGK', 'MNL', 'LIM'], regions: ['mideast', 'asia', 'americas'],
     livery: { body: '#ffffff', cheat: ['#e0393e'], title: '#1d4f91', tail: '#1d4f91', engine: '#ffffff' },
-    emblem: ['text', 'MAF', '#ffffff'] }
+    emblem: ['text', 'MAF', '#ffffff'] },
+  { code: 'PLR', name: 'Polar Airlines', title: 'POLAR AIRLINES', kinds: ['bush'], country: 'Russia',
+    hubs: ['YKS', 'HTG', 'DYR'], regions: ['russia'],
+    livery: { body: '#ffffff', cheat: ['#0066b3'], title: '#0066b3', tail: '#0066b3', engine: '#ffffff' },
+    emblem: ['bird', '#ffffff', '#e2231a'] },
+  { code: 'KRS', name: 'KrasAvia', title: 'KRASAVIA', kinds: ['bush'], country: 'Russia',
+    hubs: ['KJA', 'NSK', 'HTG'], regions: ['russia'],
+    livery: { body: '#ffffff', cheat: ['#e2231a'], title: '#1c4f9c', tail: '#1c4f9c', engine: '#ffffff' },
+    emblem: ['text', 'KA', '#ffffff'] },
+  { code: 'NSA', name: 'National Air Ambulance Service', title: 'SANAVIATSIYA', kinds: ['bush'], country: 'Russia',
+    hubs: ['ARH', 'YKS', 'NSK', 'PKC', 'DYR'], regions: ['russia'],
+    livery: { body: '#ffffff', cheat: ['#e2231a', '#1c4f9c'], title: '#e2231a', tail: '#e2231a', engine: '#ffffff' },
+    emblem: ['starOfLife', '#ffffff'] }
 ];
 
 // fill in the airlines that borrow another one's paint (the cargo divisions)

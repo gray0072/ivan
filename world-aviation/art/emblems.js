@@ -151,6 +151,10 @@ const EMBLEM_KINDS = {
     for (const [x, y] of [[16, 34], [50, 23], [84, 34]]) emCircle(g, b, x, y, 6, color);
     emPath(g, b, 'M47 16 H53 V8 H47 Z M44 10 H56 V14 H44 Z', color);
   },
+  // the national colours sweeping up the fin, white over blue over red
+  aeroflot(g, b, al) {
+    emBands(g, b, [[0.0, 0.3, '#d52b1e'], [0.3, 0.6, '#0039a6']]);
+  },
   afStripes(g, b, al) {
     emBands(g, b, [[0.08, 0.16, '#002157'], [0.2, 0.26, '#002157'], [0.3, 0.35, '#e1000f']]);
   },

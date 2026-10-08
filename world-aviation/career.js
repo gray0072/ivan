@@ -77,6 +77,11 @@ const Career = {
     d.regions = d.regions || ['sweden'];
     d.typeFlights = d.typeFlights || {};      // flights completed in each type, by its id
     d.newAircraft = d.newAircraft || [];      // types a course has just unlocked, not yet seen in the hangar
+    // the flights to each airport, by its code (an older save: counted from the log it kept)
+    if (!d.visits) {
+      d.visits = {};
+      for (const l of d.log || []) if (l.args && l.args.to && l.args.g) d.visits[l.args.to] = (d.visits[l.args.to] || 0) + 1;
+    }
     // (a board from before it grew to six offers is dealt again)
     if (d.contracts.length < 5 || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
@@ -96,6 +101,7 @@ const Career = {
       regions: ['sweden'],
       typeFlights: {},
       newAircraft: [],
+      visits: {},
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
     };
@@ -252,9 +258,40 @@ const Career = {
   // the size of the contract board: it grows with the network and the experience
   offerCount() {
     const d = this.data;
-    return Math.min(CONTRACTS.OFFERS_MAX, CONTRACTS.OFFERS + Math.max(0, d.regions.length - 1) +
+    return Math.min(CONTRACTS.OFFERS_MAX, CONTRACTS.OFFERS + Math.max(0, d.regions.length - 1) * CONTRACTS.OFFERS_PER_REGION +
       Math.floor(d.stats.flights / CONTRACTS.OFFERS_PER_FLIGHTS));
   },
+
+  // the client groups this aeroplane and this pilot can work for: passengers in a type with more
+  // than a dozen seats, freight in one that lifts a tonne, bush work in one cleared for grass or
+  // ice (with the bush course or some reputation already)
+  factionsFor(ac, fx) {
+    const out = [];
+    const repTotal = this.bestRep();
+    if (ac.seats > 12) out.push('pax');
+    if (ac.payloadKg >= 1000) out.push('cargo');
+    if ((ac.surfaces.indexOf('grass') >= 0 || ac.surfaces.indexOf('ice') >= 0) && (repTotal >= 3 || fx.bush)) out.push('bush');
+    if (!out.length) out.push(ac.seats > 12 ? 'pax' : 'cargo');
+    return out;
+  },
+  // The client group of the next offer to `to`: the one furthest below its share of the board so
+  // far (a random one of them on a tie). Passengers take half the board when the aeroplane can
+  // carry them, the freight groups (cargo, bush) share the rest, so passengers and freight come
+  // in about equal numbers; passengers only to an airport with passenger traffic.
+  dealFaction(kinds, counts, to, rng) {
+    const ok = kinds.filter((k) => k !== 'pax' || to.aptClass.indexOf('pax') >= 0);
+    if (!ok.length) return kinds[0] === 'pax' ? 'cargo' : kinds[0];
+    const pax = kinds.indexOf('pax') >= 0, freight = kinds.length - (pax ? 1 : 0);
+    const share = (k) => (k === 'pax' ? (freight ? 0.5 : 1) : (pax ? 0.5 : 1) / freight);
+    const load = (k) => ((counts[k] || 0) + 1) / share(k);
+    const least = Math.min(...ok.map(load));
+    const f = rng.pick(ok.filter((k) => load(k) - least < 1e-9));
+    counts[f] = (counts[f] || 0) + 1;
+    return f;
+  },
+
+  // how many times the pilot has flown to an airport (the novelty sort of the board)
+  visitsTo(id) { return (this.data && this.data.visits && this.data.visits[id]) || 0; },
 
   generateContracts() {
     if (!this.data) return;
@@ -283,13 +320,16 @@ const Career = {
       const onward = all.filter((a) => a !== home).sort((p, q) =>
         geoDistanceNm(p.lat, p.lon, home.lat, home.lon) - geoDistanceNm(q.lat, q.lon, home.lat, home.lon));
       const pool = homeOk ? onward : onward.slice(0, Math.max(3, Math.ceil(onward.length / 2)));
+      // (each destination once, unless the pool is too small to fill the board)
       let guard = 0;
-      while (picks.length < offers && pool.length && guard++ < 50) {
+      while (picks.length < offers && pool.length && guard++ < 400) {
         const dest = rng.pick(pool);
-        if (picks.indexOf(dest) < 0) picks.push(dest);
+        if (picks.indexOf(dest) < 0 || guard > 200) picks.push(dest);
       }
     }
-    this.data.contracts = picks.map((dest) => this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx)).filter(Boolean);
+    const kinds = this.factionsFor(ac, fx), counts = {};
+    this.data.contracts = picks.map((dest) => this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx,
+      null, this.dealFaction(kinds, counts, dest, rng))).filter(Boolean);
     // never leave a pilot with nothing to fly: fall back to a light mail run
     if (!this.data.contracts.length && all.length) {
       const dest = away && all.indexOf(home) >= 0 ? home : all[0];
@@ -299,27 +339,17 @@ const Career = {
     this.save();
   },
 
-  makeContract(rng, from, to, distNm, ac, fx, forceType) {
-    // which kinds of work can this aircraft and this pilot take?
-    const kinds = [];
-    const repTotal = Math.max(this.data.rep.pax, this.data.rep.cargo, this.data.rep.bush);
-    if (ac.seats > 12 && to.aptClass.indexOf('pax') >= 0 && this.data.rep.pax >= 0) kinds.push('pax');
-    if (ac.payloadKg >= 1000 && (this.data.rep.cargo >= 0)) kinds.push('cargo');
-    if (ac.surfaces.indexOf('grass') >= 0 || ac.surfaces.indexOf('ice') >= 0) {
-      if (this.data.rep.bush >= 0 || fx.bush) kinds.push('bush');
-    }
-    if (!kinds.length) kinds.push('pax');
-    let faction = rng.pick(kinds);
-    if (faction === 'bush' && repTotal < 3 && !fx.bush) faction = 'pax';
+  // faction: the client group the board dealt this offer to (dealFaction); without one, any the
+  // aeroplane and the destination allow
+  makeContract(rng, from, to, distNm, ac, fx, forceType, faction) {
+    if (!faction) faction = this.dealFaction(this.factionsFor(ac, fx), {}, to, rng);
     // urgent medevac only with the SAR course
     let urgent = false;
     if (fx.medevac && faction === 'bush' && rng.chance(0.22)) urgent = true;
 
-    let type = 'pax';
+    let type;
     if (urgent) type = 'medevac';
-    else if (faction === 'cargo') type = rng.pick(['cargo', 'cargo', 'reefer', 'fish', 'hazmat', 'mail']);
-    else if (faction === 'bush') type = rng.pick(['mail', 'cargo', 'fish']);
-    else type = rng.pick(['pax', 'pax', 'mail']);
+    else type = rng.pick(faction === 'cargo' ? CONTRACTS.CARGO_TYPES : faction === 'bush' ? CONTRACTS.BUSH_TYPES : CONTRACTS.PAX_TYPES);
     if (type === 'hazmat' && !fx.hazmat) type = 'cargo';
     if ((type === 'reefer' || type === 'fish') && !this.has('cargo3')) type = 'cargo';
     if ((type === 'pax') && ac.seats < 6) type = 'mail';
@@ -486,6 +516,7 @@ const Career = {
 
     d.stats.flights++;
     d.typeFlights[ac.id] = (d.typeFlights[ac.id] || 0) + 1;
+    d.visits[c.toId] = (d.visits[c.toId] || 0) + 1;
     d.stats.blockTime += result.blockSec;
     d.stats.landings++;
     if (result.grade === 'A+' || result.grade === 'A') d.stats.perfect++;

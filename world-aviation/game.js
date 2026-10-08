@@ -631,12 +631,8 @@ const Game = {
     const ft = clamp(nm * 120, 6000, fl.ac.cruiseAlt / FT * (nm > 250 ? 0.92 : 0.55));
     return Math.round((Math.max(ft, (Math.max(fl.world.elev, fl.arrival.elev) + 1500) / FT)) / 500) * 500;
   },
-  // how far out the descent starts: on the descent profile (Flight.aboveProfileFt), at least DESCENT_START_NM
-  descentNm() {
-    const fl = this.flight;
-    const lose = fl.st.pos.y / FT - (fl.arrival.elev / FT + 2500);
-    return Math.max(SIM.DESCENT_START_NM, lose / 1000 * SIM.DESCENT_NM_PER_KFT + SIM.DESCENT_END_NM);
-  },
+  // how far out the descent starts (Flight.descentStartNm)
+  descentNm() { return this.flight.descentStartNm(); },
   // the altitude the flight plan wants now: the cruise level until the top of descent, then
   // 2 500 ft above the arrival for the approach
   programAltFt() {

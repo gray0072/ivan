@@ -264,17 +264,22 @@ const World = {
     return out;
   },
 
-  // Where two taxi lines meet at an angle (a corner, a T, the stands off the apron lane) the
-  // pavement gets a fillet and the centreline a curve: an arc tangent to both lines, so the
-  // turns are round, as on a real airfield. Each fillet: its arc as [t, across] points and as
-  // world points, the pavement width, and whether it is on the apron (already paved).
+  // Where two taxi lines meet at an angle (a corner, a T, the stands off the apron lane, an exit
+  // or the line-up off the runway) the pavement gets a fillet and the centreline a curve: an arc
+  // tangent to both lines, so the turns are round, as on a real airfield (off the runway a wide
+  // one on each side, its yellow line leading off the runway centreline). Each fillet: its arc
+  // as [t, across] points and as world points, the pavement width, and whether it is on the
+  // apron (already paved).
   buildFillets(a) {
     const out = [];
     const TAXI = ['taxi', 'connector', 'apron', 'stand'];
     for (const n of a.nodeList) {
-      const es = n.edges.filter((e) => TAXI.indexOf(e.kind) >= 0);
+      const offRunway = n.kind === 'exit' || n.kind === 'lineup';
+      const es = n.edges.filter((e) => TAXI.indexOf(e.kind) >= 0 || (offRunway && e.kind === 'runway'));
       for (let i = 0; i < es.length; i++) for (let j = i + 1; j < es.length; j++) {
         const e1 = es[i], e2 = es[j];
+        if (e1.kind === 'runway' && e2.kind === 'runway') continue;
+        const exit = e1.kind === 'runway' || e2.kind === 'runway';
         const l1 = Math.hypot(e1.to.t - n.t, e1.to.across - n.across), l2 = Math.hypot(e2.to.t - n.t, e2.to.across - n.across);
         if (l1 < 1 || l2 < 1) continue;
         const u = [(e1.to.t - n.t) / l1, (e1.to.across - n.across) / l1];
@@ -283,7 +288,7 @@ const World = {
         if (ang < 25 * DEG || ang > 155 * DEG) continue;           // nearly straight on, or a hairpin
         const apron = e1.kind === 'apron' || e1.kind === 'stand' || e2.kind === 'apron' || e2.kind === 'stand';
         const half = Math.tan(ang / 2);
-        const R = Math.min(apron ? LAYOUT.FILLET_STAND_R : LAYOUT.FILLET_R, 0.45 * Math.min(l1, l2) * half);
+        const R = Math.min(exit ? LAYOUT.FILLET_EXIT_R : apron ? LAYOUT.FILLET_STAND_R : LAYOUT.FILLET_R, 0.45 * Math.min(l1, l2) * half);
         const d = R / half;                                        // from the node to where the arc meets each line
         const bis = [u[0] + v[0], u[1] + v[1]], bl = Math.hypot(bis[0], bis[1]);
         const cDist = R / Math.sin(ang / 2);

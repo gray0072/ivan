@@ -41,12 +41,28 @@ const SIM = {
   MAX_FRAME_DT: 0.25,          // never simulate more than this per frame
   GRAVITY: 9.80665,
   RHO_SL: 1.225,               // sea level air density, kg/m^3
-  TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64, 128],   // T one step faster, R one step slower
-  TIME_ACCEL_CHEAT: 256,       // the Alt+6 cheat
+  TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512],   // T one step faster, R one step slower
+  TIME_ACCEL_CHEAT: 1024,      // the Alt+6 cheat (where x512 is allowed)
   TIME_ACCEL_MIN_ALT_M: 150,   // time acceleration only above this height AGL
-  TIME_ACCEL_AP_MAX: 128,      // with the autopilot engaged: up to x128 in any phase
+  TIME_ACCEL_AP_MAX: 128,      // with the autopilot engaged: up to x128 in any phase ...
+  TIME_ACCEL_CRUISE_MAX: 512,  // ... and up to x512 in the cruise on NAV, back at x128 by the top of descent
   TIME_ACCEL_X1_NM: 2.7,       // closing on the arrival the time is back at x1 this far out (5 km) ...
-  TIME_ACCEL_SLOWDOWN_S: 3,    // ... slowing one step every this many real seconds
+  TIME_ACCEL_SLOWDOWN_S: 3,    // ... slowing one step every this many real seconds (the same before the top of descent)
+  // From x256 a steady cruise is extrapolated (Flight.coast): the physics flies only
+  // COAST_PHYS_ACCEL times the real time each frame (the autopilot and the attitude stay alive),
+  // the rest is dead reckoning in COAST_STEP_S steps: the height and the airspeed held, the heading
+  // turned to the NAV heading at most COAST_TURN_DEG_S, the wind of each point, the fuel at the
+  // present flow. Steady means: CRUISE on the autopilot's NAV, no checklist, no speed brake, the
+  // terrain not holding the autopilot up, and within these of the level, the wings level, the
+  // heading and the speed the autopilot wants
+  TIME_ACCEL_COAST_FROM: 256,
+  COAST_PHYS_ACCEL: 32,
+  COAST_STEP_S: 1,
+  COAST_TURN_DEG_S: 1,
+  COAST_MAX_VS_MS: 2.5, COAST_MAX_ALT_ERR_M: 60, COAST_MAX_BANK_DEG: 4, COAST_MAX_HDG_ERR_DEG: 3, COAST_MAX_SPD_ERR_KT: 10,
+  // the turbulence fades out above this time acceleration (as 1 / the acceleration): many seconds
+  // of gusts a frame only made the picture and the autopilot shake
+  TURB_FULL_ACCEL: 8,
   TIME_ACCEL_MIN_COS: 0.2,     // the distance for that is divided by the cosine of the angle off the runway, at most x5
   TIME_ACCEL_RESUME_S: 1,      // after an emergency the time climbs back one step every this many real seconds
   CABIN_ON_TIME_MIN: 3,        // the arrival announcement: within this many minutes of the plan is on schedule
@@ -157,6 +173,7 @@ const LAYOUT = {
   MAX_SPAN: { tiny: 36, small: 52, medium: 65, big: 80 },
   FILLET_R: 38,                // the centreline radius where taxiways meet at an angle
   FILLET_STAND_R: 30,          // ... and where a stand's lead-in leaves the apron lane
+  FILLET_EXIT_R: 60,           // ... and where a runway exit (or the line-up) leaves the runway, on both sides
   CORRIDOR_LEN: 32000,         // approach / departure corridors cut into the terrain, metres from the runway ends
   CORRIDOR_HALF_WIDTH: 1200,   // plus 12 % of the distance, then 2.5 km to blend into the terrain
   APPROACH_SLOPE_DEG: 2.4,     // the ground stays under this slope before the threshold (the glideslope is 3°)
@@ -738,11 +755,18 @@ const COURSES = [
 // ---------- Contract generation ----------
 // All money is Swedish kronor (SEK).
 const CONTRACTS = {
-  // how many contracts the board offers: this many at the start, one more for every region
-  // opened after the first and for every OFFERS_PER_FLIGHTS flights flown, up to OFFERS_MAX
+  // how many contracts the board offers: this many at the start (a short board, not to get lost
+  // in), OFFERS_PER_REGION more for every region opened after the first and one more for every
+  // OFFERS_PER_FLIGHTS flights flown, up to OFFERS_MAX
   OFFERS: 6,
-  OFFERS_PER_FLIGHTS: 15,
-  OFFERS_MAX: 10,
+  OFFERS_PER_REGION: 2,
+  OFFERS_PER_FLIGHTS: 5,
+  OFFERS_MAX: 20,
+  // the client groups are dealt evenly over the board (each offer goes to the group with the
+  // fewest offers so far that its destination and the aeroplane allow); what each group carries:
+  PAX_TYPES: ['pax'],
+  CARGO_TYPES: ['cargo', 'cargo', 'reefer', 'fish', 'hazmat', 'mail'],
+  BUSH_TYPES: ['mail', 'cargo', 'fish'],
   BASE_PAY_PER_NM: 58,           // SEK per real nautical mile, before the payload fee
   PAYLOAD_FEE_NM: 650,           // load fee = kg x PAYLOAD rate x nm / this
   FACTION_MULT: { pax: 1.0, cargo: 1.05, bush: 1.2 },

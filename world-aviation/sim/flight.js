@@ -215,7 +215,8 @@ const Flight = {
     }
     return { x: vx, y: 0, z: vz };
   },
-  windAt(alt) {
+  // calm: the steady wind only, without the gusts and a windshear (Flight.coast)
+  windAt(alt, calm) {
     const e = this.env;
     const agl = Math.max(0, alt - this.groundHeight());
     const k = clamp(agl / 900, 0, 1);
@@ -224,13 +225,14 @@ const Flight = {
     dir += Math.sin(this.st.pos.x / 40000 + this.st.pos.z / 33000) * 14 * k;
     const toward = windTowardHeading(dir) * DEG;
     let vx = hdgX(toward) * sp * KTS, vz = hdgZ(toward) * sp * KTS, vy = 0;
-    // gusts and turbulence
+    if (calm) return { x: vx, y: vy, z: vz };
+    // gusts and turbulence (fading out at a high time acceleration, SIM.TURB_FULL_ACCEL)
     if (e.turb > 0) {
       const t = this.simTime;
       const g = (fbm(t * 0.7, this.st.pos.x / 3000, 2) - 0.5) * 2;
       const g2 = (fbm(t * 0.55 + 31, this.st.pos.z / 3000, 2) - 0.5) * 2;
       const g3 = (fbm(t * 0.9 + 77, 13.1, 2) - 0.5) * 2;
-      const amp = e.turb * 7 * KTS * clamp(agl / 600, 0.25, 1);
+      const amp = e.turb * 7 * KTS * clamp(agl / 600, 0.25, 1) * Math.min(1, SIM.TURB_FULL_ACCEL / Math.max(1, e.timeAccel));
       vx += (g * 0.7 + g2 * 0.3) * amp;
       vz += (g2 * 0.7 - g * 0.3) * amp;
       vy += g3 * amp * 0.35;
@@ -252,6 +254,17 @@ const Flight = {
     const accel = this.timeAccel(dtReal);
     this.acc += dtReal * accel;
     const dt = SIM.FIXED_DT;
+    // the fastest steps in a steady cruise: most of the time is extrapolated (coast), the physics
+    // flies a share of it after that, so the autopilot meets the new position and the picture
+    // shows a live aeroplane
+    let coast = 0;
+    if (accel >= SIM.TIME_ACCEL_COAST_FROM && this.steadyCruise()) {
+      const phys = Math.min(this.acc, dtReal * SIM.COAST_PHYS_ACCEL);
+      coast = this.acc - phys;
+      this.acc = phys;
+      this.coast(coast);
+    }
+    this.coasting = coast > 0;
     let steps = Math.floor(this.acc / dt);
     if (steps > SIM.MAX_STEPS_PER_FRAME) { steps = SIM.MAX_STEPS_PER_FRAME; this.acc = 0; }
     else this.acc -= steps * dt;
@@ -262,7 +275,46 @@ const Flight = {
       this.phaseTime += dt;
     }
     this.recordTrack();
-    return steps * dt;
+    return steps * dt + coast;
+  },
+
+  // Is the flight steady enough to be extrapolated? Level in the cruise on the autopilot's NAV,
+  // the wings level, on the heading and at the speed it wants, nothing going on (SIM.COAST_*)
+  steadyCruise() {
+    const st = this.st, ap = this.ap;
+    if (this.phase !== 'CRUISE' || !ap.on || !ap.nav || this.navFailed || st.onGround || this.failure) return false;
+    if ((this.systems && this.systems.checklist) || this.env.shearT > 0 || st.spoiler > 0 || st.stallWarn) return false;
+    if (Math.abs(st.vel.y) > SIM.COAST_MAX_VS_MS || Math.abs(st.roll) > SIM.COAST_MAX_BANK_DEG * DEG) return false;
+    if (Math.abs(st.pos.y - ap.alt * FT) > SIM.COAST_MAX_ALT_ERR_M || (this.msa || 0) > st.pos.y - SIM.COAST_MAX_ALT_ERR_M) return false;
+    if (Math.abs(wrapDeg(ap.hdg - this.headingDeg())) > SIM.COAST_MAX_HDG_ERR_DEG) return false;
+    return ap.speed === undefined || Math.abs(st.ias / KTS - ap.speed) < SIM.COAST_MAX_SPD_ERR_KT;
+  },
+  // Dead reckoning through T simulated seconds of steady cruise, in COAST_STEP_S steps: the
+  // height and the airspeed held, the heading turned towards the NAV heading (at most
+  // COAST_TURN_DEG_S, as the autopilot's gentle corrections would), the steady wind of each
+  // point added, the fuel burnt at the present flow. The physics that follows in the same frame
+  // finds the aeroplane trimmed where it was, only further on.
+  coast(T) {
+    const st = this.st;
+    const w0 = this.windAt(st.pos.y, true);
+    const tas = Math.hypot(st.vel.x - w0.x, st.vel.z - w0.z);
+    while (T > 1e-6) {
+      const h = Math.min(SIM.COAST_STEP_S, T);
+      T -= h;
+      const turn = clamp(wrapDeg(this.navTarget().hdg - this.headingDeg()), -SIM.COAST_TURN_DEG_S * h, SIM.COAST_TURN_DEG_S * h);
+      st.hdg = wrapRad(st.hdg + turn * DEG);
+      const w = this.windAt(st.pos.y, true);
+      st.vel.x = hdgX(st.hdg) * tas + w.x;
+      st.vel.z = hdgZ(st.hdg) * tas + w.z;
+      st.vel.y = 0;
+      st.pos.x += st.vel.x * h;
+      st.pos.z += st.vel.z * h;
+      st.fuel = Math.max(0, st.fuel - (st.fuelFlow + st.leakRate) * h / 3600);
+      this.simTime += h;
+      this.elapsed += h;
+      this.phaseTime += h;
+    }
+    st.rollRate = 0; st.pitchRate = 0; st.yawRate = 0; st.turnRate = 0;
   },
 
   // A point every 60 m on the ground and every 600 m in the air (or on a turn of 3°); when the
@@ -275,43 +327,69 @@ const Flight = {
       const d = Math.hypot(st.pos.x - last.x, st.pos.z - last.z);
       const turned = Math.abs(wrapDeg(this.headingDeg() - last.h)) > 3;
       if (d < (air ? 600 : 60) && !(turned && d > (air ? 150 : 20)) && last.air === air) return;
-      if (d > 30000) tr.length = 0;           // a jump (the final-approach cheat): start again
+      // a jump (the final-approach cheat): start again (further than a frame flies at the fastest)
+      if (d > Math.max(30000, Math.hypot(st.vel.x, st.vel.z) * this.env.timeAccel * SIM.MAX_FRAME_DT * 1.5)) tr.length = 0;
     }
     tr.push({ x: st.pos.x, z: st.pos.z, air, h: this.headingDeg() });
     if (tr.length > 2400) this.track = tr.filter((p, i) => i % 2 === 0 || i === tr.length - 1);
   },
 
-  // The fastest step allowed now: up to x128 on the autopilot in any phase; flying by hand it
+  // The fastest step allowed now: up to x128 on the autopilot in any phase, up to x512 in the
+  // cruise on its NAV (back at x128 by the top of descent, todAccelMax); flying by hand it
   // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down or in a checklist,
   // and closing on the arrival it comes down by itself (approachAccelMax).
   timeAccelMax() {
     this.approachCapped = false;
+    this.todCapped = false;
     if (this.st.onGround || (this.systems && this.systems.checklist)) return 1;
     const agl = this.altAgl();
     if (agl < SIM.TIME_ACCEL_MIN_ALT_M) return 1;
     let max = 1;
-    if (this.ap.on) max = SIM.TIME_ACCEL_AP_MAX;
-    else for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
+    if (this.ap.on) {
+      max = SIM.TIME_ACCEL_AP_MAX;
+      if (this.cruiseNav()) {
+        const tod = this.todAccelMax();
+        max = Math.min(SIM.TIME_ACCEL_CRUISE_MAX, tod);
+        this.todCapped = tod < SIM.TIME_ACCEL_CRUISE_MAX;
+      }
+    } else for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
     const near = this.approachAccelMax();
-    if (near < max) { max = near; this.approachCapped = true; }
+    if (near < max) { max = near; this.approachCapped = true; this.todCapped = false; }
     return max;
   },
-  // Closing on the arrival, the time slows down one step at a time, a step every
-  // TIME_ACCEL_SLOWDOWN_S real seconds, and is back at x1 TIME_ACCEL_X1_NM out: at every step the
-  // distance left must hold that many seconds at each of the steps below it.
-  approachAccelMax() {
-    if (!this.arrival) return SIM.TIME_ACCEL_STEPS[SIM.TIME_ACCEL_STEPS.length - 1];
-    const left = (this.accelDistNm() - SIM.TIME_ACCEL_X1_NM) * NM;
-    if (left <= 0) return 1;
-    const gs = Math.max(30, Math.hypot(this.st.vel.x, this.st.vel.z));
+  // in the cruise on the autopilot's NAV: where the steps above x128 are allowed
+  cruiseNav() { return this.phase === 'CRUISE' && this.ap.on && this.ap.nav && !this.navFailed && !!this.arrival; },
+  // The time slows down one step at a time, a step every TIME_ACCEL_SLOWDOWN_S real seconds, to
+  // the step `floor` when `left` metres are flown: at every step the distance left must hold
+  // that many seconds at each of the steps below it (down to the floor). The fastest step that
+  // fits; at the present ground speed, so it is about gs × 3 s × the sum of the steps below:
+  // at 250 m/s x512 needs 288 km and x256 96 km before x128, x128 95 km before x1.
+  ladderMax(left, floor) {
     const steps = SIM.TIME_ACCEL_STEPS;
-    let need = 0, max = 1;
-    for (let i = 1; i < steps.length; i++) {
+    const gs = Math.max(30, Math.hypot(this.st.vel.x, this.st.vel.z));
+    let need = 0, max = floor;
+    for (let i = steps.indexOf(floor) + 1; i < steps.length; i++) {
       need += gs * steps[i - 1] * SIM.TIME_ACCEL_SLOWDOWN_S;
       if (need > left) break;
       max = steps[i];
     }
     return max;
+  },
+  // Closing on the arrival the time is back at x1 TIME_ACCEL_X1_NM out
+  approachAccelMax() {
+    if (!this.arrival) return SIM.TIME_ACCEL_STEPS[SIM.TIME_ACCEL_STEPS.length - 1];
+    const left = (this.accelDistNm() - SIM.TIME_ACCEL_X1_NM) * NM;
+    return left <= 0 ? 1 : this.ladderMax(left, 1);
+  },
+  // and the steps above x128 are taken back to x128 by the top of descent
+  todAccelMax() {
+    const left = (this.distToDestNm() - this.descentStartNm()) * NM;
+    return left <= 0 ? SIM.TIME_ACCEL_AP_MAX : this.ladderMax(left, SIM.TIME_ACCEL_AP_MAX);
+  },
+  // how far out the descent starts: on the descent profile (aboveProfileFt), at least DESCENT_START_NM
+  descentStartNm() {
+    const lose = this.st.pos.y / FT - (this.arrival.elev / FT + 2500);
+    return Math.max(SIM.DESCENT_START_NM, lose / 1000 * SIM.DESCENT_NM_PER_KFT + SIM.DESCENT_END_NM);
   },
   // The distance to the threshold divided by the cosine of the angle between the track and the
   // way to it (at most x5, TIME_ACCEL_MIN_COS): flown straight at the runway it is the distance
@@ -348,13 +426,17 @@ const Flight = {
     if (this.timeAccelIndex === 0 && !this.cheatAccel) { e.timeAccel = 1; return 1; }
     const top = this.timeAccelTop();
     const was = e.timeAccel;
-    if (this.cheatAccel && (!this.ap.on || top < SIM.TIME_ACCEL_STEPS.length - 1)) this.cheatAccel = false;
+    // (the cheat holds while the autopilot may run at x128 or faster: extrapolated in a steady
+    // cruise, elsewhere as fast as the physics steps of a frame go)
+    if (this.cheatAccel && (!this.ap.on || SIM.TIME_ACCEL_STEPS[top] < SIM.TIME_ACCEL_AP_MAX)) this.cheatAccel = false;
     // the conditions got stricter (the autopilot is off, lower down, an emergency): step down to what is allowed
     if (this.timeAccelIndex > top) this.timeAccelIndex = top;
     e.timeAccel = this.cheatAccel ? SIM.TIME_ACCEL_CHEAT : SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
     if (e.timeAccel < was) {
       this.info(tr('TIME x{n}', { n: e.timeAccel }) + (this.approachCapped ? ' — ' + tr('approaching {id}', { id: this.arrival.id })
-        : e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height') : ''), 'TIME');
+        : this.todCapped ? ' — ' + tr('top of descent ahead')
+        : e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height')
+        : e.timeAccel === SIM.TIME_ACCEL_AP_MAX ? ' — ' + tr('faster only in the cruise on NAV') : ''), 'TIME');
     }
     return e.timeAccel;
   },
@@ -377,7 +459,9 @@ const Flight = {
     }
     if (this.systems && this.systems.checklist) return tr('Work the checklist first — time runs at x1');
     if (this.approachCapped) return tr('Approaching {id} — the time slows down by itself, x1 from {nm} out', { id: this.arrival.id, nm: Units.dist(SIM.TIME_ACCEL_X1_NM) });
-    if (this.ap.on) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_AP_MAX });
+    if (this.todCapped) return tr('Top of descent ahead — the time slows down by itself, x{n} from there', { n: SIM.TIME_ACCEL_AP_MAX });
+    if (this.cruiseNav()) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_CRUISE_MAX });
+    if (this.ap.on) return tr('Time x{n} is the fastest here — up to x{max} in the cruise on the autopilot NAV', { n: SIM.TIME_ACCEL_AP_MAX, max: SIM.TIME_ACCEL_CRUISE_MAX });
     const max = this.timeAccelMax();
     const next = SIM.TIME_ACCEL_MANUAL.find((t) => t.max > max);
     return next

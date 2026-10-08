@@ -595,7 +595,7 @@ const Airport3D = {
   },
 
   // ---------- per frame: flags and the windsock in the wind, the PAPI, the flasher ----------
-  // own: the player's aeroplane { pos (world), r } for the apron traffic to give way to
+  // own: the player's aeroplane { pos, vel (world), r } for the apron traffic to give way to
   update(rec, time, eye, wind, dark, vis, own) {
     const a = rec.a;
     // the lights shine through haze much further than the ground shows (they draw without
@@ -653,7 +653,8 @@ const Airport3D = {
     let mine = null;
     if (own) {
       const l = rec.frame.worldToLocal(new THREE.Vector3(own.pos.x, own.pos.y, own.pos.z));
-      mine = { t: -l.z, across: l.x, r: own.r };
+      const v = own.vel || { x: 0, z: 0 };
+      mine = { t: -l.z, across: l.x, r: own.r, vt: v.x * a.dirX + v.z * a.dirZ, va: v.x * a.perX + v.z * a.perZ };
     }
     Apron3D.update(rec, time, dark || 0, mine);
     // the flasher: 28 steps out at 30 m, twice a second, towards the threshold

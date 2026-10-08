@@ -222,7 +222,7 @@ const UI = {
       keyRow('N', tr('autopilot NAV: fly the route and the ILS')) +
       keyRow(', / .', tr('selected altitude down / up')) +
       keyRow('; / \'', tr('selected heading (autopilot HDG mode)')) +
-      keyRow('T / R', tr('time faster / slower: up to ×128 on the autopilot, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft')) +
+      keyRow('T / R', tr('time faster / slower: up to ×128 on the autopilot, ×512 in the cruise on NAV, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft')) +
       keyRow('C / M / I', tr('camera · map (on a big screen: mini, big, off) · instrument lights: dim, medium, bright, hidden')) +
       keyRow('H', tr('controls card')) +
       keyRow('Esc', tr('pause')) +
@@ -237,7 +237,7 @@ const UI = {
       '<h3>' + tr('How a flight goes') + '</h3><ul>' +
       '<li>' + tr('At the gate press Enter for the push back and to start the engines, release the parking brake with Space and taxi along the arrow to the holding point.') + '</li>' +
       '<li>' + tr('Set take-off flaps, ask for the clearance, line up, full power, rotate at Vr, gear up.') + '</li>' +
-      '<li>' + tr('Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×128 on the autopilot.') + '</li>' +
+      '<li>' + tr('Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×128 on the autopilot, ×512 in the cruise.') + '</li>' +
       '<li>' + tr('When a warning sounds, a checklist opens: do the lit step with the control shown next to it — Enter (Go) for its switches, the real controls (0, K, G, /, Y…) for the rest. The clock is running.') + '</li>' +
       '<li>' + tr('Flaps and gear down on the approach, land by hand from 200 ft, brake, and leave the runway below 35 kt.') + '</li>' +
       '<li>' + tr('The <b>spoiler</b> (/) is a speed brake: out when you are too high or too fast on the descent, in again before the landing. After touchdown put it out with idle and the brakes — it puts the weight on the wheels, so they stop you sooner.') + '</li>' +
@@ -337,6 +337,7 @@ const UI = {
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
       row2(tr('Schedule'), Career.difficulty.id === 'easy' ? tr('no deadline') : tr('{t} real time', { t: fmtTime(c.deadline) })) +
       row2(tr('Fuel plan'), c.fuelKg + ' kg') +
+      row2(tr('Flown there'), Career.visitsTo(c.toId) ? Career.visitsTo(c.toId) + '×' : '<span class="newDest">' + tr('never — new') + '</span>') +
       (c.depGate !== undefined ? row2(tr('Stands'), gateLabel(from, c.depGate) + ' → ' + gateLabel(to, c.arrGate)) : '') +
       '</div>' +
       '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +

@@ -46,6 +46,16 @@ function lmCrown(d, cx, y, w) {
   d.r(cx - s, y + w * 0.06, w, w * 0.14);
   for (const k of [-1.08, 0, 1.08]) d.c(cx + s * k, y - h * (k ? 1 : 1.1) - w * 0.06, w * 0.07);
 }
+// an onion dome: its tip at (x, top), w wide, with a cross on the tip
+function lmOnion(d, x, top, w) {
+  const h = w * 1.25, f = (k) => (x + k * w).toFixed(1), v = (k) => (top + k * h).toFixed(1);
+  d.p('M' + x + ' ' + top + ' C' + f(0.08) + ' ' + v(0.3) + ' ' + f(0.62) + ' ' + v(0.4) + ' ' + f(0.5) + ' ' + v(0.75) +
+    ' C' + f(0.45) + ' ' + v(0.92) + ' ' + f(0.25) + ' ' + v(1) + ' ' + x + ' ' + v(1) +
+    ' C' + f(-0.25) + ' ' + v(1) + ' ' + f(-0.45) + ' ' + v(0.92) + ' ' + f(-0.5) + ' ' + v(0.75) +
+    ' C' + f(-0.62) + ' ' + v(0.4) + ' ' + f(-0.08) + ' ' + v(0.3) + ' ' + x + ' ' + top + ' Z');
+  d.r(x - 0.8, top - 9, 1.6, 10); d.r(x - 3.5, top - 6.5, 7, 1.6);
+  return top + h;
+}
 function lmWaves(d, y, w) {
   d.s('M4 ' + y + ' q8 -6 16 0 t16 0 t16 0 t16 0 t16 0 t16 0', w || 3);
 }
@@ -425,6 +435,56 @@ const LANDMARK_SYMBOLS = {
     for (const x of [26, 64]) d.p('M' + x + ' 62 C' + x + ' 50 ' + (x + 10) + ' 50 ' + (x + 10) + ' 62 Z');
     for (const x of [6, 88]) { d.r(x, 20, 6, 72); d.p('M' + (x - 1) + ' 20 L' + (x + 3) + ' 4 L' + (x + 7) + ' 20 Z'); d.r(x - 2, 42, 10, 3); }
     for (let i = 0; i < 4; i++) d.b('M' + (28 + i * 12) + ' 92 V80 a3 3 0 0 1 6 0 V92 Z');
+  },
+  // ---- Russia
+  onionDomes(d) {
+    // Moscow: the onion domes of St Basil's on their drums, over the Kremlin wall
+    for (const [x, top, w] of [[22, 34, 16], [50, 14, 22], [78, 34, 16]]) {
+      const y = lmOnion(d, x, top, w);
+      d.r(x - w * 0.32, y - 1, w * 0.64, 74 - y);
+      d.rb(x - 1.5, y + 4, 3, 7);
+    }
+    d.r(4, 72, 92, 20);
+    for (let x = 4; x < 96; x += 8) d.p('M' + x + ' 72 V66 L' + (x + 2) + ' 68 L' + (x + 4) + ' 66 V72 Z');
+    d.b('M44 92 V82 a6 6 0 0 1 12 0 V92 Z');
+  },
+  admiralty(d) {
+    // St Petersburg: the Admiralty's gilded spire with the little ship on top, over its arch
+    d.r(4, 68, 92, 24); d.r(36, 46, 28, 22); d.r(41, 36, 18, 10); d.p('M41 36 C41 30 59 30 59 36 Z');
+    d.p('M47 32 L50 6 L53 32 Z');
+    d.p('M42 7 H58 L55 10.5 H45 Z'); d.r(49.4, 0, 1.2, 7); d.p('M50.6 1 L56 5.5 H50.6 Z');
+    d.b('M43 92 V76 a7 7 0 0 1 14 0 V92 Z');
+    for (let i = 0; i < 4; i++) { d.rb(9 + i * 7, 74, 3, 14); d.rb(67 + i * 7, 74, 3, 14); }
+    for (const x of [39, 47, 55]) d.rb(x, 50, 3, 12);
+  },
+  icebreaker(d) {
+    // Murmansk: the nuclear icebreaker Lenin among the floes
+    d.p('M4 60 H96 L86 78 H16 Z');
+    d.r(26, 44, 46, 16); d.r(36, 34, 24, 10); d.rb(39, 37, 18, 3);
+    d.r(30, 20, 2.4, 24); d.r(66, 24, 2.4, 20); d.r(24, 26, 14, 1.8); d.r(61, 29, 13, 1.8);
+    for (let i = 0; i < 6; i++) d.cb(31 + i * 7, 52, 1.8);
+    d.p('M2 88 L12 82 L28 84 L32 90 Z'); d.p('M58 90 L66 83 L84 82 L96 88 Z');
+    lmWaves(d, 96, 2.5);
+  },
+  seal(d) {
+    // Irkutsk: the nerpa, Baikal's own freshwater seal, on a rock by the water
+    d.e(46, 64, 34, 15, -0.12); d.c(79, 52, 12);
+    d.cb(83, 49, 2.6); d.cb(76, 49, 2.6); d.c(84, 49, 1); d.c(77, 49, 1);
+    d.p('M14 70 L2 60 L6 78 Z'); d.p('M52 74 L64 88 L46 82 Z');
+    d.s('M86 56 L96 54 M86 58 L96 59', 1.4);
+    d.p('M10 82 C30 76 70 76 92 84 V90 H10 Z');
+    lmWaves(d, 96, 2.5);
+  },
+  mammoth(d) {
+    // Yakutsk: the woolly mammoth of the permafrost
+    d.e(44, 50, 32, 22); d.c(38, 30, 14); d.c(76, 42, 15);
+    for (const x of [18, 32, 52, 64]) d.r(x, 60, 10, 32);
+    d.s('M86 46 C96 60 92 78 82 86', 7);
+    // the tusk curving out in front, a gap round it where it crosses the trunk
+    d.sb('M78 56 C76 76 92 84 98 66', 9); d.s('M78 56 C76 76 92 84 98 66', 4);
+    d.s('M14 44 L6 60', 3);
+    d.cb(80, 38, 2.2);
+    for (let i = 0; i < 7; i++) d.p('M' + (16 + i * 7) + ' 66 l3.5 8 l3.5 -8 Z');
   },
   // ---- the Middle East and Africa
   beach(d) {

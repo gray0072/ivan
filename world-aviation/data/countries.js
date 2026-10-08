@@ -40,6 +40,7 @@ const COUNTRIES = {
   'Portugal': { flag: ['portugal'], tz: 0, hello: 'Bem-vindos' },
   'Greece': { flag: ['greece'], tz: 2, hello: 'Kalós írthate' },
   'Turkey': { flag: ['turkey'], tz: 3, hello: 'Hoş geldiniz' },
+  'Russia': { flag: ['h', ['#ffffff', '#0039a6', '#d52b1e']], tz: 3, hello: 'Dobro pozhalovat' },
   'Israel': { flag: ['israel'], tz: 2, hello: 'Bruchim haba\'im' },
   'Egypt': { flag: ['egypt'], tz: 2, hello: 'Ahlan wa sahlan' },
   'United Arab Emirates': { flag: ['uae'], tz: 4, hello: 'Ahlan wa sahlan' },
