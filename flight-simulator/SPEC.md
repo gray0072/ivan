@@ -16,4 +16,6 @@ First-person arcade flight game.
 - Terrain color/texture varies by world region and blends smoothly while flying
 - Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_HIDE_MS` (3 s) and comes back as soon as the mouse moves, clicks or scrolls
 - Updates: a page left open (above all the installed Android app, resumed from the background) looks for a new deploy on every return to the foreground and once an hour, and reloads into it only on the start screen, never mid-flight (`update.js`).
+- Languages: English, Russian or Swedish, picked with the flag switcher (EN · RU · SV) at the top of the start and game-over screens and remembered (`flightSimulator.lang`; the first time the gallery's choice, then the browser's language, then English). Everything switches at once: the start and game-over texts, the HUD, the bars, the gauges, the compass line, the landing messages and the airport names (North / Northern / Norra…). Texts in `lang.js` (`LANG`, `tr()`), `data-i18n` in `index.html`.
+- Files: `index.html` (markup), `styles.css`, `lang.js`, `game.js`, `update.js`, the flags `flag-gb.svg` / `flag-ru.svg` / `flag-se.svg`.
 - Cockpit framing (canopy pillars, windshield header) fixed on screen; clouds stay level and do not rotate with aircraft bank

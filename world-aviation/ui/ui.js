@@ -94,10 +94,12 @@ const UI = {
       '<p class="fineprint">' + esc(tr(Career.difficulty.description)) + '</p>';
   },
 
-  // the game's language, first thing on the title screen
+  // the game's language, first thing on the title screen: a flag and a code per language (art/flag-*.svg)
   langChips() {
-    return '<div class="setGroup langPick">' + Object.keys(LANGS).map((l) =>
-      '<button class="chip' + (I18N.lang === l ? ' on' : '') + '" data-act="lang" data-v="' + l + '">' + esc(LANGS[l]) + '</button>').join('') + '</div>';
+    const FLAG = { en: 'gb', ru: 'ru', sv: 'se' };
+    return '<div class="langPick" role="group" aria-label="Language">' + Object.keys(LANGS).map((l) =>
+      '<button type="button" data-act="lang" data-v="' + l + '" aria-pressed="' + (I18N.lang === l) + '" title="' + esc(LANGS[l]) + '">' +
+      '<img src="art/flag-' + FLAG[l] + '.svg" alt="">' + l.toUpperCase() + '</button>').join('') + '</div>';
   },
 
   // ---------- title ----------

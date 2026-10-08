@@ -491,9 +491,42 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .settingsRow { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; }
 .btnRow + .settingsRow { margin-top: 22px; }
 .setGroup { display: flex; align-items: center; gap: 6px; }
-/* the language picker at the top of the title screen */
-.langPick { justify-content: center; flex-wrap: wrap; margin-bottom: 4px; }
-.langPick .chip { padding: 5px 12px; font-size: 13px; }
+/* the language picker at the top of the title screen: a flag and a code per language, the same
+   switcher as the gallery's and the other games' */
+.langPick {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 4px;
+  border-radius: 22px;
+  background: rgba(13, 27, 42, 0.85);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.langPick button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  color: #9fb0c3;
+  font: 600 12px 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.langPick button:hover { background: rgba(255,255,255,0.08); color: #e8eef5; }
+.langPick button[aria-pressed="true"] { background: rgba(255,255,255,0.16); color: #e8eef5; }
+.langPick img {
+  width: 21px;
+  height: 14px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.15);
+  opacity: 0.6;
+}
+.langPick button:hover img,
+.langPick button[aria-pressed="true"] img { opacity: 1; }
 /* the departure time on the briefing */
 .todPick { flex-wrap: wrap; }
 .todPick .chip { white-space: nowrap; }

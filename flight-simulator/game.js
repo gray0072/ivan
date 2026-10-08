@@ -1,0 +1,928 @@
+// Flight Simulator: the whole game — the world, the plane, balloons, bullets, sound, the
+// first-person rendering, the cockpit and the flow between the start, flight and game-over
+// screens. Texts come from lang.js (tr); loaded last by index.html.
+
+(function () {
+  'use strict';
+
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0;
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Utility ----------
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function angDiff(a, b) {
+    let d = (a - b) % (Math.PI * 2);
+    if (d > Math.PI) d -= Math.PI * 2;
+    if (d < -Math.PI) d += Math.PI * 2;
+    return d;
+  }
+  function hash2(x, y) {
+    let h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return h - Math.floor(h);
+  }
+
+  // ---------- World ----------
+  const WORLD_W = 4200;
+  const WORLD_H = 3200;
+
+  // ---------- Terrain ----------
+  const GROUND_PALETTE = [
+    { top: [74, 124, 60], bottom: [46, 90, 38] },    // meadows
+    { top: [107, 143, 60], bottom: [70, 102, 31] },  // yellow-green fields
+    { top: [63, 107, 58], bottom: [35, 74, 31] },    // dark forest
+    { top: [138, 140, 74], bottom: [92, 94, 44] },   // dry fields
+    { top: [90, 138, 122], bottom: [53, 97, 86] }    // marshland
+  ];
+  const REGION_CELL = 1000;
+  function regionColorAt(wx, wy) {
+    const ix = Math.floor(wx / REGION_CELL), iy = Math.floor(wy / REGION_CELL);
+    const idx = Math.floor(hash2(ix, iy) * GROUND_PALETTE.length) % GROUND_PALETTE.length;
+    return GROUND_PALETTE[idx];
+  }
+  let curGroundTop = { r: GROUND_PALETTE[0].top[0], g: GROUND_PALETTE[0].top[1], b: GROUND_PALETTE[0].top[2] };
+  let curGroundBottom = { r: GROUND_PALETTE[0].bottom[0], g: GROUND_PALETTE[0].bottom[1], b: GROUND_PALETTE[0].bottom[2] };
+  function lerpColor(cur, target, t) {
+    cur.r += (target[0] - cur.r) * t;
+    cur.g += (target[1] - cur.g) * t;
+    cur.b += (target[2] - cur.b) * t;
+  }
+
+  const PATCH_COLORS = ['#2d4d22', '#7ea852', '#9c9350', '#7a6a45', '#3f7a8a', '#8a6a3a'];
+  const PATCH_STEP = 260;
+  const PATCH_RANGE = 1300;
+
+  const airports = [
+    { name: 'North', x: 600, y: 500, heading: Math.PI * 0.5 },
+    { name: 'South', x: 3600, y: 2700, heading: Math.PI * 1.5 },
+    { name: 'East', x: 3700, y: 700, heading: Math.PI },
+    { name: 'West', x: 500, y: 2600, heading: 0 },
+    { name: 'Central', x: 2100, y: 1600, heading: Math.PI * 0.25 }
+  ];
+  const RUNWAY_LEN = 460;
+  const RUNWAY_WID = 90;
+
+  // ---------- First-person projection ----------
+  const PROJ_K = 820;
+  const ALT_TO_WORLD = 3.2;
+  const NEAR_CLIP = 10;
+  const PITCH_PIXELS = 150;
+  const BANK_MAX = 0.3;
+  const BALLOON_HOVER = 70;
+  let frameHorizonY = 0;
+
+  function project(wx, wy, worldHeight) {
+    const dx = wx - plane.x, dy = wy - plane.y;
+    const lx = dx * Math.cos(plane.heading) + dy * Math.sin(plane.heading);
+    if (lx < NEAR_CLIP) return null;
+    const ly = -dx * Math.sin(plane.heading) + dy * Math.cos(plane.heading);
+    const scale = PROJ_K / lx;
+    const camHeight = plane.altitude * ALT_TO_WORLD;
+    return {
+      x: W / 2 + ly * scale,
+      y: frameHorizonY + (camHeight - worldHeight) * scale,
+      scale
+    };
+  }
+
+  // ---------- Plane ----------
+  const plane = {
+    x: airports[0].x,
+    y: airports[0].y - 50,
+    heading: airports[0].heading,
+    altitude: 55,
+    speed: 230,
+    bankVisual: 0,
+    pitchVisual: 0,
+    turnInput: 0,
+    state: 'flying' // flying | landed | takeoff | crashed
+  };
+
+  let targetAirport = airports[1];
+  let score = 0;
+  let gameState = 'start'; // start | playing | over
+  // A new deploy reloads the page only on the start screen, never mid-flight (update.js)
+  AppUpdate.watch(() => gameState === 'start');
+  let landMessageTimer = 0;
+  let takeoffTimer = 0;
+  let shakeTime = 0;
+  let shakeMag = 0;
+
+  const MAX_ALT = 100;
+  const CRUISE_ALT = 55;
+  const TURN_RATE_MAX = 1.0;   // rad/s
+  const TURN_EASE = 2.2;       // how quickly turn input ramps up/down
+  const CLIMB_RATE_MAX = 42;   // alt units/s
+
+  // ---------- Keyboard input ----------
+  const keys = {};
+  const STEER_KEYS = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+  window.addEventListener('keydown', (e) => {
+    if (STEER_KEYS.includes(e.key)) { keys[e.key] = true; e.preventDefault(); }
+    else if (e.key === 'Control') { keys['Control'] = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (STEER_KEYS.includes(e.key)) { keys[e.key] = false; e.preventDefault(); }
+    else if (e.key === 'Control') { keys['Control'] = false; e.preventDefault(); }
+  });
+
+  // Space/Enter activate whichever start/restart button is currently shown
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' && e.key !== 'Enter') return;
+    const ov = document.getElementById('overlay');
+    if (!ov || ov.style.display === 'none') return;
+    e.preventDefault();
+    if (e.repeat) return;
+    const btn = ov.querySelector('.btn');
+    if (btn) btn.click();
+  });
+
+  let shootCooldown = 0;
+
+  // ---------- Touch input (mobile: tilt to steer, tap to shoot) ----------
+  let touchFiring = false;
+  canvas.addEventListener('touchstart', (e) => { touchFiring = true; e.preventDefault(); }, { passive: false });
+  window.addEventListener('touchend', () => { touchFiring = false; });
+  window.addEventListener('touchcancel', () => { touchFiring = false; });
+
+  const TILT_MAX_DEG = 25;
+  let tiltEnabled = false;
+  let tiltTurn = 0, tiltClimb = 0;
+  let tiltBaseGamma = null, tiltBaseBeta = null;
+
+  function onDeviceOrientation(e) {
+    if (e.gamma === null || e.beta === null) return;
+    if (tiltBaseGamma === null) { tiltBaseGamma = e.gamma; tiltBaseBeta = e.beta; }
+    tiltTurn = clamp((e.gamma - tiltBaseGamma) / TILT_MAX_DEG, -1, 1);
+    tiltClimb = clamp((e.beta - tiltBaseBeta) / TILT_MAX_DEG, -1, 1);
+  }
+
+  function enableTilt() {
+    if (tiltEnabled) return;
+    tiltEnabled = true;
+    window.addEventListener('deviceorientation', onDeviceOrientation);
+  }
+
+  async function setupTilt() {
+    tiltBaseGamma = null;
+    tiltBaseBeta = null;
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      try {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res === 'granted') enableTilt();
+      } catch (err) { /* denied or unsupported, keyboard still works */ }
+    } else if (window.DeviceOrientationEvent) {
+      enableTilt();
+    }
+  }
+
+  async function beginFlight() {
+    await setupTilt();
+    startGame();
+  }
+
+  document.getElementById('startBtn').addEventListener('click', beginFlight);
+
+  function pickNewTarget() {
+    let candidates = airports.filter(a => a !== targetAirport);
+    targetAirport = candidates[Math.floor(Math.random() * candidates.length)];
+    const el = document.getElementById('targetName');
+    el.dataset.i18n = targetAirport.name;
+    el.textContent = tr(targetAirport.name);
+  }
+
+  function startGame() {
+    ensureAudio();
+    document.getElementById('overlay').style.display = 'none';
+    gameState = 'playing';
+    document.getElementById('langSwitch').hidden = true;
+    score = 0;
+    plane.x = airports[0].x;
+    plane.y = airports[0].y - 50;
+    plane.heading = airports[0].heading;
+    plane.altitude = CRUISE_ALT;
+    plane.bankVisual = 0;
+    plane.pitchVisual = 0;
+    plane.turnInput = 0;
+    plane.state = 'flying';
+    targetAirport = airports[0];
+    pickNewTarget();
+    balloons.length = 0;
+    bullets.length = 0;
+    particles.length = 0;
+    for (let i = 0; i < 16; i++) spawnBalloon();
+  }
+
+  function endGame(reason) {
+    gameState = 'over';
+    const ov = document.getElementById('overlay');
+    ov.style.display = 'flex';
+    document.getElementById('langSwitch').hidden = false;
+    document.getElementById('panel').innerHTML =
+      '<h1>💥 <span data-i18n="' + reason + '"></span></h1>' +
+      '<p data-i18n="result" data-n="' + score + '"></p>' +
+      '<button class="btn" id="startBtn2" data-i18n="again"></button>';
+    Lang.apply();
+    document.getElementById('startBtn2').addEventListener('click', () => {
+      ov.style.display = 'none';
+      beginFlight();
+    });
+  }
+
+  // ---------- Balloons ----------
+  const balloons = [];
+  const BALLOON_COLORS = ['#ff5252', '#ffca28', '#66bb6a', '#42a5f5', '#ab47bc', '#ff7043'];
+  function spawnBalloon() {
+    let x, y;
+    do {
+      x = rand(200, WORLD_W - 200);
+      y = rand(200, WORLD_H - 200);
+    } while (Math.hypot(x - plane.x, y - plane.y) < 300);
+    balloons.push({
+      x, y,
+      vx: rand(-12, 12),
+      vy: rand(-12, 12),
+      bob: rand(0, Math.PI * 2),
+      r: 22,
+      color: BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)]
+    });
+  }
+
+  // ---------- Audio ----------
+  let audioCtx = null;
+  function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+  function playShootSound() {
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    const startFreq = rand(760, 900);
+    osc.frequency.setValueAtTime(startFreq, t0);
+    osc.frequency.exponentialRampToValueAtTime(180, t0 + 0.11);
+    gain.gain.setValueAtTime(0.16, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.13);
+  }
+
+  // ---------- Bullets ----------
+  const bullets = [];
+  function shoot() {
+    shootCooldown = 0.15;
+    const fx = Math.cos(plane.heading), fy = Math.sin(plane.heading);
+    const rx = -Math.sin(plane.heading), ry = Math.cos(plane.heading);
+    const muzzleFwd = 26;
+    const muzzleSide = 16;
+    for (const side of [-1, 1]) {
+      bullets.push({
+        x: plane.x + fx * muzzleFwd + rx * muzzleSide * side,
+        y: plane.y + fy * muzzleFwd + ry * muzzleSide * side,
+        vx: fx * (820 + plane.speed),
+        vy: fy * (820 + plane.speed),
+        height: plane.altitude * ALT_TO_WORLD,
+        life: 1.1
+      });
+    }
+    playShootSound();
+  }
+
+  // ---------- Particles ----------
+  const particles = [];
+  function burst(x, y, color, count, spread, height) {
+    for (let i = 0; i < count; i++) {
+      const a = rand(0, Math.PI * 2);
+      const sp = rand(40, spread);
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: rand(0.4, 0.9),
+        maxLife: 0.9,
+        color,
+        r: rand(2, 5),
+        height
+      });
+    }
+  }
+
+  // ---------- Clouds (screen-space, stay level regardless of bank) ----------
+  const clouds = [];
+  for (let i = 0; i < 10; i++) {
+    clouds.push({
+      x: rand(0, 2000),
+      y: rand(20, 300),
+      r: rand(40, 110),
+      speed: rand(6, 18)
+    });
+  }
+
+  function addShake(mag, time) {
+    shakeMag = mag;
+    shakeTime = time;
+  }
+
+  // ---------- Update ----------
+  let last = performance.now();
+  function update(dt) {
+    if (gameState !== 'playing') return;
+
+    if (shootCooldown > 0) shootCooldown -= dt;
+
+    for (const c of clouds) {
+      c.x += c.speed * dt;
+      if (c.x - c.r > W) c.x = -c.r;
+    }
+
+    const aheadX = plane.x + Math.cos(plane.heading) * 400;
+    const aheadY = plane.y + Math.sin(plane.heading) * 400;
+    const targetRegion = regionColorAt(aheadX, aheadY);
+    lerpColor(curGroundTop, targetRegion.top, clamp(dt * 0.6, 0, 1));
+    lerpColor(curGroundBottom, targetRegion.bottom, clamp(dt * 0.6, 0, 1));
+
+    if (plane.state === 'flying') {
+      const turnTarget = clamp((keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0) + tiltTurn, -1, 1);
+      const climbFrac = clamp((keys['ArrowUp'] ? 1 : 0) - (keys['ArrowDown'] ? 1 : 0) + tiltClimb, -1, 1);
+
+      plane.turnInput += (turnTarget - plane.turnInput) * clamp(dt * TURN_EASE, 0, 1);
+      plane.heading += plane.turnInput * TURN_RATE_MAX * dt;
+      plane.altitude = clamp(plane.altitude + climbFrac * CLIMB_RATE_MAX * dt, 0, MAX_ALT);
+
+      plane.bankVisual += (-plane.turnInput * BANK_MAX - plane.bankVisual) * clamp(dt * 6, 0, 1);
+      plane.pitchVisual += (climbFrac - plane.pitchVisual) * clamp(dt * 4, 0, 1);
+
+      if ((keys['Control'] || touchFiring) && shootCooldown <= 0) shoot();
+
+      plane.x += Math.cos(plane.heading) * plane.speed * dt;
+      plane.y += Math.sin(plane.heading) * plane.speed * dt;
+
+      const margin = 60;
+      if (plane.x < margin) plane.x = margin;
+      if (plane.x > WORLD_W - margin) plane.x = WORLD_W - margin;
+      if (plane.y < margin) plane.y = margin;
+      if (plane.y > WORLD_H - margin) plane.y = WORLD_H - margin;
+
+      if (plane.altitude <= 0.01) {
+        const land = checkLanding();
+        if (land) {
+          doLanding();
+        } else {
+          plane.state = 'crashed';
+          addShake(18, 0.6);
+          setTimeout(() => endGame('crash'), 700);
+        }
+      }
+    } else if (plane.state === 'landed') {
+      plane.bankVisual += (0 - plane.bankVisual) * clamp(dt * 4, 0, 1);
+      plane.pitchVisual += (0 - plane.pitchVisual) * clamp(dt * 3, 0, 1);
+      landMessageTimer -= dt;
+      if (landMessageTimer <= 0) {
+        plane.state = 'takeoff';
+        takeoffTimer = 2.0;
+      }
+    } else if (plane.state === 'takeoff') {
+      takeoffTimer -= dt;
+      plane.pitchVisual += (0.4 - plane.pitchVisual) * clamp(dt * 2, 0, 1);
+      plane.altitude = clamp(plane.altitude + (CRUISE_ALT / 2) * dt, 0, CRUISE_ALT);
+      plane.x += Math.cos(plane.heading) * (plane.speed * 0.5) * dt;
+      plane.y += Math.sin(plane.heading) * (plane.speed * 0.5) * dt;
+      if (takeoffTimer <= 0) {
+        plane.state = 'flying';
+        plane.altitude = CRUISE_ALT;
+        pickNewTarget();
+      }
+    }
+
+    if (shakeTime > 0) {
+      shakeTime -= dt;
+      if (shakeTime < 0) shakeTime = 0;
+    }
+
+    for (const b of balloons) {
+      b.bob += dt * 2;
+      b.x += b.vx * dt;
+      b.y += b.vy * dt;
+      if (b.x < 50 || b.x > WORLD_W - 50) b.vx *= -1;
+      if (b.y < 50 || b.y > WORLD_H - 50) b.vy *= -1;
+    }
+    while (balloons.length < 16) spawnBalloon();
+
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const bl = bullets[i];
+      bl.x += bl.vx * dt;
+      bl.y += bl.vy * dt;
+      bl.life -= dt;
+      if (bl.life <= 0) { bullets.splice(i, 1); continue; }
+      for (let j = balloons.length - 1; j >= 0; j--) {
+        const bal = balloons[j];
+        if (Math.hypot(bl.x - bal.x, bl.y - bal.y) < bal.r + 6) {
+          burst(bal.x, bal.y, bal.color, 18, 200, BALLOON_HOVER + Math.sin(bal.bob) * 15);
+          balloons.splice(j, 1);
+          bullets.splice(i, 1);
+          score += 10;
+          spawnBalloon();
+          break;
+        }
+      }
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.life -= dt;
+      if (p.life <= 0) { particles.splice(i, 1); continue; }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.96;
+      p.vy *= 0.96;
+    }
+
+    document.getElementById('score').textContent = score;
+  }
+
+  function checkLanding() {
+    const a = targetAirport;
+    const cos = Math.cos(-a.heading), sin = Math.sin(-a.heading);
+    const dx = plane.x - a.x, dy = plane.y - a.y;
+    const lx = dx * cos - dy * sin;
+    const ly = dx * sin + dy * cos;
+    const withinRunway = Math.abs(lx) <= RUNWAY_LEN / 2 && Math.abs(ly) <= RUNWAY_WID / 2;
+    const headingOk = Math.abs(angDiff(plane.heading, a.heading)) < 0.5 ||
+                       Math.abs(angDiff(plane.heading, a.heading + Math.PI)) < 0.5;
+    return withinRunway && headingOk;
+  }
+
+  function doLanding() {
+    plane.state = 'landed';
+    plane.altitude = 0;
+    landMessageTimer = 2.0;
+    score += 50;
+  }
+
+  // ---------- Render ----------
+  function drawSkyGround(horizonY) {
+    const M = Math.max(W, H);
+    const skyGrad = ctx.createLinearGradient(0, -M, 0, horizonY);
+    skyGrad.addColorStop(0, '#1565c0');
+    skyGrad.addColorStop(1, '#90caf9');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(-M, -M, W + 2 * M, horizonY + M);
+
+    const groundGrad = ctx.createLinearGradient(0, horizonY, 0, H + M);
+    groundGrad.addColorStop(0, `rgb(${curGroundTop.r | 0},${curGroundTop.g | 0},${curGroundTop.b | 0})`);
+    groundGrad.addColorStop(1, `rgb(${curGroundBottom.r | 0},${curGroundBottom.g | 0},${curGroundBottom.b | 0})`);
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(-M, horizonY, W + 2 * M, H + 2 * M);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-M, horizonY);
+    ctx.lineTo(W + M, horizonY);
+    ctx.stroke();
+  }
+
+  function drawClouds(horizonY) {
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#fff';
+    for (const c of clouds) {
+      if (c.y > horizonY + 30) continue;
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, c.r, c.r * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawTerrainPatches() {
+    const fx = Math.cos(plane.heading), fy = Math.sin(plane.heading);
+    const startX = Math.floor((plane.x - PATCH_RANGE) / PATCH_STEP) * PATCH_STEP;
+    const endX = plane.x + PATCH_RANGE;
+    const startY = Math.floor((plane.y - PATCH_RANGE) / PATCH_STEP) * PATCH_STEP;
+    const endY = plane.y + PATCH_RANGE;
+    for (let wx = startX; wx <= endX; wx += PATCH_STEP) {
+      for (let wy = startY; wy <= endY; wy += PATCH_STEP) {
+        const dx = wx - plane.x, dy = wy - plane.y;
+        if (dx * fx + dy * fy < 40) continue;
+        const h = hash2(wx / PATCH_STEP, wy / PATCH_STEP);
+        if (h > 0.6) continue;
+        const jx = (hash2(wy / PATCH_STEP, wx / PATCH_STEP) - 0.5) * 180;
+        const jy = (h - 0.5) * 180;
+        const p = project(wx + jx, wy + jy, 0);
+        if (!p) continue;
+        const r = clamp(70 * p.scale, 1, 260);
+        if (p.x < -r - 40 || p.x > W + r + 40 || p.y < -r - 40 || p.y > H + r + 40) continue;
+        const color = PATCH_COLORS[Math.floor(h * 71) % PATCH_COLORS.length];
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, r, r * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawGroundGrid(horizonY) {
+    const vx = W / 2;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 2;
+    const rayCount = 7;
+    for (let i = 0; i <= rayCount; i++) {
+      const bx = (i / rayCount) * W;
+      ctx.beginPath();
+      ctx.moveTo(vx, horizonY);
+      ctx.lineTo(bx, H);
+      ctx.stroke();
+    }
+    const lines = 6;
+    for (let i = 1; i <= lines; i++) {
+      const t = i / lines;
+      const y = horizonY + t * t * (H - horizonY);
+      ctx.globalAlpha = 0.5 * (1 - t) + 0.15;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawRunways() {
+    for (const a of airports) {
+      const cosH = Math.cos(a.heading), sinH = Math.sin(a.heading);
+      const halfL = RUNWAY_LEN / 2, halfW = RUNWAY_WID / 2;
+      const localCorners = [[-halfL, -halfW], [halfL, -halfW], [halfL, halfW], [-halfL, halfW]];
+      const world = localCorners.map(([lx, ly]) => ({
+        x: a.x + lx * cosH - ly * sinH,
+        y: a.y + lx * sinH + ly * cosH
+      }));
+      const proj = world.map(p => project(p.x, p.y, 0));
+      if (proj.some(p => !p)) continue;
+
+      const isTarget = a === targetAirport;
+      ctx.fillStyle = isTarget ? '#8d8d3f' : '#5a5a5a';
+      ctx.beginPath();
+      ctx.moveTo(proj[0].x, proj[0].y);
+      for (let i = 1; i < 4; i++) ctx.lineTo(proj[i].x, proj[i].y);
+      ctx.closePath();
+      ctx.fill();
+      if (isTarget) {
+        ctx.strokeStyle = '#ffee58';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+      }
+
+      const centerNear = project(a.x - cosH * (halfL - 10), a.y - sinH * (halfL - 10), 0);
+      const centerFar = project(a.x + cosH * (halfL - 10), a.y + sinH * (halfL - 10), 0);
+      if (centerNear && centerFar) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([14, 10]);
+        ctx.beginPath();
+        ctx.moveTo(centerNear.x, centerNear.y);
+        ctx.lineTo(centerFar.x, centerFar.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      const labelPt = project(a.x, a.y, 40);
+      if (labelPt) {
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 16px Segoe UI, Arial';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(tr(a.name), labelPt.x, labelPt.y);
+        ctx.shadowBlur = 0;
+      }
+    }
+  }
+
+  function drawBalloonsFPV() {
+    for (const b of balloons) {
+      const height = BALLOON_HOVER + Math.sin(b.bob) * 15;
+      const p = project(b.x, b.y, height);
+      if (!p) continue;
+      const r = clamp(22 * p.scale, 2, 260);
+      if (p.x < -r - 20 || p.x > W + r + 20 || p.y < -r - 20 || p.y > H + r + 20) continue;
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = Math.max(1, 1.5 * p.scale);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y + r);
+      ctx.lineTo(p.x, p.y + r + r * 0.6);
+      ctx.stroke();
+
+      const grad = ctx.createRadialGradient(p.x - r * 0.3, p.y - r * 0.3, Math.max(1, r * 0.1), p.x, p.y, r);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.25, b.color);
+      grad.addColorStop(1, b.color);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y, r * 0.85, r, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawBulletsFPV() {
+    ctx.fillStyle = '#fff59d';
+    for (const bl of bullets) {
+      const p = project(bl.x, bl.y, bl.height);
+      if (!p) continue;
+      const r = clamp(3 * p.scale, 2, 24);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawParticlesFPV() {
+    for (const p of particles) {
+      const proj = project(p.x, p.y, p.height);
+      if (!proj) continue;
+      const r = clamp(p.r * proj.scale, 1, 40);
+      ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawGauge(cx, cy, r, label, frac, valueText) {
+    const startA = Math.PI * 0.72, endA = Math.PI * 2.28;
+    ctx.save();
+    ctx.fillStyle = '#0d0d0e';
+    ctx.beginPath(); ctx.arc(cx, cy, r + 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#d7d7ce';
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 2;
+    const ticks = 8;
+    for (let i = 0; i <= ticks; i++) {
+      const a = startA + (endA - startA) * (i / ticks);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * (r - 6), cy + Math.sin(a) * (r - 6));
+      ctx.lineTo(cx + Math.cos(a) * (r - 14), cy + Math.sin(a) * (r - 14));
+      ctx.stroke();
+    }
+
+    const needleA = startA + (endA - startA) * clamp(frac, 0, 1);
+    ctx.strokeStyle = '#c62828';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(needleA) * (r - 12), cy + Math.sin(needleA) * (r - 12));
+    ctx.stroke();
+    ctx.fillStyle = '#c62828';
+    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 13px Segoe UI, Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(valueText), cx, cy + r * 0.55);
+    ctx.restore();
+
+    ctx.fillStyle = '#ddd';
+    ctx.font = '11px Segoe UI, Arial';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 3;
+    ctx.fillText(label, cx, cy + r + 14);
+    ctx.shadowBlur = 0;
+  }
+
+  function drawAttitudeGauge(cx, cy, r) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+    ctx.translate(cx, cy);
+    ctx.rotate(plane.bankVisual);
+    const horizonLineY = clamp(plane.pitchVisual * r * 0.6, -r, r);
+    ctx.fillStyle = '#4a90d9';
+    ctx.fillRect(-2 * r, -2 * r, 4 * r, 2 * r + horizonLineY);
+    ctx.fillStyle = '#8a5a2e';
+    ctx.fillRect(-2 * r, horizonLineY, 4 * r, 4 * r);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-2 * r, horizonLineY);
+    ctx.lineTo(2 * r, horizonLineY);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = '#ffeb3b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.5, cy); ctx.lineTo(cx - r * 0.15, cy);
+    ctx.moveTo(cx + r * 0.15, cy); ctx.lineTo(cx + r * 0.5, cy);
+    ctx.stroke();
+    ctx.fillStyle = '#ffeb3b';
+    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2); ctx.fill();
+
+    ctx.strokeStyle = '#111';
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = '#ddd';
+    ctx.font = '11px Segoe UI, Arial';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 3;
+    ctx.fillText(tr('gaugeAttitude'), cx, cy + r + 20);
+    ctx.shadowBlur = 0;
+  }
+
+  function drawCockpit() {
+    const pillarW = clamp(W * 0.05, 40, 90);
+    const dashH = clamp(H * 0.2, 130, 190);
+
+    ctx.save();
+    const pillarGradL = ctx.createLinearGradient(0, 0, pillarW, 0);
+    pillarGradL.addColorStop(0, '#0c0c0d');
+    pillarGradL.addColorStop(1, '#2f2f33');
+    ctx.fillStyle = pillarGradL;
+    ctx.fillRect(0, 0, pillarW, H);
+
+    const pillarGradR = ctx.createLinearGradient(W - pillarW, 0, W, 0);
+    pillarGradR.addColorStop(0, '#2f2f33');
+    pillarGradR.addColorStop(1, '#0c0c0d');
+    ctx.fillStyle = pillarGradR;
+    ctx.fillRect(W - pillarW, 0, pillarW, H);
+
+    const topH = clamp(H * 0.045, 18, 36);
+    ctx.fillStyle = '#1a1a1c';
+    ctx.fillRect(0, 0, W, topH);
+    ctx.restore();
+
+    ctx.save();
+    const dashGrad = ctx.createLinearGradient(0, H - dashH, 0, H);
+    dashGrad.addColorStop(0, '#3d3d40');
+    dashGrad.addColorStop(1, '#17171a');
+    ctx.fillStyle = dashGrad;
+    ctx.beginPath();
+    ctx.moveTo(pillarW * 0.5, H);
+    ctx.lineTo(pillarW * 0.5, H - dashH * 0.55);
+    ctx.quadraticCurveTo(W * 0.5, H - dashH, W - pillarW * 0.5, H - dashH * 0.55);
+    ctx.lineTo(W - pillarW * 0.5, H);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    const gy = H - dashH * 0.55;
+    const gr = clamp(dashH * 0.3, 32, 56);
+    drawGauge(W * 0.30, gy, gr, tr('gaugeSpeed'), clamp(plane.speed / 260, 0, 1), Math.round(plane.speed));
+    drawAttitudeGauge(W * 0.5, gy - gr * 0.1, gr * 1.15);
+    drawGauge(W * 0.70, gy, gr, tr('gaugeAltitude'), clamp(plane.altitude / 100, 0, 1), Math.round(plane.altitude));
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 2;
+    const cx = W / 2, cy = H / 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 14, cy); ctx.lineTo(cx - 4, cy);
+    ctx.moveTo(cx + 4, cy); ctx.lineTo(cx + 14, cy);
+    ctx.moveTo(cx, cy - 14); ctx.lineTo(cx, cy - 4);
+    ctx.moveTo(cx, cy + 4); ctx.lineTo(cx, cy + 14);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawHudMessages() {
+    if (plane.state === 'landed' || plane.state === 'takeoff') {
+      ctx.save();
+      ctx.font = 'bold 34px Segoe UI, Arial';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff176';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 8;
+      const msg = plane.state === 'landed' ? tr('landed') : tr('heading', { name: tr(targetAirport.name) });
+      ctx.fillText(msg, W / 2, 90);
+      ctx.restore();
+    }
+  }
+
+  function drawCompass() {
+    const el = document.getElementById('compass');
+    if (gameState !== 'playing') { el.textContent = ''; return; }
+    const dx = targetAirport.x - plane.x;
+    const dy = targetAirport.y - plane.y;
+    const dist = Math.hypot(dx, dy);
+    const angleToTarget = Math.atan2(dy, dx);
+    const rel = angDiff(angleToTarget, plane.heading);
+    let arrow = '↑';
+    const deg = rel * 180 / Math.PI;
+    if (deg > 20 && deg <= 70) arrow = '↗';
+    else if (deg > 70 && deg <= 110) arrow = '→';
+    else if (deg > 110 && deg <= 160) arrow = '↘';
+    else if (deg > 160 || deg < -160) arrow = '↓';
+    else if (deg < -110) arrow = '↙';
+    else if (deg < -70) arrow = '←';
+    else if (deg < -20) arrow = '↖';
+    el.textContent = tr('compass', { arrow, name: tr(targetAirport.name), m: Math.round(dist), alt: Math.round(plane.altitude) });
+  }
+
+  function render() {
+    const horizonY = clamp(H * 0.42 + plane.pitchVisual * PITCH_PIXELS, H * 0.15, H * 0.85);
+    frameHorizonY = horizonY;
+
+    ctx.save();
+    if (shakeTime > 0) {
+      const m = shakeMag * (shakeTime / 0.6);
+      ctx.translate(rand(-m, m), rand(-m, m));
+    }
+
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(plane.bankVisual);
+    ctx.translate(-W / 2, -H / 2);
+
+    drawSkyGround(horizonY);
+
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.rotate(-plane.bankVisual);
+    ctx.translate(-W / 2, -H / 2);
+    drawClouds(horizonY);
+    ctx.restore();
+
+    drawTerrainPatches();
+    drawGroundGrid(horizonY);
+    drawRunways();
+    drawBalloonsFPV();
+    drawBulletsFPV();
+    drawParticlesFPV();
+
+    ctx.restore();
+
+    drawCockpit();
+    if (plane.state === 'crashed') {
+      ctx.fillStyle = `rgba(200,30,20,${clamp(shakeTime / 0.6, 0, 1) * 0.55})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    ctx.restore();
+
+    drawHudMessages();
+    drawCompass();
+
+    document.getElementById('altBar').style.width = plane.altitude + '%';
+    document.getElementById('spdBar').style.width = clamp((plane.speed / 260) * 100, 0, 100) + '%';
+  }
+
+  function loop(now) {
+    const dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+  // ---- mouse cursor: hidden in fullscreen once it has been still for CURSOR_HIDE_MS ----
+  const CURSOR_HIDE_MS = 3000;
+  let cursorTimer = 0, cursorX = -1, cursorY = -1;
+  function isFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+    if (window.matchMedia && matchMedia('(display-mode: fullscreen)').matches) return true;
+    return screen.width - window.innerWidth < 2 && screen.height - window.innerHeight < 2;
+  }
+  function wakeCursor() {
+    document.documentElement.classList.remove('cursor-hidden');
+    clearTimeout(cursorTimer);
+    if (!isFullscreen()) return;
+    cursorTimer = setTimeout(function () {
+      if (isFullscreen()) document.documentElement.classList.add('cursor-hidden');
+    }, CURSOR_HIDE_MS);
+  }
+  window.addEventListener('mousemove', function (e) {
+    if (e.screenX === cursorX && e.screenY === cursorY) return;  // a page change under a still cursor
+    cursorX = e.screenX; cursorY = e.screenY;
+    wakeCursor();
+  }, { passive: true });
+  window.addEventListener('mousedown', wakeCursor, { passive: true });
+  window.addEventListener('wheel', wakeCursor, { passive: true });
+  document.addEventListener('fullscreenchange', wakeCursor);
+  document.addEventListener('webkitfullscreenchange', wakeCursor);
+  window.addEventListener('resize', wakeCursor);
+
+  Lang.init();
+  requestAnimationFrame(loop);
+
+})();

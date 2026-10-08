@@ -53,7 +53,11 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 ├── assets/                  # gallery.css, gallery-lang.js (the gallery's texts in English, Russian and Swedish), gallery.js (the language switcher, remembered as ivanGallery.lang; picks up a new deploy via update.js), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
 ├── flight-simulator/
 │   ├── SPEC.md               # the game's own spec
-│   ├── index.html           # the game itself, fully self-contained
+│   ├── index.html           # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── lang.js              # texts in English, Russian and Swedish, tr(), the language switcher
+│   ├── game.js              # the whole game: world, plane, balloons, rendering, screens
+│   ├── flag-gb.svg, flag-ru.svg, flag-se.svg  # the language switcher's flags
 │   ├── update.js            # picks up a new deploy, reloading only on the start screen
 │   ├── README.md             # project documentation (English, player-facing)
 │   ├── README_RU.md           # project documentation (Russian, player-facing)

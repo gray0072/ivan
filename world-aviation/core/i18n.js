@@ -22,8 +22,12 @@ const I18N = {
       this.applyDom();
     }
   },
-  // the browser's language, for the first visit
+  // for the first visit: the language picked in the gallery, else the browser's
   guess() {
+    try {
+      const g = localStorage.getItem('ivanGallery.lang');
+      if (LANGS[g]) return g;
+    } catch (e) { /* no storage: fall through */ }
     const l = (typeof navigator !== 'undefined' && (navigator.language || '')).slice(0, 2).toLowerCase();
     return LANGS[l] ? l : 'en';
   },

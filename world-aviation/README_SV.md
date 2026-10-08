@@ -100,7 +100,7 @@ Varje kurs slutar med ett kort prov: fyra frågor, tre rätt för godkänt. De �
 
 ## Språk
 
-Hela spelet — menyerna, genomgångarna och rapporterna, uppmaningarna och meddelandena under flygningen, nödchecklistorna, pekknapparna, kurserna och proven — finns på **engelska, ryska och svenska**. Startskärmen är en himmel över ett hav av moln som glider förbi — gyllene i gryning och skymning, blå på dagen, stjärnklar på natten, efter din egen klocka — där riktiga flygbolags trafikplan flyger förbi i tur och ordning. Välj språk högst upp på startskärmen; valet sparas (första gången följer spelet webbläsarens språk). Namnen på flygplatser, städer och flygbolag och texterna på instrumenten är kvar som i en riktig cockpit.
+Hela spelet — menyerna, genomgångarna och rapporterna, uppmaningarna och meddelandena under flygningen, nödchecklistorna, pekknapparna, kurserna och proven — finns på **engelska, ryska och svenska**. Startskärmen är en himmel över ett hav av moln som glider förbi — gyllene i gryning och skymning, blå på dagen, stjärnklar på natten, efter din egen klocka — där riktiga flygbolags trafikplan flyger förbi i tur och ordning. Välj språk med flaggorna högst upp på startskärmen (EN · RU · SV); valet sparas (första gången tar spelet språket du valde i galleriet, annars webbläsarens). Namnen på flygplatser, städer och flygbolag och texterna på instrumenten är kvar som i en riktig cockpit.
 
 ## Enheter och kartan
 

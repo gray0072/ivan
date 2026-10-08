@@ -101,7 +101,7 @@ Every course ends in a short exam: four questions, three right to pass. They are
 
 ## Language
 
-The whole game — the menus, the briefings and debriefs, the prompts and messages in flight, the emergency checklists, the touch buttons, the courses and the exams — is in **English, Russian or Swedish**. The title screen is a sky above a sea of clouds drifting past — golden at dawn and dusk, blue by day, starry at night, following your own clock — with airliners of real airlines flying through it in turn. Pick the language at the top of the title screen; the choice is remembered (the first time the game follows your browser's language). Airport, city and airline names and the instrument labels stay as in a real cockpit.
+The whole game — the menus, the briefings and debriefs, the prompts and messages in flight, the emergency checklists, the touch buttons, the courses and the exams — is in **English, Russian or Swedish**. The title screen is a sky above a sea of clouds drifting past — golden at dawn and dusk, blue by day, starry at night, following your own clock — with airliners of real airlines flying through it in turn. Pick the language with the flags at the top of the title screen (EN · RU · SV); the choice is remembered (the first time the game takes the language picked in the gallery, else your browser's). Airport, city and airline names and the instrument labels stay as in a real cockpit.
 
 ## Units and the map
 
