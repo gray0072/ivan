@@ -164,8 +164,15 @@ const AircraftModels = {
         const n = jetNacelle(dia, dia * (look.engines === 'wing4' ? 2.0 : 1.75), eng, dark, paint, look.flatNacelles);
         n.position.set(side * spanAt(f), ny, nz);
         g.add(n);
-        const py = new THREE.Mesh(new THREE.BoxGeometry(dia * 0.14, dia * 0.5, dia * 1.6), metal);
-        py.position.set(side * spanAt(f), ny + dia * 0.44, nz - dia * 0.65);
+        // the pylon sits on top of the cowling (its foot just inside the cowl, which narrows to
+        // 0.42 of the fan at the back), from near the intake to a little past the exhaust: lower,
+        // it hung into the exhaust and showed as a box through the back of the engine
+        // (its top at the wing's middle: a big fan pulled up to the wing put it through the top
+        // of the wing)
+        const foot = ny + dia * ((look.flatNacelles ? 0.86 : 1) * 0.42 - 0.03);
+        const head = Math.max(foot + dia * 0.12, Math.min(ny + dia * 0.72, yAt(f)));
+        const py = new THREE.Mesh(new THREE.BoxGeometry(dia * 0.14, head - foot, dia * 1.35), metal);
+        py.position.set(side * spanAt(f), (head + foot) / 2, nz - dia * 0.575);
         g.add(py);
       }
     } else if (look.engines === 'rear2') {

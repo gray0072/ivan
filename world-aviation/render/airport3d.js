@@ -1036,15 +1036,17 @@ function makeRunwayCanvas(a, ch) {
 const SIGN_FONTS = ['Arial, sans-serif', '"Trebuchet MS", sans-serif', 'Verdana, sans-serif', 'Georgia, serif',
   'Tahoma, sans-serif', '"Segoe UI", sans-serif', '"Gill Sans", "Gill Sans MT", Calibri, sans-serif', '"Century Gothic", Futura, sans-serif'];
 function signStyle(a, id) {
+  // (unsigned shifts: `>>` turned a hash over 2^31 negative, the index too, so there was no
+  // typeface and the canvas fell back to 10 px text — blank signs at those airports)
   const h = hashStr(a.id + 'signs');
   const hsl = {};
   new THREE.Color(id.color).getHSL(hsl);
-  const hue = (hsl.h + ((h % 7) - 3) * 0.012 + 1) % 1, sat = clamp(hsl.s * (0.8 + (h >> 3) % 5 * 0.08), 0.25, 0.9);
-  const light = clamp(0.24 + ((h >> 6) % 6) * 0.03, 0.2, 0.42);
+  const hue = (hsl.h + ((h % 7) - 3) * 0.012 + 1) % 1, sat = clamp(hsl.s * (0.8 + (h >>> 3) % 5 * 0.08), 0.25, 0.9);
+  const light = clamp(0.24 + ((h >>> 6) % 6) * 0.03, 0.2, 0.42);
   const css = (l) => '#' + new THREE.Color().setHSL(hue, sat, l).getHexString();
   return {
-    font: SIGN_FONTS[(h >> 9) % SIGN_FONTS.length], weight: ['700', '800', '900'][(h >> 12) % 3],
-    bg: css(light), dark: css(light * 0.6), fg: (h >> 14) % 3 ? '#ffffff' : '#ffe9a8'
+    font: SIGN_FONTS[(h >>> 9) % SIGN_FONTS.length], weight: ['700', '800', '900'][(h >>> 12) % 3],
+    bg: css(light), dark: css(light * 0.6), fg: (h >>> 14) % 3 ? '#ffffff' : '#ffe9a8'
   };
 }
 

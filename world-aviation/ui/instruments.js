@@ -42,12 +42,12 @@ const Instruments = {
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, top + 0.5); ctx.lineTo(w, top + 0.5); ctx.stroke();
 
-    // blocks: engines on the left, configuration and warnings on the right,
-    // the round gauges in a row in the space between
+    // blocks: engines on the left, the configuration (with the caution lights under it) on the
+    // right, the round gauges in a row in the space between
     const y = top + panelH * 0.52;
     if (!compact) {
-      const engW = 160, warnW = 128, cfgW = 150;
-      const warnX = w - 12 - warnW, cfgX = warnX - 10 - cfgW;
+      const engW = 160, cfgW = 160;
+      const cfgX = w - 12 - cfgW;
       const c0 = 12 + engW + 10, c1 = cfgX - 10;
       const cx = (c0 + c1) / 2;
       const r = Math.min(panelH * 0.4, (c1 - c0) / 8.96, 100);
@@ -58,7 +58,6 @@ const Instruments = {
       this.vsi(ctx, cx + 3.86 * r, y, r * 0.62, fl);
       this.engines(ctx, 12, top + 10, engW, panelH - 20, fl, sys);
       this.config(ctx, cfgX, top + 10, cfgW, panelH - 20, fl, sys);
-      this.warnings(ctx, warnX, top + 10, warnW, panelH - 20, sys, fl);
       this.hsi(ctx, cx, top - 22, Math.min(w * 0.5, 460), 24, fl, sys);
     } else if (Cockpit.portrait(w, h)) {
       // a phone held upright: the configuration on one line, the four gauges two by two, and
@@ -648,7 +647,9 @@ const Instruments = {
     ctx.fillStyle = 'rgba(14,18,24,0.72)';
     roundRect(ctx, x, y, w, h, 6); ctx.fill();
     ctx.strokeStyle = '#3c444e'; ctx.stroke();
-    const step = phone ? 22 : 17;
+    // (on a computer the caution lights follow the lines; in a low panel the lines close up)
+    const step = phone ? 22 : Math.min(17, (h - 8 - this.CAUTION_H - 22) / 7);
+    const lightsY = y + 10 + 7 * step + 12;
     const line = (i, label, value, color) => {
       const yy = y + (phone ? 14 : 10) + i * step;
       if (yy > y + h - 8) return;
@@ -678,50 +679,35 @@ const Instruments = {
     line(6, 'ANTI-ICE', sys && sys.antiIce ? 'ON' : 'off', sys && sys.antiIce ? '#7fc4ff' : '#c8d2dc');
     line(7, 'ICE', fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
       fl.env.iceAmount > 0.2 ? '#ff7a5c' : fl.env.iceAmount > 0.02 ? '#e8b13a' : '#c8d2dc');
-    if (h > 150) {
-      line(8, 'GS · SEL', Units.spd(fl.groundSpeedKt()).replace(' ', '') + ' · ' + Units.alt(fl.ap.alt).replace(/ (ft|m)$/, ''), '#dfe7ee');
-      line(9, 'NEXT', fl.targetName(), '#e65cf0');
-      line(10, 'DIST', fl.st.onGround ? '-' : Units.dist(fl.targetDistNm(), 1), '#e65cf0');
-    }
+    if (sys) this.cautions(ctx, x + 8, lightsY, w - 16, sys);
     ctx.restore();
   },
 
-  // ---------- warning lights ----------
-  warnings(ctx, x, y, w, h, sys, fl) {
-    ctx.save();
-    ctx.fillStyle = 'rgba(14,18,24,0.72)';
-    roundRect(ctx, x, y, w, h, 6); ctx.fill();
-    ctx.strokeStyle = '#3c444e'; ctx.stroke();
-    ctx.fillStyle = '#9aa7b4';
-    ctx.font = '600 10px system-ui, sans-serif';
-    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText('ANNUNCIATOR', x + 8, y + 6);
+  // ---------- the caution lights ----------
+  // Under the configuration lines, two by two: only what no other instrument shows. A fire and
+  // a failed engine are on the engine gauges (FIRE, FAIL), the ice, the gear and the autopilot
+  // are lines of the configuration, a stall is the STALL warning on the view.
+  CAUTION_H: 33,
+  cautions(ctx, x, y, w, sys) {
+    const W = sys.warnings;
     const lights = [
-      ['FIRE', sys.warnings.fire, '#ff4d3d'],
-      ['ENG', sys.warnings.engine, '#ffb03a'],
-      ['FUEL', sys.warnings.fuelLeak || sys.warnings.fuelLow, '#ffb03a'],
-      ['HYD', sys.warnings.hydraulic, '#ffb03a'],
-      ['ICE', sys.warnings.ice, '#7fc4ff'],
-      ['CABIN', sys.warnings.cabin, '#ffb03a'],
-      ['STALL', sys.warnings.stall, '#ff4d3d'],
-      ['DAMAGE', sys.warnings.damage, '#ffb03a'],
-      ['GEAR', sys.warnings.gear || (fl.st.gear < 1 && fl.st.gear > 0), '#ffb03a'],
-      ['AP', fl.ap.on, '#7de08a']
+      ['FUEL', W.fuelLeak || W.fuelLow],
+      ['HYD', W.hydraulic],
+      ['CABIN', W.cabin],
+      ['DAMAGE', W.damage]
     ];
-    const cols = 2, cw = (w - 16) / cols, ch = 15;
-    for (let i = 0; i < lights.length; i++) {
-      const [label, on, color] = lights[i];
-      const lx = x + 8 + (i % cols) * cw, ly = y + 24 + Math.floor(i / cols) * (ch + 3);
-      ctx.fillStyle = on ? color : '#1c2229';
-      roundRect(ctx, lx, ly, cw - 6, ch, 3); ctx.fill();
-      ctx.strokeStyle = on ? color : '#39414a';
+    const cw = w / 2, ch = 15;
+    ctx.font = '700 9px system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    lights.forEach(([label, on], i) => {
+      const lx = x + (i % 2) * cw, ly = y + Math.floor(i / 2) * (ch + 3);
+      ctx.fillStyle = on ? '#ffb03a' : '#1c2229';
+      roundRect(ctx, lx, ly, cw - 4, ch, 3); ctx.fill();
+      ctx.strokeStyle = on ? '#ffb03a' : '#39414a';
       ctx.stroke();
       ctx.fillStyle = on ? '#10141a' : '#5d6874';
-      ctx.font = '700 9px system-ui, sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(label, lx + (cw - 6) / 2, ly + ch / 2 + 0.5);
-    }
-    ctx.restore();
+      ctx.fillText(label, lx + (cw - 4) / 2, ly + ch / 2 + 0.5);
+    });
   }
 };
 
