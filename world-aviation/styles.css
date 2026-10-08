@@ -486,7 +486,7 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 }
 .bigBtn small { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; color: #9fb0c3; }
 .bigBtn:hover, .btn:hover, .chip:hover, .opt:hover { filter: brightness(1.15); }
-.bigBtn.default, .btn.default { border-color: #ffd97a; }
+.bigBtn.default { border-color: #ffd97a; }
 
 .settingsRow { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; }
 .btnRow + .settingsRow { margin-top: 22px; }
@@ -554,11 +554,36 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 }
 .btn.small { padding: 5px 10px; font-size: 12px; }
 .btn.danger { border-color: #ff7a5c; color: #ffc0b0; }
+/* the screen's main action: filled gold, as the title's; on a card (a contract, a type, a region,
+   a course) the card's action in blue, so a grid of cards does not shout */
+.btn.default {
+  border-color: #ffe7ad;
+  background: linear-gradient(180deg, #ffe08a, #f0a83c);
+  color: #1d1406;
+  box-shadow: 0 6px 18px rgba(255, 176, 70, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.cFoot .btn.default, .course .btn.default {
+  border-color: #79b8ef;
+  background: linear-gradient(180deg, #3c86cf, #2a63a2);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.btn.picked { border-color: rgba(111, 177, 232, 0.55); background: rgba(36, 64, 90, 0.6); color: #cfe6fa; }
+.btn.big { padding: 12px 26px; font-size: 16px; }
+/* the way on carries an arrow forward, the way back an arrow back */
+.btn.fwd::after { content: "\2002\2192"; }
+.btn.back::before { content: "\2190\2002"; }
+.btn.back { border-color: rgba(140, 170, 200, 0.3); background: transparent; color: #c3d1de; }
+.btn.back:hover { background: rgba(140, 170, 200, 0.1); filter: none; }
 .btn.disabled, .btn:disabled { opacity: 0.42; cursor: not-allowed; }
 .btn:focus-visible, .bigBtn:focus-visible, .chip:focus-visible, .opt:focus-visible, .tab:focus-visible { outline: 2px solid #ffd97a; outline-offset: 2px; }
+.btn.default:focus-visible, .bigBtn.default:focus-visible { outline-color: #ffffff; }
+/* a sub-screen's way back, at its top left */
+.screenBar { margin: -4px 0 12px; }
 .settingsRow .fineprint { flex-basis: 100%; margin: 0; }
 .form input { -webkit-user-select: text; user-select: text; }
 .btnRow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.btnRow.split { justify-content: space-between; }
 .titleFoot { display: flex; gap: 10px; }
 
 /* ---------- the title screen: a glass panel over the moving sky (ui/title.js) ---------- */
@@ -670,7 +695,7 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .filterEmpty .lead { margin-top: 0; }
 
 /* ---------- ops ---------- */
-.opsHead { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid rgba(140, 170, 200, 0.14); }
+.opsHead { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; }
 .opsWho { font-size: 18px; font-weight: 700; }
 .opsSub { font-size: 12px; color: #8fa1b3; }
 .opsMoney { margin-left: auto; font-size: 22px; font-weight: 800; color: #ffd97a; }
@@ -678,18 +703,22 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .rep { display: inline-flex; align-items: center; gap: 4px; font: 700 12px ui-monospace, monospace; }
 .rep i { width: 8px; height: 8px; border-radius: 50%; }
 
-.tabs { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
+/* the hub's tabs: a row over a line, the open one lit and underlined in gold */
+.tabs { display: flex; gap: 2px; margin: 0 0 14px; flex-wrap: wrap; border-bottom: 1px solid rgba(140, 170, 200, 0.18); }
 .tab {
-  padding: 8px 16px;
-  border: 1px solid transparent;
+  margin-bottom: -1px;
+  padding: 10px 16px 9px;
+  border: 0;
+  border-bottom: 3px solid transparent;
   border-radius: 9px 9px 0 0;
-  background: #131a23;
-  color: #a9bacb;
+  background: transparent;
+  color: #9fb0c3;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
-.tab.on { background: #1d2a38; border-color: rgba(140, 180, 220, 0.3); color: #eaf3fb; }
+.tab:hover { background: rgba(140, 170, 200, 0.08); color: #dbe7f2; }
+.tab.on { background: rgba(140, 180, 220, 0.1); border-bottom-color: #ffd97a; color: #ffffff; }
 .tab { display: inline-flex; align-items: center; gap: 7px; }
 /* the hangar's count of types you may lease */
 .tabCount {
@@ -712,6 +741,11 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 @keyframes tabPulse {
   0% { box-shadow: 0 0 0 0 rgba(255, 217, 122, 0.5); }
   60%, 100% { box-shadow: 0 0 0 6px rgba(255, 217, 122, 0); }
+}
+@media (max-width: 520px) {
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: none; padding: 9px 10px 8px; font-size: 13px; gap: 5px; }
 }
 @media (prefers-reduced-motion: reduce) { .tabDot { animation: none; box-shadow: 0 0 0 3px rgba(255, 217, 122, 0.2); } }
 .tabBody { min-height: 260px; }
@@ -789,6 +823,13 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .acMain { padding: 10px 14px 12px; display: flex; flex-direction: column; flex: 1; }
 .acCard.plane .acHead b { font-size: 16px; }
 .acStats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 2px 0 10px; }
+/* the Network tab's region cards: the region's map in the picture, its countries' flags */
+.acPic.map img { object-fit: cover; }
+.acCard.region.locked .acPic img { filter: saturate(0.55) brightness(0.8); }
+.acCard.region .acBadge { top: 10px; bottom: auto; }
+.rgFlags { display: flex; flex-wrap: wrap; gap: 4px; margin: 7px 0 0; }
+.rgFlags img.flag { margin: 0; }
+.rgCodes { margin: 0 0 4px; font: 11px/1.5 ui-monospace, monospace; color: #6f8396; }
 .acStat { padding: 6px 4px 5px; border: 1px solid rgba(140, 170, 200, 0.12); border-radius: 8px; background: #0f161e; text-align: center; min-width: 0; }
 .acStat b { display: block; font-size: 14px; color: #e8f0f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .acStat span { display: block; font-size: 10px; color: #7f93a6; text-transform: uppercase; letter-spacing: 0.5px; }

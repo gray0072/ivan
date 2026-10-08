@@ -112,7 +112,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── lib/                  # three.min.js — three.js r147 (UMD), vendored
 │   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio, update (picks up a new deploy)
 │   ├── data/                 # airports, countries, airlines, emergencies, quizzes, lang-ru / lang-sv (translations), geodata (coastlines, mountains)
-│   ├── art/                  # flags, landmarks (city symbols), airline emblems
+│   ├── art/                  # flags, landmarks (city symbols), airline emblems, region maps
 │   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems
 │   ├── render/               # three.js: aircraft models, hangar pictures, airport3d, apron3d, scene3d
 │   ├── ui/                   # instruments, cockpit, hud, ui (screens), filters (board and hangar), title (the title's sky)

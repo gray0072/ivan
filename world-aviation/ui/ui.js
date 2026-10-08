@@ -17,15 +17,21 @@ const UI = {
   },
 
   // Arrow keys move the focus between buttons; Space / Enter press the focused
-  // (or the default) button of whatever screen is showing.
+  // (or the default) button of whatever screen is showing; Esc presses its way back
+  // (the button marked data-esc), if it has one — in the pause menu itself Esc resumes.
   key(e) {
     if (this.screen.hidden || Game.mode === 'flying') return;
+    if (e.key === 'Escape') {
+      const back = this.screen.querySelector('button[data-esc]:not([disabled])');
+      if (back) { e.preventDefault(); e.stopPropagation(); back.click(); }
+      return;
+    }
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
       if (e.key === 'Enter') { const b = this.screen.querySelector('.btn.default'); if (b) { e.preventDefault(); b.click(); } }
       return;
     }
-    const btns = Array.from(this.screen.querySelectorAll('button:not([disabled])')).filter((b) => b.offsetParent !== null);
+    const btns = this.buttons();
     if (!btns.length) return;
     const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (dirs[e.key]) {
@@ -76,14 +82,41 @@ const UI = {
         if (b.disabled) return;
         Audio2.resume();
         Audio2.cue('page');
-        UI.action(b.getAttribute('data-act'), b.getAttribute('data-v'));
+        const act = b.getAttribute('data-act'), v = b.getAttribute('data-v');
+        const before = { view: this.viewKey(), y: this.screen.scrollTop, index: this.buttons().indexOf(b) };
+        UI.action(act, v);
+        this.keepPlace(act, v, before);
       });
     });
     this.screen.querySelectorAll('input[name="startMode"]').forEach((r) => {
       r.addEventListener('change', () => { if (r.checked) Career.setSkipPushback(r.value === 'pushback'); });
     });
-    const first = this.screen.querySelector('.default:not([disabled])') || this.screen.querySelector('button');
+    const first = this.screen.querySelector('.default:not([disabled])') || this.screen.querySelector('.tab.on') || this.screen.querySelector('button');
     if (first && !isCoarsePointer()) first.focus({ preventScroll: true });
+  },
+
+  // the buttons that can be focused now
+  buttons() {
+    return Array.from(this.screen.querySelectorAll('button:not([disabled])')).filter((b) => b.offsetParent !== null);
+  },
+  // which screen is showing: the mode, the ops tab and the heading
+  viewKey() {
+    const h = this.screen.querySelector('h1, h2');
+    return Game.mode + '|' + (Game.mode === 'ops' ? this.tab : '') + '|' + (h ? h.textContent : '');
+  },
+  // After a press the screen is drawn anew: the focus stays on the same button (a tab, a chip, a
+  // card's button) and, on the same screen, so does the scroll. If that button is gone, the screen's
+  // default keeps the focus, or else the button now in its place.
+  keepPlace(act, v, before) {
+    if (this.screen.hidden) return;
+    const same = this.viewKey() === before.view;
+    if (same) this.screen.scrollTop = before.y;
+    if (isCoarsePointer()) return;
+    const btns = this.buttons();
+    const again = btns.find((b) => b.getAttribute('data-act') === act && b.getAttribute('data-v') === v);
+    if (again) { again.focus({ preventScroll: true }); return; }
+    if (!same || this.screen.querySelector('.default:not([disabled])') || !btns.length) return;
+    btns[Math.min(Math.max(before.index, 0), btns.length - 1)].focus({ preventScroll: true });
   },
 
   difficultyChips() {
@@ -154,8 +187,8 @@ const UI = {
       '<label>' + tr('Pilot name') + '<input id="pilotName" value="' + esc(CAREER.PILOT_NAME_DEFAULT) + '" maxlength="24"></label>' +
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
-      '<div class="btnRow"><button class="btn default" data-act="startcareer">' + tr('Start flying') + '</button>' +
-      '<button class="btn" data-act="back">' + tr('Back') + '</button></div>', 'narrow');
+      '<div class="btnRow split"><button class="btn back" data-act="back" data-esc>' + tr('Back') + '</button>' +
+      '<button class="btn default fwd" data-act="startcareer">' + tr('Start flying') + '</button></div>', 'narrow');
     this.screen.dataset.view = 'newcareer';
   },
 
@@ -163,11 +196,12 @@ const UI = {
     this.panel(
       '<h2>' + tr('Delete this career?') + '</h2><p class="lead">' + tr('The money, the reputation and every course you have passed will be gone.') + '</p>' +
       '<div class="btnRow"><button class="btn danger" data-act="wipeyes">' + tr('Delete it') + '</button>' +
-      '<button class="btn default" data-act="back">' + tr('Keep it') + '</button></div>', 'narrow');
+      '<button class="btn default" data-act="back" data-esc>' + tr('Keep it') + '</button></div>', 'narrow');
   },
 
   showHowTo() {
     this.panel(
+      '<div class="screenBar"><button class="btn back" data-act="back">' + tr('Back') + '</button></div>' +
       '<h2>' + tr('How to fly') + '</h2>' +
       '<div class="cols">' +
       '<div><h3>' + tr('Keyboard') + '</h3><ul class="keys">' +
@@ -209,7 +243,7 @@ const UI = {
       '<li>' + tr('The <b>spoiler</b> (/) is a speed brake: out when you are too high or too fast on the descent, in again before the landing. After touchdown put it out with idle and the brakes — it puts the weight on the wheels, so they stop you sooner.') + '</li>' +
       '<li>' + tr('Taxi to your gate, stop in the parking box and set the parking brake.') + '</li>' +
       '</ul></div></div>' +
-      '<div class="btnRow"><button class="btn default" data-act="back">' + tr('Got it') + '</button></div>');
+      '<div class="btnRow"><button class="btn default" data-act="back" data-esc>' + tr('Got it') + '</button></div>');
   },
 
   // ---------- ops hub ----------
@@ -222,6 +256,7 @@ const UI = {
     const body = this.tabBody();
     this.panel(
       '<div class="opsHead">' +
+      '<button class="btn back" data-act="backtitle" data-esc>' + tr('Menu') + '</button>' +
       '<div><div class="opsWho">' + esc(d.pilot.name) + '</div>' +
       '<div class="opsSub">' + CAREER.PILOT_LICENSE + ' · ' + tr('base {id}', { id: d.base }) +
       (d.lastTo && d.lastTo !== d.base ? ' · ' + tr('now at {id}', { id: d.lastTo }) : '') + '</div></div>' +
@@ -235,8 +270,7 @@ const UI = {
         const b = this.tabBadge(t);
         return '<button class="tab' + (this.tab === t ? ' on' : '') + '" data-act="tab" data-v="' + t + '"' +
           (b ? ' title="' + esc(b.title) + '"' : '') + '>' + tr(t.charAt(0).toUpperCase() + t.slice(1)) + (b ? b.html : '') + '</button>';
-      }).join('') +
-      '<button class="tab" data-act="backtitle">' + tr('Menu') + '</button></div>' +
+      }).join('') + '</div>' +
       '<div class="tabBody">' + body + '</div>');
     if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
@@ -301,31 +335,40 @@ const UI = {
       '</div>' +
       '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
       (flying ? '' : (need ? '<span class="need">' + esc(need) + '</span>' : '') +
-        '<button class="btn' + (need ? ' disabled' : ' default') + '" data-act="briefing" data-v="' + esc(c.id) + '"' +
+        '<button class="btn' + (need ? ' disabled' : ' default fwd') + '" data-act="briefing" data-v="' + esc(c.id) + '"' +
         (need ? ' disabled' : '') + '>' + tr('Fly this') + '</button>') + '</div>' +
       '</div>';
   },
 
-  // the regions of the world and their traffic rights
+  // the regions of the world and their traffic rights: a card per region with its map
+  // (art/regionmaps.js), the flags of its countries and what it takes to open it
   networkBody() {
     const d = Career.data;
     const cards = REGIONS.map((rg) => {
       const st = Career.regionState(rg);
       const apts = World.list.filter((a) => a.region === rg.id);
-      const status = st.owned ? '<span class="ok">' + tr('Traffic rights held') + '</span>'
+      const countries = [];
+      for (const a of apts) if (countries.indexOf(a.country) < 0) countries.push(a.country);
+      const status = st.owned ? ''                       // the badge on the map says it
         : '<span class="' + (st.repOk ? 'ok' : 'need') + '">' + tr('reputation {a} / {b}', { a: Math.floor(Career.bestRep()), b: rg.rep }) + '</span>' +
           '<span class="' + (st.flightsOk ? 'ok' : 'need') + '">' + tr('flights {a} / {b}', { a: d.stats.flights, b: rg.flights }) + '</span>';
       const can = st.available && st.afford;
       const btn = st.owned ? '' : '<button class="btn' + (can ? ' default' : ' disabled') + '" data-act="buyRegion" data-v="' + rg.id + '"' +
         (can ? '' : ' disabled') + '>' + (st.available ? (st.afford ? tr('Buy the rights · {cost}', { cost: fmtMoney(rg.cost) }) : tr('Needs {cost}', { cost: fmtMoney(rg.cost) })) : tr('Locked')) + '</button>';
-      return '<div class="acCard' + (st.owned ? ' sel' : '') + '">' +
-        '<div class="acHead"><b>' + esc(tr(rg.name)) + '</b><span class="tag">' + tr('airports: {n}', { n: apts.length }) + '</span></div>' +
+      return '<div class="acCard plane region' + (st.owned ? ' sel' : st.available ? '' : ' locked') + '">' +
+        '<div class="acPic map"><img src="' + RegionMaps.url(rg.id) + '" alt="' + esc(tr(rg.name)) + '">' +
+        '<span class="acMtow" title="' + esc(tr('airports: {n}', { n: apts.length })) + '">✈ ' + apts.length + '</span>' +
+        (st.owned ? '<span class="acBadge sel">✓ ' + tr('Traffic rights held') + '</span>'
+          : st.available ? '' : '<span class="acBadge lock">🔒 ' + tr('Locked') + '</span>') +
+        '</div><div class="acMain">' +
+        '<div class="acHead"><b>' + esc(tr(rg.name)) + '</b></div>' +
+        '<div class="rgFlags">' + countries.map((c) => '<img class="flag" src="' + Flags.url(c) + '" alt="" title="' + esc(c) + '">').join('') + '</div>' +
         '<p class="acBlurb">' + esc(tr(rg.blurb)) + '</p>' +
-        '<p class="acBlurb">' + apts.map((a) => a.id).join(' · ') + '</p>' +
-        '<div class="cFoot">' + status + btn + '</div></div>';
+        '<p class="rgCodes">' + apts.map((a) => a.id).join(' · ') + '</p>' +
+        '<div class="cFoot">' + status + btn + '</div></div></div>';
     }).join('');
     return '<div class="hint">' + tr('You start with Swedish domestic flying out of Arlanda. Each region of the world needs traffic rights: earn the reputation and the flights, then buy them. A leg may be up to {nm} nm — further than that, fly there in legs and the board offers onward flights.',
-      { nm: CONTRACTS.MAX_NM.toLocaleString('en-US') }) + '</div><div class="cards">' + cards + '</div>';
+      { nm: CONTRACTS.MAX_NM.toLocaleString('en-US') }) + '</div><div class="cards planes">' + cards + '</div>';
   },
 
   requirement(c) {
@@ -388,7 +431,7 @@ const UI = {
         : locked
           ? '<div class="cFoot"><span class="need">' + tr('Locked — pass {course}', { course: esc(this.courseText(course).name) }) + '</span></div>'
           : '<div class="cFoot"><span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
-            (sel ? '' : '<button class="btn" data-act="selectAc" data-v="' + a.id + '">' + tr('Select') + '</button>') + '</div>') +
+            '<button class="btn' + (sel ? ' picked' : ' default') + '" data-act="selectAc" data-v="' + a.id + '">' + (sel ? '✓ ' + tr('Selected') : tr('Select')) + '</button></div>') +
       '</div></div>';
   },
 
@@ -470,8 +513,7 @@ const UI = {
       unlockLine(fx.remote, tr('Remote strips and ice fields for every type')) +
       '</ul>' +
       '<h3>' + tr('Log') + '</h3><ul class="log">' + (log || '<li>' + tr('Nothing yet.') + '</li>') + '</ul>' +
-      '<div class="btnRow"><button class="btn" data-act="backtitle">' + tr('Title screen') + '</button>' +
-      '<button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>' +
+      '<div class="btnRow"><button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>' +
       '</div></div>';
   },
 
@@ -500,6 +542,7 @@ const UI = {
         (x.stormy ? '<tr><td>' + tr('WIND') + '</td><td>' + tr('stormy — expect turbulence and shear') + '</td></tr>' : '');
     };
     this.panel(
+      '<div class="screenBar"><button class="btn back" data-act="tab" data-v="dispatch" data-esc>' + tr('Back to the board') + '</button></div>' +
       '<h2 class="clientHead">' + clientLogo(c, true) + esc(c.client) + '</h2>' +
       '<div class="briefTop"><div class="bigRoute">' + c.fromId + ' → ' + c.toId + '</div>' +
       '<div class="bigPay">' + fmtMoney(c.pay) + '</div></div>' +
@@ -534,10 +577,9 @@ const UI = {
       '<label class="check"><input type="radio" name="startMode" value="pushback"' + (Career.skipPushback ? ' checked' : '') + '> ' +
       tr('At the runway — at the holding point, the engines running, cleared for take-off: about 5 minutes less on the ground, no procedure bonus') + '</label>' +
       '<p class="fineprint">' + tr('The full procedure is the real routine of the job; take the short start when you just want to fly. Your choice is remembered.') + '</p>' +
-      '<div class="btnRow"><button class="btn default" data-act="fly">' + tr('Fly it') + '</button>' +
+      '<div class="btnRow"><button class="btn default fwd big" data-act="fly">' + tr('Fly it') + '</button>' +
       '<button class="btn" data-act="practice"' + (Career.data.money < fee ? ' disabled' : '') + '>' +
-      tr('Practice the landing · {fee}', { fee: fmtMoney(fee) }) + '</button>' +
-      '<button class="btn" data-act="tab" data-v="dispatch">' + tr('Back to the board') + '</button></div>' +
+      tr('Practice the landing · {fee}', { fee: fmtMoney(fee) }) + '</button></div>' +
       '<p class="fineprint">' + tr('Practice the landing: you start on the final at {id}, clean (gear and flaps up), the autopilot holds the glide path for {s} s and hands over {nm} nm out, then you lower the gear and the flaps, land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
         { nm: PRACTICE.HANDOVER_NM, id: to.id, s: PRACTICE.AP_SECONDS, v: SIM.ROLLOUT_EXIT_KT, who: esc(tr(FACTIONS[c.faction].name)) }) + '</p>' +
       '</div></div>');
@@ -555,6 +597,7 @@ const UI = {
         : !PRACTICE.REP[r.grade] ? tr('Grade C or better earns a little reputation.')
           : tr('No new reputation: a practice on this contract already earned it (a better grade earns more).');
     this.panel(
+      '<div class="screenBar"><button class="btn back" data-act="brief" data-esc>' + tr('Back to the briefing') + '</button></div>' +
       '<div class="debriefTop">' +
       '<div class="' + gradeCls + '">' + (r.ok ? r.grade : '—') + '</div>' +
       '<div class="debriefTitle">' + tr('Practice landing · {id} runway {rwy}', { id: c.toId, rwy: Game.flight ? Game.flight.arrival.rwyName : '' }) +
@@ -568,8 +611,7 @@ const UI = {
       '<div class="btnRow">' +
       '<button class="btn default" data-act="practice"' + (Career.data.money < Career.practiceFee() ? ' disabled' : '') + '>' +
       tr('Try again · {fee}', { fee: fmtMoney(Career.practiceFee()) }) + '</button>' +
-      '<button class="btn" data-act="brief">' + tr('Back to the briefing') + '</button>' +
-      '<button class="btn" data-act="fly">' + tr('Fly it for real') + '</button>' +
+      '<button class="btn fwd" data-act="fly">' + tr('Fly it for real') + '</button>' +
       '</div>', 'narrow');
   },
 
@@ -607,7 +649,7 @@ const UI = {
       '<div class="btnRow">' +
       (p.bankrupt ? '<button class="btn default" data-act="gameover">' + tr('Start again') + '</button>'
         : failed ? '<button class="btn default" data-act="retry">' + tr('Try again') + '</button><button class="btn" data-act="ops">' + tr('Back to ops') + '</button>'
-          : '<button class="btn default" data-act="ops">' + tr('Next flight') + '</button>') +
+          : '<button class="btn default fwd" data-act="ops">' + tr('Next flight') + '</button>') +
       '</div>';
     this.panel(body, 'debrief');
   },
@@ -634,11 +676,11 @@ const UI = {
     const fl = Game.flight;
     if (!fl) { this.showPause(); return; }
     this.panel(
+      '<div class="screenBar"><button class="btn back" data-act="pauseBack" data-esc>' + tr('Back') + '</button></div>' +
       '<h2>' + tr('Paused') + '</h2>' +
       (what === 'aircraft' ? '<div class="cards planes">' + this.aircraftCard(fl.ac, true) + '</div>'
         : '<div class="contracts">' + this.contractCard(fl.contract, null, true) + '</div>') +
-      '<div class="btnRow"><button class="btn default" data-act="pauseBack">' + tr('Back') + '</button>' +
-      '<button class="btn" data-act="resume">' + tr('Resume') + '</button></div>', 'narrow');
+      '<div class="btnRow"><button class="btn default" data-act="resume">' + tr('Resume') + '</button></div>', 'narrow');
     if (what === 'aircraft' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
 
@@ -688,7 +730,7 @@ const UI = {
             (q.course.cost ? ' ' + esc(T.fee) + ' ' + fmtMoney(q.course.cost) + '.' : '')
           : esc(T.failed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '. ' + esc(T.need)) + '</p>' +
         (pass ? '<p class="ok">' + esc(tx.effect) + '</p>' : '') +
-        '<div class="btnRow">' + (pass ? '<button class="btn default" data-act="quizdone">' + esc(T.back) + '</button>'
+        '<div class="btnRow">' + (pass ? '<button class="btn default" data-act="quizdone" data-esc>' + esc(T.back) + '</button>'
           : '<button class="btn default" data-act="course" data-v="' + q.course.id + '">' + esc(T.again) + '</button>' +
           '<button class="btn" data-act="quizdone">' + esc(T.giveUp) + '</button>') + '</div>', 'narrow');
       return;
@@ -712,7 +754,7 @@ const UI = {
       '<div class="btnRow">' +
       (ans === null
         ? (q.hint ? '' : '<button class="btn" data-act="quizHint">💡 ' + esc(T.hint) + '</button>')
-        : '<button class="btn default" data-act="quizNext">' + esc(T.next) + '</button>') +
+        : '<button class="btn default fwd" data-act="quizNext">' + esc(T.next) + '</button>') +
       '<button class="btn" data-act="quitquiz">' + esc(T.giveUp) + '</button></div>', 'narrow');
   },
 
@@ -766,8 +808,8 @@ const UI = {
       case 'tab': this.tab = v; this.showOps(); break;
       case 'briefing': this.showBriefing(v); break;
       case 'selectAc': Career.select(v); this.showOps(); break;
-      case 'boardFilter': Filters.boardAction(v); this.reshowOps(name, v); break;
-      case 'hangarFilter': Filters.hangarAction(v); this.reshowOps(name, v); break;
+      case 'boardFilter': Filters.boardAction(v); this.showOps(); break;
+      case 'hangarFilter': Filters.hangarAction(v); this.showOps(); break;
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;
       case 'course': this.showQuiz(v); break;
       case 'answer': {
@@ -828,16 +870,6 @@ const UI = {
       case 'gameover': Career.reset(); Game.mode = 'menu'; this.showTitle(); break;
       default: break;
     }
-  },
-
-  // the ops hub again after a filter changed: where it was scrolled to, the focus on the same chip
-  reshowOps(act, v) {
-    const y = this.screen.scrollTop;
-    const focused = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act') === act;
-    this.showOps();
-    this.screen.scrollTop = y;
-    const b = focused && this.screen.querySelector('button[data-act="' + act + '"][data-v="' + v + '"]');
-    if (b) b.focus({ preventScroll: true });
   },
 
   // re-render whichever screen is showing (after a setting changed)

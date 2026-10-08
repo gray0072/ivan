@@ -268,7 +268,6 @@ const TEXT_RU = {
   'Remote strips and ice fields for every type': 'Удалённые полосы и ледовые аэродромы для всех типов',
   'Log': 'Журнал',
   'Nothing yet.': 'Пока пусто.',
-  'Title screen': 'Главное меню',
   '{name} starts flying. Base: Stockholm Arlanda.': '{name} начинает летать. База: Стокгольм-Арланда.',
   'Traffic rights: {region}': 'Права на полёты: {region}',
   'Flight {from} → {to} lost: {reason}': 'Рейс {from} → {to} сорван: {reason}',

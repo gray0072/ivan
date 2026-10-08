@@ -268,7 +268,6 @@ const TEXT_SV = {
   'Remote strips and ice fields for every type': 'Avlägsna banor och isfält för alla typer',
   'Log': 'Logg',
   'Nothing yet.': 'Inget än.',
-  'Title screen': 'Startskärmen',
   '{name} starts flying. Base: Stockholm Arlanda.': '{name} börjar flyga. Bas: Stockholm Arlanda.',
   'Traffic rights: {region}': 'Trafikrättigheter: {region}',
   'Flight {from} → {to} lost: {reason}': 'Flygningen {from} → {to} förlorad: {reason}',
