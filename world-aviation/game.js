@@ -457,7 +457,7 @@ const Game = {
       if (!st.onGround && fl.altAgl() > 150) {
         fl.setPhase('CLIMB');
         fl.ap.alt = this.cruiseAltFt(); fl.ap.altSet = false;
-        fl.info(tr('Climb to {alt} ft — engage the autopilot <kbd>Y</kbd>', { alt: fmtAltFt(fl.ap.alt) }));
+        fl.info(tr('Climb to {alt} ft — engage the autopilot <kbd>Y</kbd>', { alt: fmtAltFt(fl.ap.alt) }), 'AP');
       }
     } else if (p === 'CLIMB') {
       HUD.setPrompt(tr('<b>Climb</b> to {alt} ft', { alt: fmtAltFt(fl.ap.alt) }) +
@@ -465,7 +465,7 @@ const Game = {
         (!fl.ap.on ? ' · ' + tr('autopilot <kbd>Y</kbd>') : ''));
       if (Math.abs(st.pos.y / FT - fl.ap.alt) < 300) {
         fl.setPhase('CRUISE');
-        fl.info(tr('Cruise · time acceleration: <kbd>T</kbd> faster, <kbd>R</kbd> slower'));
+        fl.info(tr('Cruise · time acceleration: <kbd>T</kbd> faster, <kbd>R</kbd> slower'), 'TIME');
       }
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'CRUISE') {
@@ -660,7 +660,7 @@ const Game = {
           // pilot or a checklist chose stays (on the approach the glideslope takes over anyway)
           if (!fl.ap.altSet && fl.phase !== 'APPROACH') fl.ap.alt = this.programAltFt();
         }
-        fl.info(tr('Autopilot') + ' ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + Units.alt(fl.ap.alt) : tr('off')));
+        fl.info(tr('Autopilot') + ' ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + Units.alt(fl.ap.alt) : tr('off')), 'AP');
         Audio2.cue('click');
         break;
       case 'timeFaster': fl.changeTimeAccel(1); break;
@@ -699,7 +699,7 @@ const Game = {
         fl.ap.nav = true; fl.locCaptured = false;
         fl.ap.alt = this.programAltFt(); fl.ap.altSet = false;
         if (!fl.ap.on) { fl.ap.on = true; fl.ap.vsI = 0; }
-        fl.info(tr('Autopilot back on the programme — NAV to {id} · ALT {alt} ft', { id: fl.arrival.id, alt: fmtAltFt(fl.ap.alt) }));
+        fl.info(tr('Autopilot back on the programme — NAV to {id} · ALT {alt} ft', { id: fl.arrival.id, alt: fmtAltFt(fl.ap.alt) }), 'AP');
         Audio2.cue('click');
         break;
       case 'throttlePreset': fl.setThrottle(arg); break;

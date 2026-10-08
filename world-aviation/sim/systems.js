@@ -268,7 +268,9 @@ const Systems = {
     this.outcome = null;
     Audio2.cue('caution');
     fl.warn(def.id.toUpperCase(), tr(def.title));
-    // the interruption: drop the clock back to real time
+    // the interruption: drop the clock back to real time (it climbs back once the checklist is closed)
+    const was = fl.cheatAccel ? SIM.TIME_ACCEL_STEPS.length - 1 : fl.timeAccelIndex;
+    fl.timeAccelResume = Math.max(fl.timeAccelResume || 0, was); fl.resumeT = 0;
     fl.timeAccelIndex = 0; fl.cheatAccel = false;
     fl.env.timeAccel = 1;
   },

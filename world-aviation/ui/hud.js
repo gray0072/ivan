@@ -53,7 +53,10 @@ const HUD = {
     const now = performance.now();
     const last = this.messages[this.messages.length - 1];
     if (last && last.text === msg.text && now - last.t < 3000) return;
-    this.messages.push({ text: msg.text, kind: msg.id, t: now });
+    // one message per topic: the autopilot's and the time's newest replaces the one before
+    const topic = msg.topic || (msg.id !== 'info' ? msg.id : null);
+    if (topic) this.messages = this.messages.filter((m) => m.topic !== topic);
+    this.messages.push({ text: msg.text, kind: msg.id, topic, t: now });
     while (this.messages.length > 5) this.messages.shift();
   },
   render() {

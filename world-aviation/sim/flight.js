@@ -85,6 +85,8 @@ const Flight = {
     this.simTime = 0;
     this.acc = 0;
     this.timeAccelIndex = 0;
+    this.timeAccelResume = 0;        // the step an emergency cut the time from, to climb back to
+    this.resumeT = 0;
     this.cheatAccel = false;
     this.guidance = null;
     this.navFailed = false; this.cargoShift = false; this.medical = false;
@@ -149,7 +151,8 @@ const Flight = {
     if (!this.recent.some((e) => e.id === id)) Audio2.cue('warning');
     this.recent.push({ id, t: this.realElapsed });
   },
-  info(text) { this.events.push({ id: 'info', text, t: this.realElapsed }); },
+  // topic: a newer message on the same topic ('AP', 'TIME') replaces the one on the screen
+  info(text, topic) { this.events.push({ id: 'info', text, topic, t: this.realElapsed }); },
 
   // ---------- derived values ----------
   // the surface under the aeroplane: the ground, or the water (not the sea bed under it)
@@ -246,7 +249,7 @@ const Flight = {
   // dtReal: real seconds since the last frame. Returns the simulated seconds.
   update(dtReal) {
     this.realElapsed += dtReal;
-    const accel = this.timeAccel();
+    const accel = this.timeAccel(dtReal);
     this.acc += dtReal * accel;
     const dt = SIM.FIXED_DT;
     let steps = Math.floor(this.acc / dt);
@@ -298,7 +301,7 @@ const Flight = {
   // distance left must hold that many seconds at each of the steps below it.
   approachAccelMax() {
     if (!this.arrival) return SIM.TIME_ACCEL_STEPS[SIM.TIME_ACCEL_STEPS.length - 1];
-    const left = (this.distToRunwayNm() - SIM.TIME_ACCEL_X1_NM) * NM;
+    const left = (this.accelDistNm() - SIM.TIME_ACCEL_X1_NM) * NM;
     if (left <= 0) return 1;
     const gs = Math.max(30, Math.hypot(this.st.vel.x, this.st.vel.z));
     const steps = SIM.TIME_ACCEL_STEPS;
@@ -310,14 +313,38 @@ const Flight = {
     }
     return max;
   },
+  // The distance to the threshold divided by the cosine of the angle between the track and the
+  // way to it (at most x5, TIME_ACCEL_MIN_COS): flown straight at the runway it is the distance
+  // itself, flown past or around the airport it is longer, so the time stays fast there.
+  accelDistNm() {
+    const t = this.arrival.thr, st = this.st;
+    const dx = t.x - st.pos.x, dz = t.z - st.pos.z;
+    const d = Math.hypot(dx, dz), gs = Math.hypot(st.vel.x, st.vel.z);
+    if (d < 1 || gs < 1) return d / NM;
+    const cos = (dx * st.vel.x + dz * st.vel.z) / (d * gs);
+    return d / Math.max(cos, SIM.TIME_ACCEL_MIN_COS) / NM;
+  },
   timeAccelTop() {
     const max = this.timeAccelMax();
     let top = 0;
     SIM.TIME_ACCEL_STEPS.forEach((v, i) => { if (v <= max) top = i; });
     return top;
   },
-  timeAccel() {
+  timeAccel(dtReal = 0) {
     const e = this.env;
+    // after an emergency the time climbs back to where it was, a step a second, once the checklist is closed
+    if (this.timeAccelResume > this.timeAccelIndex && !(this.systems && this.systems.checklist)) {
+      this.resumeT += dtReal;
+      if (this.resumeT >= SIM.TIME_ACCEL_RESUME_S) {
+        this.resumeT = 0;
+        if (this.timeAccelIndex < this.timeAccelTop()) {
+          this.timeAccelIndex++;
+          e.timeAccel = SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
+          this.info(tr('TIME x{n}', { n: e.timeAccel }), 'TIME');
+        } else this.timeAccelResume = 0;     // no faster allowed now: the pilot takes it from here
+      }
+    } else this.resumeT = 0;
+    if (this.timeAccelIndex >= this.timeAccelResume) this.timeAccelResume = 0;
     if (this.timeAccelIndex === 0 && !this.cheatAccel) { e.timeAccel = 1; return 1; }
     const top = this.timeAccelTop();
     const was = e.timeAccel;
@@ -327,7 +354,7 @@ const Flight = {
     e.timeAccel = this.cheatAccel ? SIM.TIME_ACCEL_CHEAT : SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
     if (e.timeAccel < was) {
       this.info(tr('TIME x{n}', { n: e.timeAccel }) + (this.approachCapped ? ' — ' + tr('approaching {id}', { id: this.arrival.id })
-        : e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height') : ''));
+        : e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height') : ''), 'TIME');
     }
     return e.timeAccel;
   },
@@ -335,12 +362,13 @@ const Flight = {
   changeTimeAccel(dir) {
     const steps = SIM.TIME_ACCEL_STEPS;
     const top = this.timeAccelTop();
+    this.timeAccelResume = 0;                // the pilot sets the time: no climbing back after an emergency
     if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = dir < 0 ? top : this.timeAccelIndex; }
     else if (dir > 0 && this.timeAccelIndex >= top) { this.warn('TIME', this.timeAccelLimitText()); return; }
-    else if (dir < 0 && this.timeAccelIndex === 0) { this.info(tr('TIME x{n}', { n: 1 })); return; }
+    else if (dir < 0 && this.timeAccelIndex === 0) { this.info(tr('TIME x{n}', { n: 1 }), 'TIME'); return; }
     else this.timeAccelIndex = clamp(this.timeAccelIndex + dir, 0, top);
     this.env.timeAccel = steps[this.timeAccelIndex];
-    this.info(tr('TIME x{n}', { n: this.env.timeAccel }));
+    this.info(tr('TIME x{n}', { n: this.env.timeAccel }), 'TIME');
   },
   // why T cannot go any faster
   timeAccelLimitText() {
