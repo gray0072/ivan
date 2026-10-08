@@ -107,30 +107,40 @@ const UI = {
     const qualBtns = ['auto', 'low', 'medium', 'high'].map((d) =>
       '<button class="chip' + (s.quality === d ? ' on' : '') + '" data-act="quality" data-v="' + d + '">' +
       esc(tr(d === 'auto' ? 'Auto' : QUALITY[d].name)) + '</button>').join('');
+    const nRegions = REGIONS.length;
     this.panel(
       '<div class="titleWrap">' +
-      this.langChips() +
-      '<h1 class="logo">World Aviation</h1>' +
+      '<div class="titleTop"><span class="titleKicker">✈ ' + tr('Based at Stockholm Arlanda · ARN') + '</span>' + this.langChips() + '</div>' +
+      '<h1 class="logo"><span>World</span> Aviation</h1>' +
       '<p class="tagline">' + tr('A Swedish pilot, one leased turboprop — and the whole world to win, one region at a time.') + '</p>' +
+      '<div class="titleFacts">' +
+      '<span><b>' + World.list.length + '</b>' + tr('airports') + '</span>' +
+      '<span><b>' + AIRCRAFT.length + '</b>' + tr('aircraft types') + '</span>' +
+      '<span><b>' + nRegions + '</b>' + tr('regions of the world') + '</span>' +
+      '<span><b>' + Object.keys(AIRLINE_BY_CODE).length + '</b>' + tr('real airlines') + '</span>' +
+      '</div>' +
       '<div class="cardRow">' +
       (has ? '<button class="bigBtn default" data-act="continue">' + tr('Continue career') + '<small>' + esc(Career.data.pilot.name) + ' · ' +
         fmtMoney(Career.data.money) + '</small></button>' +
         '<button class="bigBtn" data-act="newcareer">' + tr('New career') + '<small>' + tr('different pilot, fresh start') + '</small></button>'
         : '<button class="bigBtn default" data-act="newcareer">' + tr('Start your career') + '<small>' + tr('based at Stockholm Arlanda') + '</small></button>') +
       '</div>' +
+      '<div class="titleSettings">' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="settingsRow">' +
       '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + qualBtns + '</div>' +
       '<div class="setGroup"><span>' + tr('Sound') + '</span>' +
       '<button class="chip' + (s.sound ? ' on' : '') + '" data-act="sound">' + tr(s.sound ? 'On' : 'Off') + '</button></div>' +
       this.unitChips() + this.aidChip() +
-      '</div>' +
+      '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
       (has ? '<button class="btn" data-act="wipe">' + tr('Delete career') + '</button>' : '') +
       '</div>' +
       '<p class="fineprint">' + esc(tr(CAREER.INTRO)) + '</p>' +
       '</div>', 'title');
+    this.screen.dataset.view = 'title';
+    TitleSky.show();
   },
 
   showNewCareer() {
@@ -257,7 +267,9 @@ const UI = {
   dispatchBody() {
     const d = Career.data;
     const ac = Career.aircraft();
-    const list = (d.contracts || []).map((c) => {
+    const all = d.contracts || [];
+    const shown = Filters.boardList(all, (c) => this.requirement(c));
+    const list = shown.map((c) => {
       const from = World.byId[c.fromId], to = World.byId[c.toId];
       const need = this.requirement(c);
       return '<div class="contract' + (this.selContract === c.id ? ' sel' : '') + '">' +
@@ -283,7 +295,9 @@ const UI = {
     return '<div class="hint">' + tr('Aircraft: <b>{ac}</b> ({klass} · max {nm} nm).', { ac: esc(ac.name), klass: esc(tr(ac.klass)), nm: ac.maxRangeNm }) + ' ' +
       (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(World.byId[d.lastTo].city), base: d.base })
         : tr('From your base {base} · open regions: {n} — more in the Network tab.', { base: d.base, n: d.regions.length })) + '</div>' +
-      '<div class="contracts">' + (list || '<p class="lead">' + tr('No contracts for this aircraft right now — try another type in the hangar.') + '</p>') + '</div>';
+      Filters.boardBar() +
+      (all.length && !shown.length ? Filters.empty('boardFilter', tr('No offers match the filters ({n} on the board).', { n: all.length }))
+        : '<div class="contracts">' + (list || '<p class="lead">' + tr('No contracts for this aircraft right now — try another type in the hangar.') + '</p>') + '</div>');
   },
 
   // the regions of the world and their traffic rights
@@ -322,11 +336,12 @@ const UI = {
     return null;
   },
 
-  // The hangar: a card per type, lightest first, each with its picture (render/preview3d.js),
+  // The hangar: a card per type (lightest first, or as the sort bar says), each with its picture (render/preview3d.js),
   // its key figures in tiles and the rest in rows
   hangarBody() {
     const d = Career.data;
-    const cards = AIRCRAFT.slice().sort((x, y) => x.mtow - y.mtow).map((a) => {
+    const types = Filters.hangarList(AIRCRAFT.slice());
+    const cards = types.map((a) => {
       const locked = !Career.unlocked(a);
       const sel = d.selected === a.id;
       const course = a.unlock ? COURSES.find((c) => c.id === a.unlock) : null;
@@ -363,7 +378,8 @@ const UI = {
         '</div></div>';
     }).join('');
     return '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') +
-      '</div><div class="cards planes">' + cards + '</div>';
+      '</div>' + Filters.hangarBar() +
+      (types.length ? '<div class="cards planes">' + cards + '</div>' : Filters.empty('hangarFilter', tr('No aircraft match the filters.')));
   },
 
   // The course tree, in the game's language (the exams run in it too)
@@ -724,6 +740,8 @@ const UI = {
       case 'tab': this.tab = v; this.showOps(); break;
       case 'briefing': this.showBriefing(v); break;
       case 'selectAc': Career.select(v); this.showOps(); break;
+      case 'boardFilter': Filters.boardAction(v); this.reshowOps(name, v); break;
+      case 'hangarFilter': Filters.hangarAction(v); this.reshowOps(name, v); break;
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;
       case 'course': this.showQuiz(v); break;
       case 'answer': {
@@ -781,6 +799,16 @@ const UI = {
       case 'gameover': Career.reset(); Game.mode = 'menu'; this.showTitle(); break;
       default: break;
     }
+  },
+
+  // the ops hub again after a filter changed: where it was scrolled to, the focus on the same chip
+  reshowOps(act, v) {
+    const y = this.screen.scrollTop;
+    const focused = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act') === act;
+    this.showOps();
+    this.screen.scrollTop = y;
+    const b = focused && this.screen.querySelector('button[data-act="' + act + '"][data-v="' + v + '"]');
+    if (b) b.focus({ preventScroll: true });
   },
 
   // re-render whichever screen is showing (after a setting changed)

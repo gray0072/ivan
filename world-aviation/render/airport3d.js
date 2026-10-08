@@ -530,7 +530,8 @@ const Airport3D = {
   },
 
   // ---------- per frame: flags and the windsock in the wind, the PAPI, the flasher ----------
-  update(rec, time, eye, wind, dark, vis) {
+  // own: the player's aeroplane { pos (world), r } for the apron traffic to give way to
+  update(rec, time, eye, wind, dark, vis, own) {
     const a = rec.a;
     // the lights shine through haze much further than the ground shows (they draw without
     // fog), but not without end: out to 2.5 times the visibility; a little bigger at night
@@ -541,13 +542,22 @@ const Airport3D = {
     // the wind in the airport's frame: x across, z = -t
     const wx = wind.x * a.perX + wind.z * a.perZ;
     const wz = -(wind.x * a.dirX + wind.z * a.dirZ);
-    const spd = Math.hypot(wx, wz);
-    const yaw = Math.atan2(-wz, wx);
+    // the flags follow the wind slowly (about 3 s), so the gusts do not make them twitch; the
+    // wave on the cloth runs on its own clock, so a change of the wind speeds it up gently
+    // instead of jumping it
+    const dt = clamp(time - (rec.flagTime === undefined ? time : rec.flagTime), 0, 0.1);
+    rec.flagTime = time;
+    const w = rec.flagWind || (rec.flagWind = { x: wx, z: wz, ph: 0 });
+    const kw = 1 - Math.exp(-dt / 3);
+    w.x += (wx - w.x) * kw; w.z += (wz - w.z) * kw;
+    const spd = Math.hypot(w.x, w.z);
+    const yaw = Math.atan2(-w.z, w.x);
     const strength = clamp(spd / 8, 0, 1);
+    w.ph += dt * (1.6 + spd * 0.25);
     // A flag: in a light wind the cloth hangs down along the pole, in a strong one it streams
     // out; each point bends down by the droop angle about the hoist edge (so that edge stays on
-    // the pole and the cloth stays on the downwind side of it), and a wave runs along it that
-    // grows towards the fly end
+    // the pole and the cloth stays on the downwind side of it), and a slow, shallow wave runs
+    // along it that grows towards the fly end
     const droop = (1 - strength) * 1.25, cd = Math.cos(droop), sd = Math.sin(droop);
     for (const f of rec.flags) {
       if (spd > 0.3) f.holder.rotation.y = yaw;
@@ -556,7 +566,7 @@ const Airport3D = {
         const x = b[i] - 0.22, k = x / f.fw;
         p[i] = 0.22 + x * cd;
         p[i + 1] = b[i + 1] - x * sd;
-        p[i + 2] = Math.sin(x * 0.9 - time * (3 + spd * 0.6) + f.phase) * k * f.fw * (0.05 + 0.06 * strength);
+        p[i + 2] = Math.sin(x * 0.6 - w.ph + f.phase) * k * f.fw * (0.03 + 0.03 * strength);
       }
       f.geo.attributes.position.needsUpdate = true;
       f.geo.computeVertexNormals();
@@ -575,7 +585,12 @@ const Airport3D = {
     });
     c.needsUpdate = true;
     // the apron: traffic, floodlights, lit windows (apron3d.js)
-    Apron3D.update(rec, time, dark || 0);
+    let mine = null;
+    if (own) {
+      const l = rec.frame.worldToLocal(new THREE.Vector3(own.pos.x, own.pos.y, own.pos.z));
+      mine = { t: -l.z, across: l.x, r: own.r };
+    }
+    Apron3D.update(rec, time, dark || 0, mine);
     // the flasher: 28 steps out at 30 m, twice a second, towards the threshold
     const k = Math.floor((time * 2 % 1) * 30);
     rec.flasher.visible = seen && k < 28;

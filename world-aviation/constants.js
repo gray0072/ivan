@@ -601,6 +601,12 @@ const AIRCRAFT = [
   }
 ];
 
+// ---------- The hangar's weight filter (ui/filters.js) ----------
+const HANGAR_FILTER = {
+  LIGHT_T: 30,                 // "light": up to this maximum take-off weight, tonnes
+  HEAVY_T: 100                 // "heavy": over this one (and the widebodies are the jets over it)
+};
+
 // ---------- Payload types ----------
 const PAYLOAD = {
   pax: { name: 'Passengers', ratePerKg: 3.4, label: 'passengers' },

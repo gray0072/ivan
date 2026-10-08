@@ -109,7 +109,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── art/                  # flags, landmarks (city symbols), airline emblems
 │   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems
 │   ├── render/               # three.js: aircraft models, hangar pictures, airport3d, apron3d, scene3d
-│   ├── ui/                   # instruments, cockpit, hud, ui (screens)
+│   ├── ui/                   # instruments, cockpit, hud, ui (screens), filters (board and hangar), title (the title's sky)
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── docs/                 # instrument screenshots (English UI) used by the READMEs
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png

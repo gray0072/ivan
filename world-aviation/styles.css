@@ -407,6 +407,13 @@ kbd {
   }
   #throttleZone { bottom: calc(10px + env(safe-area-inset-bottom)); height: calc(var(--panelH, 350px) - 40px); }
 }
+/* a tablet (a touch screen at least 600 px both ways): the messages in the left column under the
+   prompt, the last five, as on a desktop */
+@media (pointer: coarse) and (min-width: 600px) and (min-height: 600px) {
+  #messages { position: static; width: 100%; font-size: 12px; }
+  #messages .msg { margin: 0 0 4px; text-align: left; }
+  #messages .msg:nth-last-child(n+3), #messages .msg:nth-last-child(n+4) { display: table; }
+}
 
 /* ---------- screens ---------- */
 #screen {
@@ -507,6 +514,114 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .form input { -webkit-user-select: text; user-select: text; }
 .btnRow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .titleFoot { display: flex; gap: 10px; }
+
+/* ---------- the title screen: a glass panel over the moving sky (ui/title.js) ---------- */
+#titleSky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 59; display: block; background: #0b1017; }
+#titleSky[hidden] { display: none; }
+#screen[data-view="title"] { background: transparent; }
+.panel.title {
+  width: min(640px, 100%);
+  padding: 22px 26px 20px;
+  border: 1px solid rgba(200, 222, 255, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(18, 28, 44, 0.66), rgba(7, 11, 19, 0.56));
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  backdrop-filter: blur(14px) saturate(1.25);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: titleIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes titleIn { from { opacity: 0; transform: translateY(18px) scale(0.985); } to { opacity: 1; transform: none; } }
+/* a wide screen: the panel on the left, the aeroplanes in the sky on the right */
+@media (min-width: 901px) and (orientation: landscape) {
+  #screen[data-view="title"] { place-items: center start; }
+  #screen[data-view="title"] .panel.title { margin: auto auto auto max(4vw, 16px); }
+}
+/* held upright: the aeroplanes at the top, the panel under them */
+@media (orientation: portrait) {
+  #screen[data-view="title"] .panel.title { margin: max(30vh, 150px) auto 0; }
+}
+.titleTop { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.titleTop .langPick { margin: 0; }
+.titleKicker { font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: #ffd97a; }
+.panel.title h1.logo {
+  margin: 6px 0 6px;
+  font-size: clamp(40px, 8.4vw, 70px);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: -0.5px;
+  background: linear-gradient(100deg, #ffffff 0%, #d4e9ff 38%, #ffe2a0 50%, #d4e9ff 62%, #ffffff 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 6px 26px rgba(110, 170, 255, 0.35));
+  animation: logoShine 9s ease-in-out infinite;
+}
+.panel.title h1.logo span { font-weight: 300; letter-spacing: 1px; }
+@keyframes logoShine { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
+.panel.title .tagline { font-size: 15px; line-height: 1.5; color: #c8d6e4; margin-bottom: 14px; }
+.titleFacts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+.titleFacts span {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 5px 11px;
+  border: 1px solid rgba(200, 222, 255, 0.14);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #a9bdd0; font-size: 12px;
+}
+.titleFacts b { color: #eaf3fb; font-size: 14px; }
+.panel.title .bigBtn {
+  position: relative;
+  padding: 16px 44px 16px 18px;
+  border-color: rgba(200, 222, 255, 0.22);
+  background: linear-gradient(180deg, rgba(40, 58, 80, 0.75), rgba(20, 30, 44, 0.75));
+  transition: transform 0.18s, box-shadow 0.25s, filter 0.2s;
+}
+.panel.title .bigBtn::after { content: "→"; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 20px; opacity: 0.7; transition: transform 0.2s; }
+.panel.title .bigBtn.default {
+  border-color: #ffe7ad;
+  background: linear-gradient(180deg, #ffe08a, #f0a83c);
+  color: #1d1406;
+  box-shadow: 0 10px 30px rgba(255, 176, 70, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.panel.title .bigBtn.default small { color: rgba(40, 26, 6, 0.72); }
+@media (hover: hover) {
+  .panel.title .bigBtn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+  .panel.title .bigBtn:hover::after { transform: translate(4px, -50%); }
+}
+.titleSettings { padding-top: 14px; border-top: 1px solid rgba(200, 222, 255, 0.1); }
+.titleSettings .settingsRow { margin-bottom: 12px; }
+.panel.title .chip { background: rgba(14, 22, 32, 0.7); }
+.panel.title .chip.on { background: rgba(48, 92, 136, 0.85); }
+.panel.title .btn { background: rgba(20, 30, 42, 0.75); }
+.panel.title .fineprint { margin-bottom: 0; color: #8fa3b6; }
+@media (max-height: 520px) {
+  .panel.title h1.logo { font-size: 44px; }
+  .titleFacts { margin-bottom: 12px; }
+}
+@media (max-width: 640px) {
+  .panel.title { padding: 16px 16px 14px; border-radius: 16px; }
+  .titleKicker { font-size: 10px; letter-spacing: 1.2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel.title, .panel.title h1.logo { animation: none; }
+}
+
+/* ---------- the filter and sort bars over the board and the hangar (ui/filters.js) ---------- */
+.filterBar {
+  display: flex; flex-direction: column; gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(140, 170, 200, 0.14);
+  border-radius: 11px;
+  background: #101820;
+}
+.filterBar .setGroup { flex-wrap: wrap; row-gap: 6px; }
+.filterBar .setGroup > span { min-width: 54px; }
+.filterBar .chip { white-space: nowrap; }
+.chipDot { display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; }
+.filterEmpty { padding: 26px 16px; border: 1px dashed rgba(140, 170, 200, 0.25); border-radius: 11px; text-align: center; }
+.filterEmpty .lead { margin-top: 0; }
 
 /* ---------- ops ---------- */
 .opsHead { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid rgba(140, 170, 200, 0.14); }

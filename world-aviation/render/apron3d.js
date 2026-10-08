@@ -308,17 +308,36 @@ const Apron3D = {
     if (b) { b.docked.visible = !inUse; b.parked.visible = inUse; }
   },
 
-  // per frame: the traffic moves, and at night (dark 0..1) the lights come on
-  update(rec, time, dark) {
+  // per frame: the traffic moves, and at night (dark 0..1) the lights come on. own: the
+  // player's aeroplane in the airport's frame ({ t, across, r }: r about half its size) — the
+  // apron traffic gives way to it: a vehicle that would drive into it, or under its wings,
+  // stops and waits until it has passed
+  update(rec, time, dark, own) {
     const a = rec.a;
     const r = a.apronRect;
+    const dt = clamp(time - (rec.trafficTime === undefined ? time : rec.trafficTime), 0, 0.2);
+    rec.trafficTime = time;
     for (const v of rec.traffic || []) {
       if (v.kind === 'apron') {
         // up the road on one side, back on the other
-        const len = r.t1 - r.t0 - 40, s = ((time * v.speed / (2 * len) + v.phase) % 1) * 2 * len;
-        const out = s < len, t = out ? r.t0 + 20 + s : r.t1 - 20 - (s - len);
-        v.mesh.position.set(v.lane + (out ? 3 : -3), 0, -t);          // keeping right
-        v.mesh.rotation.y = out ? Math.PI : 0;
+        const len = r.t1 - r.t0 - 40;
+        if (v.s === undefined) v.s = v.phase * 2 * len;
+        const pos = (s) => {
+          const out = s < len;
+          return { out, t: out ? r.t0 + 20 + s : r.t1 - 20 - (s - len), across: v.lane + (out ? 3 : -3) };   // keeping right
+        };
+        let p = pos(v.s);
+        let go = true;
+        if (own) {
+          const ahead = (own.t - p.t) * (p.out ? 1 : -1);
+          go = !(Math.abs(own.across - p.across) < own.r + 14 && ahead > -own.r * 0.4 && ahead < own.r + 30);
+        }
+        if (go) {
+          v.s = (v.s + dt * v.speed) % (2 * len);
+          p = pos(v.s);
+        }
+        v.mesh.position.set(p.across, 0, -p.t);
+        v.mesh.rotation.y = p.out ? Math.PI : 0;
       } else {
         const rd = v.road;
         let s = ((time * v.speed / rd.len + v.phase) % 1) * rd.len;
