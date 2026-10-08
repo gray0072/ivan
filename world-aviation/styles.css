@@ -829,7 +829,7 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .acCard.region .acBadge { top: 10px; bottom: auto; }
 .rgFlags { display: flex; flex-wrap: wrap; gap: 4px; margin: 7px 0 0; }
 .rgFlags img.flag { margin: 0; }
-.rgCodes { margin: 0 0 4px; font: 11px/1.5 ui-monospace, monospace; color: #6f8396; }
+.rgCodes { margin: 0 0 4px; font: 600 12.5px/1.6 'Segoe UI', Arial, sans-serif; letter-spacing: 0.6px; color: #a7b9cb; word-spacing: 1px; }
 .acStat { padding: 6px 4px 5px; border: 1px solid rgba(140, 170, 200, 0.12); border-radius: 8px; background: #0f161e; text-align: center; min-width: 0; }
 .acStat b { display: block; font-size: 14px; color: #e8f0f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .acStat span { display: block; font-size: 10px; color: #7f93a6; text-transform: uppercase; letter-spacing: 0.5px; }

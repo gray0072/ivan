@@ -3,8 +3,8 @@
 // ============================================================
 // World Aviation — the region pictures on the Network tab: a small
 // map of the region's part of the world (the coastlines of
-// data/geodata.js), its airports lit up in gold over a soft glow,
-// the rest of the network as faint dots and the home base ringed.
+// data/geodata.js), its airports lit up in gold over a soft glow
+// and the home base ringed when it is well inside the picture.
 // Drawn once per region into a canvas and kept as an image URL
 // for UI.networkBody (ui/ui.js).
 // ============================================================
@@ -66,12 +66,8 @@ const RegionMaps = {
     }
     g.restore();
 
-    // the rest of the network, faint; the region's airports in gold
-    g.fillStyle = 'rgba(205, 220, 235, 0.38)';
-    for (const a of World.list) {
-      if (a.region === regionId) continue;
-      g.beginPath(); g.arc(px(a.lon), py(a.lat), 2.2, 0, TAU); g.fill();
-    }
+    // the region's airports in gold (only them: other regions' airports at the edge of a big
+    // region's picture read as clutter)
     for (const a of mine) {
       const x = px(a.lon), y = py(a.lat);
       g.beginPath(); g.arc(x, y, 4.6, 0, TAU);
@@ -79,11 +75,12 @@ const RegionMaps = {
       g.strokeStyle = 'rgba(40, 26, 6, 0.85)'; g.lineWidth = 1.4; g.stroke();
     }
 
-    // the home base, when it is in the picture
+    // the home base, when it is well inside the picture (clear of the badges along the top
+    // edge and of the edges, where its name would be cut off)
     const base = World.byId[(Career.data && Career.data.base) || 'ARN'];
     if (base) {
       const x = px(base.lon), y = py(base.lat);
-      if (x > 0 && x < w && y > 0 && y < h) {
+      if (x > 20 && x < w - 20 && y > h * 0.24 && y < h - 16) {
         g.beginPath(); g.arc(x, y, 9, 0, TAU);
         g.strokeStyle = '#ffffff'; g.lineWidth = 2.4; g.stroke();
         g.font = '700 17px "Segoe UI", Arial, sans-serif';

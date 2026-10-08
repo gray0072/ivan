@@ -364,7 +364,7 @@ const UI = {
         '<div class="acHead"><b>' + esc(tr(rg.name)) + '</b></div>' +
         '<div class="rgFlags">' + countries.map((c) => '<img class="flag" src="' + Flags.url(c) + '" alt="" title="' + esc(c) + '">').join('') + '</div>' +
         '<p class="acBlurb">' + esc(tr(rg.blurb)) + '</p>' +
-        '<p class="rgCodes">' + apts.map((a) => a.id).join(' · ') + '</p>' +
+        '<p class="rgCodes">' + apts.map((a) => a.id).join(' · ') + '</p>' +
         '<div class="cFoot">' + status + btn + '</div></div></div>';
     }).join('');
     return '<div class="hint">' + tr('You start with Swedish domestic flying out of Arlanda. Each region of the world needs traffic rights: earn the reputation and the flights, then buy them. A leg may be up to {nm} nm — further than that, fly there in legs and the board offers onward flights.',
