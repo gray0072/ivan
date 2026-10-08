@@ -253,6 +253,7 @@ const UI = {
     const d = Career.data;
     if (!d) { this.showTitle(); return; }
     const tabs = ['dispatch', 'network', 'hangar', 'training', 'career'];
+    if (this.tab !== 'hangar') this.freshAc = null;     // the new types' frames last while the hangar is open
     const body = this.tabBody();
     this.panel(
       '<div class="opsHead">' +
@@ -275,12 +276,16 @@ const UI = {
     if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
 
-  // what a tab shows next to its name: the hangar counts the types you may lease; training and
-  // the network get a gold dot when there is something you can do there right now
+  // what a tab shows next to its name: the hangar counts the types you may lease (and gets the
+  // gold dot too while a type a course has unlocked waits to be seen); training and the network
+  // get a gold dot when there is something you can do there right now
   tabBadge(t) {
     if (t === 'hangar') {
       const n = AIRCRAFT.filter((a) => Career.unlocked(a)).length;
-      return { html: '<span class="tabCount">' + n + '</span>', title: tr('Aircraft types available: {n} of {m}', { n, m: AIRCRAFT.length }) };
+      const fresh = Career.newAircraft();
+      const count = '<span class="tabCount">' + n + '</span>';
+      if (fresh.length) return { html: count + '<i class="tabDot"></i>', title: tr('New in the hangar: {list}', { list: fresh.map((a) => a.name).join(', ') }) };
+      return { html: count, title: tr('Aircraft types available: {n} of {m}', { n, m: AIRCRAFT.length }) };
     }
     if (t === 'training' && COURSES.some((c) => Career.courseState(c).available && Career.canAfford(c))) {
       return { html: '<i class="tabDot"></i>', title: tr('A course is open to you') };
@@ -387,28 +392,43 @@ const UI = {
 
   // The hangar: a card per type (lightest first, or as the sort bar says), each with its picture (render/preview3d.js),
   // its key figures in tiles and the rest in rows
+  // A type a course has just unlocked is shown first, in a gold frame, with the filters cleared
+  // if they would hide it; it stays new until the pilot leaves the hangar.
   hangarBody() {
-    const types = Filters.hangarList(AIRCRAFT.slice());
-    const cards = types.map((a) => this.aircraftCard(a)).join('');
-    return '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') +
-      '</div>' + Filters.hangarBar() +
+    const fresh = Career.newAircraft();
+    if (fresh.length) {
+      this.freshAc = fresh.map((a) => a.id);
+      if (Filters.hangarList(fresh.slice()).length < fresh.length) Filters.hangarAction('reset');
+      Career.seenNewAircraft();
+    }
+    const isFresh = (a) => !!(this.freshAc && this.freshAc.indexOf(a.id) >= 0);
+    const types = Filters.hangarList(AIRCRAFT.slice()).sort((p, q) => isFresh(q) - isFresh(p));
+    const cards = types.map((a) => this.aircraftCard(a, false, isFresh(a))).join('');
+    const news = AIRCRAFT.filter(isFresh);
+    return (news.length
+      ? '<div class="hint fresh">★ ' + tr('Your new rating opens {list} — select it to lease it for your next flight.', { list: '<b>' + news.map((a) => esc(a.name)).join(', ') + '</b>' }) + '</div>'
+      : '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') + '</div>') +
+      Filters.hangarBar() +
       (types.length ? '<div class="cards planes">' + cards + '</div>' : Filters.empty('hangarFilter', tr('No aircraft match the filters.')));
   },
 
   // an aircraft type's card: in the hangar, or in the pause of a flight in it (flying: no
   // selection, no lock, no button)
-  aircraftCard(a, flying) {
+  aircraftCard(a, flying, fresh) {
     const locked = !flying && !Career.unlocked(a);
     const sel = !flying && Career.data.selected === a.id;
+    const flights = locked ? 0 : Career.flightsIn(a.id);
     const course = a.unlock ? COURSES.find((c) => c.id === a.unlock) : null;
     const crew = a.seats < 10;
     const tile = (v, k) => '<div class="acStat"><b>' + v + '</b><span>' + esc(k) + '</span></div>';
-    return '<div class="acCard plane' + (sel ? ' sel' : '') + (locked ? ' locked' : '') + '">' +
+    return '<div class="acCard plane' + (sel ? ' sel' : '') + (locked ? ' locked' : '') + (fresh ? ' fresh' : '') + '">' +
       '<div class="acPic loading" style="--glow:' + hexAlpha((a.look && a.look.color) || '#6fb1e8', 0.42) + '">' +
       '<img data-ac="' + a.id + '" alt="' + esc(a.name) + '">' +
       '<span class="tag">' + esc(tr(a.klass)) + '</span>' +
       '<span class="acMtow" title="' + esc(tr('Weight: max take-off / empty')) + '">' + Math.round(a.mtow / 1000) + ' t</span>' +
+      (flights ? '<span class="acFlights" title="' + esc(tr('Flights you have completed in this type')) + '">✈ ' + tr('Flights: {n}', { n: flights }) + '</span>' : '') +
       (sel ? '<span class="acBadge sel">✓ ' + tr('Selected') + '</span>'
+        : fresh ? '<span class="acBadge fresh">★ ' + tr('New') + '</span>'
         : locked ? '<span class="acBadge lock">🔒 ' + esc(this.courseText(course).name) + '</span>' : '') +
       '</div><div class="acMain">' +
       '<div class="acHead"><b>' + esc(a.name) + '</b></div>' +
@@ -533,6 +553,7 @@ const UI = {
         (x.gust > 2 ? ', ' + tr('gusting {v}', { v: Math.round(x.speed + x.gust) }) : '');
       const cross = Math.abs(Math.sin((x.dir - a.hdgDeg) * DEG) * x.speed);
       return '<tr><td>' + tr('Runway in use') + '</td><td>' + a.rwyName + ' · ' + a.rwyLen + ' m</td></tr>' +
+        '<tr><td>' + tr('Elevation') + '</td><td>' + Math.round(a.elev / FT) + ' ft</td></tr>' +
         '<tr><td>' + tr('Wind') + '</td><td>' + wind + (cross > 4 ? ' · ' + tr('crosswind {v} kt', { v: Math.round(cross) }) : '') + '</td></tr>' +
         '<tr><td>QNH</td><td>' + x.qnh + ' hPa</td></tr>' +
         '<tr><td>' + tr('Visibility') + '</td><td>' + (x.vis / 1000).toFixed(1) + ' km</td></tr>' +
@@ -730,7 +751,10 @@ const UI = {
             (q.course.cost ? ' ' + esc(T.fee) + ' ' + fmtMoney(q.course.cost) + '.' : '')
           : esc(T.failed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '. ' + esc(T.need)) + '</p>' +
         (pass ? '<p class="ok">' + esc(tx.effect) + '</p>' : '') +
-        '<div class="btnRow">' + (pass ? '<button class="btn default" data-act="quizdone" data-esc>' + esc(T.back) + '</button>'
+        '<div class="btnRow">' + (pass ? (Career.newAircraft().length
+          ? '<button class="btn default" data-act="tab" data-v="hangar">' + tr('To the hangar') + ' →</button>' +
+            '<button class="btn" data-act="quizdone" data-esc>' + esc(T.back) + '</button>'
+          : '<button class="btn default" data-act="quizdone" data-esc>' + esc(T.back) + '</button>')
           : '<button class="btn default" data-act="course" data-v="' + q.course.id + '">' + esc(T.again) + '</button>' +
           '<button class="btn" data-act="quizdone">' + esc(T.giveUp) + '</button>') + '</div>', 'narrow');
       return;
@@ -805,7 +829,7 @@ const UI = {
         else this.showTitle();
         break;
       case 'backtitle': Game.mode = 'menu'; this.showTitle(); break;
-      case 'tab': this.tab = v; this.showOps(); break;
+      case 'tab': this.quiz = null; this.tab = v; this.showOps(); break;
       case 'briefing': this.showBriefing(v); break;
       case 'selectAc': Career.select(v); this.showOps(); break;
       case 'boardFilter': Filters.boardAction(v); this.showOps(); break;

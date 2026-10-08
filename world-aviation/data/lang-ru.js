@@ -878,5 +878,12 @@ const TEXT_RU = {
   'over {t} t': 'свыше {t} т',
   'Only what I may lease': 'Только доступные в аренду',
   'Payload': 'Загрузка',
-  'No aircraft match the filters.': 'Под фильтры не подходит ни один самолёт.'
+  'No aircraft match the filters.': 'Под фильтры не подходит ни один самолёт.',
+  'New in the hangar: {list}': 'Новое в ангаре: {list}',
+  'Your new rating opens {list} — select it to lease it for your next flight.': 'Новый допуск открывает {list} — выберите его, чтобы взять в аренду на следующий рейс.',
+  'Flights you have completed in this type': 'Сколько рейсов вы выполнили на этом типе',
+  'Flights: {n}': 'Рейсов: {n}',
+  'New': 'Новый',
+  'To the hangar': 'В ангар',
+  'Elevation': 'Высота аэропорта'
 };

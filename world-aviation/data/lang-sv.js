@@ -878,5 +878,12 @@ const TEXT_SV = {
   'over {t} t': 'över {t} t',
   'Only what I may lease': 'Bara det jag får leasa',
   'Payload': 'Last',
-  'No aircraft match the filters.': 'Inga flygplan passar filtren.'
+  'No aircraft match the filters.': 'Inga flygplan passar filtren.',
+  'New in the hangar: {list}': 'Nytt i hangaren: {list}',
+  'Your new rating opens {list} — select it to lease it for your next flight.': 'Din nya behörighet öppnar {list} — välj den för att leasa den till nästa flygning.',
+  'Flights you have completed in this type': 'Flygningar du har genomfört med den här typen',
+  'Flights: {n}': 'Flygningar: {n}',
+  'New': 'Ny',
+  'To the hangar': 'Till hangaren',
+  'Elevation': 'Flygplatsens höjd'
 };

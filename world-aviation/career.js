@@ -70,6 +70,8 @@ const Career = {
     d.lastTo = d.lastTo || d.base;
     d.season = d.season === undefined ? Math.floor(rand.next() * 12) : d.season;
     d.regions = d.regions || ['sweden'];
+    d.typeFlights = d.typeFlights || {};      // flights completed in each type, by its id
+    d.newAircraft = d.newAircraft || [];      // types a course has just unlocked, not yet seen in the hangar
     // (a board from before it grew to six offers is dealt again)
     if (d.contracts.length < 5 || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
@@ -87,6 +89,8 @@ const Career = {
       lastTo: CAREER.HOME_BASE,
       season: Math.floor(rand.next() * 12),
       regions: ['sweden'],
+      typeFlights: {},
+      newAircraft: [],
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
     };
@@ -123,6 +127,14 @@ const Career = {
   aircraft() { return AIRCRAFT.find((a) => a.id === this.data.selected) || AIRCRAFT.find((a) => !a.unlock); },
   owns(id) { return this.data.aircraft.indexOf(id) >= 0; },
   unlocked(ac) { return !ac.unlock || this.has(ac.unlock); },
+  flightsIn(id) { return (this.data.typeFlights && this.data.typeFlights[id]) || 0; },
+  // the types unlocked since the last visit to the hangar, and that visit
+  newAircraft() { return AIRCRAFT.filter((a) => (this.data.newAircraft || []).indexOf(a.id) >= 0); },
+  seenNewAircraft() {
+    if (!this.data.newAircraft || !this.data.newAircraft.length) return;
+    this.data.newAircraft = [];
+    this.save();
+  },
   // aircraft are leased per sector: any unlocked type can be selected
   select(id) {
     const ac = AIRCRAFT.find((a) => a.id === id);
@@ -176,6 +188,8 @@ const Career = {
     if (!st.available) return false;
     this.data.money -= c.cost;
     this.data.courses.push(c.id);
+    // the types this course opens are new in the hangar until the pilot has been there
+    for (const a of AIRCRAFT) if (a.unlock === c.id && this.data.newAircraft.indexOf(a.id) < 0) this.data.newAircraft.push(a.id);
     this.save();
     this.generateContracts();
     return true;
@@ -450,6 +464,7 @@ const Career = {
     d.rep[c.faction] = clamp(Math.round((rp + rep) * 10) / 10, 0, 100);
 
     d.stats.flights++;
+    d.typeFlights[ac.id] = (d.typeFlights[ac.id] || 0) + 1;
     d.stats.blockTime += result.blockSec;
     d.stats.landings++;
     if (result.grade === 'A+' || result.grade === 'A') d.stats.perfect++;
