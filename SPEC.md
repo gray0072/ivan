@@ -13,7 +13,7 @@ Authoritative developer/AI working spec for this repository. Not end-user docume
 
 ## Overview
 
-A growing gallery of small, self-contained browser games and experiments. Each project lives in its own folder (lowercase, hyphen-separated, e.g. `flight-simulator`) with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, a Swedish `README_SV.md`, and a `screenshot.png` (always showing the English UI). Every game has three difficulty levels (Easy / Medium / Hard), chosen on the start screen and in the restart dialog. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each.
+A growing gallery of small, self-contained browser games and experiments. Each project lives in its own folder (lowercase, hyphen-separated, e.g. `flight-simulator`) with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, a Swedish `README_SV.md`, and a `screenshot.png` (always showing the English UI). Every game has three difficulty levels (Easy / Medium / Hard), chosen on the start screen and in the restart dialog. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each; a switcher with flags in its top left corner shows it in English, Russian or Swedish (first the browser's language, then the one picked last).
 
 ## Projects
 
@@ -50,7 +50,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 ├── manifest.webmanifest      # PWA manifest of the gallery (icons from assets/)
 ├── tools/pwa-icons.sh        # renders a folder's PWA PNG icons from its SVGs with headless Chrome
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
-├── assets/                  # update.js + gallery.js (picks up a new deploy), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
+├── assets/                  # gallery.css, gallery-lang.js (the gallery's texts in English, Russian and Swedish), gallery.js (the language switcher, remembered as ivanGallery.lang; picks up a new deploy via update.js), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
 ├── flight-simulator/
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html           # the game itself, fully self-contained

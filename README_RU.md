@@ -15,7 +15,7 @@
 ![Mobile friendly](https://img.shields.io/badge/mobile-friendly-ffb627?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-9fb0c3?style=flat-square)](LICENSE)
 
-*[Read in English](README.md)*
+*[Read in English](README.md)* · *[Läs på svenska](README_SV.md)*
 
 </div>
 
@@ -80,7 +80,7 @@ npx serve .        # или просто открой любой index.html в �
 /
 ├── index.html                  # корневая страница-галерея
 ├── assets/                     # иконка репозитория и картинка для соцсетей
-├── README.md / README_RU.md
+├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                     # техническая спецификация
 ├── AGENTS.md                   # инструкции для AI-агентов
 ├── CLAUDE.md                   # -> ссылается на AGENTS.md

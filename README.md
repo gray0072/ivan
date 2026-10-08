@@ -15,7 +15,7 @@
 ![Mobile friendly](https://img.shields.io/badge/mobile-friendly-ffb627?style=flat-square)
 [![License: MIT](https://img.shields.io/badge/license-MIT-9fb0c3?style=flat-square)](LICENSE)
 
-*[Читать на русском](README_RU.md)*
+*[Читать на русском](README_RU.md)* · *[Läs på svenska](README_SV.md)*
 
 </div>
 
@@ -80,7 +80,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 /
 ├── index.html                  # root gallery page
 ├── assets/                     # repo icon and social preview image
-├── README.md / README_RU.md
+├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                     # technical spec
 ├── AGENTS.md                   # instructions for AI coding agents
 ├── CLAUDE.md                   # -> points to AGENTS.md
