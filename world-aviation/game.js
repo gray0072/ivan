@@ -140,6 +140,7 @@ const Game = {
     this.draw2d(dt);
     // a flight that ended in this frame (a practice landing, the debrief) is already silenced: keep it so
     Audio2.update(dt, this.mode === 'flying' ? fl : null, sys);
+    Cabin.update(this.mode === 'flying' ? fl : null, sys, this);
 
     // messages and panels
     while (fl.events.length) HUD.push(fl.events.shift());
@@ -183,7 +184,8 @@ const Game = {
   // little runway that sits where the runway is, the glideslope scale (cyan) a triangle that
   // sits where the glide path is, and a line of plain words says what to do. Off the view
   // ahead: on a desktop on the right, past the centre window post (on the left while the
-  // checklist fills the right side); on a phone high in the middle, between the buttons.
+  // checklist fills the right side), and so on a tablet on its side, clear of the throttle slider
+  // and under the buttons; on a phone high in the middle, between the buttons.
   // The landing aid setting turns it off.
   drawIls(ctx, w, h, fl) {
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
@@ -206,8 +208,13 @@ const Game = {
       cy = top * 0.56;
       // the glide path scale and its label reach about R + 70 to the right of the centre
       cx = qrh ? R + 70 : Math.min(w - R - 80, Math.max(inside ? Cockpit.postX(w, h) + R + 70 : 0, w - R - 110));
+    } else if (Math.min(w, h) >= 600) {
+      // a tablet on its side: on the right as on a desktop, clear of the throttle slider on the
+      // right edge and under the buttons in the top right corner
+      cx = Math.min(w - R - 80 - 70, Math.max(inside ? Cockpit.postX(w, h) + R + 70 : 0, w - R - 110 - 70));
+      cy = Math.max(top * 0.56, (HUD.buttonsH || 170) + V + 40);
     } else if (inside) {
-      // between the left column (strip and prompt) and the buttons
+      // a phone on its side: between the left column (strip and prompt) and the buttons
       const left = Math.min(300, w * 0.34) + 20, right = w - (HUD.buttonsW || 232) - 16;
       cx = (left + right) / 2;
     }

@@ -17,6 +17,8 @@
 // One-shots: the gear and the flaps locking, levers, the parking
 // brake, the spoiler, the touchdown (tyre chirp and a thump as hard
 // as the landing), warnings, the checklist, the 10 000 ft chime.
+// The cabin announcements (ui/cabin.js) go through announce(): the
+// cabin chime, then the voice; a callout cuts one off.
 // Callouts are spoken (speechSynthesis, where the browser has it) in
 // the game's language and units: "80 knots" (or 150 km/h), "V one",
 // "rotate", "positive rate" on the take-off, the radio heights (feet
@@ -282,11 +284,14 @@ const Audio2 = {
     this.voiceLang = v ? want : null;
     return this.voice;
   },
+  // the voice speaks English: the game is in English, or the browser has no voice for its language
+  speaksEnglish() {
+    const v = window.speechSynthesis ? this.voiceFor() : null;
+    return I18N.lang === 'en' || !!(v && !new RegExp('^' + I18N.lang, 'i').test(v.lang));
+  },
   // a callout's text for the voice that will say it
   tr(text, params) {
-    const v = window.speechSynthesis ? this.voiceFor() : null;
-    const english = I18N.lang === 'en' || (v && !new RegExp('^' + I18N.lang, 'i').test(v.lang));
-    if (!english) return tr(text, params);
+    if (!this.speaksEnglish()) return tr(text, params);
     return String(text).replace(/\{(\w+)\}/g, (all, k) => (params && params[k] !== undefined ? params[k] : all));
   },
 
@@ -294,7 +299,9 @@ const Audio2 = {
   say(text, urgent) {
     if (this.muted || !window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return;
     const s = window.speechSynthesis;
-    if (urgent && s.speaking) s.cancel();
+    // a callout comes first: a cabin announcement still talking is cut off
+    if ((urgent || this.paTalking) && s.speaking) s.cancel();
+    this.paTalking = false;
     const voice = this.voiceFor();
     const u = new SpeechSynthesisUtterance(text);
     if (voice) u.voice = voice;
@@ -302,6 +309,25 @@ const Audio2 = {
     u.rate = urgent ? 1.35 : 1.1;
     u.volume = 0.9;
     s.speak(u);
+  },
+
+  // a cabin announcement (ui/cabin.js): the cabin chime, then the voice, a little slower than
+  // the callouts; a callout cuts it off
+  announce(text) {
+    if (this.muted || !text || !window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return;
+    this.cue('pa');
+    setTimeout(() => {
+      if (this.muted) return;
+      const s = window.speechSynthesis, voice = this.voiceFor();
+      const u = new SpeechSynthesisUtterance(text);
+      if (voice) u.voice = voice;
+      u.lang = voice ? voice.lang : { en: 'en-GB', ru: 'ru-RU', sv: 'sv-SE' }[I18N.lang] || 'en-GB';
+      u.rate = 1.0;
+      u.volume = 0.75;
+      u.onend = u.onerror = () => { this.paTalking = false; };
+      this.paTalking = true;
+      s.speak(u);
+    }, 1300);
   },
 
   // ---------- one-shots ----------
@@ -385,6 +411,8 @@ const Audio2 = {
       case 'flapStop': this.thump(w, 120, 0.1, 0.1); break;
       case 'spoiler': this.noiseHit(w, 900, 0.7, 0.5, 0.12); break;
       case 'chime': beep(1046, 0.6, 'sine', 0.1); later(380, () => beep(784, 0.9, 'sine', 0.1)); break;
+      // the cabin PA's two-tone "ding-dong", lower and softer than the 10 000 ft chime
+      case 'pa': beep(659, 0.7, 'sine', 0.08); later(450, () => beep(523, 1.0, 'sine', 0.08)); break;
       case 'good': beep(880, 0.12, 'sine', 0.14); later(110, () => beep(1320, 0.2, 'sine', 0.14)); break;
       case 'bad': beep(300, 0.35, 'sawtooth', 0.14, 150); break;
       case 'page': beep(520, 0.06, 'sine', 0.07); break;

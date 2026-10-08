@@ -68,7 +68,7 @@ const HUD = {
       const tb = el('touchButtons'), root = document.documentElement.style;
       this.buttonsW = tb ? tb.offsetWidth : 0;
       if (this.buttonsW) root.setProperty('--buttonsW', this.buttonsW + 'px');
-      if (tb && tb.offsetHeight) root.setProperty('--buttonsH', tb.offsetHeight + 'px');
+      if (tb && tb.offsetHeight) { this.buttonsH = tb.offsetHeight; root.setProperty('--buttonsH', tb.offsetHeight + 'px'); }
       root.setProperty('--panelH', Math.round(window.innerHeight - Cockpit.panelTop(window.innerHeight)) + 'px');
     }
     this.messages = this.messages.filter((m) => now - m.t < 7000);

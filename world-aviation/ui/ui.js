@@ -167,7 +167,7 @@ const UI = {
       '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + qualBtns + '</div>' +
       '<div class="setGroup"><span>' + tr('Sound') + '</span>' +
       '<button class="chip' + (s.sound ? ' on' : '') + '" data-act="sound">' + tr(s.sound ? 'On' : 'Off') + '</button></div>' +
-      this.unitChips() + this.aidChip() +
+      this.unitChips() + this.aidChip() + this.cabinChip() +
       '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
@@ -687,7 +687,7 @@ const UI = {
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
       '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + this.aidChip() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + this.aidChip() + this.cabinChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
@@ -718,6 +718,14 @@ const UI = {
     const on = Career.settings.landingAid !== false;
     return '<div class="setGroup"><span>' + tr('Landing aid') + '</span>' +
       '<button class="chip' + (on ? ' on' : '') + '" data-act="landingAid" title="' + esc(tr('the ILS scales and the dotted glide path on the approach')) + '">' +
+      tr(on ? 'On' : 'Off') + '</button></div>';
+  },
+
+  // the cabin announcements on a passenger flight (ui/cabin.js)
+  cabinChip() {
+    const on = Career.settings.cabinPa !== false;
+    return '<div class="setGroup"><span>' + tr('Cabin announcements') + '</span>' +
+      '<button class="chip' + (on ? ' on' : '') + '" data-act="cabinPa" title="' + esc(tr('the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival')) + '">' +
       tr(on ? 'On' : 'Off') + '</button></div>';
   },
 
@@ -818,6 +826,11 @@ const UI = {
         break;
       case 'landingAid':
         Career.settings.landingAid = Career.settings.landingAid === false; Career.saveSettings();
+        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        break;
+      case 'cabinPa':
+        Career.settings.cabinPa = Career.settings.cabinPa === false; Career.saveSettings();
+        if (Career.settings.cabinPa === false && window.speechSynthesis && Audio2.paTalking) window.speechSynthesis.cancel();
         if (Game.mode === 'paused') this.showPause(); else this.showTitle();
         break;
       case 'howto': this.backTo = 'title'; this.showHowTo(); break;

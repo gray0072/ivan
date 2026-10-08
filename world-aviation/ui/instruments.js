@@ -211,6 +211,13 @@ const Instruments = {
     ctx.fillStyle = '#7de08a';
     ctx.font = '700 ' + Math.round(r * 0.18) + 'px ui-monospace, monospace';
     ctx.fillText(String(Math.round(v)), 0, r * 0.37);
+    // the true airspeed over the centre: high up the needle (IAS) reads far below it, and the
+    // type's cruise speed in the hangar is a true airspeed
+    if (r > 40 && st.tas / KTS > 30) {
+      ctx.fillStyle = '#8fb8d8';
+      ctx.font = '600 ' + Math.max(8, Math.round(r * 0.12)) + 'px system-ui, sans-serif';
+      ctx.fillText('TAS ' + Math.round(st.tas / KTS * k), 0, -r * 0.3);
+    }
     // the needle: pointed, the tip on the speed
     ctx.rotate(ang(v));
     pointer(ctx, r * 0.86, r * 0.045, r * 0.2, '#f5f7fa');

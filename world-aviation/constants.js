@@ -49,6 +49,7 @@ const SIM = {
   TIME_ACCEL_SLOWDOWN_S: 3,    // ... slowing one step every this many real seconds
   TIME_ACCEL_MIN_COS: 0.2,     // the distance for that is divided by the cosine of the angle off the runway, at most x5
   TIME_ACCEL_RESUME_S: 1,      // after an emergency the time climbs back one step every this many real seconds
+  CABIN_ON_TIME_MIN: 3,        // the arrival announcement: within this many minutes of the plan is on schedule
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
     { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],

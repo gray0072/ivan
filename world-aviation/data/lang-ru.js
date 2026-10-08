@@ -885,5 +885,19 @@ const TEXT_RU = {
   'Flights: {n}': 'Рейсов: {n}',
   'New': 'Новый',
   'To the hangar': 'В ангар',
-  'Elevation': 'Высота аэропорта'
+  'Elevation': 'Высота аэропорта',
+  'Ladies and gentlemen, welcome aboard this {airline} flight to {city}. Our flight time today will be {time}. Please fasten your seat belts, bring your seat backs to the upright position and open the window shades. Cabin crew, prepare for departure.': 'Дамы и господа, добро пожаловать на борт рейса {airline}, следующего в город {city}. Время в пути составит {time}. Пожалуйста, пристегните ремни безопасности, приведите спинки кресел в вертикальное положение и откройте шторки иллюминаторов. Экипажу приготовиться к вылету.',
+  'Ladies and gentlemen, this is your captain speaking. We have reached our cruising altitude of {alt}. Our speed over the ground is {spd}, and the temperature outside is {temp}. We expect to land in {city} in about {time}. Sit back, relax and enjoy the flight.': 'Дамы и господа, говорит командир корабля. Мы набрали крейсерскую высоту {alt}. Наша путевая скорость {spd}, температура за бортом {temp}. Посадка в городе {city} ожидается примерно через {time}. Устраивайтесь поудобнее, желаем вам приятного полёта.',
+  'Ladies and gentlemen, we have started our descent into {city} and will be landing in about {time}. The temperature in {city} is {temp}. Please return to your seats and fasten your seat belts.': 'Дамы и господа, мы начали снижение. Посадка в городе {city} примерно через {time}. Температура в городе {city} — {temp}. Пожалуйста, вернитесь на свои места и пристегните ремни безопасности.',
+  'Cabin crew, prepare for landing. Ladies and gentlemen, please make sure your seat belt is fastened, your seat back is upright, your tray table is stowed and the window shade is open.': 'Экипажу приготовиться к посадке. Дамы и господа, пожалуйста, пристегните ремни безопасности, приведите спинки кресел в вертикальное положение, уберите откидные столики и откройте шторки иллюминаторов.',
+  'Ladies and gentlemen, welcome to {city}. The local time is {clock} and the temperature outside is {temp}. {schedule} Please remain seated with your seat belt fastened until the seat belt sign is switched off. Thank you for flying {airline}.': 'Дамы и господа, добро пожаловать в город {city}. Местное время {clock}, температура за бортом {temp}. {schedule} Пожалуйста, оставайтесь на своих местах с пристёгнутыми ремнями, пока не погаснет табло «Пристегните ремни». Благодарим вас за выбор авиакомпании {airline}.',
+  'We have arrived on schedule.': 'Мы прибыли точно по расписанию.',
+  'We have arrived {time} ahead of schedule.': 'Мы прибыли на {time} раньше расписания.',
+  'We have arrived {time} behind schedule.': 'Мы прибыли на {time} позже расписания.',
+  'and': 'и',
+  'minus': 'минус',
+  '{v} metres': '{v} метров',
+  '{v} feet': '{v} футов',
+  'Cabin announcements': 'Объявления в салоне',
+  'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'экипаж обращается к пассажирам: перед взлётом, на эшелоне, на снижении, перед посадкой и по прибытии'
 };

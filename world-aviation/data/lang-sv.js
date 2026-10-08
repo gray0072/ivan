@@ -885,5 +885,19 @@ const TEXT_SV = {
   'Flights: {n}': 'Flygningar: {n}',
   'New': 'Ny',
   'To the hangar': 'Till hangaren',
-  'Elevation': 'Flygplatsens höjd'
+  'Elevation': 'Flygplatsens höjd',
+  'Ladies and gentlemen, welcome aboard this {airline} flight to {city}. Our flight time today will be {time}. Please fasten your seat belts, bring your seat backs to the upright position and open the window shades. Cabin crew, prepare for departure.': 'Mina damer och herrar, välkomna ombord på den här flygningen med {airline} till {city}. Flygtiden i dag blir {time}. Spänn fast säkerhetsbältet, fäll upp ryggstödet och dra upp fönsterluckan. Kabinpersonal, förbered för avgång.',
+  'Ladies and gentlemen, this is your captain speaking. We have reached our cruising altitude of {alt}. Our speed over the ground is {spd}, and the temperature outside is {temp}. We expect to land in {city} in about {time}. Sit back, relax and enjoy the flight.': 'Mina damer och herrar, det här är kaptenen som talar. Vi har nått vår marschhöjd på {alt}. Vår fart över marken är {spd} och temperaturen utanför är {temp}. Vi beräknas landa i {city} om ungefär {time}. Luta er tillbaka och njut av resan.',
+  'Ladies and gentlemen, we have started our descent into {city} and will be landing in about {time}. The temperature in {city} is {temp}. Please return to your seats and fasten your seat belts.': 'Mina damer och herrar, vi har påbörjat nedstigningen mot {city} och landar om ungefär {time}. Temperaturen i {city} är {temp}. Vänligen återgå till era platser och spänn fast säkerhetsbältet.',
+  'Cabin crew, prepare for landing. Ladies and gentlemen, please make sure your seat belt is fastened, your seat back is upright, your tray table is stowed and the window shade is open.': 'Kabinpersonal, förbered för landning. Mina damer och herrar, se till att säkerhetsbältet är fastspänt, att ryggstödet är uppfällt, att bordet är uppfällt och att fönsterluckan är uppdragen.',
+  'Ladies and gentlemen, welcome to {city}. The local time is {clock} and the temperature outside is {temp}. {schedule} Please remain seated with your seat belt fastened until the seat belt sign is switched off. Thank you for flying {airline}.': 'Mina damer och herrar, välkomna till {city}. Lokal tid är {clock} och temperaturen ute är {temp}. {schedule} Var vänlig sitt kvar med säkerhetsbältet fastspänt tills skylten för säkerhetsbälte har släckts. Tack för att ni flög med {airline}.',
+  'We have arrived on schedule.': 'Vi har landat enligt tidtabellen.',
+  'We have arrived {time} ahead of schedule.': 'Vi har landat {time} före tidtabellen.',
+  'We have arrived {time} behind schedule.': 'Vi har landat {time} efter tidtabellen.',
+  'and': 'och',
+  'minus': 'minus',
+  '{v} metres': '{v} meter',
+  '{v} feet': '{v} fot',
+  'Cabin announcements': 'Kabinutrop',
+  'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'besättningen talar till passagerarna: före start, på marschhöjd, under nedstigningen, före landning och vid ankomst'
 };

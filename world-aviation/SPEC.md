@@ -304,6 +304,7 @@ The instrument panel stays on screen in every view, so outside the cockpit the p
 - **Touchdown** — a tyre chirp per main gear and a thump as hard as the landing; a hard landing rattles.
 - **Warnings** — the master caution, the warning tone, the stick shaker on a stall warning, a two-tone chime crossing 10 000 ft.
 - **Callouts** (spoken in the game's language and units, with a voice of that language — en-GB for English; where the browser has no Russian or Swedish voice they are said in English): "80 knots" (metric: "150 km/h", 80 kt rounded like every metric speed), "V one", "rotate" on the take-off roll and "positive rate" once climbing (Russian: «Рубеж», «Подъём», «Есть набор»); on the way down to land the radio heights 1 000, 500, 100, 50, 40, 30, 20, 10 ft and "minimums" at 200 ft — metric: 300, 150, 30, 15, 10, 5 m and "minimums" at 60 m (at ×1 time only). The numbers go to the voice as whole numbers in digits, so it reads them in its own language. They respect the sound setting.
+- **Cabin announcements** (`ui/cabin.js`, on a passenger contract, not in a practice): the cabin chime (`cue('pa')`), then the voice (`Audio2.announce`) — taxiing out: welcome aboard the client's flight to the city, the planned flight time (`blockMin`), seat belts, seat backs upright, window shades open; 20 s into the cruise: the captain with the height (to 1 000 ft / 100 m), the ground speed, the air outside and the time to go; at the top of descent: the time to the landing and the temperature at the arrival; on the approach: seat belts, seat backs, tray tables stowed, window shades open; off the runway: welcome to the city, the local time (`utcOffset`), the temperature, and ahead of or behind the schedule — the airborne time (lift-off to touchdown) against `blockMin`, within `SIM.CABIN_ON_TIME_MIN` 3 min it is on schedule. Each once a flight, in the game's language (the hours, minutes and degrees with the right word for the number, `CABIN_WORDS`; English with an English voice), never while a checklist runs (it waits). A callout cuts an announcement off, so V1 or a radio height is never late. **Cabin announcements** On / Off on the title screen and in the pause (`settings.cabinPa`).
 
 ## Cheats
 
@@ -329,7 +330,7 @@ world-aviation/
 │   ├── input.js            keyboard, touch joystick/throttle/buttons, fullscreen
 │   ├── cursor.js           hides the mouse cursor in fullscreen while it is still
 │   ├── update.js           picks up a new deploy, reloading only on the title or operations screen
-│   └── audio.js            synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts
+│   └── audio.js            synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts, the cabin chime
 ├── data/
 │   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)
 │   ├── countries.js        each country's flag and its local "welcome"
@@ -363,6 +364,7 @@ world-aviation/
 │   ├── instruments.js      airspeed, attitude + radio altitude, altimeter, HSI, VSI, engine gauges, warnings
 │   ├── cockpit.js          cockpit frame, windshield effects
 │   ├── hud.js              HUD, banners, checklist panel, map, messages
+│   ├── cabin.js            the cabin announcements on a passenger flight
 │   ├── filters.js          the filter and sort bars over the contract board and the hangar (kept in the settings)
 │   ├── title.js            the title screen's backdrop: the sky of the hour, the clouds drifting past, the airliners in flight
 │   └── ui.js               title, ops hub, briefing, debrief, failure, pause, quiz screens
@@ -407,12 +409,12 @@ The arrival runway is drawn on both maps with its final approach: the extended c
 Both are the **landing aid**: `settings.landingAid` (on by default), switched on the title screen and in the pause.
 
 
-- **ILS** — on the descent and the approach within 23 nm, two scales that read at a glance: the localiser (magenta, labelled RUNWAY) carries a little runway that sits where the runway is, the glideslope (cyan, labelled GLIDE PATH) a triangle that sits where the glide path is; the yellow marks in the middle are you. Under them a line of plain words says what to do — "runway to the RIGHT ▶ turn right", "HIGH ▼ descend more", or "ON THE CENTRELINE AND THE GLIDE PATH". Outlined text instead of a panel, so the view stays open. On a desktop it is on the right, past the centre window post (in the outside views right of the aeroplane; on the left while a QRH checklist is open on the right); on a phone it is high on the windscreen, between the left column and the buttons.
+- **ILS** — on the descent and the approach within 23 nm, two scales that read at a glance: the localiser (magenta, labelled RUNWAY) carries a little runway that sits where the runway is, the glideslope (cyan, labelled GLIDE PATH) a triangle that sits where the glide path is; the yellow marks in the middle are you. Under them a line of plain words says what to do — "runway to the RIGHT ▶ turn right", "HIGH ▼ descend more", or "ON THE CENTRELINE AND THE GLIDE PATH". Outlined text instead of a panel, so the view stays open. On a desktop it is on the right, past the centre window post (in the outside views right of the aeroplane; on the left while a QRH checklist is open on the right); on a tablet on its side (a touch screen at least 600 px both ways) on the right as on a desktop, clear of the throttle slider and under the buttons (`HUD.buttonsH`); on a phone it is high on the windscreen, between the left column and the buttons.
 - **The approach path** — inside 30 nm of the runway (cruise, descent, approach) a magenta dot hangs on the extended centreline at the height of the 3° glide path every nautical mile out to 12 nm, joined by a thin line, with the distance every 4 nm and a white marker with the runway number at the threshold. The dots are projected through whichever camera is in use, so they work from the cockpit and from every outside view: flying down the line of dots is flying the ILS. They grow as they come closer and are hidden with a navigation failure.
 
 ## Instruments
 
-The airspeed dial starts at zero (so the needle never rests on a number it is not showing), with a number every 40–100 kt depending on the size, and the digital speed in a window; the VSI has its ticks and numbers on the arc the needle swings on (±2 000 fpm or ±10 m/s at ±150°), so it reads true everywhere; all needles are pointed, their tips exactly on the value.
+The airspeed dial starts at zero (so the needle never rests on a number it is not showing), with a number every 40–100 kt depending on the size, and the digital speed in a window; over the centre the true airspeed (**TAS**, in the same unit): the needle, the window and the autopilot's speed bug are the indicated airspeed, which high up reads far below the true one (a 737-800 cruising at 453 kt TAS at 37 000 ft shows about 250 kt, 460 km/h), while the hangar's cruise speed is a true airspeed; the VSI has its ticks and numbers on the arc the needle swings on (±2 000 fpm or ±10 m/s at ±150°), so it reads true everywhere; all needles are pointed, their tips exactly on the value.
 
 ## Quality presets
 
