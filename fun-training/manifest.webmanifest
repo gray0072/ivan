@@ -2,7 +2,7 @@
   "name": "Fun Training",
   "short_name": "Fun Training",
   "description": "A training game for school kids: answer tasks in time to water a flower, stop zombies, lay rails and more.",
-  "id": "./",
+  "id": "/ivan/fun-training/",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

@@ -15,4 +15,5 @@ First-person arcade flight game.
 - Instrument panel: airspeed gauge, artificial horizon (mirrors bank/pitch), altimeter
 - Terrain color/texture varies by world region and blends smoothly while flying
 - Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_HIDE_MS` (3 s) and comes back as soon as the mouse moves, clicks or scrolls
+- Updates: a page left open (above all the installed Android app, resumed from the background) looks for a new deploy on every return to the foreground and once an hour, and reloads into it only on the start screen, never mid-flight (`update.js`).
 - Cockpit framing (canopy pillars, windshield header) fixed on screen; clouds stay level and do not rotate with aircraft bank

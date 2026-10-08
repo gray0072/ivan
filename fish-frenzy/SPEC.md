@@ -11,6 +11,7 @@ Top-down eat-and-grow arcade game ("Feeding Frenzy" style).
 - Steering: arrow keys (left/right = turn, Ctrl or up = boost/dash that drains and regenerates a stamina meter)
 - Touch: on coarse-pointer devices the start button requests fullscreen; a floating joystick in the left half of the screen sets the swim direction (the fish turns toward it), any touch held in the right half boosts; multi-touch so both work together
 - Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_HIDE_MS` (3 s) and comes back as soon as the mouse moves, clicks or scrolls (`core/cursor.js`).
+- Updates: a page left open (above all the installed Android app, resumed from the background) looks for a new deploy on every return to the foreground and once an hour, and reloads into it only on the start screen, never during a run, a pause or a dialog (`core/update.js`).
 - Difficulty (picked on the start screen): Easy = food ×2, NPC speed ×0.9, boost capacity and regen ×1.5, NPC aim error ±20°, reaction 0.3 s; Medium = food ×1.5, NPC speed ×0.95, boost capacity and regen ×1.25, aim error ±10°, reaction 0.25 s; Hard = baseline, aim error ±5°, reaction 0.2 s. Share of an eaten fish's / gull's area the player grows by (`meal`): Easy 60%, Medium 50%, Hard 40% (bots: `NPC_MEAL` 55%). NPC dash stamina (`npcBoost`, a share of the player's boost capacity) and the delay after a dash until the whole tank comes back at once (`npcBoostRecharge`): Easy 1/8, 20 s; Medium 3/16, 15 s; Hard 1/4, 10 s
 - Growth: eating plankton grows the player slightly; eating a smaller fish grows it more. There is no score; the HUD shows the player's weight and length, and the game-over text repeats them. Every meal plays a quick bite animation (`CHOMP_TIME`: a dark wedge opens in the snout and snaps shut), for the player and NPCs alike; from the Shark stage on (`NO_FOOD_CHOMP_STAGE`) plankton is swallowed without it. Each meal's area is queued and applied linearly over 3 seconds (`GROW_TIME`) instead of instantly
 - Eating is mouth-only: a mouth circle in front of the gill line (`MOUTH_HIT`) must overlap any hit circle of the smaller fish (or the food). This applies both ways, so the player is safe right behind a bigger fish's tail until it turns around
@@ -59,7 +60,8 @@ fish-frenzy/
 │   ├── audio.js        Web Audio sound effects
 │   ├── input.js        keyboard, split-screen touch joystick and boost zones, fullscreen
 │   ├── quality.js      Auto graphics (createAutoGraphics): preset from the device and the frame rate
-│   └── cursor.js       hides the mouse cursor in fullscreen while it is still
+│   ├── cursor.js       hides the mouse cursor in fullscreen while it is still
+│   └── update.js       picks up a new deploy, reloading only on the start screen
 ├── sim/
 │   └── demo.js         the demo-mode pilot (createDemoPilot)
 ├── render/

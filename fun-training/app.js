@@ -827,6 +827,9 @@
   buildSettings();
   renderPlayers();
   showScreen('players');
+  // A new deploy reloads the page only on the player list or a player's home, never during a
+  // lesson, the room or a form (core/update.js)
+  AppUpdate.watch(() => screen === 'players' || screen === 'home');
 
   Quality.onChange(() => { Lesson.resize(); Confetti.resize(); });
   // Voices load asynchronously: show what Reading can do on this device once they are known.

@@ -273,6 +273,8 @@ Touch (phones/tablets): the left half is a floating joystick (pitch/roll and nos
 
 Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_HIDE_MS` (3 s) and comes back as soon as the mouse moves, clicks or scrolls (`core/cursor.js`).
 
+Updates: a page left open (above all the installed Android app, resumed from the background) looks for a new deploy on every return to the foreground and once an hour, and reloads into it only on the title or the operations screen — never from the briefing to the debrief of a flight (`core/update.js`).
+
 ## Views
 
 **C** / **Shift+C** (touch: **View**) cycle through `VIEW.MODES` (`scene3d.js` `placeCamera`); the views riding with the aeroplane are in its own axes, scaled to its length, span and fuselage:
@@ -325,6 +327,7 @@ world-aviation/
 │   ├── utils.js            math, noise, RNG, geodesy, the per-flight projection (Theatre), formatting
 │   ├── input.js            keyboard, touch joystick/throttle/buttons, fullscreen
 │   ├── cursor.js           hides the mouse cursor in fullscreen while it is still
+│   ├── update.js           picks up a new deploy, reloading only on the title or operations screen
 │   └── audio.js            synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts
 ├── data/
 │   ├── airports.js         the airports, the regions, each airport's look (city symbol, colour)

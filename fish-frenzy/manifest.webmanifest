@@ -2,7 +2,7 @@
   "name": "Fish Frenzy",
   "short_name": "Fish Frenzy",
   "description": "Eat smaller fish, avoid bigger ones and grow from a tiny fry into the Sea King.",
-  "id": "./",
+  "id": "/ivan/fish-frenzy/",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

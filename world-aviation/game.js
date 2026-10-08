@@ -65,6 +65,9 @@ const Game = {
     this.last = performance.now();
     this.mode = 'menu';
     el('bootScreen').hidden = true;
+    // A new deploy reloads the page only on the title or the operations screen, never from the
+    // briefing to the debrief of a flight (core/update.js)
+    AppUpdate.watch(() => this.mode === 'menu' || this.mode === 'ops');
     UI.showTitle();
     this.loop();
   },

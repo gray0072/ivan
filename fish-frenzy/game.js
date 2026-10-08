@@ -171,6 +171,8 @@
 
   // ---------- Game state ----------
   let gameState = 'start'; // start | playing | paused | over
+  // A new deploy reloads the page only on the start screen, never mid-game (core/update.js)
+  AppUpdate.watch(() => gameState === 'start');
   let elapsed = 0;         // in-game seconds for the current run (pauses don't count)
   let cheated = false;
   let reachedFinalStage = false;

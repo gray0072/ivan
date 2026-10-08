@@ -200,6 +200,7 @@ All six processes are built. Scenes are drawn on a canvas in a fixed design spac
 - The split-screen joystick scheme from the repo conventions doesn't apply: every action is a button (answers, number pad, pause), and plain `<button>`s are tapped directly.
 - Starting a lesson on a touch device requests fullscreen (`goFullscreen`, try/catch, works windowed on iPhone). The scene blocks page scroll / pinch zoom (`touch-action: none`, `preventDefault` on `touchstart` / `touchmove`).
 - Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_HIDE_MS` (3 s) and comes back as soon as the mouse moves, clicks or scrolls (`core/cursor.js`).
+- Updates: a page left open (above all the installed Android app, resumed from the background) looks for a new deploy on every return to the foreground and once an hour, and reloads into it only on the player list or a player's home screen, never during a lesson, in the room or on a form (`core/update.js`).
 - Portrait: the scene on top, the task panel below (the room: the room on top, the shop below); narrow screens (≤ 620 px) wrap the home top bar, put each process's track on its own full-width line with shrinking cells, use a 2 × 2 grid of operations and a full-width speed switch in the settings. Low landscape screens (≤ 520 px high) get a compact task panel and dialogs that scroll if needed. Safe-area insets are respected; sticky hover zoom is off on touch screens.
 
 ## Graphics quality
@@ -232,7 +233,8 @@ fun-training/
 │   ├── speech.js    # speech synthesis: a voice per language, says the Reading tasks
 │   ├── nav.js       # spatial keyboard / TV-remote focus navigation
 │   ├── quality.js   # automatic graphics quality (canvas resolution by device and frame rate)
-│   └── cursor.js    # hides the mouse cursor in fullscreen while it is still
+│   ├── cursor.js    # hides the mouse cursor in fullscreen while it is still
+│   └── update.js    # picks up a new deploy, reloading only on the player list or a home screen
 ├── progress.js      # levels: boss kinds, which step is open, level complete, stars, diamonds per boss
 ├── tasks/           # task types, one file each; tasks.js first, then the types
 │   ├── tasks.js     # Tasks: picks the type, expected time, answer choices, shared helpers (fmt, rnd, pick)

@@ -50,10 +50,11 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 ├── manifest.webmanifest      # PWA manifest of the gallery (icons from assets/)
 ├── tools/pwa-icons.sh        # renders a folder's PWA PNG icons from its SVGs with headless Chrome
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
-├── assets/                  # icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
+├── assets/                  # update.js + gallery.js (picks up a new deploy), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
 ├── flight-simulator/
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html           # the game itself, fully self-contained
+│   ├── update.js            # picks up a new deploy, reloading only on the start screen
 │   ├── README.md             # project documentation (English, player-facing)
 │   ├── README_RU.md           # project documentation (Russian, player-facing)
 │   ├── README_SV.md           # project documentation (Swedish, player-facing)
@@ -68,7 +69,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── styles.css
 │   ├── constants.js          # game tuning constants (sizes, speeds, counts, timings, hit shapes)
 │   ├── game.js               # world, difficulty, update loop; hands its state to render/render.js each frame
-│   ├── core/                 # utils, audio, input (keyboard, touch joystick/boost zones, fullscreen), quality (Auto graphics), cursor (hidden in fullscreen while still)
+│   ├── core/                 # utils, audio, input (keyboard, touch joystick/boost zones, fullscreen), quality (Auto graphics), cursor (hidden in fullscreen while still), update (picks up a new deploy)
 │   ├── sim/                  # demo.js — demo-mode pilot (createDemoPilot)
 │   ├── render/               # render.js (canvas, fish, jellyfish, gulls, effects), scenery.js (background)
 │   ├── ui/                   # fireworks.js — fireworks show for the max-size dialog
@@ -85,7 +86,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── index.html            # markup only, links versioned CSS/JS
 │   ├── styles.css
 │   ├── constants.js, progress.js, app.js  # tuning, levels and stars, screens and the main loop
-│   ├── core/                 # storage, audio, speech, nav (keyboard / TV-remote focus), quality, cursor (hidden in fullscreen while still)
+│   ├── core/                 # storage, audio, speech, nav (keyboard / TV-remote focus), quality, cursor (hidden in fullscreen while still), update (picks up a new deploy)
 │   ├── ui/                   # stars, lesson, muncher (pause dialog), room
 │   ├── tasks/                # task types (tasks.js dispatcher, math.js, scale.js, read.js + words.js)
 │   ├── scenes/               # fx.js shared drawing helpers + processes (flower, zombies, railway, balloon, campfire, panda)
@@ -104,7 +105,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── styles.css
 │   ├── constants.js, game.js, career.js  # tuning, main loop and phase machine, the career
 │   ├── lib/                  # three.min.js — three.js r147 (UMD), vendored
-│   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio
+│   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio, update (picks up a new deploy)
 │   ├── data/                 # airports, countries, airlines, emergencies, quizzes, lang-ru / lang-sv (translations), geodata (coastlines, mountains)
 │   ├── art/                  # flags, landmarks (city symbols), airline emblems
 │   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems

@@ -144,6 +144,7 @@
   <button class="btn" id="startBtn">Start Flight</button>
 </div>
 
+<script src="update.js?v=1"></script>
 <script>
 (function () {
   'use strict';
@@ -251,6 +252,8 @@
   let targetAirport = airports[1];
   let score = 0;
   let gameState = 'start'; // start | playing | over
+  // A new deploy reloads the page only on the start screen, never mid-flight (update.js)
+  AppUpdate.watch(() => gameState === 'start');
   let landMessageTimer = 0;
   let takeoffTimer = 0;
   let shakeTime = 0;

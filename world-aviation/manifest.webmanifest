@@ -2,7 +2,7 @@
   "name": "World Aviation",
   "short_name": "Aviation",
   "description": "A cockpit-view flight simulator and airline career: from Swedish domestic flights to the whole world.",
-  "id": "./",
+  "id": "/ivan/world-aviation/",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

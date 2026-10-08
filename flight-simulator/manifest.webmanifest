@@ -2,7 +2,7 @@
   "name": "Flight Simulator",
   "short_name": "Flight Sim",
   "description": "First-person arcade flight game: pop balloons with a twin-gun and land on the highlighted runway.",
-  "id": "./",
+  "id": "/ivan/flight-simulator/",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

@@ -2,7 +2,7 @@
   "name": "Browser Games Gallery",
   "short_name": "Games",
   "description": "Tiny self-contained browser games in vanilla JavaScript. No install — just open and play.",
-  "id": "./",
+  "id": "/ivan/",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
