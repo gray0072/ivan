@@ -269,7 +269,7 @@ const UI = {
     const d = Career.data;
     const ac = Career.aircraft();
     const all = d.contracts || [];
-    const shown = Filters.boardList(all, (c) => this.requirement(c));
+    const shown = Filters.boardList(all);
     const list = shown.map((c) => this.contractCard(c, this.requirement(c))).join('');
     const away = d.lastTo && d.lastTo !== d.base;
     return '<div class="hint">' + tr('Aircraft: <b>{ac}</b> ({klass} · max {nm} nm).', { ac: esc(ac.name), klass: esc(tr(ac.klass)), nm: ac.maxRangeNm }) + ' ' +
@@ -298,7 +298,7 @@ const UI = {
       row2(tr('Fuel plan'), c.fuelKg + ' kg') +
       '</div>' +
       '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
-      (flying ? '' : (need ? '<span class="need">' + esc(need) + '</span>' : '<span class="ok">' + tr('cleared for this type') + '</span>') +
+      (flying ? '' : (need ? '<span class="need">' + esc(need) + '</span>' : '') +
         '<button class="btn' + (need ? ' disabled' : ' default') + '" data-act="briefing" data-v="' + esc(c.id) + '"' +
         (need ? ' disabled' : '') + '>' + tr('Fly this') + '</button>') + '</div>' +
       '</div>';

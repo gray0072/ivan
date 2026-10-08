@@ -13,7 +13,8 @@ const Filters = {
   // ---------- the contract board ----------
   // type: a client group (pax / cargo / bush) or all; sort: the board's own order or a figure,
   // dir: 1 up, -1 down (each sort starts the way that is usually wanted: the best pay first,
-  // the easiest and the nearest first); flyable: only the offers this type may fly
+  // the easiest and the nearest first). The board offers only what the selected type may fly
+  // (Career.generateContracts), so there is nothing to hide by that
   BOARD_SORTS: {
     none: { name: 'As offered' },
     rep: { name: 'Reputation', dir: -1, key: (c) => c.repGain },
@@ -27,13 +28,13 @@ const Filters = {
     if (b.type !== 'all' && !FACTIONS[b.type]) b.type = 'all';
     if (!this.BOARD_SORTS[b.sort]) b.sort = 'none';
     if (b.dir !== 1 && b.dir !== -1) b.dir = this.BOARD_SORTS[b.sort].dir || 1;
-    b.flyable = !!b.flyable;
+    delete b.flyable;                                   // an older 'only what I can fly' toggle
     return b;
   },
-  // the offers to show, in order; need(c) says why one cannot be flown (null: it can)
-  boardList(contracts, need) {
+  // the offers to show, in order
+  boardList(contracts) {
     const b = this.board();
-    let list = contracts.filter((c) => (b.type === 'all' || c.faction === b.type) && (!b.flyable || !need(c)));
+    let list = contracts.filter((c) => b.type === 'all' || c.faction === b.type);
     const sort = this.BOARD_SORTS[b.sort];
     if (sort.key) list = list.map((c, i) => [c, i]).sort((p, q) => (sort.key(p[0]) - sort.key(q[0])) * b.dir || p[1] - q[1]).map((p) => p[0]);
     return list;
@@ -43,15 +44,14 @@ const Filters = {
     const type = ['all'].concat(Object.keys(FACTIONS)).map((k) =>
       this.chip('boardFilter', 'type:' + k, b.type === k, k === 'all' ? tr('All') : tr(FACTIONS[k].short), k === 'all' ? '' : FACTIONS[k].color)).join('');
     return '<div class="filterBar">' +
-      '<div class="setGroup"><span>' + tr('Show') + '</span>' + type +
-      this.chip('boardFilter', 'flyable', b.flyable, '✓ ' + tr('Only what I can fly')) + '</div>' +
+      '<div class="setGroup"><span>' + tr('Show') + '</span>' + type + '</div>' +
       '<div class="setGroup"><span>' + tr('Sort') + '</span>' + this.sortChips('boardFilter', this.BOARD_SORTS, b) + '</div>' +
       '</div>';
   },
-  // a press on the board's bar: type:<id>, flyable, sort:<id> (the active sort again turns it round)
+  // a press on the board's bar: type:<id>, sort:<id> (the active sort again turns it round)
   boardAction(v) {
     const b = this.board();
-    this.apply(b, v, this.BOARD_SORTS, 'flyable');
+    this.apply(b, v, this.BOARD_SORTS);
     Career.saveSettings();
   },
 

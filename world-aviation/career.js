@@ -213,8 +213,8 @@ const Career = {
     const dist = geoDistanceNm(from.lat, from.lon, a.lat, a.lon);
     if (dist > Math.min(ac.maxRangeNm * 0.96, CONTRACTS.MAX_NM) || dist < 35) return false;
     if (a.rwyLen < ac.takeoffDist * 0.9) return false;              // the runway has to be long enough for the type
-    const needsAsphalt = ac.surfaces.length === 1;
-    if (needsAsphalt && a.aptClass.indexOf('bush') < 0 && a.aptClass.length === 1) return false;
+    const grassOnly = a.aptClass.length === 1 && a.aptClass[0] === 'bush';
+    if (grassOnly && ac.surfaces.indexOf('grass') < 0) return false;  // a grass strip only for types cleared for grass
     return true;
   },
 
