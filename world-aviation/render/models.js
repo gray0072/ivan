@@ -96,11 +96,15 @@ const AircraftModels = {
         g.add(wl);
       }
     }
-    // wing-to-body fairing for the low wing
+    // wing-to-body fairing for the low wing: in the belly's colour, as wide as the fuselage at its
+    // height and a little more (a double deck is narrower down there), just below the belly — a
+    // white ball wider than the body, stuck on the grey belly, looked like a bump
     if (!high) {
-      const fair = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 8), base);
-      fair.scale.set(R * 0.95, R * 0.42, rootC * 0.75);
-      fair.position.set(0, -R * 0.62, wingZ - rootC * 0.5);
+      const fy = -R * 0.66, c = (fy / R + 1 - hk) / hk;
+      const fw = R * Math.sqrt(Math.max(0, 1 - c * c)) + R * 0.06;
+      const fair = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshLambertMaterial({ color: col(bellyColour(look, al)) }));
+      fair.scale.set(fw, R * 0.4, rootC * 0.85);
+      fair.position.set(0, fy, wingZ - rootC * 0.5);
       g.add(fair);
     } else {
       const fair = new THREE.Mesh(new THREE.BoxGeometry(R * 1.7, R * 0.3, rootC * 0.9), base);
@@ -507,6 +511,14 @@ const AircraftModels = {
     });
   }
 };
+
+// The colour of the belly as the livery paints it (an airline's belly colour, or the grey wash
+// over the body colour), for the parts under it: the wing-to-body fairing
+function bellyColour(look, al) {
+  if (al && al.livery.belly) return al.livery.belly;
+  const a = al ? 0.45 : 0.55, b = new THREE.Color(look.base || '#f3f5f7');
+  return '#' + b.lerp(new THREE.Color(150 / 255, 160 / 255, 170 / 255), a).getHexString();
+}
 
 // The fuselage: rings of vertices along z. u = along the body (tail 0 → nose 1), v = around (top 0).
 // hk > 1 makes a double-deck body: each ring hk times as tall as it is wide, grown upwards from its belly.

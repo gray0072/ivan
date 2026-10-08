@@ -803,6 +803,17 @@ const VIEW = {
   COCKPIT_DRAW_DIST: 12000
 };
 
+// The camera's flights at both ends of a flight (render/cinematic.js): before the start it
+// flies from a wide shot of the aeroplane and the terminal (or the runway) into the captain's
+// seat; parked at the arrival gate it flies out of the cockpit to a wide shot of the aeroplane
+// at its gate, then the debrief. Enter, Space, Esc or a tap skips it.
+const CINEMATIC = {
+  INTRO_S: 6.5,                // the fly-in, seconds (the last tenth inside the cockpit)
+  OUTRO_S: 5.5,                // the fly-out ...
+  OUTRO_HOLD_S: 1.2,           // ... and how long its last shot holds before the debrief
+  CAPTION_S: 4.2               // the route under the intro's picture: shown this long
+};
+
 // ---------- Controls and screen layout ----------
 // The time of day, chosen on the briefing: the departure's local solar time (the clock runs
 // on with the flight). The sun follows a generic path (equinox, latitude SKY_LATITUDE_DEG):

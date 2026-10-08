@@ -274,6 +274,31 @@ kbd {
   margin-bottom: 12px;
 }
 
+/* ---------- the camera's flights at the start and the end of a flight (render/cinematic.js) ----------
+   letterbox bars slide in while the camera is outside, the route as a caption over the lower bar,
+   a fade from black at the start; a tap anywhere skips (Game.skipCine) */
+#cine { position: fixed; inset: 0; z-index: 30; pointer-events: auto; touch-action: none; cursor: pointer; -webkit-user-select: none; user-select: none; }
+#cine .cineBar { position: absolute; left: 0; right: 0; height: 9vh; background: #000; transition: transform 0.7s ease; }
+#cine .cineBar.top { top: 0; transform: translateY(-100%); }
+#cine .cineBar.bottom { bottom: 0; transform: translateY(100%); display: flex; align-items: center; justify-content: flex-end; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) 20px; }
+#cine.bars .cineBar { transform: none; }
+#cineSkip { color: rgba(255, 255, 255, 0.55); font-size: 12px; letter-spacing: 0.06em; }
+#cineSkip kbd { opacity: 0.85; }
+#cineCaption {
+  position: absolute;
+  left: max(24px, env(safe-area-inset-left)); bottom: calc(9vh + 18px);
+  color: #fff; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.65);
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+#cineCaption.on { opacity: 1; transform: none; }
+#cineCaption b { display: block; font-size: clamp(20px, 3.4vw, 34px); font-weight: 700; line-height: 1.15; letter-spacing: 0.01em; }
+#cineCaption span { display: block; margin-top: 4px; font-size: clamp(11px, 1.5vw, 15px); font-weight: 600; color: #cfe0ef; letter-spacing: 0.12em; text-transform: uppercase; }
+#cineCaption img.flag { width: 1.1em; height: 0.74em; vertical-align: 0.04em; margin-right: 0.3em; border-radius: 3px; }
+#cineFade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
+#cineFade.in { animation: cineFadeIn 1.1s ease-out; }
+@keyframes cineFadeIn { from { opacity: 1; } to { opacity: 0; } }
+
 /* ---------- touch ---------- */
 #touch { display: none; }
 @media (pointer: coarse) {

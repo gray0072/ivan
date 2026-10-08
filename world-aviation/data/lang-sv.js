@@ -908,5 +908,7 @@ const TEXT_SV = {
   'Stand': 'Uppställningsplats',
   'Cabin announcement': 'Kabinutrop',
   'straight down, under the belly': 'rakt ner, under buken',
-  'Cockpit': 'Cockpit'
+  'Cockpit': 'Cockpit',
+  'Skip': 'Hoppa över',
+  'Tap to skip': 'Tryck för att hoppa över'
 };

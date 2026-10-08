@@ -30,6 +30,7 @@ const Scene3D = {
   ownAircraft: null,
   w: 0, h: 0, dpr: 1,
   camMode: 'cockpit',
+  cine: null,                     // Cinematic while the camera flies in or out (Game), else null
   texCanvas: null, texCtx: null,
   time: 0,
   inCloud: 0,
@@ -499,7 +500,10 @@ const Scene3D = {
       st.pos.z + ax.right.z * x + ax.up.z * y + ax.nose.z * z);
     const pos = new THREE.Vector3(st.pos.x, st.pos.y, st.pos.z);
     let eye, look, up = new THREE.Vector3(ax.up.x, ax.up.y, ax.up.z), fov = VIEW.FOV_DEG, minAgl = 1;
-    switch (this.camMode) {
+    // the camera's flight at the start or the end of a flight (Game sets cine to Cinematic)
+    const mode = this.cine ? 'cine' : this.camMode;
+    switch (mode) {
+      case 'cine': { const c = this.cine.pose(fl, ax); eye = c.eye; look = c.look; up = c.up; fov = c.fov; minAgl = 2; break; }
       case 'chase': eye = P(0, S * 0.5, -S * 1.62); look = P(0, 0, 4); break;
       case 'front': eye = P(0, L * 0.42, L * 0.9); look = P(0, 0, -L * 0.1); break;
       case 'wing': eye = P(-S * 0.69, S * 0.15, -S * 0.19); look = P(0, 0, 4); break;
@@ -568,7 +572,8 @@ const Scene3D = {
     cam.lookAt(look);
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
     // outside, the instrument panel covers the bottom of the screen: aim above the middle
-    const shift = this.camMode === 'cockpit' ? 0 : Math.round(this.h * 0.14);
+    // (not in the camera's flights: the panel is not drawn then)
+    const shift = this.camMode === 'cockpit' || this.cine ? 0 : Math.round(this.h * 0.14);
     if (shift !== this.viewShift || this.w + 'x' + this.h !== this.viewW) {
       this.viewShift = shift; this.viewW = this.w + 'x' + this.h;
       if (shift) cam.setViewOffset(this.w, this.h, 0, shift, this.w, this.h); else cam.clearViewOffset();

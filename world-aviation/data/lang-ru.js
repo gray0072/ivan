@@ -908,5 +908,7 @@ const TEXT_RU = {
   'Stand': 'Стоянка',
   'Cabin announcement': 'Объявление в салоне',
   'straight down, under the belly': 'прямо вниз, из-под брюха',
-  'Cockpit': 'Кабина'
+  'Cockpit': 'Кабина',
+  'Skip': 'Пропустить',
+  'Tap to skip': 'Коснитесь, чтобы пропустить'
 };

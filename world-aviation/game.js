@@ -60,6 +60,8 @@ const Game = {
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.mode === 'flying') this.pause();
     });
+    // a tap anywhere skips the camera's flight at the start or the end
+    el('cine').addEventListener('pointerdown', (e) => { e.preventDefault(); if (this.mode === 'flying') this.skipCine(); });
 
     Career.load();
     this.last = performance.now();
@@ -98,8 +100,10 @@ const Game = {
     const fl = this.flight, sys = this.systems, st = fl.st;
     const paused = this.helpOpen;
     const ax = Input.axes();
+    // the camera's flight at the start or the end: the aeroplane stands still meanwhile
+    const shot = this.cineShot();
 
-    if (!paused) {
+    if (!paused && !shot) {
       // controls (the autopilot flies the surfaces when it is engaged)
       if (!fl.ap.on) {
         // the surfaces follow the stick at their actuators' rate
@@ -133,18 +137,21 @@ const Game = {
       this.updatePhase(dt);
       Guidance.update(this);
     }
+    if (shot && !paused) this.updateCine(dt);
+    const cine = this.cineShot();
 
-    Scene3D.camMode = this.camMode;
-    Scene3D.pipRect = this.mode === 'flying' ? HUD.updatePip(fl, sys, this.camMode, this.helpOpen) : null;
+    Scene3D.cine = cine ? Cinematic : null;
+    Scene3D.camMode = cine ? (Cinematic.inside() ? 'cockpit' : 'cine') : this.camMode;
+    Scene3D.pipRect = this.mode === 'flying' && !cine ? HUD.updatePip(fl, sys, this.camMode, this.helpOpen) : null;
     Scene3D.update(dt, fl, sys);
     Scene3D.render();
     this.draw2d(dt);
     // a flight that ended in this frame (a practice landing, the debrief) is already silenced: keep it so
     Audio2.update(dt, this.mode === 'flying' ? fl : null, sys);
-    Cabin.update(this.mode === 'flying' ? fl : null, sys, this);
+    if (!cine) Cabin.update(this.mode === 'flying' ? fl : null, sys, this);
 
-    // messages and panels
-    while (fl.events.length) HUD.push(fl.events.shift());
+    // messages and panels (the tower's clearance at the runway waits for the end of the intro)
+    if (!cine) while (fl.events.length) HUD.push(fl.events.shift());
     HUD.render();
     HUD.updateStrip(fl, sys, this.res);
     HUD.updateButtons(fl, sys);
@@ -171,7 +178,12 @@ const Game = {
     ctx.clearRect(0, 0, c.width, c.height);
     const fl = this.flight;
     if (!fl) return;
-    Cockpit.draw(ctx, w, h, dpr, fl, this.systems, dt, this.camMode === 'cockpit');
+    // in the camera's flights only the rain or snow outside, and inside the cockpit fading in
+    const shot = this.cineShot(), inside = shot ? Cinematic.inside() : this.camMode === 'cockpit';
+    const alpha = shot && inside ? Cinematic.insideAmount().toFixed(3) : '';
+    if (c.style.opacity !== alpha) c.style.opacity = alpha;
+    Cockpit.draw(ctx, w, h, dpr, fl, this.systems, dt, inside);
+    if (shot && !inside) return;
     Instruments.draw(ctx, w, h, dpr, fl, this.systems);
     ctx.save();
     ctx.scale(dpr, dpr);
@@ -568,7 +580,8 @@ const Game = {
       if (sys.allStopped) fl.setPhase('PARKED');
     } else if (p === 'PARKED') {
       HUD.setPrompt('');
-      if (!this.debriefShown) { this.debriefShown = true; this.finishFlight(false); }
+      // the camera flies out to the aeroplane at its gate, then the debrief
+      if (!this.debriefShown) { this.debriefShown = true; if (!this.startCine('outro')) this.finishFlight(false); }
     }
 
     // fuel starvation
@@ -662,6 +675,8 @@ const Game = {
     if (name === 'cheat') { this.cheat(arg); return; }
     if (this.mode === 'paused') { if (name === 'pause') this.pause(); return; }
     if (this.mode !== 'flying') return;
+    // the camera's flight: Enter, Space and Esc skip it, the rest waits for the cockpit
+    if (this.cineShot()) { if (name === 'starter' || name === 'parkBrake' || name === 'pause') this.skipCine(); return; }
     const fl = this.flight;
     const sys = this.systems, st = fl.st;
     switch (name) {
@@ -786,6 +801,7 @@ const Game = {
     }
     const fl = this.flight;
     if (!fl || this.mode !== 'flying') return;
+    if (this.cineShot() && Cinematic.shot.kind === 'intro') this.endCine();
     this.cheated = true; this.cheatsUsed++;
     const st = fl.st;
     let text = '';
@@ -886,6 +902,7 @@ const Game = {
 
   startFlight(contract, opts) {
     opts = opts || {};
+    this.stopCine();
     this.contract = contract;
     this.spoilerTold = false;
     this.setup = Career.flightSetup(contract, { seed: opts.seed || 0, skipPushback: opts.skipPushback });
@@ -971,11 +988,75 @@ const Game = {
     el('hud').hidden = false;
     Audio2.resume();
     this.last = performance.now();
+    // the camera flies in from a wide shot to the captain's seat (not into a practice on the final)
+    if (!this.practice) this.startCine('intro');
+  },
+
+  // ---------- the camera's flights at the start and the end (render/cinematic.js) ----------
+  // (left out of the headless runs)
+  cineShot() { return typeof Cinematic !== 'undefined' ? Cinematic.shot : null; },
+
+  startCine(kind) {
+    if (typeof Cinematic === 'undefined' || !Scene3D.camera) return false;
+    const fl = this.flight, c = this.contract;
+    Cinematic.start(kind, fl, { atRunway: !!this.setup.skipPushback, fromOutside: kind === 'outro' && this.camMode !== 'cockpit' });
+    this.camMode = 'cockpit';
+    const box = el('cine');
+    box.hidden = false;
+    box.classList.toggle('bars', !Cinematic.inside());
+    el('hud').hidden = true;
+    if (HUD.mapOpen) HUD.closeMap();
+    const flag = (a) => (typeof flagImg === 'function' ? flagImg(a) : '');
+    const cap = el('cineCaption');
+    cap.classList.remove('on');
+    cap.innerHTML = kind === 'intro'
+      ? '<b>' + flag(fl.world) + esc(fl.world.city) + ' → ' + flag(fl.arrival) + esc(fl.arrival.city) + '</b><span>' + esc(c.client) + ' · ' + esc(fl.ac.name) + '</span>'
+      : '<b>' + flag(fl.arrival) + esc(fl.arrival.city) + '</b><span>' + fl.arrival.id + ' · ' + esc(gateName(this.arrivalGate)) + '</span>';
+    el('cineSkip').innerHTML = Input.isCoarse ? esc(tr('Tap to skip')) : esc(tr('Skip')) + ' <kbd>Enter</kbd>';
+    if (kind === 'intro') {
+      const f = el('cineFade');
+      f.classList.remove('in'); void f.offsetWidth; f.classList.add('in');
+    }
+    return true;
+  },
+
+  // each frame of a shot: the camera, the letterbox bars while outside, the caption
+  updateCine(dt) {
+    if (Cinematic.update(dt)) { this.endCine(); return; }
+    const sh = Cinematic.shot;
+    el('cine').classList.toggle('bars', !Cinematic.inside());
+    const cap = sh.kind === 'intro' ? sh.t > 0.6 && sh.t < CINEMATIC.CAPTION_S : sh.t > sh.inT1 + 0.8;
+    el('cineCaption').classList.toggle('on', cap);
+  },
+
+  // Enter, Space, Esc or a tap: to the end of the shot (the next frame ends it, so the key that
+  // skipped the fly-out does not also press a button of the debrief)
+  skipCine() { if (this.cineShot()) Cinematic.skip(); },
+
+  endCine() {
+    const sh = this.cineShot();
+    this.stopCine();
+    if (!sh) return;
+    if (sh.kind === 'outro') { this.finishFlight(false); return; }
+    el('hud').hidden = false;
+    Input.reset();
+  },
+
+  stopCine() {
+    if (typeof Cinematic === 'undefined') return;
+    Cinematic.stop();
+    Scene3D.cine = null;
+    const box = el('cine');
+    box.hidden = true;
+    box.classList.remove('bars');
+    el('cineCaption').classList.remove('on');
+    el('ui').style.opacity = '';
   },
 
   finishFlight(failed) {
     if (this.mode !== 'flying') return;
     const fl = this.flight, sys = this.systems;
+    this.stopCine();
     this.mode = failed ? 'failed' : 'debrief';
     Input.active = false;
     el('hud').hidden = true;
@@ -1047,6 +1128,7 @@ const Game = {
   },
 
   abortToOps() {
+    this.stopCine();
     this.mode = 'ops';
     Input.active = false;
     this.flight = null;
