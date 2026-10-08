@@ -885,7 +885,9 @@ const Game = {
     }
     s.from = World.here[contract.fromId];
     s.to = World.here[contract.toId];
-    s.gate = s.from.gates[s.gateIndex];
+    // the stands at both ends: a fresh draw every flight, apart from the contract's seeded weather
+    const anyGate = (gates) => gates[Math.floor(Math.random() * gates.length)];
+    s.gate = anyGate(s.from.gates);
     reseed(s.seed);
     this.cheated = false;
     this.cheatsUsed = 0;
@@ -897,7 +899,7 @@ const Game = {
     this.pushback = null;
     this.camMode = 'cockpit';
     this.debriefShown = false;
-    this.arrivalGate = s.to.gates[0];
+    this.arrivalGate = anyGate(s.to.gates);
     this.arrivalRoute = null;
     // a practice landing has no deadline
     this.practice = opts.practice ? { t: 0, handed: false, fee: opts.fee || 0 } : null;

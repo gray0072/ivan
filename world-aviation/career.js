@@ -407,10 +407,9 @@ const Career = {
       arr.lowCloud = false;
       arr.precip = 'none';
     }
-    const gateIndex = rng.int(0, from.gateCount - 1);
     const blockFuel = Math.min(ac.fuelCapKg, contract.blockFuel || contract.fuelKg * 1.45);
     return {
-      aircraft: ac, from, to, contract, gateIndex, blockFuel, skipPushback: !!opts.skipPushback,
+      aircraft: ac, from, to, contract, blockFuel, skipPushback: !!opts.skipPushback,
       weather: { dep, arr, cruise }, seed: rng.int(1, 1e9), fx
     };
   },
