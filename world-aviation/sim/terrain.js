@@ -242,7 +242,11 @@ const Terrain = {
           (1 - smoothstep(LAYOUT.CORRIDOR_LEN * 0.8, LAYOUT.CORRIDOR_LEN, dist));
         if (k > 0) {
           const slope = Math.tan((before > 0 ? LAYOUT.APPROACH_SLOPE_DEG : LAYOUT.DEPARTURE_SLOPE_DEG) * DEG);
-          const cap = a.elev + Math.max(0, dist - 1500) * slope;
+          // (before the threshold also 1 000 ft under the level flight to the glide path, where the
+          // autopilot no longer looks out for the terrain: under the slope alone a hill came within
+          // 200 ft of it 10 nm out)
+          let cap = a.elev + Math.max(0, dist - 1500) * slope;
+          if (before > 0) cap = Math.min(cap, a.elev + LAYOUT.APPROACH_FLOOR_FT * FT);
           if (h > cap) h = lerp(h, cap, k);
         }
       }

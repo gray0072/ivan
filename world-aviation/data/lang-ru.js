@@ -68,7 +68,7 @@ const TEXT_RU = {
   'selected altitude down / up': 'заданная высота ниже / выше',
   'selected heading (autopilot HDG mode)': 'заданный курс (режим автопилота HDG)',
   'time faster / slower: up to ×128 on the autopilot, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft': 'время быстрее / медленнее: до ×128 на автопилоте, вручную ×2 / ×4 / ×8 / ×16 / ×32 / ×64 выше 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft',
-  'camera · map (on a big screen: mini, big, off) · instrument lights': 'камера · карта (на большом экране: мини, большая, нет) · подсветка приборов',
+  'camera · map (on a big screen: mini, big, off) · instrument lights: dim, medium, bright, hidden': 'камера · карта (на большом экране: мини, большая, нет) · подсветка приборов: тусклая, средняя, яркая, приборы скрыты',
   'controls card': 'карточка управления',
   'pause': 'пауза',
   'Touch': 'Сенсорный экран',
@@ -532,7 +532,7 @@ const TEXT_RU = {
   'selected altitude': 'заданная высота',
   'selected heading': 'заданный курс',
   'time faster / slower (autopilot: up to ×128; by hand: more the higher you are, ×64 above 10 000 ft)': 'время быстрее / медленнее (автопилот: до ×128; вручную: чем выше, тем больше, ×64 выше 10 000 ft)',
-  'view (Shift+C back) · map (mini / big / off) · instrument lights': 'вид (Shift+C назад) · карта (мини / большая / нет) · подсветка приборов',
+  'view (Shift+C back) · map (mini / big / off) · instrument lights: dim, medium, bright, hidden': 'вид (Shift+C назад) · карта (мини / большая / нет) · подсветка приборов: тусклая, средняя, яркая, приборы скрыты',
   'spoiler · anti-ice': 'интерцептор · противообледенение',
   'this card · pause': 'эта карточка · пауза',
   'Close': 'Закрыть',
@@ -910,5 +910,9 @@ const TEXT_RU = {
   'straight down, under the belly': 'прямо вниз, из-под брюха',
   'Cockpit': 'Кабина',
   'Skip': 'Пропустить',
-  'Tap to skip': 'Коснитесь, чтобы пропустить'
+  'Tap to skip': 'Коснитесь, чтобы пропустить',
+  'Instrument lights: bright': 'Подсветка приборов: яркая',
+  'Instrument lights: medium': 'Подсветка приборов: средняя',
+  'Instrument lights: dim': 'Подсветка приборов: тусклая',
+  'Instruments hidden — <kbd>I</kbd> brings them back': 'Приборы скрыты — <kbd>I</kbd> вернёт их'
 };

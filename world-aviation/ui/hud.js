@@ -70,7 +70,7 @@ const HUD = {
       this.buttonsW = tb ? tb.offsetWidth : 0;
       if (this.buttonsW) root.setProperty('--buttonsW', this.buttonsW + 'px');
       if (tb && tb.offsetHeight) { this.buttonsH = tb.offsetHeight; root.setProperty('--buttonsH', tb.offsetHeight + 'px'); }
-      root.setProperty('--panelH', Math.round(window.innerHeight - Cockpit.panelTop(window.innerHeight)) + 'px');
+      root.setProperty('--panelH', Math.round(window.innerHeight - Cockpit.panelTop(window.innerHeight, true)) + 'px');
     }
     this.messages = this.messages.filter((m) => now - m.t < 7000);
     const key = this.messages.map((m) => m.t).join(',');

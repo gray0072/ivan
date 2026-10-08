@@ -223,7 +223,7 @@ const UI = {
       keyRow(', / .', tr('selected altitude down / up')) +
       keyRow('; / \'', tr('selected heading (autopilot HDG mode)')) +
       keyRow('T / R', tr('time faster / slower: up to ×128 on the autopilot, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft')) +
-      keyRow('C / M / I', tr('camera · map (on a big screen: mini, big, off) · instrument lights')) +
+      keyRow('C / M / I', tr('camera · map (on a big screen: mini, big, off) · instrument lights: dim, medium, bright, hidden')) +
       keyRow('H', tr('controls card')) +
       keyRow('Esc', tr('pause')) +
       '</ul></div>' +

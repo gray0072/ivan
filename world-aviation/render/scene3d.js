@@ -31,6 +31,7 @@ const Scene3D = {
   w: 0, h: 0, dpr: 1,
   camMode: 'cockpit',
   cine: null,                     // Cinematic while the camera flies in or out (Game), else null
+  panelHidden: false,             // the instrument panel is hidden (Game): no need to aim above it
   texCanvas: null, texCtx: null,
   time: 0,
   inCloud: 0,
@@ -572,8 +573,8 @@ const Scene3D = {
     cam.lookAt(look);
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
     // outside, the instrument panel covers the bottom of the screen: aim above the middle
-    // (not in the camera's flights: the panel is not drawn then)
-    const shift = this.camMode === 'cockpit' || this.cine ? 0 : Math.round(this.h * 0.14);
+    // (not in the camera's flights, nor with the panel hidden: it is not drawn then)
+    const shift = this.camMode === 'cockpit' || this.cine || this.panelHidden ? 0 : Math.round(this.h * 0.14);
     if (shift !== this.viewShift || this.w + 'x' + this.h !== this.viewW) {
       this.viewShift = shift; this.viewW = this.w + 'x' + this.h;
       if (shift) cam.setViewOffset(this.w, this.h, 0, shift, this.w, this.h); else cam.clearViewOffset();

@@ -106,7 +106,7 @@ const SIM = {
   GS_CAPTURE_ABOVE_DEG: 0.35,  // the glideslope is captured from below, or from at most this far above it
   FINAL_FIX_NM: 10,            // the autopilot NAV mode joins the extended centreline here
   MSA_LOOKAHEAD_M: 20000,      // the autopilot keeps clear of the terrain this far ahead
-  MSA_MARGIN_M: 450,           // by this much
+  MSA_MARGIN_M: 300,           // by this much (1 000 ft: the obstacle clearance of a real minimum safe altitude)
   GPWS_LOOKAHEAD_S: 25,        // TERRAIN — PULL UP when the ground this many seconds ahead is too close
   ROLLOUT_EXIT_KT: 35,         // below this the landing roll becomes the taxi-in
   // the guidance arrow on the ground (sim/guidance.js)
@@ -145,6 +145,8 @@ const LAYOUT = {
   CORRIDOR_LEN: 32000,         // approach / departure corridors cut into the terrain, metres from the runway ends
   CORRIDOR_HALF_WIDTH: 1200,   // plus 12 % of the distance, then 2.5 km to blend into the terrain
   APPROACH_SLOPE_DEG: 2.4,     // the ground stays under this slope before the threshold (the glideslope is 3°)
+  APPROACH_FLOOR_FT: 1500,     // ... and at most this far over the field: 1 000 ft under the 2 500 ft the
+                               // autopilot levels at before it meets the glide path
   DEPARTURE_SLOPE_DEG: 3.5,    // and under this one past the far end of the runway
   TAXI_KT: 15                  // comfortable taxi speed, knots
 };
@@ -842,6 +844,11 @@ const PRACTICE = {
 const CONTROLS = {
   THROTTLE_CURVE: 1.8,         // thrust = lever position ^ this: the low end of the lever is finer (taxi power)
   THROTTLE_KEY_RATE: 0.45,     // lever travel per second with Z / X
+  // the instrument lights, dimmest first (how much of the panel's light is left); I steps up
+  // through them, from the brightest one more press hides the panel and the heading strip for
+  // the whole view, and the next brings it back dim. A flight starts bright.
+  INSTRUMENT_LIGHTS: [0.3, 0.6, 1],
+  INSTRUMENT_DIM_DARK: 0.75,   // the panel is darkened by (1 - light) times this
   // the hydraulic actuators: how fast each control surface follows the stick, in full
   // deflections per second (a key press does not throw a surface to its stop at once)
   SURFACE_RATE: { aileron: 2.0, elevator: 1.6, rudder: 1.2 },

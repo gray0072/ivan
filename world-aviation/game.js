@@ -141,6 +141,7 @@ const Game = {
     const cine = this.cineShot();
 
     Scene3D.cine = cine ? Cinematic : null;
+    Scene3D.panelHidden = Instruments.hidden;
     Scene3D.camMode = cine ? (Cinematic.inside() ? 'cockpit' : 'cine') : this.camMode;
     Scene3D.pipRect = this.mode === 'flying' && !cine ? HUD.updatePip(fl, sys, this.camMode, this.helpOpen) : null;
     Scene3D.update(dt, fl, sys);
@@ -708,7 +709,11 @@ const Game = {
         break;
       case 'map': HUD.toggleMap(); break;
       case 'prompt': HUD.togglePrompt(); break;
-      case 'brightness': Instruments.bright = Instruments.bright > 0.6 ? 0.45 : 1; break;
+      case 'brightness':
+        Instruments.nextLight();
+        fl.info([tr('Instrument lights: dim'), tr('Instrument lights: medium'), tr('Instrument lights: bright')][Instruments.light] ||
+          tr('Instruments hidden — <kbd>I</kbd> brings them back'));
+        break;
       case 'spoiler': fl.toggleSpoiler(); fl.info(tr(st.spoiler ? 'Spoiler out' : 'Spoiler in')); break;
       case 'antiIce':
         sys.antiIce = !sys.antiIce;

@@ -979,7 +979,11 @@ const Flight = {
     // high on the descent and still fast: the speed brake goes out, and in again on the profile
     if (this.phase === 'DESCENT') {
       const above = this.aboveProfileFt();
-      if (above > SIM.AP_SPEEDBRAKE_HIGH_FT && ias > spdT - 5) this.apSpeedBrake(true);
+      // (not while the terrain holds it up: high above the profile then, it climbed with the speed
+      // brake out, slowed and stalled)
+      const msaHolds = (this.msa || 0) > st.pos.y - 300;
+      if (above > SIM.AP_SPEEDBRAKE_HIGH_FT && ias > spdT - 5 && !msaHolds) this.apSpeedBrake(true);
+      else if (msaHolds) this.apSpeedBrake(false);
       else if (above < 0) this.apSpeedBrake(false);
     } else this.apSpeedBrake(false);
 
@@ -1009,6 +1013,10 @@ const Flight = {
         this.info(tr('Terrain ahead — the autopilot holds {alt} ft', { alt: fmtAltFt(Math.ceil(target / FT / 100) * 100) }));
       }
       vsT = clamp((target - st.pos.y) * 0.05, -11, ac.climbRate);
+      // a climb (for the terrain, or back up to the selected altitude) only as steep as the
+      // spare speed allows: never down to the stall — low and slow with the gear out, a full
+      // climb rate up to a new safe altitude stalled the aeroplane and dropped the autopilot
+      if (vsT > 0) vsT = Math.min(vsT, Math.max(0, ias - this.vsNow() * 1.3) * 0.35);
       // a descent like a real autopilot's: the thrust at idle and the speed on the elevator, so
       // when the aeroplane is faster than it should be the descent gets shallower (down to level
       // flight) until the drag has taken the extra speed off

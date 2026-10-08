@@ -68,7 +68,7 @@ const TEXT_SV = {
   'selected altitude down / up': 'vald höjd ner / upp',
   'selected heading (autopilot HDG mode)': 'vald kurs (autopilotens HDG-läge)',
   'time faster / slower: up to ×128 on the autopilot, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft': 'tiden snabbare / långsammare: upp till ×128 med autopilot, för hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 över 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft',
-  'camera · map (on a big screen: mini, big, off) · instrument lights': 'kamera · karta (på stor skärm: mini, stor, av) · instrumentbelysning',
+  'camera · map (on a big screen: mini, big, off) · instrument lights: dim, medium, bright, hidden': 'kamera · karta (på stor skärm: mini, stor, av) · instrumentbelysning: svag, mellan, stark, dolda instrument',
   'controls card': 'kontrollkort',
   'pause': 'paus',
   'Touch': 'Pekskärm',
@@ -532,7 +532,7 @@ const TEXT_SV = {
   'selected altitude': 'vald höjd',
   'selected heading': 'vald kurs',
   'time faster / slower (autopilot: up to ×128; by hand: more the higher you are, ×64 above 10 000 ft)': 'tiden snabbare / långsammare (autopilot: upp till ×128; för hand: mer ju högre du är, ×64 över 10 000 ft)',
-  'view (Shift+C back) · map (mini / big / off) · instrument lights': 'vy (Shift+C bakåt) · karta (mini / stor / av) · instrumentbelysning',
+  'view (Shift+C back) · map (mini / big / off) · instrument lights: dim, medium, bright, hidden': 'vy (Shift+C bakåt) · karta (mini / stor / av) · instrumentbelysning: svag, mellan, stark, dolda instrument',
   'spoiler · anti-ice': 'spoiler · isskydd',
   'this card · pause': 'det här kortet · paus',
   'Close': 'Stäng',
@@ -910,5 +910,9 @@ const TEXT_SV = {
   'straight down, under the belly': 'rakt ner, under buken',
   'Cockpit': 'Cockpit',
   'Skip': 'Hoppa över',
-  'Tap to skip': 'Tryck för att hoppa över'
+  'Tap to skip': 'Tryck för att hoppa över',
+  'Instrument lights: bright': 'Instrumentbelysning: stark',
+  'Instrument lights: medium': 'Instrumentbelysning: mellan',
+  'Instrument lights: dim': 'Instrumentbelysning: svag',
+  'Instruments hidden — <kbd>I</kbd> brings them back': 'Instrumenten dolda — <kbd>I</kbd> tar tillbaka dem'
 };

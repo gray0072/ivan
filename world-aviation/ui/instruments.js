@@ -13,9 +13,16 @@
 const PHONE_THROTTLE_W = 78;
 
 const Instruments = {
-  ctx: null, w: 0, h: 0, dpr: 1, bright: 1,
+  ctx: null, w: 0, h: 0, dpr: 1,
+  light: CONTROLS.INSTRUMENT_LIGHTS.length - 1,   // the instrument lights: an index into CONTROLS.INSTRUMENT_LIGHTS (bright), past its end the panel is hidden
+
+  get bright() { return CONTROLS.INSTRUMENT_LIGHTS[this.light] || 0; },
+  get hidden() { return this.light >= CONTROLS.INSTRUMENT_LIGHTS.length; },
+  // I: dim → medium → bright → hidden → dim
+  nextLight() { this.light = (this.light + 1) % (CONTROLS.INSTRUMENT_LIGHTS.length + 1); },
 
   draw(ctx, w, h, dpr, fl, sys) {
+    if (this.hidden) return;
     this.ctx = ctx; this.w = w; this.h = h; this.dpr = dpr;
     const st = fl.st, ac = fl.ac;
     const compact = w < 760 || h < 560;
@@ -94,7 +101,7 @@ const Instruments = {
     }
     // instrument lights dimmed
     if (this.bright < 1) {
-      ctx.fillStyle = 'rgba(0,0,0,' + (1 - this.bright) * 0.6 + ')';
+      ctx.fillStyle = 'rgba(0,0,0,' + (1 - this.bright) * CONTROLS.INSTRUMENT_DIM_DARK + ')';
       ctx.fillRect(0, top, w, panelH);
     }
     ctx.restore();
