@@ -102,9 +102,17 @@ const Instruments = {
 
   // ---------- helpers ----------
   // the case and the face; the name and the unit go where the dial has no ticks: `at` is their
-  // centre as a fraction of the radius (default: the bottom of the face)
+  // centre as a fraction of the radius (default: the bottom of the face); with at.mid the name
+  // and all the unit's lines together are centred on that height
   bezel(ctx, x, y, r, label, sub, at) {
-    const lx = x + (at ? at.x : 0) * r, ly = y + (at ? at.y : 0.82) * r;
+    const lx = x + (at ? at.x : 0) * r;
+    let ly = y + (at ? at.y : 0.82) * r;
+    if (at && at.mid && label) {
+      // the name's capitals reach about 0.1 r above its baseline, the unit's last line ends on its own
+      const lines = sub ? String(sub).split('\n').length : 0;
+      const top = ly - r * 0.1, bottom = lines ? ly + r * (0.13 + (lines - 1) * 0.12) : ly;
+      ly -= (top + bottom) / 2 - ly;
+    }
     ctx.save();
     const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.35, r * 0.1, x, y, r);
     g.addColorStop(0, '#23282f');
@@ -158,6 +166,7 @@ const Instruments = {
     ctx.lineWidth = r * 0.12;
     ctx.beginPath(); ctx.arc(0, 0, r * 0.78, ang(ac.vne * k), ang(ac.vne * k + vmax * 0.008)); ctx.stroke();
     // ticks every `minor`, a longer one every 2, a number every `label`
+    const win = { w: r * 0.6, y: r * 0.24, h: r * 0.25 };             // the digital window, under the centre
     const minor = vmax <= 250 ? 10 : vmax <= 500 ? 20 : 50;
     const label = [20, 40, 50, 100, 200, 250].find((l) => l % minor === 0 && vmax / l <= (r < 70 ? 5 : 7)) || 200;
     ctx.strokeStyle = '#c8d2dc';
@@ -172,7 +181,13 @@ const Instruments = {
       ctx.moveTo(Math.cos(a) * r * 0.9, Math.sin(a) * r * 0.9);
       ctx.lineTo(Math.cos(a) * r * (major ? 0.77 : 0.83), Math.sin(a) * r * (major ? 0.77 : 0.83));
       ctx.stroke();
-      if (s > 0 && s % label === 0 && r > 40) ctx.fillText(String(s), Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6);
+      if (s > 0 && s % label === 0 && r > 40) {
+        // a number that would run into the digital window (the last one, near the red line) is left out
+        const tx = Math.cos(a) * r * 0.6, ty = Math.sin(a) * r * 0.6;
+        const hw = ctx.measureText(String(s)).width / 2 + r * 0.03, hh = r * 0.09;
+        if (tx + hw > -win.w / 2 && tx - hw < win.w / 2 && ty + hh > win.y && ty - hh < win.y + win.h) continue;
+        ctx.fillText(String(s), tx, ty);
+      }
     }
     // V-speed bugs
     const bug = (s, color) => {
@@ -191,7 +206,7 @@ const Instruments = {
     ctx.fillStyle = '#05070a';
     ctx.strokeStyle = '#4c5561';
     ctx.lineWidth = 1;
-    roundRect(ctx, -r * 0.3, r * 0.24, r * 0.6, r * 0.25, 3);
+    roundRect(ctx, -win.w / 2, win.y, win.w, win.h, 3);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#7de08a';
     ctx.font = '700 ' + Math.round(r * 0.18) + 'px ui-monospace, monospace';
@@ -406,7 +421,7 @@ const Instruments = {
     const vmax = metric ? 10 : 2000;
     const majors = metric ? [2, 4, 6, 8, 10] : [500, 1000, 1500, 2000];
     const minor = metric ? 1 : 250;
-    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm\n×1000', { x: -0.55, y: -0.1 });
+    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm\n×1000', { x: -0.55, y: 0, mid: true });
     ctx.save();
     ctx.translate(x, y);
     const ang = (s) => -clamp(s, -vmax, vmax) / vmax * 150 * DEG;

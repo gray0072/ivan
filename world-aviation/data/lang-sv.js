@@ -391,10 +391,20 @@ const TEXT_SV = {
   // ---------- pause ----------
   'Paused': 'Paus',
   'Resume': 'Fortsätt',
+  'The flight': 'Flygningen',
+  'The aircraft': 'Flygplanet',
   'Restart this flight': 'Starta om flygningen',
   'Controls': 'Kontroller',
   'Abandon, back to ops': 'Avbryt, tillbaka till uppdragen',
   'Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.': 'Esc, mellanslag eller Enter fortsätter. En ny svårighetsgrad gäller från nästa flygning eller omstarten.',
+
+  // ---------- the spoken callouts (core/audio.js) ----------
+  '{v} knots': '{v} knop',
+  '{v} kilometres per hour': '{v} kilometer i timmen',
+  'V one': 'V ett',
+  'rotate': 'Rotera',
+  'positive rate': 'Positiv stigning',
+  'minimums': 'Minimum',
 
   // ---------- countries (the airports' countries) ----------
   'Norway': 'Norge',

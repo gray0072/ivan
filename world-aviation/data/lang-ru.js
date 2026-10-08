@@ -391,10 +391,20 @@ const TEXT_RU = {
   // ---------- pause ----------
   'Paused': 'Пауза',
   'Resume': 'Продолжить',
+  'The flight': 'Рейс',
+  'The aircraft': 'Самолёт',
   'Restart this flight': 'Начать рейс заново',
   'Controls': 'Управление',
   'Abandon, back to ops': 'Прекратить рейс и вернуться к рейсам',
   'Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.': 'Esc, пробел или Enter — продолжить. Новая сложность действует со следующего рейса или после перезапуска.',
+
+  // ---------- the spoken callouts (core/audio.js) ----------
+  '{v} knots': '{v} узлов',
+  '{v} kilometres per hour': '{v} километров в час',
+  'V one': 'Рубеж',
+  'rotate': 'Подъём',
+  'positive rate': 'Есть набор',
+  'minimums': 'Минимум',
 
   // ---------- countries (the airports' countries) ----------
   'Norway': 'Норвегия',

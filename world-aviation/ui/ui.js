@@ -62,7 +62,8 @@ const UI = {
 
   panel(html, cls) {
     this.screen.hidden = false;
-    this.screen.dataset.view = '';
+    // in the pause the flight stays in sight behind the glass (styles.css)
+    this.screen.dataset.view = Game.mode === 'paused' ? 'pause' : '';
     this.screen.innerHTML = '<div class="panel ' + (cls || '') + '">' + Units.text(html) + '</div>';
     this.screen.scrollTop = 0;
     this.wire();
@@ -269,28 +270,7 @@ const UI = {
     const ac = Career.aircraft();
     const all = d.contracts || [];
     const shown = Filters.boardList(all, (c) => this.requirement(c));
-    const list = shown.map((c) => {
-      const from = World.byId[c.fromId], to = World.byId[c.toId];
-      const need = this.requirement(c);
-      return '<div class="contract' + (this.selContract === c.id ? ' sel' : '') + '">' +
-        '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
-        esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
-        '<div class="cRoute"><b>' + c.fromId + ' → ' + c.toId + '</b>' +
-        '<span>' + flagImg(from) + esc(from.city) + ' → ' + flagImg(to) + esc(to.city) + '</span></div>' +
-        '<div class="cGrid">' +
-        row2(tr('Load'), loadText(c)) +
-        row2(tr('Distance'), c.distanceNm + ' nm') +
-        row2(tr('Payout'), fmtMoney(c.pay)) +
-        row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
-        row2(tr('Schedule'), Career.difficulty.id === 'easy' ? tr('no deadline') : tr('{t} real time', { t: fmtTime(c.deadline) })) +
-        row2(tr('Fuel plan'), c.fuelKg + ' kg') +
-        '</div>' +
-        '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
-        (need ? '<span class="need">' + esc(need) + '</span>' : '<span class="ok">' + tr('cleared for this type') + '</span>') +
-        '<button class="btn' + (need ? ' disabled' : ' default') + '" data-act="briefing" data-v="' + esc(c.id) + '"' +
-        (need ? ' disabled' : '') + '>' + tr('Fly this') + '</button></div>' +
-        '</div>';
-    }).join('');
+    const list = shown.map((c) => this.contractCard(c, this.requirement(c))).join('');
     const away = d.lastTo && d.lastTo !== d.base;
     return '<div class="hint">' + tr('Aircraft: <b>{ac}</b> ({klass} · max {nm} nm).', { ac: esc(ac.name), klass: esc(tr(ac.klass)), nm: ac.maxRangeNm }) + ' ' +
       (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(World.byId[d.lastTo].city), base: d.base })
@@ -298,6 +278,30 @@ const UI = {
       Filters.boardBar() +
       (all.length && !shown.length ? Filters.empty('boardFilter', tr('No offers match the filters ({n} on the board).', { n: all.length }))
         : '<div class="contracts">' + (list || '<p class="lead">' + tr('No contracts for this aircraft right now — try another type in the hangar.') + '</p>') + '</div>');
+  },
+
+  // a contract's card: on the board (need: why it cannot be flown, or null), or in the pause of
+  // its flight (flying: no button)
+  contractCard(c, need, flying) {
+    const from = World.byId[c.fromId], to = World.byId[c.toId];
+    return '<div class="contract' + (!flying && this.selContract === c.id ? ' sel' : '') + '">' +
+      '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
+      esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
+      '<div class="cRoute"><b>' + c.fromId + ' → ' + c.toId + '</b>' +
+      '<span>' + flagImg(from) + esc(from.city) + ' → ' + flagImg(to) + esc(to.city) + '</span></div>' +
+      '<div class="cGrid">' +
+      row2(tr('Load'), loadText(c)) +
+      row2(tr('Distance'), c.distanceNm + ' nm') +
+      row2(tr('Payout'), fmtMoney(c.pay)) +
+      row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
+      row2(tr('Schedule'), Career.difficulty.id === 'easy' ? tr('no deadline') : tr('{t} real time', { t: fmtTime(c.deadline) })) +
+      row2(tr('Fuel plan'), c.fuelKg + ' kg') +
+      '</div>' +
+      '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
+      (flying ? '' : (need ? '<span class="need">' + esc(need) + '</span>' : '<span class="ok">' + tr('cleared for this type') + '</span>') +
+        '<button class="btn' + (need ? ' disabled' : ' default') + '" data-act="briefing" data-v="' + esc(c.id) + '"' +
+        (need ? ' disabled' : '') + '>' + tr('Fly this') + '</button>') + '</div>' +
+      '</div>';
   },
 
   // the regions of the world and their traffic rights
@@ -339,47 +343,51 @@ const UI = {
   // The hangar: a card per type (lightest first, or as the sort bar says), each with its picture (render/preview3d.js),
   // its key figures in tiles and the rest in rows
   hangarBody() {
-    const d = Career.data;
     const types = Filters.hangarList(AIRCRAFT.slice());
-    const cards = types.map((a) => {
-      const locked = !Career.unlocked(a);
-      const sel = d.selected === a.id;
-      const course = a.unlock ? COURSES.find((c) => c.id === a.unlock) : null;
-      const crew = a.seats < 10;
-      const tile = (v, k) => '<div class="acStat"><b>' + v + '</b><span>' + esc(k) + '</span></div>';
-      return '<div class="acCard plane' + (sel ? ' sel' : '') + (locked ? ' locked' : '') + '">' +
-        '<div class="acPic loading" style="--glow:' + hexAlpha((a.look && a.look.color) || '#6fb1e8', 0.42) + '">' +
-        '<img data-ac="' + a.id + '" alt="' + esc(a.name) + '">' +
-        '<span class="tag">' + esc(tr(a.klass)) + '</span>' +
-        '<span class="acMtow" title="' + esc(tr('Weight: max take-off / empty')) + '">' + Math.round(a.mtow / 1000) + ' t</span>' +
-        (sel ? '<span class="acBadge sel">✓ ' + tr('Selected') + '</span>'
-          : locked ? '<span class="acBadge lock">🔒 ' + esc(this.courseText(course).name) + '</span>' : '') +
-        '</div><div class="acMain">' +
-        '<div class="acHead"><b>' + esc(a.name) + '</b></div>' +
-        '<p class="acBlurb">' + esc(tr(a.blurb)) + '</p>' +
-        '<div class="acStats">' +
-        tile(a.seats, tr(crew ? 'crew' : 'seats')) +
-        tile(Math.round(a.payloadKg / 100) / 10 + ' t', tr('payload')) +
-        tile(a.maxRangeNm + ' nm', tr('range')) +
-        tile(a.cruiseTas + ' kt', tr('cruise')) +
-        '</div><div class="cGrid">' +
-        row2(tr('Weight: max take-off / empty'), fmtTonnes(a.mtow) + ' t · ' + fmtTonnes(a.emptyKg) + ' t') +
-        row2(tr('Length / span'), a.dims.len + ' m · ' + a.dims.span + ' m') +
-        row2(tr('Runway needed'), a.takeoffDist + ' m') +
-        row2(tr('Stall speed'), tr('{v} kt, full flaps, max weight', { v: Math.round(vs0Of(a, a.mtow)) })) +
-        row2(tr('Crosswind limit'), a.crosswindLimit + ' kt') +
-        row2(tr('Surfaces'), a.surfaces.map((x) => tr(x)).join(', ')) +
-        row2(tr('Lease per block hour'), fmtMoney(a.rent)) +
-        '</div>' +
-        (locked
-          ? '<div class="cFoot"><span class="need">' + tr('Locked — pass {course}', { course: esc(this.courseText(course).name) }) + '</span></div>'
-          : '<div class="cFoot"><span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
-            (sel ? '' : '<button class="btn" data-act="selectAc" data-v="' + a.id + '">' + tr('Select') + '</button>') + '</div>') +
-        '</div></div>';
-    }).join('');
+    const cards = types.map((a) => this.aircraftCard(a)).join('');
     return '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') +
       '</div>' + Filters.hangarBar() +
       (types.length ? '<div class="cards planes">' + cards + '</div>' : Filters.empty('hangarFilter', tr('No aircraft match the filters.')));
+  },
+
+  // an aircraft type's card: in the hangar, or in the pause of a flight in it (flying: no
+  // selection, no lock, no button)
+  aircraftCard(a, flying) {
+    const locked = !flying && !Career.unlocked(a);
+    const sel = !flying && Career.data.selected === a.id;
+    const course = a.unlock ? COURSES.find((c) => c.id === a.unlock) : null;
+    const crew = a.seats < 10;
+    const tile = (v, k) => '<div class="acStat"><b>' + v + '</b><span>' + esc(k) + '</span></div>';
+    return '<div class="acCard plane' + (sel ? ' sel' : '') + (locked ? ' locked' : '') + '">' +
+      '<div class="acPic loading" style="--glow:' + hexAlpha((a.look && a.look.color) || '#6fb1e8', 0.42) + '">' +
+      '<img data-ac="' + a.id + '" alt="' + esc(a.name) + '">' +
+      '<span class="tag">' + esc(tr(a.klass)) + '</span>' +
+      '<span class="acMtow" title="' + esc(tr('Weight: max take-off / empty')) + '">' + Math.round(a.mtow / 1000) + ' t</span>' +
+      (sel ? '<span class="acBadge sel">✓ ' + tr('Selected') + '</span>'
+        : locked ? '<span class="acBadge lock">🔒 ' + esc(this.courseText(course).name) + '</span>' : '') +
+      '</div><div class="acMain">' +
+      '<div class="acHead"><b>' + esc(a.name) + '</b></div>' +
+      '<p class="acBlurb">' + esc(tr(a.blurb)) + '</p>' +
+      '<div class="acStats">' +
+      tile(a.seats, tr(crew ? 'crew' : 'seats')) +
+      tile(Math.round(a.payloadKg / 100) / 10 + ' t', tr('payload')) +
+      tile(a.maxRangeNm + ' nm', tr('range')) +
+      tile(a.cruiseTas + ' kt', tr('cruise')) +
+      '</div><div class="cGrid">' +
+      row2(tr('Weight: max take-off / empty'), fmtTonnes(a.mtow) + ' t · ' + fmtTonnes(a.emptyKg) + ' t') +
+      row2(tr('Length / span'), a.dims.len + ' m · ' + a.dims.span + ' m') +
+      row2(tr('Runway needed'), a.takeoffDist + ' m') +
+      row2(tr('Stall speed'), tr('{v} kt, full flaps, max weight', { v: Math.round(vs0Of(a, a.mtow)) })) +
+      row2(tr('Crosswind limit'), a.crosswindLimit + ' kt') +
+      row2(tr('Surfaces'), a.surfaces.map((x) => tr(x)).join(', ')) +
+      row2(tr('Lease per block hour'), fmtMoney(a.rent)) +
+      '</div>' +
+      (flying ? ''
+        : locked
+          ? '<div class="cFoot"><span class="need">' + tr('Locked — pass {course}', { course: esc(this.courseText(course).name) }) + '</span></div>'
+          : '<div class="cFoot"><span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
+            (sel ? '' : '<button class="btn" data-act="selectAc" data-v="' + a.id + '">' + tr('Select') + '</button>') + '</div>') +
+      '</div></div>';
   },
 
   // The course tree, in the game's language (the exams run in it too)
@@ -609,11 +617,27 @@ const UI = {
       '<h2>' + tr('Paused') + '</h2>' +
       '<p class="lead">' + (fl ? esc(fl.contract.client) + ' · ' + fl.contract.fromId + ' → ' + fl.contract.toId : '') + '</p>' +
       '<div class="btnRow"><button class="btn default" data-act="resume">' + tr('Resume') + '</button>' +
+      (fl ? '<button class="btn" data-act="pauseFlight">' + tr('The flight') + '</button>' +
+        '<button class="btn" data-act="pauseAircraft">' + tr('The aircraft') + '</button>' : '') +
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
       '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
       '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + this.aidChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
+  },
+
+  // from the pause: the flight's contract card, or the card of the aircraft flying it, as on the
+  // board and in the hangar
+  showPauseCard(what) {
+    const fl = Game.flight;
+    if (!fl) { this.showPause(); return; }
+    this.panel(
+      '<h2>' + tr('Paused') + '</h2>' +
+      (what === 'aircraft' ? '<div class="cards planes">' + this.aircraftCard(fl.ac, true) + '</div>'
+        : '<div class="contracts">' + this.contractCard(fl.contract, null, true) + '</div>') +
+      '<div class="btnRow"><button class="btn default" data-act="pauseBack">' + tr('Back') + '</button>' +
+      '<button class="btn" data-act="resume">' + tr('Resume') + '</button></div>', 'narrow');
+    if (what === 'aircraft' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
 
   // aviation units (ft, kt, nm) or metric (m, km/h, km)
@@ -791,6 +815,9 @@ const UI = {
         break;
       case 'ops': Game.abortToOps(); break;
       case 'resume': Game.pause(); break;
+      case 'pauseFlight': if (Game.mode === 'paused') this.showPauseCard('flight'); break;
+      case 'pauseAircraft': if (Game.mode === 'paused') this.showPauseCard('aircraft'); break;
+      case 'pauseBack': if (Game.mode === 'paused') this.showPause(); break;
       case 'restart':
         // a practice restarts as a practice (a new session, paid again)
         if (Game.contract && Game.practice) { this.selContract = Game.contract.id; this.action('practice'); }

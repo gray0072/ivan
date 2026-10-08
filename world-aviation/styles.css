@@ -431,6 +431,19 @@ kbd {
   background: radial-gradient(1200px 700px at 50% 0%, #1a2734 0%, #0b1017 70%);
 }
 #screen[hidden] { display: none; }
+/* the pause: the frozen flight stays in sight — the view and the panel dimmed a little, darker at
+   the edges, and the screens on frosted glass in the middle */
+#screen[data-view="pause"] {
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 45%, rgba(4, 8, 14, 0.28) 0%, rgba(4, 8, 14, 0.5) 70%, rgba(4, 8, 14, 0.62) 100%);
+}
+#screen[data-view="pause"] .panel {
+  background: rgba(12, 18, 27, 0.7);
+  border-color: rgba(200, 222, 255, 0.18);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
 .panel {
   width: min(1080px, 100%);
   margin: auto;

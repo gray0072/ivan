@@ -34,13 +34,13 @@ Starting **at the gate** and flying the whole ground routine yourself pays a bon
 - **Enter** — the next step on the ground: push back, engine start, take-off clearance
 - **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **/** spoiler · **K** anti-ice
 - **Y** autopilot · **N** back to the programme (NAV along the route and the planned altitude, after you changed the heading or the altitude) · **, .** selected altitude · **; '** selected heading (HDG mode)
-- **T / R** time faster / slower · **C / Shift+C** next / previous view: cockpit, chase, front looking back, wing, tail fin, landing gear, top down, tower / fly-by · **M** moving map (on a big screen: mini map, big map, off) · **I** instrument lights · **H** controls card · **Esc** pause
+- **T / R** time faster / slower · **C / Shift+C** next / previous view: cockpit, chase, front looking back, wing, tail fin, landing gear, top down, tower / fly-by · **M** moving map (on a big screen: mini map, big map, off) · **I** instrument lights · **H** controls card · **Esc** pause (the flight stays in view behind it, dimmed; there you can also look at the flight's card and the aircraft's)
 
 **On a phone or tablet** the game goes fullscreen when you start (where the browser allows it). The **left half** of the screen is a floating joystick — it appears where your thumb lands: drag down to pull the nose up, left and right to roll and to steer on the ground (the nosewheel and the control surfaces are hydraulic: they follow your thumb smoothly, not at once). The **slider on the right edge** is the throttle — its lower half gives fine control of low power for taxiing. The flight strip and the hint text sit on the left; tap either to fold or open it (the strip folds to the route, the fuel and the time left). The buttons come in rows of related ones: **Menu · View · Map · Ice** (anti-ice), **AP · NAV** (back to the programme) **· Time − · Time +**, **Flap − · Flap + · Gear · Spoiler**, **Go** (push back, start, take-off clearance) **· Brake · Park** (the parking brake — release it to taxi). The map closes with a tap anywhere on it. A switch that stays on lights up on its button: the autopilot, NAV and the gear down in green, the spoiler and the parking brake in red. Held upright the buttons run across the top and the four main gauges sit two by two on a taller panel; on its side the climb rate is a number next to the altimeter. On a tablet the messages stay on the left under the hint text, as on a computer. Both thumbs work at the same time, so you can fly and work a checklist together.
 
 The controls work in any keyboard layout (the keys are read by their place on the keyboard).
 
-**Sound**: jet fans whine and roar with the power, propellers beat, the wheels rumble over the slab joints, the brakes hiss, the gear and the flaps whir and clunk, the tyres chirp on touchdown — and a voice calls "V one", "rotate" and the radio heights down to "ten" on landing.
+**Sound**: jet fans whine and roar with the power, propellers beat, the wheels rumble over the slab joints, the brakes hiss, the gear and the flaps whir and clunk, the tyres chirp on touchdown — and a voice calls "V one", "rotate" and the radio heights down to "ten" on landing, in the game's language and in feet or metres, as the units setting says.
 
 ## Instruments
 
@@ -101,7 +101,7 @@ Every course ends in a short exam: four questions, three right to pass. They are
 
 ## Language
 
-The whole game — the menus, the briefings and debriefs, the prompts and messages in flight, the emergency checklists, the touch buttons, the courses and the exams — is in **English, Russian or Swedish**. The title screen is a sky above a sea of clouds drifting past — golden at dawn and dusk, blue by day, starry at night, following your own clock — with airliners of real airlines flying through it in turn. Pick the language at the top of the title screen; the choice is remembered (the first time the game follows your browser's language). Airport, city and airline names, the instrument labels and the spoken callouts stay as in a real cockpit.
+The whole game — the menus, the briefings and debriefs, the prompts and messages in flight, the emergency checklists, the touch buttons, the courses and the exams — is in **English, Russian or Swedish**. The title screen is a sky above a sea of clouds drifting past — golden at dawn and dusk, blue by day, starry at night, following your own clock — with airliners of real airlines flying through it in turn. Pick the language at the top of the title screen; the choice is remembered (the first time the game follows your browser's language). Airport, city and airline names and the instrument labels stay as in a real cockpit.
 
 ## Units and the map
 

@@ -17,9 +17,10 @@
 // One-shots: the gear and the flaps locking, levers, the parking
 // brake, the spoiler, the touchdown (tyre chirp and a thump as hard
 // as the landing), warnings, the checklist, the 10 000 ft chime.
-// Callouts are spoken (speechSynthesis, where the browser has it):
-// "eighty knots", "V one", "rotate", "positive rate" on the take-off,
-// the radio heights and "minimums" on the approach.
+// Callouts are spoken (speechSynthesis, where the browser has it) in
+// the game's language and units: "80 knots" (or 150 km/h), "V one",
+// "rotate", "positive rate" on the take-off, the radio heights (feet
+// or metres) and "minimums" on the approach.
 //
 // Two buses: the world (engines, wheels, wind) goes through a filter
 // that muffles it in the cockpit; the cockpit (warnings, clicks,
@@ -235,30 +236,58 @@ const Audio2 = {
     this.callouts(fl, t);
   },
 
+  // In the game's language and units: "80 knots" or "150 km/h" (80 kt rounded), and the radio
+  // heights in feet or on a metric scale of their own (300, 150, 60 m minimums, 30, 15, 10, 5).
+  // The numbers go to the voice as whole numbers in digits; it reads them in its own language.
   callouts(fl, t) {
     const st = fl.st;
     const ias = st.ias / KTS;
-    const say = (key, text) => { if (!t.said[key]) { t.said[key] = true; this.say(text); } };
+    const metric = Units.metric;
+    const say = (key, text) => { if (!t.said[key]) { t.said[key] = true; this.say(text()); } };
     if (fl.phase === 'TAKEOFF' && st.onGround) {
       const vr = fl.ac.vr;
-      if (vr > 95 && ias >= 80) say('80', 'eighty knots');
-      if (ias >= vr - 6) say('v1', 'V one');
-      if (ias >= vr) say('vr', 'rotate');
+      if (vr > 95 && ias >= 80) {
+        say('80', () => metric ? this.tr('{v} kilometres per hour', { v: Units.kmh(80) }) : this.tr('{v} knots', { v: 80 }));
+      }
+      if (ias >= vr - 6) say('v1', () => this.tr('V one'));
+      if (ias >= vr) say('vr', () => this.tr('rotate'));
     }
-    if (!st.onGround && t.said.vr && st.vel.y > 2 && fl.altAgl() > 8) say('pos', 'positive rate');
+    if (!st.onGround && t.said.vr && st.vel.y > 2 && fl.altAgl() > 8) say('pos', () => this.tr('positive rate'));
     // radio heights on the way down to land
-    const agl = fl.altAgl() / FT;
+    const agl = metric ? fl.altAgl() : fl.altAgl() / FT;
     const down = !st.onGround && st.vel.y < -0.5 && (fl.phase === 'APPROACH' || fl.phase === 'DESCENT');
-    if (down && t.agl !== null && (fl.env.timeAccel || 1) <= 1) {
-      for (const h of [1000, 500, 200, 100, 50, 40, 30, 20, 10]) {
-        if (t.agl > h && agl <= h) {
-          const word = h === 200 ? 'minimums' : h === 1000 ? 'one thousand' : h === 500 ? 'five hundred' :
-            h === 100 ? 'one hundred' : String(h);
-          this.say(word, h <= 50);
-        }
+    if (down && t.agl !== null && t.aglMetric === metric && (fl.env.timeAccel || 1) <= 1) {
+      const heights = metric ? [300, 150, 60, 30, 15, 10, 5] : [1000, 500, 200, 100, 50, 40, 30, 20, 10];
+      const minimums = metric ? 60 : 200, quick = metric ? 15 : 50;
+      for (const h of heights) {
+        if (t.agl > h && agl <= h) this.say(h === minimums ? this.tr('minimums') : String(h), h <= quick);
       }
     }
     t.agl = agl;
+    t.aglMetric = metric;
+  },
+
+  // the voice's language: the game's, if the browser has a voice for it (the list may still be
+  // loading), else English
+  voiceFor() {
+    const s = window.speechSynthesis;
+    const vs = s.getVoices();
+    const want = I18N.lang;
+    if (this.voice && this.voiceLang === want) return this.voice;
+    const tag = { en: /^en[-_]GB/i, ru: /^ru/i, sv: /^sv/i }[want];
+    let v = vs.find((x) => tag.test(x.lang)) || (want === 'en' ? vs.find((x) => /^en/i.test(x.lang)) : null);
+    // no voice for Russian or Swedish here: English words with an English voice
+    if (!v && want !== 'en' && vs.length) v = vs.find((x) => /^en[-_]GB/i.test(x.lang)) || vs.find((x) => /^en/i.test(x.lang)) || null;
+    this.voice = v || null;
+    this.voiceLang = v ? want : null;
+    return this.voice;
+  },
+  // a callout's text for the voice that will say it
+  tr(text, params) {
+    const v = window.speechSynthesis ? this.voiceFor() : null;
+    const english = I18N.lang === 'en' || (v && !new RegExp('^' + I18N.lang, 'i').test(v.lang));
+    if (!english) return tr(text, params);
+    return String(text).replace(/\{(\w+)\}/g, (all, k) => (params && params[k] !== undefined ? params[k] : all));
   },
 
   // a spoken callout; the quick radio heights cut off one that is still talking
@@ -266,13 +295,10 @@ const Audio2 = {
     if (this.muted || !window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return;
     const s = window.speechSynthesis;
     if (urgent && s.speaking) s.cancel();
-    if (!this.voice) {
-      const vs = s.getVoices();
-      this.voice = vs.find((x) => /en-GB/i.test(x.lang)) || vs.find((x) => /^en/i.test(x.lang)) || null;
-    }
+    const voice = this.voiceFor();
     const u = new SpeechSynthesisUtterance(text);
-    if (this.voice) u.voice = this.voice;
-    u.lang = this.voice ? this.voice.lang : 'en-GB';
+    if (voice) u.voice = voice;
+    u.lang = voice ? voice.lang : { en: 'en-GB', ru: 'ru-RU', sv: 'sv-SE' }[I18N.lang] || 'en-GB';
     u.rate = urgent ? 1.35 : 1.1;
     u.volume = 0.9;
     s.speak(u);
