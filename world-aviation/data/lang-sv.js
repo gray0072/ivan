@@ -905,5 +905,6 @@ const TEXT_SV = {
   'Gate {n}, terminal {t}': 'Gate {n}, terminal {t}',
   'T{t} · gate {n}': 'T{t} · gate {n}',
   'Stands': 'Uppställningsplatser',
-  'Stand': 'Uppställningsplats'
+  'Stand': 'Uppställningsplats',
+  'Cabin announcement': 'Kabinutrop'
 };

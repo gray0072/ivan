@@ -312,21 +312,29 @@ const Audio2 = {
   },
 
   // a cabin announcement (ui/cabin.js): the cabin chime, then the voice, a little slower than
-  // the callouts; a callout cuts it off
+  // the callouts; a callout cuts it off. It is said a sentence at a time: Chrome's network voices
+  // drop or cut off a long utterance (a quarter of a minute, a few hundred letters), and the
+  // utterances are kept referenced until they are said (one collected early never ends).
   announce(text) {
     if (this.muted || !text || !window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return;
     this.cue('pa');
     setTimeout(() => {
       if (this.muted) return;
       const s = window.speechSynthesis, voice = this.voiceFor();
-      const u = new SpeechSynthesisUtterance(text);
-      if (voice) u.voice = voice;
-      u.lang = voice ? voice.lang : { en: 'en-GB', ru: 'ru-RU', sv: 'sv-SE' }[I18N.lang] || 'en-GB';
-      u.rate = 1.0;
-      u.volume = 0.75;
-      u.onend = u.onerror = () => { this.paTalking = false; };
+      const parts = announcementParts(text);
+      const queue = this.paQueue = parts.map((p, i) => {
+        const u = new SpeechSynthesisUtterance(p);
+        if (voice) u.voice = voice;
+        u.lang = voice ? voice.lang : { en: 'en-GB', ru: 'ru-RU', sv: 'sv-SE' }[I18N.lang] || 'en-GB';
+        u.rate = 1.0;
+        u.volume = 0.8;
+        u.onerror = () => { this.paTalking = false; };
+        if (i === parts.length - 1) u.onend = () => { this.paTalking = false; if (this.paQueue === queue) this.paQueue = null; };
+        return u;
+      });
+      if (s.paused) s.resume();
       this.paTalking = true;
-      s.speak(u);
+      for (const u of queue) s.speak(u);
     }, 1300);
   },
 
@@ -420,3 +428,17 @@ const Audio2 = {
     }
   }
 };
+
+// an announcement in pieces the voices say whole: its sentences, a long one cut at its commas
+function announcementParts(text) {
+  const out = [];
+  for (const sentence of String(text).split(/(?<=[.!?])\s+/)) {
+    if (sentence.length <= 160) { if (sentence.trim()) out.push(sentence.trim()); continue; }
+    let cur = '';
+    for (const bit of sentence.split(/(?<=,)\s+/)) {
+      if (cur && (cur + ' ' + bit).length > 160) { out.push(cur); cur = bit; } else cur = cur ? cur + ' ' + bit : bit;
+    }
+    if (cur) out.push(cur);
+  }
+  return out;
+}

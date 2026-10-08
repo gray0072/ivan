@@ -43,7 +43,13 @@ const Cabin = {
     if (!this.on() || game.practice || fl.failure || (sys && sys.checklist)) return;
     const c = fl.contract;
     if (!c || c.type !== 'pax') return;
-    const once = (key, cond, text) => { if (!this.said[key] && cond) { this.said[key] = true; Audio2.announce(text()); } };
+    // (a line on the HUD too, so an announcement a browser cannot voice still shows it was made)
+    const once = (key, cond, text) => {
+      if (this.said[key] || !cond) return;
+      this.said[key] = true;
+      Audio2.announce(text());
+      if (!Audio2.muted) fl.info('📢 ' + tr('Cabin announcement'));
+    };
     once('welcome', p === 'TAXI_OUT' || p === 'HOLD_SHORT' || (p === 'TAKEOFF' && st.onGround && st.ias / KTS < 30),
       () => this.tr('Ladies and gentlemen, welcome aboard this {airline} flight to {city}. Our flight time today will be {time}. Please fasten your seat belts, bring your seat backs to the upright position and open the window shades. Cabin crew, prepare for departure.',
       { airline: c.client, city: fl.arrival.city, time: this.duration(c.blockMin) }));

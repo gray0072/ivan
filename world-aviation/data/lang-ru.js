@@ -905,5 +905,6 @@ const TEXT_RU = {
   'Gate {n}, terminal {t}': 'Гейт {n}, терминал {t}',
   'T{t} · gate {n}': 'T{t} · гейт {n}',
   'Stands': 'Стоянки',
-  'Stand': 'Стоянка'
+  'Stand': 'Стоянка',
+  'Cabin announcement': 'Объявление в салоне'
 };
