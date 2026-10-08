@@ -15,7 +15,10 @@
 
 const TERRAIN = {
   maxSdfKm: 90,       // distances to the coast beyond this saturate
-  aptGrid: null, aptGridCell: 20000
+  aptGrid: null, aptGridCell: 20000,
+  // the ground round each airport brought to its real elevation (fitAirports): what is more than
+  // fitSlackM off it, fully within fitInnerM and fading out by fitOuterM
+  fitSlackM: 150, fitInnerM: 15000, fitOuterM: 60000
 };
 
 const Terrain = {
@@ -192,6 +195,51 @@ const Terrain = {
     const len = Math.hypot(nx, ny, nz) || 1;
     if (out) { out.x = nx / len; out.y = ny / len; out.z = nz / len; return out; }
     return { x: nx / len, y: ny / len, z: nz / len };
+  },
+
+  // The map data is coarse (a coast point every degree or two, mountain ranges as straight
+  // ridges hundreds of km wide), so the ground it makes round an airport can be far off the
+  // airport's real elevation — Delhi on a Himalayan foothill, Mexico City in a pit 2 km deep,
+  // Bogotá on a table. Each airport's elevation is real: where the ground 2-6 km round it
+  // (the median) is more than fitSlackM off it, the land round it is moved by the excess, fully
+  // within fitInnerM and fading out by fitOuterM, so the ground near a field keeps its relief
+  // relative to the field and the mountains further off stay where the data puts them. The sea
+  // stays sea; overlapping airports share the correction by weight.
+  fitAirports(airports) {
+    const g = this.g;
+    if (!g) return;
+    const fits = [];
+    for (const a of airports) {
+      const hs = [];
+      for (const rad of [2000, 4000, 6000]) for (let k = 0; k < 12; k++) {
+        const q = k / 12 * Math.PI * 2;
+        hs.push(this.rawAt(a.x + Math.sin(q) * rad, a.z - Math.cos(q) * rad));
+      }
+      hs.sort((p, q) => p - q);
+      const h0 = hs[hs.length >> 1];
+      if (h0 <= 0.5) continue;                          // a field by the sea: nothing to fit to
+      const off = a.elev - h0;
+      if (Math.abs(off) <= TERRAIN.fitSlackM) continue;
+      fits.push({ x: a.x, z: a.z, off: off - Math.sign(off) * TERRAIN.fitSlackM });
+    }
+    if (!fits.length) return;
+    const R0 = TERRAIN.fitInnerM, R1 = TERRAIN.fitOuterM;
+    for (let j = 0; j < g.h; j++) {
+      const z = g.z0 + j * g.cell;
+      for (let i = 0; i < g.w; i++) {
+        const k = j * g.w + i, h = g.height[k];
+        if (h <= 0.5) continue;
+        const x = g.x0 + i * g.cell;
+        let wSum = 0, sum = 0;
+        for (const f of fits) {
+          const dx = x - f.x, dz = z - f.z;
+          if (Math.abs(dx) > R1 || Math.abs(dz) > R1) continue;
+          const w = 1 - smoothstep(R0, R1, Math.hypot(dx, dz));
+          if (w > 0) { wSum += w; sum += w * f.off; }
+        }
+        if (wSum > 0) g.height[k] = Math.max(1.2, h + sum / Math.max(1, wSum));
+      }
+    }
   },
 
   // Airports bucketed into a coarse grid so heightAt stays cheap

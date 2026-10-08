@@ -89,6 +89,7 @@ const World = {
       this.airports.push(placed);
       this.here[meta.id] = placed;
     }
+    Terrain.fitAirports(this.airports);
     Terrain.buildAirportGrid(this.airports);
     this.key = key;
   },

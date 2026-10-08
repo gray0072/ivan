@@ -80,7 +80,10 @@ const noiseTable = new Float32Array(NOISE_SIZE * NOISE_SIZE);
   for (let i = 0; i < noiseTable.length; i++) noiseTable[i] = r();
 })();
 function noiseValue(xi, yi) {
-  const x = xi | 0, y = yi | 0;
+  // (floor, not `| 0`: truncating towards zero gave a negative fraction below zero, the curve
+  // below extrapolated, and the noise left 0..1 — up to 140 in ridgeNoise, 8 800 m mountains
+  // west and south of the equator and the meridian)
+  const x = Math.floor(xi), y = Math.floor(yi);
   const fx = xi - x, fy = yi - y;
   const u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
   const idx = (xx, yy) => noiseTable[((yy & (NOISE_SIZE - 1)) * NOISE_SIZE) + (xx & (NOISE_SIZE - 1))];
