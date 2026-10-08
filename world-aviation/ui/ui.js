@@ -337,6 +337,7 @@ const UI = {
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
       row2(tr('Schedule'), Career.difficulty.id === 'easy' ? tr('no deadline') : tr('{t} real time', { t: fmtTime(c.deadline) })) +
       row2(tr('Fuel plan'), c.fuelKg + ' kg') +
+      (c.depGate !== undefined ? row2(tr('Stands'), gateLabel(from, c.depGate) + ' → ' + gateLabel(to, c.arrGate)) : '') +
       '</div>' +
       '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
       (flying ? '' : (need ? '<span class="need">' + esc(need) + '</span>' : '') +
@@ -537,6 +538,24 @@ const UI = {
       '</div></div>';
   },
 
+  // an airport's table, in the briefing and in the pause: the stand, the runway in use, the
+  // elevation and the weather x
+  airportRows(x, a, gate) {
+    const wind = tr('{v} kt from {d}°', { v: Math.round(x.speed), d: String(Math.round(x.dir)).padStart(3, '0') }) +
+      (x.gust > 2 ? ', ' + tr('gusting {v}', { v: Math.round(x.speed + x.gust) }) : '');
+    const cross = Math.abs(Math.sin((x.dir - a.hdgDeg) * DEG) * x.speed);
+    return (gate !== undefined ? '<tr><td>' + tr('Stand') + '</td><td>' + gateLabel(a, gate) + '</td></tr>' : '') +
+      '<tr><td>' + tr('Runway in use') + '</td><td>' + a.rwyName + ' · ' + a.rwyLen + ' m</td></tr>' +
+      '<tr><td>' + tr('Elevation') + '</td><td>' + Math.round(a.elev / FT) + ' ft</td></tr>' +
+      '<tr><td>' + tr('Wind') + '</td><td>' + wind + (cross > 4 ? ' · ' + tr('crosswind {v} kt', { v: Math.round(cross) }) : '') + '</td></tr>' +
+      '<tr><td>QNH</td><td>' + x.qnh + ' hPa</td></tr>' +
+      '<tr><td>' + tr('Visibility') + '</td><td>' + (x.vis / 1000).toFixed(1) + ' km</td></tr>' +
+      '<tr><td>' + tr('Cloud') + '</td><td>' + tr('base {b} ft, tops {t} ft', { b: fmtAlt(x.cloudBase), t: fmtAlt(x.cloudTop) }) + '</td></tr>' +
+      '<tr><td>' + tr('Temperature') + '</td><td>' + Math.round(x.temp) + ' °C' + (x.snow ? ' · ' + tr('snow') : x.precip === 'rain' ? ' · ' + tr('rain') : '') + '</td></tr>' +
+      (x.icing ? '<tr><td>' + tr('ICING') + '</td><td>' + tr('expected in cloud — anti-ice K') + '</td></tr>' : '') +
+      (x.stormy ? '<tr><td>' + tr('WIND') + '</td><td>' + tr('stormy — expect turbulence and shear') + '</td></tr>' : '');
+  },
+
   // ---------- briefing ----------
   showBriefing(contractId) {
     const c = Career.contractById(contractId);
@@ -548,20 +567,7 @@ const UI = {
     const from = World.byId[c.fromId], to = World.byId[c.toId];
     const setup = Career.flightSetup(c, { seed: 0 });
     const fee = Career.practiceFee();
-    const w = (x, a) => {
-      const wind = tr('{v} kt from {d}°', { v: Math.round(x.speed), d: String(Math.round(x.dir)).padStart(3, '0') }) +
-        (x.gust > 2 ? ', ' + tr('gusting {v}', { v: Math.round(x.speed + x.gust) }) : '');
-      const cross = Math.abs(Math.sin((x.dir - a.hdgDeg) * DEG) * x.speed);
-      return '<tr><td>' + tr('Runway in use') + '</td><td>' + a.rwyName + ' · ' + a.rwyLen + ' m</td></tr>' +
-        '<tr><td>' + tr('Elevation') + '</td><td>' + Math.round(a.elev / FT) + ' ft</td></tr>' +
-        '<tr><td>' + tr('Wind') + '</td><td>' + wind + (cross > 4 ? ' · ' + tr('crosswind {v} kt', { v: Math.round(cross) }) : '') + '</td></tr>' +
-        '<tr><td>QNH</td><td>' + x.qnh + ' hPa</td></tr>' +
-        '<tr><td>' + tr('Visibility') + '</td><td>' + (x.vis / 1000).toFixed(1) + ' km</td></tr>' +
-        '<tr><td>' + tr('Cloud') + '</td><td>' + tr('base {b} ft, tops {t} ft', { b: fmtAlt(x.cloudBase), t: fmtAlt(x.cloudTop) }) + '</td></tr>' +
-        '<tr><td>' + tr('Temperature') + '</td><td>' + Math.round(x.temp) + ' °C' + (x.snow ? ' · ' + tr('snow') : x.precip === 'rain' ? ' · ' + tr('rain') : '') + '</td></tr>' +
-        (x.icing ? '<tr><td>' + tr('ICING') + '</td><td>' + tr('expected in cloud — anti-ice K') + '</td></tr>' : '') +
-        (x.stormy ? '<tr><td>' + tr('WIND') + '</td><td>' + tr('stormy — expect turbulence and shear') + '</td></tr>' : '');
-    };
+    const w = (x, a) => this.airportRows(x, a, a === from ? c.depGate : c.arrGate);
     this.panel(
       '<div class="screenBar"><button class="btn back" data-act="tab" data-v="dispatch" data-esc>' + tr('Back to the board') + '</button></div>' +
       '<h2 class="clientHead">' + clientLogo(c, true) + esc(c.client) + '</h2>' +
@@ -700,9 +706,18 @@ const UI = {
       '<div class="screenBar"><button class="btn back" data-act="pauseBack" data-esc>' + tr('Back') + '</button></div>' +
       '<h2>' + tr('Paused') + '</h2>' +
       (what === 'aircraft' ? '<div class="cards planes">' + this.aircraftCard(fl.ac, true) + '</div>'
-        : '<div class="contracts">' + this.contractCard(fl.contract, null, true) + '</div>') +
+        : '<div class="contracts">' + this.contractCard(fl.contract, null, true) + '</div>' + this.pauseAirports(fl)) +
       '<div class="btnRow"><button class="btn default" data-act="resume">' + tr('Resume') + '</button></div>', 'narrow');
     if (what === 'aircraft' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
+  },
+
+  // the flight's two airports, as in the briefing (the weather the flight was set up with)
+  pauseAirports(fl) {
+    const c = fl.contract, s = Game.setup;
+    if (!s || !s.weather) return '';
+    const from = World.byId[c.fromId], to = World.byId[c.toId];
+    const block = (a, x, gate) => '<div><h3>' + flagImg(a) + esc(a.name) + ' · ' + a.id + '</h3><table class="wx">' + this.airportRows(x, a, gate) + '</table></div>';
+    return '<div class="briefCols pauseApts">' + block(from, s.weather.dep, c.depGate) + block(to, s.weather.arr, c.arrGate) + '</div>';
   },
 
   // aviation units (ft, kt, nm) or metric (m, km/h, km)
@@ -963,6 +978,11 @@ function vs0Of(a, kg) {
 function clientLogo(c, big) {
   if (!c.airline || !AIRLINE_BY_CODE[c.airline]) return '';
   return '<img class="logo' + (big ? ' big' : '') + '" src="' + Emblems.url(c.airline) + '" alt="">';
+}
+// a stand by its index at an airport (static data): "T2 · gate 3" where there are several terminals
+function gateLabel(apt, i) {
+  const n = i + 1;
+  return apt.terminals > 1 ? tr('T{t} · gate {n}', { t: World.terminalOf(apt, i), n }) : tr('Gate {n}', { n });
 }
 function flagImg(apt) {
   return '<img class="flag" src="' + Flags.url(apt.country) + '" alt="" title="' + esc(apt.country) + '">';

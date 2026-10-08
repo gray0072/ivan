@@ -59,6 +59,11 @@ const Career = {
     d.selected = renamed[d.selected] || d.selected || 'B1900D';
     d.contracts = d.contracts || [];
     for (const c of d.contracts) if (renamed[c.aircraftId]) c.aircraftId = renamed[c.aircraftId];
+    // the stands of a contract from before they were drawn with it
+    for (const c of d.contracts) {
+      const from = World.byId[c.fromId], to = World.byId[c.toId];
+      if (from && to && !(c.depGate < from.gatesPerTerminal && c.arrGate < to.gateCount)) Object.assign(c, World.pickGates(from, to, makeRng(hashStr(c.id))));
+    }
     d.stats = d.stats || { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 };
     d.pilot = { name: (d.pilot && d.pilot.name) || CAREER.PILOT_NAME_DEFAULT };   // older saves also had an operator name
     for (const l of d.log || []) {
@@ -351,6 +356,7 @@ const Career = {
     return {
       id: from.id + '-' + to.id + '-' + type + '-' + Math.round(pay),
       client: client.name, airline: client.code,
+      ...World.pickGates(from, to, rng),
       faction, type, urgent,
       fromId: from.id, toId: to.id,
       pax, payloadKg, payloadLabel: pt.label,
@@ -449,6 +455,7 @@ const Career = {
       lines.push({ label: 'Medical diversion costs', value: -Math.round(c.pay * (1 - result.moneyFactor)) });
     }
     if (result.noClearance) lines.push({ label: 'Took off without a clearance (fine)', value: -Math.round(base * SIM.NO_CLEARANCE_FINE) });
+    if (result.taxiOverspeed) lines.push({ label: 'Taxi overspeed, {v} kt (fine)', args: { v: result.taxiOverspeed }, value: -Math.round(base * SIM.TAXI_OVERSPEED_FINE) });
     if (!result.onTime) lines.push({ label: 'Late delivery', value: -Math.round(base * 0.12) });
     const total = lines.reduce((s, l) => s + l.value, 0);
     d.money += total;

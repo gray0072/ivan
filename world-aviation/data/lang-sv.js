@@ -899,5 +899,11 @@ const TEXT_SV = {
   '{v} metres': '{v} meter',
   '{v} feet': '{v} fot',
   'Cabin announcements': 'Kabinutrop',
-  'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'besättningen talar till passagerarna: före start, på marschhöjd, under nedstigningen, före landning och vid ankomst'
+  'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'besättningen talar till passagerarna: före start, på marschhöjd, under nedstigningen, före landning och vid ankomst',
+  'Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported': 'För hög taxifart — {v} kt, gränsen är {max} kt: det rapporteras',
+  'Taxi overspeed, {v} kt (fine)': 'För hög taxifart, {v} kt (böter)',
+  'Gate {n}, terminal {t}': 'Gate {n}, terminal {t}',
+  'T{t} · gate {n}': 'T{t} · gate {n}',
+  'Stands': 'Uppställningsplatser',
+  'Stand': 'Uppställningsplats'
 };

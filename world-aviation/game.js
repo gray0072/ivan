@@ -402,14 +402,25 @@ const Game = {
       }
     }
 
-    // off without asking the tower: the flight goes on (the prompts and the arrow move on to the
-    // climb), but the tower is not amused
-    if ((p === 'ENGINE_START' || p === 'TAXI_OUT' || p === 'HOLD_SHORT') && (!st.onGround || speed > SIM.TAKEOFF_NO_CLEARANCE_KT)) {
+    // off the ground without asking the tower: the flight goes on (the prompts and the arrow move
+    // on to the climb), but the tower is not amused
+    if ((p === 'ENGINE_START' || p === 'TAXI_OUT' || p === 'HOLD_SHORT') && !st.onGround) {
       fl.noClearance = true;
       st.parkingBrake = false;
       fl.setPhase('TAKEOFF');
       fl.warn('CLEARANCE', tr('Tower: you took off without a clearance — this will be reported'));
       return;
+    }
+
+    // taxiing at twice the limit (off the runway, where a take-off roll is not taxiing): reported
+    // once a flight and fined on the debrief, the fastest speed remembered
+    if ((p === 'ENGINE_START' || p === 'TAXI_OUT' || p === 'HOLD_SHORT' || p === 'EXIT') && st.onGround && speed > SIM.TAXI_OVERSPEED_KT) {
+      const here = fl.nearestApt(), loc = here ? World.local(here, st.pos.x, st.pos.z) : null;
+      const onRunway = loc && Math.abs(loc.across) < here.rwyHalfWidth + 10 && Math.abs(loc.t) < here.half + 100;
+      if (!onRunway) {
+        if (!fl.taxiOverspeed) fl.warn('TAXISPEED', tr('Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported', { v: Math.round(speed), max: SIM.TAXI_LIMIT_KT }));
+        fl.taxiOverspeed = Math.max(fl.taxiOverspeed || 0, Math.round(speed));
+      }
     }
 
     if (p === 'GATE') {
@@ -885,9 +896,12 @@ const Game = {
     }
     s.from = World.here[contract.fromId];
     s.to = World.here[contract.toId];
-    // the stands at both ends: a fresh draw every flight, apart from the contract's seeded weather
-    const anyGate = (gates) => gates[Math.floor(Math.random() * gates.length)];
-    s.gate = anyGate(s.from.gates);
+    // the stands at both ends, drawn with the contract (a contract from an older save draws them now)
+    if (!(contract.depGate < s.from.gates.length) || !(contract.arrGate < s.to.gates.length)) {
+      Object.assign(contract, World.pickGates(s.from, s.to, makeRng(hashStr(contract.id))));
+      Career.save();
+    }
+    s.gate = s.from.gates[contract.depGate];
     reseed(s.seed);
     this.cheated = false;
     this.cheatsUsed = 0;
@@ -899,7 +913,7 @@ const Game = {
     this.pushback = null;
     this.camMode = 'cockpit';
     this.debriefShown = false;
-    this.arrivalGate = anyGate(s.to.gates);
+    this.arrivalGate = s.to.gates[contract.arrGate];
     this.arrivalRoute = null;
     // a practice landing has no deadline
     this.practice = opts.practice ? { t: 0, handed: false, fee: opts.fee || 0 } : null;
@@ -976,8 +990,8 @@ const Game = {
       damage: clamp(fl.st.damage, 0, 1), fuelUsed: this.fuel0 - fl.st.fuel,
       blockSec: fl.elapsed, realSec: fl.realElapsed, pushbackSkipped: this.setup.skipPushback, timeOfDay: this.setup.timeOfDay,
       cheated: this.cheated, cheatsUsed: this.cheatsUsed,
-      moneyFactor: fl.moneyFactor || 1, repPenalty: (fl.pendingRepPenalty || 0) + (fl.noClearance ? 5 : 0),
-      noClearance: !!fl.noClearance
+      moneyFactor: fl.moneyFactor || 1, repPenalty: (fl.pendingRepPenalty || 0) + (fl.noClearance ? 5 : 0) + (fl.taxiOverspeed ? 2 : 0),
+      noClearance: !!fl.noClearance, taxiOverspeed: fl.taxiOverspeed || 0
     };
     const payout = failed
       ? Career.failFlight({ contract: this.contract, reason: this.failure ? this.failure.text : tr('Failed'), cheated: this.cheated })
@@ -1058,7 +1072,10 @@ const Game = {
 function frame() { return new Promise((r) => requestAnimationFrame(() => r())); }
 function fmtAltFt(ft) { return Math.round(ft).toLocaleString('en-US'); }
 // a stand's name in the game's language ("Gate 3")
-function gateName(g) { return g.number ? tr('Gate {n}', { n: g.number }) : tr(g.name); }
+function gateName(g) {
+  if (!g.number) return tr(g.name);
+  return g.terminals > 1 ? tr('Gate {n}, terminal {t}', { n: g.number, t: g.terminal }) : tr('Gate {n}', { n: g.number });
+}
 function pickQuality(setting) {
   if (setting && setting !== 'auto') return setting;
   return isCoarsePointer() ? 'medium' : 'high';

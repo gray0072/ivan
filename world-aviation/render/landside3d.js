@@ -5,10 +5,10 @@
 // built in the airport's frame like airport3d.js (local x = across,
 // towards the terminal and on beyond it; z = -t; y = up):
 //
-//   - the terminal's signs, lit at night: at a big airport TERMINAL 1
-//     and TERMINAL 2 over the two halves of the building (on the apron
-//     side between the stands, on the road side over the doors), at the
-//     others DEPARTURES and ARRIVALS over the doors on the road side
+//   - the terminal's signs, lit at night: at a big airport TERMINAL n
+//     on each of its two or three terminals (on the apron side between
+//     the stands, on the road side over the doors), at the others
+//     DEPARTURES and ARRIVALS over the doors on the road side
 //   - behind the car park, more the bigger the airport (a.landside,
 //     LANDSIDE in constants.js): office blocks and a hotel with floors of
 //     windows lit at night and the hotel's name on its roof, a
@@ -20,8 +20,7 @@
 
 const Landside3D = {
   build(a, rec, at, tex) {
-    const term = a.buildings.find((b) => b.kind === 'terminal');
-    if (term) this.terminalSigns(a, term, rec, at, tex);
+    for (const term of a.buildings.filter((b) => b.kind === 'terminal')) this.terminalSigns(a, term, rec, at, tex);
     if (!a.landside || !a.landside.length) return;
     const rng = makeRng(hashStr(a.id + 'landside'));
     const walls = kit(), windows = kit();
@@ -39,8 +38,8 @@ const Landside3D = {
   // ---------- the signs on the terminal ----------
   terminalSigns(a, b, rec, at, tex) {
     const h = b.h, front = b.across - b.acrossSize / 2, back = b.across + b.acrossSize / 2;
-    const big = a.terminal === 'big';
-    const names = big ? ['TERMINAL 1', 'TERMINAL 2'] : ['DEPARTURES', 'ARRIVALS'];
+    const several = b.terms > 1;
+    const names = several ? ['TERMINAL ' + b.term, 'TERMINAL ' + b.term] : ['DEPARTURES', 'ARRIVALS'];
     const sign = (text, t, across, y, hgt, side) => {
       const cv = signCanvas(text, '#1d2a38', '#ffffff');
       const map = tex(cv, 8);
@@ -59,13 +58,11 @@ const Landside3D = {
       sign(text, t, back + 0.7, ys, 2.4, 1);
       at(new THREE.Mesh(cellBox(0.3, 2.6, 10), door), t, back + 0.15, 1.3);
     });
-    // the apron side of a big terminal: halfway between the first two stands and the last two,
-    // under the roof, above the stand numbers
-    if (big && a.gates.length >= 4) {
-      const n = a.gates.length;
-      // (beside the floodlight mast that stands halfway)
-      sign('T1 · TERMINAL 1', (a.gates[0].t + a.gates[1].t) / 2 + 15, front - 1.2, h - 3.4, 3.2, -1);
-      sign('T2 · TERMINAL 2', (a.gates[n - 2].t + a.gates[n - 1].t) / 2 + 15, front - 1.2, h - 3.4, 3.2, -1);
+    // the apron side of each terminal of a big airport: halfway between its stands, under the
+    // roof, above the stand numbers (beside the floodlight mast that stands halfway)
+    if (several) {
+      const gs = a.gates.filter((g) => g.terminal === b.term);
+      sign('T' + b.term + ' · TERMINAL ' + b.term, (gs[0].t + gs[gs.length - 1].t) / 2 + 15, front - 1.2, h - 3.4, 3.2, -1);
     }
   },
 

@@ -899,5 +899,11 @@ const TEXT_RU = {
   '{v} metres': '{v} метров',
   '{v} feet': '{v} футов',
   'Cabin announcements': 'Объявления в салоне',
-  'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'экипаж обращается к пассажирам: перед взлётом, на эшелоне, на снижении, перед посадкой и по прибытии'
+  'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'экипаж обращается к пассажирам: перед взлётом, на эшелоне, на снижении, перед посадкой и по прибытии',
+  'Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported': 'Превышение скорости на рулении — {v} kt при ограничении {max} kt: будет доложено',
+  'Taxi overspeed, {v} kt (fine)': 'Превышение скорости на рулении, {v} kt (штраф)',
+  'Gate {n}, terminal {t}': 'Гейт {n}, терминал {t}',
+  'T{t} · gate {n}': 'T{t} · гейт {n}',
+  'Stands': 'Стоянки',
+  'Stand': 'Стоянка'
 };

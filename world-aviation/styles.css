@@ -454,6 +454,7 @@ kbd {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 .panel.narrow { width: min(560px, 100%); }
+.pauseApts { margin-top: 14px; }
 .panel.title { width: min(760px, 100%); }
 
 h1.logo {

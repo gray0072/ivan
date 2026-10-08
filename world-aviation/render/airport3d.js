@@ -70,7 +70,7 @@ const Airport3D = {
     at(new THREE.Mesh(rgeo, new THREE.MeshLambertMaterial({ map: tex(rw.cv) })), 0, 0, 0.12);
 
     this.buildLights(a, rec, at);
-    this.buildMarkings(a, at);
+    this.buildMarkings(a, at, tex);
     this.buildBuildings(a, rec, at, tex, lambert, id);
     Landside3D.build(a, rec, at, tex);
     this.buildEquipment(a, rec, at, tex, lambert);
@@ -102,7 +102,7 @@ const Airport3D = {
   //            bars, the runway holding position
   //   white  - the runway edge lines and centreline, the lines of the landside roads and the
   //            apron service road, the zebra crossings
-  buildMarkings(a, at) {
+  buildMarkings(a, at, tex) {
     const L = LAYOUT;
     const Y = markBatch(0.16), W = markBatch(0.15);   // above the ground plane (0.05) and the runway (0.12)
 
@@ -149,10 +149,14 @@ const Airport3D = {
       for (const d of [-9.3, 9.3]) W.poly(offsetPolyline(pts, d), 0.3);
       for (const d of [-4.65, 4.65]) W.poly(offsetPolyline(pts, d), 0.22, 4, 6);
     }
-    // the zebra crossings from the terminal to the car park
-    for (const tc of [r.t0 + (r.t1 - r.t0) * 0.3, r.t0 + (r.t1 - r.t0) * 0.7]) {
+    // the zebra crossings from the terminal to the car park: in front of each terminal of a big
+    // airport (its number is painted on the lane beside it: roadNumbers), else two along the one
+    const terms = a.buildings.filter((b) => b.kind === 'terminal');
+    const crossings = terms.length > 1 ? terms.map((b) => b.t) : [r.t0 + (r.t1 - r.t0) * 0.3, r.t0 + (r.t1 - r.t0) * 0.7];
+    for (const tc of crossings) {
       for (let k = -8; k <= 8; k += 1.6) W.strip(tc + k + 0.4, roadA - 9.6, tc + k + 0.4, roadA + 9.6, 0.8);
     }
+    if (terms.length > 1) this.roadNumbers(a, terms, at, tex, roadA);
     // the tail-of-stand road between the apron's airside edge and the apron lane
     const ta = roadAcross(a);
     for (const d of [-6, 6]) W.strip(r.t0, ta + d, r.t1, ta + d, 0.3);
@@ -171,6 +175,26 @@ const Airport3D = {
       geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
       const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(color).convertSRGBToLinear(), side: THREE.DoubleSide });
       at(new THREE.Mesh(geo, mat), 0, 0, 0);
+    }
+  },
+
+  // "T1", "T2", "T3" painted on the road's lane by the terminal, either side of its crossing,
+  // reading for the cars coming to it
+  roadNumbers(a, terms, at, tex, roadA) {
+    for (const b of terms) {
+      const cv = document.createElement('canvas');
+      cv.width = 256; cv.height = 128;
+      const g = cv.getContext('2d');
+      g.fillStyle = '#e9e8e2'; g.font = '900 120px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('T' + b.term, 128, 70);
+      const map = tex(cv, 8);
+      const mat = new THREE.MeshLambertMaterial({ map, transparent: true, alphaTest: 0.3, polygonOffset: true, polygonOffsetFactor: -2 });
+      for (const [dt, lane, turn] of [[-22, -4.65, 1], [22, 4.65, -1]]) {
+        // letters 7 m long down the lane, 3.5 m across it
+        const geo = new THREE.PlaneGeometry(7, 3.5);
+        geo.rotateX(-Math.PI / 2); geo.rotateY(turn * Math.PI / 2);
+        at(new THREE.Mesh(geo, mat), b.t + dt, roadA + lane, 0.17);
+      }
     }
   },
 
@@ -372,8 +396,10 @@ const Airport3D = {
     for (let t = b.t - b.along / 2 + 12; t < b.t + b.along / 2; t += 12) {
       at(new THREE.Mesh(new THREE.BoxGeometry(0.8, h * 0.62, 0.6), lambert(0xd9dde0)), t, front - 0.6, h * 0.36);
     }
-    // the name of the airport in big letters on the roof, facing the apron and the road
-    const name = a.name.toUpperCase();
+    // the name of the airport in big letters on the roof, facing the apron and the road (at a
+    // big airport on the middle terminal, the others carry their number)
+    const several = b.terms > 1, main = !several || b.term === Math.ceil(b.terms / 2);
+    const name = main ? a.name.toUpperCase() : 'TERMINAL ' + b.term;
     const lh = clamp(b.along * 0.9 / (name.length * 0.78), 7, h > 18 ? 24 : 16);
     const lw = Math.min(b.along * 0.92, name.length * lh * 0.8);
     const lt = tex(makeLettersCanvas(name, id.color), 8);
@@ -388,7 +414,9 @@ const Airport3D = {
       // the frame the letters stand on
       at(new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, lw * 0.96), lambert(0x6c7378)), b.t, side < 0 ? front + 4 : back - 4, h + 2.2);
     }
-    // the welcome banner on the apron side, above the glass, at the departure end of the building
+    // the welcome banner on the apron side, above the glass, at the departure end of the
+    // building (the first terminal), and the flags at the other end (the last)
+    if (several && b.term !== 1) { this.terminalFlags(a, b, rec, at, tex, id); return; }
     const bh = Math.max(8, h * 0.62), bw = Math.min(b.along * 0.45, bh * 3.2);
     const bt = b.t - b.along / 2 + bw / 2 + 6;
     const banner = tex(makeBannerCanvas(a, id), 8);
@@ -401,10 +429,14 @@ const Airport3D = {
     const bgeo2 = new THREE.PlaneGeometry(bw, bh);
     bgeo2.rotateY(Math.PI / 2);
     at(new THREE.Mesh(bgeo2, bannerMat), b.t, back + 0.6, h - bh / 2 - 0.4);
-    // three flagpoles on the roof at the other end: the country, the city, the country
-    const ft = b.t + b.along / 2 - 22;
+    if (!several) this.terminalFlags(a, b, rec, at, tex, id);
+  },
+  // three flagpoles on the roof at the far end of the (last) terminal: the country, the city, the country
+  terminalFlags(a, b, rec, at, tex, id) {
+    if (b.terms > 1 && b.term !== b.terms) return;
+    const ft = b.t + b.along / 2 - 22, front = b.across - b.acrossSize / 2;
     for (let i = 0; i < 3; i++) {
-      this.flag(rec, at, tex, a.country, i === 1 ? id : null, ft - i * 11, front + 10, h + 1.6, 13, 8);
+      this.flag(rec, at, tex, a.country, i === 1 ? id : null, ft - i * 11, front + 10, b.h + 1.6, 13, 8);
     }
   },
 

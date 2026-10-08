@@ -183,11 +183,15 @@ const Apron3D = {
       const g1 = new THREE.PlaneGeometry(6, 6);
       g1.rotateX(-Math.PI / 2); g1.rotateY(-Math.PI / 2);   // upright for a pilot rolling in towards the terminal
       at(new THREE.Mesh(g1, new THREE.MeshLambertMaterial({ map: plate, polygonOffset: true, polygonOffsetFactor: -2 })), gate.t, L.APRON_LANE + 26, 0.17);
+      // the board stands out from the glass on a dark box, clear of the window frames (their
+      // faces are 1 m out: a board in that plane mixed with them)
       const g2 = new THREE.PlaneGeometry(4.5, 4.5);
       g2.rotateY(-Math.PI / 2);
       const bm = new THREE.MeshLambertMaterial({ map: plate, emissiveMap: plate, emissive: 0x000000 });
       rec.night.push({ mat: bm, color: new THREE.Color(0xffffff), k: 0.8 });
-      at(new THREE.Mesh(g2, bm), gate.t, front - 1.0, term ? Math.min(term.h - 3, 12) : 9);
+      const by = term ? Math.min(term.h - 3, 12) : 9;
+      at(new THREE.Mesh(cellBox(0.7, 5.1, 5.1), new THREE.MeshLambertMaterial({ color: 0x1b232c })), gate.t, front - 1.35, by);
+      at(new THREE.Mesh(g2, bm), gate.t, front - 1.8, by);
     }
 
     // ---- the stands

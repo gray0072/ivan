@@ -53,8 +53,10 @@ const SIM = {
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
     { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],
-  TAKEOFF_NO_CLEARANCE_KT: 50, // rolling faster than this before the clearance counts as a take-off without one
-  NO_CLEARANCE_FINE: 0.05,     // ... and costs this share of the contract pay
+  TAXI_LIMIT_KT: 20,           // the taxi speed limit the prompts give
+  TAXI_OVERSPEED_KT: 40,       // twice the limit off the runway: a taxi overspeed, reported and fined
+  TAXI_OVERSPEED_FINE: 0.03,   // ... of the contract's pay
+  NO_CLEARANCE_FINE: 0.05,     // lifting off before the take-off clearance costs this share of the contract pay
   MAX_STEPS_PER_FRAME: 300,    // physics steps per rendered frame at most (x128 at 25 fps)
   CRUISE_ALT_MIN: 2500,
   CRUISE_ALT_MAX: 11300,
@@ -133,6 +135,8 @@ const LAYOUT = {
   TERMINAL: 470,               // terminal building centre
   APRON_START: 0.3,            // where the apron starts, fraction of the runway length
   GATE_SPACING: 80,
+  TERMINAL_GAP: 70,            // between two terminals of a big airport, along the apron
+  THREE_TERMINALS_RWY: 3200,   // a big airport with a runway this long has three terminals, else two
   FILLET_R: 38,                // the centreline radius where taxiways meet at an angle
   FILLET_STAND_R: 30,          // ... and where a stand's lead-in leaves the apron lane
   CORRIDOR_LEN: 32000,         // approach / departure corridors cut into the terrain, metres from the runway ends

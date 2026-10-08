@@ -90,7 +90,7 @@ const Flight = {
     this.cheatAccel = false;
     this.guidance = null;
     this.navFailed = false; this.cargoShift = false; this.medical = false;
-    this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false;
+    this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0;
     this.warnedBank = false;
     this.locCaptured = false; this.overRunway = false;
     this.ap = {

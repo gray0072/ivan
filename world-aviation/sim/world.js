@@ -44,13 +44,23 @@ const World = {
   // static data of an airport: everything that does not depend on where the world is centred
   meta(def) {
     const hdgDeg = (def.rwy * 10) % 360;
+    // a big airport has two terminals of two stands each, three on a long runway; the others one
+    const terminals = def.terminal === 'big' ? (def.rwyLen >= LAYOUT.THREE_TERMINALS_RWY ? 3 : 2) : 1;
+    const gatesPerTerminal = def.terminal === 'big' ? 2 : def.terminal === 'medium' ? 3 : 2;
     return Object.assign({}, def, {
       rwyName: String(def.rwy).padStart(2, '0'),
       rwyOpposite: String(((def.rwy + 17) % 36) + 1).padStart(2, '0'),
       hdg: hdgDeg * DEG, hdgDeg, half: def.rwyLen / 2, rwyHalfWidth: RWY_HALF_WIDTH,
       mountainous: !!def.mountainous, arctic: !!def.arctic,
-      gateCount: def.terminal === 'big' ? 4 : def.terminal === 'medium' ? 3 : 2
+      terminals, gatesPerTerminal, gateCount: terminals * gatesPerTerminal
     });
+  },
+  // the terminal (1, 2, 3) of a stand, by its index
+  terminalOf(a, i) { return Math.floor(i / a.gatesPerTerminal) + 1; },
+  // a flight's stands, drawn when its contract is made: the departure from the terminal nearest
+  // the departure end of the runway (T1, the first along it), the arrival at any stand
+  pickGates(from, to, rng) {
+    return { depGate: rng.int(0, from.gatesPerTerminal - 1), arrGate: rng.int(0, to.gateCount - 1) };
   },
 
   // Build the world of a flight from one airport to another
@@ -108,7 +118,7 @@ const World = {
 
     const gates = a.gateCount;
     a.apronT0 = -a.half + a.rwyLen * LAYOUT.APRON_START;
-    a.apronT1 = a.apronT0 + gates * LAYOUT.GATE_SPACING + 160;
+    a.apronT1 = a.apronT0 + gates * LAYOUT.GATE_SPACING + (a.terminals - 1) * LAYOUT.TERMINAL_GAP + 160;
     a.apronT = (a.apronT0 + a.apronT1) / 2;
 
     this.buildNetwork(a, gates);
@@ -171,13 +181,16 @@ const World = {
 
     a.gates = [];
     for (let i = 0; i < gateCount; i++) {
-      const t = a.apronT0 + 80 + (i + 0.5) * L.GATE_SPACING;
+      const term = this.terminalOf(a, i);
+      // (a gap between the terminals)
+      const t = a.apronT0 + 80 + (i + 0.5) * L.GATE_SPACING + (term - 1) * L.TERMINAL_GAP;
       const lane = add('lane' + i, t, L.APRON_LANE, 'apron');
       const stand = add('stand' + i, t, L.STAND, 'gate');
       link('lane' + i, 'stand' + i, 'stand', 40);
       laneChain.push(lane);
       a.gates.push({
         id: a.id + '-' + (i + 1), name: 'Gate ' + (i + 1), number: i + 1, index: i,
+        terminal: term, terminals: a.terminals,
         t, standX: stand.x, standZ: stand.z,
         parkHdg: (a.hdgDeg + 90) % 360,              // nose-in, facing the terminal
         laneNode: lane, node: stand
@@ -256,7 +269,15 @@ const World = {
     };
     const term = a.terminal;
     const h = term === 'big' ? 22 : term === 'medium' ? 16 : 11;
-    put(a.apronT, L.TERMINAL, a.apronT1 - a.apronT0 - 60, 60, h, 'terminal');
+    // one building along the whole apron, or one per terminal round its stands (b.term, b.terms)
+    if (a.terminals === 1) put(a.apronT, L.TERMINAL, a.apronT1 - a.apronT0 - 60, 60, h, 'terminal');
+    else {
+      for (let k = 1; k <= a.terminals; k++) {
+        const gs = a.gates.filter((g) => g.terminal === k);
+        put((gs[0].t + gs[gs.length - 1].t) / 2, L.TERMINAL, gs.length * L.GATE_SPACING + 20, 60, h, 'terminal');
+      }
+    }
+    b.filter((x) => x.kind === 'terminal').forEach((x, i, all) => { x.term = i + 1; x.terms = all.length; });
     put(a.apronT1 + 50, L.TERMINAL, 14, 14, 32, 'tower');
     for (let i = 0; i < (term === 'big' ? 3 : 2); i++) {
       put(a.apronT0 - 60 - i * 95, L.TERMINAL - 10, 80, 70, 14, 'hangar');
