@@ -44,9 +44,11 @@ const World = {
   // static data of an airport: everything that does not depend on where the world is centred
   meta(def) {
     const hdgDeg = (def.rwy * 10) % 360;
-    // a big airport has two terminals of two stands each, three on a long runway; the others one
-    const terminals = def.terminal === 'big' ? (def.rwyLen >= LAYOUT.THREE_TERMINALS_RWY ? 3 : 2) : 1;
-    const gatesPerTerminal = def.terminal === 'big' ? 2 : def.terminal === 'medium' ? 3 : 2;
+    // the terminals and their stands by the airport's size and runway (LAYOUT.TERMINAL_PLANS):
+    // from one terminal with one stand (tiny) to three terminals of three (big, a long runway)
+    let plan = null;
+    for (const p of LAYOUT.TERMINAL_PLANS[def.terminal] || LAYOUT.TERMINAL_PLANS.small) if (def.rwyLen >= p[0] || !plan) plan = p;
+    const terminals = plan[1], gatesPerTerminal = plan[2];
     return Object.assign({}, def, {
       rwyName: String(def.rwy).padStart(2, '0'),
       rwyOpposite: String(((def.rwy + 17) % 36) + 1).padStart(2, '0'),
@@ -171,20 +173,27 @@ const World = {
     a.exits.push(nodes.rwyEnd);
     for (let i = 0; i + 1 < rwyChain.length; i++) link(rwyChain[i], rwyChain[i + 1], 'runway', RWY_HALF_WIDTH * 2);
 
-    // the apron: a lane in front of the stands, joined to the taxiway at both ends
+    // the apron: a lane in front of the stands, and lanes off the taxiway into it (apronLanes)
     const laneChain = [];
-    laneChain.push(add('laneA', a.apronT0 + 40, L.APRON_LANE, 'apron'));
-    laneChain.push(add('laneB', a.apronT1 - 40, L.APRON_LANE, 'apron'));
-    twyChain.push(add('apA', a.apronT0 + 40, L.TWY_OFFSET, 'taxi'));
-    twyChain.push(add('apB', a.apronT1 - 40, L.TWY_OFFSET, 'taxi'));
-    link('laneA', 'apA', 'taxi');
-    link('laneB', 'apB', 'taxi');
+    const standT = [];
+    for (let i = 0; i < gateCount; i++) {
+      // (a gap between the terminals)
+      standT.push(a.apronT0 + 80 + (i + 0.5) * L.GATE_SPACING + (this.terminalOf(a, i) - 1) * L.TERMINAL_GAP);
+    }
+    const lanes = this.apronLanes(a, standT, twyChain.slice());
+    lanes.forEach((ln, k) => {
+      laneChain.push(add('laneX' + k, ln.t, L.APRON_LANE, 'apron'));
+      // (a lane across from a runway exit joins the taxiway at the exit's node: a crossing)
+      const tw = ln.at || add('apX' + k, ln.t, L.TWY_OFFSET, 'taxi');
+      if (!ln.at) twyChain.push(tw);
+      link('laneX' + k, tw.id, 'taxi');
+    });
+    a.apronLanes = lanes.map((ln) => ln.t);
 
     a.gates = [];
     for (let i = 0; i < gateCount; i++) {
       const term = this.terminalOf(a, i);
-      // (a gap between the terminals)
-      const t = a.apronT0 + 80 + (i + 0.5) * L.GATE_SPACING + (term - 1) * L.TERMINAL_GAP;
+      const t = standT[i];
       const lane = add('lane' + i, t, L.APRON_LANE, 'apron');
       const stand = add('stand' + i, t, L.STAND, 'gate');
       link('lane' + i, 'stand' + i, 'stand', 40);
@@ -217,6 +226,42 @@ const World = {
       }
     }
     a.fillets = this.buildFillets(a);
+  },
+
+  // The lanes off the parallel taxiway into the apron, as [{ t, at }] along the runway: at both
+  // ends of the apron, in the gap between two terminals, and between a terminal's stands, so
+  // that at most LANE_MAX_STANDS stands lie between two lanes and every stand has one beside it.
+  // A lane that would meet the taxiway just beside a runway exit meets it at the exit's node
+  // (`at`: a crossing, not two junctions a few metres apart), or moves away from it, unless
+  // either brings it too close to a stand; then a lane between the stands is left out (an end one
+  // stays where it was).
+  apronLanes(a, standT, twyNodes) {
+    const L = LAYOUT, n = a.gatesPerTerminal;
+    const ts = [{ t: a.apronT0 + 40, end: true }];
+    for (let k = 0; k < a.terminals; k++) {
+      const gs = standT.slice(k * n, k * n + n);
+      const groups = Math.ceil(gs.length / L.LANE_MAX_STANDS);
+      for (let j = 1; j < groups; j++) {
+        const i = Math.round(j * gs.length / groups);
+        ts.push({ t: (gs[i - 1] + gs[i]) / 2 });
+      }
+      if (k + 1 < a.terminals) ts.push({ t: (gs[gs.length - 1] + standT[(k + 1) * n]) / 2 });
+    }
+    ts.push({ t: a.apronT1 - 40, end: true });
+    const out = [];
+    const clear = (t) => standT.every((s) => Math.abs(s - t) >= L.LANE_STAND_CLEAR_M) && t > a.apronT0 + 15 && t < a.apronT1 - 15;
+    for (const ln of ts) {
+      const near = twyNodes.find((nd) => Math.abs(nd.t - ln.t) < L.LANE_SNAP_M);
+      if (near) {
+        // onto the exit, else far enough from it for two junctions, else (between stands) none
+        const away = near.t + Math.sign(ln.t - near.t || 1) * L.LANE_SNAP_M;
+        if (clear(near.t)) { out.push({ t: near.t, at: near }); continue; }
+        if (clear(away)) { out.push({ t: away, at: null }); continue; }
+        if (!ln.end) continue;
+      }
+      out.push({ t: ln.t, at: null });
+    }
+    return out;
   },
 
   // Where two taxi lines meet at an angle (a corner, a T, the stands off the apron lane) the

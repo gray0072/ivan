@@ -43,7 +43,7 @@ const AircraftModels = {
     const top = R * (2 * hk - 1);                                  // the roof above the axis
     const jet = ac.engineType === 'jet';
     const g = new THREE.Group();
-    g.userData = { gear: [], props: [], surf: { flap: [], aileron: [], spoiler: [], elevator: [], rudder: [] } };
+    g.userData = { gear: [], props: [], fans: [], surf: { flap: [], aileron: [], spoiler: [], elevator: [], rudder: [] } };
     const surf = g.userData.surf;
 
     const metal = new THREE.MeshLambertMaterial({ color: 0xd9dee3 });
@@ -95,6 +95,17 @@ const AircraftModels = {
         wl.position.set(tipX, wingY + semi * Math.sin(dihedral), wingZ - semi * Math.tan(sweep));
         g.add(wl);
       }
+    }
+    // the wing's centre section through the body, the root's section from one root to the other:
+    // where the body is narrower than the roots at the wing's height (a double deck's belly, the
+    // lower surface of a thick root) it closes what was a gap between the wing and the body
+    if (!high) {
+      const centre = liftingSurface({
+        semi: R * 1.6, rootC, tipC: rootC, sweep: 0, tRoot: wingDef.tRoot, tTip: wingDef.tRoot, cut: 1, pieces: [], noCap: true
+      }, metal, surf, 1);
+      centre.position.set(-R * 0.8, wingY, wingZ);
+      centre.name = 'wingCentre';
+      g.add(centre);
     }
     // wing-to-body fairing for the low wing: in the belly's colour, as wide as the fuselage at its
     // height and a little more (a double deck is narrower down there), just below the belly — a
@@ -164,6 +175,7 @@ const AircraftModels = {
         const n = jetNacelle(dia, dia * (look.engines === 'wing4' ? 2.0 : 1.75), eng, dark, paint, look.flatNacelles);
         n.position.set(side * spanAt(f), ny, nz);
         g.add(n);
+        g.userData.fans.push(n.userData.fan);
         // the pylon sits on top of the cowling (its foot just inside the cowl, which narrows to
         // 0.42 of the fan at the back), from near the intake to a little past the exhaust: lower,
         // it hung into the exhaust and showed as a box through the back of the engine
@@ -181,6 +193,7 @@ const AircraftModels = {
         const n = jetNacelle(dia, dia * 2.1, eng, dark, paint);
         n.position.set(side * (R + dia * 0.75), R * 0.35, -L * 0.24);
         g.add(n);
+        g.userData.fans.push(n.userData.fan);
         const py = new THREE.Mesh(new THREE.BoxGeometry(dia * 0.9, dia * 0.16, dia * 1.1), metal);
         py.position.set(side * (R + dia * 0.1), R * 0.35, -L * 0.25);
         g.add(py);
@@ -314,7 +327,7 @@ const AircraftModels = {
     return g;
   },
 
-  // spin the propellers and fold the gear; called every frame for the player's aircraft
+  // spin the propellers and the fans, fold the gear; called every frame for the player's aircraft
   animate(model, st) {
     for (const p of model.userData.props) {
       const speed = st.propSpeed || 0;
@@ -323,6 +336,8 @@ const AircraftModels = {
       p.userData.disc.material.opacity = blur * 0.35;
       for (const b of p.userData.blades) b.visible = blur < 0.9;
     }
+    // the fans turn with the power (slowly enough that the blades never strobe backwards)
+    for (const f of model.userData.fans || []) f.rotation.z -= (st.propSpeed || 0) * 0.11;
     const down = st.gear === undefined ? 1 : clamp(st.gear, 0, 1);
     for (const leg of model.userData.gear) {
       leg.pivot.rotation[leg.axis] = leg.angle * (1 - down);
@@ -693,7 +708,16 @@ function finGeometry(rootC, tipC, h, sweep, thick) {
   return geo;
 }
 
-// the dark inside of a cowling (the tube's back faces) and the fan face, seen from both ends
+// the inlet's lining, and the fan's materials (lit a little from inside so the blades read even in
+// the cowling's shadow)
+const inletMetal = new THREE.MeshLambertMaterial({ color: 0xaab3bc });
+const fanMats = new Map();
+function fanMat(map) {
+  if (!fanMats.has(map)) fanMats.set(map, new THREE.MeshLambertMaterial({ map, emissiveMap: map, emissive: 0x2a2a2a, side: THREE.DoubleSide }));
+  return fanMats.get(map);
+}
+
+// the dark inside of a cowling (the tube's back faces), seen through both ends
 const insideMats = new Map();
 function nacelleInside(dark, side) {
   const key = dark.uuid + side;
@@ -701,10 +725,61 @@ function nacelleInside(dark, side) {
   return insideMats.get(key);
 }
 
-// A turbofan: the cowling, a dark intake, the fan face and the exhaust cone
+// The textures of a turbofan's front, drawn once: the fan (swept blades catching the light round
+// a dark hub, in the dark casing) and the spinner (with a white spiral, as most have)
+let fanTextures = null;
+function fanFaceTextures() {
+  if (fanTextures) return fanTextures;
+  const make = (size, draw) => {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = size;
+    draw(cv.getContext('2d'), size);
+    const t = new THREE.CanvasTexture(cv);
+    t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = 4;
+    return t;
+  };
+  const fan = make(256, (g, n) => {
+    const c = n / 2, R = n / 2;
+    const bg = g.createRadialGradient(c, c, R * 0.2, c, c, R);
+    bg.addColorStop(0, '#0b0d10'); bg.addColorStop(1, '#1c2026');
+    g.fillStyle = bg; g.fillRect(0, 0, n, n);
+    // the blades: wide chords swept round with the radius, lit on one side as a real fan is
+    const N = 22, r0 = R * 0.3, r1 = R * 0.95, pitch = TAU / N;
+    for (let b = 0; b < N; b++) {
+      const a0 = b * pitch, sweep = (r) => 0.42 * (r - r0) / (r1 - r0);
+      const pts = [];
+      for (let k = 0; k <= 8; k++) { const r = r0 + (r1 - r0) * k / 8; pts.push([r, a0 + sweep(r)]); }
+      for (let k = 8; k >= 0; k--) { const r = r0 + (r1 - r0) * k / 8; pts.push([r, a0 + sweep(r) + pitch * (0.62 + 0.18 * k / 8)]); }
+      g.beginPath();
+      pts.forEach(([r, a], k) => { const x = c + Math.cos(a) * r, y = c + Math.sin(a) * r; if (k) g.lineTo(x, y); else g.moveTo(x, y); });
+      g.closePath();
+      const lit = 0.5 + 0.5 * Math.cos(a0 - 0.8);
+      const gr = g.createRadialGradient(c, c, r0, c, c, r1);
+      const sh = (v) => Math.round(70 + 90 * v);
+      gr.addColorStop(0, 'rgb(' + sh(lit * 0.6) + ',' + sh(lit * 0.6 + 0.03) + ',' + sh(lit * 0.6 + 0.07) + ')');
+      gr.addColorStop(1, 'rgb(' + sh(lit) + ',' + sh(lit + 0.03) + ',' + sh(lit + 0.07) + ')');
+      g.fillStyle = gr; g.fill();
+      g.strokeStyle = 'rgba(8, 10, 12, 0.85)'; g.lineWidth = 1.2; g.stroke();
+    }
+    // the hub and the casing ring round the blade tips
+    g.fillStyle = '#2b3036'; g.beginPath(); g.arc(c, c, r0, 0, TAU); g.fill();
+    g.strokeStyle = '#0e1013'; g.lineWidth = R * 0.07; g.beginPath(); g.arc(c, c, R * 0.985, 0, TAU); g.stroke();
+  });
+  const spinner = make(64, (g, n) => {
+    g.fillStyle = '#69727c'; g.fillRect(0, 0, n, n);
+    g.strokeStyle = '#f2f4f6'; g.lineWidth = 7;
+    for (const dx of [-n, 0, n]) { g.beginPath(); g.moveTo(dx, n); g.lineTo(dx + n, 0); g.stroke(); }
+  });
+  fanTextures = { fan, spinner };
+  return fanTextures;
+}
+
+// A turbofan: the cowling with its lip, a bright inlet lining, the fan behind it (blades and a
+// spinner, `n.userData.fan`, turned by animate()) and the exhaust cone
 function jetNacelle(dia, len, skin, dark, paint, flat) {
   const n = new THREE.Group();
-  const cowl = new THREE.Mesh(new THREE.CylinderGeometry(dia * 0.5, dia * 0.42, len, 20, 1, true), skin);
+  const cowl = new THREE.Mesh(new THREE.CylinderGeometry(dia * 0.5, dia * 0.42, len, 24, 1, true), skin);
   cowl.rotation.x = Math.PI / 2;
   n.add(cowl);
   // the open tube has an inside too: dark, seen through the intake and the exhaust (one-sided
@@ -712,12 +787,26 @@ function jetNacelle(dia, len, skin, dark, paint, flat) {
   const liner = new THREE.Mesh(cowl.geometry, nacelleInside(dark, THREE.BackSide));
   liner.rotation.x = Math.PI / 2;
   n.add(liner);
-  const lip = new THREE.Mesh(new THREE.TorusGeometry(dia * 0.47, dia * 0.05, 8, 20), paint);
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(dia * 0.47, dia * 0.05, 10, 32), paint);
   lip.position.z = len / 2;
   n.add(lip);
-  const fan = new THREE.Mesh(new THREE.CircleGeometry(dia * 0.46, 20), nacelleInside(dark, THREE.DoubleSide));
-  fan.position.z = len / 2 - dia * 0.12;
+  // the inlet's polished lining from the lip to the fan, seen from inside
+  const inlet = new THREE.Mesh(new THREE.CylinderGeometry(dia * 0.462, dia * 0.455, dia * 0.24, 32, 1, true),
+    nacelleInside(inletMetal, THREE.BackSide));
+  inlet.rotation.x = Math.PI / 2;
+  inlet.position.z = len / 2 - dia * 0.12;
+  n.add(inlet);
+  const tx = fanFaceTextures();
+  const fan = new THREE.Group();
+  fan.position.z = len / 2 - dia * 0.24;
+  const face = new THREE.Mesh(new THREE.CircleGeometry(dia * 0.456, 32), fanMat(tx.fan));
+  fan.add(face);
+  const spin = new THREE.Mesh(new THREE.ConeGeometry(dia * 0.14, dia * 0.3, 20), fanMat(tx.spinner));
+  spin.rotation.x = Math.PI / 2;
+  spin.position.z = dia * 0.15;
+  fan.add(spin);
   n.add(fan);
+  n.userData.fan = fan;
   const cone = new THREE.Mesh(new THREE.ConeGeometry(dia * 0.24, dia * 0.6, 14), dark);
   cone.rotation.x = -Math.PI / 2;
   cone.position.z = -len / 2 - dia * 0.25;

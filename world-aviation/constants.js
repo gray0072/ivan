@@ -139,7 +139,22 @@ const LAYOUT = {
   APRON_START: 0.3,            // where the apron starts, fraction of the runway length
   GATE_SPACING: 80,
   TERMINAL_GAP: 70,            // between two terminals of a big airport, along the apron
-  THREE_TERMINALS_RWY: 3200,   // a big airport with a runway this long has three terminals, else two
+  // the terminals and their stands by the airport's size and its runway, from one terminal with
+  // one stand to three with three each: [the runway at least (m), terminals, stands in each]
+  // (the last row whose runway length the airport's runway reaches)
+  TERMINAL_PLANS: {
+    tiny: [[0, 1, 1]],
+    small: [[0, 1, 2]],
+    medium: [[0, 1, 3], [3000, 1, 4]],
+    big: [[0, 2, 2], [3200, 3, 2], [3800, 3, 3]]
+  },
+  LANE_MAX_STANDS: 2,          // a lane off the taxiway into the apron at least every this many stands
+  LANE_SNAP_M: 50,             // a lane this near a runway exit along the taxiway meets it at the exit (or
+                               // moves this far from it)
+  LANE_STAND_CLEAR_M: 25,      // ... if it stays this far from every stand's lead-in
+  // the wingspan an airport's stands and taxiways take (ICAO Annex 14 codes: C under 36 m, D under
+  // 52 m, E under 65 m, F under 80 m); a bigger aeroplane may still be flown there, with a warning
+  MAX_SPAN: { tiny: 36, small: 52, medium: 65, big: 80 },
   FILLET_R: 38,                // the centreline radius where taxiways meet at an angle
   FILLET_STAND_R: 30,          // ... and where a stand's lead-in leaves the apron lane
   CORRIDOR_LEN: 32000,         // approach / departure corridors cut into the terrain, metres from the runway ends
@@ -800,6 +815,10 @@ const VIEW = {
     cockpit: 'cockpit', chase: 'chase', front: 'front, looking back', wing: 'wing', tail: 'tail fin',
     gear: 'landing gear', top: 'top down', down: 'straight down, under the belly', tower: 'tower / fly-by'
   },
+  // the tower / fly-by view (Scene3D.towerShot): a shot is held SHOT_S seconds of real time (a
+  // random length in the range), from the nearest tower within TOWER_M, en route the fly-by shots
+  // in this ORDER; a pass only while the aeroplane flies at most PASS_MAX_M in half a shot
+  FLYBY: { SHOT_S: [3, 5], TOWER_M: 14000, PASS_MAX_M: 3000, ORDER: ['pass', 'lead', 'side', 'trail'] },
   NEAR_CLIP: 0.7,
   FOG_DENSITY: 1 / 62000,      // 1/e per metre
   COCKPIT_DRAW_DIST: 12000

@@ -897,6 +897,9 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .acStat span { display: block; font-size: 10px; color: #7f93a6; text-transform: uppercase; letter-spacing: 0.5px; }
 .acCard.plane .cGrid { grid-template-columns: 1fr; gap: 2px; }
 .acCard.plane .cFoot { margin-top: auto; padding-top: 10px; }
+/* a type that does not suit the airport the pilot is at (Career.misfit): it may still be selected */
+.fitWarn { flex: 1 0 100%; margin: 0; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255, 176, 58, 0.35);
+  background: rgba(255, 176, 58, 0.1); color: #ffcf8a; font-size: 12px; line-height: 1.4; }
 @media (hover: hover) {
   .acCard.plane:hover { transform: translateY(-2px); border-color: rgba(140, 190, 235, 0.4); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35); }
   .acCard.plane.sel:hover { border-color: #6fb1e8; }

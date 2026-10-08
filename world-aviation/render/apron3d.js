@@ -243,10 +243,17 @@ const Apron3D = {
     // overhang with the lamp head turned along the building, so they never go through the roof
     // (the airside ones on the grass just off the apron, clear of the service road and of the
     // wings: ICAO's 50.5 m from a code F taxilane centreline to an object, from the apron lane
-    // and from the lanes off the taxiway at both ends, MAST_CLEAR)
+    // and from every lane off the taxiway into the apron, MAST_CLEAR — so only between two lanes
+    // at least twice that apart, spread evenly, about 110 m from each other)
     const masts = [];
-    const laneA = r.t0 + 40, laneB = r.t1 - 40, airside = Math.min(r.a0 - 6, L.APRON_LANE - MAST_CLEAR);
-    for (let t = laneA + MAST_CLEAR; t <= laneB - MAST_CLEAR; t += 110) masts.push([t, airside, false]);
+    const airside = Math.min(r.a0 - 6, L.APRON_LANE - MAST_CLEAR);
+    const lanes = a.apronLanes || [r.t0 + 40, r.t1 - 40];
+    for (let k = 0; k + 1 < lanes.length; k++) {
+      const t0 = lanes[k] + MAST_CLEAR, t1 = lanes[k + 1] - MAST_CLEAR;
+      if (t1 < t0) continue;
+      const n = Math.floor((t1 - t0) / 110) + 1;
+      for (let i = 0; i < n; i++) masts.push([n === 1 ? (t0 + t1) / 2 : t0 + (t1 - t0) * i / (n - 1), airside, false]);
+    }
     const termA = front - 7.5;
     for (let i = 0; i <= a.gates.length; i++) {
       // (the first one a little nearer its stand, clear of the welcome banner)

@@ -421,6 +421,9 @@ const UI = {
     const flights = locked ? 0 : Career.flightsIn(a.id);
     const course = a.unlock ? COURSES.find((c) => c.id === a.unlock) : null;
     const crew = a.seats < 10;
+    // a type that does not suit the airport the pilot is at: a warning, but it may still be chosen
+    const here = !flying && !locked ? Career.here() : null;
+    const misfit = here ? Career.misfit(a, here) : null;
     const tile = (v, k) => '<div class="acStat"><b>' + v + '</b><span>' + esc(k) + '</span></div>';
     return '<div class="acCard plane' + (sel ? ' sel' : '') + (locked ? ' locked' : '') + (fresh ? ' fresh' : '') + '">' +
       '<div class="acPic loading" style="--glow:' + hexAlpha((a.look && a.look.color) || '#6fb1e8', 0.42) + '">' +
@@ -451,9 +454,17 @@ const UI = {
       (flying ? ''
         : locked
           ? '<div class="cFoot"><span class="need">' + tr('Locked — pass {course}', { course: esc(this.courseText(course).name) }) + '</span></div>'
-          : '<div class="cFoot"><span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
+          : '<div class="cFoot">' + (misfit ? '<p class="fitWarn">⚠ ' + esc(this.misfitText(a, here, misfit)) + '</p>' : '') +
+            '<span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
             '<button class="btn' + (sel ? ' picked' : ' default') + '" data-act="selectAc" data-v="' + a.id + '">' + (sel ? '✓ ' + tr('Selected') : tr('Select')) + '</button></div>') +
       '</div></div>';
+  },
+
+  // why a type does not suit an airport, in words (Career.misfit)
+  misfitText(a, apt, why) {
+    if (why === 'runway') return tr('Not for {apt}: its runway is {have} m, this type needs {need} m', { apt: apt.name, have: apt.rwyLen, need: a.takeoffDist });
+    if (why === 'grass') return tr('Not for {apt}: a grass strip, and this type is not cleared for grass', { apt: apt.name });
+    return tr('Too big for {apt}: a {span} m wingspan, its stands and taxiways take up to {max} m', { apt: apt.name, span: a.dims.span, max: LAYOUT.MAX_SPAN[apt.terminal] });
   },
 
   // The course tree, in the game's language (the exams run in it too)

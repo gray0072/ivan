@@ -152,6 +152,9 @@ const TEXT_RU = {
   'Medevac rating required': 'Нужен допуск к санрейсам',
   'Arctic ground handling required': 'Нужен курс арктического наземного обслуживания',
   'Runway at {id} too short for {ac}': 'Полоса в {id} слишком короткая для {ac}',
+  'Not for {apt}: its runway is {have} m, this type needs {need} m': 'Не для аэропорта {apt}: его полоса {have} м, этому типу нужно {need} м',
+  'Not for {apt}: a grass strip, and this type is not cleared for grass': 'Не для аэропорта {apt}: там травяная полоса, а этому типу на траву нельзя',
+  'Too big for {apt}: a {span} m wingspan, its stands and taxiways take up to {max} m': 'Слишком большой для аэропорта {apt}: размах крыла {span} м, его стоянки и рулёжки — до {max} м',
   'Grass strip — not cleared for {ac}': 'Грунтовая полоса — {ac} на неё не допущен',
 
   // ---------- network ----------
@@ -556,7 +559,7 @@ const TEXT_RU = {
   '<b>Starting</b> · watch the N1 and EGT gauges': '<b>Запуск</b> · следите за указателями N1 и EGT',
   '<b>Start the engines</b><br>press <kbd>Enter</kbd>': '<b>Запустите двигатели</b><br>нажмите <kbd>Enter</kbd>',
   '<b>Taxi</b> to the holding point of runway {rwy}': '<b>Руление</b> к предварительному старту полосы {rwy}',
-  'throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>': 'тяга <kbd>1</kbd>–<kbd>3</kbd>, разворот <kbd>←</kbd><kbd>→</kbd>, тормоз <kbd>B</kbd>',
+  'throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>': 'тяга <kbd>1</kbd>–<kbd>3</kbd>, поворот <kbd>←</kbd><kbd>→</kbd>, тормоз <kbd>B</kbd>',
   '{d} to go': 'осталось {d}',
   'too fast — keep below 20 kt': 'слишком быстро — не больше 20 kt',
   'Holding point runway {rwy}': 'Предварительный старт полосы {rwy}',

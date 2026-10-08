@@ -491,7 +491,7 @@ const Scene3D = {
   // ---------- the camera (VIEW.MODES) ----------
   // Most views ride with the aeroplane, in its own axes (x right, y up, z forward) scaled to
   // its size; the top-down view keeps the nose up, and the tower view stands on the
-  // nearest tower (or, en route, beside the flight path for a fly-by) and zooms in on the aeroplane.
+  // nearest tower (or, en route, cuts between fly-by shots: towerShot) and zooms in on the aeroplane.
   placeCamera(fl, ax) {
     const st = fl.st, d = fl.dims;
     const L = d.len, S = d.span, R = d.fus / 2;
@@ -503,6 +503,7 @@ const Scene3D = {
     let eye, look, up = new THREE.Vector3(ax.up.x, ax.up.y, ax.up.z), fov = VIEW.FOV_DEG, minAgl = 1;
     // the camera's flight at the start or the end of a flight (Game sets cine to Cinematic)
     const mode = this.cine ? 'cine' : this.camMode;
+    if (mode !== 'tower') this.shot = null;
     switch (mode) {
       case 'cine': { const c = this.cine.pose(fl, ax); eye = c.eye; look = c.look; up = c.up; fov = c.fov; minAgl = 2; break; }
       case 'chase': eye = P(0, S * 0.5, -S * 1.62); look = P(0, 0, 4); break;
@@ -530,29 +531,8 @@ const Scene3D = {
         break;
       }
       case 'tower': {
-        let best = null, bd = 14000;
-        for (const a of World.airports) {
-          const dd = Math.hypot(a.x - st.pos.x, a.z - st.pos.z);
-          if (dd < bd) { bd = dd; best = a; }
-        }
-        const tw = best && best.buildings.find((b) => b.kind === 'tower');
-        if (tw) {
-          eye = new THREE.Vector3(tw.x, best.elev + tw.h + 40, tw.z);          // above the cab, the flag and the roof
-          this.flyby = null;
-        } else {
-          // a fly-by: wait beside the flight path ahead, then move on once the aeroplane has passed
-          const v = new THREE.Vector3(st.vel.x, 0, st.vel.z);
-          const fb = this.flyby;
-          const passed = fb && (fb.clone().sub(pos).dot(v) < 0) && fb.distanceTo(pos) > S * 12 + 300;
-          if (!fb || passed || fb.distanceTo(pos) > 6000) {
-            const ahead = v.lengthSq() > 25 ? v.clone().multiplyScalar(7) : new THREE.Vector3(ax.nose.x, 0, ax.nose.z).multiplyScalar(80);
-            const side = new THREE.Vector3(ahead.z, 0, -ahead.x).normalize().multiplyScalar(S * 1.6 + 35);
-            this.flyby = pos.clone().add(ahead).add(side);
-            this.flyby.y += 10;
-          }
-          eye = this.flyby.clone();
-          minAgl = 4;
-        }
+        eye = this.towerShot(fl, ax, pos);
+        minAgl = 4;
         look = pos;
         up = new THREE.Vector3(0, 1, 0);
         const dist = Math.max(1, eye.distanceTo(pos));
@@ -582,6 +562,65 @@ const Scene3D = {
     return eye;
   },
 
+  // The tower / fly-by view: a sequence of shots, each held for VIEW.FLYBY.SHOT_S (3-5 s of real
+  // time, whatever the time acceleration), so the picture never jumps about from frame to frame.
+  // Near an airport it stands above the nearest tower's cab for as long as the aeroplane is in
+  // range; en route it goes round four shots: a pass (it waits beside the flight path ahead and
+  // the aeroplane flies by), a lead (ahead of the aeroplane, moving with it, looking back), from
+  // far off to one side, and a trail (behind it). A pass is placed by how far the aeroplane flies
+  // in the shot (its speed in real time, the time acceleration included), so it passes halfway
+  // through; when that is too far (the time running fast) only the moving shots are used.
+  towerShot(fl, ax, pos) {
+    const st = fl.st, S = fl.dims.span, F = VIEW.FLYBY, now = this.time;
+    let best = null, bd = F.TOWER_M;
+    for (const a of World.airports) {
+      const dd = Math.hypot(a.x - pos.x, a.z - pos.z);
+      if (dd < bd) { bd = dd; best = a; }
+    }
+    const tw = best && best.buildings.find((b) => b.kind === 'tower');
+    // the track in real time, turned slowly so a turn does not swing the moving shots round
+    const k = fl.env.timeAccel || 1;
+    const vx = st.vel.x * k, vz = st.vel.z * k, v = Math.hypot(vx, vz);
+    const want = v > 3 ? new THREE.Vector3(vx, 0, vz) : new THREE.Vector3(ax.nose.x, 0, ax.nose.z);
+    if (want.lengthSq() < 1e-9) want.set(0, 0, -1);
+    want.normalize();
+    let sh = this.shot;
+    if (!sh) this.shotDir = want.clone();
+    else this.shotDir.lerp(want, clamp((this.dtReal || 0) * 1.2, 0, 1)).normalize();
+    const f = this.shotDir, r = new THREE.Vector3(-f.z, 0, f.x);           // ahead, and to its right
+    const age = sh ? now - sh.t0 : 0;
+    const held = sh && age >= F.SHOT_S[0];
+    let next = null;
+    if (!sh) next = tw ? 'tower' : 'pass';
+    else if (sh.kind === 'tower') { if (held && tw !== sh.tw) next = tw ? 'tower' : 'pass'; }   // out of range, or another tower nearer
+    else if (tw && held) next = 'tower';
+    else if (age >= sh.dur || (sh.kind === 'pass' && held && sh.eye.distanceTo(pos) > F.PASS_MAX_M * 1.5)) {
+      next = F.ORDER[(F.ORDER.indexOf(sh.kind) + 1) % F.ORDER.length];
+    }
+    if (next) {
+      const dur = F.SHOT_S[0] + Math.random() * (F.SHOT_S[1] - F.SHOT_S[0]);
+      // a pass only while the aeroplane flies no further than PASS_MAX_M in half a shot
+      if (next === 'pass' && v * dur * 0.45 > F.PASS_MAX_M) next = 'lead';
+      sh = this.shot = { kind: next, t0: now, dur, side: Math.random() < 0.5 ? -1 : 1 };
+      if (next === 'tower') { sh.tw = tw; sh.eye = new THREE.Vector3(tw.x, best.elev + tw.h + 40, tw.z); }   // above the cab, the flag and the roof
+      if (next === 'pass') {
+        const ahead = Math.max(v * dur * 0.45, S * 2 + 60), lateral = clamp(v * dur * 0.08, S * 1.6 + 35, 600);
+        sh.eye = pos.clone().addScaledVector(f, ahead).addScaledVector(r, lateral * sh.side);
+        sh.eye.y += 10;
+      }
+    }
+    if (sh.eye) return sh.eye.clone();
+    // the moving shots: offsets in the track's axes, sliding a little through the shot
+    const u = clamp((now - sh.t0) / sh.dur, 0, 1), sd = sh.side;
+    let o;
+    if (sh.kind === 'lead') o = [S * 2.2 + 40, sd * lerp(S * 0.9, S * 0.3, u), S * 0.25 + 4];
+    else if (sh.kind === 'trail') o = [-(S * 2.4 + 45), sd * S * 0.45, lerp(S * 0.15, S * 0.5, u) + 4];
+    else o = [lerp(S * 1.5, -S * 1.5, u), sd * (S * 7 + 150), S * 0.3 + 4];   // far off to the side
+    const eye = pos.clone().addScaledVector(f, o[0]).addScaledVector(r, o[1]);
+    eye.y += o[2];
+    return eye;
+  },
+
   // the pilot's eye and where it looks: the cockpit view, and the cockpit inset (renderPip)
   cockpitPose(fl, ax) {
     const st = fl.st, d = fl.dims, L = d.len;
@@ -597,6 +636,7 @@ const Scene3D = {
 
   update(dt, fl, sys) {
     this.time += dt;
+    this.dtReal = dt;
     const st = fl.st, env = fl.env;
     const ax = st.axes || fl.updateAxes();
     const eye = this.placeCamera(fl, ax);

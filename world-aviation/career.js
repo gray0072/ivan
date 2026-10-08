@@ -231,10 +231,22 @@ const Career = {
     if (a.id === from.id || !this.hasRegion(a.region)) return false;
     const dist = geoDistanceNm(from.lat, from.lon, a.lat, a.lon);
     if (dist > Math.min(ac.maxRangeNm * 0.96, CONTRACTS.MAX_NM) || dist < 35) return false;
-    if (a.rwyLen < ac.takeoffDist * 0.9) return false;              // the runway has to be long enough for the type
-    const grassOnly = a.aptClass.length === 1 && a.aptClass[0] === 'bush';
-    if (grassOnly && ac.surfaces.indexOf('grass') < 0) return false;  // a grass strip only for types cleared for grass
-    return true;
+    // the runway has to be long enough for the type, a grass strip only for types cleared for grass
+    // (a type too big for the stands may still go there: the hangar warns about it)
+    const misfit = this.misfit(ac, a);
+    return misfit !== 'runway' && misfit !== 'grass';
+  },
+
+  // the airport the pilot is at now: where the last flight ended, or the base
+  here() { return World.byId[this.data.lastTo] || World.byId[this.data.base]; },
+  // why a type does not suit an airport, or null: 'runway' (too short for it), 'grass' (a grass
+  // strip, the type not cleared for grass) or 'span' (its wings too wide for the stands and the
+  // taxiways, LAYOUT.MAX_SPAN by the airport's size)
+  misfit(ac, a) {
+    if (a.rwyLen < ac.takeoffDist * 0.9) return 'runway';
+    if (a.aptClass.length === 1 && a.aptClass[0] === 'bush' && ac.surfaces.indexOf('grass') < 0) return 'grass';
+    if (ac.dims.span > (LAYOUT.MAX_SPAN[a.terminal] || Infinity)) return 'span';
+    return null;
   },
 
   // the size of the contract board: it grows with the network and the experience
@@ -249,7 +261,7 @@ const Career = {
     const rng = rand;
     const ac = this.aircraft();
     const fx = this.effects();
-    const from = World.byId[this.data.lastTo] || World.byId[this.data.base];
+    const from = this.here();
     const home = World.byId[this.data.base];
     const away = from !== home;
     const all = World.list.filter((a) => this.legOk(from, a, ac));

@@ -152,6 +152,9 @@ const TEXT_SV = {
   'Medevac rating required': 'Kräver behörighet för ambulansflyg',
   'Arctic ground handling required': 'Kräver arktisk markhantering',
   'Runway at {id} too short for {ac}': 'Banan på {id} är för kort för {ac}',
+  'Not for {apt}: its runway is {have} m, this type needs {need} m': 'Inte för {apt}: banan är {have} m, den här typen behöver {need} m',
+  'Not for {apt}: a grass strip, and this type is not cleared for grass': 'Inte för {apt}: en gräsbana, och den här typen är inte godkänd för gräs',
+  'Too big for {apt}: a {span} m wingspan, its stands and taxiways take up to {max} m': 'För stor för {apt}: {span} m spännvidd, dess uppställningsplatser och taxibanor tar högst {max} m',
   'Grass strip — not cleared for {ac}': 'Gräsbana — {ac} är inte godkänd för den',
 
   // ---------- network ----------
