@@ -247,7 +247,11 @@ const Units = {
   // every "<number> ft|kt|nm|fpm" in a text, converted
   text(s) {
     if (!this.metric || !s) return s;
-    return String(s).replace(/(\d{1,3}(?:[ ,  ]\d{3})+|\d+(?:\.\d+)?)\s?(ft|kt|nm|fpm)\b/g, (all, num, unit) => {
+    // an image's data: URL is left as it is ("…A3nm+…" in its base64 is not a distance)
+    return String(s).split(/(data:[^"'\s)]+)/).map((part, i) => (i % 2 ? part : this.convert(part))).join('');
+  },
+  convert(s) {
+    return s.replace(/(\d{1,3}(?:[ ,  ]\d{3})+|\d+(?:\.\d+)?)\s?(ft|kt|nm|fpm)\b/g, (all, num, unit) => {
       const v = parseFloat(num.replace(/[ ,  ]/g, ''));
       if (!isFinite(v)) return all;
       if (unit === 'ft') return fmtNum(this.m(v)) + ' m';
