@@ -399,20 +399,23 @@ const Airport3D = {
     // the name of the airport in big letters on the roof, facing the apron and the road (at a
     // big airport on the middle terminal, the others carry their number)
     const several = b.terms > 1, main = !several || b.term === Math.ceil(b.terms / 2);
-    const name = main ? a.name.toUpperCase() : 'TERMINAL ' + b.term;
-    const lh = clamp(b.along * 0.9 / (name.length * 0.78), 7, h > 18 ? 24 : 16);
-    const lw = Math.min(b.along * 0.92, name.length * lh * 0.8);
-    const lt = tex(makeLettersCanvas(name, id.color), 8);
-    // (lit at night)
-    const letters = new THREE.MeshLambertMaterial({ map: lt, emissiveMap: lt, emissive: 0x000000, transparent: true, alphaTest: 0.35, side: THREE.FrontSide });
-    rec.night.push({ mat: letters, color: new THREE.Color(0xffffff), k: 0.9 });
-    for (const side of [-1, 1]) {
-      const geo = new THREE.PlaneGeometry(lw, lh);
-      geo.rotateY(side * Math.PI / 2);
-      at(new THREE.Mesh(geo, letters),
-        b.t, (side < 0 ? front + 4 : back - 4) + side * 0.6, h + 1.6 + lh / 2);
-      // the frame the letters stand on
-      at(new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, lw * 0.96), lambert(0x6c7378)), b.t, side < 0 ? front + 4 : back - 4, h + 2.2);
+    if (!main) this.terminalPanel(a, b, rec, at, tex, lambert, id);
+    else {
+      const name = a.name.toUpperCase();
+      const lh = clamp(b.along * 0.9 / (name.length * 0.78), 7, h > 18 ? 24 : 16);
+      const lw = Math.min(b.along * 0.92, name.length * lh * 0.8);
+      const lt = tex(makeLettersCanvas(name, id.color), 8);
+      // (lit at night)
+      const letters = new THREE.MeshLambertMaterial({ map: lt, emissiveMap: lt, emissive: 0x000000, transparent: true, alphaTest: 0.35, side: THREE.FrontSide });
+      rec.night.push({ mat: letters, color: new THREE.Color(0xffffff), k: 0.9 });
+      for (const side of [-1, 1]) {
+        const geo = new THREE.PlaneGeometry(lw, lh);
+        geo.rotateY(side * Math.PI / 2);
+        at(new THREE.Mesh(geo, letters),
+          b.t, (side < 0 ? front + 4 : back - 4) + side * 0.6, h + 1.6 + lh / 2);
+        // the frame the letters stand on
+        at(new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, lw * 0.96), lambert(0x6c7378)), b.t, side < 0 ? front + 4 : back - 4, h + 2.2);
+      }
     }
     // the welcome banner on the apron side, above the glass, at the departure end of the
     // building (the first terminal), and the flags at the other end (the last)
@@ -431,6 +434,35 @@ const Airport3D = {
     at(new THREE.Mesh(bgeo2, bannerMat), b.t, back + 0.6, h - bh / 2 - 0.4);
     if (!several) this.terminalFlags(a, b, rec, at, tex, id);
   },
+  // the roof sign of a terminal other than the one with the airport's name: a panel in the
+  // airport's sign style (signStyle) — its number in a square, then TERMINAL — facing the apron
+  // and the road, lit at night
+  terminalPanel(a, b, rec, at, tex, lambert, id) {
+    const st = signStyle(a, id);
+    const cv = document.createElement('canvas');
+    cv.width = 1024; cv.height = 256;
+    const g = cv.getContext('2d');
+    g.fillStyle = st.bg; g.fillRect(0, 0, 1024, 256);
+    g.fillStyle = st.dark; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = st.fg; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = st.weight + ' 190px ' + st.font; g.fillText(String(b.term), 128, 138);
+    g.font = st.weight + ' 120px ' + st.font;
+    const w = g.measureText('TERMINAL').width;
+    g.save(); g.translate(640, 136); g.scale(Math.min(1, 700 / w), 1); g.fillText('TERMINAL', 0, 0); g.restore();
+    const map = tex(cv, 8);
+    const mat = new THREE.MeshLambertMaterial({ map, emissiveMap: map, emissive: 0x000000 });
+    rec.night.push({ mat, color: new THREE.Color(0xffffff), k: 0.75 });
+    const ph = clamp(b.h * 0.55, 7, 12), pw = ph * 4;
+    const front = b.across - b.acrossSize / 2, back = b.across + b.acrossSize / 2;
+    for (const side of [-1, 1]) {
+      const geo = new THREE.PlaneGeometry(pw, ph);
+      geo.rotateY(side * Math.PI / 2);
+      const across = side < 0 ? front + 4 : back - 4;
+      at(new THREE.Mesh(geo, mat), b.t, across + side * 0.35, b.h + 1.6 + ph / 2);
+      at(new THREE.Mesh(cellBox(0.6, ph + 0.6, pw + 0.6), lambert(0x4a5157)), b.t, across, b.h + 1.6 + ph / 2);
+    }
+  },
+
   // three flagpoles on the roof at the far end of the (last) terminal: the country, the city, the country
   terminalFlags(a, b, rec, at, tex, id) {
     if (b.terms > 1 && b.term !== b.terms) return;
@@ -532,12 +564,13 @@ const Airport3D = {
     ws.add(droop);
     at(ws, -h + 220, -(RWY_HALF_WIDTH + 70), 6.8);
     rec.windsock = { holder: ws, droop };
-    // the localiser array beyond the far end, the glideslope mast beside the touchdown zone
+    // the localiser array beyond the far end, the glideslope mast beside the touchdown zone, on
+    // the side away from the taxiway (17 m off its centreline it stood in the way of every wing)
     const red = lambert(0xc8442e), white = lambert(0xeeeeee);
     at(new THREE.Mesh(new THREE.BoxGeometry(44, 0.5, 1), white), h + RWY_BLAST + 240, 0, 2.6);
     for (let x = -21; x <= 21; x += 3.5) at(new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.6, 0.4), (x / 3.5 | 0) % 2 ? red : white), h + RWY_BLAST + 240, x, 1.3);
-    for (let i = 0; i < 4; i++) at(new THREE.Mesh(new THREE.BoxGeometry(0.5, 4, 0.5), i % 2 ? red : white), -h + 300, RWY_HALF_WIDTH + 120, 2 + i * 4);
-    at(new THREE.Mesh(new THREE.BoxGeometry(3, 2.6, 3), white), -h + 300, RWY_HALF_WIDTH + 126, 1.3);
+    for (let i = 0; i < 4; i++) at(new THREE.Mesh(new THREE.BoxGeometry(0.5, 4, 0.5), i % 2 ? red : white), -h + 300, -(RWY_HALF_WIDTH + 120), 2 + i * 4);
+    at(new THREE.Mesh(new THREE.BoxGeometry(3, 2.6, 3), white), -h + 300, -(RWY_HALF_WIDTH + 126), 1.3);
     // signs: the runway holding position (red) and the exits (yellow)
     const hold = a.nodes.hold;
     this.sign(rec, at, tex, a.rwyName + '-' + a.rwyOpposite, '#c8102e', '#ffffff', hold.t - 20, hold.across);
@@ -996,6 +1029,25 @@ function makeRunwayCanvas(a, ch) {
 }
 
 // ---------- the identity: the letters on the roof and the welcome banner ----------
+// An airport's own sign style for its terminals (there is no international standard for the
+// look of terminal signs, each airport has its own family): a typeface and a weight, and an
+// accent colour from the city's, shifted a little in hue and lightness — fixed by the airport's
+// code. Used by the terminal panels (Airport3D.terminalPanel) and the terminal signs (landside3d.js).
+const SIGN_FONTS = ['Arial, sans-serif', '"Trebuchet MS", sans-serif', 'Verdana, sans-serif', 'Georgia, serif',
+  'Tahoma, sans-serif', '"Segoe UI", sans-serif', '"Gill Sans", "Gill Sans MT", Calibri, sans-serif', '"Century Gothic", Futura, sans-serif'];
+function signStyle(a, id) {
+  const h = hashStr(a.id + 'signs');
+  const hsl = {};
+  new THREE.Color(id.color).getHSL(hsl);
+  const hue = (hsl.h + ((h % 7) - 3) * 0.012 + 1) % 1, sat = clamp(hsl.s * (0.8 + (h >> 3) % 5 * 0.08), 0.25, 0.9);
+  const light = clamp(0.24 + ((h >> 6) % 6) * 0.03, 0.2, 0.42);
+  const css = (l) => '#' + new THREE.Color().setHSL(hue, sat, l).getHexString();
+  return {
+    font: SIGN_FONTS[(h >> 9) % SIGN_FONTS.length], weight: ['700', '800', '900'][(h >> 12) % 3],
+    bg: css(light), dark: css(light * 0.6), fg: (h >> 14) % 3 ? '#ffffff' : '#ffe9a8'
+  };
+}
+
 function makeLettersCanvas(text, color) {
   const cv = document.createElement('canvas');
   cv.width = 2048; cv.height = 192;

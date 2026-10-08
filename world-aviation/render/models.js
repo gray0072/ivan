@@ -113,7 +113,9 @@ const AircraftModels = {
     const finH = jet ? R * 2.1 + L * 0.06 : R * 1.6 + L * 0.06;
     const finSweep = (jet ? 38 : 30) * DEG;
     const finZ = -L * 0.5 + finRoot + L * 0.015;                   // fin leading edge at the root
-    const finY = R * 0.62 + (top - R) * 0.8;                       // a double deck's roof runs higher into the tail
+    // (its root inside the tail cone all along: lower, its edge hung out under the narrow end
+    // of the cone, a thin rod seen from below; a double deck's roof runs higher into the tail)
+    const finY = R * 0.72 + (top - R) * 0.8;
     // the fin is a lifting surface stood on end (its span up), with the rudder behind it
     const finT = finRoot * 0.08;
     const fin = liftingSurface({
@@ -366,13 +368,13 @@ const AircraftModels = {
       // belly
       g.fillStyle = 'rgba(150,160,170,0.55)';
       g.fillRect(0, yAt(118 + lo), W, yAt(124 - 2 * lo));
-      // cheatline below the windows on both sides, and a bold tail sweep at the back
+      // cheatline below the windows on both sides, and a bold tail sweep at the back, over the
+      // top of the tail cone into the fin (all round, the cone looked like a coloured bulb from below)
       g.fillStyle = color;
       for (const c of [100 + lo, 260 - lo]) g.fillRect(W * 0.04, yAt(c - 3), W * 0.9, yAt(5));
       g.globalAlpha = 0.9;
-      g.beginPath();
-      g.moveTo(0, 0); g.lineTo(W * 0.2, 0); g.lineTo(W * 0.12, H); g.lineTo(0, H);
-      g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(W * 0.2, 0); g.lineTo(W * 0.11, yAt(55)); g.lineTo(0, yAt(75)); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(0, H); g.lineTo(W * 0.2, H); g.lineTo(W * 0.11, yAt(305)); g.lineTo(0, yAt(285)); g.closePath(); g.fill();
       g.globalAlpha = 1;
     } else {
       // an airline's paint: the belly below the cheatline, a coloured nose, the cheatline,
@@ -520,7 +522,9 @@ function fuselageGeometry(L, R, hk) {
     }
     if (z < zTail + tailLen) {
       const u = ((zTail + tailLen) - z) / tailLen;              // 0 → 1 to the tail end
-      const e = u * u * (3 - 2 * u);
+      // smooth off the cabin, still narrowing at the end: a cone to the tip (a curve that went
+      // flat there left a long thin tube, a rod under the tail seen from below)
+      const e = u * u * (2 - u);
       const r = R * (1 - 0.86 * e);
       return { r, y: (R - r) * 0.93 };                           // the top line stays level, the belly sweeps up
     }

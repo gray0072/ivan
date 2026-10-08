@@ -427,6 +427,9 @@ const Career = {
     const ac = AIRCRAFT.find((a) => a.id === c.aircraftId) || this.aircraft();
     if (result.cheated) {
       d.stats.cheats += result.cheatsUsed || 1;
+      // not paid, but the aeroplane is there: the board is dealt again from the arrival
+      d.lastTo = c.toId;
+      this.generateContracts();
       this.save();
       return { lines: [{ label: 'Cheated run — not paid', value: 0 }], total: 0, rep: 0, grade: result.grade, records: false };
     }

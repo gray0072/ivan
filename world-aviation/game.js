@@ -135,6 +135,7 @@ const Game = {
     }
 
     Scene3D.camMode = this.camMode;
+    Scene3D.pipRect = this.mode === 'flying' ? HUD.updatePip(fl, sys, this.camMode, this.helpOpen) : null;
     Scene3D.update(dt, fl, sys);
     Scene3D.render();
     this.draw2d(dt);
@@ -1074,7 +1075,7 @@ function fmtAltFt(ft) { return Math.round(ft).toLocaleString('en-US'); }
 // a stand's name in the game's language ("Gate 3")
 function gateName(g) {
   if (!g.number) return tr(g.name);
-  return g.terminals > 1 ? tr('Gate {n}, terminal {t}', { n: g.number, t: g.terminal }) : tr('Gate {n}', { n: g.number });
+  return g.terminals > 1 ? tr('Terminal {t}, gate {n}', { n: g.number, t: g.terminal }) : tr('Gate {n}', { n: g.number });
 }
 function pickQuality(setting) {
   if (setting && setting !== 'auto') return setting;

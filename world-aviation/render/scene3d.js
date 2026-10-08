@@ -514,6 +514,16 @@ const Scene3D = {
         fov = 60;
         break;
       }
+      case 'down': {
+        // a camera under the belly looking straight down at the ground, the nose up the screen
+        eye = P(0, -R - 0.4, L * 0.05);
+        look = eye.clone(); look.y -= 100;
+        up = new THREE.Vector3(ax.nose.x, 0, ax.nose.z);
+        if (up.lengthSq() < 1e-6) up.set(0, 0, -1);
+        up.normalize();
+        fov = 70; minAgl = 0.4;
+        break;
+      }
       case 'tower': {
         let best = null, bd = 14000;
         for (const a of World.airports) {
@@ -545,9 +555,8 @@ const Scene3D = {
         break;
       }
       default: {          // the cockpit
-        const k = L / 18, o = VIEW.COCKPIT_EYE;
-        eye = P(o.x * k + VIEW.COCKPIT_SEAT_X * d.fus, o.y * k, o.z * k);
-        look = new THREE.Vector3(eye.x + ax.nose.x - ax.up.x * 0.06, eye.y + ax.nose.y - ax.up.y * 0.06, eye.z + ax.nose.z - ax.up.z * 0.06);
+        const c = this.cockpitPose(fl, ax);
+        eye = c.eye; look = c.look;
       }
     }
     // never below the ground
@@ -567,11 +576,26 @@ const Scene3D = {
     return eye;
   },
 
+  // the pilot's eye and where it looks: the cockpit view, and the cockpit inset (renderPip)
+  cockpitPose(fl, ax) {
+    const st = fl.st, d = fl.dims, L = d.len;
+    const k = L / 18, o = VIEW.COCKPIT_EYE;
+    const x = o.x * k + VIEW.COCKPIT_SEAT_X * d.fus, y = o.y * k, z = o.z * k;
+    const eye = new THREE.Vector3(
+      st.pos.x + ax.right.x * x + ax.up.x * y + ax.nose.x * z,
+      st.pos.y + ax.right.y * x + ax.up.y * y + ax.nose.y * z,
+      st.pos.z + ax.right.z * x + ax.up.z * y + ax.nose.z * z);
+    const look = new THREE.Vector3(eye.x + ax.nose.x - ax.up.x * 0.06, eye.y + ax.nose.y - ax.up.y * 0.06, eye.z + ax.nose.z - ax.up.z * 0.06);
+    return { eye, look, up: new THREE.Vector3(ax.up.x, ax.up.y, ax.up.z) };
+  },
+
   update(dt, fl, sys) {
     this.time += dt;
     const st = fl.st, env = fl.env;
     const ax = st.axes || fl.updateAxes();
     const eye = this.placeCamera(fl, ax);
+    // the cockpit inset (Game sets pipRect where HUD.updatePip put its frame, or null)
+    this.pipPose = this.pipRect && this.camMode !== 'cockpit' ? this.cockpitPose(fl, ax) : null;
     this.aircraftY = st.pos.y;
     this.lastGround = fl.groundHeight();
 
@@ -748,6 +772,27 @@ const Scene3D = {
 
   render() {
     this.renderer.render(this.scene, this.camera);
+    if (this.pipPose && this.pipRect) this.renderPip();
+  },
+  // The view from the cockpit in a small frame over the outside view (taxiing seen from outside
+  // without losing the pilot's view): the same scene drawn again into that rectangle of the
+  // canvas, without the own aeroplane, through a camera at the pilot's eye
+  renderPip() {
+    const r = this.renderer, rc = this.pipRect, p = this.pipPose;
+    const s = this.w / window.innerWidth;
+    const x = rc.left * s, y = (window.innerHeight - rc.bottom) * s, w = rc.width * s, h = rc.height * s;
+    if (w < 20 || h < 20) return;
+    const cam = this.pipCam || (this.pipCam = new THREE.PerspectiveCamera(VIEW.FOV_DEG, 1.6, VIEW.NEAR_CLIP, this.camera.far));
+    cam.position.copy(p.eye); cam.up.copy(p.up); cam.lookAt(p.look);
+    if (Math.abs(cam.aspect - w / h) > 0.001 || cam.far !== this.camera.far) { cam.aspect = w / h; cam.far = this.camera.far; cam.updateProjectionMatrix(); }
+    const own = this.ownAircraft, vis = own && own.visible;
+    if (own) own.visible = false;
+    r.setScissorTest(true);
+    r.setScissor(x, y, w, h); r.setViewport(x, y, w, h);
+    r.render(this.scene, cam);
+    r.setScissorTest(false);
+    r.setViewport(0, 0, this.w, this.h);
+    if (own) own.visible = vis;
   },
 
   flash() { this.lightning = 1; }

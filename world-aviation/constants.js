@@ -126,7 +126,10 @@ const SIM = {
 const LAYOUT = {
   RWY_HALF_WIDTH: 23,
   TWY_OFFSET: 160,             // parallel taxiway centreline
-  TWY_WIDTH: 23,
+  TWY_WIDTH: 23,               // (the ICAO code E taxiway; by the airport's size: TWY_WIDTHS)
+  // taxiway width by the terminal's size, ICAO Annex 14's minimum for the biggest aeroplane it
+  // takes: code F (A380, 747-8) 25 m, E (777, 787, A350) 23 m, D 18 m, C (737, A320) 15 m
+  TWY_WIDTHS: { big: 25, medium: 23, small: 18, tiny: 15 },
   HOLD_OFFSET: 80,             // holding point, from the runway centreline
   HOLD_T: 90,                  // holding point, from the runway start
   EXITS: [0.45, 0.65, 0.85],   // runway exits as a fraction of the length
@@ -790,10 +793,10 @@ const VIEW = {
   // fuselage diameter), so it sits about 30 degrees to the right
   CENTRE_POST_AHEAD: 0.24,
   // the views C (and Shift+C) cycle through, and their names
-  MODES: ['cockpit', 'chase', 'front', 'wing', 'tail', 'gear', 'top', 'tower'],
+  MODES: ['cockpit', 'chase', 'front', 'wing', 'tail', 'gear', 'top', 'down', 'tower'],
   NAMES: {
     cockpit: 'cockpit', chase: 'chase', front: 'front, looking back', wing: 'wing', tail: 'tail fin',
-    gear: 'landing gear', top: 'top down', tower: 'tower / fly-by'
+    gear: 'landing gear', top: 'top down', down: 'straight down, under the belly', tower: 'tower / fly-by'
   },
   NEAR_CLIP: 0.7,
   FOG_DENSITY: 1 / 62000,      // 1/e per metre

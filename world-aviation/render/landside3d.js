@@ -39,9 +39,12 @@ const Landside3D = {
   terminalSigns(a, b, rec, at, tex) {
     const h = b.h, front = b.across - b.acrossSize / 2, back = b.across + b.acrossSize / 2;
     const several = b.terms > 1;
+    // (at a big airport in its own sign style, signStyle in airport3d.js)
+    const look = AIRPORT_LOOK[a.id] || ['star', '#2a5d8f'];
+    const st = several ? signStyle(a, { color: look[1] }) : null;
     const names = several ? ['TERMINAL ' + b.term, 'TERMINAL ' + b.term] : ['DEPARTURES', 'ARRIVALS'];
     const sign = (text, t, across, y, hgt, side) => {
-      const cv = signCanvas(text, '#1d2a38', '#ffffff');
+      const cv = st ? signCanvas(text, st.bg, st.fg, st.weight + ' 84px ' + st.font) : signCanvas(text, '#1d2a38', '#ffffff');
       const map = tex(cv, 8);
       const mat = new THREE.MeshLambertMaterial({ map, emissiveMap: map, emissive: 0x000000 });
       rec.night.push({ mat, color: new THREE.Color(0xffffff), k: 0.8 });
@@ -139,8 +142,9 @@ const Landside3D = {
 
 // a sign: the text in fg on bg (null: transparent, the letters outlined), its canvas sized to the
 // text so the sign keeps its proportions
-function signCanvas(text, bg, fg) {
-  const H = 128, font = '700 84px Arial, sans-serif';
+function signCanvas(text, bg, fg, font) {
+  const H = 128;
+  font = font || '700 84px Arial, sans-serif';
   const probe = document.createElement('canvas').getContext('2d');
   probe.font = font;
   const cv = document.createElement('canvas');

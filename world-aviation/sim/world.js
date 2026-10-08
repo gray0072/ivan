@@ -140,7 +140,7 @@ const World = {
     };
     const link = (id1, id2, kind, width) => {
       const n1 = nodes[id1], n2 = nodes[id2];
-      const w = width || L.TWY_WIDTH;
+      const w = width || L.TWY_WIDTHS[a.terminal] || L.TWY_WIDTH;
       n1.edges.push({ to: n2, kind, width: w });
       n2.edges.push({ to: n1, kind, width: w });
     };

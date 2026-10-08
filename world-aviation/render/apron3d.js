@@ -25,6 +25,7 @@
 // ============================================================
 
 const APRON_FLOOD = 0xffe3b8;      // the colour of the floodlights
+const MAST_CLEAR = 52;             // a floodlight mast from a taxilane centreline, metres (ICAO code F: 50.5)
 
 // A kit of boxes and cylinders in vertex colours, merged into one mesh. Parts are placed
 // in the current frame; push(x, y, z, ry) starts a frame (turned by ry about y) and pop()
@@ -240,8 +241,12 @@ const Apron3D = {
     // ---- floodlight masts: along the airside edge of the apron, and on the terminal side
     // halfway between the stands (clear of the bridges and the wings), just outside the roof's
     // overhang with the lamp head turned along the building, so they never go through the roof
+    // (the airside ones on the grass just off the apron, clear of the service road and of the
+    // wings: ICAO's 50.5 m from a code F taxilane centreline to an object, from the apron lane
+    // and from the lanes off the taxiway at both ends, MAST_CLEAR)
     const masts = [];
-    for (let t = r.t0 + 85; t <= r.t1 - 30; t += 110) masts.push([t, r.a0 + 6, false]);
+    const laneA = r.t0 + 40, laneB = r.t1 - 40, airside = Math.min(r.a0 - 6, L.APRON_LANE - MAST_CLEAR);
+    for (let t = laneA + MAST_CLEAR; t <= laneB - MAST_CLEAR; t += 110) masts.push([t, airside, false]);
     const termA = front - 7.5;
     for (let i = 0; i <= a.gates.length; i++) {
       // (the first one a little nearer its stand, clear of the welcome banner)

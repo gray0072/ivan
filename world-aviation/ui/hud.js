@@ -27,6 +27,7 @@ const HUD = {
     this.mapCtx = this.mapCanvas ? this.mapCanvas.getContext('2d') : null;
     this.arrow = el('taxiArrow');
     this.mini = el('miniMap');
+    this.pip = el('pipFrame');
     try { this.miniWanted = localStorage.getItem('worldAviation.miniMap') !== 'off'; } catch (e) { /* storage blocked */ }
     // on a touch screen a tap folds the prompt to its first line, and opens it again
     if (this.prompt) this.prompt.addEventListener('pointerdown', (e) => { e.stopPropagation(); this.togglePrompt(); });
@@ -283,6 +284,11 @@ const HUD = {
     const guide = fl.guidance;
     if (!guide || !guide.visible) { elx.hidden = true; return; }
     elx.hidden = false;
+    // in the cockpit over the windshield; in the views from outside centred just above the
+    // heading strip, under the aeroplane, so it never covers it (the top-down view)
+    const outside = typeof Game !== 'undefined' && Game.camMode !== 'cockpit';
+    const top = outside ? Math.round(Cockpit.panelTop(window.innerHeight) - 118) + 'px' : '';
+    if (elx.style.top !== top) elx.style.top = top;
     const rel = wrapDeg(guide.bearing - fl.headingDeg());
     elx.querySelector('svg').style.transform = 'rotate(' + rel + 'deg)';
     elx.classList.toggle('near', guide.dist < 90);
@@ -315,6 +321,20 @@ const HUD = {
     if (hint) hint.innerHTML = tr('Moving map &middot; north up') + ' &middot; ' +
       tr(Input.isCoarse ? 'tap anywhere to close' : this.bigScreen() ? '<kbd>M</kbd> to hide' : '<kbd>M</kbd> to close');
   },
+  // The cockpit inset: on the ground in a view from outside, the pilot's view in a frame where
+  // the mini map goes (on a tablet under the buttons), so the aeroplane can be taxied watched
+  // from outside without losing the way ahead; gone in the air, where the mini map comes back.
+  // Not on a phone (no room) nor with the big map, the help or a checklist open. Returns the
+  // frame's rectangle for Scene3D.renderPip, or null.
+  updatePip(fl, sys, camMode, helpOpen) {
+    const f = this.pip;
+    if (!f) return null;
+    const roomy = this.bigScreen() || (Input.isCoarse && Math.min(window.innerWidth, window.innerHeight) >= 600);
+    const show = !!fl && roomy && camMode !== 'cockpit' && fl.st.onGround && !this.mapOpen && !helpOpen && !(sys && sys.checklist);
+    if (f.hidden === show) f.hidden = !show;
+    return show ? f.getBoundingClientRect() : null;
+  },
+
   // the mini map is there when it helps and gone when it would be in the way: in the air,
   // not during a checklist, not on the last 1 000 ft of the approach
   updateMini(fl, sys, helpOpen) {

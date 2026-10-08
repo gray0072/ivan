@@ -223,6 +223,27 @@ kbd {
   background: rgba(11, 20, 32, 0.82);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
+/* the cockpit inset on the ground in a view from outside (HUD.updatePip): where the mini map
+   goes, a frame over the canvas, which draws the pilot's view into it (Scene3D.renderPip) */
+#pipFrame {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top));
+  right: calc(10px + env(safe-area-inset-right));
+  width: clamp(240px, 19vw, 340px);
+  aspect-ratio: 16 / 10;
+  border: 1px solid rgba(140, 165, 190, 0.45);
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+#pipFrame span {
+  position: absolute; left: 8px; top: 6px; padding: 1px 7px; border-radius: 8px;
+  background: rgba(9, 15, 22, 0.62); color: #dbe7f2; font-size: 11px; font-weight: 700;
+}
+/* a tablet: under the buttons in the top right corner */
+@media (pointer: coarse) {
+  #pipFrame { top: calc(var(--buttonsH, 170px) + 18px + env(safe-area-inset-top)); width: clamp(220px, 26vw, 320px); }
+}
 /* with the mini map up, the checklist card sits under it instead of under its corner */
 #hud.miniOn #checklist {
   top: calc(20px + clamp(240px, 19vw, 340px) * 0.625 + env(safe-area-inset-top));

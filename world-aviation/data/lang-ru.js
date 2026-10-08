@@ -902,9 +902,11 @@ const TEXT_RU = {
   'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'экипаж обращается к пассажирам: перед взлётом, на эшелоне, на снижении, перед посадкой и по прибытии',
   'Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported': 'Превышение скорости на рулении — {v} kt при ограничении {max} kt: будет доложено',
   'Taxi overspeed, {v} kt (fine)': 'Превышение скорости на рулении, {v} kt (штраф)',
-  'Gate {n}, terminal {t}': 'Гейт {n}, терминал {t}',
+  'Terminal {t}, gate {n}': 'Терминал {t}, гейт {n}',
   'T{t} · gate {n}': 'T{t} · гейт {n}',
   'Stands': 'Стоянки',
   'Stand': 'Стоянка',
-  'Cabin announcement': 'Объявление в салоне'
+  'Cabin announcement': 'Объявление в салоне',
+  'straight down, under the belly': 'прямо вниз, из-под брюха',
+  'Cockpit': 'Кабина'
 };
