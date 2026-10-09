@@ -13,7 +13,7 @@ const SETTINGS_KEY = 'worldaviation.settings.v1';
 
 const Career = {
   data: null,
-  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', lang: '', landingAid: true },
+  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', lang: '', landingAid: true, noseUp: 'down' },
 
   // ---------- persistence ----------
   loadSettings() {
@@ -30,6 +30,7 @@ const Career = {
     delete this.settings.quizLang;
     I18N.set(this.settings.lang);
     Units.metric = this.settings.units === 'metric';
+    Input.invertPitch = this.settings.noseUp === 'up';
     return this.settings;
   },
   saveSettings() {

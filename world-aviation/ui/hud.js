@@ -271,7 +271,8 @@ const HUD = {
       spoiler: ['/', 'Spoiler', 'press / — speed brake', 'the Spoiler button'],
       apOff: ['Y', 'AP', 'press Y — autopilot off', 'the AP button'],
       parkBrake: ['Space', 'Park', 'press Space — parking brake', 'the Park button'],
-      climb: ['↓', 'stick ▼', 'hold ↓ — pull the nose up', 'drag the stick down — nose up'],
+      climb: Input.invertPitch ? ['↑', 'stick ▲', 'hold ↑ — lift the nose', 'drag the stick up — nose up']
+        : ['↓', 'stick ▼', 'hold ↓ — pull the nose up', 'drag the stick down — nose up'],
       slowVne: ['speed', 'speed', 'wait for the speed to drop', 'wait for the speed to drop']
     }[step.kind] || ['Enter', 'tap', 'press Enter', 'tap the step'];
     return tr(T[(short ? 0 : 2) + (coarse ? 1 : 0)], p);
@@ -521,7 +522,7 @@ const TOUCH_KEYS = [
   ['<kbd>Y</kbd>', 'AP', 1], ['<kbd>N</kbd>', 'NAV', 1], ['<kbd>K</kbd>', 'Ice', 1], ['<kbd>M</kbd>', 'Map', 1], ['<kbd>C</kbd>', 'View', 1],
   ['<kbd>T</kbd>', 'Time +', 1], ['<kbd>R</kbd>', 'Time −', 1], ['<kbd>9</kbd>', 'throttle slider up'],
   ['<kbd>0</kbd>', 'throttle slider down'], ['<kbd>1</kbd>–<kbd>3</kbd>', 'a little throttle'],
-  ['<kbd>←</kbd><kbd>→</kbd>', 'the stick'], ['<kbd>↓</kbd>', 'stick down'], ['<kbd>/</kbd>', 'Spoiler', 1]
+  ['<kbd>←</kbd><kbd>→</kbd>', 'the stick'], ['<kbd>↓</kbd>', 'stick down'], ['<kbd>↑</kbd>', 'stick up'], ['<kbd>/</kbd>', 'Spoiler', 1]
 ];
 // a message is plain text with the keys in <kbd>: escaped, the keys kept (on a touch screen
 // swapped for the button names)

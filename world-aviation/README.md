@@ -29,7 +29,7 @@ Starting **at the gate** and flying the whole ground routine yourself pays a bon
 
 ## Controls
 
-- **↑ ↓** or **W S** — pitch (↓ pulls the nose up) · **← →** or **A D** — roll, and steering on the ground · **Q E** — rudder
+- **↑ ↓** or **W S** — pitch (↓ pulls the nose up; **Nose up: ↑ Up** on the title screen or in the pause flips it, for the keys and the touch stick) · **← →** or **A D** — roll, and steering on the ground · **Q E** — rudder
 - **Z X** or **− +** — throttle · **1**…**8** — 10 %…80 % · **9** — full power · **0** — idle
 - **Enter** — the next step on the ground: push back, engine start, take-off clearance
 - **G** gear · **F / V** flaps down / up · **B** brakes (hold) · **Space** parking brake · **/** spoiler · **K** anti-ice

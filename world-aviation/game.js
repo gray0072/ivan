@@ -480,7 +480,7 @@ const Game = {
         const todo = [];
         if (st.flapsTarget < this.takeoffFlaps() && st.ias / KTS < fl.vr()) todo.push(tr('flaps {n} <kbd>F</kbd>', { n: this.takeoffFlaps() }));
         if (!lined && speed < 40) todo.push(tr('taxi onto the runway and line up — follow the arrow'));
-        todo.push(tr('full power <kbd>9</kbd>, rotate at Vr {vr} kt — pull back <kbd>↓</kbd>', { vr }));
+        todo.push(tr(Input.invertPitch ? 'full power <kbd>9</kbd>, rotate at Vr {vr} kt — nose up <kbd>↑</kbd>' : 'full power <kbd>9</kbd>, rotate at Vr {vr} kt — pull back <kbd>↓</kbd>', { vr }));
         steps = todo.map((t, i) => (i ? t : '<b>' + t + '</b>')).join(' · ');
       }
       HUD.setPrompt(st.onGround

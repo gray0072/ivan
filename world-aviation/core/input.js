@@ -5,7 +5,7 @@
 //
 // The aeroplane is flown with the arrow keys or WASD, the throttle
 // with Z/X (or 1-9), the rudder with Q/E; T and R make the time run
-// faster and slower. On a phone the left half
+// faster and slower; the pitch can be flipped (settings.noseUp). On a phone the left half
 // of the screen is a floating joystick for pitch and roll, the
 // right edge is a throttle slider, and the upper right has big
 // buttons for gear, flaps, brakes, autopilot and the menu. Both
@@ -20,6 +20,7 @@ const Input = {
   active: false,
   onAction: null,          // set by game.js for one-shot actions
   isCoarse: false,
+  invertPitch: false,      // settings.noseUp 'up': up arrow / the stick pushed up raises the nose
 
   init() {
     this.isCoarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
@@ -105,6 +106,7 @@ const Input = {
       pitch = -this.touch.stick.y;
       roll = this.touch.stick.x;
     }
+    if (this.invertPitch) pitch = -pitch;
     let thr = 0;
     if (k.z || k.PageDown || k['_'] || k['-']) thr -= 1;
     if (k.x || k.PageUp || k['+'] || k['=']) thr += 1;

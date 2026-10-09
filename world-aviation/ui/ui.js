@@ -165,7 +165,7 @@ const UI = {
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="settingsRow">' +
       '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + qualBtns + '</div>' +
-      this.soundChip() + this.unitChips() + this.aidChip() + this.cabinChip() +
+      this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() +
       '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
@@ -204,7 +204,7 @@ const UI = {
       '<h2>' + tr('How to fly') + '</h2>' +
       '<div class="cols">' +
       '<div><h3>' + tr('Keyboard') + '</h3><ul class="keys">' +
-      keyRow('↑ / ↓ · W / S', tr('pitch — ↓ pulls the nose up')) +
+      keyRow('↑ / ↓ · W / S', tr(Input.invertPitch ? 'pitch — ↑ lifts the nose' : 'pitch — ↓ pulls the nose up')) +
       keyRow('← / → · A / D', tr('roll — and steering on the ground')) +
       keyRow('Q / E', tr('rudder')) +
       keyRow('Z / X · − / +', tr('throttle down / up')) +
@@ -227,7 +227,9 @@ const UI = {
       keyRow('Esc', tr('pause')) +
       '</ul></div>' +
       '<div><h3>' + tr('Touch') + '</h3><ul>' +
-      '<li>' + tr('The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag down to pull the nose up, left and right to roll — and to steer on the ground.') + '</li>' +
+      '<li>' + tr(Input.invertPitch
+        ? 'The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag up to lift the nose, left and right to roll — and to steer on the ground.'
+        : 'The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag down to pull the nose up, left and right to roll — and to steer on the ground.') + '</li>' +
       '<li>' + tr('The <b>slider on the right edge</b> is the throttle — its lower half gives fine control of low power for taxiing.') + '</li>' +
       '<li>' + tr('The buttons at the top right: <b>Go</b> (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, <b>Time +</b> / <b>Time −</b> and the menu.') + '</li>' +
       '<li>' + tr('Tap the hint text to fold it to one line, tap again to open it.') + '</li>' +
@@ -704,7 +706,7 @@ const UI = {
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
       '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + this.soundChip() + this.unitChips() + this.aidChip() + this.cabinChip() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
@@ -744,6 +746,14 @@ const UI = {
     const on = Career.settings.sound;
     return '<div class="setGroup"><span>' + tr('Sound') + '</span>' +
       '<button class="chip' + (on ? ' on' : '') + '" data-act="sound">' + tr(on ? 'On' : 'Off') + '</button></div>';
+  },
+
+  // which way of the arrow keys and the touch stick lifts the nose: down (pull back, the default) or up
+  pitchChips() {
+    const up = Career.settings.noseUp === 'up';
+    return '<div class="setGroup"><span>' + tr('Nose up') + '</span>' +
+      '<button class="chip' + (up ? '' : ' on') + '" data-act="noseUp" data-v="down" title="' + esc(tr('↓ and the stick pulled down lift the nose, like pulling back a yoke')) + '">↓ ' + tr('Down') + '</button>' +
+      '<button class="chip' + (up ? ' on' : '') + '" data-act="noseUp" data-v="up" title="' + esc(tr('↑ and the stick pushed up lift the nose')) + '">↑ ' + tr('Up') + '</button></div>';
   },
 
   // the landing aid: the ILS scales with plain words and the dotted glide path on the approach
@@ -860,6 +870,11 @@ const UI = {
       case 'units':
         Career.settings.units = v; Career.saveSettings();
         Units.metric = v === 'metric';
+        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        break;
+      case 'noseUp':
+        Career.settings.noseUp = v; Career.saveSettings();
+        Input.invertPitch = v === 'up';
         if (Game.mode === 'paused') this.showPause(); else this.showTitle();
         break;
       case 'landingAid':
