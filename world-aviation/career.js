@@ -301,7 +301,12 @@ const Career = {
     const from = this.here();
     const home = World.byId[this.data.base];
     const away = from !== home;
-    const all = World.list.filter((a) => this.legOk(from, a, ac));
+    const kinds = this.factionsFor(ac, fx), counts = {};
+    // the legs this type may fly that some client may fly too (traffic rights, data/airlines.js);
+    // if none of them has a client, the legs alone, for the light mail run below
+    const legs = World.list.filter((a) => this.legOk(from, a, ac));
+    const served = legs.filter((a) => this.clientGroups(kinds, from, a).length);
+    const all = served.length ? served : legs;
     const picks = [];
     const offers = this.offerCount();
     if (!away) {
@@ -327,21 +332,45 @@ const Career = {
         if (picks.indexOf(dest) < 0 || guard > 200) picks.push(dest);
       }
     }
-    const kinds = this.factionsFor(ac, fx), counts = {};
-    this.data.contracts = picks.map((dest) => this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx,
-      null, this.dealFaction(kinds, counts, dest, rng))).filter(Boolean);
+    this.data.contracts = picks.map((dest) => {
+      const dist = geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon);
+      const f = this.dealFaction(kinds, counts, dest, rng);
+      // no client of that group may fly it: another group's offer instead
+      for (const k of [f].concat(this.clientGroups(kinds, from, dest).filter((g) => g !== f))) {
+        const c = this.makeContract(rng, from, dest, dist, ac, fx, null, k);
+        if (c) return c;
+      }
+      return null;
+    }).filter(Boolean);
     // never leave a pilot with nothing to fly: fall back to a light mail run
     if (!this.data.contracts.length && all.length) {
       const dest = away && all.indexOf(home) >= 0 ? home : all[0];
-      const c = this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx, 'mail');
+      const groups = this.clientGroups(kinds, from, dest);
+      const c = this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx, 'mail',
+        groups[0] || kinds[0], !groups.length);
       if (c) this.data.contracts.push(c);
     }
     this.save();
   },
 
+  // the client groups of `kinds` with an airline that may fly this route (pickAirline), passengers
+  // only to an airport with passenger traffic
+  clientGroups(kinds, from, to) {
+    return kinds.filter((k) => (k !== 'pax' || to.aptClass.indexOf('pax') >= 0) &&
+      AIRLINES.some((al) => al.kinds.indexOf(k) >= 0 && airlineMayFly(al, k, from, to)));
+  },
+
+  // the airlines of any group that may fly this route, or null
+  mayFly(from, to, faction) {
+    const list = AIRLINES.filter((al) => airlineMayFly(al, faction, from, to));
+    return list.length ? list : null;
+  },
+
   // faction: the client group the board dealt this offer to (dealFaction); without one, any the
-  // aeroplane and the destination allow
-  makeContract(rng, from, to, distNm, ac, fx, forceType, faction) {
+  // aeroplane and the destination allow. null when no airline of that group may fly the route,
+  // unless `anyClient` (the last-resort mail run: then an airline of another group that may fly
+  // it, else any of the group)
+  makeContract(rng, from, to, distNm, ac, fx, forceType, faction, anyClient) {
     if (!faction) faction = this.dealFaction(this.factionsFor(ac, fx), {}, to, rng);
     // urgent medevac only with the SAR course
     let urgent = false;
@@ -355,7 +384,9 @@ const Career = {
     if ((type === 'pax') && ac.seats < 6) type = 'mail';
     if (forceType) type = forceType;
 
-    const client = pickAirline(faction, from, to, rng);
+    const client = pickAirline(faction, from, to, rng) || (anyClient ? rng.pick(this.mayFly(from, to, faction) ||
+      AIRLINES.filter((al) => al.kinds.indexOf(faction) >= 0)) : null);
+    if (!client) return null;
 
     // what you actually fly (WORLD.SCALE of the real distance; 1 = the world at its real size)
     const gameNm = distNm * WORLD.SCALE;

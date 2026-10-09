@@ -10,19 +10,39 @@
 //   kinds    which client groups it belongs to (FACTIONS: pax, cargo, bush)
 //   hubs     airports it is based at: it is the likely client there,
 //            and its aircraft stand at those gates
-//   regions  where else it hires aircraft (REGIONS ids, 'all' = everywhere)
+//   regions  where else it hires aircraft (REGIONS ids)
+//   abroad   (optional) the only foreign countries it flies to (the Russian airlines)
 //   livery   body, belly, cheatline colours, titles colour, fin, engines, nose
 //   emblem   the fin art: [kind, ...arguments], drawn by art/emblems.js
 //   like     copy the livery and emblem of another airline (cargo divisions)
 // The liveries and emblems are simplified drawings of the real ones.
+// Who may fly a route at all (traffic rights, see airlineMayFly below):
+//   - both ends in its regions (or its hubs);
+//   - a domestic route only by that country's airlines or one based there (a hub
+//     in that country: a local subsidiary) — no Aeroflot from Stockholm to Kiruna;
+//   - an international route by a passenger or bush airline only from or to its
+//     own country or one of its bases (no fifth-freedom flights); freight flies
+//     between third countries too;
+//   - no flights at all between Russia and Europe or North America (CLOSED_TO_RUSSIA:
+//     the airspace closed both ways since 2022); the Western airlines have no
+//     'russia' in their regions, the Russian ones fly abroad only to the countries
+//     in their `abroad` list.
 // ============================================================
 
 const ALL_REGIONS = ['sweden', 'nordic', 'europe', 'russia', 'mideast', 'americas', 'asia'];
+// everywhere but Russia (closed to European and North American airlines since 2022)
+const WORLDWIDE = ALL_REGIONS.filter((r) => r !== 'russia');
+// the countries with no flights to and from Russia
+const CLOSED_TO_RUSSIA = ['Sweden', 'Norway', 'Finland', 'Denmark', 'Iceland', 'Faroe Islands', 'Greenland', 'United Kingdom',
+  'Ireland', 'Netherlands', 'Belgium', 'Luxembourg', 'France', 'Germany', 'Switzerland', 'Austria', 'Czechia', 'Poland',
+  'Latvia', 'Estonia', 'Hungary', 'Italy', 'Spain', 'Portugal', 'Greece', 'United States', 'Canada'];
+// the state a territory's traffic rights belong to
+const STATE_OF = { 'Svalbard': 'Norway' };
 
 const AIRLINES = [
   // ---- Sweden and the Nordic countries
   { code: 'SK', name: 'SAS Scandinavian Airlines', title: 'SCANDINAVIAN', kinds: ['pax'], country: 'Sweden',
-    hubs: ['ARN', 'CPH', 'OSL', 'GOT', 'LLA', 'UME', 'TRD', 'BGO', 'SVG', 'AAL', 'KRN'], regions: ALL_REGIONS,
+    hubs: ['ARN', 'CPH', 'OSL', 'GOT', 'LLA', 'UME', 'TRD', 'BGO', 'SVG', 'AAL', 'KRN'], regions: ['sweden', 'nordic', 'europe', 'americas', 'asia'],
     livery: { body: '#ffffff', belly: '#a9b6c8', title: '#0c1e4f', tail: '#0c1e4f', engine: '#0c1e4f' },
     emblem: ['text', 'SAS', '#ffffff', { italic: true }] },
   { code: 'DY', name: 'Norwegian', title: 'norwegian', kinds: ['pax'], country: 'Norway',
@@ -55,7 +75,7 @@ const AIRLINES = [
     emblem: ['greenland'] },
   // ---- Europe
   { code: 'BA', name: 'British Airways', title: 'BRITISH AIRWAYS', kinds: ['pax'], country: 'United Kingdom',
-    hubs: ['LHR', 'EDI', 'MAN'], regions: ALL_REGIONS,
+    hubs: ['LHR', 'EDI', 'MAN'], regions: WORLDWIDE,
     livery: { body: '#ffffff', belly: '#0d2b5c', cheat: ['#d52b1e'], title: '#0d2b5c', tail: '#ffffff', engine: '#0d2b5c' },
     emblem: ['chatham'] },
   { code: 'EI', name: 'Aer Lingus', title: 'aer lingus', kinds: ['pax'], country: 'Ireland',
@@ -63,27 +83,27 @@ const AIRLINES = [
     livery: { body: '#ffffff', belly: '#006272', title: '#006272', tail: '#006272', engine: '#ffffff', titleFont: 'lower' },
     emblem: ['shamrock', '#ffffff', '#6cc24a'] },
   { code: 'FR', name: 'Ryanair', title: 'RYANAIR', kinds: ['pax'], country: 'Ireland',
-    hubs: ['DUB', 'PMI', 'BCN', 'MAN', 'FCO', 'MXP', 'LIS'], regions: ['europe'],
+    hubs: ['DUB', 'PMI', 'BCN', 'MAN', 'FCO', 'MXP', 'LIS'], regions: ['europe', 'sweden', 'nordic'],
     livery: { body: '#ffffff', belly: '#073590', title: '#073590', tail: '#073590', engine: '#073590' },
     emblem: ['harp', '#f1c933'] },
   { code: 'U2', name: 'easyJet', title: 'easyJet', kinds: ['pax'], country: 'United Kingdom',
-    hubs: ['MAN', 'GVA', 'BER', 'EDI', 'NCE'], regions: ['europe'],
+    hubs: ['MAN', 'GVA', 'BER', 'EDI', 'NCE'], regions: ['europe', 'nordic'],
     livery: { body: '#ffffff', nose: '#ff6600', title: '#ff6600', tail: '#ff6600', engine: '#ff6600', titleFont: 'plain' },
     emblem: ['text', 'easyJet', '#ffffff', { size: 0.42 }] },
   { code: 'W6', name: 'Wizz Air', title: 'wizzair', kinds: ['pax'], country: 'Hungary',
-    hubs: ['BUD', 'WAW'], regions: ['europe', 'mideast'],
+    hubs: ['BUD', 'WAW'], regions: ['europe', 'sweden', 'nordic', 'mideast'],
     livery: { body: '#ffffff', title: '#c6007e', tail: '#c6007e', engine: '#2e2a6b', titleFont: 'lower' },
     emblem: ['wizz'] },
   { code: 'KL', name: 'KLM Royal Dutch Airlines', title: 'KLM', kinds: ['pax'], country: 'Netherlands',
-    hubs: ['AMS'], regions: ALL_REGIONS,
+    hubs: ['AMS'], regions: WORLDWIDE,
     livery: { body: '#00a1de', belly: '#ffffff', cheat: ['#003082'], title: '#ffffff', tail: '#00a1de', engine: '#00a1de' },
     emblem: ['crown', '#ffffff'] },
   { code: 'AF', name: 'Air France', title: 'AIRFRANCE', kinds: ['pax'], country: 'France',
-    hubs: ['CDG', 'NCE'], regions: ALL_REGIONS,
+    hubs: ['CDG', 'NCE'], regions: WORLDWIDE,
     livery: { body: '#ffffff', title: '#002157', tail: '#ffffff', engine: '#ffffff' },
     emblem: ['afStripes'] },
   { code: 'LH', name: 'Lufthansa', title: 'Lufthansa', kinds: ['pax'], country: 'Germany',
-    hubs: ['FRA', 'MUC', 'HAM', 'BER'], regions: ALL_REGIONS,
+    hubs: ['FRA', 'MUC', 'HAM', 'BER'], regions: WORLDWIDE,
     livery: { body: '#ffffff', title: '#05164d', tail: '#05164d', engine: '#05164d', titleFont: 'serif' },
     emblem: ['crane', '#ffffff'] },
   { code: 'LX', name: 'Swiss International Air Lines', title: 'SWISS', kinds: ['pax'], country: 'Switzerland',
@@ -132,19 +152,23 @@ const AIRLINES = [
     emblem: ['turkish'] },
   // ---- Russia
   { code: 'SU', name: 'Aeroflot', title: 'AEROFLOT', kinds: ['pax'], country: 'Russia',
-    hubs: ['SVO', 'LED', 'KGD', 'AER', 'KZN', 'SVX', 'OVB', 'KJA', 'IKT', 'VVO', 'MMK', 'ARH'], regions: ALL_REGIONS,
+    hubs: ['SVO', 'LED', 'KGD', 'AER', 'KZN', 'SVX', 'OVB', 'KJA', 'IKT', 'VVO', 'MMK', 'ARH'], regions: ['russia', 'europe', 'mideast', 'asia'],
+    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'Thailand', 'China', 'India', 'Indonesia'],
     livery: { body: '#ffffff', belly: '#c3c8cf', title: '#02458d', tail: '#ffffff', engine: '#02458d' },
     emblem: ['aeroflot'] },
   { code: 'S7', name: 'S7 Airlines', title: 'S7 airlines', kinds: ['pax'], country: 'Russia',
-    hubs: ['OVB', 'IKT', 'SVO', 'KJA', 'AER'], regions: ['russia', 'europe', 'asia'],
+    hubs: ['OVB', 'IKT', 'SVO', 'KJA', 'AER'], regions: ['russia', 'europe', 'mideast', 'asia'],
+    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'Thailand', 'China', 'India'],
     livery: { body: '#a3c93a', belly: '#ffffff', title: '#ffffff', tail: '#a3c93a', engine: '#a3c93a', titleFont: 'plain' },
     emblem: ['text', 'S7', '#ffffff'] },
   { code: 'U6', name: 'Ural Airlines', title: 'URAL AIRLINES', kinds: ['pax'], country: 'Russia',
-    hubs: ['SVX', 'SVO', 'AER', 'KZN'], regions: ['russia', 'europe', 'asia', 'mideast'],
+    hubs: ['SVX', 'SVO', 'AER', 'KZN'], regions: ['russia', 'europe', 'mideast', 'asia'],
+    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'China', 'India', 'Thailand'],
     livery: { body: '#ffffff', cheat: ['#c8102e'], title: '#c8102e', tail: '#002d72', engine: '#ffffff' },
     emblem: ['bird', '#ffffff', '#c8102e'] },
   { code: 'DP', name: 'Pobeda', title: 'pobeda', kinds: ['pax'], country: 'Russia',
-    hubs: ['SVO', 'LED', 'KZN', 'AER', 'KGD', 'MMK', 'ARH'], regions: ['russia', 'europe'],
+    hubs: ['SVO', 'LED', 'KZN', 'AER', 'KGD', 'MMK', 'ARH'], regions: ['russia', 'europe', 'mideast'],
+    abroad: ['Turkey', 'United Arab Emirates'],
     livery: { body: '#ffffff', title: '#1e4fa0', tail: '#1e4fa0', engine: '#ffffff', titleFont: 'lower' },
     emblem: ['text', 'P', '#ffffff', { size: 1.0 }] },
   { code: 'R3', name: 'Yakutia Airlines', title: 'YAKUTIA', kinds: ['pax'], country: 'Russia',
@@ -153,6 +177,7 @@ const AIRLINES = [
     emblem: ['bird', '#ffffff', '#f2c500'] },
   { code: 'HZ', name: 'Aurora', title: 'AURORA', kinds: ['pax'], country: 'Russia',
     hubs: ['VVO', 'PKC', 'DYR'], regions: ['russia', 'asia'],
+    abroad: ['China', 'South Korea', 'Thailand'],
     livery: { body: '#ffffff', title: '#1b2a5c', tail: '#1b2a5c', engine: '#ffffff' },
     emblem: ['aurora'] },
   // ---- the Middle East and Africa
@@ -177,7 +202,7 @@ const AIRLINES = [
     livery: { body: '#ffffff', title: '#c1272d', tail: '#c1272d', engine: '#ffffff' },
     emblem: ['ramStar'] },
   { code: 'ET', name: 'Ethiopian Airlines', title: 'Ethiopian', kinds: ['pax'], country: 'Ethiopia',
-    hubs: ['ADD'], regions: ['mideast', 'europe', 'asia', 'americas'],
+    hubs: ['ADD'], regions: ['mideast', 'europe', 'asia', 'americas', 'sweden', 'nordic'],
     livery: { body: '#ffffff', title: '#007a3d', tail: '#ffffff', engine: '#ffffff', titleFont: 'serif' },
     emblem: ['ethiopian'] },
   { code: 'KQ', name: 'Kenya Airways', title: 'Kenya Airways', kinds: ['pax'], country: 'Kenya',
@@ -305,15 +330,15 @@ const AIRLINES = [
 
   // ---- cargo carriers
   { code: 'DHL', name: 'DHL Aviation', title: 'DHL', kinds: ['cargo'], country: 'Germany',
-    hubs: ['BRU', 'CPH', 'ARN', 'CDG', 'MIA', 'HKG'], regions: ALL_REGIONS,
+    hubs: ['BRU', 'CPH', 'ARN', 'CDG', 'MIA', 'HKG'], regions: WORLDWIDE,
     livery: { body: '#ffcc00', belly: '#ffcc00', title: '#d40511', tail: '#ffcc00', engine: '#ffcc00' },
     emblem: ['dhl'] },
   { code: 'FX', name: 'FedEx Express', title: 'FedEx', kinds: ['cargo'], country: 'United States',
-    hubs: ['CDG', 'ANC'], regions: ALL_REGIONS,
+    hubs: ['CDG', 'ANC'], regions: WORLDWIDE,
     livery: { body: '#ffffff', belly: '#bfc3c7', title: '#4d148c', tail: '#4d148c', engine: '#ffffff', titleFont: 'fedex' },
     emblem: ['fedex'] },
   { code: '5X', name: 'UPS Airlines', title: 'UPS', kinds: ['cargo'], country: 'United States',
-    hubs: ['ANC', 'MIA', 'HKG'], regions: ALL_REGIONS,
+    hubs: ['ANC', 'MIA', 'HKG'], regions: WORLDWIDE,
     livery: { body: '#ffffff', belly: '#351c15', title: '#351c15', tail: '#351c15', engine: '#351c15' },
     emblem: ['upsShield'] },
   { code: 'CV', name: 'Cargolux', title: 'CARGOLUX', kinds: ['cargo'], country: 'Luxembourg',
@@ -329,7 +354,7 @@ const AIRLINES = [
     livery: { body: '#ffffff', title: '#0067a5', tail: '#ffffff', engine: '#ffffff' },
     emblem: ['poppy'] },
   { code: 'LHC', name: 'Lufthansa Cargo', title: 'Lufthansa Cargo', like: 'LH', kinds: ['cargo'], country: 'Germany',
-    hubs: ['FRA'], regions: ALL_REGIONS },
+    hubs: ['FRA'], regions: WORLDWIDE },
   { code: 'EKC', name: 'Emirates SkyCargo', title: 'Emirates SkyCargo', like: 'EK', kinds: ['cargo'], country: 'United Arab Emirates',
     hubs: ['DXB'], regions: ALL_REGIONS },
   { code: 'QRC', name: 'Qatar Airways Cargo', title: 'QATAR CARGO', like: 'QR', kinds: ['cargo'], country: 'Qatar',
@@ -348,7 +373,8 @@ const AIRLINES = [
     emblem: ['globe', '#ffffff', '#f2a900'] },
 
   { code: 'RU', name: 'AirBridgeCargo', title: 'AirBridgeCargo', kinds: ['cargo'], country: 'Russia',
-    hubs: ['SVO', 'KJA', 'OVB'], regions: ['russia', 'europe', 'asia', 'americas'],
+    hubs: ['SVO', 'KJA', 'OVB'], regions: ['russia', 'europe', 'mideast', 'asia'],
+    abroad: ['China', 'Turkey', 'United Arab Emirates', 'India'],
     livery: { body: '#ffffff', title: '#0d3b84', tail: '#0d3b84', engine: '#ffffff', titleFont: 'plain' },
     emblem: ['text', 'ABC', '#ffffff'] },
 
@@ -378,7 +404,7 @@ const AIRLINES = [
     livery: { body: '#ffffff', title: '#00205b', tail: '#00205b', engine: '#ffffff' },
     emblem: ['raven', '#ffffff'] },
   { code: 'HAR', name: 'Harbour Air', title: 'HARBOUR AIR', kinds: ['bush'], country: 'Canada',
-    hubs: ['YVR', 'SEA'], regions: ['americas'],
+    hubs: ['YVR'], regions: ['americas'],
     livery: { body: '#ffffff', cheat: ['#f7a800'], title: '#00467f', tail: '#00467f', engine: '#ffffff' },
     emblem: ['orca', '#ffffff'] },
   { code: 'AMF', name: 'AMREF Flying Doctors', title: 'AMREF FLYING DOCTORS', kinds: ['bush'], country: 'Kenya',
@@ -417,20 +443,48 @@ for (const al of AIRLINES) {
   al.emblem = src.emblem;
 }
 
-// The client for a contract: an airline of that client group based at either end of the
-// route if there is one, else one from that country, else one that works in the region.
+// the state an airport's (or an airline's) country belongs to for traffic rights
+function stateOf(country) { return STATE_OF[country] || country; }
+// the states an airline is based in: its own and those of its hubs (local subsidiaries)
+for (const al of AIRLINES) {
+  al.bases = [stateOf(al.country)];
+  for (const id of al.hubs) {
+    const apt = typeof AIRPORTS !== 'undefined' && AIRPORTS.find((a) => a.id === id);
+    if (apt && al.bases.indexOf(stateOf(apt.country)) < 0) al.bases.push(stateOf(apt.country));
+  }
+}
+
+// does the airline work at this airport: one of its hubs, or in its regions (and, abroad,
+// in a country it flies to)
+function airlineWorksAt(al, apt) {
+  if (al.hubs.indexOf(apt.id) >= 0) return true;
+  if (al.regions.indexOf(apt.region) < 0) return false;
+  const st = stateOf(apt.country);
+  return !al.abroad || st === stateOf(al.country) || al.abroad.indexOf(st) >= 0;
+}
+
+// may the airline fly this route for this client group (the rules at the top of the file)
+function airlineMayFly(al, faction, from, to) {
+  if (!airlineWorksAt(al, from) || !airlineWorksAt(al, to)) return false;
+  const a = stateOf(from.country), b = stateOf(to.country);
+  if ((a === 'Russia' && CLOSED_TO_RUSSIA.indexOf(b) >= 0) || (b === 'Russia' && CLOSED_TO_RUSSIA.indexOf(a) >= 0)) return false;
+  if (a === b) return al.bases.indexOf(a) >= 0;                             // cabotage
+  return faction === 'cargo' || al.bases.indexOf(a) >= 0 || al.bases.indexOf(b) >= 0;   // no fifth freedoms
+}
+
+// The client for a contract among the airlines of that client group that may fly the route:
+// one based at either end of it most likely, then one from either country, then any other.
+// null when none may fly it.
 function pickAirline(faction, from, to, rng) {
   const pool = [];
   for (const al of AIRLINES) {
-    if (al.kinds.indexOf(faction) < 0) continue;
-    let w = 0;
+    if (al.kinds.indexOf(faction) < 0 || !airlineMayFly(al, faction, from, to)) continue;
+    let w = 1;
     if (al.hubs.indexOf(from.id) >= 0 || al.hubs.indexOf(to.id) >= 0) w = 6;
     else if (al.country === from.country || al.country === to.country) w = 2;
-    else if (al.regions.indexOf(from.region) >= 0 && al.regions.indexOf(to.region) >= 0) w = 1;
-    if (w) pool.push({ al, w });
+    pool.push({ al, w });
   }
-  if (!pool.length) for (const al of AIRLINES) if (al.kinds.indexOf(faction) >= 0) pool.push({ al, w: 1 });
-  return rng.weighted(pool, (p) => p.w).al;
+  return pool.length ? rng.weighted(pool, (p) => p.w).al : null;
 }
 
 // The airlines whose aeroplanes stand at an airport's gates: its home carriers first
@@ -446,8 +500,8 @@ function airlinesAt(apt) {
   if (list.length < 2) {
     for (const al of AIRLINES) {
       if (list.length >= 3) break;
-      if (list.indexOf(al) < 0 && al.kinds.indexOf('pax') >= 0 && al.regions.indexOf(apt.region) >= 0 &&
-        al.regions.length < 6) list.push(al);
+      if (list.indexOf(al) < 0 && al.kinds.indexOf('pax') >= 0 && airlineWorksAt(al, apt) &&
+        al.regions.length < 5) list.push(al);
     }
   }
   return list;

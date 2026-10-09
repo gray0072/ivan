@@ -373,7 +373,7 @@ const Airport3D = {
         const win = lambert(0x3a4550);
         rec.night.push({ mat: win, color: new THREE.Color(0xfff0c8), k: 0.5 });
         at(new THREE.Mesh(cellBox(0.3, 1.4, b.along * 0.85), win), b.t, b.across - b.acrossSize / 2 - 0.15, b.h - 2);
-        const cargo = AIRLINES.filter((x) => x.kinds.indexOf('cargo') >= 0 && (x.hubs.indexOf(a.id) >= 0 || x.regions.indexOf(a.region) >= 0));
+        const cargo = AIRLINES.filter((x) => x.kinds.indexOf('cargo') >= 0 && airlineWorksAt(x, a));
         if (cargo.length) this.logoBoard(rec, at, tex, cargo[hashStr(a.id) % cargo.length], b.t, b.across - b.acrossSize / 2 - 0.2, b.h * 0.55, Math.min(b.along * 0.8, 60), b.h * 0.6);
       }
     }
