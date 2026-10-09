@@ -394,7 +394,10 @@ const Scene3D = {
 
   // ---------- airports (airport3d.js) ----------
   buildAirport(a) {
-    if (this.airports3D.has(a.id)) return this.airports3D.get(a.id);
+    // (built again when the name on its roof has changed with the game's language: roofLabel)
+    const have = this.airports3D.get(a.id);
+    if (have && have.label === roofLabel(a)) return have;
+    if (have) this.dropAirport(a.id);
     const rec = Airport3D.build(a, {
       aniso: this.maxAniso, maxTex: this.renderer.capabilities.maxTextureSize, hi: this.qualityName !== 'low', quality: this.quality
     });

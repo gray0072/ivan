@@ -17,11 +17,14 @@
 //     an approach light system with a sequenced flasher and a working
 //     PAPI that shows the glide path from where the camera is
 //   - the buildings, and what makes each airport recognisable: its
-//     name in big letters on the terminal roof (both sides), a welcome
-//     banner with the city symbol and the flag, the national and the
-//     city flags on the roof and on the tower (streaming downwind), the
-//     home airlines' logos on the hangars, and their aeroplanes at the
-//     gates (data/airports.js, data/airlines.js, art/)
+//     name in big letters on the terminal roof (both sides; in Russian
+//     or Swedish at that country's airports when the game is), a welcome
+//     banner with the city symbol and the flag, the national, the city
+//     and the region's flags on the roof and the national one on the
+//     tower (streaming downwind), the home airlines' logos on the
+//     hangars, and their aeroplanes at the gates (data/airports.js,
+//     data/airlines.js, data/regions.js, art/)
+//   - the local products' boards: adverts3d.js
 //   - a windsock, the localiser array, the glideslope mast, signs
 //   - the perimeter fence and the trees outside it: perimeter3d.js
 //   - the stands' bridges and vehicles, floodlights and traffic: apron3d.js
@@ -39,7 +42,7 @@ const Airport3D = {
     const look = AIRPORT_LOOK[a.id] || ['star', '#2a5d8f'];
     const id = { symbol: look[0], color: look[1], airlines: airlinesAt(a), paint: buildingPaint(a) };
     // night: materials that light up after dark ({ mat, color, k }: emissive = color x dark x k)
-    const rec = { a, id, textures: [], flags: [], parked: [], night: [], frame: null, group: null };
+    const rec = { a, id, label: roofLabel(a), textures: [], flags: [], parked: [], night: [], frame: null, group: null };
 
     const group = new THREE.Group();
     const frame = new THREE.Group();
@@ -74,6 +77,8 @@ const Airport3D = {
     this.buildMarkings(a, at, tex);
     this.buildBuildings(a, rec, at, tex, lambert, id);
     Landside3D.build(a, rec, at, tex);
+    // the boards of the region's and the country's products (adverts3d.js)
+    Adverts3D.build(a, rec, at, tex);
     // the perimeter fence and the trees outside it, of the airport's climate (perimeter3d.js)
     Perimeter3D.build(a, rec, at, tex, opts.quality);
     this.buildEquipment(a, rec, at, tex, lambert);
@@ -378,6 +383,8 @@ const Airport3D = {
     const style = terminalStyle(a);
     b.roofTop = () => h + 1.6;
     b.roofAt = () => h + 1.6;
+    // the stretches of the apron front taken by a banner or a sign, [t0, t1] (kept clear by adverts3d.js)
+    b.frontTaken = [];
     at(new THREE.Mesh(cellBox(b.acrossSize, h, b.along), lambert(id.paint.terminal)), b.t, b.across, h / 2);
     // the roof: an overhanging slab in the airport's colour, the glass front underneath
     at(new THREE.Mesh(cellBox(b.acrossSize + 8, 1.6, b.along + 8),
@@ -401,7 +408,7 @@ const Airport3D = {
     const several = b.terms > 1, sign = roofName(a);
     if (sign.b !== b) this.terminalPanel(a, b, rec, at, tex, lambert, id);
     else {
-      const name = a.name.toUpperCase(), lh = sign.lh, lw = sign.lw;
+      const name = rec.label, lh = sign.lh, lw = sign.lw;
       const lt = tex(makeLettersCanvas(name, id.color), 8);
       // (lit at night)
       const letters = new THREE.MeshLambertMaterial({ map: lt, emissiveMap: lt, emissive: 0x000000, transparent: true, alphaTest: 0.35, side: THREE.FrontSide });
@@ -422,6 +429,7 @@ const Airport3D = {
     if (several && b.term !== 1) { this.terminalFlags(a, b, rec, at, tex, id); return; }
     const bh = Math.max(8, h * 0.62), bw = Math.min(b.along * 0.45, bh * 3.2);
     const bt = b.t - b.along / 2 + bw / 2 + 6;
+    b.frontTaken.push([bt - bw / 2, bt + bw / 2]);
     const banner = tex(makeBannerCanvas(a, id), 8);
     const bannerMat = new THREE.MeshLambertMaterial({ map: banner, emissiveMap: banner, emissive: 0x000000 });
     rec.night.push({ mat: bannerMat, color: new THREE.Color(0xffffff), k: 0.7 });
@@ -626,12 +634,14 @@ const Airport3D = {
     }
   },
 
-  // three flagpoles on the roof at the far end of the (last) terminal: the country, the city, the country
+  // three flagpoles on the roof at the far end of the (last) terminal: the country, the city, and
+  // the region's (data/regions.js) where it has one, else the country's again
   terminalFlags(a, b, rec, at, tex, id) {
     if (b.terms > 1 && b.term !== b.terms) return;
     const ft = b.t + b.along / 2 - 22, front = b.across - b.acrossSize / 2;
+    const reg = AIRPORT_REGIONS[a.id], region = reg && RegionFlags.has(reg[0]) ? reg[0] : null;
     for (let i = 0; i < 3; i++) {
-      this.flag(rec, at, tex, a.country, i === 1 ? id : null, ft - i * 11, front + 10, b.roofAt ? b.roofAt(ft - i * 11, front + 10) - 0.3 : b.h + 1.6, 13, 8);
+      this.flag(rec, at, tex, a.country, i === 1 ? id : null, ft - i * 11, front + 10, b.roofAt ? b.roofAt(ft - i * 11, front + 10) - 0.3 : b.h + 1.6, 13, 8, i === 2 ? region : null);
     }
   },
 
@@ -765,8 +775,9 @@ const Airport3D = {
     at(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex(cv, 8) })), t, across, y);
   },
 
-  // a flagpole with a flag that streams downwind (update); city: the airport identity for a city flag
-  flag(rec, at, tex, country, city, t, across, y, pole, fw) {
+  // a flagpole with a flag that streams downwind (update); city: the airport identity for a city
+  // flag, region: the key of a region's flag (art/regions.js)
+  flag(rec, at, tex, country, city, t, across, y, pole, fw, region) {
     const fh = fw * 2 / 3;
     at(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, pole, 6), new THREE.MeshLambertMaterial({ color: 0xe8e8e8 })), t, across, y + pole / 2);
     const src = document.createElement('canvas');
@@ -775,7 +786,8 @@ const Airport3D = {
     if (city) {
       g.fillStyle = city.color; g.fillRect(0, 0, 192, 128);
       Landmarks.draw(g, city.symbol, 50, 18, 92, '#ffffff', city.color);
-    } else Flags.draw(g, country, 0, 0, 192, 128);
+    } else if (region) RegionFlags.draw(g, region, 0, 0, 192, 128);
+    else Flags.draw(g, country, 0, 0, 192, 128);
     // (a power-of-two texture, so it is mipmapped everywhere: a flag far off or edge-on
     // stays steady instead of shimmering while the view turns)
     const cv = document.createElement('canvas');
@@ -1033,10 +1045,17 @@ function roofName(a) {
   const terms = a.buildings.filter((b) => b.kind === 'terminal');
   const b = terms[Math.ceil(terms.length / 2) - 1];
   if (!b) return { b: null, lh: 0, lw: 0 };
-  const n = a.name.toUpperCase().length;
+  const n = roofLabel(a).length;
   const lh = clamp(b.along * 0.9 / (n * 0.78), 7, b.h > 18 ? 24 : 16);
   return { b, lh, lw: Math.min(b.along * 0.92, n * lh * 0.8) };
 }
+
+// The airport's name on its roof, upper case: in the game's language at the airports of the
+// country that speaks it (Russian at a Russian airport when the game is in Russian, Swedish at a
+// Swedish one, data/airport-names.js), else in English. Its welcome banner follows it (makeBannerCanvas).
+const ROOF_LANG = { Russia: 'ru', Sweden: 'sv' };
+function roofLang(a) { return ROOF_LANG[a.country] === I18N.lang ? I18N.lang : null; }
+function roofLabel(a) { const l = roofLang(a); return (l ? aptName(a, l) : a.name).toUpperCase(); }
 
 function buildingPaint(a) {
   if (REAL_PAINTS[a.id]) return Object.assign({}, BUILDING_PAINTS[0], REAL_PAINTS[a.id]);
@@ -1456,9 +1475,10 @@ function makeBannerCanvas(a, id) {
     const w = g.measureText(text).width;
     g.save(); g.translate(x0, y); g.scale(Math.min(1, avail / w), 1); g.fillText(text, 0, 0); g.restore();
   };
-  fit('WELCOME TO', '700 44px Arial, sans-serif', 52, 'rgba(255,255,255,0.85)');
-  fit(a.city.toUpperCase(), '900 108px Arial, sans-serif', 134, '#ffffff');
-  const c = COUNTRIES[a.country];
-  fit((c ? c.hello + ' · ' : '') + a.country, 'italic 600 40px Georgia, serif', 222, 'rgba(255,255,255,0.92)');
+  // (in the local language when the roof is: the greeting on top, the city in it, the English under)
+  const c = COUNTRIES[a.country], l = roofLang(a);
+  fit(l && c ? c.hello.toUpperCase() : 'WELCOME TO', '700 44px Arial, sans-serif', 52, 'rgba(255,255,255,0.85)');
+  fit((l ? aptCity(a, l) : a.city).toUpperCase(), '900 108px Arial, sans-serif', 134, '#ffffff');
+  fit(l ? 'Welcome to ' + a.city + ' · ' + a.country : (c ? c.hello + ' · ' : '') + a.country, 'italic 600 40px Georgia, serif', 222, 'rgba(255,255,255,0.92)');
   return cv;
 }

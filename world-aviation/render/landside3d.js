@@ -51,6 +51,7 @@ const Landside3D = {
       const geo = new THREE.PlaneGeometry(hgt * cv.width / cv.height, hgt);
       geo.rotateY(side * Math.PI / 2);
       at(new THREE.Mesh(geo, mat), t, across, y);
+      return hgt * cv.width / cv.height;
     };
     // the road side: over the doors at a quarter of the building from each end
     const door = new THREE.MeshLambertMaterial({ color: 0x24313c });
@@ -65,7 +66,9 @@ const Landside3D = {
     // roof, above the stand numbers (beside the floodlight mast that stands halfway)
     if (several) {
       const gs = a.gates.filter((g) => g.terminal === b.term);
-      sign('T' + b.term + ' · TERMINAL ' + b.term, (gs[0].t + gs[gs.length - 1].t) / 2 + 15, front - 1.2, h - 3.4, 3.2, -1);
+      const st = (gs[0].t + gs[gs.length - 1].t) / 2 + 15;
+      const sw = sign('T' + b.term + ' · TERMINAL ' + b.term, st, front - 1.2, h - 3.4, 3.2, -1);
+      if (b.frontTaken) b.frontTaken.push([st - sw / 2, st + sw / 2]);      // (kept clear by adverts3d.js)
     }
   },
 
