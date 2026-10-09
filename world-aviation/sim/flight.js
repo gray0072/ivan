@@ -41,7 +41,7 @@ const Flight = {
   events: [],           // messages for the HUD
   timeAccelIndex: 0,
   elapsed: 0,           // flight time, simulated seconds
-  realElapsed: 0,       // flight time, real seconds (the deadline runs on this)
+  realElapsed: 0,       // flight time, real seconds
   landed: null,         // touchdown record
   failure: null,        // set when the flight is lost
 

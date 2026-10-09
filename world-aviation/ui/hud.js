@@ -87,11 +87,11 @@ const HUD = {
   },
 
   // ---------- contract strip ----------
-  updateStrip(fl, sys, res) {
+  updateStrip(fl, sys) {
     if (!this.strip) return;
     const c = fl.contract;
     if (!c) { this.strip.hidden = true; return; }
-    // a phone folds the strip to the route, the fuel and the time left, so the prompt under it
+    // a phone folds the strip to the route and the fuel, so the prompt under it
     // stays off the panel (a tap opens it)
     this.strip.classList.toggle('compact', Input.isCoarse && !this.stripOpen);
     this.strip.hidden = false;
@@ -119,8 +119,6 @@ const HUD = {
       this.stripLive = this.strip.querySelector('.stripLive');
       this.stripLiveHtml = '';
     }
-    const left = res ? Math.max(0, res.deadline - fl.realElapsed) : 0;
-    const late = res && fl.realElapsed > res.deadline;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);
     // the time now at both ends of the route: the departure's clock, running on with the flight,
     // and the same moment on the arrival's clock — whole hours apart, the difference of the two
@@ -137,9 +135,7 @@ const HUD = {
         fmtTonnes(fl.weight()) + ' / ' + fmtTonnes(fl.ac.mtow) + ' t</span></div>' +
       '<div class="stripRow"><span>' + tr('LOCAL TIME, {id}', { id: dep.id }) + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('LOCAL TIME, {id}', { id: arr.id }) + '</span><span>' + fmtClock(arrClock) + '</span></div>' +
-      '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +
-      (res && Career.difficulty.id !== 'easy' ? '<div class="stripRow key"><span>' + tr(late ? 'LATE BY' : 'TIME LEFT') + '</span><b class="' +
-        (late ? 'bad' : (left < 60 ? 'warn' : 'good')) + '">' + fmtTime(late ? fl.realElapsed - res.deadline : left) + '</b></div>' : '');
+      '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>';
     if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
   },
 

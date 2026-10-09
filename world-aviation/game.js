@@ -15,7 +15,6 @@ const Game = {
   systems: null,
   setup: null,
   contract: null,
-  res: null,
   cheated: false,
   cheatsUsed: 0,
   fuel0: 0,
@@ -154,7 +153,7 @@ const Game = {
     // messages and panels (the tower's clearance at the runway waits for the end of the intro)
     if (!cine) while (fl.events.length) HUD.push(fl.events.shift());
     HUD.render();
-    HUD.updateStrip(fl, sys, this.res);
+    HUD.updateStrip(fl, sys);
     HUD.updateButtons(fl, sys);
     HUD.updateChecklist(sys, this.hintOn());
     HUD.updateGuidance(fl, dt);
@@ -502,8 +501,7 @@ const Game = {
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'CRUISE') {
       HUD.setPrompt('<b>' + tr('Cruise · {nm} nm to {id}', { nm: Math.round(fl.distToDestNm()), id: arr.id }) + '</b><br>' +
-        (fl.ap.on ? tr('autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel }) : tr('autopilot <kbd>Y</kbd> flies the route')) +
-        (this.res && fl.realElapsed > this.res.deadline * 0.75 ? ' · <b class="bad">' + tr('running late') + '</b>' : ''));
+        (fl.ap.on ? tr('autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel }) : tr('autopilot <kbd>Y</kbd> flies the route')));
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'DESCENT') {
       HUD.setPrompt(tr('<b>Descent</b> to {alt} ft · {nm} nm to runway {rwy}', { alt: fmtAltFt(fl.ap.alt), nm: Math.round(fl.distToRunwayNm()), rwy: arr.rwyName }) + this.spoilerHint());
@@ -934,10 +932,8 @@ const Game = {
     this.debriefShown = false;
     this.arrivalGate = s.to.gates[contract.arrGate];
     this.arrivalRoute = null;
-    // a practice landing has no deadline
     this.practice = opts.practice ? { t: 0, handed: false, fee: opts.fee || 0 } : null;
     this.flight.practice = !!this.practice;
-    this.res = this.practice ? null : { deadline: contract.deadline };
 
     // weather into the flight environment
     const env = this.flight.env;
@@ -978,7 +974,7 @@ const Game = {
     Scene3D.warmup(this.flight);
     HUD.reset();
     HUD.setPrompt('');
-    HUD.updateStrip(this.flight, this.systems, this.res);
+    HUD.updateStrip(this.flight, this.systems);
     UI.lastContract = contract;
     this.helpOpen = false;
     el('helpPanel').hidden = true;
@@ -1066,9 +1062,8 @@ const Game = {
     const diff = Career.difficulty;
     const grade = failed ? 'F' : this.gradeLanding(landed, fl, diff);
     const mishandled = sys.checklistFailed.length;
-    const onTime = !failed && (diff.id === 'easy' || fl.realElapsed <= this.res.deadline);
     const result = {
-      contract: this.contract, grade, failed, onTime, mishandled,
+      contract: this.contract, grade, failed, mishandled,
       handled: sys.checklistDone.length,
       damage: clamp(fl.st.damage, 0, 1), fuelUsed: this.fuel0 - fl.st.fuel,
       blockSec: fl.elapsed, realSec: fl.realElapsed, pushbackSkipped: this.setup.skipPushback, timeOfDay: this.setup.timeOfDay,

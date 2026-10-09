@@ -214,27 +214,27 @@ const DIFFICULTY = {
     windFactor: 0.5, turbulence: 0.45, icingChance: 0.5,
     qrhTimeFactor: 1.5, emergencyOverlap: 0,
     qrhHint: true,
-    deadlineFactor: 2.0, touchdownTolerance: 0.35, gradeBonus: 0.15,
+    touchdownTolerance: 0.35, gradeBonus: 0.15,
     fuelPenaltyFactor: 0.5, damageFactor: 0.6,
-    description: 'Calm weather, one problem at a time with a long grace period, checklists come with hints, generous landing grading and no deadlines.'
+    description: 'Calm weather, one problem at a time with a long grace period, checklists come with hints and generous landing grading.'
   },
   medium: {
     id: 'medium', name: 'Medium',
     windFactor: 1.0, turbulence: 1.0, icingChance: 1.0,
     qrhTimeFactor: 1.0, emergencyOverlap: 1,
     qrhHint: false,
-    deadlineFactor: 1.0, touchdownTolerance: 0.25, gradeBonus: 0,
+    touchdownTolerance: 0.25, gradeBonus: 0,
     fuelPenaltyFactor: 1.0, damageFactor: 1.0,
-    description: 'Real wind and turbulence, problems may overlap, standard deadlines and standard grading.'
+    description: 'Real wind and turbulence, problems may overlap, standard grading.'
   },
   hard: {
     id: 'hard', name: 'Hard',
     windFactor: 1.5, turbulence: 1.8, icingChance: 1.7,
     qrhTimeFactor: 0.75, emergencyOverlap: 2,
     qrhHint: false,
-    deadlineFactor: 0.8, touchdownTolerance: 0.2, gradeBonus: -0.1,
+    touchdownTolerance: 0.2, gradeBonus: -0.1,
     fuelPenaltyFactor: 1.6, damageFactor: 1.5,
-    description: 'Storm season: strong wind and severe turbulence, failures with no warning, two problems at once, short deadlines and strict grading.'
+    description: 'Storm season: strong wind and severe turbulence, failures with no warning, two problems at once and strict grading.'
   }
 };
 
@@ -760,7 +760,7 @@ const COURSES = [
     effect: 'Icing builds 45% slower, icing emergencies give 30% more time, winter contracts pay +20%.', course: 'bush' },
   { id: 'bush3', branch: 'bush', tier: 3, name: 'Medevac & SAR Contracts', cost: 17000, requires: ['bush2'], rep: 35,
     blurb: 'Search and rescue, medevac flights and getting there before the weather closes the strip.',
-    effect: 'Unlocks urgent SAR and medevac contracts (short deadlines, up to 3x the rate).', course: 'bush' },
+    effect: 'Unlocks urgent SAR and medevac contracts (up to 3x the rate).', course: 'bush' },
   { id: 'bush4', branch: 'bush', tier: 4, name: 'Seaplane & Remote Bases', cost: 33000, requires: ['bush3'], rep: 60,
     blurb: 'Floats, skis and strips with no fuel, no lights and no second attempt.',
     effect: 'Unlocks ice fields and remote strips for every aircraft type.', course: 'bush' }
@@ -796,13 +796,7 @@ const CONTRACTS = {
   // saves those minutes on the ground (and their lease) but earns neither
   FULL_GROUND_BONUS: 0.06,
   FULL_GROUND_REP: 0.3,
-  GROUND_ALLOWANCE_S: 480,       // pushback, start, taxi out and taxi in, real seconds
-  APPROACH_ALLOWANCE_S: 300,     // the approach, flown at 1x, real seconds
-  CRUISE_ACCEL_EXPECTED: 6,      // the time acceleration the schedule assumes en route (short legs)
-  CRUISE_ACCEL_PER_NM: 1 / 30,   // ... and more on long legs (per game nm), up to
-  CRUISE_ACCEL_MAX: 90,
   MAX_NM: 4500,                  // the longest contract, real nm (further: fly there in legs)
-  TIME_ALLOWANCE_FACTOR: 1.3,    // deadline slack on top of the block time
   FUEL_RESERVE_FACTOR: 1.45,     // block fuel = trip fuel x this + taxi fuel
   FUEL_MIN_FACTOR: 1.15,         // the load is cut so that the trip fuel x this still fits under the maximum take-off weight
   FUEL_TAXI_KG_PER_ENGINE: 25,

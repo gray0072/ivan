@@ -597,7 +597,6 @@ const UI = {
       row2(tr('Load'), loadText(c)) +
       row2(tr('Distance'), c.distanceNm + ' nm') +
       row2(tr('En route'), tr('about {m} min at 1× — use the autopilot and time acceleration', { m: c.blockMin })) +
-      row2(tr('Deadline'), Career.difficulty.id === 'easy' ? tr('none') : tr('{t} of real time', { t: fmtTime(c.deadline) })) +
       row2(tr('Fuel'), tr('plan {p} kg · on board {b} kg', { p: c.fuelKg, b: Math.round(setup.blockFuel) })) +
       row2(tr('Take-off weight'), tr('{w} t · max {m} t', { w: fmtTonnes(ac.emptyKg + c.payloadKg + setup.blockFuel), m: fmtTonnes(ac.mtow) })) +
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
@@ -669,7 +668,7 @@ const UI = {
       (failed ? '' :
         '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(landed) +
         '</div><div><h3>' + tr('In the log') + '</h3><ul class="unlocks">' +
-        '<li>' + tr('Block time {b} · real time {r}', { b: fmtTime(result.blockSec), r: fmtTime(result.realSec) }) + ' · ' + tr(result.onTime ? 'on time' : 'late') + '</li>' +
+        '<li>' + tr('Block time {b} · real time {r}', { b: fmtTime(result.blockSec), r: fmtTime(result.realSec) }) + '</li>' +
         '<li>' + tr('Fuel used {kg} kg (plan {p} kg)', { kg: Math.round(result.fuelUsed), p: result.contract.fuelKg }) + '</li>' +
         '<li>' + tr('Checklists: {a} worked, {b} mishandled', { a: result.handled, b: result.mishandled }) + '</li>' +
         '<li>' + tr('Damage {p} %', { p: Math.round(result.damage * 100) }) + '</li>' +

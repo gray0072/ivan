@@ -68,6 +68,10 @@ const Career = {
     d.stats = d.stats || { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 };
     d.pilot = { name: (d.pilot && d.pilot.name) || this.randomPilotName() };   // older saves also had an operator name
     for (const l of d.log || []) {
+      // (flights had a deadline once: their lines lose the "on time" / "late" at the end)
+      if (l.tpl === '{from} → {to} · {type} · grade {g} · on time' || l.tpl === '{from} → {to} · {type} · grade {g} · late') {
+        l.tpl = '{from} → {to} · {type} · grade {g}'; l.text = logLine(l.tpl, l.args).text;
+      }
       if (l.tpl === 'Operator certificate granted to {airline}. Base: Stockholm Arlanda.') {
         l.tpl = '{name} starts flying. Base: Stockholm Arlanda.'; l.args = { name: d.pilot.name }; l.text = logLine(l.tpl, l.args).text;
       }
@@ -418,9 +422,6 @@ const Career = {
     if (payloadKg > usable) payloadKg = Math.round(usable);
 
     const pt = PAYLOAD[type];
-    const accel = clamp(gameNm * CONTRACTS.CRUISE_ACCEL_PER_NM, CONTRACTS.CRUISE_ACCEL_EXPECTED, CONTRACTS.CRUISE_ACCEL_MAX);
-    const realSec = CONTRACTS.GROUND_ALLOWANCE_S + CONTRACTS.APPROACH_ALLOWANCE_S + airSec / accel;
-    const deadline = realSec * CONTRACTS.TIME_ALLOWANCE_FACTOR * this.difficulty.deadlineFactor;
     let pay = distNm * CONTRACTS.BASE_PAY_PER_NM * CONTRACTS.FACTION_MULT[faction] +
       payloadKg * pt.ratePerKg * distNm / CONTRACTS.PAYLOAD_FEE_NM;
     if (urgent) pay *= CONTRACTS.URGENT_MULT;
@@ -442,7 +443,6 @@ const Career = {
       pax, payloadKg, payloadLabel: pt.label,
       distanceNm: Math.round(distNm),
       blockMin: Math.round(airSec / 60),
-      deadline: Math.round(deadline),
       pay, fuelKg, blockFuel, repGain: Math.round(repGain * 10) / 10,
       difficulty: contractDifficulty(distNm, type, to),
       aircraftId: ac.id
@@ -519,7 +519,6 @@ const Career = {
     const gradeBonus = Math.round(c.pay * (gm - 1));
     lines.push({ label: 'Contract', value: base });
     if (gradeBonus) lines.push({ label: 'Landing grade {g}', args: { g: result.grade }, value: gradeBonus });
-    if (result.onTime) lines.push({ label: 'On time', value: Math.round(base * 0.08) });
     const fullGround = !result.pushbackSkipped && !result.noClearance;
     if (fullGround) lines.push({ label: 'Full ground procedure', value: Math.round(base * CONTRACTS.FULL_GROUND_BONUS) });
     const tod = TIME_OF_DAY[result.timeOfDay];
@@ -539,12 +538,10 @@ const Career = {
     }
     if (result.noClearance) lines.push({ label: 'Took off without a clearance (fine)', value: -Math.round(base * SIM.NO_CLEARANCE_FINE) });
     if (result.taxiOverspeed) lines.push({ label: 'Taxi overspeed, {v} kt (fine)', args: { v: result.taxiOverspeed }, value: -Math.round(base * SIM.TAXI_OVERSPEED_FINE) });
-    if (!result.onTime) lines.push({ label: 'Late delivery', value: -Math.round(base * 0.12) });
     const total = lines.reduce((s, l) => s + l.value, 0);
     d.money += total;
     let rep = c.repGain * (0.6 + 0.4 * gm);
     if (result.mishandled > 0) rep -= result.mishandled * 0.8;
-    if (result.onTime) rep += 0.4;
     if (fullGround) rep += CONTRACTS.FULL_GROUND_REP;
     if (this.has('gen4')) rep += 0.5;
     rep -= (result.repPenalty || 0) / 10;
@@ -608,7 +605,7 @@ function contractDifficulty(distNm, type, to) {
 }
 
 function dayLabel(c, result, day) {
-  return logLine(result.onTime ? '{from} → {to} · {type} · grade {g} · on time' : '{from} → {to} · {type} · grade {g} · late',
+  return logLine('{from} → {to} · {type} · grade {g}',
     { from: c.fromId, to: c.toId, type: PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type, g: result.grade }, day);
 }
 
