@@ -11,7 +11,8 @@
 //   - on the landing roll the exit is the first one still reachable
 //     at the present speed (room to slow down and to turn); roll
 //     past it and the arrow moves on to the next one — until you
-//     turn off, then the exit you took stays;
+//     turn off, then the exit you took stays; while it is still
+//     far, the arrow leans towards it (its turn-off at the edge);
 //   - lining up, it leads onto the centreline ahead, never back to
 //     the line-up point.
 // In the air without the autopilot it gives the bearing to the
@@ -64,9 +65,10 @@ const Guidance = {
       }
       if (prog) {
         const stand = game.arrivalRoute[game.arrivalRoute.length - 1];
-        // down the centreline to the exit while it is still more than a carrot ahead; into the
-        // stand, the stop bar itself for the last few metres
-        target = lead > look ? World.at(a, loc.t + Math.min(lead, 300), 0)
+        // while the exit is still more than a carrot ahead: at the point where its turn-off
+        // meets the runway's edge (the arrow leans towards the exit, more as it comes up, and
+        // never off the paving); into the stand, the stop bar itself for the last few metres
+        target = lead > look ? World.at(a, game.arrivalRoute[0].t - SIM.EXIT_AIM_BACK_M, RWY_HALF_WIDTH)
           : prog.remaining < look * 0.6 ? stand : prog.carrot;
         g.remaining = prog.remaining + Math.max(0, lead); g.deviation = prog.deviation;
       }

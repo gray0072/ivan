@@ -131,6 +131,8 @@ const SIM = {
   EXIT_DECEL_MS2: 1.5,         // braking assumed to slow down for a runway exit ...
   EXIT_TURN_M: 25,             // ... plus the room for the turn itself
   EXIT_MIN_LEAD_M: 30,         // an exit nearer than this ahead is never the one to take
+  EXIT_AIM_BACK_M: 13,         // the arrow on the landing roll aims at the runway's edge this far before the exit
+                               // (where its turn-off, LAYOUT.FILLET_EXIT_R, leaves the paving)
   EXIT_COMMIT_DEG: 20          // turned this far off the runway heading: you are taking this exit, it stays
 };
 

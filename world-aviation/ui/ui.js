@@ -336,7 +336,6 @@ const UI = {
       row2(tr('Distance'), c.distanceNm + ' nm') +
       row2(tr('Payout'), fmtMoney(c.pay)) +
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
-      row2(tr('Schedule'), Career.difficulty.id === 'easy' ? tr('no deadline') : tr('{t} real time', { t: fmtTime(c.deadline) })) +
       row2(tr('Fuel plan'), c.fuelKg + ' kg') +
       row2(tr('Flown there'), Career.visitsTo(c.toId) ? Career.visitsTo(c.toId) + '×' : '<span class="newDest">' + tr('never — new') + '</span>') +
       (c.depGate !== undefined ? row2(tr('Stands'), gateLabel(from, c.depGate) + ' → ' + gateLabel(to, c.arrGate)) : '') +

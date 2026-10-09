@@ -9,14 +9,15 @@
 //     board on the terminal above each stand
 //   - at every stand with a parked aeroplane: a jet bridge to its
 //     front door (at a small terminal an airstair truck), a GPU, a
-//     belt loader with a baggage train, a fuel truck under the wing
+//     belt loader at the aft hold, a fuel truck under the wing
 //     of a jet, a catering truck, cones at the nose, the wingtips and
 //     the tail; at the stands the player uses this flight the bridge
 //     is retracted and the stand is empty
 //   - floodlight masts on both sides of the apron: their lamps and
 //     the pools of light they throw on the apron at night
-//   - traffic: baggage trains and a follow-me car on the tail-of-stand
-//     road, cars (with their lights at night) on the landside roads
+//   - traffic: the baggage trains between the baggage halls and the
+//     stands (baggage3d.js), cars (with their lights at night) on the
+//     landside roads
 //   - the pushback tug for the player's own departure (Scene3D)
 //
 // Static parts are merged into one mesh with vertex colours per group
@@ -101,20 +102,19 @@ const Vehicles = {
     for (const x of [-0.75, 0.75]) for (const z of [-0.85, 0.85]) k.wheel(x, z, 0.36);
     return k;
   },
-  cart(k, z, rng) {
-    k.box(1.5, 0.22, 2.6, 0, 0.62, z, '#6b6f73').box(1.5, 1.2, 0.08, 0, 1.25, z + 1.27, '#6b6f73');
-    const cols = ['#2b4a7a', '#7a2b2b', '#2f2f33', '#5a5a3a', '#8a6a3a', '#3a6a5a'];
-    for (let i = 0; i < 4; i++) {
-      if (rng.next() < 0.25) continue;
-      k.box(0.6, 0.35 + rng.next() * 0.3, 0.9, (i % 2 ? 0.35 : -0.35), 0.95, z + (i < 2 ? -0.6 : 0.5), cols[(rng.next() * cols.length) | 0]);
-    }
+  // a baggage cart, empty, and the bags on one (a few suitcases)
+  cartBase(k, z) {
+    k.box(1.5, 0.22, 2.6, 0, 0.62, z, '#6b6f73').box(1.5, 1.2, 0.08, 0, 1.25, z + 1.27, '#6b6f73')
+      .box(0.08, 0.08, 0.9, 0, 0.5, z - 1.7, '#6b6f73');
     for (const x of [-0.65, 0.65]) for (const dz of [-0.9, 0.9]) k.wheel(x, z + dz, 0.25);
     return k;
   },
-  // a tractor and n carts behind it
-  train(k, n, rng) {
-    Vehicles.tractor(k);
-    for (let i = 0; i < n; i++) Vehicles.cart(k, -3.4 - i * 3.3, rng);
+  bags(k, z, rng) {
+    const cols = ['#2b4a7a', '#7a2b2b', '#2f2f33', '#5a5a3a', '#8a6a3a', '#3a6a5a'];
+    for (let i = 0; i < 6; i++) {
+      if (i > 1 && rng.next() < 0.3) continue;
+      k.box(0.6, 0.35 + rng.next() * 0.3, 0.75, (i % 2 ? 0.35 : -0.35), 0.95, z - 0.8 + ((i / 2) | 0) * 0.8, cols[(rng.next() * cols.length) | 0]);
+    }
     return k;
   },
   beltLoader(k) {
@@ -179,6 +179,7 @@ const Apron3D = {
     const front = term ? term.across - term.acrossSize / 2 : L.TERMINAL - 30;
     const bridges = a.terminal === 'big' || a.terminal === 'medium';
     rec.gateKits = []; rec.bridges = [];
+    const bagStands = [];
     rec.night = rec.night || [];
     const P = (t, across) => [across, -t];          // frame x, z
 
@@ -212,15 +213,15 @@ const Apron3D = {
       Vehicles.cone(k, L.STAND + Lc / 2 + 1.6, -gate.t);
       for (const s of [-1, 1]) Vehicles.cone(k, L.STAND - Lc * 0.05, -(gate.t + s * (S / 2 + 1.2)));
       Vehicles.cone(k, L.STAND - Lc / 2 - 1.6, -gate.t);
-      // the hold: a belt loader at the aft door on the right side (-t), the baggage train beside it
+      // the hold: a belt loader at the aft door on the right side (-t); the baggage trains
+      // come and stop beside it (baggage3d.js)
       const holdA = L.STAND - Lc * 0.22;
-      if (Lc > 15) {
-        k.push(holdA, 0, -(gate.t - R - 4.6), Math.PI); Vehicles.beltLoader(k); k.pop();
-        k.push(holdA - 6, 0, -(gate.t - R - 10), Math.PI / 2); Vehicles.train(k, 3, rng); k.pop();
-      }
-      // fuel under the right wing of a jet, catering at the rear right door of a big one
+      if (Lc > 15) { k.push(holdA, 0, -(gate.t - R - 4.6), Math.PI); Vehicles.beltLoader(k); k.pop(); }
+      bagStands.push({ t: gate.t, hold: holdA, R, parked: Lc > 15, inUse: false });
+      // fuel under the right wing of a jet (clear of the baggage trains' way up beside the
+      // hold, 10 m out from the fuselage), catering at the rear right door of a big one
       if (jet && S > 25) {
-        k.push(L.STAND + Lc * 0.02, 0, -(gate.t - R - S * 0.2), Math.PI / 2); Vehicles.fuelTruck(k); k.pop();
+        k.push(L.STAND + Lc * 0.02, 0, -(gate.t - R - Math.max(S * 0.2, 13.5)), Math.PI / 2); Vehicles.fuelTruck(k); k.pop();
       }
       if (jet && Lc > 35 && i % 2 === 0) {
         k.push(L.STAND - Lc * 0.38, 0, -(gate.t - R - 3.8), Math.PI); Vehicles.catering(k); k.pop();
@@ -289,19 +290,10 @@ const Apron3D = {
       at(new THREE.Mesh(g, pool), t, ac + (ac < L.STAND ? 35 : -45), 0.3);
     }
 
-    // ---- traffic: the tail-of-stand road and the landside roads
+    // ---- traffic: the baggage trains on the service road between the stands and the
+    // building (its middle 25 m beyond the stands: airport3d.js), the cars on the landside roads
+    Baggage.build(a, rec, at, bagStands, front, L.STAND + 25, rng);
     rec.traffic = [];
-    const roadA = roadAcross(a);
-    const mover = (build, lane, speed, phase) => {
-      const k = kit(); build(k);
-      const mesh = k.mesh();
-      at(mesh, 0, 0, 0);
-      rec.traffic.push({ mesh, kind: 'apron', lane, speed, phase });
-      return mesh;
-    };
-    mover((k) => Vehicles.train(k, 3, rng), roadA, 6, 0);
-    mover((k) => Vehicles.followMe(k), roadA, 9, 0.45);
-    if (a.terminal === 'big') mover((k) => Vehicles.train(k, 2, rng), roadA, 5, 0.7);
     const box = groundBox(a), FADE = 150;
     const roads = landsideRoads(a).map((rd) => polylineLength(truncateInBox(rd, box.tMin + FADE, box.tMax - FADE, box.aMin + FADE, box.aMax - FADE)));
     const carCols = ['#c8ccd0', '#2b2f33', '#8a1d1d', '#1d3f78', '#e6e6e6', '#6b6f73', '#2e5a3a', '#b5a27a'];
@@ -324,57 +316,40 @@ const Apron3D = {
   // a stand in use by the player: no parked aeroplane, no vehicles, the bridge retracted
   setGate(rec, i, inUse) {
     if (rec.gateKits && rec.gateKits[i]) rec.gateKits[i].visible = !inUse;
+    if (rec.bagStands && rec.bagStands[i]) rec.bagStands[i].inUse = inUse;
     const b = rec.bridges && rec.bridges[i];
     if (b) { b.docked.visible = !inUse; b.parked.visible = inUse; }
   },
 
   // per frame: the traffic moves, and at night (dark 0..1) the lights come on. own: the
-  // player's aeroplane in the airport's frame ({ t, across, r, vt, va }: r about half its size,
-  // its velocity along and across) — the apron traffic gives way to it: a vehicle whose road
-  // ahead runs into the ground the aeroplane covers now or in the next few seconds stops well
-  // short of it and waits; one already on that ground drives on and clears it, so none is left
-  // standing across the aeroplane's way
+  // player's aeroplane in the airport's frame ({ t, across, r, vt, va, len, rad, landed }: r
+  // about half its size, its velocity along and across, its length and fuselage radius, landed
+  // here) — the baggage trains give way to it while it moves: a train whose track ahead runs
+  // into the ground the aeroplane covers now or in the next few seconds stops well short of it
+  // and waits; one already on that ground drives on and clears it, so none is left standing
+  // across the aeroplane's way. At rest at its stand the aeroplane is served like the others.
   update(rec, time, dark, own) {
-    const a = rec.a;
-    const r = a.apronRect;
     const dt = clamp(time - (rec.trafficTime === undefined ? time : rec.trafficTime), 0, 0.2);
     rec.trafficTime = time;
+    Baggage.update(rec, dt, dark, own);
+    // the cars on the landside roads
     for (const v of rec.traffic || []) {
-      if (v.kind === 'apron') {
-        // up the road on one side, back on the other
-        const len = r.t1 - r.t0 - 40;
-        if (v.s === undefined) v.s = v.phase * 2 * len;
-        const pos = (s) => {
-          s %= 2 * len;
-          const out = s < len;
-          return { out, t: out ? r.t0 + 20 + s : r.t1 - 20 - (s - len), across: v.lane + (out ? 3 : -3) };   // keeping right
-        };
-        let p = pos(v.s);
-        const go = !own || !this.blocked(own, v.s, pos);
-        if (go) {
-          v.s = (v.s + dt * v.speed) % (2 * len);
-          p = pos(v.s);
-        }
-        v.mesh.position.set(p.across, 0, -p.t);
-        v.mesh.rotation.y = p.out ? Math.PI : 0;
-      } else {
-        const rd = v.road;
-        let s = ((time * v.speed / rd.len + v.phase) % 1) * rd.len;
-        if (v.dir < 0) s = rd.len - s;
-        const p = pointAlong(rd, s);
-        // keep right: the lane is on the right of the direction of travel
-        const dt = p.dt * v.dir, da = p.da * v.dir;
-        v.mesh.position.set(p.across + dt * 4.65, 0, -p.t + da * 4.65);
-        v.mesh.rotation.y = Math.atan2(da, -dt);
-        if (v.lights) v.lights.visible = dark > 0.25;
-      }
+      const rd = v.road;
+      let s = ((time * v.speed / rd.len + v.phase) % 1) * rd.len;
+      if (v.dir < 0) s = rd.len - s;
+      const p = pointAlong(rd, s);
+      // keep right: the lane is on the right of the direction of travel
+      const ut = p.dt * v.dir, ua = p.da * v.dir;
+      v.mesh.position.set(p.across + ut * 4.65, 0, -p.t + ua * 4.65);
+      v.mesh.rotation.y = Math.atan2(ua, -ut);
+      if (v.lights) v.lights.visible = dark > 0.25;
     }
     if (rec.poolMat) rec.poolMat.opacity = dark * 0.3;
     if (rec.lamps) rec.lamps.visible = dark > 0.15;
     for (const n of rec.night || []) n.mat.emissive.copy(n.color).multiplyScalar(dark * n.k);
   },
 
-  // Must a vehicle at s on the tail-of-stand road (pos(s) → { t, across }) wait for the
+  // Must a vehicle at s on its track (pos(s) → { t, across }) wait for the
   // aeroplane? Yes when its road from just ahead of it to GIVE_WAY_GAP further meets the ground
   // the aeroplane covers now or soon, and it is not on that ground already.
   blocked(own, s, pos) {
@@ -399,11 +374,6 @@ const Apron3D = {
     return k.mesh();
   }
 };
-
-// the tail-of-stand road runs between the apron's airside edge and the apron lane
-function roadAcross(a) {
-  return (a.apronRect.a0 + LAYOUT.APRON_LANE - 20) / 2;
-}
 
 // a jet bridge in the airport frame: the rotunda at rot [across, t], the cab's face at tip,
 // the floor at `sill` (the door sill) where it meets the aeroplane

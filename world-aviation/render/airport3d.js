@@ -157,11 +157,8 @@ const Airport3D = {
       for (let k = -8; k <= 8; k += 1.6) W.strip(tc + k + 0.4, roadA - 9.6, tc + k + 0.4, roadA + 9.6, 0.8);
     }
     if (terms.length > 1) this.roadNumbers(a, terms, at, tex, roadA);
-    // the tail-of-stand road between the apron's airside edge and the apron lane
-    const ta = roadAcross(a);
-    for (const d of [-6, 6]) W.strip(r.t0, ta + d, r.t1, ta + d, 0.3);
-    for (let t = r.t0; t + 4 <= r.t1; t += 8) W.strip(t, ta, t + 4, ta, 0.25);
-    // the apron service road between the stands and the building
+    // the apron service road between the stands and the building (the baggage trains' road,
+    // render/baggage3d.js)
     W.strip(r.t0, L.STAND + 18.2, r.t1, L.STAND + 18.2, 0.4);
     W.strip(r.t0, L.STAND + 31.8, r.t1, L.STAND + 31.8, 0.4);
     for (let t = r.t0; t + 4.5 <= r.t1; t += 9) W.strip(t, L.STAND + 25, t + 4.5, L.STAND + 25, 0.4);
@@ -732,7 +729,10 @@ const Airport3D = {
     if (own) {
       const l = rec.frame.worldToLocal(new THREE.Vector3(own.pos.x, own.pos.y, own.pos.z));
       const v = own.vel || { x: 0, z: 0 };
-      mine = { t: -l.z, across: l.x, r: own.r, vt: v.x * a.dirX + v.z * a.dirZ, va: v.x * a.perX + v.z * a.perZ };
+      mine = {
+        t: -l.z, across: l.x, r: own.r, vt: v.x * a.dirX + v.z * a.dirZ, va: v.x * a.perX + v.z * a.perZ,
+        len: own.len, rad: own.rad, landed: own.landed
+      };
     }
     Apron3D.update(rec, time, dark || 0, mine);
     // the flasher: 28 steps out at 30 m, twice a second, towards the threshold
