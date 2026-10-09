@@ -843,8 +843,12 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .ok { color: #7de08a; font-size: 12px; }
 .row2 .newDest { color: #7de08a; }
 
-.check { display: block; margin: 12px 0 0; font-size: 13px; color: #b3c4d4; }
-.check input { margin-right: 6px; }
+/* how the flight starts on the briefing: two option buttons side by side, one under the other on a narrow screen */
+.startPick { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 8px; }
+.startPick .chip { display: block; padding: 10px 14px; border-radius: 11px; text-align: left; line-height: 1.35; }
+.startPick .chip b { display: block; font-size: 14px; color: #eaf3fb; }
+.startPick .chip small { display: block; margin-top: 3px; font-size: 12px; color: #9fb0c3; }
+.startPick .chip.on small { color: #c3d1de; }
 
 .cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 .acCard { padding: 12px 14px; border: 1px solid rgba(140, 170, 200, 0.18); border-radius: 11px; background: #131b24; }

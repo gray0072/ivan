@@ -54,6 +54,8 @@ const Input = {
       case 't': this.fire('timeFaster'); break;
       case 'r': this.fire('timeSlower'); break;
       case 'c': this.fire('camera', e.shiftKey ? -1 : 1); break;
+      case 'x': this.fire('camera', -1); break;
+      case 'z': this.fire('camera', 'cockpit'); break;
       case 'm': this.fire('map'); break;
       case 'i': this.fire('brightness'); break;
       case '/': this.fire('spoiler'); break;

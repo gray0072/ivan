@@ -82,6 +82,8 @@ const Career = {
     d.regions = d.regions || ['sweden'];
     d.typeFlights = d.typeFlights || {};      // flights completed in each type, by its id
     d.newAircraft = d.newAircraft || [];      // types a course has just unlocked, not yet seen in the hangar
+    // (the level was a setting of the browser once: an older save takes the one picked last)
+    if (!DIFFICULTY[d.difficulty]) d.difficulty = DIFFICULTY[this.settings.difficulty] ? this.settings.difficulty : 'medium';
     // the flights to each airport, by its code (an older save: counted from the log it kept)
     if (!d.visits) {
       d.visits = {};
@@ -113,6 +115,7 @@ const Career = {
       typeFlights: {},
       newAircraft: [],
       visits: {},
+      difficulty: DIFFICULTY[opts.difficulty] ? opts.difficulty : 'medium',
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
     };
@@ -144,8 +147,20 @@ const Career = {
     this.data = null;
   },
 
-  // one remembered choice, set on the title screen and in every restart dialog
-  get difficulty() { return DIFFICULTY[this.settings.difficulty] || DIFFICULTY.medium; },
+  // the career's own level, kept in its save like the other habits (set on the title screen and in
+  // every restart dialog); settings.difficulty is only the last pick, the level a new career starts at
+  get difficulty() {
+    const v = this.data && this.data.difficulty;
+    return DIFFICULTY[v] || DIFFICULTY[this.settings.difficulty] || DIFFICULTY.medium;
+  },
+  setDifficulty(v) {
+    if (!DIFFICULTY[v]) return;
+    this.settings.difficulty = v;
+    this.saveSettings();
+    if (!this.data) return;
+    this.data.difficulty = v;
+    this.save();
+  },
   aircraft() { return AIRCRAFT.find((a) => a.id === this.data.selected) || AIRCRAFT.find((a) => !a.unlock); },
   owns(id) { return this.data.aircraft.indexOf(id) >= 0; },
   unlocked(ac) { return !ac.unlock || this.has(ac.unlock); },

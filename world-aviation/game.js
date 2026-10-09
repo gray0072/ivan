@@ -728,7 +728,8 @@ const Game = {
       case 'camera':
       {
         const modes = VIEW.MODES, n = modes.length;
-        this.camMode = modes[(modes.indexOf(this.camMode) + (arg === -1 ? n - 1 : 1)) % n];
+        // C the next view, X (or Shift+C) the one before, Z straight to the cockpit
+        this.camMode = arg === 'cockpit' ? 'cockpit' : modes[(modes.indexOf(this.camMode) + (arg === -1 ? n - 1 : 1)) % n];
         fl.info(tr('View: {v}', { v: tr(VIEW.NAMES[this.camMode]) }));
       }
         break;

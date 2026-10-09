@@ -9,7 +9,7 @@
 // ============================================================
 
 const UI = {
-  screen: null, tab: 'dispatch', selContract: null, quiz: null, lastContract: null,
+  screen: null, tab: 'dispatch', selContract: null, quiz: null, lastContract: null, keyLockUntil: 0,
 
   init() {
     this.screen = el('screen');
@@ -31,6 +31,11 @@ const UI = {
       if (e.key === 'Enter') { const b = this.screen.querySelector('.btn.default'); if (b) { e.preventDefault(); b.click(); } }
       return;
     }
+    // keys still held or pressed from the flight (the arrows steer, Space is the parking brake) must not
+    // wander onto a setting and press it: a held key's repeats and the first moments of a screen that
+    // has just come up over the flight are ignored
+    const nav = e.code === 'Space' || e.key === 'Enter' || e.key.indexOf('Arrow') === 0;
+    if (nav && (e.repeat || performance.now() < this.keyLockUntil)) { e.preventDefault(); return; }
     const btns = this.buttons();
     if (!btns.length) return;
     const dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
@@ -67,6 +72,7 @@ const UI = {
   },
 
   panel(html, cls) {
+    if (this.screen.hidden) this.keyLockUntil = performance.now() + UI_KEY_LOCK_MS;
     this.screen.hidden = false;
     // in the pause the flight stays in sight behind the glass (styles.css)
     this.screen.dataset.view = Game.mode === 'paused' ? 'pause' : '';
@@ -87,9 +93,6 @@ const UI = {
         UI.action(act, v);
         this.keepPlace(act, v, before);
       });
-    });
-    this.screen.querySelectorAll('input[name="startMode"]').forEach((r) => {
-      r.addEventListener('change', () => { if (r.checked) Career.setSkipPushback(r.value === 'pushback'); });
     });
     const first = this.screen.querySelector('.default:not([disabled])') || this.screen.querySelector('.tab.on') || this.screen.querySelector('button');
     if (first && !isCoarsePointer()) first.focus({ preventScroll: true });
@@ -119,12 +122,13 @@ const UI = {
     btns[Math.min(Math.max(before.index, 0), btns.length - 1)].focus({ preventScroll: true });
   },
 
-  difficultyChips() {
-    const s = Career.settings;
+  // the career's level; on the new career screen the level that career will start at (the last pick)
+  difficultyChips(forNew) {
+    const cur = forNew ? (DIFFICULTY[Career.settings.difficulty] || DIFFICULTY.medium) : Career.difficulty;
     return '<div class="setGroup"><span>' + tr('Difficulty') + '</span>' + ['easy', 'medium', 'hard'].map((d) =>
-      '<button class="chip' + (s.difficulty === d ? ' on' : '') + '" data-act="difficulty" data-v="' + d + '">' +
+      '<button class="chip' + (cur.id === d ? ' on' : '') + '" data-act="difficulty" data-v="' + d + '">' +
       esc(tr(DIFFICULTY[d].name)) + '</button>').join('') + '</div>' +
-      '<p class="fineprint">' + esc(tr(Career.difficulty.description)) + '</p>';
+      '<p class="fineprint">' + esc(tr(cur.description)) + '</p>';
   },
 
   // the game's language, first thing on the title screen: a flag and a code per language (art/flag-*.svg)
@@ -185,7 +189,7 @@ const UI = {
       '<label>' + tr('Pilot name') + '<span class="nameLine"><input id="pilotName" value="' + esc(Career.randomPilotName()) + '" maxlength="24">' +
       '<button class="chip" data-act="rerollName" title="' + esc(tr('Another name')) + '" aria-label="' + esc(tr('Another name')) + '">🎲</button></span></label>' +
       '</div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips(true) + '</div>' +
       '<div class="btnRow split"><button class="btn back" data-act="back" data-esc>' + tr('Back') + '</button>' +
       '<button class="btn default fwd" data-act="startcareer">' + tr('Start flying') + '</button></div>', 'narrow');
     this.screen.dataset.view = 'newcareer';
@@ -222,7 +226,7 @@ const UI = {
       keyRow(', / .', tr('selected altitude down / up')) +
       keyRow('; / \'', tr('selected heading (autopilot HDG mode)')) +
       keyRow('T / R', tr('time faster / slower: up to ×128 on the autopilot, ×512 in the cruise on NAV, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft')) +
-      keyRow('C / M / I', tr('camera · map (on a big screen: mini, big, off) · instrument lights: dim, medium, bright, hidden')) +
+      keyRow('C / X / Z · M · I', tr('camera: next / back / straight to the cockpit · map (on a big screen: mini, big, off) · instrument lights: dim, medium, bright, hidden')) +
       keyRow('H', tr('controls card')) +
       keyRow('Esc', tr('pause')) +
       '</ul></div>' +
@@ -613,10 +617,13 @@ const UI = {
       }).join('') + '</div>' +
       '<p class="fineprint">' + tr('In the dark the runway is its lights, the PAPI and your landing lights: harder, and paid more.') + '</p>' +
       '<h3>' + tr('How you start') + '</h3>' +
-      '<label class="check"><input type="radio" name="startMode" value="gate"' + (Career.skipPushback ? '' : ' checked') + '> ' +
-      tr('At the gate — push back, start the engines, taxi out: +{bonus} and reputation for the full ground procedure', { bonus: fmtMoney(Math.round(c.pay * CONTRACTS.FULL_GROUND_BONUS)) }) + '</label>' +
-      '<label class="check"><input type="radio" name="startMode" value="pushback"' + (Career.skipPushback ? ' checked' : '') + '> ' +
-      tr('At the runway — at the holding point, the engines running, cleared for take-off: about 5 minutes less on the ground, no procedure bonus') + '</label>' +
+      // two buttons side by side, the pilot's habit lit: the arrows reach them like every other button
+      '<div class="startPick">' +
+      '<button class="chip' + (Career.skipPushback ? '' : ' on') + '" data-act="startMode" data-v="gate" aria-pressed="' + !Career.skipPushback + '">' +
+      '<b>' + tr('At the gate') + '</b><small>' + tr('push back, start the engines, taxi out · +{bonus} and reputation for the full ground procedure', { bonus: fmtMoney(Math.round(c.pay * CONTRACTS.FULL_GROUND_BONUS)) }) + '</small></button>' +
+      '<button class="chip' + (Career.skipPushback ? ' on' : '') + '" data-act="startMode" data-v="pushback" aria-pressed="' + Career.skipPushback + '">' +
+      '<b>' + tr('At the runway') + '</b><small>' + tr('at the holding point, the engines running, cleared for take-off · about 5 minutes less on the ground, no procedure bonus') + '</small></button>' +
+      '</div>' +
       '<p class="fineprint">' + tr('The full procedure is the real routine of the job; take the short start when you just want to fly. Your choice is remembered.') + '</p>' +
       '<div class="btnRow"><button class="btn default fwd big" data-act="fly">' + tr('Fly it') + '</button>' +
       '<button class="btn" data-act="practice"' + (Career.data.money < fee ? ' disabled' : '') + '>' +
@@ -855,15 +862,19 @@ const UI = {
       case 'startcareer': {
         const pilot = (el('pilotName') || {}).value || '';
         reseed(hashStr(pilot) ^ Date.now());
-        Career.new({ pilot });
+        Career.new({ pilot, difficulty: Career.settings.difficulty });
         enterFullscreen();
         this.tab = 'dispatch';
         this.showOps();
         break;
       }
       case 'difficulty':
-        Career.settings.difficulty = v; Career.saveSettings();
-        if (Career.data && (Game.mode === 'menu' || Game.mode === 'debrief' || Game.mode === 'failed')) Career.generateContracts();
+        // (the new career screen picks the next career's level, not the one being left)
+        if (this.screen.dataset.view === 'newcareer') { Career.settings.difficulty = v; Career.saveSettings(); }
+        else if (v !== Career.difficulty.id) {
+          Career.setDifficulty(v);
+          if (Career.data && (Game.mode === 'menu' || Game.mode === 'debrief' || Game.mode === 'failed')) Career.generateContracts();
+        }
         this.refresh();
         break;
       case 'quality':
@@ -958,6 +969,7 @@ const UI = {
       }
       case 'brief': this.showBriefing(this.selContract); break;
       case 'tod': Career.setTimeOfDay(v); this.showBriefing(this.selContract); break;
+      case 'startMode': Career.setSkipPushback(v === 'pushback'); this.showBriefing(this.selContract); break;
       case 'retry':
         if (this.lastContract) { enterFullscreen(); Game.launch(this.lastContract, { skipPushback: Career.skipPushback }); }
         break;
