@@ -299,7 +299,7 @@ const TEXT_RU = {
   'The job': 'Задание',
   'Aircraft': 'Самолёт',
   'En route': 'Время в пути',
-  'about {m} min at 1× — use the autopilot and time acceleration': 'около {m} мин при 1× — используйте автопилот и ускорение времени',
+  'about {t} at 1× — use the autopilot and time acceleration': 'около {t} при 1× — используйте автопилот и ускорение времени',
   'Fuel': 'Топливо',
   'plan {p} kg · on board {b} kg': 'план {p} kg · на борту {b} kg',
   'Take-off weight': 'Взлётная масса',

@@ -299,7 +299,7 @@ const TEXT_SV = {
   'The job': 'Uppdraget',
   'Aircraft': 'Flygplan',
   'En route': 'Flygtid',
-  'about {m} min at 1× — use the autopilot and time acceleration': 'cirka {m} min i 1× — använd autopiloten och tidsacceleration',
+  'about {t} at 1× — use the autopilot and time acceleration': 'cirka {t} i 1× — använd autopiloten och tidsacceleration',
   'Fuel': 'Bränsle',
   'plan {p} kg · on board {b} kg': 'plan {p} kg · ombord {b} kg',
   'Take-off weight': 'Startvikt',

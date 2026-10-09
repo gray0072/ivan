@@ -598,7 +598,7 @@ const UI = {
       row2(tr('Aircraft'), esc(ac.name) + ' · ' + esc(tr(ac.klass))) +
       row2(tr('Load'), loadText(c)) +
       row2(tr('Distance'), c.distanceNm + ' nm') +
-      row2(tr('En route'), tr('about {m} min at 1× — use the autopilot and time acceleration', { m: c.blockMin })) +
+      row2(tr('En route'), tr('about {t} at 1× — use the autopilot and time acceleration', { t: fmtDuration(c.blockMin) })) +
       row2(tr('Arrival, local time'), this.arrivalClock(c, from, to)) +
       row2(tr('Fuel'), tr('plan {p} kg · on board {b} kg', { p: c.fuelKg, b: Math.round(setup.blockFuel) })) +
       row2(tr('Take-off weight'), tr('{w} t · max {m} t', { w: fmtTonnes(ac.emptyKg + c.payloadKg + setup.blockFuel), m: fmtTonnes(ac.mtow) })) +
