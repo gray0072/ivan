@@ -137,7 +137,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 2. **Spec first:** write `<name>/SPEC.md` (idea, screens, rules, controls incl. touch, difficulty levels, cheats, files) and agree on it before writing any game code.
 3. Put a self-contained `index.html` inside it (plus any assets it needs), implementing the spec.
 4. Add a `README.md` (English), a `README_RU.md` (Russian) and a `README_SV.md` (Swedish), each written for players and linking to the other two (same pattern as this repo's root READMEs).
-5. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog.
+5. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog, and a Sound On / Off switch on the start screen and in the pause (see `AGENTS.md`).
 6. Add a `screenshot.png` preview image showing the English UI.
 7. Make it an installable PWA: `icon-maskable.svg`, the PNGs from `tools/pwa-icons.sh <name>`, a `manifest.webmanifest` and the `<head>` links (see `AGENTS.md`).
 8. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md` / `README_SV.md`.

@@ -42,6 +42,7 @@ const TEXT_SV = {
   'You are a Swedish commercial pilot with an EASA ATPL, based at Stockholm Arlanda with one leased turboprop. Start with Sweden, win Scandinavia, then buy the traffic rights to the rest of the world, one region at a time.': 'Du är en svensk trafikpilot med EASA ATPL, baserad på Stockholm Arlanda med ett leasat turbopropplan. Börja med Sverige, vinn Skandinavien och köp sedan trafikrättigheterna till resten av världen, en region i taget.',
   'You have an EASA ATPL, one leased turboprop and a base at Stockholm Arlanda. What is your name?': 'Du har ett EASA ATPL, ett leasat turbopropplan och en bas på Stockholm Arlanda. Vad heter du?',
   'Pilot name': 'Pilotens namn',
+  'Another name': 'Ett annat namn',
   'Start flying': 'Börja flyga',
   'Back': 'Tillbaka',
   'Delete this career?': 'Radera den här karriären?',

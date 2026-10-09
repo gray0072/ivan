@@ -13,7 +13,6 @@
 // Every contract is flown out of, or back to, your home base.
 const CAREER = {
   HOME_BASE: 'ARN',
-  PILOT_NAME_DEFAULT: 'Sven Ekman',
   PILOT_LICENSE: 'EASA ATPL',
   PILOT_COUNTRY: 'Sweden',
   PILOT_CITY: 'Stockholm',

@@ -39,6 +39,10 @@ The start screen also has a **Graphics** switch (remembered between visits):
 - **Low** — for TVs and weak devices: also plain single-colour fish, jellyfish and rocks (no shading), no drifting motes or sand ripples, rendered at up to 1280×720, and a quarter fewer extra fish on big screens.
 - **Minimal** — the lightest: like Low, but rendered at up to 960×540, without seaweed, and with half the extra fish on big screens (a phone-sized screen is never emptier than on a phone).
 
+## Sound
+
+The **Sound** switch (On / Off) is on the start screen and in the pause; the choice is remembered between visits.
+
 ## Demo
 
 The **Demo** button under the graphics switch starts an Easy run where the fish plays by itself: unlike the other fish it reacts instantly and aims precisely, sees further and plays smarter: it escapes all predators that come close at once (the ones facing it count the most) but ignores distant ones, chases the tastiest fish in view that isn't right next to a predator and aims where the prey is heading, ignores plankton (it only eats what it bumps into), stays away from the surface and its gulls while it's a Fry, steers clear of jellyfish, and after a couple of leaps out of the water dives back down for a while. It dashes to escape or to catch prey, spends full stamina on hunting, and always keeps a reserve for a getaway. When it dies the demo starts over; press any key or tap the screen to go back to the menu. Demo runs never set records.

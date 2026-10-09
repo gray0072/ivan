@@ -40,7 +40,7 @@ Att börja **vid gaten** och själv flyga hela markrutinen ger en bonus: +6 % av
 
 Kontrollerna fungerar med alla tangentbordslayouter (tangenterna läses efter sin plats, inte efter bokstaven).
 
-**Ljud**: jetmotorerna tjuter och dånar med gasen, propellrarna dunkar, hjulen dunsar över plattfogarna, bromsarna väser, landställ och klaffar surrar och låser med en duns, däcken tjuter vid sättningen — och en röst ropar "V ett", "rotera" och höjderna ner till "tio" vid landningen, på spelets språk och i fot eller meter, som enhetsinställningen säger.
+**Ljud**: jetmotorerna tjuter och dånar med gasen, propellrarna dunkar, hjulen dunsar över plattfogarna, bromsarna väser, landställ och klaffar surrar och låser med en duns, däcken tjuter vid sättningen — och en röst ropar "V ett", "rotera" och höjderna ner till "tio" vid landningen, på spelets språk och i fot eller meter, som enhetsinställningen säger. Reglaget **Sound** på startskärmen och i pausen stänger av allt — även utropen och kabinutropen.
 
 ## Instrument
 

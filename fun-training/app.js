@@ -799,6 +799,16 @@
   $('playersBtn').addEventListener('click', () => { renderPlayers(); showScreen('players'); });
   $('settingsDone').addEventListener('click', openHome);
   $('pauseBtn').addEventListener('click', pause);
+  // Sound on / off: the same switch on the home screen and in the lesson bar (Sfx remembers it)
+  function showSound() {
+    document.querySelectorAll('.soundBtn').forEach(b => {
+      b.textContent = Sfx.on ? '🔊' : '🔇';
+      b.title = Sfx.on ? 'Sound: on (tap to switch off)' : 'Sound: off (tap to switch on)';
+      b.setAttribute('aria-label', b.title);
+    });
+  }
+  document.querySelectorAll('.soundBtn').forEach(b => b.addEventListener('click', () => { Sfx.setOn(!Sfx.on); showSound(); }));
+  showSound();
   $('resumeBtn').addEventListener('click', resume);
   ['slowerBtn', 'fasterBtn'].forEach(id => $(id).addEventListener('click', () => changeSpeed($(id))));
   $('quitBtn').addEventListener('click', quitLesson);

@@ -150,3 +150,19 @@ html.cursor-hidden, html.cursor-hidden * { cursor: none !important; }
   flex-direction: column;
   align-items: center;
 }
+
+/* the sound switch under the start and game-over panels, in the switcher's style */
+.soundBtn {
+  margin-top: 18px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: rgba(13, 27, 42, 0.85);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #9fb0c3;
+  font: 600 12px 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.soundBtn:hover { color: #e8eef5; background: rgba(30, 48, 68, 0.9); }
+.soundBtn[aria-pressed="true"] { color: #e8eef5; }

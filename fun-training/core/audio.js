@@ -1,9 +1,19 @@
-// Synthesized sound effects (Web Audio, no files).
+// Synthesized sound effects (Web Audio, no files), with the sound on / off switch (the home screen and the
+// lesson bar), remembered on this device for every player.
 
 const Sfx = (() => {
+  const SOUND_KEY = 'funTraining.sound';
   let ctx = null;
   let master = null;
   let noiseBuf = null;
+  let on = true;
+  try { on = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) { /* storage blocked */ }
+
+  function setOn(v) {
+    on = v;
+    if (master) master.gain.value = on ? 0.55 : 0;
+    try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch (e) { /* storage blocked */ }
+  }
 
   function ac() {
     if (!ctx) {
@@ -11,7 +21,7 @@ const Sfx = (() => {
       if (!C) return null;
       ctx = new C();
       master = ctx.createGain();
-      master.gain.value = 0.55;
+      master.gain.value = on ? 0.55 : 0;
       master.connect(ctx.destination);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 1.5, ctx.sampleRate);
       const d = noiseBuf.getChannelData(0);
@@ -82,6 +92,8 @@ const Sfx = (() => {
   }
 
   return {
+    get on() { return on; },
+    setOn,
     unlock: ac,
     click() { tone(900, 0, 0.06, { type: 'triangle', gain: 0.12 }); },
     correct() {

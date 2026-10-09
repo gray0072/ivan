@@ -11,6 +11,7 @@ First-person arcade flight game.
 - First-person cockpit view (pseudo-3D perspective projection onto a 2D canvas, no WebGL)
 - Steering: arrow keys (left/right = yaw with eased turn rate and visual bank, up/down = climb/descend with visual pitch)
 - Twin-gun shooting (Ctrl, held to fire continuously) with synthesized "pew" sound effects, used to shoot down floating balloons for points
+- Sound switch (🔊 Sound: on / 🔇 off) under the start and game-over panels, remembered in `localStorage` as `flightSimulator.sound` (`on` / `off`, default on); every sound goes through one master gain, set to 0 or 1 at once
 - Fly to a highlighted target airport, descend, align with the runway heading, and land within the runway bounds for points; missing the runway at zero altitude crashes the game
 - Instrument panel: airspeed gauge, artificial horizon (mirrors bank/pitch), altimeter
 - Terrain color/texture varies by world region and blends smoothly while flying

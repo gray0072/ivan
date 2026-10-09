@@ -214,6 +214,8 @@ All six processes are built. Scenes are drawn on a canvas in a fixed design spac
 
 ## Sounds
 
+A 🔊 / 🔇 button on the home screen (`#soundBtn`) and in the lesson bar next to the pause (`#lsSoundBtn`) switches the sound effects off and on at once (the master gain at 0), remembered on the device for every player (`funTraining.sound`: `on` / `off`, default on). The Reading voice is not affected: listening is the task itself, and it is spoken only when the task or the 🔊 Listen button asks for it.
+
 The Reading voice is the device's speech synthesis (`speech.js`). Everything else is synthesized with Web Audio (`audio.js`), no files: UI click, cash register, coins spent, yum, bleh, sour, sizzle, teeth chattering, giggle, correct chime, wrong buzz, warning tick, water pouring, whoosh, bonk, zombie groan, rail clank, train whistle, crash, burner roar, splash, thunder, fire crackle, wolf howl and yelp, birds, munching, tummy rumble, sniffles, crying, a cute roar, monkey chatter, a happy squeak, boss drums and growl, victory fanfare, coins jingle, diamonds sparkle, star fanfare, fireworks pops, defeat sad trombone, the Coin Muncher's chomp and burp.
 
 ## Storage

@@ -40,7 +40,7 @@ Starting **at the gate** and flying the whole ground routine yourself pays a bon
 
 The controls work in any keyboard layout (the keys are read by their place on the keyboard).
 
-**Sound**: jet fans whine and roar with the power, propellers beat, the wheels rumble over the slab joints, the brakes hiss, the gear and the flaps whir and clunk, the tyres chirp on touchdown — and a voice calls "V one", "rotate" and the radio heights down to "ten" on landing, in the game's language and in feet or metres, as the units setting says.
+**Sound**: jet fans whine and roar with the power, propellers beat, the wheels rumble over the slab joints, the brakes hiss, the gear and the flaps whir and clunk, the tyres chirp on touchdown — and a voice calls "V one", "rotate" and the radio heights down to "ten" on landing, in the game's language and in feet or metres, as the units setting says. The **Sound** switch on the title screen and in the pause turns all of it off — the callouts and the cabin announcements too.
 
 ## Instruments
 

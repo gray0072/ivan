@@ -257,10 +257,34 @@
 
   // ---------- Audio ----------
   let audioCtx = null;
+  let audioOut = null;   // the master gain every sound goes through: 0 while the sound is off
+  // Sound on / off (the button under the start and game-over panels), remembered between visits
+  const SOUND_KEY = 'flightSimulator.sound';
+  let soundOn = true;
+  try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (err) { /* storage blocked */ }
   function ensureAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioOut = audioCtx.createGain();
+      audioOut.gain.value = soundOn ? 1 : 0;
+      audioOut.connect(audioCtx.destination);
+    }
     if (audioCtx.state === 'suspended') audioCtx.resume();
   }
+  const soundBtn = document.getElementById('soundBtn');
+  function showSound() {
+    soundBtn.dataset.i18n = soundOn ? 'soundOn' : 'soundOff';
+    soundBtn.setAttribute('aria-pressed', soundOn);
+    soundBtn.textContent = tr(soundBtn.dataset.i18n);
+  }
+  soundBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    if (audioOut) audioOut.gain.value = soundOn ? 1 : 0;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (err) { /* storage blocked */ }
+    soundBtn.blur();
+    showSound();
+  });
+  showSound();
   function playShootSound() {
     if (!audioCtx) return;
     const t0 = audioCtx.currentTime;
@@ -272,7 +296,7 @@
     osc.frequency.exponentialRampToValueAtTime(180, t0 + 0.11);
     gain.gain.setValueAtTime(0.16, t0);
     gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.12);
-    osc.connect(gain).connect(audioCtx.destination);
+    osc.connect(gain).connect(audioOut);
     osc.start(t0);
     osc.stop(t0 + 0.13);
   }

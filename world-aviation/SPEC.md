@@ -67,7 +67,7 @@ Airports are all built from one template around the runway in use (`LAYOUT` in `
    - Flying over the runway and still being airborne at its far end means a go-around: back to `DESCENT`, the approach is flown again. A touch-and-go during the rollout also goes back to `APPROACH`, and only the final landing is graded.
 5. **Debrief** — landing grade, touchdown data (vertical speed, speed vs Vref, distance from the threshold, centreline offset, bank and crab), the log, the invoice, the reputation change, the difficulty choice and "Next flight".
 6. **Failure** — crash (terrain, ditching — the aeroplane meets the water at its surface, not the sea or lake bed under it: `Terrain.surfaceAt` is the ground or sea level, whichever is higher, for the physics, the terrain warnings and the outside cameras — wing or nose strike, gear-up landing, gear collapse), runway excursion, landing back at the departure. Shows the cause and the cost; "Try again" (the same contract) or "Back to ops", with the difficulty choice.
-7. **Pause** (Esc) — resume (Esc / Space / Enter), **The flight** (the contract's card as on the board, without its button) and **The aircraft** (the type's card as in the hangar, with its picture) each with Back, restart the flight, controls, abandon to Ops, the difficulty, units and landing aid choices. The frozen flight stays in sight behind it — the view, the HUD and the panel only dimmed a little, darker towards the edges — and the pause's screens sit on frosted glass in the middle (`#screen[data-view="pause"]`).
+7. **Pause** (Esc) — resume (Esc / Space / Enter), **The flight** (the contract's card as on the board, without its button) and **The aircraft** (the type's card as in the hangar, with its picture) each with Back, restart the flight, controls, abandon to Ops, the difficulty, sound, units, landing aid and cabin announcement choices. The frozen flight stays in sight behind it — the view, the HUD and the panel only dimmed a little, darker towards the edges — and the pause's screens sit on frosted glass in the middle (`#screen[data-view="pause"]`).
 8. **Quiz** — a training course's exam (`data/quizzes.js`): four questions drawn from a pool of five, three options each (shuffled), pass mark 3/4. Written for a school pupil: plain words, one clearly right answer. A **Hint** button shows a clue before answering; after each answer the right option is marked and the same text explains it, then **Next**. The exam runs in the game's language (English, Russian or Swedish, picked on the title screen).
 
 ## Time of day
@@ -260,7 +260,7 @@ Contracts: distance × rate × faction + load × the payload type's rate × dist
 
 Aircraft are leased per sector: any unlocked type can be selected in the hangar.
 
-The new-career dialog asks only for the pilot's name (default **Sven Ekman**); it is shown on the title screen, in the ops header, on the career page and in the log. Older saves lose their operator name on load.
+The new-career dialog asks only for the pilot's name, offered filled in with a Swedish man's name picked at random from `PILOT_NAMES` (`data/pilots.js`: Sven Flygare, Bosse Blixt, Stig Stigberg, Arne Anflygsson…; 🎲 beside the field offers another, an empty field takes one too); it is shown on the title screen, in the ops header, on the career page and in the log. Older saves lose their operator name on load.
 
 ## Controls
 
@@ -354,6 +354,7 @@ world-aviation/
 │   ├── countries.js        each country's flag and its local "welcome"
 │   ├── airlines.js         the real airlines: livery, emblem, client groups, hubs; pickAirline, airlinesAt
 │   ├── emergencies.js      the emergencies and their QRH checklists
+│   ├── pilots.js           the Swedish names a new career offers for its pilot
 │   ├── quizzes.js          the course exams in English, Russian and Swedish, with hints; the Training tab's words and the course texts in Russian and Swedish
 │   ├── lang-ru.js          every other text of the game in Russian (TEXT_RU: English text → translation)
 │   ├── lang-sv.js          the same in Swedish (TEXT_SV)

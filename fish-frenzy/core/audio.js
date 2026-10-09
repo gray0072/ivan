@@ -1,9 +1,24 @@
 'use strict';
 
 let audioCtx = null;
+let audioOut = null;   // the master gain every sound goes through: 0 while the sound is off
+// Sound on / off (the start screen and the pause), remembered between visits
+const SOUND_KEY = 'fishFrenzy.sound';
+let soundOn = true;
+try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (err) { /* storage blocked */ }
 function ensureAudio() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioOut = audioCtx.createGain();
+    audioOut.gain.value = soundOn ? 1 : 0;
+    audioOut.connect(audioCtx.destination);
+  }
   if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function setSound(on) {
+  soundOn = on;
+  if (audioOut) audioOut.gain.value = on ? 1 : 0;
+  try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch (err) { /* storage blocked */ }
 }
 function tone(freqStart, freqEnd, dur, type, gainVal) {
   if (!audioCtx) return;
@@ -15,7 +30,7 @@ function tone(freqStart, freqEnd, dur, type, gainVal) {
   osc.frequency.exponentialRampToValueAtTime(Math.max(20, freqEnd), t0 + dur);
   gain.gain.setValueAtTime(gainVal, t0);
   gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-  osc.connect(gain).connect(audioCtx.destination);
+  osc.connect(gain).connect(audioOut);
   osc.start(t0);
   osc.stop(t0 + dur + 0.02);
 }
@@ -33,7 +48,7 @@ function playLevelUp() {
     osc.frequency.setValueAtTime(f, t0);
     gain.gain.setValueAtTime(0.15, t0);
     gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.2);
-    osc.connect(gain).connect(audioCtx.destination);
+    osc.connect(gain).connect(audioOut);
     osc.start(t0);
     osc.stop(t0 + 0.22);
   });
@@ -50,7 +65,7 @@ function playFanfare() {
     osc.frequency.setValueAtTime(f, t0);
     gain.gain.setValueAtTime(0.16, t0);
     gain.gain.exponentialRampToValueAtTime(0.001, t0 + (i === notes.length - 1 ? 0.9 : 0.25));
-    osc.connect(gain).connect(audioCtx.destination);
+    osc.connect(gain).connect(audioOut);
     osc.start(t0);
     osc.stop(t0 + 1);
   });
@@ -78,7 +93,7 @@ function gullVoice(t0, points, dur, vol, vibHz, vibDepth) {
   gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
   gain.gain.setValueAtTime(vol, t0 + dur * 0.5);
   gain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-  osc.connect(bp).connect(gain).connect(audioCtx.destination);
+  osc.connect(bp).connect(gain).connect(audioOut);
   osc.start(t0); lfo.start(t0);
   osc.stop(t0 + dur + 0.05); lfo.stop(t0 + dur + 0.05);
 }
@@ -146,7 +161,7 @@ function playSplash(size, entering, volume = 1, own = true) {
     f.frequency.exponentialRampToValueAtTime(260 - size * 120, t0 + dur);
     node = node.connect(f);
   }
-  node.connect(out).connect(audioCtx.destination);
+  node.connect(out).connect(audioOut);
   src.start(t0);
 
   // plop: the collapsing air cavity, deeper for bigger fish; the main body of a splashdown
@@ -160,7 +175,7 @@ function playSplash(size, entering, volume = 1, own = true) {
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.exponentialRampToValueAtTime((entering ? 0.3 : 0.15) * level, t0 + 0.012);
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + plopDur);
-  osc.connect(g).connect(audioCtx.destination);
+  osc.connect(g).connect(audioOut);
   osc.start(t0);
   osc.stop(t0 + plopDur + 0.02);
 
@@ -177,7 +192,7 @@ function playSplash(size, entering, volume = 1, own = true) {
     bg.gain.setValueAtTime(0.0001, t);
     bg.gain.exponentialRampToValueAtTime(0.05 * level, t + 0.006);
     bg.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-    bo.connect(bg).connect(audioCtx.destination);
+    bo.connect(bg).connect(audioOut);
     bo.start(t);
     bo.stop(t + 0.08);
   }

@@ -65,7 +65,7 @@ const Career = {
       if (from && to && !(c.depGate < from.gatesPerTerminal && c.arrGate < to.gateCount)) Object.assign(c, World.pickGates(from, to, makeRng(hashStr(c.id))));
     }
     d.stats = d.stats || { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 };
-    d.pilot = { name: (d.pilot && d.pilot.name) || CAREER.PILOT_NAME_DEFAULT };   // older saves also had an operator name
+    d.pilot = { name: (d.pilot && d.pilot.name) || this.randomPilotName() };   // older saves also had an operator name
     for (const l of d.log || []) {
       if (l.tpl === 'Operator certificate granted to {airline}. Base: Stockholm Arlanda.') {
         l.tpl = '{name} starts flying. Base: Stockholm Arlanda.'; l.args = { name: d.pilot.name }; l.text = logLine(l.tpl, l.args).text;
@@ -86,9 +86,15 @@ const Career = {
     if (d.contracts.length < 5 || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
 
+  // a Swedish name for a new pilot (data/pilots.js), never the one just offered
+  randomPilotName(not) {
+    const pool = PILOT_NAMES.filter((n) => n !== not);
+    return pool[Math.floor(Math.random() * pool.length)];
+  },
+
   new(opts) {
     this.data = {
-      pilot: { name: (opts.pilot || '').trim() || CAREER.PILOT_NAME_DEFAULT },
+      pilot: { name: (opts.pilot || '').trim() || this.randomPilotName() },
       money: CONTRACTS.START_MONEY,
       rep: { pax: 0, cargo: 0, bush: 0 },
       courses: ['gen1'],

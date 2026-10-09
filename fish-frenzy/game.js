@@ -53,6 +53,11 @@
   }
   graphicsBtns.forEach((btn) => btn.addEventListener('click', () => setGraphics(btn.dataset.graphics)));
   setGraphics(graphicsKey);
+  // Sound on / off, on the start screen and in the pause (core/audio.js keeps and remembers it)
+  const soundBtns = document.querySelectorAll('#overlay .btn[data-sound]');
+  function showSound() { soundBtns.forEach((b) => b.classList.toggle('active', (b.dataset.sound === 'on') === soundOn)); }
+  soundBtns.forEach((btn) => btn.addEventListener('click', () => { setSound(btn.dataset.sound === 'on'); showSound(); }));
+  showSound();
   document.getElementById('demoBtn').addEventListener('click', () => startGame('easy', true));
   function exitDemo() {
     demo = false;

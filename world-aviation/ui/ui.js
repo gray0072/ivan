@@ -165,9 +165,7 @@ const UI = {
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="settingsRow">' +
       '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + qualBtns + '</div>' +
-      '<div class="setGroup"><span>' + tr('Sound') + '</span>' +
-      '<button class="chip' + (s.sound ? ' on' : '') + '" data-act="sound">' + tr(s.sound ? 'On' : 'Off') + '</button></div>' +
-      this.unitChips() + this.aidChip() + this.cabinChip() +
+      this.soundChip() + this.unitChips() + this.aidChip() + this.cabinChip() +
       '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
@@ -184,7 +182,8 @@ const UI = {
       '<h2>' + tr('New career') + '</h2>' +
       '<p class="lead">' + tr('You have an EASA ATPL, one leased turboprop and a base at Stockholm Arlanda. What is your name?') + '</p>' +
       '<div class="form">' +
-      '<label>' + tr('Pilot name') + '<input id="pilotName" value="' + esc(CAREER.PILOT_NAME_DEFAULT) + '" maxlength="24"></label>' +
+      '<label>' + tr('Pilot name') + '<span class="nameLine"><input id="pilotName" value="' + esc(Career.randomPilotName()) + '" maxlength="24">' +
+      '<button class="chip" data-act="rerollName" title="' + esc(tr('Another name')) + '" aria-label="' + esc(tr('Another name')) + '">🎲</button></span></label>' +
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="btnRow split"><button class="btn back" data-act="back" data-esc>' + tr('Back') + '</button>' +
@@ -705,7 +704,7 @@ const UI = {
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
       '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + this.unitChips() + this.aidChip() + this.cabinChip() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.soundChip() + this.unitChips() + this.aidChip() + this.cabinChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
@@ -738,6 +737,13 @@ const UI = {
     return '<div class="setGroup"><span>' + tr('Units') + '</span>' +
       '<button class="chip' + (u === 'aviation' ? ' on' : '') + '" data-act="units" data-v="aviation" title="' + esc(tr('feet, knots, nautical miles')) + '">ft · kt · nm</button>' +
       '<button class="chip' + (u === 'metric' ? ' on' : '') + '" data-act="units" data-v="metric" title="' + esc(tr('metres, km/h, kilometres')) + '">m · km/h · km</button></div>';
+  },
+
+  // every sound of the game, the callouts and the cabin announcements included (on the title and in the pause)
+  soundChip() {
+    const on = Career.settings.sound;
+    return '<div class="setGroup"><span>' + tr('Sound') + '</span>' +
+      '<button class="chip' + (on ? ' on' : '') + '" data-act="sound">' + tr(on ? 'On' : 'Off') + '</button></div>';
   },
 
   // the landing aid: the ILS scales with plain words and the dotted glide path on the approach
@@ -844,8 +850,13 @@ const UI = {
       case 'sound':
         Career.settings.sound = !Career.settings.sound; Career.saveSettings();
         Audio2.setMuted(!Career.settings.sound);
-        this.showTitle();
+        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
         break;
+      case 'rerollName': {
+        const inp = el('pilotName');
+        if (inp) { inp.value = Career.randomPilotName(inp.value); inp.focus(); }
+        break;
+      }
       case 'units':
         Career.settings.units = v; Career.saveSettings();
         Units.metric = v === 'metric';

@@ -42,6 +42,7 @@ const TEXT_RU = {
   'You are a Swedish commercial pilot with an EASA ATPL, based at Stockholm Arlanda with one leased turboprop. Start with Sweden, win Scandinavia, then buy the traffic rights to the rest of the world, one region at a time.': 'Вы — шведский линейный пилот с лицензией EASA ATPL, база — Стокгольм-Арланда, у вас один арендованный турбовинтовой самолёт. Начните со Швеции, покорите Скандинавию, а потом покупайте права на полёты по всему миру, регион за регионом.',
   'You have an EASA ATPL, one leased turboprop and a base at Stockholm Arlanda. What is your name?': 'У вас есть лицензия EASA ATPL, один арендованный турбовинтовой самолёт и база в Стокгольме-Арланде. Как вас зовут?',
   'Pilot name': 'Имя пилота',
+  'Another name': 'Другое имя',
   'Start flying': 'Начать полёты',
   'Back': 'Назад',
   'Delete this career?': 'Удалить эту карьеру?',

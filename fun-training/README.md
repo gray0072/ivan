@@ -14,6 +14,8 @@ Each player picks a character — Kitty, Puppy, Bunny, Panda, Fox, Bear, Unicorn
 
 Pausing isn't free: while the game is paused, you can think the task over, but the Coin Muncher eats its coins meanwhile. The pause also asks "Too fast?" or "Can go faster?" and changes the speed of that kind of task right away, showing the new price per task. After a defeat or lots of mistakes, one button replays the step a speed slower.
 
+The 🔊 button on the home screen and in the lesson bar switches the sound effects off and on (remembered on the device); the Reading voice still speaks, it is the task.
+
 Works on a TV (keyboard or remote: arrows, Enter, digits, Back), on a computer and on a phone: tap the answers, or type them on the on-screen number pad.
 
 ![Screenshot](screenshot.png)
