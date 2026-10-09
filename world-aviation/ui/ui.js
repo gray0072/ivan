@@ -326,8 +326,30 @@ const UI = {
       (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(aptCity(World.byId[d.lastTo])), base: d.base })
         : tr('From your base {base} · open regions: {n} — more in the Network tab.', { base: d.base, n: d.regions.length })) + '</div>' +
       Filters.boardBar() +
-      (all.length && !shown.length ? Filters.empty('boardFilter', tr('No offers match the filters ({n} on the board).', { n: all.length }))
+      (!shown.length && FACTIONS[Filters.board().type] ? this.boardGap(Filters.board().type, all.length)
         : '<div class="contracts">' + (list || '<p class="lead">' + tr('No contracts for this aircraft right now — try another type in the hangar.') + '</p>') + '</div>');
+  },
+
+  // the board filtered to one client group that has no offer: why (Career.boardGap) and what to
+  // do about it — another type from the hangar (filtered to that group), a course, another airport
+  boardGap(k, n) {
+    const ac = Career.aircraft(), here = Career.here(), group = tr(FACTIONS[k].short);
+    const why = Career.boardGap(k);
+    let text, more = '';
+    if (why === 'seats') text = tr('Passenger flights need a type with more than {n} seats, and {ac} has {s}.', { n: CONTRACTS.PAX_SEATS, ac: esc(ac.name), s: ac.seats });
+    else if (why === 'payload') text = tr('Cargo flights need a type that lifts at least {t} t, and {ac} lifts {p} t.', { t: CONTRACTS.CARGO_KG / 1000, ac: esc(ac.name), p: fmtTonnes(ac.payloadKg) });
+    else if (why === 'surface') text = tr('Bush and rescue flights need a type cleared for grass or ice strips, and {ac} flies from asphalt only.', { ac: esc(ac.name) });
+    else if (why === 'rating') text = tr('Bush and rescue flights need the Short Field Ops course or {n} reputation in any group (you have {r}).', { n: CONTRACTS.BUSH_REP, r: Math.floor(Career.bestRep()) });
+    else if (why === 'clients') text = tr('No {group} client flies from {apt} to anywhere {ac} reaches in your open regions. Fly on to another airport, or open more regions in the Network tab.', { group: esc(group), apt: esc(aptName(here)), ac: esc(ac.name) });
+    else text = tr('No {group} offers on the board this time ({n} of other kinds). The board is dealt anew after every flight.', { group: esc(group), n });
+    if (why === 'seats' || why === 'payload' || why === 'surface') {
+      const names = AIRCRAFT.filter((a) => !a.legend && Career.suits(a).indexOf(k) >= 0).map((a) => a.name);
+      if (names.length <= 5) text += ' ' + tr('Types for it: {list}.', { list: esc(names.join(', ')) });
+      more = '<button class="btn default" data-act="acFor" data-v="' + k + '">' + Filters.useIcon(k) + tr('Aircraft for {group}', { group: esc(group) }) + '</button>';
+    } else if (why === 'rating') {
+      more = '<button class="btn default" data-act="tab" data-v="training">' + tr('Training') + '</button>';
+    }
+    return Filters.empty('boardFilter', text, more);
   },
 
   // a contract's card: on the board (need: why it cannot be flown, or null), or in the pause of
@@ -336,7 +358,7 @@ const UI = {
     const from = World.byId[c.fromId], to = World.byId[c.toId];
     return '<div class="contract' + (!flying && this.selContract === c.id ? ' sel' : '') + '">' +
       '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
-      esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
+      UseIcons.svg(c.faction) + esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
       '<div class="cRoute"><b>' + c.fromId + ' → ' + c.toId + '</b>' +
       '<span>' + flagImg(from) + esc(aptCity(from)) + ' → ' + flagImg(to) + esc(aptCity(to)) + '</span></div>' +
       '<div class="cGrid">' +
@@ -419,7 +441,7 @@ const UI = {
     const cards = types.map((a) => this.aircraftCard(a, false, isFresh(a))).join('');
     const news = AIRCRAFT.filter(isFresh);
     return (news.length
-      ? '<div class="hint fresh">★ ' + (news.length === 1 && news[0].legend ? tr('The Mriya is yours — select it for your next flight.')
+      ? '<div class="hint fresh">★ ' + (news.length === 1 && news[0].legend ? (Career.mriyaOpen() ? tr('The Mriya is yours — select it for your next flight.') : tr('The Mriya is yours — pass every course to fly it.'))
         : tr('Your new rating opens {list} — select it to lease it for your next flight.', { list: '<b>' + news.map((a) => esc(a.name)).join(', ') + '</b>' })) + '</div>'
       : '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') + '</div>') +
       (legend ? this.legendCard(legend, isFresh(legend)) : '') +
@@ -456,16 +478,17 @@ const UI = {
           '<p class="lgOwn">🔑 ' + tr('Your own aircraft — no lease. Upkeep {kr} per block hour: its crew of six, its maintenance, insurance and hangar.', { kr: fmtMoney(a.rent) }) + '</p>'
         : '<div class="lgBar"><i style="width:' + pct + '%"></i></div>' +
           '<p class="lgCount"><b>' + pct + ' %</b> · ' + tr('{n} of {m} parts fitted', { n, m: N }) +
-          (m.bought.length ? ' · ' + tr('{n} on the stand', { n: m.bought.length }) : '') + '</p>' +
-          (Career.mriyaOpen() ? '' : '<p class="need">🔒 ' + tr('Every course passed: {n} of {m}', { n: passed, m: COURSES.length }) + '</p>')) +
+          (m.bought.length ? ' · ' + tr('{n} on the stand', { n: m.bought.length }) : '') + '</p>') +
+      // (built at any time, flown only with every course passed)
+      (Career.mriyaOpen() ? '' : '<p class="need">🔒 ' + tr('To fly it: every course passed — {n} of {m}', { n: passed, m: COURSES.length }) + '</p>') +
       '<div class="lgFinishes"><span>' + tr('Colour') + '</span>' + MRIYA_FINISHES.map((f) => {
         const own = Career.hasMriyaFinish(f.id), on = Career.mriyaFinish().id === f.id;
         return '<button class="lgSwatch' + (on ? ' on' : '') + (own ? '' : ' buy') + '" data-act="' + (own ? 'mriyaFinish' : 'mriyaTry') + '" data-v="' + f.id + '" aria-pressed="' + on + '" title="' +
-          esc(tr(f.name) + (own ? '' : ' · ' + fmtMoney(MRIYA.FINISH_KR))) + '" aria-label="' + esc(tr(f.name)) + '">' + finishDot(f) + '</button>';
+          esc(tr(f.name) + (own ? '' : ' · ' + fmtMoney(finishPrice(f)))) + '" aria-label="' + esc(tr(f.name)) + '">' + finishDot(f) + '</button>';
       }).join('') + '<b class="lgFinName">' + esc(tr(Career.mriyaFinish().name)) + '</b></div>' +
       '<div class="cFoot">' + (misfit ? '<p class="fitWarn">⚠ ' + esc(this.misfitText(a, here, misfit)) + '</p>' : '') +
       (done ? '<button class="btn" data-act="mriya">' + tr('Assembly hall') + '</button>' +
-        '<button class="btn' + (sel ? ' picked' : ' default') + '" data-act="selectAc" data-v="' + a.id + '">' + (sel ? '✓ ' + tr('Selected') : tr('Select')) + '</button>'
+        (Career.mriyaOpen() ? '<button class="btn' + (sel ? ' picked' : ' default') + '" data-act="selectAc" data-v="' + a.id + '">' + (sel ? '✓ ' + tr('Selected') : tr('Select')) + '</button>' : '')
         : '<button class="btn default fwd" data-act="mriya">' + (n || m.bought.length ? tr('Assembly hall') : tr('Build it')) + '</button>') +
       '</div></div></div>';
   },
@@ -492,7 +515,7 @@ const UI = {
         : fresh ? '<span class="acBadge fresh">★ ' + tr('New') + '</span>'
         : locked ? '<span class="acBadge lock">🔒 ' + esc(this.courseText(course).name) + '</span>' : '') +
       '</div><div class="acMain">' +
-      '<div class="acHead"><b>' + esc(a.name) + '</b></div>' +
+      '<div class="acHead"><b>' + esc(a.name) + '</b>' + this.useBadges(a) + '</div>' +
       '<p class="acBlurb">' + esc(tr(a.blurb)) + '</p>' +
       '<div class="acStats">' +
       tile(a.seats, tr(crew ? 'crew' : 'seats')) +
@@ -515,6 +538,16 @@ const UI = {
             '<span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
             '<button class="btn' + (sel ? ' picked' : ' default') + '" data-act="selectAc" data-v="' + a.id + '">' + (sel ? '✓ ' + tr('Selected') : tr('Select')) + '</button></div>') +
       '</div></div>';
+  },
+
+  // what a type is built for (Career.suits): a round badge per client group; bush work dimmed
+  // while the pilot is not rated for it yet (Career.bushRated)
+  useBadges(a) {
+    return '<span class="useBadges">' + Career.suits(a).map((k) => {
+      const off = k === 'bush' && !Career.bushRated();
+      const title = tr(FACTIONS[k].short) + (off ? ' · ' + tr('needs the Short Field Ops course or {n} reputation', { n: CONTRACTS.BUSH_REP }) : '');
+      return '<span class="use ' + k + (off ? ' off' : '') + '" title="' + esc(title) + '" aria-label="' + esc(title) + '">' + UseIcons.svg(k) + '</span>';
+    }).join('') + '</span>';
   },
 
   // why a type does not suit an airport, in words (Career.misfit)
@@ -980,6 +1013,7 @@ const UI = {
       case 'mriyaTry': MriyaScreen.show(v); break;
       case 'boardFilter': Filters.boardAction(v); this.showOps(); break;
       case 'hangarFilter': Filters.hangarAction(v); this.showOps(); break;
+      case 'acFor': Filters.hangarFor(v); this.tab = 'hangar'; this.showOps(); break;
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;
       case 'course': this.showQuiz(v); break;
       case 'answer': {

@@ -39,10 +39,7 @@
 // centre of gravity, and the wheels touch y = -gearH.
 // ============================================================
 
-// the Mriya's finish by its id (data/mriya.js), its own one (the first) when there is no such
-function mriyaFinish(id) {
-  return MRIYA_FINISHES.find((f) => f.id === (id && id.id ? id.id : id)) || MRIYA_FINISHES[0];
-}
+// (mriyaFinish: the Mriya's finish by its id, in career.js)
 
 // Where the main parts of a type's model are, in its own axes (metres): the wing, the engines,
 // the tail and the gear. build() places the parts by it; the Mriya's blueprint draws it.

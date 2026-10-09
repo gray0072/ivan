@@ -840,7 +840,7 @@ const MRIYA = {
   SNAP_M: 7,                   // a part let go this close to its place (metres on the blueprint) snaps into it
   KEY_STEP_M: 1.6,             // the arrow keys move a part this far (Shift: a quarter of it)
   SPIN_S: 48,                  // the hologram turns once round in this many seconds
-  FINISH_KR: 1000000           // each of its finishes but its own (data/mriya.js), kronor, once
+  FINISH_KR: 1000000           // a finish (data/mriya.js) costs its `price` times this, kronor, once (1 to 5 million)
 };
 
 // ---------- Contract generation ----------
@@ -858,6 +858,12 @@ const CONTRACTS = {
   PAX_TYPES: ['pax'],
   CARGO_TYPES: ['cargo', 'cargo', 'reefer', 'fish', 'hazmat', 'mail'],
   BUSH_TYPES: ['mail', 'cargo', 'fish'],
+  // what a type needs to work for each group (Career.suits): passengers more than PAX_SEATS
+  // seats, freight a payload of CARGO_KG; bush work a type cleared for grass or ice, and the
+  // Short Field Ops course or BUSH_REP reputation in any group
+  PAX_SEATS: 12,
+  CARGO_KG: 1000,
+  BUSH_REP: 3,
   BASE_PAY_PER_NM: 58,           // SEK per real nautical mile, before the payload fee
   PAYLOAD_FEE_NM: 650,           // load fee = kg x PAYLOAD rate x nm / this
   FACTION_MULT: { pax: 1.0, cargo: 1.05, bush: 1.2 },

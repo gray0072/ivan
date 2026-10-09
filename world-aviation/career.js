@@ -168,7 +168,8 @@ const Career = {
   },
   aircraft() { return AIRCRAFT.find((a) => a.id === this.data.selected) || AIRCRAFT.find((a) => !a.unlock); },
   owns(id) { return this.data.aircraft.indexOf(id) >= 0; },
-  unlocked(ac) { return !ac.unlock || (ac.legend ? this.mriyaDone() : this.has(ac.unlock)); },
+  // (the Mriya: built, and flown only by a pilot with every course passed)
+  unlocked(ac) { return !ac.unlock || (ac.legend ? this.mriyaDone() && this.mriyaOpen() : this.has(ac.unlock)); },
   flightsIn(id) { return (this.data.typeFlights && this.data.typeFlights[id]) || 0; },
   // the types unlocked since the last visit to the hangar, and that visit
   newAircraft() { return AIRCRAFT.filter((a) => (this.data.newAircraft || []).indexOf(a.id) >= 0); },
@@ -232,6 +233,9 @@ const Career = {
     this.data.courses.push(c.id);
     // the types this course opens are new in the hangar until the pilot has been there
     for (const a of AIRCRAFT) if (a.unlock === c.id && this.data.newAircraft.indexOf(a.id) < 0) this.data.newAircraft.push(a.id);
+    // the last course: a Mriya already built may now be flown
+    const legend = AIRCRAFT.find((a) => a.legend);
+    if (legend && this.mriyaDone() && this.mriyaOpen() && this.data.newAircraft.indexOf(legend.id) < 0) this.data.newAircraft.push(legend.id);
     this.save();
     this.generateContracts();
     return true;
@@ -263,10 +267,10 @@ const Career = {
   },
 
   // ---------- the Mriya's assembly hall (data/mriya.js, ui/mriya.js) ----------
-  // The An-225 is built from fifty parts once every course is passed. A part costs money and the
+  // The An-225 is built from fifty parts, bought at any time. A part costs money and the
   // reputation of one client group, its share of MRIYA.PRICE_KR and MRIYA.PRICE_REP; bought, it
   // waits on the stand until the pilot fits it on the blueprint. The fiftieth fitted, the
-  // aeroplane is theirs.
+  // aeroplane is theirs — to fly once every course is passed (mriyaOpen).
   mriyaOpen() { return COURSES.every((c) => this.has(c.id)); },
   mriyaDone() { return !!(this.data && this.data.mriya && this.data.mriya.done); },
   mriyaPrice(part) {
@@ -287,9 +291,8 @@ const Career = {
     const m = this.data.mriya;
     return m.placed.indexOf(id) >= 0 ? 'placed' : m.bought.indexOf(id) >= 0 ? 'bought' : 'shop';
   },
-  // what stops the pilot buying a part, or null: 'courses', 'money' or 'rep'
+  // what stops the pilot buying a part, or null: 'money' or 'rep'
   mriyaWhyNot(part) {
-    if (!this.mriyaOpen()) return 'courses';
     const pr = this.mriyaPrice(part);
     if (this.data.money < pr.kr) return 'money';
     if ((this.data.rep[pr.kind] || 0) < pr.rep) return 'rep';
@@ -326,13 +329,13 @@ const Career = {
   },
 
   // The Mriya's finish (data/mriya.js): the one it wears, which ones the pilot has; each of the
-  // others costs MRIYA.FINISH_KR once (only once the hall is open), switching is free
+  // others costs its price once (finishPrice), at any time; switching is free
   mriyaFinish() { return mriyaFinish(this.data && this.data.mriya && this.data.mriya.finish); },
   hasMriyaFinish(id) { return !!(this.data && this.data.mriya.finishes.indexOf(id) >= 0); },
   buyMriyaFinish(id) {
     const f = MRIYA_FINISHES.find((x) => x.id === id);
-    if (!f || this.hasMriyaFinish(id) || !this.mriyaOpen() || this.data.money < MRIYA.FINISH_KR) return false;
-    this.data.money -= MRIYA.FINISH_KR;
+    if (!f || this.hasMriyaFinish(id) || this.data.money < finishPrice(f)) return false;
+    this.data.money -= finishPrice(f);
     this.data.mriya.finishes.push(id);
     this.data.mriya.finish = id;
     this.save();
@@ -376,17 +379,35 @@ const Career = {
       Math.floor(d.stats.flights / CONTRACTS.OFFERS_PER_FLIGHTS));
   },
 
-  // the client groups this aeroplane and this pilot can work for: passengers in a type with more
-  // than a dozen seats, freight in one that lifts a tonne, bush work in one cleared for grass or
-  // ice (with the bush course or some reputation already)
-  factionsFor(ac, fx) {
+  // the client groups a type is built for, whatever the pilot's ratings: passengers in one with
+  // more than a dozen seats, freight in one that lifts a tonne, bush work in one cleared for grass
+  // or ice (the hangar's purpose filter and its badges)
+  suits(ac) {
     const out = [];
-    const repTotal = this.bestRep();
-    if (ac.seats > 12) out.push('pax');
-    if (ac.payloadKg >= 1000) out.push('cargo');
-    if ((ac.surfaces.indexOf('grass') >= 0 || ac.surfaces.indexOf('ice') >= 0) && (repTotal >= 3 || fx.bush)) out.push('bush');
-    if (!out.length) out.push(ac.seats > 12 ? 'pax' : 'cargo');
+    if (ac.seats > CONTRACTS.PAX_SEATS) out.push('pax');
+    if (ac.payloadKg >= CONTRACTS.CARGO_KG) out.push('cargo');
+    if (ac.surfaces.indexOf('grass') >= 0 || ac.surfaces.indexOf('ice') >= 0) out.push('bush');
     return out;
+  },
+  // may the pilot take bush work: the Short Field Ops course or some reputation already
+  bushRated(fx) { return !!(fx || this.effects()).bush || this.bestRep() >= CONTRACTS.BUSH_REP; },
+  // the client groups this aeroplane and this pilot can work for
+  factionsFor(ac, fx) {
+    const out = this.suits(ac).filter((k) => k !== 'bush' || this.bushRated(fx));
+    if (!out.length) out.push(ac.seats > CONTRACTS.PAX_SEATS ? 'pax' : 'cargo');
+    return out;
+  },
+  // Why the board has no offer of a client group for the selected type here (the board's hint
+  // under an empty filter): 'seats', 'payload' or 'surface' (the type is not built for it),
+  // 'rating' (bush work without the course or the reputation), 'clients' (no client of the group
+  // flies from here to anywhere the type reaches in the open regions) or 'luck' (the board was
+  // dealt without one this time)
+  boardGap(faction) {
+    const ac = this.aircraft(), from = this.here();
+    if (this.suits(ac).indexOf(faction) < 0) return faction === 'pax' ? 'seats' : faction === 'cargo' ? 'payload' : 'surface';
+    if (faction === 'bush' && !this.bushRated()) return 'rating';
+    const any = World.list.some((a) => this.legOk(from, a, ac) && this.clientGroups([faction], from, a).length);
+    return any ? 'luck' : 'clients';
   },
   // The client group of the next offer to `to`: the one furthest below its share of the board so
   // far (a random one of them on a tie). Passengers take half the board when the aeroplane can
@@ -698,6 +719,13 @@ const Career = {
 };
 
 const CONTRACTS_PAX_FILL = [0.5, 1.0];
+
+// the Mriya's finish by its id (data/mriya.js), its own one (the first) when there is no such;
+// what one costs (its price in units of MRIYA.FINISH_KR)
+function mriyaFinish(id) {
+  return MRIYA_FINISHES.find((f) => f.id === (id && id.id ? id.id : id)) || MRIYA_FINISHES[0];
+}
+function finishPrice(f) { return Math.round((f.price || 0) * MRIYA.FINISH_KR); }
 
 function contractDifficulty(distNm, type, to) {
   let d = 1;

@@ -8,7 +8,7 @@
 //     fitted parts gold in it, the progress in a ring beside it
 //   - the legend and the real figures
 //   - its finish: eleven to choose from (data/mriya.js), its own free,
-//     the others MRIYA.FINISH_KR each; one not yet bought can be tried
+//     the others 1 to 5 million kr each (finishPrice), cheapest first; one not yet bought can be tried
 //     on the hologram before it is paid for
 //   - the blueprint (art/mriyaplan.js): every part's place, the fitted
 //     ones gold; a bought part is carried onto it and snaps into its
@@ -126,9 +126,10 @@ const MriyaScreen = {
     this.drawProgress();
     this.drawFinishes();
     // locked until every course is passed
-    const open = Career.mriyaOpen(), passed = COURSES.filter((c) => Career.has(c.id)).length;
-    el('mLock').innerHTML = open || Career.mriyaDone() ? ''
-      : '<div class="hint mLockNote">🔒 ' + tr('The Antonov works sell their parts only to a pilot who has passed every course: {n} of {m} so far. Look round, plan the build — and come back with every rating.', { n: passed, m: COURSES.length }) + '</div>';
+    // (the parts and the colours are sold at any time; flying it takes every course)
+    const passed = COURSES.filter((c) => Career.has(c.id)).length;
+    el('mLock').innerHTML = Career.mriyaOpen() ? ''
+      : '<div class="hint mLockNote">🔒 ' + tr('Build it whenever you like — but to fly it you need every course passed: {n} of {m} so far.', { n: passed, m: COURSES.length }) + '</div>';
     this.drawSlots();
     // the stand
     const stand = m.bought.map((id) => this.part(id)).filter(Boolean);
@@ -169,15 +170,15 @@ const MriyaScreen = {
     const f = mriyaFinish(shown);
     let line;
     if (this.trying) {
-      const why = !Career.mriyaOpen() ? tr('Pass every course') : Career.data.money < MRIYA.FINISH_KR ? tr('Needs {kr}', { kr: fmtMoney(MRIYA.FINISH_KR) }) : null;
-      line = '<b>' + esc(tr(f.name)) + '</b> — ' + esc(tr(f.blurb)) + ' <span class="mFinPrice">' + fmtMoney(MRIYA.FINISH_KR) + '</span>' +
+      const why = Career.data.money < finishPrice(f) ? tr('Needs {kr}', { kr: fmtMoney(finishPrice(f)) }) : null;
+      line = '<b>' + esc(tr(f.name)) + '</b> — ' + esc(tr(f.blurb)) + ' <span class="mFinPrice">' + fmtMoney(finishPrice(f)) + '</span>' +
         '<span class="mFinBtns"><button class="btn small' + (why ? ' disabled' : ' default') + '" data-m="finishBuy"' + (why ? ' disabled' : '') + '>' +
         (why || tr('Buy this colour')) + '</button><button class="btn small" data-m="finishCancel">' + tr('Back to {name}', { name: esc(tr(mriyaFinish(cur).name)) }) + '</button></span>';
     } else line = '<b>' + esc(tr(f.name)) + '</b> — ' + esc(tr(f.blurb));
     el('mFin').innerHTML = '<div class="mSwatches">' + MRIYA_FINISHES.map((x) => {
       const own = Career.hasMriyaFinish(x.id);
       return '<button class="mSwatch' + (x.id === shown ? ' on' : '') + (own ? ' own' : '') + '" data-m="finish" data-id="' + x.id + '" aria-pressed="' + (x.id === shown) + '" title="' + esc(tr(x.name)) + '">' +
-        finishDot(x) + '<span>' + esc(tr(x.name)) + '</span><small>' + (x.id === cur ? '✓ ' + tr('On it') : own ? tr('Yours') : fmtMoney(MRIYA.FINISH_KR)) + '</small></button>';
+        finishDot(x) + '<span>' + esc(tr(x.name)) + '</span><small>' + (x.id === cur ? '✓ ' + tr('On it') : own ? tr('Yours') : fmtMoney(finishPrice(x))) + '</small></button>';
     }).join('') + '</div><p class="mFinLine">' + line + '</p>';
   },
   // a swatch pressed: one the pilot has goes on at once; another is tried on
@@ -228,7 +229,7 @@ const MriyaScreen = {
     if (st === 'placed') act = '<span class="mFitted">✓ ' + tr('Fitted') + '</span>';
     else if (st === 'bought') act = '<button class="btn small default" data-m="pick" data-id="' + p.id + '">' + tr('Fit it') + '</button>';
     else {
-      const label = why === 'courses' ? tr('Pass every course') : why === 'money' ? tr('Needs {kr}', { kr: fmtMoney(pr.kr) })
+      const label = why === 'money' ? tr('Needs {kr}', { kr: fmtMoney(pr.kr) })
         : why === 'rep' ? tr('Needs {r} reputation', { r: fmtRep(pr.rep) }) : tr('Buy');
       act = '<button class="btn small' + (why ? ' disabled' : ' default') + '" data-m="buy" data-id="' + p.id + '"' + (why ? ' disabled' : '') + '>' + label + '</button>';
     }

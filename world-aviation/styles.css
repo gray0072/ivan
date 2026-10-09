@@ -827,6 +827,22 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .tag.pax { background: #1d3a55; color: #a9d3f5; }
 .tag.cargo { background: #4a3a1c; color: #f0d59a; }
 .tag.bush { background: #1c4436; color: #a5e8c6; }
+/* the client groups' pictures (art/useicons.js): in a contract's tag, a filter chip, a button,
+   and as round badges by a type's name in the hangar (what it is built for) */
+.useSvg { width: 14px; height: 14px; fill: currentColor; fill-opacity: 0.22; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.tag .useSvg { width: 11px; height: 11px; vertical-align: -2px; margin-right: 4px; }
+.chipUse, .btn .chipUse { display: inline-block; margin-right: 6px; line-height: 0; vertical-align: -2px; }
+.chipUse .useSvg { width: 13px; height: 13px; }
+.chipUse.pax, .use.pax { color: #7fbcff; }
+.chipUse.cargo, .use.cargo { color: #f2b55a; }
+.chipUse.bush, .use.bush { color: #6fe0b4; }
+.btn.default .chipUse { color: inherit; }
+.useBadges { display: inline-flex; gap: 5px; flex: none; }
+.use { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px currentColor; }
+.use.pax { background: rgba(79, 163, 255, 0.14); }
+.use.cargo { background: rgba(232, 161, 58, 0.14); }
+.use.bush { background: rgba(99, 214, 168, 0.14); }
+.use.off { opacity: 0.45; background: none; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
 .cRoute { margin: 8px 0 6px; display: flex; align-items: baseline; gap: 10px; }
 .cRoute b { font-size: 19px; }
 .cRoute span { font-size: 12px; color: #8fa1b3; }

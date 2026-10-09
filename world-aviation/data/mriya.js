@@ -35,34 +35,35 @@ const MRIYA_GROUPS = [
 ];
 
 // The Mriya's finishes (render/models.js paints it in the one chosen, Career.mriyaFinish): the
-// first is its own and free, each of the others costs MRIYA.FINISH_KR once and is then the pilot's
-// to switch to at any time. light / base / shade: the body's colour on the roof, the sides and
+// first is its own and free, each of the others costs `price` × MRIYA.FINISH_KR (1 to 5 million kr)
+// once and is then the pilot's// to switch to at any time. light / base / shade: the body's colour on the roof, the sides and
 // under the belly; accent: the fins and the engine lips; lines: the stripes along each side (one
 // under the other; flow: one stripe running through all of them); title: the AN-225 MRIYA titles;
-// specular and shininess: how it shines (a low shininess is satin, almost matt)
+// specular and shininess: how it shines (a low shininess is satin, almost matt). Listed by price,
+// cheapest first, as the hall and the hangar card show them.
 const MRIYA_FINISHES = [
-  { id: 'pearl', name: 'Pearl and champagne', blurb: 'Pearl white with a champagne line and champagne fins: quiet, and it catches the light.',
+  { id: 'pearl', price: 0, name: 'Pearl and champagne', blurb: 'Pearl white with a champagne line and champagne fins: quiet, and it catches the light.',
     light: '#fbfaf6', base: '#eae7df', shade: '#c4c0b5', accent: '#b0915f', lines: ['#b0915f'], title: '#7a6440', specular: 0xffffff, shininess: 80 },
-  { id: 'classic', name: 'Mriya classic', blurb: 'The real Mriya\'s colours: white, with the blue and the yellow of Ukraine along its sides.',
+  { id: 'classic', price: 1, name: 'Mriya classic', blurb: 'The real Mriya\'s colours: white, with the blue and the yellow of Ukraine along its sides.',
     light: '#ffffff', base: '#f2f4f6', shade: '#c9ced4', accent: '#f2f4f6', lines: ['#0057b7', '#ffd700'], title: '#0057b7', specular: 0x777777, shininess: 30 },
-  { id: 'gold', name: 'Gold', blurb: 'Polished gold from nose to tail, a dark gold line along it. Nobody will miss it.',
-    light: '#f3d27a', base: '#c99a3e', shade: '#8a6420', accent: '#c99a3e', lines: ['#6e4c10'], title: '#6e4c10', specular: 0xfff0c8, shininess: 90 },
-  { id: 'platinum', name: 'Platinum', blurb: 'Bright polished metal, a graphite line: the look of a bare-metal airliner of the sixties.',
-    light: '#f0f3f6', base: '#c4c9ce', shade: '#7c838a', accent: '#9aa1a8', lines: ['#3d434a'], title: '#3d434a', specular: 0xffffff, shininess: 110 },
-  { id: 'midnight', name: 'Midnight blue', blurb: 'Deep night blue with a silver line and silver titles.',
+  { id: 'midnight', price: 1.5, name: 'Midnight blue', blurb: 'Deep night blue with a silver line and silver titles.',
     light: '#33507e', base: '#1c2b4a', shade: '#0e182c', accent: '#1c2b4a', lines: ['#c9ced6'], title: '#d4d9e0', specular: 0x9fb2d6, shininess: 70 },
-  { id: 'rose', name: 'Rose gold', blurb: 'The warm pink of rose gold, a line of deep copper.',
-    light: '#efc8b8', base: '#c6907e', shade: '#8a5a4b', accent: '#c6907e', lines: ['#6e3f33'], title: '#6e3f33', specular: 0xffe0d4, shininess: 90 },
-  { id: 'emerald', name: 'Emerald', blurb: 'Dark emerald green with a line and titles of old gold.',
-    light: '#33876a', base: '#1d5c47', shade: '#0e3528', accent: '#1d5c47', lines: ['#c9a44a'], title: '#dcbb63', specular: 0xbfe8d4, shininess: 70 },
-  { id: 'burgundy', name: 'Burgundy', blurb: 'The red of an old wine, a thin gold line.',
+  { id: 'burgundy', price: 1.5, name: 'Burgundy', blurb: 'The red of an old wine, a thin gold line.',
     light: '#933447', base: '#6a1e2b', shade: '#3a0e17', accent: '#6a1e2b', lines: ['#c9a44a'], title: '#dcbb63', specular: 0xffc8c8, shininess: 60 },
-  { id: 'graphite', name: 'Graphite and copper', blurb: 'Dark graphite, copper fins and a copper line.',
+  { id: 'emerald', price: 2, name: 'Emerald', blurb: 'Dark emerald green with a line and titles of old gold.',
+    light: '#33876a', base: '#1d5c47', shade: '#0e3528', accent: '#1d5c47', lines: ['#c9a44a'], title: '#dcbb63', specular: 0xbfe8d4, shininess: 70 },
+  { id: 'graphite', price: 2, name: 'Graphite and copper', blurb: 'Dark graphite, copper fins and a copper line.',
     light: '#5d636c', base: '#3b4047', shade: '#202428', accent: '#b87333', lines: ['#b87333'], title: '#d08a4a', specular: 0xcccccc, shininess: 60 },
-  { id: 'obsidian', name: 'Obsidian', blurb: 'Satin black all over, a grey line: six hundred tonnes of shadow.',
+  { id: 'obsidian', price: 2.5, name: 'Obsidian', blurb: 'Satin black all over, a grey line: six hundred tonnes of shadow.',
     light: '#2c2f34', base: '#17191c', shade: '#0a0b0d', accent: '#17191c', lines: ['#5a5f66'], title: '#8a9099', specular: 0x3a3a3a, shininess: 14 },
-  { id: 'aurora', name: 'Aurora', blurb: 'Arctic white with the northern lights flowing along its sides, green into blue into violet.',
-    light: '#ffffff', base: '#edf3f6', shade: '#c4d3dc', accent: '#2f9e8f', lines: ['#36d1a6', '#3a8fd9', '#8a5ad9'], flow: true, title: '#2a6f8f', specular: 0xffffff, shininess: 60 }
+  { id: 'platinum', price: 3, name: 'Platinum', blurb: 'Bright polished metal, a graphite line: the look of a bare-metal airliner of the sixties.',
+    light: '#f0f3f6', base: '#c4c9ce', shade: '#7c838a', accent: '#9aa1a8', lines: ['#3d434a'], title: '#3d434a', specular: 0xffffff, shininess: 110 },
+  { id: 'rose', price: 3.5, name: 'Rose gold', blurb: 'The warm pink of rose gold, a line of deep copper.',
+    light: '#efc8b8', base: '#c6907e', shade: '#8a5a4b', accent: '#c6907e', lines: ['#6e3f33'], title: '#6e3f33', specular: 0xffe0d4, shininess: 90 },
+  { id: 'aurora', price: 4, name: 'Aurora', blurb: 'Arctic white with the northern lights flowing along its sides, green into blue into violet.',
+    light: '#ffffff', base: '#edf3f6', shade: '#c4d3dc', accent: '#2f9e8f', lines: ['#36d1a6', '#3a8fd9', '#8a5ad9'], flow: true, title: '#2a6f8f', specular: 0xffffff, shininess: 60 },
+  { id: 'gold', price: 5, name: 'Gold', blurb: 'Polished gold from nose to tail, a dark gold line along it. Nobody will miss it.',
+    light: '#f3d27a', base: '#c99a3e', shade: '#8a6420', accent: '#c99a3e', lines: ['#6e4c10'], title: '#6e4c10', specular: 0xfff0c8, shininess: 90 }
 ];
 
 // the legend, on the assembly hall's first screen

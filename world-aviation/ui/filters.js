@@ -43,7 +43,7 @@ const Filters = {
   boardBar() {
     const b = this.board();
     const type = ['all'].concat(Object.keys(FACTIONS)).map((k) =>
-      this.chip('boardFilter', 'type:' + k, b.type === k, k === 'all' ? tr('All') : tr(FACTIONS[k].short), k === 'all' ? '' : FACTIONS[k].color)).join('');
+      this.chip('boardFilter', 'type:' + k, b.type === k, k === 'all' ? tr('All') : tr(FACTIONS[k].short), k === 'all' ? '' : this.useIcon(k))).join('');
     return '<div class="filterBar">' +
       '<div class="setGroup"><span>' + tr('Show') + '</span>' + type + '</div>' +
       '<div class="setGroup"><span>' + tr('Sort') + '</span>' + this.sortChips('boardFilter', this.BOARD_SORTS, b) + '</div>' +
@@ -57,8 +57,10 @@ const Filters = {
   },
 
   // ---------- the hangar ----------
-  // type: what kind of aeroplane; weight: by the maximum take-off weight; available: only the
-  // types you may lease; sort by weight (lightest first, as the ladder goes), range, payload or lease
+  // use: the client group a type is built for (Career.suits); type: what kind of aeroplane;
+  // weight: by the maximum take-off weight; available: only the types you may lease; sort by
+  // weight (lightest first, as the ladder goes), range, payload or lease
+  HANGAR_USES: ['all'].concat(Object.keys(FACTIONS)),
   HANGAR_TYPES: {
     all: { name: 'All' },
     prop: { name: 'Turboprops', test: (a) => a.engineType === 'prop' },
@@ -82,6 +84,7 @@ const Filters = {
   hangar() {
     const s = Career.settings;
     const h = s.hangar || (s.hangar = {});
+    if (this.HANGAR_USES.indexOf(h.use) < 0) h.use = 'all';
     if (!this.HANGAR_TYPES[h.type]) h.type = 'all';
     if (!this.HANGAR_WEIGHTS[h.weight]) h.weight = 'all';
     if (!this.HANGAR_SORTS[h.sort]) h.sort = 'weight';
@@ -92,16 +95,19 @@ const Filters = {
   hangarList(types) {
     const h = this.hangar();
     const ty = this.HANGAR_TYPES[h.type], wt = this.HANGAR_WEIGHTS[h.weight], sort = this.HANGAR_SORTS[h.sort];
-    return types.filter((a) => (!ty.test || ty.test(a)) && (!wt.test || wt.test(a)) && (!h.available || Career.unlocked(a)))
+    return types.filter((a) => (h.use === 'all' || Career.suits(a).indexOf(h.use) >= 0) && (!ty.test || ty.test(a)) && (!wt.test || wt.test(a)) && (!h.available || Career.unlocked(a)))
       .sort((p, q) => (sort.key(p) - sort.key(q)) * h.dir || p.mtow - q.mtow);
   },
   hangarBar() {
     const h = this.hangar();
     const L = HANGAR_FILTER.LIGHT_T, H = HANGAR_FILTER.HEAVY_T;
+    const use = this.HANGAR_USES.map((k) => this.chip('hangarFilter', 'use:' + k, h.use === k,
+      k === 'all' ? tr('All') : tr(FACTIONS[k].short), k === 'all' ? '' : this.useIcon(k))).join('');
     const type = Object.keys(this.HANGAR_TYPES).map((k) => this.chip('hangarFilter', 'type:' + k, h.type === k, tr(this.HANGAR_TYPES[k].name))).join('');
     const weight = Object.keys(this.HANGAR_WEIGHTS).map((k) =>
       this.chip('hangarFilter', 'weight:' + k, h.weight === k, tr(this.HANGAR_WEIGHTS[k].name, { t: k === 'light' ? L : H, a: L, b: H }))).join('');
     return '<div class="filterBar">' +
+      '<div class="setGroup"><span>' + tr('Purpose') + '</span>' + use + '</div>' +
       '<div class="setGroup"><span>' + tr('Type') + '</span>' + type + '</div>' +
       '<div class="setGroup"><span>' + tr('Weight') + '</span>' + weight +
       this.chip('hangarFilter', 'available', h.available, '✓ ' + tr('Only what I may lease')) + '</div>' +
@@ -111,6 +117,13 @@ const Filters = {
   hangarAction(v) {
     const h = this.hangar();
     this.apply(h, v, this.HANGAR_SORTS, 'available');
+    Career.saveSettings();
+  },
+  // the hangar showing every type built for one client group (the board's empty-filter button)
+  hangarFor(k) {
+    const h = this.hangar();
+    this.apply(h, 'reset');
+    h.use = this.HANGAR_USES.indexOf(k) >= 0 ? k : 'all';
     Career.saveSettings();
   },
 
@@ -125,10 +138,13 @@ const Filters = {
       for (const f of Object.keys(st)) if (f !== 'sort' && f !== 'dir') st[f] = typeof st[f] === 'boolean' ? false : 'all';
     } else if (id !== undefined) st[k] = id;
   },
-  chip(act, v, on, label, dot) {
+  // a filter chip; icon: html before the label (useIcon)
+  chip(act, v, on, label, icon) {
     return '<button class="chip' + (on ? ' on' : '') + '" data-act="' + act + '" data-v="' + v + '" aria-pressed="' + on + '">' +
-      (dot ? '<i class="chipDot" style="background:' + dot + '"></i>' : '') + label + '</button>';
+      (icon || '') + label + '</button>';
   },
+  // a client group's picture in its colour, for a chip
+  useIcon(k) { return '<i class="chipUse ' + k + '">' + UseIcons.svg(k) + '</i>'; },
   // the sort chips; the active one carries its direction and turns round when pressed again
   sortChips(act, sorts, st) {
     return Object.keys(sorts).map((k) => {
@@ -136,9 +152,9 @@ const Filters = {
       return this.chip(act, 'sort:' + k, on, tr(sorts[k].name) + arrow);
     }).join('');
   },
-  // what the list says when the filters leave nothing
-  empty(act, text) {
+  // what the list says when the filters leave nothing; more: buttons of its own after 'Show all'
+  empty(act, text, more) {
     return '<div class="filterEmpty"><p class="lead">' + text + '</p>' +
-      '<button class="btn" data-act="' + act + '" data-v="reset">' + tr('Show all') + '</button></div>';
+      '<button class="btn" data-act="' + act + '" data-v="reset">' + tr('Show all') + '</button>' + (more || '') + '</div>';
   }
 };
