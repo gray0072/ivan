@@ -208,17 +208,18 @@ const Input = {
   },
 
   // The slider is the thrust lever: its position maps to thrust on a curve, so the low end
-  // (taxi power) has more room under the thumb.
+  // (taxi power) has more room under the thumb. The knob stays inside the slider: its centre
+  // runs from half its height above the bottom to half its height below the top.
   moveThrottle(e, zone, knob) {
-    const r = zone.getBoundingClientRect();
-    const v = clamp(1 - (e.clientY - r.top) / r.height, 0, 1);
+    const r = zone.getBoundingClientRect(), k = THROTTLE_KNOB_H / 2;
+    const v = clamp(1 - (e.clientY - r.top - k) / Math.max(1, r.height - 2 * k), 0, 1);
     this.touchThrottle = throttleFromLever(v);
     this.placeThrottleKnob(v, knob);
   },
   placeThrottleKnob(v, knob) {
     knob = knob || el('throttleKnob');
     if (!knob) return;
-    knob.style.bottom = 'calc(' + (v * 100) + '% - 18px)';
+    knob.style.bottom = 'calc(' + v + ' * (100% - ' + THROTTLE_KNOB_H + 'px))';
   },
   // the knob follows the levers when the thumb is off the slider (the autothrottle, the keys)
   syncThrottle(throttle) {
@@ -235,6 +236,9 @@ const Input = {
   touchThrottle: null,
   touchBrake: false
 };
+
+// the touch thrust lever's knob, px tall (#throttleKnob in styles.css)
+const THROTTLE_KNOB_H = 36;
 
 // thrust lever position (0..1) <-> thrust (0..1)
 function throttleFromLever(v) { return Math.pow(clamp(v, 0, 1), CONTROLS.THROTTLE_CURVE); }

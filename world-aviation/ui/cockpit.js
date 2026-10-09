@@ -17,8 +17,9 @@ const Cockpit = {
   // goes down to the bottom of the screen, unless `always` asks for the panel's own place
   panelTop(h, always) {
     if (!always && Instruments.hidden) return h;
-    // a phone held upright: a taller panel for the gauges two by two and the thrust lever
-    if (this.portrait(window.innerWidth, h)) return h - Math.min(h * 0.42, 360);
+    // a phone held upright: a taller panel for the gauges two by two and the thrust lever, as
+    // tall as the gauges need (Instruments.uprightR), so the view keeps more than half the screen
+    if (this.portrait(window.innerWidth, h)) return h - (36 + 4.3 * Instruments.uprightR(window.innerWidth, h));
     return h - Math.min(h * (h < 560 ? 0.34 : 0.30), h < 560 ? 210 : 250);
   },
 
@@ -60,8 +61,8 @@ const Cockpit = {
     ctx.lineTo(w, top + 14); ctx.lineTo(0, top + 14);
     ctx.closePath(); ctx.fill();
 
-    // A-pillars
-    const pillarW = wide ? frame * 0.85 : frame * 0.55;
+    // A-pillars (thin on a phone held upright, where the view is narrow enough already)
+    const pillarW = wide ? frame * 0.85 : this.portrait(w, h) ? frame * 0.2 : frame * 0.55;
     ctx.fillStyle = '#1b2027';
     ctx.fillRect(0, 0, pillarW, top + 12);
     ctx.fillRect(w - pillarW, 0, pillarW, top + 12);

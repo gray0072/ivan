@@ -11,6 +11,8 @@
 // on a phone the touch thrust lever (#throttleZone in styles.css: 62 px wide, 8 px from the
 // edge) covers the right edge of the panel: the gauges keep out of this many pixels
 const PHONE_THROTTLE_W = 78;
+// held upright the round gauges are this share of the size that would fill the panel's width
+const PHONE_UPRIGHT_GAUGES = 0.8;
 
 const Instruments = {
   ctx: null, w: 0, h: 0, dpr: 1,
@@ -20,6 +22,11 @@ const Instruments = {
   get hidden() { return this.light >= CONTROLS.INSTRUMENT_LIGHTS.length; },
   // I: dim → medium → bright → hidden → dim
   nextLight() { this.light = (this.light + 1) % (CONTROLS.INSTRUMENT_LIGHTS.length + 1); },
+  // a phone held upright: the radius of its four round gauges (two by two left of the thrust
+  // lever); the panel is made as tall as they need (Cockpit.panelTop)
+  uprightR(w, h) {
+    return Math.min((w - PHONE_THROTTLE_W - 6) / 4.3, (Math.min(h * 0.42, 360) - 36) / 4.3, 92) * PHONE_UPRIGHT_GAUGES;
+  },
 
   draw(ctx, w, h, dpr, fl, sys) {
     if (this.hidden) return;
@@ -62,16 +69,16 @@ const Instruments = {
     } else if (Cockpit.portrait(w, h)) {
       // a phone held upright: the configuration on one line, the four gauges two by two, and
       // the right edge left to the thrust lever (the touch slider sits over it)
+      // (no heading strip on a phone: the taxi arrow, the map and the route marker do its job)
       const lineH = 20;
       this.configLine(ctx, 8, top + 6, w - 16, lineH, fl, sys);
       const x0 = 6, x1 = w - PHONE_THROTTLE_W, y0 = top + 10 + lineH, y1 = h - 6;
-      const r = Math.min((x1 - x0) / 4.3, (y1 - y0) / 4.3, 92);
+      const r = this.uprightR(w, h);
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, d = r * 1.08;
       this.asi(ctx, cx - d, cy - d, r, fl);
       this.adi(ctx, cx + d, cy - d, r, fl);
       this.alt(ctx, cx - d, cy + d, r, fl);
       this.vsi(ctx, cx + d, cy + d, r, fl);
-      this.hsi(ctx, w / 2, top - 18, Math.min(w * 0.62, 420), 22, fl, sys);
     } else if (Input.isCoarse) {
       // a phone on its side: the thrust lever on the right edge, so no VSI (the climb rate is a
       // number next to the altimeter), and the configuration keeps what the buttons do not show
@@ -84,7 +91,6 @@ const Instruments = {
       this.alt(ctx, cx + 2.1 * r, y, r, fl);
       this.vsBox(ctx, cx + 3.6 * r, y, r * 0.95, fl);
       this.config(ctx, 6, top + 6, cfgW, panelH - 12, fl, sys, true);
-      this.hsi(ctx, w / 2, top - 18, Math.min(w * 0.62, 420), 22, fl, sys);
     } else {
       // a small window on a computer
       const cfgW = 124;

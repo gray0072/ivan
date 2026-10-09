@@ -450,9 +450,7 @@ const AircraftModels = {
     g.beginPath();
     g.moveTo(cx + 1.4 * px, yAt(30 + ck)); g.lineTo(cx + 2.4 * px, yAt(15 + ck)); g.lineTo(cx + 2.4 * px, yAt(ck));
     g.lineTo(cx + 1.4 * px, yAt(ck)); g.closePath(); g.fill();
-    const tex = new THREE.CanvasTexture(cv);
-    tex.encoding = THREE.sRGBEncoding;
-    tex.anisotropy = 4;
+    const tex = paintedTexture(cv);
     this.liveries.set(key, tex);
     return tex;
   },
@@ -517,10 +515,7 @@ const AircraftModels = {
         const chord = Math.abs(le - te);
         const rM = Math.min(chord * 0.4, h * 0.36);
         Emblems.draw(g, al, { w: W, h: H, cx: U((le + te) / 2), cy: V(yc), r: rM / h * H });
-        const t = new THREE.CanvasTexture(cv);
-        t.encoding = THREE.sRGBEncoding;
-        t.anisotropy = 4;
-        return t;
+        return paintedTexture(cv);
       });
       this.finArt.set(key, tex);
     }
@@ -725,6 +720,41 @@ function nacelleInside(dark, side) {
   return insideMats.get(key);
 }
 
+// A canvas drawing (a livery, a fin's emblem, a fan) as a texture the GPU gets as plain bytes:
+// the pixels read back, turned into linear light (as an sRGB texture would be read) and turned
+// bottom-up for GL. Some phones (seen on a Poco X6 Pro) drew canvas-made textures black in the
+// small off-screen renderer of the title screen and the hangar (render/preview3d.js): the
+// fuselage black, only the plain-painted wings and engines lit. Plain RGBA bytes go up to the GPU
+// the same simple way everywhere. (8 bits of linear light band in deep gradients, which the flat
+// colours of a paint scheme do not have.)
+const SRGB_TO_LINEAR_8 = (() => {
+  const t = new Uint8Array(256);
+  for (let i = 0; i < 256; i++) {
+    const c = i / 255;
+    t[i] = Math.round((c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)) * 255);
+  }
+  return t;
+})();
+function paintedTexture(cv) {
+  const w = cv.width, h = cv.height, row = w * 4;
+  const src = cv.getContext('2d').getImageData(0, 0, w, h).data;
+  const out = new Uint8Array(row * h), lin = SRGB_TO_LINEAR_8;
+  for (let y = 0; y < h; y++) {
+    const s = (h - 1 - y) * row, d = y * row;
+    for (let i = 0; i < row; i += 4) {
+      out[d + i] = lin[src[s + i]]; out[d + i + 1] = lin[src[s + i + 1]]; out[d + i + 2] = lin[src[s + i + 2]];
+      out[d + i + 3] = src[s + i + 3];
+    }
+  }
+  const t = new THREE.DataTexture(out, w, h, THREE.RGBAFormat);
+  t.magFilter = THREE.LinearFilter;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true;
+  t.anisotropy = 4;
+  t.needsUpdate = true;
+  return t;
+}
+
 // The textures of a turbofan's front, drawn once: the fan (swept blades catching the light round
 // a dark hub, in the dark casing) and the spinner (with a white spiral, as most have)
 let fanTextures = null;
@@ -734,10 +764,7 @@ function fanFaceTextures() {
     const cv = document.createElement('canvas');
     cv.width = cv.height = size;
     draw(cv.getContext('2d'), size);
-    const t = new THREE.CanvasTexture(cv);
-    t.encoding = THREE.sRGBEncoding;
-    t.anisotropy = 4;
-    return t;
+    return paintedTexture(cv);
   };
   const fan = make(256, (g, n) => {
     const c = n / 2, R = n / 2;

@@ -87,6 +87,8 @@ const Flight = {
     this.timeAccelIndex = 0;
     this.timeAccelResume = 0;        // the step an emergency cut the time from, to climb back to
     this.resumeT = 0;
+    this.timeAccelWant = 0;          // a step asked for in the climb, given once in the cruise on NAV
+    this.wantT = 0;
     this.cheatAccel = false;
     this.guidance = null;
     this.navFailed = false; this.cargoShift = false; this.medical = false;
@@ -359,6 +361,11 @@ const Flight = {
   },
   // in the cruise on the autopilot's NAV: where the steps above x128 are allowed
   cruiseNav() { return this.phase === 'CRUISE' && this.ap.on && this.ap.nav && !this.navFailed && !!this.arrival; },
+  // on the autopilot's NAV on the way up to the cruise (or in it): a faster step asked for now is
+  // given there (timeAccelWant)
+  wantsCruise() {
+    return this.ap.on && this.ap.nav && !this.navFailed && !!this.arrival && (this.phase === 'TAKEOFF' || this.phase === 'CLIMB' || this.phase === 'CRUISE');
+  },
   // The time slows down one step at a time, a step every TIME_ACCEL_SLOWDOWN_S real seconds, to
   // the step `floor` when `left` metres are flown: at every step the distance left must hold
   // that many seconds at each of the steps below it (down to the floor). The fastest step that
@@ -423,6 +430,20 @@ const Flight = {
       }
     } else this.resumeT = 0;
     if (this.timeAccelIndex >= this.timeAccelResume) this.timeAccelResume = 0;
+    // T pressed past x128 in the climb: once level in the cruise on NAV the time goes on up to
+    // the step asked for, a step a second (gone with the autopilot, or past the cruise)
+    if (this.timeAccelWant > this.timeAccelIndex) {
+      if (!this.wantsCruise()) this.timeAccelWant = 0;
+      else if (this.timeAccelIndex < this.timeAccelTop() && !(this.systems && this.systems.checklist)) {
+        this.wantT += dtReal;
+        if (this.wantT >= SIM.TIME_ACCEL_RESUME_S) {
+          this.wantT = 0;
+          this.timeAccelIndex++;
+          e.timeAccel = SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
+          this.info(tr('TIME x{n}', { n: e.timeAccel }), 'TIME');
+        }
+      } else this.wantT = 0;
+    } else { this.timeAccelWant = 0; this.wantT = 0; }
     if (this.timeAccelIndex === 0 && !this.cheatAccel) { e.timeAccel = 1; return 1; }
     const top = this.timeAccelTop();
     const was = e.timeAccel;
@@ -445,7 +466,17 @@ const Flight = {
     const steps = SIM.TIME_ACCEL_STEPS;
     const top = this.timeAccelTop();
     this.timeAccelResume = 0;                // the pilot sets the time: no climbing back after an emergency
+    if (dir < 0) this.timeAccelWant = 0;
     if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = dir < 0 ? top : this.timeAccelIndex; }
+    else if (dir > 0 && this.timeAccelIndex >= top && this.timeAccelIndex < steps.length - 1 &&
+      steps[this.timeAccelIndex] >= SIM.TIME_ACCEL_AP_MAX && !this.cruiseNav() && this.wantsCruise() && !this.approachCapped &&
+      !(this.systems && this.systems.checklist)) {
+      // on the autopilot in the climb: x128 now, and the step asked for once in the cruise
+      this.timeAccelWant = Math.min(Math.max(this.timeAccelWant, this.timeAccelIndex) + 1, steps.indexOf(SIM.TIME_ACCEL_CRUISE_MAX));
+      this.info(tr('Time x{n} in the climb — x{want} once level in the cruise, it speeds up by itself',
+        { n: steps[this.timeAccelIndex], want: steps[this.timeAccelWant] }), 'TIME');
+      return;
+    }
     else if (dir > 0 && this.timeAccelIndex >= top) { this.warn('TIME', this.timeAccelLimitText()); return; }
     else if (dir < 0 && this.timeAccelIndex === 0) { this.info(tr('TIME x{n}', { n: 1 }), 'TIME'); return; }
     else this.timeAccelIndex = clamp(this.timeAccelIndex + dir, 0, top);
@@ -1034,6 +1065,12 @@ const Flight = {
     return Math.max(target, this.vsNow() * 1.35, this.phase === 'APPROACH' ? vref : 0);
   },
 
+  // the autopilot's best climb rate here (m/s): less the higher it is (SIM.AP_CEILING_RATIO)
+  apClimbRate() {
+    const ac = this.ac;
+    return ac.climbRate * clamp(1 - this.st.pos.y / (ac.cruiseAlt * SIM.AP_CEILING_RATIO), SIM.AP_CLIMB_MIN_SHARE, 1);
+  },
+
   // ---------- autopilot ----------
   // HDG / NAV laterally (NAV flies to the final fix and captures the localiser),
   // ALT hold or G/S vertically, and an autothrottle on the speed.
@@ -1096,7 +1133,7 @@ const Flight = {
         this.msaWarnT = this.realElapsed;
         this.info(tr('Terrain ahead — the autopilot holds {alt} ft', { alt: fmtAltFt(Math.ceil(target / FT / 100) * 100) }));
       }
-      vsT = clamp((target - st.pos.y) * 0.05, -11, ac.climbRate);
+      vsT = clamp((target - st.pos.y) * 0.05, -11, this.apClimbRate());
       // a climb (for the terrain, or back up to the selected altitude) only as steep as the
       // spare speed allows: never down to the stall — low and slow with the gear out, a full
       // climb rate up to a new safe altitude stalled the aeroplane and dropped the autopilot

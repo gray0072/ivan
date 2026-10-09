@@ -198,7 +198,8 @@ const Game = {
   // sits where the glide path is, and a line of plain words says what to do. Off the view
   // ahead: on a desktop on the right, past the centre window post (on the left while the
   // checklist fills the right side), and so on a tablet on its side, clear of the throttle slider
-  // and under the buttons; on a phone high in the middle, between the buttons.
+  // and under the buttons; on a phone high in the middle, between the buttons, at half the size
+  // and without the words (the scales say it, and the view needs the room).
   // The landing aid setting turns it off.
   drawIls(ctx, w, h, fl) {
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
@@ -209,13 +210,14 @@ const Game = {
     const top = Cockpit.panelTop(h);
     const inside = this.camMode === 'cockpit';
     const side = !Input.isCoarse, upright = Cockpit.portrait(w, h);
-    const R = side ? Math.min(90, w * 0.08) : upright ? w * 0.1 : Math.min(110, w * 0.12), V = upright ? 40 : Math.min(70, h * 0.1);
+    const phone = Input.isCoarse && Math.min(w, h) < 600, k = phone ? 0.5 : 1;     // the symbols' scale
+    const R = (side ? Math.min(90, w * 0.08) : upright ? w * 0.1 : Math.min(110, w * 0.12)) * k;
+    const V = (upright ? 40 : Math.min(70, h * 0.1)) * k;
     let cx = inside ? w / 2 : w - R - 110, cy = inside ? top * 0.5 : top * 0.56;
     if (upright) {
-      // a phone held upright: on the right between the messages under the buttons and the
-      // heading strip, clear of the strip and the prompt on the left
-      cx = w * 0.7;
-      cy = top - 150;
+      // a phone held upright: on the right, just above the panel, clear of the prompt on the left
+      cx = w * 0.72;
+      cy = top - V - 34;
     } else if (side) {
       const cb = el('checklist'), qrh = cb && !cb.hidden;
       cy = top * 0.56;
@@ -234,7 +236,7 @@ const Game = {
     const LOC = '#e65cf0', GS = '#4fd8ff';
     const loc = clamp(-d.locDeg / 2.5, -1, 1);       // + : the runway is to the right
     const gs = clamp(-d.gsDeg / 0.7, -1, 1);         // + : the glide path is above you
-    const ly = cy + V + 16, gx = cx + R + 18;
+    const ly = cy + V + 16 * k, gx = cx + R + 18 * k;
     ctx.save();
     // dark outlines instead of a panel: the colours read against a bright sky, the view stays open
     ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
@@ -248,23 +250,26 @@ const Game = {
     ctx.moveTo(cx - R, ly); ctx.lineTo(cx + R, ly);
     ctx.moveTo(gx, cy - V); ctx.lineTo(gx, cy + V);
     ctx.stroke();
-    for (const k of [-1, -0.5, 0.5, 1]) {
-      ctx.beginPath(); ctx.arc(cx + k * R, ly, 2.5, 0, TAU); ctx.stroke();
-      ctx.beginPath(); ctx.arc(gx, cy + k * V, 2.5, 0, TAU); ctx.stroke();
+    for (const f of [-1, -0.5, 0.5, 1]) {
+      ctx.beginPath(); ctx.arc(cx + f * R, ly, 2.5 * k, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(gx, cy + f * V, 2.5 * k, 0, TAU); ctx.stroke();
     }
     // the centre marks: you
-    ctx.strokeStyle = '#ffd97a'; ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(cx, ly - 9); ctx.lineTo(cx, ly + 9); ctx.moveTo(gx - 9, cy); ctx.lineTo(gx + 9, cy); ctx.stroke();
+    ctx.strokeStyle = '#ffd97a'; ctx.lineWidth = 2.5 * Math.sqrt(k);
+    ctx.beginPath(); ctx.moveTo(cx, ly - 9 * k); ctx.lineTo(cx, ly + 9 * k); ctx.moveTo(gx - 9 * k, cy); ctx.lineTo(gx + 9 * k, cy); ctx.stroke();
     // the runway on the localiser scale: a little runway seen from the approach
     const rx = cx + loc * R;
     ctx.fillStyle = Math.abs(loc) >= 1 ? '#ff7a5c' : LOC;
-    ctx.beginPath(); ctx.moveTo(rx - 3, ly - 12); ctx.lineTo(rx + 3, ly - 12); ctx.lineTo(rx + 7, ly + 12); ctx.lineTo(rx - 7, ly + 12); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
-    ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(rx, ly - 10); ctx.lineTo(rx, ly + 11); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(rx - 3 * k, ly - 12 * k); ctx.lineTo(rx + 3 * k, ly - 12 * k); ctx.lineTo(rx + 7 * k, ly + 12 * k); ctx.lineTo(rx - 7 * k, ly + 12 * k); ctx.closePath(); ctx.fill();
+    if (!phone) {
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(rx, ly - 10); ctx.lineTo(rx, ly + 11); ctx.stroke(); ctx.setLineDash([]);
+    }
     // the glide path on the glideslope scale: a triangle pointing at the scale
     const gy = cy - gs * V;
     ctx.fillStyle = Math.abs(gs) >= 1 ? '#ff7a5c' : GS;
-    ctx.beginPath(); ctx.moveTo(gx - 3, gy); ctx.lineTo(gx + 13, gy - 8); ctx.lineTo(gx + 13, gy + 8); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(gx - 3 * k, gy); ctx.lineTo(gx + 13 * k, gy - 8 * k); ctx.lineTo(gx + 13 * k, gy + 8 * k); ctx.closePath(); ctx.fill();
+    if (phone) { ctx.restore(); return; }
     // labels and plain words
     ctx.font = '700 11px system-ui, sans-serif';
     ctx.textAlign = 'center';
@@ -952,6 +957,9 @@ const Game = {
     // the time of day: the departure's local hour, the clock runs on with the flight (Scene3D)
     this.setup.timeOfDay = Career.timeOfDay;
     env.hour0 = TIME_OF_DAY[this.setup.timeOfDay].hour;
+    // the night sky of this contract: the moon's phase (0 new, 0.5 full) and the season's stars
+    env.moonPhase = (hashStr(contract.id + '/moon') >>> 0) % 10000 / 10000;
+    env.month = Career.data.season || 0;
 
     const fx = s.fx;
     this.systems = Systems.init(this.flight, {

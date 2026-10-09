@@ -91,9 +91,15 @@ const HUD = {
     if (!this.strip) return;
     const c = fl.contract;
     if (!c) { this.strip.hidden = true; return; }
-    // a phone folds the strip to the route and the fuel, so the prompt under it
-    // stays off the panel (a tap opens it)
-    this.strip.classList.toggle('compact', Input.isCoarse && !this.stripOpen);
+    // a phone folds the strip to the route, so the prompt under it stays off the panel (a tap
+    // opens it); held upright it has no room for the route at all (it is in the pause menu). The
+    // fuel shows on a phone only when it is short (fuelShort): a line of its own, held upright
+    const short = this.fuelShort(fl, sys);
+    const upright = Cockpit.portrait(window.innerWidth, window.innerHeight);
+    this.strip.classList.toggle('compact', Input.isCoarse && (!this.stripOpen || upright));
+    this.strip.classList.toggle('fuelShort', short);
+    this.strip.classList.toggle('fuelOnly', upright);
+    if (upright && !short) { this.strip.hidden = true; return; }
     this.strip.hidden = false;
     // the route, the airports with their countries, the pay and the planned flight time: built
     // once a flight (the flags are images); the actual flight time and the live figures under it
@@ -139,6 +145,18 @@ const HUD = {
     if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
   },
 
+  // Is the fuel worth a look? Leaking, the low-fuel light on, or less on board than the rest of
+  // the route takes as the contract planned it (Career.makeContract: the cruise burn at 85 %,
+  // over the distance at 85 % of the cruise speed, plus 4 minutes) with a little to spare.
+  // Usually there is plenty, and a phone has no room for a number nobody needs.
+  fuelShort(fl, sys) {
+    const st = fl.st, ac = fl.ac;
+    if (st.leakRate > 0 || (sys && sys.warnings && (sys.warnings.fuelLeak || sys.warnings.fuelLow))) return true;
+    if (!fl.arrival) return false;
+    const hours = fl.distToDestNm() / (ac.cruiseTas * 0.85) + 4 / 60;
+    return st.fuel < ac.fuelFlowCruise * ac.engines * hours * 0.85 * CONTROLS.FUEL_SHOW_MARGIN;
+  },
+
   // ---------- phase prompt ----------
   setPrompt(html) {
     if (!this.prompt) return;
@@ -181,6 +199,22 @@ const HUD = {
       document.querySelectorAll('#touchButtons [data-act]').forEach((b) => { this.litBtns[b.getAttribute('data-act')] = b; });
     }
     const st = fl.st;
+    // the last row changes with the flight: Go and the brakes on the ground, gone after the
+    // lift-off; the autopilot and the time from the climb (CONTROLS.TOUCH_AP_ROW_AGL_M up, where the
+    // CLIMB phase starts) until the autopilot lets go on the approach, when the brakes come back
+    // for the landing (the row keeps its place in between, so nothing jumps)
+    const row = st.onGround || (fl.phase === 'APPROACH' && !fl.ap.on) ? 'ground'
+      : fl.phase === 'TAKEOFF' && fl.altAgl() < CONTROLS.TOUCH_AP_ROW_AGL_M ? 'none' : 'air';
+    if (row !== this.btnRow) {
+      this.btnRow = row;
+      const tb = el('touchButtons');
+      if (tb) tb.setAttribute('data-show', row);
+      // a brake left on in the take-off roll is not waiting for the touchdown
+      if (row !== 'ground' && Input.touchBrake) {
+        Input.touchBrake = false;
+        if (this.litBtns.brake) this.litBtns.brake.classList.remove('on');
+      }
+    }
     const on = { ap: fl.ap.on, nav: fl.ap.on && fl.ap.nav, gear: st.gearTarget >= 1, spoiler: st.spoiler, parkBrake: st.parkingBrake, antiIce: sys && sys.antiIce };
     for (const k in on) {
       const b = this.litBtns[k];

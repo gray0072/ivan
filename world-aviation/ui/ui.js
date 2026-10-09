@@ -231,7 +231,7 @@ const UI = {
         ? 'The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag up to lift the nose, left and right to roll — and to steer on the ground.'
         : 'The <b>left half</b> of the screen is a floating joystick: it appears where your thumb lands. Drag down to pull the nose up, left and right to roll — and to steer on the ground.') + '</li>' +
       '<li>' + tr('The <b>slider on the right edge</b> is the throttle — its lower half gives fine control of low power for taxiing.') + '</li>' +
-      '<li>' + tr('The buttons at the top right: <b>Go</b> (push back, start, taxi, clearance), gear, flaps, brakes, parking brake, autopilot, <b>Time +</b> / <b>Time −</b> and the menu.') + '</li>' +
+      '<li>' + tr('The buttons at the top: the menu, the view, the map and anti-ice; the flaps, the gear and the spoiler; and a row that changes with the flight — on the ground and for the landing <b>Go</b> (push back, start, clearance), the brake and the parking brake, in the air the autopilot and <b>Time −</b> / <b>Time +</b>.') + '</li>' +
       '<li>' + tr('Tap the hint text to fold it to one line, tap again to open it.') + '</li>' +
       '<li>' + tr('Both thumbs work at once, so you can fly and work a checklist together.') + '</li>' +
       '</ul>' +
@@ -658,7 +658,8 @@ const UI = {
     Input.active = false;
     const p = result.payout || { lines: [], total: 0 };
     const landed = Game.flight && Game.flight.landed;
-    const gradeCls = 'grade' + (result.grade === 'A+' || result.grade === 'A' ? ' top' : result.grade === 'F' || result.grade === 'E' ? ' bad' : '');
+    const gradeCls = 'grade' + (result.grade === 'A+' || result.grade === 'A' ? ' top' : result.grade === 'F' || result.grade === 'E' ? ' bad' : '') +
+      (failed ? ' word' : '');                     // a word instead of a letter: smaller, so it fits a phone
     const body =
       '<div class="debriefTop">' +
       '<div class="' + gradeCls + '">' + (failed ? tr('LOST') : result.grade) + '</div>' +

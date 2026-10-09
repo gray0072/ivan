@@ -90,6 +90,7 @@ const Scene3D = {
         sunDir: { value: new THREE.Vector3(0.4, 0.35, -0.85).normalize() },
         moonDir: { value: new THREE.Vector3(0, 1, 0) },
         moonAmt: { value: 0 },
+        moonLit: { value: 1 },
         glow: { value: new THREE.Color(0xf0a060) },
         warm: { value: 0 },
         flash: { value: 0 }
@@ -103,7 +104,7 @@ const Scene3D = {
         }`,
       fragmentShader: `
         uniform vec3 top, mid, bot, ground, sunDir, moonDir, glow;
-        uniform float flash, moonAmt, warm;
+        uniform float flash, moonAmt, moonLit, warm;
         varying vec3 vDir;
         void main() {
           float y = normalize(vDir).y;
@@ -123,10 +124,24 @@ const Scene3D = {
           vec2 hs = normalize(sunDir.xz + vec2(1e-5));
           float side = max(dot(normalize(d.xz + vec2(1e-5)), hs), 0.0);
           c += glow * warm * pow(side, 3.0) * (1.0 - smoothstep(0.0, 0.35, abs(y))) * 0.75;
-          // the moon: a disc and a soft halo
-          float m = dot(d, normalize(moonDir));
-          c += vec3(0.92, 0.94, 1.0) * smoothstep(0.99986, 0.99992, m) * moonAmt * up;
-          c += vec3(0.5, 0.6, 0.8) * pow(max(m, 0.0), 300.0) * 0.2 * moonAmt;
+          // the moon: a ball lit by the sun (so its phase shows), its seas, and a soft halo
+          vec3 md = normalize(moonDir);
+          float m = dot(d, md);
+          if (m > 0.9998) {
+            vec3 o = (d - md * m) / 0.0148;                          // on the disc: 0 centre, 1 the rim
+            float rr = dot(o, o);
+            vec3 e = normalize(cross(vec3(0.0, 1.0, 0.0), md)), nn = cross(md, e);
+            vec2 q = vec2(dot(o, e), dot(o, nn));
+            vec3 n = o - md * sqrt(max(1.0 - rr, 0.0));              // the ball's face towards us
+            float lit = smoothstep(-0.035, 0.035, dot(n, normalize(sunDir)));
+            float sea = 1.0 - 0.16 * smoothstep(0.22, 0.1, length(q - vec2(-0.25, 0.3)))
+                            - 0.13 * smoothstep(0.26, 0.12, length(q - vec2(0.2, 0.15)))
+                            - 0.11 * smoothstep(0.2, 0.08, length(q - vec2(-0.05, -0.35)));
+            float disc = 1.0 - smoothstep(0.86, 1.0, rr);
+            c = max(c, mix(c, vec3(0.92, 0.94, 1.0) * sea, disc * lit * moonAmt * up));   // it only brightens a day sky
+            c += vec3(0.05, 0.06, 0.08) * disc * (1.0 - lit) * moonAmt * (1.0 - moonLit) * up;   // earthshine, strongest on a crescent
+          }
+          c += vec3(0.5, 0.6, 0.8) * pow(max(m, 0.0), 300.0) * 0.2 * moonAmt * moonLit * moonLit;
           c += vec3(0.7, 0.75, 0.85) * flash;                        // lightning
           gl_FragColor = vec4(c, 1.0);
         }`
@@ -137,22 +152,43 @@ const Scene3D = {
     this.scene.add(this.sky);
   },
 
-  // the stars: points on the upper half of the dome, fading in as it gets dark
+  // the stars: a sphere of points turning round the pole with the clock (update), fading in as it
+  // gets dark and towards the horizon; laid out with the pole at +Y, the pole star on it
   buildStars() {
-    const n = 1400, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
+    const n = 2800, pos = new Float32Array(n * 3), col = new Float32Array(n * 3);
     const rng = makeRng(424242);
     for (let i = 0; i < n; i++) {
-      const y = rng.range(0.02, 1), a = rng.range(0, TAU), r = Math.sqrt(1 - y * y);
+      const y = i === 0 ? 1 : rng.range(-1, 1), a = rng.range(0, TAU), r = Math.sqrt(1 - y * y);
       pos.set([Math.cos(a) * r, y, Math.sin(a) * r], i * 3);
-      const b = 0.35 + Math.pow(rng.next(), 3) * 0.65, tint = rng.range(-0.08, 0.08);
+      const b = i === 0 ? 0.95 : 0.35 + Math.pow(rng.next(), 3) * 0.65, tint = rng.range(-0.08, 0.08);
       col.set([b * (1 + tint), b, b * (1 - tint)], i * 3);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    this.stars = new THREE.Points(geo, new THREE.PointsMaterial({
-      size: 1.8, sizeAttenuation: false, vertexColors: true, transparent: true, opacity: 0, depthWrite: false, fog: false
+    this.stars = new THREE.Points(geo, new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, fog: false,
+      uniforms: { opacity: { value: 0 }, size: { value: 1.8 } },
+      vertexShader: `
+        attribute vec3 color;
+        uniform float size;
+        varying vec3 vCol;
+        varying float vUp;
+        void main() {
+          vCol = color;
+          vUp = normalize((modelMatrix * vec4(position, 1.0)).xyz - cameraPosition).y;
+          gl_PointSize = size;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform float opacity;
+        varying vec3 vCol;
+        varying float vUp;
+        void main() {
+          gl_FragColor = vec4(vCol, opacity * smoothstep(0.0, 0.08, vUp));   // dimmer low down, none below the horizon
+        }`
     }));
+    this.stars.matrixAutoUpdate = false;
     this.stars.frustumCulled = false;
     this.stars.renderOrder = -999;
     this.scene.add(this.stars);
@@ -647,29 +683,42 @@ const Scene3D = {
     this.aircraftY = st.pos.y;
     this.lastGround = fl.groundHeight();
 
-    // ---- the hour: the sun, the moon (full, opposite the sun), the stars
+    // ---- the hour: the sun, the moon (in its phase: it keeps 24 h × phase behind the sun), the stars
     const hour = ((env.hour0 !== undefined ? env.hour0 : 13) + fl.elapsed / 3600) % 24;
     const sun = sunAt(hour);
     const sd = new THREE.Vector3(sun.x, sun.y, sun.z);
-    const md = sd.clone().negate();
+    const phase = ((env.moonPhase !== undefined ? env.moonPhase : 0.5) + fl.elapsed / (MOON_MONTH_DAYS * 86400)) % 1;
+    const moon = sunAt(hour - phase * 24);
+    const md = new THREE.Vector3(moon.x, moon.y, moon.z);
+    const moonLit = 0.5 * (1 - sd.dot(md));                             // the lit share of its face
+    const moonUp = smoothstep(-0.02, 0.1, md.y);
     const day = smoothstep(-0.12, 0.2, sun.el);                         // how much sunlight
     const dark = 1 - smoothstep(-0.16, 0.03, sun.el);                   // 1 at night: lights on
     const warm = smoothstep(-0.14, 0.0, sun.el) * (1 - smoothstep(0.05, 0.4, sun.el));   // dusk colours
     this.dark = dark;
     GroundLights.update(dark);
-    const lit = day > 0.05 ? sd : md;                                   // the light comes from the moon at night
+    const lit = day > 0.05 ? sd : md.y > 0.05 ? md : NIGHT_GLOW_DIR;    // the moon lights the night, or the sky's glow when it is down
     this.sun.position.copy(eye).addScaledVector(lit, 50000);
     this.sun.target.position.copy(eye);
     const u = this.sky.material.uniforms;
     u.sunDir.value.copy(sd);
     u.moonDir.value.copy(md);
-    u.moonAmt.value = dark * smoothstep(-0.02, 0.1, md.y);
+    u.moonAmt.value = (0.25 + 0.75 * dark) * moonUp;                 // faint by day, bright at night
+    u.moonLit.value = moonLit;
     u.warm.value = warm;
     this.sky.position.copy(this.camera.position);      // the dome travels with the eye
     this.sky.scale.setScalar(300000);
-    this.stars.position.copy(this.camera.position);
-    this.stars.scale.setScalar(290000);
-    this.stars.material.opacity = dark * 0.95 * clamp((env.vis - 2000) / 8000, 0, 1);
+    // the stars turn round the pole (north, SKY_LATITUDE_DEG up) westward with the clock, a
+    // sidereal day a little shorter than the sun's, the season setting which ones are out at night
+    const lat = SKY_LATITUDE_DEG * DEG;
+    const turn = ((hour - 12) * SIDEREAL_RATE + ((env.month || 0) - 2.7) * 2) * 15 * DEG;
+    STAR_A.set(0, Math.cos(lat), Math.sin(lat));                       // the equator on the meridian
+    STAR_P.set(0, Math.sin(lat), -Math.cos(lat));                      // the pole
+    STAR_W.set(-1, 0, 0);                                              // west
+    this.stars.matrix.makeBasis(STAR_A, STAR_P, STAR_W).multiply(STAR_M.makeRotationY(-turn))
+      .scale(STAR_S.setScalar(290000)).setPosition(this.camera.position);
+    this.stars.matrixWorldNeedsUpdate = true;
+    this.stars.material.uniforms.opacity.value = dark * 0.95 * clamp((env.vis - 2000) / 8000, 0, 1);
 
     // ---- the sky's colours, the fog and the light: day, dusk and night mixed by the hour
     const vis = clamp(env.vis, 400, this.quality.drawFar);
@@ -688,7 +737,7 @@ const Scene3D = {
     const dim = clamp(1 - fl.st.pos.y / 20000, 0.55, 1);
     this.sun.color.setHex(0xfff4dd).lerp(SKY_TMP.setHex(0xffa060), warm);
     if (day <= 0.05) this.sun.color.setHex(0x9fb4d8);
-    this.sun.intensity = (day > 0.05 ? 1.15 * day : 0.3 * dark) * dim;
+    this.sun.intensity = (day > 0.05 ? 1.15 * day : (0.12 + 0.18 * moonLit * moonUp) * dark) * dim;
     this.hemi.color.setHex(0x30406a).lerp(SKY_TMP.setHex(0xdceaf6), day);
     this.hemi.groundColor.setHex(0x161a1e).lerp(SKY_TMP.setHex(0x4d5b46), day);
     this.hemi.intensity = (0.3 + 0.65 * day) * dim;
@@ -853,6 +902,9 @@ const Scene3D = {
 };
 
 const SKY_TMP = new THREE.Color(), SKY_TMP2 = new THREE.Color();
+const STAR_A = new THREE.Vector3(), STAR_P = new THREE.Vector3(), STAR_W = new THREE.Vector3();
+const STAR_M = new THREE.Matrix4(), STAR_S = new THREE.Vector3();
+const NIGHT_GLOW_DIR = new THREE.Vector3(0.3, 0.9, -0.3).normalize();
 
 // ---------- procedural textures ----------
 function makeTreeTexture() {

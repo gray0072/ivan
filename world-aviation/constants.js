@@ -113,6 +113,12 @@ const SIM = {
   AP_ROLL_IN_REF: 0.85,
   LOC_MIN_EST_NM: 5,           // the localiser is captured only where the turn onto it ends at least this far out
   AP_BANK_DEG: 25,             // the autopilot's bank in a turn
+  // The autopilot's climb: the type's climbRate low down, less and less higher up, as a real
+  // aeroplane's engines have less to spare: the rate falls in a straight line to nothing at
+  // AP_CEILING_RATIO × the type's cruise level (an ATR 72: 1 280 fpm at the ground, 500 fpm at
+  // 20 000 ft, 24 min to get there), never below AP_CLIMB_MIN_SHARE of it
+  AP_CEILING_RATIO: 1.5,
+  AP_CLIMB_MIN_SHARE: 0.25,
   AP_DESCENT_SPEED_GAIN: 0.6,  // m/s less descent per kt over the speed target (an idle descent pitches for speed)
   AP_SLOW_BELOW_FT: 10000,     // below this height over the arrival the descent speed is at most AP_SLOW_KT
   AP_SLOW_KT: 250,
@@ -881,6 +887,10 @@ const TIME_OF_DAY = {
   dawn: { name: 'Dawn', hour: 6.3, bonus: 0.05 }
 };
 const SKY_LATITUDE_DEG = 50;
+// The night sky: the moon's phase is drawn per flight from the contract (a retry has the same
+// moon) and ages with the flight; the stars turn round the pole with the clock.
+const MOON_MONTH_DAYS = 29.53;     // new moon to new moon: the moon rises about 50 min later each day
+const SIDEREAL_RATE = 1.00274;     // the stars turn this much faster than the sun (a sidereal day)
 
 // The practice landing (the briefing's "Practice the landing"): it starts on the final at the
 // destination, the autopilot holds the glide path for a moment, then you land and brake below
@@ -907,7 +917,14 @@ const CONTROLS = {
   SURFACE_RATE: { aileron: 2.0, elevator: 1.6, rudder: 1.2 },
   MINIMAP_MIN_W: 1100,         // the mini map in the corner: desktop windows at least this wide ...
   MINIMAP_MIN_H: 640,          // ... and this tall
-  MINIMAP_FPS: 6               // the mini map is redrawn this often
+  MINIMAP_FPS: 6,              // the mini map is redrawn this often
+  // a touch screen's row of buttons that changes with the flight (HUD.updateButtons): after the
+  // lift-off the autopilot and the time come up this high above the ground (where the climb starts)
+  TOUCH_AP_ROW_AGL_M: 150,
+  // a phone shows the fuel only when it is short (HUD.fuelShort): leaking, the low-fuel light, or
+  // less on board than this many times what the rest of the route takes as the contract planned
+  // it (a flight starts with at least 1.15 times its trip fuel, CONTRACTS.FUEL_MIN_FACTOR)
+  FUEL_SHOW_MARGIN: 1.05
 };
 
 const PALETTE = {

@@ -333,7 +333,7 @@ kbd {
     right: 8px;
     bottom: 12%;
     width: 62px;
-    height: 40%;
+    height: 34%;
     border: 1px solid rgba(200, 220, 240, 0.25);
     border-radius: 32px;
     background: rgba(12, 18, 26, 0.5);
@@ -377,7 +377,14 @@ kbd {
     color: #dfe7ee;
     font: 600 11px system-ui, sans-serif;
   }
-  #stickZone:not(.active) #stickBase, #stickZone:not(.active) #stickKnob { opacity: 0.18; }
+  /* the stick shows only under the thumb */
+  #stickZone:not(.active) #stickBase, #stickZone:not(.active) #stickKnob { opacity: 0; }
+  /* the last row changes with the flight (HUD.updateButtons): Go and the brakes on the ground and
+     for the landing, the autopilot and the time in the air, nothing (but its place) just after
+     the lift-off */
+  #touchButtons[data-show="air"] [data-row="ground"], #touchButtons[data-show="ground"] [data-row="air"],
+  #touchButtons[data-show="none"] [data-row="ground"] { display: none; }
+  #touchButtons[data-show="none"] [data-row="air"] { visibility: hidden; }
   #touchButtons button.go { background: rgba(60, 120, 70, 0.75); border-color: #7de08a; }
   #touchButtons button.on { background: rgba(255, 217, 122, 0.28); color: #fff3d2; }
   /* the prompt sits on the left under the contract strip, off the forward view and the ILS
@@ -427,9 +434,13 @@ kbd {
   #touchButtons button[data-act="parkBrake"].lit, #touchButtons button[data-act="spoiler"].lit {
     border-color: #ff7a5c; color: #ffd9cf; box-shadow: inset 0 -3px 0 #ff7a5c;
   }
-  /* the strip opens and folds with a tap; folded it keeps the route, the fuel and the time left */
+  /* the strip opens and folds with a tap; folded it keeps the route, and the fuel when it is
+     short; held upright only that fuel line (HUD.updateStrip) */
   #strip { pointer-events: auto; touch-action: none; }
-  #strip.compact > :not(.big):not(.stripLive), #strip.compact .stripLive .stripRow:not(.key) { display: none; }
+  #strip.compact > :not(.big):not(.stripLive), #strip.compact .stripLive .stripRow:not(.key),
+  #strip.compact:not(.fuelShort) .stripRow.key, #strip.fuelOnly > .big { display: none; }
+  #strip.fuelShort .stripRow.key { color: #ff9c7a; font-weight: 700; }
+  #strip.fuelShort.fuelOnly { border-color: rgba(255, 122, 92, 0.55); }
   #strip.compact .stripRow.route::after { content: " ▸"; color: #8d99a6; font-size: 11px; }
 }
 /* a phone held upright: the buttons across the top, the strip and the prompt under them on the
@@ -960,6 +971,7 @@ button, input, select { font-family: inherit; }
 /* ---------- debrief ---------- */
 .debriefTop { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
 .grade {
+  flex: none;
   min-width: 86px;
   padding: 8px 12px;
   border: 2px solid #6fb1e8;
@@ -971,7 +983,9 @@ button, input, select { font-family: inherit; }
 }
 .grade.top { border-color: #7de08a; color: #d6ffe2; }
 .grade.bad { border-color: #ff7a5c; color: #ffd0c2; }
-.debriefTitle { font-size: 18px; color: #cfdae5; }
+.grade.word { font-size: 20px; padding: 12px 12px; }
+.debriefTitle { min-width: 0; font-size: 18px; color: #cfdae5; overflow-wrap: anywhere; }
+@media (max-width: 520px) { .debriefTop { gap: 12px; } .debriefTitle { font-size: 16px; } }
 .cols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 table.money { width: 100%; font-size: 13px; border-collapse: collapse; }
 table.money td { padding: 4px 0; border-bottom: 1px dashed rgba(140, 170, 200, 0.12); }

@@ -117,8 +117,9 @@ const AircraftPreview = {
       scene.add(shadow);
     } else {
       // the light of the title's sky: a low warm sun behind the camera at dusk, a high white
-      // one by day, a cold moon and the sky's glow at night
-      const L = { dusk: [0xbcc8ff, 0x6a4a52, 0.62, 0xffc48a, 1.0], day: [0xeaf4ff, 0x6a7280, 0.8, 0xfff4e2, 0.8], night: [0x6c86c8, 0x1c2232, 0.5, 0xb8c8ff, 0.42] }[hero.light] || [0xeef6ff, 0x4a5560, 0.75, 0xffffff, 0.75];
+      // one by day, a cold moon and the sky's glow at night (bright enough that a white body
+      // reads as white against the dark sky, only bluer)
+      const L = { dusk: [0xbcc8ff, 0x6a4a52, 0.62, 0xffc48a, 1.0], day: [0xeaf4ff, 0x6a7280, 0.8, 0xfff4e2, 0.8], night: [0x7a92d0, 0x2a3350, 0.62, 0xc4d2ff, 0.56] }[hero.light] || [0xeef6ff, 0x4a5560, 0.75, 0xffffff, 0.75];
       scene.add(new THREE.HemisphereLight(L[0], L[1], L[2]));
       const key = new THREE.DirectionalLight(L[3], L[4]);
       key.position.set(70, 30, 55);
