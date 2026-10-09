@@ -480,11 +480,16 @@ kbd {
   touch-action: pan-y;
   -webkit-user-select: none;
   display: grid;
+  /* one column no wider than the screen: a row that scrolls sideways (the hub's tabs on a phone)
+     must not stretch the panel past the edge */
+  grid-template-columns: minmax(0, 1fr);
   place-items: start center;
   overflow: auto;
   padding: 16px;
   padding-top: max(16px, env(safe-area-inset-top));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
   background: radial-gradient(1200px 700px at 50% 0%, #1a2734 0%, #0b1017 70%);
 }
 #screen[hidden] { display: none; }
@@ -762,7 +767,7 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .rep i { width: 8px; height: 8px; border-radius: 50%; }
 
 /* the hub's tabs: a row over a line, the open one lit and underlined in gold */
-.tabs { display: flex; gap: 2px; margin: 0 0 14px; flex-wrap: wrap; border-bottom: 1px solid rgba(140, 170, 200, 0.18); }
+.tabs { position: relative; display: flex; gap: 2px; margin: 0 0 14px; flex-wrap: wrap; border-bottom: 1px solid rgba(140, 170, 200, 0.18); }
 .tab {
   margin-bottom: -1px;
   padding: 10px 16px 9px;
@@ -956,13 +961,139 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .course p.effect { color: #9be8ac; }
 .price { font: 700 12px ui-monospace, monospace; color: #ffd97a; }
 
-.careerCols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-.repRow { display: grid; grid-template-columns: 1fr 120px 34px; gap: 8px; align-items: center; font-size: 13px; margin-bottom: 5px; }
-.bar { height: 8px; border-radius: 4px; background: #1e2833; overflow: hidden; }
-.bar i { display: block; height: 100%; }
-.licList { font-size: 13px; color: #b3c4d4; }
+/* the Career tab (UI.careerBody): the pilot's card, the records in tiles, cards for the
+   reputation, the licences, the unlocks and the log as a timeline */
+.cvHero {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 14px; padding: 16px 18px;
+  border: 1px solid rgba(255, 217, 122, 0.28); border-radius: 14px;
+  background:
+    radial-gradient(ellipse 60% 120% at 100% 0%, rgba(255, 217, 122, 0.13), transparent 70%),
+    radial-gradient(ellipse 50% 140% at 0% 100%, rgba(79, 163, 255, 0.14), transparent 70%),
+    linear-gradient(135deg, #1b2a3a, #121b26);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+/* faint diagonal stripes, like the gold braid on a captain's sleeve, fading out behind the balance */
+.cvHero::after {
+  content: ''; position: absolute; right: -30px; top: 50%; width: 280px; height: 110px; margin-top: -55px;
+  background: repeating-linear-gradient(-12deg, transparent 0 10px, rgba(255, 217, 122, 0.07) 10px 13px);
+  -webkit-mask: radial-gradient(ellipse at 50% 50%, #000 25%, transparent 70%);
+  mask: radial-gradient(ellipse at 50% 50%, #000 25%, transparent 70%);
+  pointer-events: none;
+}
+.cvBadge {
+  flex: none; display: grid; place-items: center;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: conic-gradient(from 210deg, #ffd97a, #b8862e, #ffe9ae, #c79a3d, #ffd97a);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 217, 122, 0.15);
+}
+.cvBadge span {
+  display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #2b4360, #142131);
+  color: #ffe7a8; font: 800 21px/1 'Segoe UI', Arial, sans-serif; letter-spacing: 1px;
+}
+.cvWho { flex: 1 1 220px; min-width: 0; position: relative; z-index: 1; }
+.cvName { font-size: 24px; font-weight: 800; color: #f4f8fc; overflow-wrap: anywhere; }
+.cvChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.cvChip {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px;
+  background: rgba(9, 15, 22, 0.5); border: 1px solid rgba(140, 170, 200, 0.16);
+  font-size: 12px; color: #9fb0c3; white-space: nowrap;
+}
+.cvChip b { margin-left: 4px; color: #e3edf6; font-weight: 600; }
+.cvChip.gold { border-color: rgba(255, 217, 122, 0.45); color: #ffd97a; font-weight: 700; letter-spacing: 0.5px; }
+.cvBal { position: relative; z-index: 1; margin-left: auto; text-align: right; }
+.cvBal span { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8fa1b3; }
+.cvBal b { font-size: 26px; font-weight: 800; color: #ffd97a; text-shadow: 0 0 18px rgba(255, 217, 122, 0.25); white-space: nowrap; }
+
+/* the eight tiles in even rows: eight on a wide screen, four by four on a phone held sideways,
+   two by two held upright */
+.cvStats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+@media (min-width: 1000px) { .cvStats { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+.cvStat {
+  position: relative; padding: 10px 8px 9px; min-width: 0; text-align: center;
+  border: 1px solid rgba(140, 170, 200, 0.14); border-radius: 10px;
+  background: linear-gradient(180deg, #16212d, #0f161e);
+}
+.cvStat b { display: block; font-size: 20px; font-weight: 800; color: #e8f0f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cvStat span { display: block; margin-top: 2px; font-size: 10px; color: #7f93a6; text-transform: uppercase; letter-spacing: 0.5px; }
+.cvStat small { position: absolute; top: 6px; right: 7px; font: 700 10px ui-monospace, monospace; color: #7de08a; }
+.cvStat.good b { color: #9be8ac; }
+.cvStat.bad b { color: #ff9c7a; }
+.cvStat.warn b { color: #f0c36a; }
+.cvStat.money b { font-size: 17px; line-height: 24px; color: #ffd97a; }
+.cvStat.grade.top { border-color: rgba(125, 224, 138, 0.45); background: linear-gradient(180deg, #17291f, #0f1a14); }
+.cvStat.grade.top b { color: #d6ffe2; }
+.cvStat.grade.bad { border-color: rgba(255, 122, 92, 0.4); }
+
+.careerCols { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.careerCols > div { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cvCard { padding: 4px 14px 14px; border: 1px solid rgba(140, 170, 200, 0.16); border-radius: 12px; background: #131b24; }
+.cvCard h3 { display: flex; align-items: center; gap: 8px; }
+.cvCount { margin-left: auto; padding: 1px 8px; border-radius: 10px; background: rgba(140, 180, 220, 0.14); color: #cfe0f0; font: 700 11px ui-monospace, monospace; letter-spacing: 0; }
+
+/* a client group's reputation: its picture, its name and number, a glowing bar marked in quarters */
+.repRow { display: grid; grid-template-columns: 26px 1fr auto; gap: 4px 10px; align-items: center; margin-bottom: 10px; font-size: 13px; }
+.repRow:last-child { margin-bottom: 0; }
+.repRow .use { grid-row: 1 / 3; width: 26px; height: 26px; }
+.repName { color: #c9d6e2; }
+.repRow b { font: 800 15px ui-monospace, monospace; color: var(--c); }
+.repRow .bar { grid-column: 2 / 4; }
+.bar { position: relative; height: 8px; border-radius: 4px; background: #1e2833; overflow: hidden; }
+.bar::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent calc(25% - 1px), rgba(11, 16, 23, 0.7) 0 25%, transparent 0 calc(50% - 1px),
+    rgba(11, 16, 23, 0.7) 0 50%, transparent 0 calc(75% - 1px), rgba(11, 16, 23, 0.7) 0 75%, transparent 0); }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--c, #6fb1e8);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--c, #6fb1e8) 50%, #0b1017), var(--c, #6fb1e8));
+  box-shadow: 0 0 10px var(--c, #6fb1e8); }
+
+.cvProgress { height: 5px; margin: 0 0 10px; border-radius: 3px; background: #1e2833; overflow: hidden; }
+.cvProgress i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3d7a52, #7de08a); }
+.licList { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+.lic { padding: 4px 10px 4px 8px; border-radius: 20px; border: 1px solid rgba(125, 224, 138, 0.3); background: #14221a; color: #c4f0cf; }
+.lic::before { content: '✓'; margin-right: 5px; color: #7de08a; font-weight: 700; }
+.cvNone { color: #7f8fa1; }
+
 .unlocks, .log { margin: 0; padding-left: 18px; font-size: 12px; color: #a3b3c3; line-height: 1.6; }
 .log { max-height: 220px; overflow: auto; }
+/* what the courses have unlocked: a green tick in a circle, or a dimmed lock */
+.cvCard .unlocks { padding: 0; list-style: none; line-height: 1.4; }
+.cvCard .unlocks li { display: flex; align-items: flex-start; gap: 9px; padding: 5px 0; border-bottom: 1px dashed rgba(140, 170, 200, 0.09); }
+.cvCard .unlocks li:last-child { border-bottom: 0; }
+.cvCard .unlocks i { flex: none; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; font-style: normal; }
+.cvCard .unlocks li.ok { color: #dfeee3; }
+.cvCard .unlocks li.ok i { background: #2f6b45; color: #d6ffe2; font-weight: 700; }
+.cvCard .unlocks li.off { color: #6f8193; }
+.cvCard .unlocks li.off i { background: #1c2631; filter: grayscale(1); opacity: 0.6; }
+
+/* the log as a timeline: a line down the left, a dot per entry coloured by what happened (logKind) */
+.cvCard .log { position: relative; max-height: 420px; padding: 0 4px 0 22px; list-style: none; line-height: 1.4; }
+.cvCard .log::before { content: ''; position: absolute; left: 7px; top: 8px; bottom: 8px; width: 2px; background: rgba(140, 170, 200, 0.14); }
+.cvCard .log li { position: relative; padding: 5px 0; color: #c3d1de; }
+.cvCard .log li::before {
+  content: ''; position: absolute; left: -19px; top: 9px; width: 8px; height: 8px; border-radius: 50%;
+  background: #6f8193; box-shadow: 0 0 0 3px #131b24;
+}
+.cvCard .log li:first-child { color: #eef4fa; }
+.cvCard .log li.flight::before { background: #6fb1e8; }
+.cvCard .log li.top::before { background: #7de08a; }
+.cvCard .log li.bad::before { background: #f0c36a; }
+.cvCard .log li.lost { color: #ffb8a4; }
+.cvCard .log li.lost::before { background: #ff7a5c; }
+.cvCard .log li.rights::before { background: #b58cff; }
+.cvCard .log li.legend { color: #ffe7a8; font-weight: 600; }
+.cvCard .log li.legend::before { background: #ffd97a; box-shadow: 0 0 0 3px #131b24, 0 0 10px #ffd97a; }
+@media (max-width: 520px) {
+  .cvHero { padding: 14px; gap: 12px; }
+  .cvBadge { width: 52px; height: 52px; }
+  .cvBadge span { width: 44px; height: 44px; font-size: 17px; }
+  .cvName { font-size: 20px; }
+  .cvChip { white-space: normal; }
+  .cvBal { margin-left: 0; flex: 1 0 100%; text-align: left; }
+  .cvStats { grid-template-columns: repeat(2, 1fr); }
+  .careerCols { grid-template-columns: 1fr; }
+}
 
 /* ---------- briefing ---------- */
 .briefTop { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }

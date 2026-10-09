@@ -241,8 +241,6 @@ const TEXT_SV = {
 
   // ---------- career tab ----------
   'Pilot': 'Pilot',
-  'Name': 'Namn',
-  'Licence': 'Certifikat',
   'Home base': 'Hemmabas',
   'Balance': 'Saldo',
   'Records': 'Rekord',

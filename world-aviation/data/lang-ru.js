@@ -241,8 +241,6 @@ const TEXT_RU = {
 
   // ---------- career tab ----------
   'Pilot': 'Пилот',
-  'Name': 'Имя',
-  'Licence': 'Лицензия',
   'Home base': 'Домашняя база',
   'Balance': 'Баланс',
   'Records': 'Достижения',

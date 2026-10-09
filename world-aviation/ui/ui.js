@@ -282,6 +282,9 @@ const UI = {
           (b ? ' title="' + esc(b.title) + '"' : '') + '>' + tr(t.charAt(0).toUpperCase() + t.slice(1)) + (b ? b.html : '') + '</button>';
       }).join('') + '</div>' +
       '<div class="tabBody">' + body + '</div>');
+    // on a phone the tabs scroll sideways: bring the open one into view, in the middle of the row
+    const row = this.screen.querySelector('.tabs'), on = row && row.querySelector('.tab.on');
+    if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
     if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
 
@@ -589,55 +592,76 @@ const UI = {
     return t ? { name: t[0], blurb: t[1], effect: t[2] } : { name: c.name, blurb: c.blurb, effect: c.effect };
   },
 
+  // the Career tab: the pilot's card on top, the records in tiles, then the reputation, the
+  // licences, the log as a timeline and what the courses have unlocked
   careerBody() {
     const d = Career.data;
     const fx = Career.effects();
     const s = d.stats;
-    const licences = COURSES.filter((c) => Career.has(c.id)).map((c) => this.courseText(c).name);
-    const log = (d.log || []).map((l) => '<li>' + esc(logText(l)) + '</li>').join('');
-    return '<div class="careerCols"><div>' +
-      '<h3>' + tr('Pilot') + '</h3>' +
-      '<div class="cGrid">' + row2(tr('Name'), esc(d.pilot.name)) +
-      row2(tr('Licence'), CAREER.PILOT_LICENSE) + row2(tr('Home base'), aptName(World.byId[d.base])) +
-      row2(tr('Balance'), fmtMoney(d.money)) + row2(tr('Difficulty'), esc(tr(Career.difficulty.name))) + '</div>' +
-      '<h3>' + tr('Reputation') + '</h3>' +
+    const base = World.byId[d.base];
+    const passed = COURSES.filter((c) => Career.has(c.id));
+    const initials = d.pilot.name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('') || '✈';
+    const smoothPct = s.landings ? Math.round(s.perfect / s.landings * 100) : 0;
+    const gradeCls = s.bestGrade === 'A+' || s.bestGrade === 'A' ? ' top' : s.bestGrade === 'E' || s.bestGrade === 'F' ? ' bad' : '';
+    const tile = (label, value, cls, sub) => '<div class="cvStat' + (cls || '') + '"><b>' + value + '</b><span>' + esc(label) + '</span>' +
+      (sub ? '<small>' + sub + '</small>' : '') + '</div>';
+    const unlocks = [
+      [fx.hint, tr('Advanced systems — checklist hints and more time')],
+      [fx.ifr, tr('Instrument rating — you may fly into low cloud and use the ILS')],
+      [fx.hazmat, tr('Dangerous goods contracts')],
+      [fx.payloadTol > 1, tr('Weight and balance — 15 % more payload before you are over weight')],
+      [fx.iceFactor < 1, tr('De-icing — ice builds {p} % slower', { p: Math.round((1 - fx.iceFactor) * 100) })],
+      [fx.medevac, tr('Medevac and search and rescue contracts')],
+      [fx.forecast, tr('Full weather reports at both ends, and better fuel planning')],
+      [fx.mountain, tr('Mountain and adverse weather routes')],
+      [fx.turboprop, tr('Regional turboprops — the ATR 72-600, and +10 % on short legs in a turboprop')],
+      [fx.fbw, tr('Fly-by-wire jets — the Embraer E195-E2 and the Airbus A220-300')],
+      [fx.widebody, tr('Widebody procedures — the Airbus A350-900, the Boeing 777-300ER and the Airbus A380')],
+      [fx.etops, tr('ETOPS — the Airbus A330-300 and the Boeing 787-9, and +10 % on long legs in a twin')],
+      [fx.outsize, tr('Outsize cargo — the Antonov An-124, onto gravel and ice')],
+      [fx.remote, tr('Remote strips and ice fields for every type')],
+      [Career.mriyaDone(), tr('The An-225 Mriya — built again with your own hands')]
+    ];
+    const opened = unlocks.filter((u) => u[0]).length;
+    const log = (d.log || []).map((l) => '<li class="' + logKind(l) + '">' + esc(logText(l)) + '</li>').join('');
+    const count = (n, m) => '<span class="cvCount">' + n + ' / ' + m + '</span>';
+    return '<div class="cvHero">' +
+      '<div class="cvBadge"><span>' + esc(initials) + '</span></div>' +
+      '<div class="cvWho"><div class="cvName">' + esc(d.pilot.name) + '</div>' +
+      '<div class="cvChips"><span class="cvChip gold">' + CAREER.PILOT_LICENSE + '</span>' +
+      '<span class="cvChip">' + (base ? flagImg(base) : '') + esc(tr('Home base')) + ': <b>' + (base ? esc(aptName(base)) : d.base) + '</b></span>' +
+      '<span class="cvChip">' + esc(tr('Difficulty')) + ': <b>' + esc(tr(Career.difficulty.name)) + '</b></span></div></div>' +
+      '<div class="cvBal"><span>' + esc(tr('Balance')) + '</span><b>' + fmtMoney(d.money) + '</b></div>' +
+      '</div>' +
+      '<div class="cvStats">' +
+      tile(tr('Flights flown'), s.flights) +
+      tile(tr('Block time'), fmtTime(s.blockTime)) +
+      tile(tr('Landings'), s.landings) +
+      tile(tr('Smooth landings'), s.perfect, s.perfect ? ' good' : '', s.landings ? smoothPct + ' %' : '') +
+      tile(tr('Flights lost'), s.crashes, s.crashes ? ' bad' : '') +
+      tile(tr('Best grade'), s.bestGrade || '—', ' grade' + gradeCls) +
+      tile(tr('Best single flight'), fmtMoney(s.bestPay), ' money') +
+      tile(tr('Cheats used'), s.cheats, s.cheats ? ' warn' : '') +
+      '</div>' +
+      '<div class="careerCols"><div>' +
+      '<section class="cvCard"><h3>' + tr('Reputation') + '</h3>' +
       Object.keys(FACTIONS).map((k) => {
-        const v = d.rep[k];
-        return '<div class="repRow"><span>' + esc(tr(FACTIONS[k].name)) + '</span>' +
-          '<div class="bar"><i style="width:' + v + '%;background:' + FACTIONS[k].color + '"></i></div>' +
-          '<b>' + Math.round(v) + '</b></div>';
-      }).join('') +
-      '<h3>' + tr('Records') + '</h3>' +
-      '<div class="cGrid">' + row2(tr('Flights flown'), s.flights) +
-      row2(tr('Block time'), fmtTime(s.blockTime)) +
-      row2(tr('Landings'), s.landings) +
-      row2(tr('Smooth landings'), s.perfect) +
-      row2(tr('Flights lost'), s.crashes) +
-      row2(tr('Best grade'), s.bestGrade || '—') +
-      row2(tr('Best single flight'), fmtMoney(s.bestPay)) +
-      row2(tr('Cheats used'), s.cheats) + '</div>' +
-      '</div><div><h3>' + tr('Licences and ratings') + '</h3><p class="licList">' +
-      (licences.length ? licences.map(esc).join(' · ') : tr('none yet')) + '</p>' +
-      '<h3>' + tr('Unlocked by your courses') + '</h3><ul class="unlocks">' +
-      unlockLine(fx.hint, tr('Advanced systems — checklist hints and more time')) +
-      unlockLine(fx.ifr, tr('Instrument rating — you may fly into low cloud and use the ILS')) +
-      unlockLine(fx.hazmat, tr('Dangerous goods contracts')) +
-      unlockLine(fx.payloadTol > 1, tr('Weight and balance — 15 % more payload before you are over weight')) +
-      unlockLine(fx.iceFactor < 1, tr('De-icing — ice builds {p} % slower', { p: Math.round((1 - fx.iceFactor) * 100) })) +
-      unlockLine(fx.medevac, tr('Medevac and search and rescue contracts')) +
-      unlockLine(fx.forecast, tr('Full weather reports at both ends, and better fuel planning')) +
-      unlockLine(fx.mountain, tr('Mountain and adverse weather routes')) +
-      unlockLine(fx.turboprop, tr('Regional turboprops — the ATR 72-600, and +10 % on short legs in a turboprop')) +
-      unlockLine(fx.fbw, tr('Fly-by-wire jets — the Embraer E195-E2 and the Airbus A220-300')) +
-      unlockLine(fx.widebody, tr('Widebody procedures — the Airbus A350-900, the Boeing 777-300ER and the Airbus A380')) +
-      unlockLine(fx.etops, tr('ETOPS — the Airbus A330-300 and the Boeing 787-9, and +10 % on long legs in a twin')) +
-      unlockLine(fx.outsize, tr('Outsize cargo — the Antonov An-124, onto gravel and ice')) +
-      unlockLine(fx.remote, tr('Remote strips and ice fields for every type')) +
-      unlockLine(Career.mriyaDone(), tr('The An-225 Mriya — built again with your own hands')) +
-      '</ul>' +
-      '<h3>' + tr('Log') + '</h3><ul class="log">' + (log || '<li>' + tr('Nothing yet.') + '</li>') + '</ul>' +
-      '<div class="btnRow"><button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>' +
-      '</div></div>';
+        const v = Math.max(0, Math.min(100, d.rep[k]));
+        return '<div class="repRow" style="--c:' + FACTIONS[k].color + '">' +
+          '<span class="use ' + k + '">' + UseIcons.svg(k) + '</span>' +
+          '<span class="repName">' + esc(tr(FACTIONS[k].name)) + '</span><b>' + Math.round(v) + '</b>' +
+          '<div class="bar"><i style="width:' + v + '%"></i></div></div>';
+      }).join('') + '</section>' +
+      '<section class="cvCard"><h3>' + tr('Licences and ratings') + count(passed.length, COURSES.length) + '</h3>' +
+      '<div class="cvProgress"><i style="width:' + Math.round(passed.length / COURSES.length * 100) + '%"></i></div>' +
+      '<div class="licList">' + (passed.length ? passed.map((c) => '<span class="lic">' + esc(this.courseText(c).name) + '</span>').join('')
+        : '<span class="cvNone">' + tr('none yet') + '</span>') + '</div></section>' +
+      '<section class="cvCard cvLog"><h3>' + tr('Log') + '</h3><ul class="log">' + (log || '<li>' + tr('Nothing yet.') + '</li>') + '</ul></section>' +
+      '</div><div>' +
+      '<section class="cvCard"><h3>' + tr('Unlocked by your courses') + count(opened, unlocks.length) + '</h3><ul class="unlocks">' +
+      unlocks.map((u) => unlockLine(u[0], u[1])).join('') + '</ul></section>' +
+      '</div></div>' +
+      '<div class="btnRow"><button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>';
   },
 
   // an airport's table, in the briefing and in the pause: the stand, the runway in use, the
@@ -1116,7 +1140,16 @@ function logText(l) {
 }
 function row2(k, v) { return '<div class="row2"><span>' + esc(k) + '</span><b>' + v + '</b></div>'; }
 function keyRow(k, d) { return '<li><kbd>' + esc(k) + '</kbd> ' + esc(d) + '</li>'; }
-function unlockLine(on, text) { return '<li class="' + (on ? 'ok' : '') + '">' + (on ? '✓ ' : '· ') + esc(text) + '</li>'; }
+function unlockLine(on, text) { return '<li class="' + (on ? 'ok' : 'off') + '"><i>' + (on ? '✓' : '🔒') + '</i>' + esc(text) + '</li>'; }
+// what kind of entry a log line is, for its dot on the Career tab's timeline
+function logKind(l) {
+  const t = l.tpl || l.text || '';
+  if (/lost/.test(t)) return 'lost';
+  if (/Mriya/.test(t)) return 'legend';
+  if (/^Traffic rights/.test(t)) return 'rights';
+  if (l.args && l.args.g) return l.args.g === 'A+' || l.args.g === 'A' ? 'top' : l.args.g === 'E' || l.args.g === 'F' ? 'bad' : 'flight';
+  return 'note';
+}
 // '#rrggbb' as rgba() with the given opacity
 function hexAlpha(hex, alpha) {
   const n = parseInt(hex.slice(1), 16);
