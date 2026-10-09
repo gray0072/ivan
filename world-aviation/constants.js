@@ -833,10 +833,11 @@ const WEATHER = {
 };
 
 // ---------- Camera / rendering presets ----------
+// (landTex: the size of the land cover's tiles, texels: render/landcover.js)
 const QUALITY = {
-  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000 },
-  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000 },
-  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000 }
+  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000, landTex: 512 },
+  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000, landTex: 1024 },
+  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000, landTex: 1024 }
 };
 
 const VIEW = {
@@ -860,6 +861,9 @@ const VIEW = {
   // in this ORDER; a pass only while the aeroplane flies at most PASS_MAX_M in half a shot
   FLYBY: { SHOT_S: [3, 5], TOWER_M: 14000, PASS_MAX_M: 3000, ORDER: ['pass', 'lead', 'side', 'trail'] },
   NEAR_CLIP: 0.7,
+  // the haze is about HAZE_M deep: above it the fog thins as the height grows, to HAZE_MIN of
+  // its density, so from the cruise the ground below still shows (Scene3D)
+  HAZE_M: 2000, HAZE_MIN: 0.15,
   FOG_DENSITY: 1 / 62000,      // 1/e per metre
   COCKPIT_DRAW_DIST: 12000
 };

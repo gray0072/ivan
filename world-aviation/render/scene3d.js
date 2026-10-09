@@ -10,6 +10,8 @@
 //   - a near terrain mesh that follows the aeroplane and is
 //     rebuilt (heights, normals, colours) on the CPU when the
 //     aeroplane has moved far enough
+//   - over both, the land cover (landcover.js): fields, woods,
+//     villages and towns, their lights at night
 //   - a sea plane, airports (airport3d.js), trees and a cloud
 //     layer around the player
 //   - the light of the hour: sunlight or moonlight, the sky's glow,
@@ -218,8 +220,9 @@ const Scene3D = {
     const pos = new Float32Array(vw * vh * 3);
     const col = new Float32Array(vw * vh * 3);
     const nor = new Float32Array(vw * vh * 3);
+    const land = new Float32Array(vw * vh * 3);
     const heights = new Float32Array(vw * vh);
-    const c = [0, 0, 0];
+    const c = [0, 0, 0], ld = [0, 0, 0];
     for (let j = 0; j < vh; j++) {
       for (let i = 0; i < vw; i++) {
         const k = j * vw + i;
@@ -239,8 +242,9 @@ const Scene3D = {
         const l = Math.hypot(nx, ny, nz) || 1;
         nor[k * 3] = nx / l; nor[k * 3 + 1] = ny / l; nor[k * 3 + 2] = nz / l;
         const slope = 1 - ny / l;
-        Terrain.colorAt(pos[k * 3], pos[k * 3 + 2], heights[k], slope, c);
+        Terrain.colorAt(pos[k * 3], pos[k * 3 + 2], heights[k], slope, c, ld);
         col[k * 3] = c[0] / 255; col[k * 3 + 1] = c[1] / 255; col[k * 3 + 2] = c[2] / 255;
+        land[k * 3] = ld[0]; land[k * 3 + 1] = ld[1]; land[k * 3 + 2] = ld[2];
       }
     }
     const idx = new Uint32Array(nx * nz * 6);
@@ -256,23 +260,22 @@ const Scene3D = {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    geo.setAttribute('land', new THREE.BufferAttribute(land, 3));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeBoundingSphere();
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
     if (this.farMesh) { this.scene.remove(this.farMesh); this.farMesh.geometry.dispose(); }
-    this.farMesh = new THREE.Mesh(geo, mat);
+    this.farMesh = new THREE.Mesh(geo, LandCover.material());
     this.farMesh.renderOrder = 0;
     this.scene.add(this.farMesh);
   },
 
   buildNearTerrain() {
     const n = this.quality.nearCells;
-    const geo = new THREE.PlaneGeometry(1, 1, n, n);
-    geo.rotateX(-Math.PI / 2);
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
     if (!this.nearMesh || this.nearN !== n) {
+      const geo = new THREE.PlaneGeometry(1, 1, n, n);
+      geo.rotateX(-Math.PI / 2);
       if (this.nearMesh) { this.scene.remove(this.nearMesh); this.nearMesh.geometry.dispose(); }
-      this.nearMesh = new THREE.Mesh(geo, mat);
+      this.nearMesh = new THREE.Mesh(geo, LandCover.material());
       this.nearMesh.frustumCulled = false;
       this.nearMesh.renderOrder = 2;
       this.scene.add(this.nearMesh);
@@ -280,6 +283,8 @@ const Scene3D = {
       this.nearNor = geo.attributes.normal.array;
       geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array((n + 1) * (n + 1) * 3), 3));
       this.nearCol = geo.attributes.color.array;
+      geo.setAttribute('land', new THREE.BufferAttribute(new Float32Array((n + 1) * (n + 1) * 3), 3));
+      this.nearLand = geo.attributes.land.array;
       this.nearN = n;
       this.nearOx = this.nearOz = null;    // a new mesh: its origin is set by the next build
       this.nearHs = new Float32Array((n + 1) * (n + 1));
@@ -328,10 +333,10 @@ const Scene3D = {
     }
     const w = bld.rows, cell = bld.cell;
     const x0 = bld.cx - bld.half, z0 = bld.cz - bld.half;
-    const hs = this.nearHs, pos = this.nearPos, nor = this.nearNor, col = this.nearCol;
+    const hs = this.nearHs, pos = this.nearPos, nor = this.nearNor, col = this.nearCol, land = this.nearLand;
     const taper = { cx: bld.cx, cz: bld.cz, half: bld.half };   // fade into the far mesh at the edge
     const budget = bld.full ? w : Math.ceil(w / 4);
-    const c = [0, 0, 0];
+    const c = [0, 0, 0], ld = [0, 0, 0];
     let done = 0;
     while (bld.row < w && done < budget) {
       const j = bld.row;
@@ -352,14 +357,17 @@ const Scene3D = {
         const l = Math.hypot(nx, ny, nz) || 1;
         nor[k * 3] = nx / l; nor[k * 3 + 1] = ny / l; nor[k * 3 + 2] = nz / l;
         const slope = 1 - ny / l;
-        Terrain.colorAt(pos[k * 3], pos[k * 3 + 2], hs[k], slope, c);
+        const wx = x0 + i * cell, wz = z0 + j * cell;
+        Terrain.colorAt(wx, wz, hs[k], slope, c, ld);
         col[k * 3] = c[0] / 255; col[k * 3 + 1] = c[1] / 255; col[k * 3 + 2] = c[2] / 255;
+        land[k * 3] = ld[0]; land[k * 3 + 1] = ld[1]; land[k * 3 + 2] = ld[2];
       }
     }
     const g = this.nearMesh.geometry;
     g.attributes.position.needsUpdate = true;
     g.attributes.normal.needsUpdate = true;
     g.attributes.color.needsUpdate = true;
+    g.attributes.land.needsUpdate = true;
     if (bld.row >= w) {
       g.computeBoundingSphere();
       bld.done = true;
@@ -474,15 +482,16 @@ const Scene3D = {
     const n = this.quality.trees;
     const m = new THREE.Matrix4();
     const rng = makeRng(Math.round(px / 1000) * 7919 + Math.round(pz / 1000) * 104729);
-    const radius = 4200;
+    const radius = 4200, c = [0, 0, 0], land = [0, 0, 0];
     let placed = 0;
-    for (let i = 0; i < n * 2 && placed < n; i++) {
+    for (let i = 0; i < n * 4 && placed < n; i++) {
       const a = rng.next() * TAU, r = Math.sqrt(rng.next()) * radius;
       const x = px + Math.cos(a) * r, z = pz + Math.sin(a) * r;
       const h = Terrain.heightAt(x, z);
       if (h < 6 || h > 900) continue;
-      // trees follow the forest colour: lower, flatter land
-      if (rng.next() > clamp(1 - (h - 250) / 700, 0.05, 1) * 0.9) continue;
+      // trees stand in the woods of the land cover, a few along the fields
+      Terrain.colorAt(x, z, h, 0, c, land);
+      if (rng.next() > Math.max(0.03, LandCover.forestAt(x, z, land))) continue;
       const s = 6 + rng.next() * 9;
       m.makeScale(s, s * (0.8 + rng.next() * 0.7), s);
       m.setPosition(x, h, z);
@@ -502,6 +511,7 @@ const Scene3D = {
     this.qualityName = name;
     this.quality = q;
     this.resize();
+    LandCover.build(q.landTex, this.maxAniso, this.renderer.capabilities.isWebGL2);
     this.buildFarTerrain();
     GroundLights.build(this.scene, this.quality);
     this.buildNearTerrain();
@@ -697,6 +707,7 @@ const Scene3D = {
     const warm = smoothstep(-0.14, 0.0, sun.el) * (1 - smoothstep(0.05, 0.4, sun.el));   // dusk colours
     this.dark = dark;
     GroundLights.update(dark);
+    LandCover.update(dark);
     const lit = day > 0.05 ? sd : md.y > 0.05 ? md : NIGHT_GLOW_DIR;    // the moon lights the night, or the sky's glow when it is down
     this.sun.position.copy(eye).addScaledVector(lit, 50000);
     this.sun.target.position.copy(eye);
@@ -727,7 +738,9 @@ const Scene3D = {
       return out.lerp(SKY_TMP.setHex(duskHex), warm * 0.75);
     };
     const fogCol = mixSky(0xc3d6e6, 0xe8a777, 0x0e1626, this.scene.fog.color);
-    this.scene.fog.density = 2.6 / vis;
+    // the haze lies low: from high up the ground is seen through less of it
+    const above = Math.max(1, eye.y - (this.lastGround || 0));
+    this.scene.fog.density = 2.6 / vis * clamp(VIEW.HAZE_M / above, VIEW.HAZE_MIN, 1);
     u.bot.value.copy(fogCol);
     mixSky(0x8fb9dd, 0xc98a6e, 0x0a1428, u.mid.value);
     mixSky(0x2b6fb5, 0x34477e, 0x02050d, u.top.value);

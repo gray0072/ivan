@@ -206,7 +206,7 @@ const Apron3D = {
       const d = aircraftDims(ac);
       const R = d.radius, Lc = d.len, S = d.span, jet = ac.engineType === 'jet';
       const sill = Math.max(1.0, d.gearH - R * 0.3);
-      const doorAcross = L.STAND + Lc / 2 - Math.max(2.5, Lc * 0.12);
+      const doorBack = frontDoorFromNose(Lc), doorAcross = L.STAND + Lc / 2 - doorBack;
       const k = kit();
       // the GPU by the nose, the cones
       k.push(L.STAND + Lc / 2 - 1, 0, -(gate.t + R + 3.5), 0); Vehicles.gpu(k); k.pop();
@@ -233,10 +233,14 @@ const Apron3D = {
       rec.gateKits.push(gm);
 
       // the jet bridge: docked to the front door, or retracted: folded back along the
-      // terminal, between the glass and the service road, clear of both
+      // terminal, between the glass and the service road, clear of both. Docked, the cab is
+      // turned square to the fuselage and the bellows meet its side where it is widest under
+      // them (by the nose the body narrows: the bellows reach 1.55 m either side of the door)
       if (bridges) {
         const rot = [front - 4, gate.t + 14];
-        const docked = jetBridge(rot, [doorAcross, gate.t + R + 0.25], sill);
+        let side = 0;
+        for (const dz of [-1.55, 0, 1.55]) side = Math.max(side, fuselageRing(Lc, R, Lc / 2 - doorBack + dz).r);
+        const docked = jetBridge(rot, [doorAcross, gate.t + side + 0.05], sill, R);
         const parked = jetBridge(rot, [front - 5, gate.t + 36], 3.8);
         at(docked, 0, 0, 0); at(parked, 0, 0, 0);
         rec.bridges.push({ docked, parked });
@@ -375,19 +379,32 @@ const Apron3D = {
   }
 };
 
-// a jet bridge in the airport frame: the rotunda at rot [across, t], the cab's face at tip,
-// the floor at `sill` (the door sill) where it meets the aeroplane
-function jetBridge(rot, tip, sill) {
+// a jet bridge in the airport frame: the rotunda at rot [across, t], the bellows' face at tip,
+// the floor at `sill` (the door sill) where it meets the aeroplane. Docked (R: the fuselage
+// radius) the cab is turned square to the aeroplane's left side (facing -t), the tunnel running
+// into its back; retracted the cab is in line with the tunnel.
+function jetBridge(rot, tip, sill, R) {
   const k = kit();
-  const dx = tip[0] - rot[0], dz = -(tip[1] - rot[1]);
-  const len = Math.max(4, Math.hypot(dx, dz) - 3.6);           // the bellows end at the tip
-  const ry = Math.atan2(dx, dz);
   const y0 = 3.8;                                           // the floor at the rotunda
+  const CAB_W = 3.6, CAB_D = 2.4, BELLOWS = 0.6;
+  const cabH = R ? clamp(R * 1.6 + 0.8, 2.6, 3.3) : 3.3;    // a small aeroplane's door is lower
   k.cyl(0.7, 0.7, y0, 10, rot[0], y0 / 2, -rot[1], '#8a8f93')
     .cyl(2.7, 2.7, 3.4, 16, rot[0], y0 + 1.7, -rot[1], '#bfc4c8')
     .cyl(2.9, 2.9, 0.3, 16, rot[0], y0 + 3.5, -rot[1], '#8a8f93');
-  // the tunnel slopes from the rotunda's floor to the sill
-  k.push(rot[0], 0, -rot[1], ry);
+  // the cab's middle [across, t] and its heading
+  let cab, cabRy;
+  if (R) {
+    cab = [tip[0], tip[1] + BELLOWS + CAB_D / 2];
+    cabRy = 0;
+  } else {
+    const dx = tip[0] - rot[0], dt = tip[1] - rot[1], l = Math.hypot(dx, dt) || 1, back = BELLOWS + CAB_D / 2;
+    cab = [tip[0] - dx / l * back, tip[1] - dt / l * back];
+    cabRy = Math.atan2(dx, -dt);
+  }
+  // the tunnel slopes from the rotunda's floor to the sill, into the middle of the cab
+  const dx = cab[0] - rot[0], dz = -(cab[1] - rot[1]);
+  const len = Math.max(4, Math.hypot(dx, dz) - 1.6);
+  k.push(rot[0], 0, -rot[1], Math.atan2(dx, dz));
   const slope = Math.atan2(sill - y0, len);
   const mid = (y0 + sill) / 2 + 1.5;
   k.box(2.9, 3.0, len, 0, mid, len / 2 + 1.6, '#cfd3d6', -slope)
@@ -396,8 +413,11 @@ function jetBridge(rot, tip, sill) {
   const legZ = len * 0.75 + 1.6, legY = y0 + (sill - y0) * 0.75;
   k.box(0.5, legY, 0.5, -0.9, legY / 2, legZ, '#7d8286').box(0.5, legY, 0.5, 0.9, legY / 2, legZ, '#7d8286')
     .box(2.6, 0.8, 1.2, 0, 0.4, legZ, '#33373a');
+  k.pop();
   // the cab and the bellows against the aeroplane
-  k.box(3.6, 3.3, 2.2, 0, sill + 1.65, len + 2.0, '#d5d8db').box(3.1, 3.0, 0.5, 0, sill + 1.55, len + 3.3, '#2b2f33');
+  k.push(cab[0], 0, -cab[1], cabRy);
+  k.box(CAB_W, cabH, CAB_D, 0, sill + cabH / 2, 0, '#d5d8db')
+    .box(3.1, cabH - 0.3, BELLOWS, 0, sill + 0.05 + (cabH - 0.3) / 2, CAB_D / 2 + BELLOWS / 2, '#2b2f33');
   k.pop();
   return k.mesh();
 }

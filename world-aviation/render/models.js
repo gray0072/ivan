@@ -428,7 +428,7 @@ const AircraftModels = {
       const pitch = Math.max(3, 0.53 * px), ww = Math.max(1.6, 0.24 * px);
       rows.forEach((row, i) => {
         // the upper deck ends further forward and further back than the main deck
-        const x0 = W * (i < rows.length - 1 ? 0.33 : 0.27), x1 = W * (i < rows.length - 1 ? 0.84 : 0.86);
+        const x0 = W * (i < rows.length - 1 ? 0.33 : 0.27), x1 = W * (i < rows.length - 1 ? 0.84 : FRONT_DOOR_U);
         for (const c of [row, 360 - row]) {
           for (let x = x0; x < x1; x += pitch) g.fillRect(x, yAt(c - 4), ww, yAt(6));
         }
@@ -537,28 +537,39 @@ function bellyColour(look, al) {
   return '#' + b.lerp(new THREE.Color(150 / 255, 160 / 255, 170 / 255), a).getHexString();
 }
 
+// The front passenger door (painted on the livery, its forward edge at FRONT_DOOR_U of the body
+// from the tail, 0.85 m wide): its middle, metres back from the nose tip. The jet bridges and the
+// airstairs of the parked aeroplanes (apron3d.js) dock there.
+const FRONT_DOOR_U = 0.86;
+function frontDoorFromNose(L) { return L * (1 - FRONT_DOOR_U) - 0.425; }
+
+// The fuselage's cross-section at z (model axes, the nose at L / 2): its radius r and how far its
+// centre sits above the axis, y
+function fuselageRing(L, R, z) {
+  const noseLen = Math.min(L * 0.14, R * 2.8), tailLen = L * 0.3;
+  const zNose = L / 2, zTail = -L / 2;
+  if (z > zNose - noseLen) {
+    const u = Math.min(1, (z - (zNose - noseLen)) / noseLen);   // 0 → 1 to the tip
+    return { r: R * Math.sqrt(Math.max(0, 1 - u * u)) * (1 - 0.06 * u), y: -R * 0.16 * u * u };
+  }
+  if (z < zTail + tailLen) {
+    const u = Math.min(1, ((zTail + tailLen) - z) / tailLen);   // 0 → 1 to the tail end
+    // smooth off the cabin, still narrowing at the end: a cone to the tip (a curve that went
+    // flat there left a long thin tube, a rod under the tail seen from below)
+    const e = u * u * (2 - u);
+    const r = R * (1 - 0.86 * e);
+    return { r, y: (R - r) * 0.93 };                             // the top line stays level, the belly sweeps up
+  }
+  return { r: R, y: 0 };
+}
+
 // The fuselage: rings of vertices along z. u = along the body (tail 0 → nose 1), v = around (top 0).
 // hk > 1 makes a double-deck body: each ring hk times as tall as it is wide, grown upwards from its belly.
 function fuselageGeometry(L, R, hk) {
   hk = hk || 1;
   const N = 56, SEG = 24;
-  const noseLen = Math.min(L * 0.14, R * 2.8), tailLen = L * 0.3;
-  const zNose = L / 2, zTail = -L / 2;
-  const ring = (z) => {
-    if (z > zNose - noseLen) {
-      const u = (z - (zNose - noseLen)) / noseLen;              // 0 → 1 to the tip
-      return { r: R * Math.sqrt(Math.max(0, 1 - u * u)) * (1 - 0.06 * u), y: -R * 0.16 * u * u };
-    }
-    if (z < zTail + tailLen) {
-      const u = ((zTail + tailLen) - z) / tailLen;              // 0 → 1 to the tail end
-      // smooth off the cabin, still narrowing at the end: a cone to the tip (a curve that went
-      // flat there left a long thin tube, a rod under the tail seen from below)
-      const e = u * u * (2 - u);
-      const r = R * (1 - 0.86 * e);
-      return { r, y: (R - r) * 0.93 };                           // the top line stays level, the belly sweeps up
-    }
-    return { r: R, y: 0 };
-  };
+  const zTail = -L / 2;
+  const ring = (z) => fuselageRing(L, R, z);
   const pos = [], uv = [], idx = [];
   const zs = [];
   for (let i = 0; i <= N; i++) zs.push(zTail + L * (0.5 - 0.5 * Math.cos(Math.PI * i / N)));

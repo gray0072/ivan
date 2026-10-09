@@ -16,6 +16,7 @@
 const TERRAIN = {
   maxSdfKm: 90,       // distances to the coast beyond this saturate
   aptGrid: null, aptGridCell: 20000,
+  cityGrid: null, cityGridCell: 40000, cityKey: '',   // the real cities in a grid (urbanAt)
   // the ground round each airport brought to its real elevation (fitAirports): what is more than
   // fitSlackM off it, fully within fitInnerM and fading out by fitOuterM
   fitSlackM: 150, fitInnerM: 15000, fitOuterM: 60000
@@ -302,13 +303,49 @@ const Terrain = {
     return h;
   },
 
-  // Vertex colour for terrain, written into out[0..2] as 0..255
-  colorAt(x, z, h, slope, out) {
+  // How much of a real city (data/cities.js, when loaded) covers (x, z), 0..1: its built-up
+  // area, ragged at the edge (n: noise 0..1). The cities of the flight's world are put in a grid
+  // the first time it is asked.
+  urbanAt(x, z, n) {
+    if (typeof CITIES === 'undefined') return 0;
+    const T = TERRAIN, cell = T.cityGridCell, key = Theatre.lat0 + ',' + Theatre.lon0 + ',' + Theatre.sin0;
+    if (T.cityKey !== key) {
+      T.cityKey = key;
+      T.cityGrid = new Map();
+      const S = WORLD.SCALE * 1000;
+      for (const [, lat, lon, pop] of CITIES) {
+        const p = Theatre.toWorld(lat, lon), R = (1 + 4 * Math.sqrt(pop)) * S;
+        if (Math.abs(p.x) > 6e6 || Math.abs(p.z) > 6e6) continue;
+        const c = { x: p.x, z: p.z, R };
+        for (let cx = Math.floor((p.x - R) / cell); cx <= Math.floor((p.x + R) / cell); cx++) {
+          for (let cz = Math.floor((p.z - R) / cell); cz <= Math.floor((p.z + R) / cell); cz++) {
+            const k = cx * 100003 + cz;
+            if (!T.cityGrid.has(k)) T.cityGrid.set(k, []);
+            T.cityGrid.get(k).push(c);
+          }
+        }
+      }
+    }
+    const list = T.cityGrid.get(Math.floor(x / cell) * 100003 + Math.floor(z / cell));
+    if (!list) return 0;
+    let u = 0;
+    for (const c of list) {
+      const d = Math.hypot(x - c.x, z - c.z) * (0.8 + 0.4 * n);
+      if (d < c.R) u = Math.max(u, 1 - smoothstep(c.R * 0.5, c.R, d));
+    }
+    return u * 0.9;
+  },
+
+  // Vertex colour for terrain, written into out[0..2] as 0..255. land (optional, for the
+  // renderer's land cover, render/landcover.js) gets [patch, woods, urban], each 0..1: how much
+  // of the fields, woods and villages show (none on the water, the beaches, rock, snow, sand),
+  // how wooded the country is, and how much of a real city is here.
+  colorAt(x, z, h, slope, out, land) {
     const geo = Theatre.toGeo(x, z);
     const alat = Math.abs(geo.lat);
     const n1 = fbm(x / 5200 + 21, z / 5200 - 13, 3);
     const n2 = fbm(x / 1100 - 5, z / 1100 + 7, 2);
-    let r, g, b;
+    let r, g, b, patch = 0, woods = 0;
     if (h < 0.5) {
       r = 44 + n1 * 20; g = 54 + n1 * 24; b = 58 + n1 * 18;
     } else if (h < 14 && alat < 68) {
@@ -335,7 +372,16 @@ const Terrain = {
       // faint patchwork of clearings and fields in the lowlands
       const field = smoothstep(320, 80, h) * (1 - rock) * (1 - dry) * smoothstep(0.55, 0.75, fbm(x / 2600 + 31, z / 2600 + 17, 2));
       r = lerp(r, 108 + n2 * 30, field * 0.5); g = lerp(g, 126 + n2 * 26, field * 0.5); b = lerp(b, 78, field * 0.5);
+      if (land) {
+        // fields in the kind lowlands; the woods thicken in the taiga, the tropics and the hills,
+        // and from one region to the next
+        patch = (1 - rock) * (1 - snowAmt) * (1 - tundra) * (1 - 0.75 * dry) * (1 - 0.6 * smoothstep(700, 2000, h));
+        const taiga = smoothstep(56, 61, alat) * (1 - smoothstep(66, 70, alat));
+        woods = 0.2 + 0.5 * taiga + 0.4 * trop + 0.3 * smoothstep(200, 800, h) + (fbm(x / 41000 - 3, z / 41000 + 5, 2) - 0.5) * 0.6;
+        woods = clamp(woods * (1 - dry), 0, 0.95);
+      }
     }
+    if (land) { land[0] = patch; land[1] = woods; land[2] = h < 0.5 ? 0 : this.urbanAt(x, z, n2); }
     const shade = clamp(0.8 + slope * 0.5, 0.72, 1.16);
     out[0] = clamp(r * shade, 0, 255);
     out[1] = clamp(g * shade, 0, 255);
