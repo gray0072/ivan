@@ -21,21 +21,21 @@ const QUIZ_TEXT = {
     intro: 'Courses are the only way up. Each one ends in a short exam — 3 of 4 questions right and the course is yours; ' +
       'the fee is paid when you pass. Reputation with each client opens the higher tiers.',
     branches: { general: 'General', pax: 'Passenger', cargo: 'Cargo', bush: 'Bush & SAR' },
-    done: 'Passed', locked: 'Locked', needRep: 'Needs {n} {b} reputation', free: 'free', take: 'Take the exam', noMoney: 'Not enough money' },
+    done: 'Passed', locked: 'Locked', free: 'free', take: 'Take the exam', noMoney: 'Not enough money' },
   ru: { question: 'Вопрос', of: 'из', pass: 'для зачёта', hint: 'Подсказка', next: 'Дальше', right: 'Верно!', wrong: 'Не совсем — правильный ответ:',
     passed: 'Экзамен сдан', failed: 'Пока не сдан', correct: 'верно', need: 'Нужно 3. Деньги не списаны.', fee: 'Оплачен курс:',
     back: 'К дереву обучения', again: 'Ещё раз', giveUp: 'Сдаться',
     intro: 'Расти можно только через курсы. Каждый заканчивается коротким экзаменом: 3 верных ответа из 4 — и курс ваш; ' +
       'плата списывается, только когда экзамен сдан. Репутация у заказчиков открывает следующие ступени.',
     branches: { general: 'Общие', pax: 'Пассажиры', cargo: 'Грузы', bush: 'Малая авиация и ПСО' },
-    done: 'Сдан', locked: 'Закрыт', needRep: 'Нужна репутация {n} · {b}', free: 'бесплатно', take: 'Сдать экзамен', noMoney: 'Не хватает денег' },
+    done: 'Сдан', locked: 'Закрыт', free: 'бесплатно', take: 'Сдать экзамен', noMoney: 'Не хватает денег' },
   sv: { question: 'Fråga', of: 'av', pass: 'för godkänt', hint: 'Ledtråd', next: 'Nästa', right: 'Rätt!', wrong: 'Inte riktigt — rätt svar är:',
     passed: 'Godkänd', failed: 'Inte den här gången', correct: 'rätt', need: 'Du behöver 3. Inget dras.', fee: 'Kursavgift betald:',
     back: 'Tillbaka till utbildningen', again: 'Försök igen', giveUp: 'Ge upp',
     intro: 'Kurserna är enda vägen uppåt. Varje kurs slutar med ett kort prov — 3 av 4 rätt och kursen är din; ' +
       'avgiften dras först när du klarar provet. Rykte hos kunderna öppnar de högre nivåerna.',
     branches: { general: 'Allmänt', pax: 'Passagerare', cargo: 'Frakt', bush: 'Bush och SAR' },
-    done: 'Godkänd', locked: 'Låst', needRep: 'Kräver {n} i rykte · {b}', free: 'gratis', take: 'Gör provet', noMoney: 'För lite pengar' }
+    done: 'Godkänd', locked: 'Låst', free: 'gratis', take: 'Gör provet', noMoney: 'För lite pengar' }
 };
 
 // the courses (COURSES in constants.js, which holds the English) in Russian and Swedish:

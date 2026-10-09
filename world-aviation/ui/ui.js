@@ -560,30 +560,84 @@ const UI = {
     return tr('Too big for {apt}: a {span} m wingspan, its stands and taxiways take up to {max} m', { apt: aptName(apt), span: a.dims.span, max: LAYOUT.MAX_SPAN[apt.terminal] });
   },
 
-  // The course tree, in the game's language (the exams run in it too)
+  // The course tree, in the game's language (the exams run in it too): a card with the courses
+  // passed, the ones open now and the one to open next, then a column per branch — every course
+  // a card with its picture (art/courseicons.js), what it asks for (the course before it, the
+  // flights flown, the reputation) ticked off as it is met, the types it unlocks and its exam
   trainingBody() {
     const lang = this.quizLang(), T = QUIZ_TEXT[lang];
+    const flown = Career.data.stats.flights;
+    const passed = COURSES.filter((c) => Career.has(c.id)).length;
+    const open = COURSES.filter((c) => Career.courseState(c).available);
+    // the course to open next: of those still closed, the one that asks for the fewest flights
+    const next = COURSES.filter((c) => { const st = Career.courseState(c); return !st.bought && !st.available; })
+      .sort((x, y) => (x.flights || 0) - (y.flights || 0))[0];
+    const icon = (c) => this.courseIcon(c);
+    const head = '<div class="trHead">' +
+      '<div class="trRing" style="--p:' + Math.round(passed / COURSES.length * 100) + '"><b>' + passed + '</b><span>/ ' + COURSES.length + '</span></div>' +
+      '<div class="trHeadText"><h3>' + tr('Courses passed') + '</h3>' +
+      (open.length ? '<p class="trOpen">' + tr('Open now') + ': ' + open.map((c) => '<b>' + esc(this.courseText(c, lang).name) + '</b>').join(', ') + '</p>' : '') +
+      (next ? '<p class="trNext">' + icon(next) + '<span>' + tr('Next to open') + ': <b>' + esc(this.courseText(next, lang).name) + '</b><br>' +
+        this.courseNeeds(next, true) + '</span></p>'
+        : passed === COURSES.length ? '<p class="trOpen ok">' + tr('Every course passed.') + '</p>' : '') +
+      '</div></div>';
     const columns = ['general', 'pax', 'cargo', 'bush'].map((b) => {
-      const courses = COURSES.filter((c) => c.branch === b).sort((x, y) => x.tier - y.tier);
+      const courses = COURSES.filter((c) => c.branch === b).sort((x, y) => x.tier - y.tier || (x.flights || 0) - (y.flights || 0));
+      const done = courses.filter((c) => Career.has(c.id)).length;
       const items = courses.map((c) => {
         const st = Career.courseState(c);
         const afford = Career.canAfford(c);
         const tx = this.courseText(c, lang);
-        const status = st.bought ? '<span class="ok">' + esc(T.done) + '</span>'
-          : st.lockedByCourse ? '<span class="need">' + esc(T.locked) + '</span>'
-            : st.lockedByRep ? '<span class="need">' + esc(T.needRep.replace('{n}', c.rep).replace('{b}', T.branches[b === 'general' ? 'pax' : b])) + '</span>'
-              : '<span class="price">' + (c.cost ? fmtMoney(c.cost) : esc(T.free)) + '</span>';
+        const state = st.bought ? 'done' : st.available ? 'open' : 'locked';
+        const badge = st.bought ? '<span class="coState ok">✓ ' + esc(T.done) + '</span>'
+          : st.available ? '<span class="price">' + (c.cost ? fmtMoney(c.cost) : esc(T.free)) + '</span>'
+            : '<span class="coState">🔒 ' + esc(T.locked) + '</span>';
+        const types = AIRCRAFT.filter((a) => a.unlock === c.id);
         const can = st.available && afford;
-        const btn = st.bought ? '' : '<button class="btn small' + (can ? ' default' : ' disabled') + '" data-act="course" data-v="' + c.id + '"' +
-          (can ? '' : ' disabled') + '>' + esc(st.available ? (afford ? T.take : T.noMoney) : T.locked) + '</button>';
-        return '<div class="course' + (st.bought ? ' done' : '') + '">' +
-          '<div class="coHead"><b>' + esc(tx.name) + '</b>' + status + '</div>' +
+        return '<div class="course ' + state + '" style="--bc:' + COURSE_COLOR[b] + '">' +
+          '<div class="coHead">' + icon(c) + '<div class="coTitle"><small>' + tr('Level {n}', { n: c.tier + (b === 'general' ? 1 : 0) }) + '</small>' +
+          '<b>' + esc(tx.name) + '</b></div>' + badge + '</div>' +
           '<p>' + esc(tx.blurb) + '</p>' +
-          '<p class="effect">' + esc(tx.effect) + '</p>' + btn + '</div>';
+          '<p class="effect">' + esc(tx.effect) + '</p>' +
+          (types.length ? '<div class="coTypes">' + types.map((a) => '<span>✈ ' + esc(a.name) + '</span>').join('') + '</div>' : '') +
+          (st.bought ? '' : this.courseNeeds(c) +
+            (st.available ? '<button class="btn small' + (can ? ' default' : ' disabled') + '" data-act="course" data-v="' + c.id + '"' +
+              (can ? '' : ' disabled') + '>' + esc(afford ? T.take : T.noMoney) + '</button>' : '')) +
+          '</div>';
       }).join('');
-      return '<div class="branch"><h3>' + esc(T.branches[b]) + '</h3>' + items + '</div>';
+      return '<div class="branch" style="--bc:' + COURSE_COLOR[b] + '"><h3 class="brHead"><span class="brIcon">' +
+        (b === 'general' ? CourseIcons.svg('general') : UseIcons.svg(b)) + '</span>' + esc(T.branches[b]) +
+        '<span class="cvCount">' + done + ' / ' + courses.length + '</span></h3>' + items + '</div>';
     }).join('');
-    return '<div class="hint">' + esc(T.intro) + '</div><div class="branches">' + columns + '</div>';
+    return head + '<div class="hint">' + esc(T.intro) + '</div><div class="branches">' + columns + '</div>';
+  },
+  // what a course asks for, ticked off as it is met: the courses before it, the flights flown in
+  // all, the reputation with its clients — each with how far the pilot has come; `short`: only
+  // what is still missing, on one line (the training card's "next to open")
+  courseNeeds(c, short) {
+    const st = Career.courseState(c), flown = Career.data.stats.flights;
+    const rows = [];
+    for (const r of c.requires || []) {
+      const rc = COURSES.find((x) => x.id === r);
+      if (rc) rows.push({ ok: Career.has(r), text: tr('Course: {name}', { name: this.courseText(rc).name }) });
+    }
+    if (c.flights) rows.push({ ok: st.reqFlights, text: tr('Flights flown'), have: flown, need: c.flights });
+    if (c.rep) {
+      const who = c.branch === 'general' ? tr('Reputation (any group)') : tr('Reputation · {group}', { group: tr(FACTIONS[c.branch].short) });
+      rows.push({ ok: st.reqRep, text: who, have: Math.floor(Career.repFor(c.branch)), need: c.rep });
+    }
+    if (short) {
+      return rows.filter((r) => !r.ok).map((r) => esc(r.text) + (r.need ? ' ' + Math.min(r.have, r.need) + ' / ' + r.need : '')).join(' · ');
+    }
+    if (!rows.length) return '';
+    return '<ul class="coNeeds">' + rows.map((r) => '<li class="' + (r.ok ? 'ok' : 'need') + '"><i>' + (r.ok ? '✓' : '·') + '</i>' +
+      '<span>' + esc(r.text) + '</span>' +
+      (r.need ? '<em>' + Math.min(r.have, r.need) + ' / ' + r.need + '</em><span class="reqBar"><i style="width:' +
+        Math.round(Math.min(1, r.have / r.need) * 100) + '%"></i></span>' : '') + '</li>').join('') + '</ul>';
+  },
+  // a course's picture in a round badge of its branch's colour
+  courseIcon(c) {
+    return '<span class="coIcon" style="--bc:' + COURSE_COLOR[c.branch] + '">' + CourseIcons.svg(c.id) + '</span>';
   },
   // a course's name, description and effect in the game's language (English from COURSES)
   courseText(c, lang) {
@@ -926,14 +980,16 @@ const UI = {
       const pass = q.correct >= 3 || q.questions.length === 0;
       if (pass && !q.paid) { Career.buyCourse(q.course); q.paid = true; Audio2.cue('good'); }
       if (!pass && !q.told) { q.told = true; Audio2.cue('bad'); }
-      this.panel('<h2>' + esc(tx.name) + '</h2>' +
+      this.panel((pass
+        ? '<div class="badgeWon">' + this.courseIcon(q.course) + '<b>' + esc(tx.name) + '</b></div>'
+        : '<div class="quizTop">' + this.courseIcon(q.course) + '<h2>' + esc(tx.name) + '</h2></div>') +
         '<p class="lead">' + (pass
           ? esc(T.passed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '.' +
             (q.course.cost ? ' ' + esc(T.fee) + ' ' + fmtMoney(q.course.cost) + '.' : '')
           : esc(T.failed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '. ' + esc(T.need)) + '</p>' +
         (pass ? '<p class="ok">' + esc(tx.effect) + '</p>' : '') +
         '<div class="btnRow">' + (pass ? (Career.newAircraft().length
-          ? '<button class="btn default" data-act="tab" data-v="hangar">' + tr('To the hangar') + ' →</button>' +
+          ? '<button class="btn default fwd" data-act="tab" data-v="hangar">' + tr('To the hangar') + '</button>' +
             '<button class="btn" data-act="quizdone" data-esc>' + esc(T.back) + '</button>'
           : '<button class="btn default" data-act="quizdone" data-esc>' + esc(T.back) + '</button>')
           : '<button class="btn default" data-act="course" data-v="' + q.course.id + '">' + esc(T.again) + '</button>' +
@@ -951,7 +1007,7 @@ const UI = {
     const after = ans === null ? ''
       : '<div class="quizNote ' + (ans === 1 ? 'good' : 'bad') + '"><b>' + esc(ans === 1 ? T.right : T.wrong + ' ' + L[1]) + '</b><br>' + esc(L[4]) + '</div>';
     this.panel(
-      '<h2>' + esc(tx.name) + '</h2>' +
+      '<div class="quizTop">' + this.courseIcon(q.course) + '<h2>' + esc(tx.name) + '</h2></div>' +
       '<div class="quizHead">' + esc(T.question) + ' ' + (q.index + 1) + ' ' + esc(T.of) + ' ' + q.questions.length +
       ' · ' + esc(T.pass) + ' 3</div>' +
       '<p class="qText">' + esc(L[0]) + '</p>' + opts +
@@ -1141,6 +1197,8 @@ function logText(l) {
 function row2(k, v) { return '<div class="row2"><span>' + esc(k) + '</span><b>' + v + '</b></div>'; }
 function keyRow(k, d) { return '<li><kbd>' + esc(k) + '</kbd> ' + esc(d) + '</li>'; }
 function unlockLine(on, text) { return '<li class="' + (on ? 'ok' : 'off') + '"><i>' + (on ? '✓' : '🔒') + '</i>' + esc(text) + '</li>'; }
+// the training branches' colours: the client groups' own, a light blue for the general courses
+const COURSE_COLOR = { general: '#8fc0ea', pax: FACTIONS.pax.color, cargo: FACTIONS.cargo.color, bush: FACTIONS.bush.color };
 // what kind of entry a log line is, for its dot on the Career tab's timeline
 function logKind(l) {
   const t = l.tpl || l.text || '';

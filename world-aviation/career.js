@@ -213,10 +213,12 @@ const Career = {
   courseState(c) {
     const reqCourse = (c.requires || []).every((r) => this.has(r));
     const reqRep = c.rep === undefined ? true : this.repFor(c.branch) >= c.rep;
+    const reqFlights = !c.flights || this.data.stats.flights >= c.flights;
     const bought = this.has(c.id);
     return {
-      available: reqCourse && reqRep && !bought,
-      lockedByCourse: !reqCourse, lockedByRep: !reqRep && reqCourse,
+      available: reqCourse && reqRep && reqFlights && !bought,
+      lockedByCourse: !reqCourse, lockedByRep: !reqRep && reqCourse, lockedByFlights: !reqFlights && reqCourse,
+      reqCourse, reqRep, reqFlights,
       bought
     };
   },

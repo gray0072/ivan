@@ -516,6 +516,18 @@ kbd {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 .panel.narrow { width: min(560px, 100%); }
+/* on a phone (upright, or held sideways) the menus take the whole screen: no frame round the panel
+   eating its width — only the glass panels of the title screen and the pause keep theirs */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  #screen:not([data-view="title"]):not([data-view="pause"]) {
+    padding-left: max(10px, env(safe-area-inset-left));
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+  #screen:not([data-view="title"]):not([data-view="pause"]) > .panel {
+    padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
+  }
+}
 .pauseApts { margin-top: 14px; }
 .panel.title { width: min(760px, 100%); }
 
@@ -633,11 +645,28 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 }
 .btn.picked { border-color: rgba(111, 177, 232, 0.55); background: rgba(36, 64, 90, 0.6); color: #cfe6fa; }
 .btn.big { padding: 12px 26px; font-size: 16px; }
-/* the way on carries an arrow forward, the way back an arrow back */
-.btn.fwd::after { content: "\2002\2192"; }
-.btn.back::before { content: "\2190\2002"; }
+/* the way on carries an arrow forward, the way back an arrow back: drawn arrows (an SVG mask in
+   the text's colour), the same on every phone, not a font's thin arrow characters */
+.btn.fwd, .btn.back { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.fwd::after, .btn.back::before, .panel.title .bigBtn::after {
+  content: ''; flex: none; width: 18px; height: 18px; background: currentColor;
+  -webkit-mask: var(--arrow) center / contain no-repeat; mask: var(--arrow) center / contain no-repeat;
+  transition: transform 0.2s;
+}
+.btn.fwd::after, .panel.title .bigBtn::after {
+  --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12h14M13 5.5l6.5 6.5-6.5 6.5'/%3E%3C/svg%3E");
+  margin-right: -3px;
+}
+.btn.back::before {
+  --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5.5 8.5 12l6.5 6.5'/%3E%3C/svg%3E");
+  margin-left: -5px;
+}
 .btn.back { border-color: rgba(140, 170, 200, 0.3); background: transparent; color: #c3d1de; }
 .btn.back:hover { background: rgba(140, 170, 200, 0.1); filter: none; }
+@media (hover: hover) {
+  .btn.fwd:hover::after { transform: translateX(3px); }
+  .btn.back:hover::before { transform: translateX(-3px); }
+}
 .btn.disabled, .btn:disabled { opacity: 0.42; cursor: not-allowed; }
 .btn:focus-visible, .bigBtn:focus-visible, .chip:focus-visible, .opt:focus-visible, .tab:focus-visible { outline: 2px solid #ffd97a; outline-offset: 2px; }
 .btn.default:focus-visible, .bigBtn.default:focus-visible { outline-color: #ffffff; }
@@ -711,7 +740,7 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
   background: linear-gradient(180deg, rgba(40, 58, 80, 0.75), rgba(20, 30, 44, 0.75));
   transition: transform 0.18s, box-shadow 0.25s, filter 0.2s;
 }
-.panel.title .bigBtn::after { content: "→"; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 20px; opacity: 0.7; transition: transform 0.2s; }
+.panel.title .bigBtn::after { position: absolute; right: 18px; top: 50%; width: 22px; height: 22px; margin: 0; transform: translateY(-50%); opacity: 0.75; }
 .panel.title .bigBtn.default {
   border-color: #ffe7ad;
   background: linear-gradient(180deg, #ffe08a, #f0a83c);
@@ -951,15 +980,88 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
   .acCard.plane, .acPic img { transition: none; }
 }
 
-.branches { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
-.branch { display: flex; flex-direction: column; gap: 8px; }
-.course { padding: 10px 12px; border: 1px solid rgba(140, 170, 200, 0.16); border-radius: 10px; background: #131b24; }
-.course.done { border-color: #3d7a52; background: #14221a; }
-.coHead { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
-.coHead b { font-size: 14px; }
-.course p { margin: 5px 0; font-size: 12px; color: #a3b3c3; line-height: 1.45; }
+/* the Training tab (UI.trainingBody): the progress card on top, a column per branch, the courses
+   as cards down a line like the steps of a ladder — passed in green, open in gold, closed dimmed */
+.trHead {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 12px; padding: 14px 16px;
+  border: 1px solid rgba(140, 170, 200, 0.18); border-radius: 14px;
+  background: radial-gradient(ellipse 60% 140% at 0% 50%, rgba(125, 224, 138, 0.1), transparent 70%), linear-gradient(135deg, #18242f, #111922);
+}
+.trRing {
+  flex: none; position: relative; display: grid; place-content: center; justify-items: center;
+  width: 78px; height: 78px; border-radius: 50%;
+  background: conic-gradient(#7de08a calc(var(--p) * 1%), #233040 0);
+}
+.trRing::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: #131c26; }
+.trRing b, .trRing span { position: relative; line-height: 1; }
+.trRing b { font-size: 24px; font-weight: 800; color: #e8fbe9; }
+.trRing span { font-size: 11px; color: #8fa1b3; }
+.trHeadText { min-width: 0; flex: 1; }
+.trHeadText h3 { margin: 0 0 4px; }
+.trOpen { margin: 0 0 6px; font-size: 13px; color: #c3d1de; line-height: 1.45; }
+.trOpen b { color: #ffd97a; }
+.trNext { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 12px; color: #9fb0c3; line-height: 1.45; }
+.trNext b { color: #e3edf6; }
+.trNext .coIcon { width: 34px; height: 34px; opacity: 0.85; }
+.trNext .coIcon svg { width: 18px; height: 18px; }
+
+.branches { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: start; }
+.branch { display: flex; flex-direction: column; gap: 10px; }
+.brHead { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; color: var(--bc); }
+.brIcon { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--bc) 16%, transparent); box-shadow: inset 0 0 0 1px var(--bc); }
+.brIcon svg { width: 15px; height: 15px; fill: currentColor; fill-opacity: 0.2; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+
+/* a course's picture: line art in a round badge of its branch's colour (art/courseicons.js) */
+.coIcon {
+  flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  border: 2px solid var(--bc, #8fc0ea); color: var(--bc, #8fc0ea);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--bc, #8fc0ea) 26%, #16212c), #0f161e);
+}
+.courseSvg { width: 22px; height: 22px; fill: currentColor; fill-opacity: 0.16; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+
+.course {
+  position: relative; padding: 11px 12px 12px; border: 1px solid rgba(140, 170, 200, 0.16); border-radius: 12px;
+  background: linear-gradient(180deg, #151e28, #111820);
+}
+/* the line of the ladder between one course and the next */
+.course + .course::before {
+  content: ''; position: absolute; left: 31px; top: -11px; width: 2px; height: 10px;
+  background: color-mix(in srgb, var(--bc) 45%, transparent);
+}
+.course.done { border-color: rgba(125, 224, 138, 0.38); background: linear-gradient(180deg, #15241b, #101a14); }
+.course.done .coIcon { border-color: #7de08a; color: #9be8ac; }
+.course.open { border-color: rgba(255, 217, 122, 0.55); box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.25), 0 8px 24px rgba(255, 217, 122, 0.08); }
+.course.open .coIcon { animation: coGlow 2.6s ease-in-out infinite; }
+@keyframes coGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 217, 122, 0); } 50% { box-shadow: 0 0 14px 2px rgba(255, 217, 122, 0.35); } }
+.course.locked .coIcon { filter: grayscale(0.7); opacity: 0.55; }
+.course.locked .coTitle b, .course.locked p { opacity: 0.75; }
+.coHead { display: flex; align-items: center; gap: 10px; }
+.coTitle { flex: 1; min-width: 0; }
+.coTitle small { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #7f93a6; }
+.coTitle b { display: block; font-size: 14px; line-height: 1.25; }
+.coState { flex: none; font-size: 11px; color: #8fa1b3; white-space: nowrap; }
+.coState.ok { color: #7de08a; font-weight: 700; }
+.course p { margin: 7px 0 0; font-size: 12px; color: #a3b3c3; line-height: 1.45; }
 .course p.effect { color: #9be8ac; }
-.price { font: 700 12px ui-monospace, monospace; color: #ffd97a; }
+.course .btn { margin-top: 10px; }
+.price { font: 700 12px ui-monospace, monospace; color: #ffd97a; white-space: nowrap; }
+/* the types a course unlocks */
+.coTypes { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.coTypes span { padding: 2px 8px; border-radius: 20px; background: rgba(140, 180, 220, 0.1); border: 1px solid rgba(140, 180, 220, 0.2); font-size: 11px; color: #cfe0f0; }
+/* what a course asks for, ticked off as it is met */
+.coNeeds { margin: 9px 0 0; padding: 7px 9px; list-style: none; border-radius: 9px; background: rgba(9, 14, 20, 0.55); font-size: 12px; }
+.coNeeds li { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 2px 7px; padding: 2px 0; color: #ffb59e; }
+.coNeeds li.ok { color: #9be8ac; }
+.coNeeds i { font-style: normal; font-weight: 700; text-align: center; }
+.coNeeds em { font: 700 11px ui-monospace, monospace; font-style: normal; }
+.reqBar { grid-column: 2 / 4; height: 4px; border-radius: 2px; background: #1e2833; overflow: hidden; }
+.reqBar i { display: block; height: 100%; border-radius: 2px; background: currentColor; }
+@media (prefers-reduced-motion: reduce) { .course.open .coIcon { animation: none; box-shadow: 0 0 10px rgba(255, 217, 122, 0.3); } }
+@media (max-width: 520px) {
+  .trHead { padding: 12px; gap: 12px; }
+  .trRing { width: 64px; height: 64px; }
+  .trRing b { font-size: 20px; }
+}
 
 /* the Career tab (UI.careerBody): the pilot's card, the records in tiles, cards for the
    reputation, the licences, the unlocks and the log as a timeline */
@@ -1191,6 +1293,17 @@ table.money tr.total td { font-weight: 800; font-size: 16px; border-bottom: 0; p
 }
 
 /* ---------- exams ---------- */
+.quizTop { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.quizTop h2 { margin: 0; }
+.quizTop .coIcon { width: 46px; height: 46px; }
+.quizTop .coIcon svg { width: 26px; height: 26px; }
+/* the exam passed: the course's badge, big, in a ring of gold */
+.badgeWon { display: grid; justify-items: center; gap: 6px; margin: 6px 0 4px; text-align: center; }
+.badgeWon .coIcon { width: 92px; height: 92px; border-width: 3px; animation: badgeIn 0.7s cubic-bezier(0.2, 1.4, 0.3, 1) both; }
+.badgeWon .coIcon svg { width: 50px; height: 50px; }
+.badgeWon b { font-size: 18px; color: #fff3cf; }
+@keyframes badgeIn { from { transform: scale(0.3) rotate(-25deg); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .badgeWon .coIcon { animation: none; } }
 
 .opt.right { border-color: #4ac47f; background: #183a28; color: #dff7e8; opacity: 1; }
 .opt.wrong { border-color: #e0574a; background: #3d1d1b; color: #ffd9d4; opacity: 1; }
