@@ -27,6 +27,7 @@
 
 const APRON_FLOOD = 0xffe3b8;      // the colour of the floodlights
 const MAST_CLEAR = 52;             // a floodlight mast from a taxilane centreline, metres (ICAO code F: 50.5)
+const MAST_NAME_GAP = 40;          // no airside mast this far either side of the airport's name on the roof, metres
 // the apron traffic gives way to the player's aeroplane (Apron3D.update): the ground it covers is
 // its circle (half its length or span) plus GIVE_WAY_PAD, now and where it will be over the next
 // GIVE_WAY_AHEAD_S seconds; a vehicle stops GIVE_WAY_GAP metres short of that ground
@@ -253,15 +254,22 @@ const Apron3D = {
     // (the airside ones on the grass just off the apron, clear of the service road and of the
     // wings: ICAO's 50.5 m from a code F taxilane centreline to an object, from the apron lane
     // and from every lane off the taxiway into the apron, MAST_CLEAR — so only between two lanes
-    // at least twice that apart, spread evenly, about 110 m from each other)
+    // at least twice that apart, spread evenly, about 110 m from each other; none in front of the
+    // airport's name on the roof, MAST_NAME_GAP either side of it, where they would cross the
+    // letters seen from the apron and the taxiway)
     const masts = [];
     const airside = Math.min(r.a0 - 6, L.APRON_LANE - MAST_CLEAR);
     const lanes = a.apronLanes || [r.t0 + 40, r.t1 - 40];
+    const sign = roofName(a);
+    const n0 = sign.b ? sign.b.t - sign.lw / 2 - MAST_NAME_GAP : Infinity, n1 = sign.b ? sign.b.t + sign.lw / 2 + MAST_NAME_GAP : -Infinity;
     for (let k = 0; k + 1 < lanes.length; k++) {
-      const t0 = lanes[k] + MAST_CLEAR, t1 = lanes[k + 1] - MAST_CLEAR;
-      if (t1 < t0) continue;
-      const n = Math.floor((t1 - t0) / 110) + 1;
-      for (let i = 0; i < n; i++) masts.push([n === 1 ? (t0 + t1) / 2 : t0 + (t1 - t0) * i / (n - 1), airside, false]);
+      const s0 = lanes[k] + MAST_CLEAR, s1 = lanes[k + 1] - MAST_CLEAR;
+      const pieces = s1 <= n0 || s0 >= n1 ? [[s0, s1]] : [[s0, Math.min(s1, n0)], [Math.max(s0, n1), s1]];
+      for (const [t0, t1] of pieces) {
+        if (t1 < t0) continue;
+        const n = Math.floor((t1 - t0) / 110) + 1;
+        for (let i = 0; i < n; i++) masts.push([n === 1 ? (t0 + t1) / 2 : t0 + (t1 - t0) * i / (n - 1), airside, false]);
+      }
     }
     const termA = front - 7.5;
     for (let i = 0; i <= a.gates.length; i++) {
@@ -269,14 +277,17 @@ const Apron3D = {
       const t = i === 0 ? a.gates[0].t - 30 : i < a.gates.length ? a.gates[i].t - L.GATE_SPACING / 2 : a.gates[i - 1].t + L.GATE_SPACING / 2;
       masts.push([t, termA, true]);
     }
+    // (the airside ones 26 m tall; the terminal's below its roof edge, so seen from the apron
+    // they never stand in front of the airport's name on the roof)
+    const termMast = Math.min(26, (term ? term.h : 11) - 2.5);
     const mk = kit();
     const lamps = [];
     for (const [t, ac, along] of masts) {
-      const [x, z] = P(t, ac);
-      mk.cyl(0.25, 0.4, 26, 8, x, 13, z, '#9aa0a4');
-      if (along) mk.box(1.2, 1.2, 4.2, x, 26.2, z, '#3a3f44');
-      else mk.box(4.2, 1.2, 1.6, x, 26.2, z, '#3a3f44');
-      for (let i = -1; i <= 1; i++) lamps.push(x + (along ? 0 : i * 1.3), 25.5, z + (along ? i * 1.3 : 0));
+      const [x, z] = P(t, ac), mh = along ? termMast : 26;
+      mk.cyl(0.25, 0.4, mh, 8, x, mh / 2, z, '#9aa0a4');
+      if (along) mk.box(1.2, 1.2, 4.2, x, mh + 0.2, z, '#3a3f44');
+      else mk.box(4.2, 1.2, 1.6, x, mh + 0.2, z, '#3a3f44');
+      for (let i = -1; i <= 1; i++) lamps.push(x + (along ? 0 : i * 1.3), mh - 0.5, z + (along ? i * 1.3 : 0));
     }
     at(mk.mesh(), 0, 0, 0);
     const lgeo = new THREE.BufferGeometry();

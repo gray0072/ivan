@@ -60,6 +60,7 @@ const Systems = {
     this.fire = false;
     this.hydraulics = true; this.brakeFactor = 1;
     this.antiIce = false;
+    this.iceHold = false;            // ice building with the anti-ice off: the time is held at x1
     this.depressurised = false;
     this.pressurised = true;
     this.cabinAlt = flight.world.elev;
@@ -194,7 +195,12 @@ const Systems = {
       e.iceAmount = approach(e.iceAmount, 0, (this.antiIce ? 0.03 : 0.004) * dt);
     }
     e.icing = e.iceAmount > 0.08;
-    if (inIcing && !this.antiIce && e.iceAmount > 0.15) fl.warn('ICE', tr('Ice building — engine anti-ice K'));
+    // ice building with the anti-ice off: a warning, and the time drops to x1 as for an emergency,
+    // climbing back once the anti-ice is on (or out of the icing)
+    const hold = inIcing && !this.antiIce && (e.iceAmount > 0.15 || this.iceHold);
+    if (hold && !this.iceHold && (fl.env.timeAccel > 1 || fl.cheatAccel)) fl.interruptTime();
+    this.iceHold = hold;
+    if (hold) fl.warn('ICE', tr('Ice building — engine anti-ice K'));
   },
 
   updatePressurisation(dt) {
@@ -269,10 +275,7 @@ const Systems = {
     Audio2.cue('caution');
     fl.warn(def.id.toUpperCase(), tr(def.title));
     // the interruption: drop the clock back to real time (it climbs back once the checklist is closed)
-    const was = fl.cheatAccel ? SIM.TIME_ACCEL_STEPS.length - 1 : fl.timeAccelIndex;
-    fl.timeAccelResume = Math.max(fl.timeAccelResume || 0, was); fl.resumeT = 0;
-    fl.timeAccelIndex = 0; fl.cheatAccel = false;
-    fl.env.timeAccel = 1;
+    fl.interruptTime();
   },
 
   pickEngine() {

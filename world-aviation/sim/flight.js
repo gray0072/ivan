@@ -338,12 +338,13 @@ const Flight = {
 
   // The fastest step allowed now: up to x128 on the autopilot in any phase, up to x512 in the
   // cruise on its NAV (back at x128 by the top of descent, todAccelMax); flying by hand it
-  // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down or in a checklist,
+  // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down, in a checklist or
+  // with ice building and the anti-ice off,
   // and closing on the arrival it comes down by itself (approachAccelMax).
   timeAccelMax() {
     this.approachCapped = false;
     this.todCapped = false;
-    if (this.st.onGround || (this.systems && this.systems.checklist)) return 1;
+    if (this.st.onGround || this.timeHeld()) return 1;
     const agl = this.altAgl();
     if (agl < SIM.TIME_ACCEL_MIN_ALT_M) return 1;
     let max = 1;
@@ -415,10 +416,22 @@ const Flight = {
     SIM.TIME_ACCEL_STEPS.forEach((v, i) => { if (v <= max) top = i; });
     return top;
   },
+  // something to deal with now (an emergency's checklist, ice building with the anti-ice off):
+  // the time stays at x1 until it is done
+  timeHeld() { return !!(this.systems && (this.systems.checklist || this.systems.iceHold)); },
+  // an interruption: drop the clock back to real time; it climbs back to where it was, a step a
+  // second, once nothing holds it (timeHeld)
+  interruptTime() {
+    const was = this.cheatAccel ? SIM.TIME_ACCEL_STEPS.length - 1 : this.timeAccelIndex;
+    this.timeAccelResume = Math.max(this.timeAccelResume || 0, was); this.resumeT = 0;
+    this.timeAccelIndex = 0; this.cheatAccel = false;
+    this.env.timeAccel = 1;
+  },
   timeAccel(dtReal = 0) {
     const e = this.env;
-    // after an emergency the time climbs back to where it was, a step a second, once the checklist is closed
-    if (this.timeAccelResume > this.timeAccelIndex && !(this.systems && this.systems.checklist)) {
+    // after an emergency the time climbs back to where it was, a step a second, once the checklist is
+    // closed (and the anti-ice is on, if ice was building)
+    if (this.timeAccelResume > this.timeAccelIndex && !this.timeHeld()) {
       this.resumeT += dtReal;
       if (this.resumeT >= SIM.TIME_ACCEL_RESUME_S) {
         this.resumeT = 0;
@@ -434,7 +447,7 @@ const Flight = {
     // the step asked for, a step a second (gone with the autopilot, or past the cruise)
     if (this.timeAccelWant > this.timeAccelIndex) {
       if (!this.wantsCruise()) this.timeAccelWant = 0;
-      else if (this.timeAccelIndex < this.timeAccelTop() && !(this.systems && this.systems.checklist)) {
+      else if (this.timeAccelIndex < this.timeAccelTop() && !this.timeHeld()) {
         this.wantT += dtReal;
         if (this.wantT >= SIM.TIME_ACCEL_RESUME_S) {
           this.wantT = 0;
@@ -465,12 +478,14 @@ const Flight = {
   changeTimeAccel(dir) {
     const steps = SIM.TIME_ACCEL_STEPS;
     const top = this.timeAccelTop();
+    // T refused while a checklist or the ice holds the time: it still climbs back once that is done
+    if (dir > 0 && this.timeHeld()) { this.warn('TIME', this.timeAccelLimitText()); return; }
     this.timeAccelResume = 0;                // the pilot sets the time: no climbing back after an emergency
     if (dir < 0) this.timeAccelWant = 0;
     if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = dir < 0 ? top : this.timeAccelIndex; }
     else if (dir > 0 && this.timeAccelIndex >= top && this.timeAccelIndex < steps.length - 1 &&
       steps[this.timeAccelIndex] >= SIM.TIME_ACCEL_AP_MAX && !this.cruiseNav() && this.wantsCruise() && !this.approachCapped &&
-      !(this.systems && this.systems.checklist)) {
+      !this.timeHeld()) {
       // on the autopilot in the climb: x128 now, and the step asked for once in the cruise
       this.timeAccelWant = Math.min(Math.max(this.timeAccelWant, this.timeAccelIndex) + 1, steps.indexOf(SIM.TIME_ACCEL_CRUISE_MAX));
       this.info(tr('Time x{n} in the climb — x{want} once level in the cruise, it speeds up by itself',
@@ -489,6 +504,7 @@ const Flight = {
       return tr('Time acceleration only in the air, above {alt} ft', { alt: fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) });
     }
     if (this.systems && this.systems.checklist) return tr('Work the checklist first — time runs at x1');
+    if (this.systems && this.systems.iceHold) return tr('Anti-ice first (K) — time runs at x1');
     if (this.approachCapped) return tr('Approaching {id} — the time slows down by itself, x1 from {nm} out', { id: this.arrival.id, nm: Units.dist(SIM.TIME_ACCEL_X1_NM) });
     if (this.todCapped) return tr('Top of descent ahead — the time slows down by itself, x{n} from there', { n: SIM.TIME_ACCEL_AP_MAX });
     if (this.cruiseNav()) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_CRUISE_MAX });
@@ -820,11 +836,43 @@ const Flight = {
         fromThr: Math.round(loc.t + a.half),
         offset: Math.round(loc.across),
         surf: surf.type,
-        damage
+        damage,
+        t: this.elapsed
       };
+      this.cabinReaction(this.cabinMood(fpm, bank, surf));
+    } else if (this.landed && a === this.arrival && !this.landed.bounced && this.elapsed - this.landed.t < CABIN_REACTION.BOUNCE_S && fpm > 60) {
+      this.landed.bounced = true;
+      this.cabinReaction('bounce');
     }
     this.info(tr('TOUCHDOWN {v} fpm', { v: Math.round(Math.max(0, fpm)) }));
     Audio2.cue('touchdown', Math.max(0, fpm));
+  },
+
+  // how the passengers take the landing (CABIN_REACTION)
+  cabinMood(fpm, bank, surf) {
+    const R = CABIN_REACTION, moods = ['ovation', 'applause', 'polite', 'firm', 'rough', 'hard'];
+    let i = fpm <= R.OVATION_FPM ? 0 : fpm <= R.APPLAUSE_FPM ? 1 : fpm <= R.POLITE_FPM ? 2
+      : fpm <= R.FIRM_FPM ? 3 : fpm <= SIM.TOUCHDOWN_HARD_FPM ? 4 : 5;
+    if (bank > R.BANK_DEG) i = Math.min(5, i + 1);
+    if (!surf.onPavement) i = 5;
+    return moods[i];
+  },
+  // the cabin heard (core/crowd.js) and a line about it; only with passengers on board, never
+  // in the simulator (a practice landing)
+  cabinReaction(mood) {
+    const c = this.contract;
+    if (!c || c.type !== 'pax' || !c.pax || this.practice) return;
+    if (this.landed) this.landed.cabin = mood;
+    this.info({
+      ovation: tr('The cabin bursts into applause'),
+      applause: tr('The passengers applaud'),
+      polite: tr('A few passengers clap'),
+      firm: tr('A firm one — the overhead bins rattle'),
+      rough: tr('"Ooh!" from the cabin — cups fly in the galley'),
+      hard: tr('Gasps in the cabin — the galley is a mess'),
+      bounce: tr('"Whoa!" — the cabin felt that bounce')
+    }[mood]);
+    Audio2.cue('cabin', { mood, pax: c.pax });
   },
 
   nearestApt() {

@@ -142,6 +142,13 @@ const SIM = {
   EXIT_COMMIT_DEG: 20          // turned this far off the runway heading: you are taking this exit, it stays
 };
 
+// The cabin's reaction to the landing (Flight.cabinMood, core/crowd.js), with passengers on board:
+// by the sink rate at the graded touchdown, fpm — an ovation, applause, a few claps, the bins
+// rattling (firm), an "ooh" and the galley (rough, up to SIM.TOUCHDOWN_HARD_FPM), a gasp and a
+// crying baby (hard); a bank past BANK_DEG makes it one worse, a touchdown off the paved
+// surface hard; a bounce within BOUNCE_S seconds of the graded touchdown gets a "whoa"
+const CABIN_REACTION = { OVATION_FPM: 100, APPLAUSE_FPM: 200, POLITE_FPM: 320, FIRM_FPM: 450, BANK_DEG: 5, BOUNCE_S: 6 };
+
 // ---------- Airport layout (metres) ----------
 // Every airport is drawn from the same template around its runway:
 // t = along the runway from its middle (positive towards the departure end),

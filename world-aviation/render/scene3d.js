@@ -693,12 +693,17 @@ const Scene3D = {
     this.aircraftY = st.pos.y;
     this.lastGround = fl.groundHeight();
 
-    // ---- the hour: the sun, the moon (in its phase: it keeps 24 h × phase behind the sun), the stars
-    const hour = ((env.hour0 !== undefined ? env.hour0 : 13) + fl.elapsed / 3600) % 24;
-    const sun = sunAt(hour);
+    // ---- the hour: the sun, the moon (in its phase: it keeps 24 h × phase behind the sun), the stars,
+    // seen from where the aeroplane is: its latitude, and the local solar time there (the departure's
+    // clock, plus 1 h for every 15° flown east), so flying east the sky turns faster, west slower
+    const geo = Theatre.toGeo(st.pos.x, st.pos.z);
+    const lon0 = fl.world && fl.world.lon !== undefined ? fl.world.lon : geo.lon;
+    const hour = (((env.hour0 !== undefined ? env.hour0 : 13) + fl.elapsed / 3600
+      + (((geo.lon - lon0) % 360 + 540) % 360 - 180) / 15) % 24 + 24) % 24;
+    const sun = sunAt(hour, geo.lat);
     const sd = new THREE.Vector3(sun.x, sun.y, sun.z);
     const phase = ((env.moonPhase !== undefined ? env.moonPhase : 0.5) + fl.elapsed / (MOON_MONTH_DAYS * 86400)) % 1;
-    const moon = sunAt(hour - phase * 24);
+    const moon = sunAt(hour - phase * 24, geo.lat);
     const md = new THREE.Vector3(moon.x, moon.y, moon.z);
     const moonLit = 0.5 * (1 - sd.dot(md));                             // the lit share of its face
     const moonUp = smoothstep(-0.02, 0.1, md.y);
@@ -719,9 +724,10 @@ const Scene3D = {
     u.warm.value = warm;
     this.sky.position.copy(this.camera.position);      // the dome travels with the eye
     this.sky.scale.setScalar(300000);
-    // the stars turn round the pole (north, SKY_LATITUDE_DEG up) westward with the clock, a
-    // sidereal day a little shorter than the sun's, the season setting which ones are out at night
-    const lat = SKY_LATITUDE_DEG * DEG;
+    // the stars turn round the pole (north, as high as the aeroplane's latitude; below the horizon
+    // south of the equator) westward with the clock, a sidereal day a little shorter than the
+    // sun's, the season setting which ones are out at night
+    const lat = geo.lat * DEG;
     const turn = ((hour - 12) * SIDEREAL_RATE + ((env.month || 0) - 2.7) * 2) * 15 * DEG;
     STAR_A.set(0, Math.cos(lat), Math.sin(lat));                       // the equator on the meridian
     STAR_P.set(0, Math.sin(lat), -Math.cos(lat));                      // the pole

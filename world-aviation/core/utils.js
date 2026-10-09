@@ -176,11 +176,11 @@ function windTowardHeading(windDirDeg) { return (windDirDeg + 180) % 360; }
 
 // World axes: x = east, y = up, z = south (north is -z). A heading (radians,
 // clockwise from north) points along hdgX/hdgZ; bearingDeg is its inverse.
-// The sun at a local solar hour (0-24) on the generic path of TIME_OF_DAY: elevation and
-// azimuth (radians, azimuth clockwise from north), and the unit vector towards it in world
-// axes (x east, y up, z south)
-function sunAt(hour) {
-  const H = (hour - 12) * 15 * DEG, lat = SKY_LATITUDE_DEG * DEG;
+// The sun at a local solar hour (0-24) on the generic path of TIME_OF_DAY (the equinox), seen
+// from a latitude (degrees, SKY_LATITUDE_DEG if not given): elevation and azimuth (radians,
+// azimuth clockwise from north), and the unit vector towards it in world axes (x east, y up, z south)
+function sunAt(hour, latDeg) {
+  const H = (hour - 12) * 15 * DEG, lat = (latDeg !== undefined ? latDeg : SKY_LATITUDE_DEG) * DEG;
   const el = Math.asin(Math.cos(lat) * Math.cos(H));
   const az = Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(lat)) + Math.PI;
   const c = Math.cos(el);

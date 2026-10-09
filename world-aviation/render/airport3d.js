@@ -387,12 +387,10 @@ const Airport3D = {
     }
     // the name of the airport in big letters on the roof, facing the apron and the road (at a
     // big airport on the middle terminal, the others carry their number)
-    const several = b.terms > 1, main = !several || b.term === Math.ceil(b.terms / 2);
-    if (!main) this.terminalPanel(a, b, rec, at, tex, lambert, id);
+    const several = b.terms > 1, sign = roofName(a);
+    if (sign.b !== b) this.terminalPanel(a, b, rec, at, tex, lambert, id);
     else {
-      const name = a.name.toUpperCase();
-      const lh = clamp(b.along * 0.9 / (name.length * 0.78), 7, h > 18 ? 24 : 16);
-      const lw = Math.min(b.along * 0.92, name.length * lh * 0.8);
+      const name = a.name.toUpperCase(), lh = sign.lh, lw = sign.lw;
       const lt = tex(makeLettersCanvas(name, id.color), 8);
       // (lit at night)
       const letters = new THREE.MeshLambertMaterial({ map: lt, emissiveMap: lt, emissive: 0x000000, transparent: true, alphaTest: 0.35, side: THREE.FrontSide });
@@ -802,6 +800,18 @@ const REAL_PAINTS = {
   ICN: { terminal: 0xdfe2e5, termRoof: 0xcfd4d8 },
   HND: { terminal: 0xc9cdcf, tower: 0xdfe1e2 }
 };
+// the airport's name in big letters on a terminal's roof: which terminal carries it (the only
+// one, or the middle one), the letters' height and the sign's length along the building, metres
+// (the floodlight masts keep out of its way: apron3d.js)
+function roofName(a) {
+  const terms = a.buildings.filter((b) => b.kind === 'terminal');
+  const b = terms[Math.ceil(terms.length / 2) - 1];
+  if (!b) return { b: null, lh: 0, lw: 0 };
+  const n = a.name.toUpperCase().length;
+  const lh = clamp(b.along * 0.9 / (n * 0.78), 7, b.h > 18 ? 24 : 16);
+  return { b, lh, lw: Math.min(b.along * 0.92, n * lh * 0.8) };
+}
+
 function buildingPaint(a) {
   if (REAL_PAINTS[a.id]) return Object.assign({}, BUILDING_PAINTS[0], REAL_PAINTS[a.id]);
   return BUILDING_PAINTS[hashStr(a.id + '/paint') % BUILDING_PAINTS.length];

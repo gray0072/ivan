@@ -16,7 +16,8 @@
 //   - the stick shaker on a stall warning
 // One-shots: the gear and the flaps locking, levers, the parking
 // brake, the spoiler, the touchdown (tyre chirp and a thump as hard
-// as the landing), warnings, the checklist, the 10 000 ft chime.
+// as the landing), warnings, the checklist, the 10 000 ft chime, and the
+// passengers' reaction to the landing (core/crowd.js).
 // The cabin announcements (ui/cabin.js) go through announce(): the
 // cabin chime, then the voice; a callout cuts one off.
 // Callouts are spoken (speechSynthesis, where the browser has it) in
@@ -411,6 +412,8 @@ const Audio2 = {
         if (fpm > 600) this.noiseHit(w, 300, 0.6, 0.6, 0.35 * k, 'lowpass');     // a hard one rattles everything
         break;
       }
+      // the passengers' reaction to the landing (core/crowd.js; arg: { mood, pax })
+      case 'cabin': if (typeof Crowd !== 'undefined') Crowd.play(arg.mood, arg.pax); break;
       case 'crash': this.thump(w, 40, 1.4, 0.6); this.noiseHit(w, 500, 0.5, 1.5, 0.5, 'lowpass'); break;
       case 'gear': case 'gearDown':
         this.thump(w, 75, 0.2, 0.28); later(140, () => this.thump(w, 65, 0.25, 0.3));    // down and locked
