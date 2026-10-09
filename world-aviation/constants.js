@@ -151,6 +151,7 @@ const LAYOUT = {
   APRON_LANE: 300,             // taxi lane on the apron (100 m lead-in to the stands: room for a 747 to straighten up)
   STAND: 400,                  // the parking position (nose-in towards the terminal)
   TERMINAL: 470,               // terminal building centre
+  HANGAR_DOORS: 425,           // the line of the hangar doors (HANGARS)
   APRON_START: 0.3,            // where the apron starts, fraction of the runway length
   GATE_SPACING: 80,
   TERMINAL_GAP: 70,            // between two terminals of a big airport, along the apron
@@ -189,6 +190,20 @@ const LANDSIDE = {
   medium: [[-80, 705, 110, 50, 13, 'carpark'], [40, 698, 44, 22, 34, 'hotel'], [110, 700, 54, 28, 17, 'office']],
   big: [[-150, 705, 140, 50, 16, 'carpark'], [-30, 698, 50, 24, 46, 'hotel'], [60, 700, 64, 30, 28, 'office'], [150, 700, 56, 30, 38, 'office']]
 };
+
+// the hangars by the terminal's size, from the apron's start down the runway, their doors on one
+// line facing the parallel taxiway: [along, across size, height] in metres, shape
+//   gable - a small shed with a pitched roof, for the light aeroplanes
+//   arch  - the classic arched hangar for one narrow-body
+//   wide  - a big maintenance hangar for the wide-bodies, a flat roof and a tall door frame
+const HANGARS = {
+  tiny: [[36, 30, 8, 'gable']],
+  small: [[64, 54, 12, 'arch'], [40, 34, 9, 'gable']],
+  medium: [[86, 72, 15, 'arch'], [70, 60, 13, 'arch'], [44, 36, 10, 'gable']],
+  big: [[140, 95, 30, 'wide'], [90, 74, 16, 'arch'], [76, 64, 14, 'arch'], [46, 38, 10, 'gable']]
+};
+// the control tower by the terminal's size: the height of the cab's floor, metres
+const TOWER_H = { tiny: 10, small: 20, medium: 32, big: 56 };
 
 // ---------- Difficulty ----------
 const DIFFICULTY = {

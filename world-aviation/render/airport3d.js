@@ -36,7 +36,7 @@ const Airport3D = {
   build(a, opts) {
     const L = LAYOUT;
     const look = AIRPORT_LOOK[a.id] || ['star', '#2a5d8f'];
-    const id = { symbol: look[0], color: look[1], airlines: airlinesAt(a) };
+    const id = { symbol: look[0], color: look[1], airlines: airlinesAt(a), paint: buildingPaint(a) };
     // night: materials that light up after dark ({ mat, color, k }: emissive = color x dark x k)
     const rec = { a, id, textures: [], flags: [], parked: [], night: [], frame: null, group: null };
 
@@ -348,26 +348,18 @@ const Airport3D = {
   // ---------- buildings and the airport's identity ----------
   buildBuildings(a, rec, at, tex, lambert, id) {
     const L = LAYOUT;
-    const colour = new THREE.Color(id.color).convertSRGBToLinear();
     for (const b of a.buildings) {
       if (b.kind === 'terminal') this.terminal(a, b, rec, at, tex, lambert, id);
-      else if (b.kind === 'tower') {
-        at(new THREE.Mesh(new THREE.CylinderGeometry(5, 6.5, b.h, 12), lambert(0xd8d8d2)), b.t, b.across, b.h / 2);
-        at(new THREE.Mesh(new THREE.CylinderGeometry(7.5, 7.5, 2.2, 12), new THREE.MeshLambertMaterial({ color: colour })), b.t, b.across, b.h + 0.6);
-        const cab = lambert(0x2c3a46);
-        rec.night.push({ mat: cab, color: new THREE.Color(0x9fd0e8), k: 0.5 });
-        at(new THREE.Mesh(new THREE.CylinderGeometry(10, 8, 6, 12), cab), b.t, b.across, b.h + 4.7);
-        at(new THREE.Mesh(new THREE.CylinderGeometry(10.6, 10.6, 1, 12), lambert(0xe6e6e0)), b.t, b.across, b.h + 8.2);
-        this.flag(rec, at, tex, a.country, null, b.t, b.across, b.h + 8.7, 14, 9);
-      } else if (b.kind === 'hangar') {
+      else if (b.kind === 'tower') this.tower(a, b, rec, at, tex, lambert, id);
+      else if (b.kind === 'hangar') {
         const n = a.buildings.filter((x) => x.kind === 'hangar').indexOf(b);
-        this.hangar(a, b, rec, at, tex, lambert, id.airlines[n % Math.max(1, id.airlines.length)]);
+        this.hangar(a, b, rec, at, tex, lambert, id, id.airlines[n % Math.max(1, id.airlines.length)]);
       } else if (b.kind === 'fuel') {
         for (let i = 0; i < 3; i++) {
           at(new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 11, 18), lambert(0xd9dcd8)), b.t - 18 + i * 18, b.across - 8 + (i % 2) * 16, 5.5);
         }
       } else {
-        const m = at(new THREE.Mesh(cellBox(b.acrossSize, b.h, b.along), lambert(0xa8a49a)), b.t, b.across, b.h / 2);
+        const m = at(new THREE.Mesh(cellBox(b.acrossSize, b.h, b.along), lambert(id.paint.hangar)), b.t, b.across, b.h / 2);
         m.userData.kind = b.kind;
         // the office windows along the top of the front, lit at night
         const win = lambert(0x3a4550);
@@ -381,10 +373,10 @@ const Airport3D = {
 
   terminal(a, b, rec, at, tex, lambert, id) {
     const h = b.h, front = b.across - b.acrossSize / 2, back = b.across + b.acrossSize / 2;
-    at(new THREE.Mesh(cellBox(b.acrossSize, h, b.along), lambert(0xc3c8cc)), b.t, b.across, h / 2);
+    at(new THREE.Mesh(cellBox(b.acrossSize, h, b.along), lambert(id.paint.terminal)), b.t, b.across, h / 2);
     // the roof: an overhanging slab in the airport's colour, the glass front underneath
     at(new THREE.Mesh(cellBox(b.acrossSize + 8, 1.6, b.along + 8),
-      new THREE.MeshLambertMaterial({ color: new THREE.Color(id.color).convertSRGBToLinear() })), b.t, b.across - 2, h + 0.8);
+      new THREE.MeshLambertMaterial({ color: new THREE.Color(id.paint.termRoof || id.color).convertSRGBToLinear() })), b.t, b.across - 2, h + 0.8);
     // the glass front, lit from inside at night
     const glass = lambert(0x2e4558);
     rec.night.push({ mat: glass, color: new THREE.Color(0xffd9a0), k: 0.55 });
@@ -472,24 +464,110 @@ const Airport3D = {
     }
   },
 
-  hangar(a, b, rec, at, tex, lambert, al) {
-    const w = b.acrossSize, len = b.along, h = b.h;
-    at(new THREE.Mesh(cellBox(w, h, len), lambert(0x9aa2a8)), b.t, b.across, h / 2);
-    // the arched roof: a half cylinder lying across (its axis from the doors to the back), the
-    // arch up; its end caps stand on top of the front and back walls, never in them (a cap in
-    // a wall's plane flickered against it), and it is cut into rings for the log depth buffer
-    const roof = new THREE.CylinderGeometry(len / 2, len / 2, w, 24, Math.max(1, Math.ceil(w / 12)), false, 0, Math.PI);
-    roof.rotateZ(Math.PI / 2);
-    const rm = at(new THREE.Mesh(roof, lambert(0x7d868c)), b.t, b.across, h);
-    rm.scale.set(1, 0.32, 1);
-    // the doors and the operator's logo above them
+  // The control tower, by the airport's size (b.size): b.h is the height of the cab's floor,
+  // the national flag flies on the roof
+  //   tiny   - a square concrete post beside a low operations building, a small flared cab
+  //   small  - a slender round shaft, a balcony in the airport's colour, an eight-sided cab
+  //   medium - a round shaft, a collar in the airport's colour, a wide cab
+  //   big    - a tall tapering shaft on a base building, an equipment floor, a big cab with a
+  //            radar dome and an aerial on the roof
+  tower(a, b, rec, at, tex, lambert, id) {
+    const P = id.paint, h = b.h, T = b.t, A = b.across;
+    const accent = new THREE.MeshLambertMaterial({ color: new THREE.Color(id.color).convertSRGBToLinear() });
+    const cab = lambert(0x2c3a46);
+    rec.night.push({ mat: cab, color: new THREE.Color(0x9fd0e8), k: 0.5 });
+    const cyl = (r0, r1, hh, n, mat, y, turn) => {
+      const m = at(new THREE.Mesh(new THREE.CylinderGeometry(r0, r1, hh, n), mat), T, A, y);
+      if (turn) m.rotation.y = turn;
+      return m;
+    };
+    if (b.size === 'tiny') {
+      at(new THREE.Mesh(cellBox(12, 6, 16), lambert(P.terminal)), T, A + 8.5, 3);
+      at(new THREE.Mesh(cellBox(5, h, 5), lambert(P.tower)), T, A, h / 2);
+      at(new THREE.Mesh(cellBox(5.4, 1, 5.4), accent), T, A, h - 0.5);
+      // (four-sided cylinders turned square to the runway: the cab leans out at the top)
+      cyl(5.6, 4.6, 3.6, 4, cab, h + 1.8, Math.PI / 4);
+      cyl(6.2, 6.2, 0.6, 4, lambert(P.trim), h + 3.9, Math.PI / 4);
+      this.flag(rec, at, tex, a.country, null, T, A, h + 4.2, 8, 6);
+    } else if (b.size === 'small') {
+      cyl(3.2, 4, h, 10, lambert(P.tower), h / 2);
+      cyl(6, 6, 0.8, 10, accent, h + 0.4);
+      cyl(6.5, 5.2, 4.6, 8, cab, h + 3.1);
+      cyl(7, 7, 0.8, 8, lambert(P.trim), h + 5.8);
+      this.flag(rec, at, tex, a.country, null, T, A, h + 6.2, 10, 7);
+    } else if (b.size === 'big') {
+      const base = 9;
+      at(new THREE.Mesh(cellBox(26, base, 26), lambert(P.terminal)), T, A, base / 2);
+      const win = lambert(0x3a4550);
+      rec.night.push({ mat: win, color: new THREE.Color(0xfff0c8), k: 0.5 });
+      at(new THREE.Mesh(cellBox(26.3, 1.6, 26.3), win), T, A, base - 2.6);
+      cyl(5, 7.5, h - base, 16, lambert(P.tower), base + (h - base) / 2);
+      // two rings in the airport's colour on the shaft (just outside its taper)
+      for (const k of [0.45, 0.8]) {
+        const r = 7.5 - 2.5 * k + 0.3;
+        cyl(r, r, 1.4, 16, accent, base + (h - base) * k);
+      }
+      cyl(9, 5.5, 6, 16, lambert(P.tower), h - 3);
+      cyl(11, 11, 1.6, 16, accent, h + 0.8);
+      cyl(12.5, 10, 7, 16, cab, h + 5.1);
+      cyl(13.2, 13.2, 1.2, 16, lambert(P.trim), h + 9.2);
+      // the radar dome and an aerial at the edge of the roof
+      at(new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 1.6, 10), lambert(P.trim)), T + 6, A + 6, h + 10.6);
+      at(new THREE.Mesh(new THREE.SphereGeometry(2.6, 14, 10), lambert(0xf2f2ee)), T + 6, A + 6, h + 13.2);
+      at(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 12, 6), lambert(0xc8c8c4)), T - 7, A + 6, h + 15.8);
+      this.flag(rec, at, tex, a.country, null, T, A, h + 9.8, 16, 10);
+    } else {
+      cyl(5, 6.5, h, 12, lambert(P.tower), h / 2);
+      cyl(7.5, 7.5, 2.2, 12, accent, h + 0.6);
+      cyl(10, 8, 6, 12, cab, h + 4.7);
+      cyl(10.6, 10.6, 1, 12, lambert(P.trim), h + 8.2);
+      this.flag(rec, at, tex, a.country, null, T, A, h + 8.7, 14, 9);
+    }
+  },
+
+  // A hangar in the airport's paint (id.paint), its doors facing the runway, the operator's
+  // logo over them; b.shape (HANGARS in constants.js):
+  //   arch  - an arched roof;  gable - a pitched one;  wide - a flat roof with a raised
+  //   middle for a tall tail, the deep door frame in the airport's colour
+  hangar(a, b, rec, at, tex, lambert, id, al) {
+    const P = id.paint, w = b.acrossSize, len = b.along, h = b.h;
     const front = b.across - w / 2;
-    at(new THREE.Mesh(cellBox(0.4, h * 0.82, len * 0.9), lambert(0x5d666c)), b.t, front - 0.2, h * 0.41);
+    at(new THREE.Mesh(cellBox(w, h, len), lambert(P.hangar)), b.t, b.across, h / 2);
     // the lamps over the doors, lit at night
     const lamp = lambert(0x50565b);
     rec.night.push({ mat: lamp, color: new THREE.Color(0xfff2d0), k: 0.9 });
+    if (b.shape === 'wide') {
+      const accent = new THREE.MeshLambertMaterial({ color: new THREE.Color(id.color).convertSRGBToLinear() });
+      at(new THREE.Mesh(cellBox(w + 1, 1.2, len + 1), lambert(P.roof)), b.t, b.across, h + 0.6);
+      // the raised middle over the tail dock, at the front, with its own door
+      const th = h * 0.28, tw = len * 0.3, td = w * 0.45;
+      at(new THREE.Mesh(cellBox(td, th, tw), lambert(P.hangar)), b.t, front + td / 2, h + 1.2 + th / 2);
+      at(new THREE.Mesh(cellBox(td + 1, 0.8, tw + 1), lambert(P.roof)), b.t, front + td / 2, h + 1.6 + th);
+      at(new THREE.Mesh(cellBox(0.4, th * 0.85, tw * 0.9), lambert(P.door)), b.t, front - 0.2, h + 1.2 + th * 0.45);
+      // the deep door frame, and the door leaves under it (the seams between them show)
+      const fh = h * 0.2;
+      at(new THREE.Mesh(cellBox(3, fh, len), accent), b.t, front - 1.5, h - fh / 2);
+      const n = 6, lw = len * 0.96 / n;
+      for (let i = 0; i < n; i++) {
+        at(new THREE.Mesh(cellBox(0.4, h - fh, lw - 0.5), lambert(i % 2 ? P.door : P.hangar)), b.t - len * 0.48 + lw * (i + 0.5), front - 0.2, (h - fh) / 2);
+      }
+      at(new THREE.Mesh(cellBox(0.3, 0.5, len * 0.9), lamp), b.t, front - 0.6, h - fh - 0.6);
+      if (al) this.logoBoard(rec, at, tex, al, b.t + len * 0.28, front - 3.1, h - fh / 2, len * 0.36, fh * 0.8);
+      return;
+    }
+    // the roof: a half cylinder lying across (its axis from the doors to the back), the arch
+    // up, or a pitched one (the same with two sides); its end caps stand on top of the front and
+    // back walls, never in them (a cap in a wall's plane flickered against it), and it is cut
+    // into rings for the log depth buffer
+    const gable = b.shape === 'gable';
+    const roof = new THREE.CylinderGeometry(len / 2, len / 2, w, gable ? 2 : 24, Math.max(1, Math.ceil(w / 12)), false, 0, Math.PI);
+    roof.rotateZ(Math.PI / 2);
+    const rm = at(new THREE.Mesh(roof, lambert(P.roof)), b.t, b.across, h);
+    rm.scale.set(1, gable ? 0.42 : 0.32, 1);
+    // the doors and the operator's logo above them
+    at(new THREE.Mesh(cellBox(0.4, h * 0.82, len * 0.9), lambert(P.door)), b.t, front - 0.2, h * 0.41);
     at(new THREE.Mesh(cellBox(0.3, 0.5, len * 0.85), lamp), b.t, front - 0.6, h * 0.86);
-    // (on the arch's front end, low enough for its corners to stay on it)
+    // (on the roof's front end, low enough for its corners to stay on it)
     if (al) this.logoBoard(rec, at, tex, al, b.t, front - 0.5, h + len * 0.055, len * 0.45, len * 0.09);
   },
 
@@ -673,6 +751,62 @@ const Airport3D = {
 };
 
 // ---------- the ground texture ----------
+// The colours of an airport's buildings: one scheme per airport, picked by its code, for the
+// terminal's walls, the tower, the hangars (and the cargo shed), their roofs and doors, and the
+// trim (the tower's roof); the accents stay in the airport's own colour (AIRPORT_LOOK)
+const BUILDING_PAINTS = [
+  { terminal: 0xc3c8cc, tower: 0xd8d8d2, hangar: 0x9aa2a8, roof: 0x7d868c, door: 0x5d666c, trim: 0xe6e6e0 },   // concrete grey
+  { terminal: 0xe2d8c4, tower: 0xece4d4, hangar: 0xc6bba2, roof: 0x8a6e52, door: 0x6e6252, trim: 0xf2ece0 },   // sand
+  { terminal: 0xeceff2, tower: 0xf4f4f2, hangar: 0xd6dce2, roof: 0x3f6f9e, door: 0x4e6680, trim: 0x3f6f9e },   // white and blue
+  { terminal: 0xa45a46, tower: 0xc9bcae, hangar: 0x96483a, roof: 0x4a4e52, door: 0x5a3a32, trim: 0xe0d6ca },   // brick
+  { terminal: 0x6e7880, tower: 0x8e979e, hangar: 0x5f6a72, roof: 0x3a4248, door: 0x2e3438, trim: 0xb8c0c6 },   // dark steel
+  { terminal: 0xe6dfc2, tower: 0xf0ead2, hangar: 0x8fa48a, roof: 0x4f7050, door: 0x5c6b58, trim: 0x4f7050 },   // cream and green
+  { terminal: 0xd8cfc0, tower: 0xf2f0ea, hangar: 0x8e2f25, roof: 0x2f3133, door: 0xe8e2d6, trim: 0x2f3133 },   // falu red sheds
+  { terminal: 0xb8c2c8, tower: 0xe8ecee, hangar: 0xc8ccc8, roof: 0xa8432e, door: 0x6c7276, trim: 0xa8432e }    // silver, red roofs
+];
+// The big, well-known airports in something like their real colours, over the concrete grey
+// scheme: the terminal's walls and its roof slab (termRoof, else the airport's colour), the
+// tower, and the hangars in the home carrier's colours where it has its base there
+const REAL_PAINTS = {
+  ARN: { terminal: 0xcfd3d6, tower: 0xe9ebec, hangar: 0xd9dcde, roof: 0x6d757b, door: 0x3f4a54, trim: 0x30363c },   // glass and grey, the white tower
+  OSL: { terminal: 0xc49a6c, termRoof: 0xa9aeb2, tower: 0xe6e4de, hangar: 0xcfd2d4, roof: 0x8d9399, trim: 0x9aa0a6 },   // oak, glass and a steel roof
+  HEL: { terminal: 0xdfe2e4, tower: 0xf2f2f0, hangar: 0xe6e8ea, roof: 0x1b3f7a, door: 0x1b3f7a, trim: 0xdfe2e4 },   // white, Finnair blue hangars
+  CPH: { terminal: 0xb9bfc4, termRoof: 0x8e9499, tower: 0xd5d3cc, hangar: 0xd8dadb, roof: 0x6a7076 },
+  LHR: { terminal: 0xd3d8dc, termRoof: 0xcdd2d6, tower: 0xf0f1f1, hangar: 0xdfe2e4, roof: 0x4b5560, door: 0x1b2a4a },   // T5's steel and glass, the BA base
+  AMS: { terminal: 0xc9ced3, termRoof: 0x1f3c88, tower: 0xe8eaeb, hangar: 0xe6e9eb, roof: 0x00a1de, door: 0x0b5ca8, trim: 0x1f3c88 },   // KLM blue hangars
+  CDG: { terminal: 0xb4afa5, termRoof: 0x9e9a92, tower: 0xbdb8ae, hangar: 0xd0d2d2, roof: 0x7d8288, door: 0x1c2f5e, trim: 0x8e8a82 },   // raw concrete
+  FRA: { terminal: 0xbcc1c5, tower: 0xc9ccce, hangar: 0xe4e6e8, roof: 0x8a9096, door: 0x0a1d3d, trim: 0xd8dadc },   // Lufthansa's navy doors
+  MUC: { terminal: 0xe2e5e8, tower: 0xd7dade, hangar: 0xe4e6e8, roof: 0x9aa2aa, door: 0x0a1d3d, trim: 0xb8bec4 },
+  BER: { terminal: 0xd7cdb5, termRoof: 0x3d4146, tower: 0xb6babd, hangar: 0xcfd1d2, roof: 0x4a4e52, door: 0x3a3e42, trim: 0x2f3336 },   // limestone, a dark roof
+  VIE: { terminal: 0xdcdfe1, tower: 0xf4f4f2, hangar: 0xe2e4e6, roof: 0x8a9096, door: 0xc8102e },
+  MAD: { terminal: 0xc5c9cc, termRoof: 0xb4bac0, tower: 0xe9e9e6, trim: 0xf2b705 },   // T4's wavy steel roof, its yellow
+  BCN: { terminal: 0xefefed, termRoof: 0xdcdfe1, tower: 0xf3f3f1 },   // white T1
+  IST: { terminal: 0xb7bcc0, termRoof: 0xc9cdd0, tower: 0xa9aeb3, hangar: 0xdfe2e4, door: 0xc8102e },   // the grey tulip tower
+  SVO: { terminal: 0xd9dce0, tower: 0xe8e8e6, hangar: 0xe6e8ea, roof: 0x1f3f8f, door: 0x1f3f8f, trim: 0xf26b21 },   // Aeroflot blue
+  LED: { terminal: 0xc9ced2, termRoof: 0xb8925a, tower: 0xe2e4e5, trim: 0xb8925a },   // Pulkovo's gilded folded roof
+  CAI: { terminal: 0xd8c6a1, termRoof: 0xcbbf9f, tower: 0xe1d4b6, hangar: 0xd6cbb2, roof: 0x9c8a6a },   // sand
+  DXB: { terminal: 0xdadfe2, termRoof: 0xc6ccd0, tower: 0xf0f0ee, hangar: 0xf0f0ee, roof: 0xc7c9ca, door: 0xb0262c, trim: 0xc5a35a },   // Emirates red and gold
+  DOH: { terminal: 0xe6e9eb, termRoof: 0xf1f2f2, tower: 0xf4f4f2, hangar: 0xe6e8ea, roof: 0x5c0632, door: 0x5c0632, trim: 0xd9dcde },   // the white wave, Qatar burgundy
+  ATL: { terminal: 0xc7b59a, tower: 0xe8e6e0, hangar: 0xdfe1e2, roof: 0x2d3e63, door: 0xc8102e },   // the Delta base
+  DEN: { terminal: 0xdcdad4, termRoof: 0xf6f6f2, tower: 0xe6e4de },   // the white tent roof
+  LAX: { terminal: 0xddd6c6, tower: 0xd5d0c2 },
+  SFO: { terminal: 0xd5d9db, tower: 0xeceeee },
+  JFK: { terminal: 0xbfc3c6, tower: 0xd6d8d8 },
+  SIN: { terminal: 0xe5e8e8, tower: 0xf2f2f0, hangar: 0xeceeee, roof: 0x1d2c5e, door: 0xd2a94c, trim: 0xd2a94c },   // SIA navy and gold
+  HKG: { terminal: 0xcbd1d5, termRoof: 0xdfe3e6, tower: 0xe4e6e7, hangar: 0xdfe2e4, roof: 0x006564, door: 0x006564 },   // Cathay green
+  CGK: { terminal: 0xece5d6, termRoof: 0x9a4b2e, tower: 0xe8e2d4, hangar: 0xe2ddd2, roof: 0x9a4b2e, trim: 0x9a4b2e },   // Javanese terracotta roofs
+  KUL: { terminal: 0xece7dc, termRoof: 0xd9d6cf, tower: 0xf0ece2 },
+  BKK: { terminal: 0xb8c0c6, termRoof: 0xc8ced2, tower: 0xa0a8ae },   // steel and glass, the grey tower
+  PEK: { terminal: 0xc8ccd0, termRoof: 0xb7bdc2, trim: 0xb02a2a },   // T3's silver roof and red
+  PVG: { terminal: 0xdfe3e5, termRoof: 0xeceeef },
+  ICN: { terminal: 0xdfe2e5, termRoof: 0xcfd4d8 },
+  HND: { terminal: 0xc9cdcf, tower: 0xdfe1e2 }
+};
+function buildingPaint(a) {
+  if (REAL_PAINTS[a.id]) return Object.assign({}, BUILDING_PAINTS[0], REAL_PAINTS[a.id]);
+  return BUILDING_PAINTS[hashStr(a.id + '/paint') % BUILDING_PAINTS.length];
+}
+
 // A box cut into cells of about 12 m: big buildings are passed close by on the apron, and
 // one huge quad per wall lets the ground and the terrain flicker through it with the
 // logarithmic depth buffer

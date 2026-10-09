@@ -329,9 +329,17 @@ const World = {
       }
     }
     b.filter((x) => x.kind === 'terminal').forEach((x, i, all) => { x.term = i + 1; x.terms = all.length; });
-    put(a.apronT1 + 50, L.TERMINAL, 14, 14, 32, 'tower');
-    for (let i = 0; i < (term === 'big' ? 3 : 2); i++) {
-      put(a.apronT0 - 60 - i * 95, L.TERMINAL - 10, 80, 70, 14, 'hangar');
+    // the tower: the bigger the airport, the taller (b.size picks its design, render/airport3d.js)
+    const tw = term === 'big' ? 30 : 14;
+    put(a.apronT1 + 50, L.TERMINAL, tw, tw, TOWER_H[term] || 32, 'tower');
+    b[b.length - 1].size = term;
+    // the hangars (HANGARS): more and bigger ones at a bigger airport, side by side down the
+    // runway from the apron, the doors all on one line
+    let end = a.apronT0 - 25;
+    for (const [along, acrossSize, hh, shape] of HANGARS[term] || HANGARS.medium) {
+      put(end - along / 2, L.HANGAR_DOORS + acrossSize / 2, along, acrossSize, hh, 'hangar');
+      b[b.length - 1].shape = shape;
+      end -= along + 30;
     }
     put(a.apronT1 + 160, L.STAND, 60, 60, 10, 'fuel');
     put(a.apronT1 + 270, L.STAND + 20, 110, 60, 9, 'warehouse');
