@@ -685,6 +685,38 @@ const AIRCRAFT = [
     dims: { len: 72.72, span: 79.75, fus: 7.14 },
     look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#f3f5f7', color: '#6a2c82', sweep: 33.5, fan: 0.47, tall: 1.18, decks: 2, bodyRows: 3 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    // The legend: the heaviest aeroplane ever flown, destroyed in 2022. It is not leased: the pilot
+    // builds it part by part in the Mriya's assembly hall (data/mriya.js, ui/mriya.js) once every
+    // course is passed, and it is theirs. Real figures: 84 m long, 88.4 m
+    // span, 905 m² of wing, 640 t at take-off, 285 t empty, 250 t of payload, six Progress D-18T
+    // of 229.5 kN, 800 km/h in the cruise, 15 400 km on full tanks (300 t of fuel), 3 500 m of
+    // runway at full weight, 32 wheels, a crew of six. No lease: it is the pilot's own, but it has
+    // its upkeep (`rent`, per block hour: its crew of six, its maintenance, insurance and hangar —
+    // more than the An-124's lease).
+    // Painted in the finish the pilot chose (look.finish, MRIYA_FINISHES in data/mriya.js).
+    id: 'A225', name: 'Antonov An-225 Mriya', klass: 'Outsize freighter', branch: 'cargo', legend: true,
+    blurb: 'The Dream: built to carry the Buran space shuttle on its back, six engines, 32 wheels and 250 tonnes in the hold. One was ever flown — and you built it again with your own hands.',
+    seats: 6, payloadKg: 250000, mtow: 640000, emptyKg: 285000,
+    engines: 6, engineType: 'jet', thrust: 1377000,
+    wingArea: 905, clMaxClean: 1.4, clMaxFlap: 2.2, cd0: 0.026, kInd: 0.04,
+    cruiseAlt: 10000, cruiseTas: 432, climbRate: 6,
+    fuelCapKg: 300000, fuelFlowCruise: 2650, fuelFlowIdle: 230,
+    vne: 460, vr: 160, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.006, vfe: 250 },
+      { notch: 2, cl: 0.28, cd: 0.018, vfe: 220 },
+      { notch: 3, cl: 0.48, cd: 0.040, vfe: 200 },
+      { notch: 4, cl: 0.66, cd: 0.072, vfe: 185 },
+      { notch: 5, cl: 0.82, cd: 0.125, vfe: 170 }
+    ],
+    gearCd: 0.038, rollRate: 0.45, pitchRate: 0.38, yawRate: 0.5,
+    takeoffDist: 3500, crosswindLimit: 30, maxRangeNm: 8300, surfaces: ['asphalt'],
+    rent: 42000, price: 0, bonus: 1.6, unlock: 'mriya',
+    dims: { len: 84, span: 88.4, fus: 7.3 },
+    look: { wing: 'high', engines: 'wing6', tail: 'twin', base: '#eae7df', color: '#b0915f', finish: true, sweep: 32, dihedral: -3, tall: 1.1, fan: 0.38, mainRows: 7, sponsons: true, freighter: true },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
   }
 ];
 
@@ -794,6 +826,22 @@ const COURSES = [
 ];
 
 // The exam questions (in English, Russian and Swedish) are in data/quizzes.js.
+
+// ---------- The Mriya's assembly hall (ui/mriya.js) ----------
+// The An-225 is built from 50 parts (data/mriya.js), bought one by one once every course is passed.
+// Each part costs money and the reputation of one client group: its share of these totals
+// (`kr` / the sum of every part's `kr`, `rep` / the sum of `rep` over the parts of its group), so
+// changing a total re-prices every part.
+const MRIYA = {
+  PRICE_KR: 10000000,          // all 50 parts together, kronor ...
+  PRICE_REP: 100,              // ... and this much reputation of each client group
+  ROUND_KR: 1000,              // a part's price is rounded to this many kronor ...
+  ROUND_REP: 0.5,              // ... and its reputation to this
+  SNAP_M: 7,                   // a part let go this close to its place (metres on the blueprint) snaps into it
+  KEY_STEP_M: 1.6,             // the arrow keys move a part this far (Shift: a quarter of it)
+  SPIN_S: 48,                  // the hologram turns once round in this many seconds
+  FINISH_KR: 1000000           // each of its finishes but its own (data/mriya.js), kronor, once
+};
 
 // ---------- Contract generation ----------
 // All money is Swedish kronor (SEK).

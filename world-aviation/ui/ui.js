@@ -21,6 +21,8 @@ const UI = {
   // (the button marked data-esc), if it has one — in the pause menu itself Esc resumes.
   key(e) {
     if (this.screen.hidden || Game.mode === 'flying') return;
+    // a screen with keys of its own first (the Mriya's hall while a part is carried)
+    if (this.keyHook && this.keyHook(e)) return;
     if (e.key === 'Escape') {
       const back = this.screen.querySelector('button[data-esc]:not([disabled])');
       if (back) { e.preventDefault(); e.stopPropagation(); back.click(); }
@@ -72,6 +74,8 @@ const UI = {
   },
 
   panel(html, cls) {
+    // the screen being left lets go of what it holds (the Mriya's hall: its renderer)
+    if (this.onLeave) { const f = this.onLeave; this.onLeave = null; f(); }
     if (this.screen.hidden) this.keyLockUntil = performance.now() + UI_KEY_LOCK_MS;
     this.screen.hidden = false;
     // in the pause the flight stays in sight behind the glass (styles.css)
@@ -409,14 +413,61 @@ const UI = {
       Career.seenNewAircraft();
     }
     const isFresh = (a) => !!(this.freshAc && this.freshAc.indexOf(a.id) >= 0);
-    const types = Filters.hangarList(AIRCRAFT.slice()).sort((p, q) => isFresh(q) - isFresh(p));
+    // the legend has its own card on top, whatever the filters say
+    const legend = AIRCRAFT.find((a) => a.legend);
+    const types = Filters.hangarList(AIRCRAFT.filter((a) => !a.legend)).sort((p, q) => isFresh(q) - isFresh(p));
     const cards = types.map((a) => this.aircraftCard(a, false, isFresh(a))).join('');
     const news = AIRCRAFT.filter(isFresh);
     return (news.length
-      ? '<div class="hint fresh">★ ' + tr('Your new rating opens {list} — select it to lease it for your next flight.', { list: '<b>' + news.map((a) => esc(a.name)).join(', ') + '</b>' }) + '</div>'
+      ? '<div class="hint fresh">★ ' + (news.length === 1 && news[0].legend ? tr('The Mriya is yours — select it for your next flight.')
+        : tr('Your new rating opens {list} — select it to lease it for your next flight.', { list: '<b>' + news.map((a) => esc(a.name)).join(', ') + '</b>' })) + '</div>'
       : '<div class="hint">' + tr('Aircraft are leased for each sector — the rent is on every debrief. Bigger is not always better: a heavy jet needs runway, needs a rating, and costs more to lease.') + '</div>') +
+      (legend ? this.legendCard(legend, isFresh(legend)) : '') +
       Filters.hangarBar() +
       (types.length ? '<div class="cards planes">' + cards + '</div>' : Filters.empty('hangarFilter', tr('No aircraft match the filters.')));
+  },
+
+  // The legend's card over the hangar, in a gold frame: the An-225 as a pale hologram, in its finish
+  // over as much of it as is built (the parts fitted in its assembly hall, ui/mriya.js), the
+  // progress, the hall's door, and its finishes (data/mriya.js: one the pilot has goes on at a press,
+  // another is tried on in the hall); built, the whole aeroplane, to select like any other
+  legendCard(a, fresh) {
+    const m = Career.data.mriya, done = Career.mriyaDone();
+    const n = m.placed.length, N = MRIYA_PARTS.length, pct = Math.floor(n / N * 100);
+    const sel = Career.data.selected === a.id;
+    const passed = COURSES.filter((c) => Career.has(c.id)).length;
+    const here = done ? Career.here() : null, misfit = here ? Career.misfit(a, here) : null;
+    const tile = (v, k) => '<div class="acStat"><b>' + v + '</b><span>' + esc(k) + '</span></div>';
+    return '<div class="legendCard' + (done ? ' done' : '') + (sel ? ' sel' : '') + (fresh ? ' fresh' : '') + '">' +
+      '<div class="acPic lgPic loading" style="--p:' + (done ? 100 : pct) + '%">' +
+      (done ? '' : '<img class="lgGhost" data-ac="ghost|' + a.id + '" alt="">') +
+      '<div class="lgGold"><img data-ac="finish|' + a.id + '|' + Career.mriyaFinish().id + '" alt="' + esc(a.name) + '"></div>' +
+      (done ? '' : '<span class="lgEdge"></span>') +
+      '<span class="tag lgTag">★ ' + tr('Legend') + '</span>' +
+      '<span class="acMtow">' + Math.round(a.mtow / 1000) + ' t</span>' +
+      (sel ? '<span class="acBadge sel">✓ ' + tr('Selected') + '</span>' : '') +
+      '</div><div class="lgMain">' +
+      '<div class="lgKicker">' + (done ? tr('Built with your own hands') : tr('The heaviest aeroplane ever flown')) + '</div>' +
+      '<h3 class="lgName">' + esc(a.name) + ' <i lang="uk">' + MRIYA_LEGEND.native + '</i></h3>' +
+      '<p class="acBlurb">' + esc(tr(done ? a.blurb : MRIYA_LEGEND.motto)) + '</p>' +
+      (done
+        ? '<div class="acStats">' + tile(Math.round(a.payloadKg / 1000) + ' t', tr('payload')) + tile(a.engines, tr('engines')) +
+          tile(a.maxRangeNm + ' nm', tr('range')) + tile(a.cruiseTas + ' kt', tr('cruise')) + '</div>' +
+          '<p class="lgOwn">🔑 ' + tr('Your own aircraft — no lease. Upkeep {kr} per block hour: its crew of six, its maintenance, insurance and hangar.', { kr: fmtMoney(a.rent) }) + '</p>'
+        : '<div class="lgBar"><i style="width:' + pct + '%"></i></div>' +
+          '<p class="lgCount"><b>' + pct + ' %</b> · ' + tr('{n} of {m} parts fitted', { n, m: N }) +
+          (m.bought.length ? ' · ' + tr('{n} on the stand', { n: m.bought.length }) : '') + '</p>' +
+          (Career.mriyaOpen() ? '' : '<p class="need">🔒 ' + tr('Every course passed: {n} of {m}', { n: passed, m: COURSES.length }) + '</p>')) +
+      '<div class="lgFinishes"><span>' + tr('Colour') + '</span>' + MRIYA_FINISHES.map((f) => {
+        const own = Career.hasMriyaFinish(f.id), on = Career.mriyaFinish().id === f.id;
+        return '<button class="lgSwatch' + (on ? ' on' : '') + (own ? '' : ' buy') + '" data-act="' + (own ? 'mriyaFinish' : 'mriyaTry') + '" data-v="' + f.id + '" aria-pressed="' + on + '" title="' +
+          esc(tr(f.name) + (own ? '' : ' · ' + fmtMoney(MRIYA.FINISH_KR))) + '" aria-label="' + esc(tr(f.name)) + '">' + finishDot(f) + '</button>';
+      }).join('') + '<b class="lgFinName">' + esc(tr(Career.mriyaFinish().name)) + '</b></div>' +
+      '<div class="cFoot">' + (misfit ? '<p class="fitWarn">⚠ ' + esc(this.misfitText(a, here, misfit)) + '</p>' : '') +
+      (done ? '<button class="btn" data-act="mriya">' + tr('Assembly hall') + '</button>' +
+        '<button class="btn' + (sel ? ' picked' : ' default') + '" data-act="selectAc" data-v="' + a.id + '">' + (sel ? '✓ ' + tr('Selected') : tr('Select')) + '</button>'
+        : '<button class="btn default fwd" data-act="mriya">' + (n || m.bought.length ? tr('Assembly hall') : tr('Build it')) + '</button>') +
+      '</div></div></div>';
   },
 
   // an aircraft type's card: in the hangar, or in the pause of a flight in it (flying: no
@@ -455,7 +506,7 @@ const UI = {
       row2(tr('Stall speed'), tr('{v} kt, full flaps, max weight', { v: Math.round(vs0Of(a, a.mtow)) })) +
       row2(tr('Crosswind limit'), a.crosswindLimit + ' kt') +
       row2(tr('Surfaces'), a.surfaces.map((x) => tr(x)).join(', ')) +
-      row2(tr('Lease per block hour'), fmtMoney(a.rent)) +
+      (a.legend ? row2(tr('Upkeep per block hour'), fmtMoney(a.rent) + ' · ' + tr('your own aircraft')) : row2(tr('Lease per block hour'), fmtMoney(a.rent))) +
       '</div>' +
       (flying ? ''
         : locked
@@ -549,6 +600,7 @@ const UI = {
       unlockLine(fx.etops, tr('ETOPS — the Airbus A330-300 and the Boeing 787-9, and +10 % on long legs in a twin')) +
       unlockLine(fx.outsize, tr('Outsize cargo — the Antonov An-124, onto gravel and ice')) +
       unlockLine(fx.remote, tr('Remote strips and ice fields for every type')) +
+      unlockLine(Career.mriyaDone(), tr('The An-225 Mriya — built again with your own hands')) +
       '</ul>' +
       '<h3>' + tr('Log') + '</h3><ul class="log">' + (log || '<li>' + tr('Nothing yet.') + '</li>') + '</ul>' +
       '<div class="btnRow"><button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>' +
@@ -607,7 +659,7 @@ const UI = {
       row2(tr('Fuel'), tr('plan {p} kg · on board {b} kg', { p: c.fuelKg, b: Math.round(setup.blockFuel) })) +
       row2(tr('Take-off weight'), tr('{w} t · max {m} t', { w: fmtTonnes(ac.emptyKg + c.payloadKg + setup.blockFuel), m: fmtTonnes(ac.mtow) })) +
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
-      row2(tr('Lease'), '−' + fmtMoney(ac.rent)) +
+      (ac.legend ? row2(tr('Upkeep'), '−' + fmtMoney(ac.rent) + ' · ' + tr('your own aircraft')) : row2(tr('Lease'), '−' + fmtMoney(ac.rent))) +
       '</div>' +
       '<h3>' + tr('Departure time') + '</h3>' +
       '<div class="setGroup todPick">' + Object.keys(TIME_OF_DAY).map((k) => {
@@ -923,6 +975,9 @@ const UI = {
       case 'tab': this.quiz = null; this.tab = v; this.showOps(); break;
       case 'briefing': this.showBriefing(v); break;
       case 'selectAc': Career.select(v); this.showOps(); break;
+      case 'mriya': MriyaScreen.show(); break;
+      case 'mriyaFinish': Career.setMriyaFinish(v); this.showOps(); break;
+      case 'mriyaTry': MriyaScreen.show(v); break;
       case 'boardFilter': Filters.boardAction(v); this.showOps(); break;
       case 'hangarFilter': Filters.hangarAction(v); this.showOps(); break;
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;

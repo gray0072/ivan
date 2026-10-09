@@ -33,7 +33,7 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 
 ### world-aviation
 
-Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (141 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, ten aircraft and a training tree; playable in English, Russian or Swedish. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
+Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (141 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, eighteen real aircraft to lease and a training tree — and, at the end, the An-225 Mriya to build again part by part; playable in English, Russian or Swedish. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
 
 ## Project structure
 
@@ -110,12 +110,12 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── styles.css
 │   ├── constants.js, game.js, career.js  # tuning, main loop and phase machine, the career
 │   ├── lib/                  # three.min.js — three.js r147 (UMD), vendored
-│   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio, update (picks up a new deploy)
-│   ├── data/                 # airports, countries, airlines, emergencies, quizzes, lang-ru / lang-sv (translations), geodata (coastlines, mountains)
-│   ├── art/                  # flags, landmarks (city symbols), airline emblems, region maps
+│   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio, crowd, fanfare, update (picks up a new deploy)
+│   ├── data/                 # airports, countries, airlines, emergencies, quizzes, mriya (the An-225's parts), lang-ru / lang-sv (translations), geodata (coastlines, mountains)
+│   ├── art/                  # flags, landmarks (city symbols), airline emblems, region maps, the Mriya's blueprint
 │   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems
-│   ├── render/               # three.js: aircraft models, hangar pictures, airport3d, apron3d, baggage3d, landcover, scene3d
-│   ├── ui/                   # instruments, cockpit, hud, ui (screens), filters (board and hangar), title (the title's sky)
+│   ├── render/               # three.js: aircraft models, hangar pictures, the Mriya's hologram, airport3d, apron3d, baggage3d, landcover, scene3d
+│   ├── ui/                   # instruments, cockpit, hud, ui (screens), filters (board and hangar), title (the title's sky), mriya (the assembly hall), fireworks
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── docs/                 # instrument screenshots (English UI) used by the READMEs
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png

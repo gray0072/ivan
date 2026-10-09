@@ -825,6 +825,8 @@ const Game = {
 
   // ---------- cheats ----------
   cheat(digit) {
+    // in the Mriya's assembly hall the hall's own cheats (ui/mriya.js)
+    if (typeof MriyaScreen !== 'undefined' && MriyaScreen.isOpen()) { MriyaScreen.cheat(digit); return; }
     if (digit === 0) {
       HUD.showBanner('Cheats: Alt+1 full fuel · Alt+2 no emergencies · Alt+3 jump to final · Alt+4 +10 000 kr · ' +
         'Alt+5 repair · Alt+6 time x' + SIM.TIME_ACCEL_CHEAT, 'cheat', 7000);

@@ -472,7 +472,9 @@ const Systems = {
     if (!this.pressurised) w.cabin = true;
     if (st.stallWarn) w.stall = true;
     if (this.engines.some((e) => e.failed || e.fire || e.bird || (e.startPhase === 'off' && fl.phase !== 'GATE' && fl.phase !== 'PUSHBACK' && fl.phase !== 'ENGINE_START' && fl.phase !== 'SHUTDOWN' && fl.phase !== 'PARKED'))) w.engine = true;
-    if (st.fuel < this.ac.fuelCapKg * 0.06) w.fuelLow = true;
+    // low fuel: under 6 % of the tanks, or half an hour of cruise for the big tanks (the Mriya's
+    // 6 % is 18 t, more than a short leg loads: its light was on from the gate)
+    if (st.fuel < Math.min(this.ac.fuelCapKg * 0.06, this.ac.fuelFlowCruise * this.ac.engines * 0.5)) w.fuelLow = true;
     if (st.damage > 0.15) w.damage = true;
     if (st.gearFailed) w.gear = true;
     this.anyWarning = Object.keys(w).length > 0;

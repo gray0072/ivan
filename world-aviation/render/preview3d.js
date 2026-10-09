@@ -10,7 +10,9 @@
 // missing ones one per frame so the screen never stalls, and frees
 // the renderer when the queue is empty. The title screen (ui/title.js)
 // asks it for bigger pictures of airliners in flight in an airline's
-// colours: AircraftPreview.hero(id, airline, light, cb).
+// colours: AircraftPreview.hero(id, airline, light, cb). An img[data-ac="ghost|A225"]
+// gets the type as a pale hologram (the Mriya's card before it is built), and
+// img[data-ac="finish|A225|<finish>"] the Mriya in one of its finishes (data/mriya.js).
 // ============================================================
 
 const AircraftPreview = {
@@ -53,11 +55,11 @@ const AircraftPreview = {
 
   next() {
     const id = this.queue.shift();
-    const part = id.split('|'), hero = part[0] === 'hero';
-    const ac = AIRCRAFT.find((a) => a.id === (hero ? part[1] : id));
+    const part = id.split('|'), hero = part[0] === 'hero', ghost = part[0] === 'ghost', finish = part[0] === 'finish' ? part[2] : null;
+    const ac = AIRCRAFT.find((a) => a.id === (hero || ghost || finish ? part[1] : id));
     if (ac) {
       let canvas = null;
-      try { canvas = this.draw(ac, hero ? { airline: part[2], light: part[3] } : null); } catch (err) { canvas = null; }
+      try { canvas = this.draw(ac, hero ? { airline: part[2], light: part[3] } : null, ghost, finish); } catch (err) { canvas = null; }
       if (canvas) {
         const done = (blob) => {
           if (!blob) return;
@@ -84,8 +86,8 @@ const AircraftPreview = {
   },
 
   // one picture: the model on a transparent background, framed to fill the width; hero: in
-  // flight for the title screen ({ airline, light })
-  draw(ac, hero) {
+  // flight for the title screen ({ airline, light }); ghost: a pale hologram (render/mriya3d.js)
+  draw(ac, hero, ghost, finish) {
     const W = hero ? this.HERO_W : this.W, H = hero ? this.HERO_H : this.H;
     if (!this.renderer) {
       const canvas = document.createElement('canvas');
@@ -106,8 +108,14 @@ const AircraftPreview = {
       const rim = new THREE.DirectionalLight(0x9cc8ff, 0.25);
       rim.position.set(-60, 20, -40);
       scene.add(rim);
-      model = AircraftModels.build(ac);
+      model = AircraftModels.build(ac, { finish });
       AircraftModels.animate(model, { gear: 1, flaps: 0, propSpeed: 0 });
+      if (ghost) {
+        // (normal blending: added light would leave the transparent picture without alpha)
+        const holo = hologramMaterial(0xa8dcff, 1.7);
+        holo.blending = THREE.NormalBlending;
+        model.traverse((o) => { if (o.isMesh) o.material = holo; if (o.isPoints) o.visible = false; });
+      }
       // a soft shadow on the ground under it
       shadow = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
         new THREE.MeshBasicMaterial({ map: this.shadow(), transparent: true, depthWrite: false }));

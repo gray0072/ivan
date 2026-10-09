@@ -805,10 +805,12 @@ const Scene3D = {
     }
     // ---- own aircraft for the chase and wing views
     const airline = fl.contract && fl.contract.airline && AIRLINE_BY_CODE[fl.contract.airline] ? fl.contract.airline : null;
-    const ownKey = fl.ac.id + '|' + airline;
+    // (the Mriya wears the finish the pilot chose for it, never the client's paint)
+    const finish = fl.ac.legend && typeof Career !== 'undefined' ? Career.mriyaFinish().id : null;
+    const ownKey = fl.ac.id + '|' + airline + '|' + finish;
     if (!this.ownAircraft || this.ownAircraftId !== ownKey) {
       if (this.ownAircraft) this.scene.remove(this.ownAircraft);
-      this.ownAircraft = AircraftModels.build(fl.ac, { airline });
+      this.ownAircraft = AircraftModels.build(fl.ac, { airline, finish });
       this.ownAircraftId = ownKey;
       this.scene.add(this.ownAircraft);
     }

@@ -1055,3 +1055,239 @@ table.money tr.total td { font-weight: 800; font-size: 16px; border-bottom: 0; p
 
 /* the mouse cursor, hidden in fullscreen while it is still (core/cursor.js) */
 html.cursor-hidden, html.cursor-hidden * { cursor: none !important; }
+
+/* ---------- the legend's card over the hangar (UI.legendCard): the An-225 as a hologram, gold
+   over as much of it as is built ---------- */
+.legendCard { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); margin-bottom: 14px; overflow: hidden;
+  border: 1px solid rgba(255, 217, 122, 0.35); border-radius: 14px;
+  background: linear-gradient(135deg, #1b1810 0%, #11161d 60%); box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35); }
+.legendCard .lgPic { background:
+    radial-gradient(ellipse 70% 40% at 50% 70%, rgba(255, 200, 100, 0.16), transparent 72%),
+    radial-gradient(ellipse 80% 80% at 50% 55%, rgba(80, 150, 220, 0.28), transparent 75%),
+    linear-gradient(180deg, #14263a 0%, #0d1824 60%, #0a1018 100%); }
+.lgGold { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--p, 0%)) 0 0); }
+.lgEdge { position: absolute; top: 10%; bottom: 10%; left: var(--p, 0%); width: 2px; margin-left: -1px;
+  background: linear-gradient(180deg, transparent, #ffe08a 30%, #ffe08a 70%, transparent); box-shadow: 0 0 14px 2px rgba(255, 217, 122, 0.7); }
+.acPic .lgTag { background: rgba(255, 217, 122, 0.92); color: #2a1f05; font-weight: 800; }
+.lgMain { padding: 14px 16px 14px; display: flex; flex-direction: column; }
+.lgKicker { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: #ffd97a; }
+h3.lgName { margin: 4px 0 2px; font-size: 22px; letter-spacing: 0; text-transform: none; color: #fff7e0; }
+.lgName i { font-style: normal; font-weight: 400; color: #ffd97a; }
+.lgBar { height: 9px; margin: 6px 0 6px; border-radius: 6px; background: #252e38; overflow: hidden; }
+.lgBar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #b88a2c, #ffe08a);
+  box-shadow: 0 0 12px rgba(255, 217, 122, 0.6); }
+.lgCount { margin: 0 0 4px; font-size: 13px; color: #e2d3a8; }
+.lgCount b { color: #ffd97a; }
+.legendCard .cFoot { margin-top: auto; padding-top: 10px; }
+.legendCard .cFoot .btn + .btn { margin-left: 0; }
+.legendCard.done { border-color: #ffd97a; animation: lgShine 3.2s ease-in-out infinite; }
+.legendCard.done .lgPic { background:
+    radial-gradient(ellipse 70% 45% at 50% 68%, rgba(255, 200, 100, 0.34), transparent 72%),
+    linear-gradient(180deg, #2b2112 0%, #17140e 60%, #0d0b08 100%); }
+@keyframes lgShine {
+  0%, 100% { box-shadow: 0 0 0 1px #ffd97a, 0 0 16px rgba(255, 217, 122, 0.2); }
+  50% { box-shadow: 0 0 0 2px #ffd97a, 0 0 34px rgba(255, 217, 122, 0.45); }
+}
+@media (prefers-reduced-motion: reduce) { .legendCard.done { animation: none; } }
+@media (max-width: 760px) { .legendCard { grid-template-columns: 1fr; } }
+
+/* ---------- the Mriya's assembly hall (ui/mriya.js) ---------- */
+.panel.mriya { width: min(1260px, 100%); position: relative; }
+.mHead { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.mPurse { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.mMoney { font-size: 20px; font-weight: 800; color: #ffd97a; }
+.mHero { position: relative; height: clamp(300px, 54vh, 580px); border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(140, 190, 240, 0.18);
+  background:
+    radial-gradient(ellipse 60% 35% at 50% 88%, rgba(255, 190, 90, 0.18), transparent 70%),
+    radial-gradient(ellipse 90% 80% at 50% 40%, #13304c 0%, #0a1726 55%, #05090f 100%); }
+.panel.mriya.done .mHero { border-color: rgba(255, 217, 122, 0.45);
+  background: radial-gradient(ellipse 70% 45% at 50% 80%, rgba(255, 190, 90, 0.32), transparent 72%),
+    radial-gradient(ellipse 90% 80% at 50% 40%, #2a2414 0%, #120f0a 60%, #060504 100%); }
+.mHero canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; }
+.mHero.noGl canvas { display: none; }
+.mTitle { position: absolute; left: 18px; top: 14px; right: 150px; pointer-events: none; }
+.mTitle h2 { margin: 0; font-size: clamp(26px, 4.4vw, 44px); letter-spacing: 1px;
+  background: linear-gradient(180deg, #fff6d6, #e8b84f 60%, #a8781e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.mTitle h2 i { font-style: normal; font-weight: 400; }
+.mTitle p { margin: 4px 0 0; max-width: 520px; color: #c9d8e6; font-size: 14px; text-shadow: 0 1px 6px #000; }
+.mProgress { position: absolute; right: 14px; top: 12px; width: 124px; height: 124px; pointer-events: none; }
+.mRing { width: 100%; height: 100%; }
+.mRing circle { fill: none; stroke-width: 7; }
+.mRing .bg { stroke: rgba(150, 190, 230, 0.18); }
+.mRing .fg { stroke: #ffd97a; stroke-linecap: round; filter: drop-shadow(0 0 4px rgba(255, 217, 122, 0.8)); }
+.mPct { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.mPct b { font-size: 30px; line-height: 1; color: #fff3cf; }
+.mPct b small { font-size: 15px; color: #ffd97a; }
+.mPct span { margin-top: 3px; font-size: 10px; line-height: 1.25; color: #b9c9d8; max-width: 92px; }
+.mPct .mOnStand { color: #ffd97a; }
+.mTurn { position: absolute; right: 14px; bottom: 10px; font-size: 11px; color: rgba(200, 220, 240, 0.55); pointer-events: none; }
+.mLegend { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; margin: 14px 0 6px; }
+.mStory p { margin: 0 0 8px; color: #c3d1de; line-height: 1.55; font-size: 14px; }
+.mStory p:last-child { color: #ffd97a; font-weight: 600; }
+.mFacts { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; align-content: start; font-size: 12px; }
+.mFacts div { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px dashed rgba(255, 217, 122, 0.15); padding: 2px 0; }
+.mFacts span { color: #8296a8; }
+.mFacts b { color: #f1e3b8; text-align: right; }
+.mLockNote { border-left-color: #ff9c7a; }
+.mWork { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.mBoard { position: sticky; top: 0; }
+.mPlanWrap { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid rgba(120, 180, 240, 0.3);
+  background: radial-gradient(ellipse at 50% 40%, #0f3152, #0a2038 70%); box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45); }
+.mPlan { display: block; width: 100%; height: auto; max-height: 72vh; -webkit-user-select: none; user-select: none; touch-action: pan-y; }
+.panel.mriya.carrying .mPlan { touch-action: none; cursor: grabbing; }
+.mPlan .g1 { fill: none; stroke: rgba(150, 200, 255, 0.09); stroke-width: 0.05; }
+.mPlan .g2 { fill: none; stroke: rgba(150, 200, 255, 0.2); stroke-width: 0.1; }
+.mLines path { fill: none; stroke: rgba(170, 215, 255, 0.45); stroke-width: 0.13; }
+.mDim path { fill: none; stroke: rgba(200, 225, 255, 0.5); stroke-width: 0.1; }
+.mDim text { fill: #a9cdf0; font: 600 1.7px ui-monospace, monospace; text-anchor: middle; }
+.mDim text.mStamp { text-anchor: start; font-size: 1.5px; letter-spacing: 0.15px; fill: rgba(169, 205, 240, 0.6); }
+.slot path { fill: rgba(120, 190, 255, 0.05); stroke: rgba(150, 210, 255, 0.38); stroke-width: 0.12; stroke-dasharray: 0.5 0.35; transition: fill 0.3s; }
+.slot.bought path { stroke: rgba(255, 217, 122, 0.6); }
+.slot.placed path { fill: url(#mGold); stroke: #6b4a10; stroke-width: 0.1; stroke-dasharray: none; }
+.slot.box.placed path { fill: #ffd27a; }
+.slot.hover path { fill: rgba(120, 200, 255, 0.28); stroke: #9fe0ff; stroke-width: 0.3; stroke-dasharray: none; }
+.slot.placed.hover path { fill: #fff0b8; }
+.slot.target path { fill: rgba(255, 215, 120, 0.18); stroke: #ffe08a; stroke-width: 0.35; stroke-dasharray: none; filter: url(#mGlow); animation: mTarget 0.9s ease-in-out infinite alternate; }
+.slot.target.ready path { fill: rgba(255, 225, 140, 0.6); stroke: #fff6d6; animation: none; }
+.slot.just path { animation: mJust 1.2s ease-out; }
+@keyframes mTarget { from { opacity: 0.45; } to { opacity: 1; } }
+@keyframes mJust { 0% { fill: #ffffff; } 100% { fill: #d8ad48; } }
+.ghost path { fill: rgba(255, 224, 150, 0.55); stroke: #fff3c4; stroke-width: 0.16; }
+.ghost.snap { transition: transform 0.16s ease-out; }
+.ghost.nope path { animation: mNope 0.5s ease-out; }
+@keyframes mNope { 0%, 60% { fill: rgba(255, 90, 70, 0.6); stroke: #ff9c7a; } 100% { fill: rgba(255, 224, 150, 0.55); stroke: #fff3c4; } }
+@media (prefers-reduced-motion: reduce) { .slot.target path { animation: none; } }
+.mMsg { min-height: 40px; padding: 8px 12px; border-top: 1px solid rgba(120, 180, 240, 0.2); background: rgba(6, 16, 28, 0.75);
+  color: #cfe0f0; font-size: 13px; line-height: 1.4; }
+.mMsg b { color: #ffd97a; }
+.mTray { display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px; }
+.mTray .fineprint { margin: 4px 0; }
+.mChip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 5px 12px 5px 5px; border: 1px solid rgba(255, 217, 122, 0.45);
+  border-radius: 10px; background: linear-gradient(180deg, #2a2414, #1b170e); color: #f1e3b8; font-size: 12px; font-weight: 600;
+  cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.mChip:hover { filter: brightness(1.15); }
+.mChip.carried { opacity: 0.5; border-style: dashed; }
+.mChip:focus-visible { outline: 2px solid #ffd97a; outline-offset: 2px; }
+.mThumb { width: 40px; height: 40px; flex: none; border-radius: 7px; background: rgba(10, 32, 56, 0.9); }
+.mThumb path { fill: #d8ad48; stroke: #fff0c0; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.mPart.shop .mThumb path { fill: rgba(120, 190, 255, 0.25); stroke: rgba(170, 215, 255, 0.8); }
+.mFloat { position: fixed; left: 0; top: 0; z-index: 120; display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; pointer-events: none;
+  border: 1px solid #ffd97a; border-radius: 10px; background: rgba(27, 23, 14, 0.92); color: #f1e3b8; font-size: 12px; font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.mFloat[hidden] { display: none; }
+.mShop h3:first-child, .mBoard h3:first-child { margin-top: 0; }
+.mShop .fineprint { margin: 0 0 8px; }
+.mList { display: grid; gap: 8px; }
+.mPart { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px;
+  border: 1px solid rgba(140, 170, 200, 0.16); border-radius: 11px; background: #131b24; }
+.mPart .mThumb { width: 52px; height: 52px; }
+.mPart.bought { border-color: rgba(255, 217, 122, 0.6); }
+.mPart.placed { border-color: rgba(255, 217, 122, 0.25); background: linear-gradient(135deg, #1d1a12, #131b24 70%); }
+.mPHead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mPHead b { font-size: 14px; color: #eef4fa; }
+.mSpec { margin-top: 2px; font-size: 12px; font-weight: 600; color: #ffd97a; }
+.mPInfo p { margin: 3px 0 0; font-size: 12px; line-height: 1.4; color: #9fb0c3; }
+.mPBuy { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 116px; text-align: right; }
+.mPrice { font: 700 15px ui-monospace, monospace; color: #eef4fa; }
+.mPart.placed .mPrice { color: #8a99a8; }
+.mRep { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #c3d1de; }
+.mRep i { width: 8px; height: 8px; border-radius: 50%; }
+.mFitted { font-size: 12px; font-weight: 700; color: #ffd97a; }
+.mToast { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 130;
+  padding: 8px 14px; border-radius: 9px; background: rgba(60, 20, 70, 0.92); border: 1px solid #c58cff; color: #f2e4ff; font-size: 13px; }
+.mToast[hidden] { display: none; }
+.mFinale { position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 16px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(40, 28, 6, 0.3), rgba(0, 0, 0, 0.55)); animation: mFade 0.6s ease-out; }
+.mFinaleCard { max-width: 560px; padding: 22px 24px 20px; text-align: center; border: 1px solid #ffd97a; border-radius: 18px;
+  background: rgba(22, 17, 8, 0.86); box-shadow: 0 0 60px rgba(255, 200, 90, 0.35), 0 30px 80px rgba(0, 0, 0, 0.6);
+  animation: mPop 0.9s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.mFinaleNative { font-size: clamp(64px, 16vw, 128px); font-weight: 900; line-height: 1; letter-spacing: 6px;
+  background: linear-gradient(100deg, #a8781e 0%, #ffe9a8 30%, #fff 45%, #e8b84f 60%, #a8781e 100%); background-size: 250% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: mGleam 3s linear infinite; }
+.mFinaleCard h2 { margin: 6px 0 6px; font-size: 24px; color: #fff3cf; }
+.mFinaleCard p { margin: 0; color: #e2d3a8; line-height: 1.5; }
+.mFinaleCard .btnRow { justify-content: center; }
+@keyframes mFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mPop { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes mGleam { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+@media (prefers-reduced-motion: reduce) { .mFinaleNative, .mFinaleCard, .mFinale { animation: none; } }
+canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 115; pointer-events: none; }
+@media (max-width: 900px) {
+  .mWork, .mLegend { grid-template-columns: 1fr; }
+  .mBoard { position: static; }
+}
+@media (max-width: 560px) {
+  .mHero { height: clamp(260px, 46vh, 420px); }
+  .mTitle { right: 104px; left: 12px; }
+  .mTitle p { font-size: 12px; }
+  .mProgress { width: 92px; height: 92px; right: 8px; top: 8px; }
+  .mPct b { font-size: 22px; }
+  .mPct span { font-size: 9px; max-width: 70px; }
+  .mPart { grid-template-columns: 44px minmax(0, 1fr); }
+  .mPart .mThumb { width: 44px; height: 44px; }
+  .mPBuy { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-end; flex-wrap: wrap; min-width: 0; }
+  .mPBuy .mPrice { margin-right: auto; }
+  .mFacts { grid-template-columns: 1fr; }
+}
+/* (the catalogue's Buy is a card's action: blue; Fit it stays gold, the thing to do next) */
+.mPBuy .btn.default[data-m="buy"] { border-color: #79b8ef; background: linear-gradient(180deg, #3c86cf, #2a63a2); color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22); }
+.mHead { flex-wrap: wrap; }
+.mHead .btn { white-space: nowrap; }
+
+/* the Mriya's finishes: a round swatch each (its body from the roof to the belly, its lines across) */
+.mDot { position: relative; display: block; width: 30px; height: 30px; flex: none; border-radius: 50%; overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.4); }
+.mDot em { position: absolute; left: 0; right: 0; top: 54%; height: 16%; }
+.mFinishes { margin: 8px 0 4px; }
+.mSwatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.mSwatch { display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 9px; align-items: center;
+  padding: 7px 10px; border: 1px solid #34414e; border-radius: 11px; background: #161e27; color: #dbe6f0; text-align: left; cursor: pointer; }
+.mSwatch .mDot { grid-row: 1 / 3; }
+.mSwatch span { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mSwatch small { font-size: 11px; color: #8fa3b6; }
+.mSwatch.own small { color: #c3d1de; }
+.mSwatch.on { border-color: #ffd97a; background: #1f1c12; box-shadow: 0 0 0 1px #ffd97a, 0 0 14px rgba(255, 217, 122, 0.25); }
+.mSwatch.on small { color: #ffd97a; }
+.mSwatch:hover { filter: brightness(1.15); }
+.mSwatch:focus-visible { outline: 2px solid #ffd97a; outline-offset: 2px; }
+.mFinLine { margin: 8px 0 0; font-size: 13px; color: #c3d1de; line-height: 1.5; }
+.mFinLine b { color: #fff3cf; }
+.mFinPrice { margin-left: 6px; font: 700 13px ui-monospace, monospace; color: #ffd97a; }
+.mFinBtns { display: inline-flex; gap: 8px; margin-left: 10px; vertical-align: middle; flex-wrap: wrap; }
+/* ... and on the hangar card: small round buttons, the one it wears ringed in gold */
+.lgFinishes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 2px; }
+.lgFinishes > span { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8296a8; margin-right: 4px; }
+.lgSwatch { padding: 2px; border: 1px solid transparent; border-radius: 50%; background: none; cursor: pointer; }
+.lgSwatch .mDot { width: 22px; height: 22px; }
+.lgSwatch.buy .mDot { opacity: 0.55; }
+.lgSwatch.on { border-color: #ffd97a; box-shadow: 0 0 10px rgba(255, 217, 122, 0.45); }
+.lgSwatch:hover .mDot { opacity: 1; transform: scale(1.1); }
+.lgSwatch:focus-visible { outline: 2px solid #ffd97a; outline-offset: 1px; }
+.lgFinName { margin-left: 4px; font-size: 12px; color: #e2d3a8; }
+@media (max-width: 560px) { .mSwatches { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mFinBtns { margin: 6px 0 0; } }
+
+/* the legend stands out in the hangar before it is built and after: a gold frame breathing slowly,
+   and a gleam of light sweeping across its picture now and then (built: brighter, more often) */
+.legendCard { position: relative; border-color: #c9a44a; animation: lgGlow 4.5s ease-in-out infinite; }
+@keyframes lgGlow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.55), 0 0 18px rgba(255, 200, 100, 0.14), 0 12px 34px rgba(0, 0, 0, 0.35); }
+  50% { box-shadow: 0 0 0 1px #ffd97a, 0 0 32px rgba(255, 200, 100, 0.3), 0 12px 34px rgba(0, 0, 0, 0.35); }
+}
+.legendCard .lgPic::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 38%, rgba(255, 236, 190, 0.16) 48%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 236, 190, 0.16) 52%, transparent 62%);
+  background-size: 260% 100%; background-position: 130% 0; animation: lgSweep 7s ease-in-out infinite; }
+@keyframes lgSweep { 0%, 62% { background-position: 130% 0; } 100% { background-position: -30% 0; } }
+.legendCard.done { border-color: #ffd97a; animation: lgShine 3.2s ease-in-out infinite; }
+.legendCard.done .lgPic::after { animation-duration: 4.5s; }
+.lgOwn { margin: 0 0 4px; padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255, 217, 122, 0.3);
+  background: rgba(255, 217, 122, 0.07); font-size: 12px; line-height: 1.45; color: #e9dcb6; }
+@media (prefers-reduced-motion: reduce) {
+  .legendCard { animation: none; box-shadow: 0 0 0 1px #ffd97a, 0 0 24px rgba(255, 200, 100, 0.25); }
+  .legendCard .lgPic::after { animation: none; display: none; }
+}
+.lgFinName { flex-basis: 100%; margin: 2px 0 0; }
+.lgFinishes { gap: 3px; }
+.lgSwatch { padding: 1px; }
+.lgSwatch .mDot { width: 20px; height: 20px; }

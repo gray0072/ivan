@@ -82,6 +82,10 @@ const Career = {
     d.regions = d.regions || ['sweden'];
     d.typeFlights = d.typeFlights || {};      // flights completed in each type, by its id
     d.newAircraft = d.newAircraft || [];      // types a course has just unlocked, not yet seen in the hangar
+    d.mriya = d.mriya || { bought: [], placed: [] };   // the An-225's parts: bought, and fitted on the blueprint
+    // ... and its finishes: the ones bought (its own is always there) and the one it wears
+    d.mriya.finishes = d.mriya.finishes || [MRIYA_FINISHES[0].id];
+    if (d.mriya.finishes.indexOf(d.mriya.finish) < 0) d.mriya.finish = MRIYA_FINISHES[0].id;
     // (the level was a setting of the browser once: an older save takes the one picked last)
     if (!DIFFICULTY[d.difficulty]) d.difficulty = DIFFICULTY[this.settings.difficulty] ? this.settings.difficulty : 'medium';
     // the flights to each airport, by its code (an older save: counted from the log it kept)
@@ -114,6 +118,7 @@ const Career = {
       regions: ['sweden'],
       typeFlights: {},
       newAircraft: [],
+      mriya: { bought: [], placed: [], finish: MRIYA_FINISHES[0].id, finishes: [MRIYA_FINISHES[0].id] },
       visits: {},
       difficulty: DIFFICULTY[opts.difficulty] ? opts.difficulty : 'medium',
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
@@ -163,7 +168,7 @@ const Career = {
   },
   aircraft() { return AIRCRAFT.find((a) => a.id === this.data.selected) || AIRCRAFT.find((a) => !a.unlock); },
   owns(id) { return this.data.aircraft.indexOf(id) >= 0; },
-  unlocked(ac) { return !ac.unlock || this.has(ac.unlock); },
+  unlocked(ac) { return !ac.unlock || (ac.legend ? this.mriyaDone() : this.has(ac.unlock)); },
   flightsIn(id) { return (this.data.typeFlights && this.data.typeFlights[id]) || 0; },
   // the types unlocked since the last visit to the hangar, and that visit
   newAircraft() { return AIRCRAFT.filter((a) => (this.data.newAircraft || []).indexOf(a.id) >= 0); },
@@ -255,6 +260,89 @@ const Career = {
       etops: d.courses.indexOf('paxetops') >= 0,
       outsize: d.courses.indexOf('cargo5') >= 0
     };
+  },
+
+  // ---------- the Mriya's assembly hall (data/mriya.js, ui/mriya.js) ----------
+  // The An-225 is built from fifty parts once every course is passed. A part costs money and the
+  // reputation of one client group, its share of MRIYA.PRICE_KR and MRIYA.PRICE_REP; bought, it
+  // waits on the stand until the pilot fits it on the blueprint. The fiftieth fitted, the
+  // aeroplane is theirs.
+  mriyaOpen() { return COURSES.every((c) => this.has(c.id)); },
+  mriyaDone() { return !!(this.data && this.data.mriya && this.data.mriya.done); },
+  mriyaPrice(part) {
+    if (!this._mriyaSums) {
+      const sums = { kr: 0 };
+      for (const p of MRIYA_PARTS) { sums.kr += p.kr; sums[p.kind] = (sums[p.kind] || 0) + p.rep; }
+      this._mriyaSums = sums;
+    }
+    const sum = this._mriyaSums;
+    return {
+      kr: Math.max(MRIYA.ROUND_KR, Math.round(MRIYA.PRICE_KR * part.kr / sum.kr / MRIYA.ROUND_KR) * MRIYA.ROUND_KR),
+      rep: Math.max(MRIYA.ROUND_REP, Math.round(MRIYA.PRICE_REP * part.rep / sum[part.kind] / MRIYA.ROUND_REP) * MRIYA.ROUND_REP),
+      kind: part.kind
+    };
+  },
+  // where a part is: 'placed' on the aeroplane, 'bought' (on the stand) or still in the 'shop'
+  mriyaState(id) {
+    const m = this.data.mriya;
+    return m.placed.indexOf(id) >= 0 ? 'placed' : m.bought.indexOf(id) >= 0 ? 'bought' : 'shop';
+  },
+  // what stops the pilot buying a part, or null: 'courses', 'money' or 'rep'
+  mriyaWhyNot(part) {
+    if (!this.mriyaOpen()) return 'courses';
+    const pr = this.mriyaPrice(part);
+    if (this.data.money < pr.kr) return 'money';
+    if ((this.data.rep[pr.kind] || 0) < pr.rep) return 'rep';
+    return null;
+  },
+  buyMriyaPart(id) {
+    const part = MRIYA_PARTS.find((p) => p.id === id);
+    if (!part || this.mriyaState(id) !== 'shop' || this.mriyaWhyNot(part)) return false;
+    const pr = this.mriyaPrice(part);
+    this.data.money -= pr.kr;
+    this.data.rep[pr.kind] = Math.max(0, Math.round(((this.data.rep[pr.kind] || 0) - pr.rep) * 10) / 10);
+    this.data.mriya.bought.push(id);
+    this.save();
+    return true;
+  },
+  // a bought part fitted in its place; the last one finishes the aeroplane (true)
+  placeMriyaPart(id) {
+    const m = this.data.mriya;
+    const i = m.bought.indexOf(id);
+    if (i < 0) return false;
+    m.bought.splice(i, 1);
+    m.placed.push(id);
+    let done = false;
+    if (m.placed.length >= MRIYA_PARTS.length && !m.done) {
+      m.done = true; done = true;
+      const ac = AIRCRAFT.find((a) => a.legend);
+      if (!this.owns(ac.id)) this.data.aircraft.push(ac.id);
+      if (this.data.newAircraft.indexOf(ac.id) < 0) this.data.newAircraft.push(ac.id);
+      this.data.log.unshift(logLine(m.cheated ? 'The An-225 Mriya is built again (with cheats).' : 'The An-225 Mriya is built again — {name} flies the Dream.',
+        { name: this.data.pilot.name }, this.data.log.length));
+    }
+    this.save();
+    return done ? 'done' : true;
+  },
+
+  // The Mriya's finish (data/mriya.js): the one it wears, which ones the pilot has; each of the
+  // others costs MRIYA.FINISH_KR once (only once the hall is open), switching is free
+  mriyaFinish() { return mriyaFinish(this.data && this.data.mriya && this.data.mriya.finish); },
+  hasMriyaFinish(id) { return !!(this.data && this.data.mriya.finishes.indexOf(id) >= 0); },
+  buyMriyaFinish(id) {
+    const f = MRIYA_FINISHES.find((x) => x.id === id);
+    if (!f || this.hasMriyaFinish(id) || !this.mriyaOpen() || this.data.money < MRIYA.FINISH_KR) return false;
+    this.data.money -= MRIYA.FINISH_KR;
+    this.data.mriya.finishes.push(id);
+    this.data.mriya.finish = id;
+    this.save();
+    return true;
+  },
+  setMriyaFinish(id) {
+    if (!this.hasMriyaFinish(id)) return false;
+    this.data.mriya.finish = id;
+    this.save();
+    return true;
   },
 
   // ---------- contracts ----------
@@ -540,7 +628,8 @@ const Career = {
     if (tod && tod.bonus) lines.push({ label: tod.name + ' flight', value: Math.round(base * tod.bonus) });
     // the lease runs per block hour (at least one), and the fuel burnt is paid for
     const hours = Math.max(1, result.blockSec / 3600);
-    lines.push({ label: 'Aircraft lease ({ac}, {h} h)', args: { ac: ac.name, h: hours.toFixed(1) }, value: -Math.round(ac.rent * hours) });
+    // (the Mriya is the pilot's own: its upkeep instead of a lease)
+    lines.push({ label: ac.legend ? 'Upkeep of your own aircraft ({ac}, {h} h)' : 'Aircraft lease ({ac}, {h} h)', args: { ac: ac.name, h: hours.toFixed(1) }, value: -Math.round(ac.rent * hours) });
     lines.push({ label: 'Fuel burnt ({kg} kg)', args: { kg: Math.round(result.fuelUsed) }, value: -Math.round(result.fuelUsed * CONTRACTS.FUEL_RATE) });
     if (result.damage > 0.02) {
       const dmg = -Math.round(c.pay * result.damage * 0.7);
