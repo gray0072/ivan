@@ -109,12 +109,13 @@ const HUD = {
       this.stripKey = key;
       const apt = (id) => {
         const a = World.byId[id];
-        return '<div class="stripApt">' + (typeof flagImg === 'function' ? flagImg(a) : '') + '<b>' + a.id + '</b> ' + esc(a.name) +
+        return '<div class="stripApt">' + (typeof flagImg === 'function' ? flagImg(a) : '') + '<b>' + a.id + '</b> ' + esc(aptName(a)) +
           ' · <span>' + esc(tr(a.country)) + '</span></div>';
       };
       this.strip.innerHTML =
         (fl.practice ? '<div class="stripRow big"><span class="good">' + tr('PRACTICE LANDING') + '</span></div>' : '') +
         '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + esc(tr(PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type).toUpperCase()) + '</span></div>' +
+        '<div class="stripRow"><span>' + tr('AIRCRAFT') + '</span><b>' + esc(fl.ac.name) + '</b></div>' +
         '<div class="stripRow big route">' + c.fromId + ' → ' + c.toId + '</div>' +
         apt(c.fromId) + apt(c.toId) +
         '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +

@@ -105,6 +105,12 @@ const SIM = {
   DESCENT_NM_PER_KFT: 3.2,     // the descent profile: nm flown per 1 000 ft lost ...
   DESCENT_END_NM: 12,          // ... down to 2 500 ft over the arrival this far out
   APPROACH_NM: 19,             // the approach phase starts on the localiser inside this distance
+  EMERGENCY_ALT_HOLD_S: 120,   // an altitude a checklist chose is held this long (flight time) after the emergency is over
+  GLIDE_AID_NM: 20,            // the dotted glide path shows inside this distance (to the threshold over the cosine of
+                               // the angle between the track and the way to it, Flight.accelDistNm: flown past or away
+                               // from the airport it is further), fading in over the last GLIDE_AID_FADE_NM of it ...
+  GLIDE_AID_FADE_NM: 5,
+  ILS_AID_NM: 23,              // ... and the ILS scales on the descent inside this one (on the approach, always)
   FLAPS_PROMPT_NM: 15,         // on the approach the prompt asks for the flaps from here (whenever the next step fits the speed) ...
   GEAR_PROMPT_NM: 8,           // ... and for the gear from here
   LOC_TIME_S: 22,              // the localiser closes a cross-track error with this time constant
@@ -167,6 +173,11 @@ const LAYOUT = {
   STAND: 400,                  // the parking position (nose-in towards the terminal)
   TERMINAL: 470,               // terminal building centre
   HANGAR_DOORS: 425,           // the line of the hangar doors (HANGARS)
+  FENCE_FAR: -455,             // the perimeter fence on the far side of the runway (across) ...
+  FENCE_BEYOND: 480,           // ... across both ends this far past the runway (still on the level ground) ...
+                               // ... and on the terminal side along the terminal's middle line, from building to building
+  FENCE_H: 2.4,                // its height, metres, a post every FENCE_POST_M
+  FENCE_POST_M: 3,
   APRON_START: 0.3,            // where the apron starts, fraction of the runway length
   GATE_SPACING: 80,
   TERMINAL_GAP: 70,            // between two terminals of a big airport, along the apron
@@ -217,6 +228,9 @@ const HANGARS = {
   medium: [[86, 72, 15, 'arch'], [70, 60, 13, 'arch'], [44, 36, 10, 'gable']],
   big: [[140, 95, 30, 'wide'], [90, 74, 16, 'arch'], [76, 64, 14, 'arch'], [46, 38, 10, 'gable']]
 };
+// the trees outside an airport's fence (render/perimeter3d.js), by its size, at the High quality
+// (QUALITY's aptTrees scales it); which trees: the airport's climate (AIRPORT_CLIMATE)
+const AIRPORT_TREES = { tiny: 450, small: 650, medium: 900, big: 1200 };
 // the control tower by the terminal's size: the height of the cab's floor, metres
 const TOWER_H = { tiny: 10, small: 20, medium: 32, big: 56 };
 
@@ -842,9 +856,9 @@ const WEATHER = {
 // ---------- Camera / rendering presets ----------
 // (landTex: the size of the land cover's tiles, texels: render/landcover.js)
 const QUALITY = {
-  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000, landTex: 512 },
-  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000, landTex: 1024 },
-  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000, landTex: 1024 }
+  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000, landTex: 512, aptTrees: 0.4 },
+  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000, landTex: 1024, aptTrees: 0.75 },
+  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000, landTex: 1024, aptTrees: 1 }
 };
 
 const VIEW = {

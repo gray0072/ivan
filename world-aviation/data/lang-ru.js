@@ -933,5 +933,22 @@ const TEXT_RU = {
   'Instrument lights: bright': 'Подсветка приборов: яркая',
   'Instrument lights: medium': 'Подсветка приборов: средняя',
   'Instrument lights: dim': 'Подсветка приборов: тусклая',
-  'Instruments hidden — <kbd>I</kbd> brings them back': 'Приборы скрыты — <kbd>I</kbd> вернёт их'
+  'Instruments hidden — <kbd>I</kbd> brings them back': 'Приборы скрыты — <kbd>I</kbd> вернёт их',
+  '{alt} ft for the emergency — back to {cruise} ft when it is over, or now with <kbd>N</kbd>': '{alt} ft из-за отказа — обратно на {cruise} ft, когда он позади, или сейчас: <kbd>N</kbd>',
+  'The emergency is over — autopilot back to the flight plan, ALT {alt} ft': 'Отказ позади — автопилот возвращается к плану полёта, ALT {alt} ft',
+  'AIRCRAFT': 'САМОЛЁТ',
+  'Arrival, local time': 'Прилёт, местное время',
+  '{d} h on {id}': '{d} ч к времени {id}',
+  'the same time as {id}': 'то же время, что в {id}',
+  'the next day': 'на следующий день',
+  'the day before': 'накануне',
+  'The Caucasus & Central Asia': 'Кавказ и Средняя Азия',
+  'Baku on the Caspian, Tbilisi and Yerevan under the Caucasus and Ararat, and the Silk Road cities from Tashkent and Dushanbe to Almaty, Bishkek and Astana — where the Russian airlines still fly abroad.': 'Баку на Каспии, Тбилиси и Ереван под Кавказом и Араратом, города Шёлкового пути от Ташкента и Душанбе до Алматы, Бишкека и Астаны — сюда российские авиакомпании по-прежнему летают за границу.',
+  'Azerbaijan': 'Азербайджан',
+  'Georgia': 'Грузия',
+  'Armenia': 'Армения',
+  'Kazakhstan': 'Казахстан',
+  'Uzbekistan': 'Узбекистан',
+  'Kyrgyzstan': 'Киргизия',
+  'Tajikistan': 'Таджикистан'
 };

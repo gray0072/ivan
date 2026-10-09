@@ -51,3 +51,13 @@ function tr(s, params) {
   if (params) out = out.replace(/\{(\w+)\}/g, (all, k) => (params[k] !== undefined ? params[k] : all));
   return out;
 }
+
+// an airport's name and its city in the game's language, or in `lang` (the voice's): the
+// Russian and Swedish ones from data/airport-names.js, else the English
+function aptName(a, lang) { return aptWord(a, lang, 0) || a.name; }
+function aptCity(a, lang) { return aptWord(a, lang, 1) || a.city; }
+function aptWord(a, lang, k) {
+  const l = lang || I18N.lang, n = typeof AIRPORT_NAMES !== 'undefined' && a && AIRPORT_NAMES[a.id];
+  if (!n || l === 'en') return '';
+  return (l === 'ru' ? n[k] : l === 'sv' ? n[2 + k] : '') || '';
+}

@@ -52,18 +52,18 @@ const Cabin = {
     };
     once('welcome', p === 'TAXI_OUT' || p === 'HOLD_SHORT' || (p === 'TAKEOFF' && st.onGround && st.ias / KTS < 30),
       () => this.tr('Ladies and gentlemen, welcome aboard this {airline} flight to {city}. Our flight time today will be {time}. Please fasten your seat belts, bring your seat backs to the upright position and open the window shades. Cabin crew, prepare for departure.',
-      { airline: c.client, city: fl.arrival.city, time: this.duration(c.blockMin) }));
+      { airline: c.client, city: aptCity(fl.arrival, this.lang()), time: this.duration(c.blockMin) }));
     once('cruise', p === 'CRUISE' && fl.phaseTime > 20,
       () => this.tr('Ladies and gentlemen, this is your captain speaking. We have reached our cruising altitude of {alt}. Our speed over the ground is {spd}, and the temperature outside is {temp}. We expect to land in {city} in about {time}. Sit back, relax and enjoy the flight.',
-      { alt: this.alt(st.pos.y), spd: this.speed(fl.groundSpeedKt()), temp: this.temp(this.oat(fl)), city: fl.arrival.city, time: this.duration(this.minutesToGo(fl)) }));
+      { alt: this.alt(st.pos.y), spd: this.speed(fl.groundSpeedKt()), temp: this.temp(this.oat(fl)), city: aptCity(fl.arrival, this.lang()), time: this.duration(this.minutesToGo(fl)) }));
     once('descent', p === 'DESCENT' && fl.phaseTime > 5,
       () => this.tr('Ladies and gentlemen, we have started our descent into {city} and will be landing in about {time}. The temperature in {city} is {temp}. Please return to your seats and fasten your seat belts.',
-      { city: fl.arrival.city, time: this.duration(this.minutesToGo(fl)), temp: this.temp(fl.env.temp) }));
+      { city: aptCity(fl.arrival, this.lang()), time: this.duration(this.minutesToGo(fl)), temp: this.temp(fl.env.temp) }));
     once('landing', p === 'APPROACH',
       () => this.tr('Cabin crew, prepare for landing. Ladies and gentlemen, please make sure your seat belt is fastened, your seat back is upright, your tray table is stowed and the window shade is open.'));
     once('arrived', p === 'EXIT',
       () => this.tr('Ladies and gentlemen, welcome to {city}. The local time is {clock} and the temperature outside is {temp}. {schedule} Please remain seated with your seat belt fastened until the seat belt sign is switched off. Thank you for flying {airline}.',
-      { city: fl.arrival.city, clock: this.localClock(fl), temp: this.temp(fl.env.temp), schedule: this.schedule(c), airline: c.client }));
+      { city: aptCity(fl.arrival, this.lang()), clock: this.localClock(fl), temp: this.temp(fl.env.temp), schedule: this.schedule(c), airline: c.client }));
   },
 
   // ahead of or behind the planned flight time (off the ground to on it), a couple of minutes either way is on schedule

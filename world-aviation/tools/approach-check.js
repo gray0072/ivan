@@ -27,7 +27,7 @@ const os = require('os');
 try { os.setPriority(os.constants.priority.PRIORITY_BELOW_NORMAL); } catch (e) { /* not allowed: fine */ }
 
 const ROOT = path.join(__dirname, '..');
-const FILES = ['constants.js', 'data/airports.js', 'data/countries.js', 'data/geodata.js', 'core/i18n.js', 'core/utils.js',
+const FILES = ['constants.js', 'data/airports.js', 'data/airport-names.js', 'data/countries.js', 'data/geodata.js', 'core/i18n.js', 'core/utils.js',
   'sim/terrain.js', 'sim/world.js', 'core/audio.js', 'sim/flight.js', 'sim/systems.js'];
 
 const args = process.argv.slice(2);

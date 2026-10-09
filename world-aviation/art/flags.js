@@ -282,5 +282,61 @@ const FLAG_SPECIAL = {
       g.fillStyle = '#ffffff'; flagStar(g, w * x, h * y, h * 0.075);
       g.fillStyle = '#c8102e'; flagStar(g, w * x, h * y, h * 0.05);
     }
+  },
+  azerbaijan(g, w, h) {
+    flagStripes(g, w, h, 'h', ['#00b5e2', '#ef3340', '#509e2f']);
+    flagCrescent(g, w * 0.47, h / 2, h * 0.15, h * 0.04, '#ef3340', '#ffffff');
+    g.fillStyle = '#ffffff'; flagStar(g, w * 0.56, h / 2, h * 0.07, 8, 0.45);
+  },
+  georgia(g, w, h) {
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#ff0000';
+    const t = h * 0.2;
+    g.fillRect(w / 2 - t / 2, 0, t, h); g.fillRect(0, h / 2 - t / 2, w, t);
+    // the four small crosses in the quarters
+    for (const [x, y] of [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]]) {
+      const cx = w * x, cy = h * y, s = h * 0.13, k = h * 0.04;
+      g.fillRect(cx - k / 2, cy - s, k, s * 2); g.fillRect(cx - s, cy - k / 2, s * 2, k);
+    }
+  },
+  kazakhstan(g, w, h) {
+    g.fillStyle = '#00afca'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#fec50c';
+    flagStar(g, w / 2, h * 0.42, h * 0.22, 16, 0.75);
+    g.fillStyle = '#00afca'; g.beginPath(); g.arc(w / 2, h * 0.42, h * 0.12, 0, TAU); g.fill();
+    g.fillStyle = '#fec50c'; g.beginPath(); g.arc(w / 2, h * 0.42, h * 0.1, 0, TAU); g.fill();
+    // the eagle under the sun, and the ornament along the hoist
+    g.beginPath(); g.moveTo(w * 0.3, h * 0.66); g.quadraticCurveTo(w / 2, h * 0.58, w * 0.7, h * 0.66); g.quadraticCurveTo(w / 2, h * 0.74, w * 0.3, h * 0.66); g.fill();
+    for (let y = 0.08; y < 0.95; y += 0.14) g.fillRect(w * 0.06, h * y, w * 0.04, h * 0.08);
+  },
+  uzbekistan(g, w, h) {
+    flagStripes(g, w, h, 'h', ['#0099b5', '#ce1126', '#ffffff', '#ce1126', '#1eb53a'], [10, 1, 8, 1, 10]);
+    flagCrescent(g, w * 0.13, h * 0.17, h * 0.11, h * 0.04, '#0099b5', '#ffffff');
+    g.fillStyle = '#ffffff';
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3 + Math.min(r, 2); c++) {
+      if (r === 0 && c < 2) continue;
+      flagStar(g, w * (0.2 + c * 0.055), h * (0.08 + r * 0.09), h * 0.025);
+    }
+  },
+  kyrgyzstan(g, w, h) {
+    g.fillStyle = '#e8112d'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#ffef00';
+    flagStar(g, w / 2, h / 2, h * 0.32, 20, 0.7);
+    g.beginPath(); g.arc(w / 2, h / 2, h * 0.17, 0, TAU); g.fill();
+    // the tunduk, the crown of a yurt
+    g.strokeStyle = '#e8112d'; g.lineWidth = h * 0.03;
+    g.beginPath(); g.arc(w / 2, h / 2, h * 0.12, 0, TAU); g.stroke();
+    for (const k of [-1, 0, 1]) {
+      g.beginPath(); g.moveTo(w / 2 - h * 0.12, h / 2 + k * h * 0.05); g.lineTo(w / 2 + h * 0.12, h / 2 + k * h * 0.05); g.stroke();
+    }
+  },
+  tajikistan(g, w, h) {
+    flagStripes(g, w, h, 'h', ['#cc0000', '#ffffff', '#006600'], [2, 3, 2]);
+    g.fillStyle = '#f8c300';
+    g.beginPath(); g.moveTo(w * 0.44, h * 0.55); g.lineTo(w * 0.47, h * 0.45); g.lineTo(w / 2, h * 0.5); g.lineTo(w * 0.53, h * 0.45); g.lineTo(w * 0.56, h * 0.55); g.closePath(); g.fill();
+    for (let i = 0; i < 7; i++) {
+      const a = Math.PI + (i + 0.5) / 7 * Math.PI;
+      flagStar(g, w / 2 + Math.cos(a) * h * 0.17, h * 0.53 + Math.sin(a) * h * 0.17, h * 0.025);
+    }
   }
 };

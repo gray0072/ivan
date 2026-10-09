@@ -319,7 +319,7 @@ const World = {
       b.push({ x: p.x, z: p.z, t, across, along, acrossSize, h, kind });
     };
     const term = a.terminal;
-    const h = term === 'big' ? 22 : term === 'medium' ? 16 : 11;
+    const h = term === 'big' ? 26 : term === 'medium' ? 16 : 11;          // (a big one gets a roof of its own on top: render/airport3d.js)
     // one building along the whole apron, or one per terminal round its stands (b.term, b.terms)
     if (a.terminals === 1) put(a.apronT, L.TERMINAL, a.apronT1 - a.apronT0 - 60, 60, h, 'terminal');
     else {

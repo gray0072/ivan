@@ -933,5 +933,22 @@ const TEXT_SV = {
   'Instrument lights: bright': 'Instrumentbelysning: stark',
   'Instrument lights: medium': 'Instrumentbelysning: mellan',
   'Instrument lights: dim': 'Instrumentbelysning: svag',
-  'Instruments hidden — <kbd>I</kbd> brings them back': 'Instrumenten dolda — <kbd>I</kbd> tar tillbaka dem'
+  'Instruments hidden — <kbd>I</kbd> brings them back': 'Instrumenten dolda — <kbd>I</kbd> tar tillbaka dem',
+  '{alt} ft for the emergency — back to {cruise} ft when it is over, or now with <kbd>N</kbd>': '{alt} ft för nödläget — tillbaka till {cruise} ft när det är över, eller nu med <kbd>N</kbd>',
+  'The emergency is over — autopilot back to the flight plan, ALT {alt} ft': 'Nödläget är över — autopiloten tillbaka till färdplanen, ALT {alt} ft',
+  'AIRCRAFT': 'FLYGPLAN',
+  'Arrival, local time': 'Ankomst, lokal tid',
+  '{d} h on {id}': '{d} h mot {id}',
+  'the same time as {id}': 'samma tid som {id}',
+  'the next day': 'dagen därpå',
+  'the day before': 'dagen före',
+  'The Caucasus & Central Asia': 'Kaukasus och Centralasien',
+  'Baku on the Caspian, Tbilisi and Yerevan under the Caucasus and Ararat, and the Silk Road cities from Tashkent and Dushanbe to Almaty, Bishkek and Astana — where the Russian airlines still fly abroad.': 'Baku vid Kaspiska havet, Tbilisi och Jerevan under Kaukasus och Ararat, och sidenvägens städer från Tasjkent och Dusjanbe till Almaty, Bisjkek och Astana — dit de ryska flygbolagen fortfarande flyger utomlands.',
+  'Azerbaijan': 'Azerbajdzjan',
+  'Georgia': 'Georgien',
+  'Armenia': 'Armenien',
+  'Kazakhstan': 'Kazakstan',
+  'Uzbekistan': 'Uzbekistan',
+  'Kyrgyzstan': 'Kirgizistan',
+  'Tajikistan': 'Tadzjikistan'
 };

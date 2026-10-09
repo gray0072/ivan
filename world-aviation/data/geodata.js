@@ -329,6 +329,12 @@ const RANGES = [
   [[2.5, 45.2, 1100, 70], [3.5, 44.4, 1200, 60]],                                  // the Massif Central
   // the Caucasus, Anatolia, Iran, Arabia
   [[37.5, 44.5, 2000, 50], [42.5, 43.0, 4500, 60], [46.0, 42.0, 3500, 60], [49.0, 41.0, 2000, 40]],
+  [[43.2, 41.2, 2300, 45], [45.5, 40.3, 2800, 45], [46.6, 39.4, 3000, 40]],          // the Lesser Caucasus
+  [[43.8, 39.7, 3500, 22], [44.3, 39.7, 5000, 14], [44.6, 39.6, 3500, 12]],          // Ararat, south-west of Yerevan
+  [[55.0, 38.8, 2200, 40], [58.5, 37.8, 2800, 40], [61.0, 36.6, 2200, 40]],          // the Kopet Dag
+  [[67.5, 39.2, 3500, 35], [69.5, 39.3, 4200, 35], [71.0, 39.4, 4500, 40]],          // the Gissar range, north of Dushanbe
+  [[71.5, 38.6, 5000, 110], [74.0, 38.3, 6000, 110]],                               // the Pamir
+  [[72.5, 42.5, 3800, 28], [74.5, 42.55, 4500, 28], [76.0, 42.8, 4500, 28], [77.2, 43.0, 4500, 26], [79.0, 43.0, 4000, 30]],   // the Kyrgyz and Ile Alatau, south of Bishkek and Almaty
   [[28.0, 39.0, 900, 200], [36.0, 39.0, 1200, 250], [42.0, 39.5, 2200, 250]],
   // the Taurus: the Beydağları west of Antalya, down to the sea at Kemer, and the main range
   // round the Antalya plain to the north, close to the coast at Alanya, then east to the Amanos

@@ -19,7 +19,7 @@ const GALLERY_LANG = {
     ftAlt: 'Fun Training screenshot',
     ftDesc: 'A training game for school kids: water a flower, stop zombies, lay rails for a train, keep a balloon in the air, a campfire burning or a panda fed and happy by answering tasks in time. Math, reading-scale and listen-and-read tasks (Swedish, English, Russian), players, progress tracks with stars and bosses, coins and diamonds to spend on your own character — food, clothes and a room to furnish — and settings for operations, limits and speed.',
     waAlt: 'World Aviation screenshot',
-    waDesc: 'A cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, win Scandinavia, then buy the traffic rights to the rest of the world, region by region. Push back, taxi, take off, work the emergency checklists, fly the ILS and land — from Visby to New York and Tokyo. Eighteen aircraft from a 19-seat turboprop to the ATR 72, the Embraer E2, the A220, the 737, the A320neo, the 787, the A350, the 777, the An-124, the 747-8F and the double-deck A380, 132 real airports, a training tree and Swedish kronor.'
+    waDesc: 'A cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, win Scandinavia, then buy the traffic rights to the rest of the world, region by region. Push back, taxi, take off, work the emergency checklists, fly the ILS and land — from Visby to New York and Tokyo. Eighteen aircraft from a 19-seat turboprop to the ATR 72, the Embraer E2, the A220, the 737, the A320neo, the 787, the A350, the 777, the An-124, the 747-8F and the double-deck A380, 141 real airports, a training tree and Swedish kronor.'
   },
   ru: {
     name: 'Русский',
@@ -37,7 +37,7 @@ const GALLERY_LANG = {
     ftAlt: 'Скриншот Fun Training',
     ftDesc: 'Обучающая игра для школьников: поливайте цветок, останавливайте зомби, прокладывайте рельсы для поезда, держите в воздухе воздушный шар, поддерживайте костёр или кормите панду, вовремя решая задания. Математика, задания на шкале чтения и «послушай и прочитай» (шведский, английский, русский), игроки, дорожки прогресса со звёздами и боссами, монеты и алмазы для своего персонажа — еда, одежда и комната, которую можно обставить, — и настройки действий, пределов и скорости.',
     waAlt: 'Скриншот World Aviation',
-    waDesc: 'Авиасимулятор с видом из кабины и карьера пилота авиакомпании: начните с внутренних рейсов по Швеции из Арланды, покорите Скандинавию, а затем покупайте права на полёты в остальной мир, регион за регионом. Буксировка, руление, взлёт, аварийные чек-листы, заход по ILS и посадка — от Висбю до Нью-Йорка и Токио. Восемнадцать самолётов от 19-местного турбовинтового до ATR 72, Embraer E2, A220, 737, A320neo, 787, A350, 777, Ан-124, 747-8F и двухпалубного A380, 132 настоящих аэропорта, дерево обучения и шведские кроны.'
+    waDesc: 'Авиасимулятор с видом из кабины и карьера пилота авиакомпании: начните с внутренних рейсов по Швеции из Арланды, покорите Скандинавию, а затем покупайте права на полёты в остальной мир, регион за регионом. Буксировка, руление, взлёт, аварийные чек-листы, заход по ILS и посадка — от Висбю до Нью-Йорка и Токио. Восемнадцать самолётов от 19-местного турбовинтового до ATR 72, Embraer E2, A220, 737, A320neo, 787, A350, 777, Ан-124, 747-8F и двухпалубного A380, 141 настоящий аэропорт, дерево обучения и шведские кроны.'
   },
   sv: {
     name: 'Svenska',
@@ -55,6 +55,6 @@ const GALLERY_LANG = {
     ftAlt: 'Skärmbild från Fun Training',
     ftDesc: 'Ett övningsspel för skolbarn: vattna en blomma, stoppa zombier, lägg räls åt ett tåg, håll en ballong i luften, en lägereld brinnande eller en panda mätt och glad genom att lösa uppgifter i tid. Matte, läsuppgifter på en skala och lyssna-och-läs (svenska, engelska, ryska), spelare, framstegsbanor med stjärnor och bossar, mynt och diamanter att lägga på din egen figur — mat, kläder och ett rum att möblera — och inställningar för räknesätt, gränser och tempo.',
     waAlt: 'Skärmbild från World Aviation',
-    waDesc: 'En flygsimulator med vy från cockpit och en karriär som trafikpilot: börja med inrikesflyg i Sverige från Arlanda, vinn Skandinavien och köp sedan trafikrättigheterna till resten av världen, region för region. Pushback, taxning, start, nödchecklistor, ILS-inflygning och landning — från Visby till New York och Tokyo. Arton flygplan från en turboprop med 19 platser till ATR 72, Embraer E2, A220, 737, A320neo, 787, A350, 777, An-124, 747-8F och den dubbeldäckade A380, 132 riktiga flygplatser, ett utbildningsträd och svenska kronor.'
+    waDesc: 'En flygsimulator med vy från cockpit och en karriär som trafikpilot: börja med inrikesflyg i Sverige från Arlanda, vinn Skandinavien och köp sedan trafikrättigheterna till resten av världen, region för region. Pushback, taxning, start, nödchecklistor, ILS-inflygning och landning — från Visby till New York och Tokyo. Arton flygplan från en turboprop med 19 platser till ATR 72, Embraer E2, A220, 737, A320neo, 787, A350, 777, An-124, 747-8F och den dubbeldäckade A380, 141 riktiga flygplatser, ett utbildningsträd och svenska kronor.'
   }
 };

@@ -714,5 +714,30 @@ const LANDMARK_SYMBOLS = {
     d.p('M78 42 C88 52 94 66 98 80 C90 68 84 58 76 48 Z');
     d.cb(72, 36, 2);
     d.s('M36 80 L32 92 M28 92 H38 M52 80 L56 92 M52 92 H62', 3.5);
+  },
+  // Baku: the three Flame Towers
+  flameTowers(d) {
+    d.p('M8 92 C6 60 18 34 30 22 C34 40 38 62 36 92 Z');
+    d.p('M36 92 C34 52 46 18 60 4 C66 30 68 62 64 92 Z');
+    d.p('M64 92 C62 64 74 42 90 30 C92 52 92 74 92 92 Z');
+    for (const [x, y] of [[22, 60], [50, 50], [78, 66]]) for (let k = 0; k < 3; k++) d.b('M' + (x - 6) + ' ' + (y + k * 9) + ' H' + (x + 6) + ' V' + (y + k * 9 + 2.5) + ' H' + (x - 6) + ' Z');
+  },
+  // Yerevan: Ararat, the big peak and the small one
+  ararat(d) {
+    d.p('M0 92 L34 20 L48 40 L54 36 L60 46 L72 38 L100 92 Z');
+    d.b('M24 42 L34 20 L44 36 L38 34 L33 40 L29 36 Z'); d.b('M64 46 L72 38 L79 50 L74 47 L70 51 Z');
+  },
+  // Astana: the Baiterek, a golden egg in the crown of a tree
+  baiterek(d) {
+    d.p('M46 92 L48 40 H52 L54 92 Z'); d.r(30, 86, 40, 6);
+    d.s('M50 44 C40 40 34 30 36 18 M50 44 C60 40 66 30 64 18 M48 46 C38 44 28 36 26 24 M52 46 C62 44 72 36 74 24', 3);
+    d.c(50, 24, 13); d.cb(46, 20, 3);
+  },
+  // Bishkek: a yurt
+  yurt(d) {
+    d.p('M8 92 V62 C8 52 30 30 50 26 C70 30 92 52 92 62 V92 Z');
+    d.b('M42 92 V68 H58 V92 Z');
+    d.sb('M14 62 H86 M20 74 H38 M62 74 H80', 3);
+    d.r(44, 18, 12, 8);
   }
 };

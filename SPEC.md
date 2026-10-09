@@ -33,7 +33,7 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 
 ### world-aviation
 
-Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (132 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, ten aircraft and a training tree; playable in English, Russian or Swedish. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
+Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (141 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, ten aircraft and a training tree; playable in English, Russian or Swedish. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
 
 ## Project structure
 

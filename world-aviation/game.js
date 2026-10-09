@@ -204,7 +204,9 @@ const Game = {
   drawIls(ctx, w, h, fl) {
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
     if (Career.settings.landingAid === false) return;
-    if (fl.distToRunwayNm() > SIM.APPROACH_NM + 4 || fl.navFailed) return;
+    // (on the descent by the distance over the cosine of the angle off the way to the runway, so
+    // passing the airport or flying away from it does not bring it up early)
+    if (fl.navFailed || (fl.phase === 'DESCENT' ? fl.accelDistNm() : fl.distToRunwayNm()) > SIM.ILS_AID_NM) return;
     const d = fl.ilsDeviation();
     if (d.along > 0) return;
     const top = Cockpit.panelTop(h);
@@ -299,13 +301,16 @@ const Game = {
     const p = fl.phase;
     if (fl.st.onGround || fl.navFailed || !(p === 'DESCENT' || p === 'APPROACH' || p === 'CRUISE')) return;
     if (Career.settings.landingAid === false) return;
-    const nm = fl.distToRunwayNm();
-    if (nm > 30) return;
+    // on the localiser by the distance itself, before it by the distance over the cosine of the
+    // angle between the track and the way to the runway (Flight.accelDistNm): flown past or
+    // round the airport, or away from it, it is longer, so the path is not up too early
+    const nm = p === 'APPROACH' ? fl.distToRunwayNm() : fl.accelDistNm();
+    if (nm > SIM.GLIDE_AID_NM) return;
     const a = fl.arrival, cam = Scene3D.camera;
     const v = this.pathVec || (this.pathVec = new THREE.Vector3());
     cam.updateMatrixWorld();
     const top = Cockpit.panelTop(h);
-    const fade = clamp((30 - nm) / 8, 0, 1);
+    const fade = clamp((SIM.GLIDE_AID_NM - nm) / SIM.GLIDE_AID_FADE_NM, 0, 1);
     const pts = [];
     for (let k = 0; k <= 12; k++) {
       const q = World.at(a, -a.half - k * NM, 0);
@@ -410,6 +415,7 @@ const Game = {
     const apt = fl.world, arr = fl.arrival;
     // a new phase unfolds the prompt the player folded away on a touch screen
     if (p !== this.promptPhase) { this.promptPhase = p; if (HUD.expandPrompt) HUD.expandPrompt(); }
+    this.releaseEmergencyAlt();
 
     // a touchdown at the destination ends the flying part, whatever the phase says
     if (AIRBORNE_PHASES.includes(p) && st.onGround && st.wasAirborne) {
@@ -505,8 +511,10 @@ const Game = {
       }
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'CRUISE') {
+      const low = fl.ap.emergency && fl.ap.alt < this.cruiseAltFt() - 1000;
       HUD.setPrompt('<b>' + tr('Cruise · {nm} nm to {id}', { nm: Math.round(fl.distToDestNm()), id: arr.id }) + '</b><br>' +
-        (fl.ap.on ? tr('autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel }) : tr('autopilot <kbd>Y</kbd> flies the route')));
+        (fl.ap.on ? tr('autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel }) : tr('autopilot <kbd>Y</kbd> flies the route')) +
+        (low ? '<br>' + tr('{alt} ft for the emergency — back to {cruise} ft when it is over, or now with <kbd>N</kbd>', { alt: fmtAltFt(fl.ap.alt), cruise: fmtAltFt(this.cruiseAltFt()) }) : ''));
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'DESCENT') {
       HUD.setPrompt(tr('<b>Descent</b> to {alt} ft · {nm} nm to runway {rwy}', { alt: fmtAltFt(fl.ap.alt), nm: Math.round(fl.distToRunwayNm()), rwy: arr.rwyName }) + this.spoilerHint());
@@ -636,6 +644,24 @@ const Game = {
   },
   // how far out the descent starts (Flight.descentStartNm)
   descentNm() { return this.flight.descentStartNm(); },
+  // An altitude a checklist chose (icing: lower, out of the cloud; the cabin altitude: 10 000 ft)
+  // holds only while the emergency lasts: the ice gone with the anti-ice on, or the cabin holding
+  // its pressure again, and SIM.EMERGENCY_ALT_HOLD_S of flight later, the autopilot climbs back to
+  // the flight plan's altitude (held for good, a whole leg was flown at 2 300 ft, hours late).
+  // N, the top of descent or an altitude the pilot selects ends it too.
+  releaseEmergencyAlt() {
+    const fl = this.flight, sys = this.systems, ap = fl.ap;
+    if (!ap.emergency) return;
+    if (!ap.altSet || (fl.phase !== 'CLIMB' && fl.phase !== 'CRUISE')) { ap.emergency = null; return; }
+    const over = !sys.checklist && (ap.emergency === 'icing' ? !fl.env.forcedIce && sys.antiIce && fl.env.iceAmount < 0.05
+      : ap.emergency === 'depress' ? sys.pressurised && !sys.depressurised : true);
+    if (!over) { ap.emergencyOver = null; return; }
+    if (ap.emergencyOver === null || ap.emergencyOver === undefined) ap.emergencyOver = fl.elapsed;
+    if (fl.elapsed - ap.emergencyOver < SIM.EMERGENCY_ALT_HOLD_S) return;
+    ap.emergency = null;
+    ap.alt = this.programAltFt(); ap.altSet = false;
+    fl.info(tr('The emergency is over — autopilot back to the flight plan, ALT {alt} ft', { alt: fmtAltFt(ap.alt) }), 'AP');
+  },
   // the altitude the flight plan wants now: the cruise level until the top of descent, then
   // 2 500 ft above the arrival for the approach
   programAltFt() {
@@ -724,8 +750,8 @@ const Game = {
         fl.info(tr(st.parkingBrake ? 'Parking brake set' : 'Parking brake released'));
         Audio2.cue('parkbrake', st.parkingBrake);
         break;
-      case 'altUp': fl.ap.alt = Math.min(fl.ap.alt + 500, 41000); fl.ap.altSet = true; fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
-      case 'altDown': fl.ap.alt = Math.max(1000, fl.ap.alt - 500); fl.ap.altSet = true; fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
+      case 'altUp': fl.ap.alt = Math.min(fl.ap.alt + 500, 41000); fl.ap.altSet = true; fl.ap.emergency = null; fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
+      case 'altDown': fl.ap.alt = Math.max(1000, fl.ap.alt - 500); fl.ap.altSet = true; fl.ap.emergency = null; fl.info(tr('Selected altitude {alt} ft', { alt: fmtAltFt(fl.ap.alt) })); break;
       case 'hdgUp': case 'hdgDown':
         if (fl.ap.nav) { fl.ap.nav = false; fl.ap.hdg = Math.round(fl.headingDeg()); }
         fl.ap.hdg = (fl.ap.hdg + (name === 'hdgUp' ? 5 : 355)) % 360;
@@ -1015,8 +1041,8 @@ const Game = {
     const cap = el('cineCaption');
     cap.classList.remove('on');
     cap.innerHTML = kind === 'intro'
-      ? '<b>' + flag(fl.world) + esc(fl.world.city) + ' → ' + flag(fl.arrival) + esc(fl.arrival.city) + '</b><span>' + esc(c.client) + ' · ' + esc(fl.ac.name) + '</span>'
-      : '<b>' + flag(fl.arrival) + esc(fl.arrival.city) + '</b><span>' + fl.arrival.id + ' · ' + esc(gateName(this.arrivalGate)) + '</span>';
+      ? '<b>' + flag(fl.world) + esc(aptCity(fl.world)) + ' → ' + flag(fl.arrival) + esc(aptCity(fl.arrival)) + '</b><span>' + esc(c.client) + ' · ' + esc(fl.ac.name) + '</span>'
+      : '<b>' + flag(fl.arrival) + esc(aptCity(fl.arrival)) + '</b><span>' + fl.arrival.id + ' · ' + esc(gateName(this.arrivalGate)) + '</span>';
     el('cineSkip').innerHTML = Input.isCoarse ? esc(tr('Tap to skip')) : esc(tr('Skip')) + ' <kbd>Enter</kbd>';
     if (kind === 'intro') {
       const f = el('cineFade');

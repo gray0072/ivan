@@ -29,7 +29,7 @@
 //     in their `abroad` list.
 // ============================================================
 
-const ALL_REGIONS = ['sweden', 'nordic', 'europe', 'russia', 'mideast', 'americas', 'asia'];
+const ALL_REGIONS = ['sweden', 'nordic', 'europe', 'russia', 'caucasus', 'mideast', 'americas', 'asia'];
 // everywhere but Russia (closed to European and North American airlines since 2022)
 const WORLDWIDE = ALL_REGIONS.filter((r) => r !== 'russia');
 // the countries with no flights to and from Russia
@@ -152,23 +152,23 @@ const AIRLINES = [
     emblem: ['turkish'] },
   // ---- Russia
   { code: 'SU', name: 'Aeroflot', title: 'AEROFLOT', kinds: ['pax'], country: 'Russia',
-    hubs: ['SVO', 'LED', 'KGD', 'AER', 'KZN', 'SVX', 'OVB', 'KJA', 'IKT', 'VVO', 'MMK', 'ARH'], regions: ['russia', 'europe', 'mideast', 'asia'],
-    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'Thailand', 'China', 'India', 'Indonesia'],
+    hubs: ['SVO', 'LED', 'KGD', 'AER', 'KZN', 'SVX', 'OVB', 'KJA', 'IKT', 'VVO', 'MMK', 'ARH'], regions: ['russia', 'caucasus', 'europe', 'mideast', 'asia'],
+    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'Thailand', 'China', 'India', 'Indonesia', 'Azerbaijan', 'Armenia', 'Kazakhstan', 'Uzbekistan', 'Kyrgyzstan', 'Tajikistan'],
     livery: { body: '#ffffff', belly: '#c3c8cf', title: '#02458d', tail: '#ffffff', engine: '#02458d' },
     emblem: ['aeroflot'] },
   { code: 'S7', name: 'S7 Airlines', title: 'S7 airlines', kinds: ['pax'], country: 'Russia',
-    hubs: ['OVB', 'IKT', 'SVO', 'KJA', 'AER'], regions: ['russia', 'europe', 'mideast', 'asia'],
-    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'Thailand', 'China', 'India'],
+    hubs: ['OVB', 'IKT', 'SVO', 'KJA', 'AER'], regions: ['russia', 'caucasus', 'europe', 'mideast', 'asia'],
+    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'Thailand', 'China', 'India', 'Georgia', 'Azerbaijan', 'Armenia', 'Kazakhstan', 'Uzbekistan', 'Kyrgyzstan', 'Tajikistan'],
     livery: { body: '#a3c93a', belly: '#ffffff', title: '#ffffff', tail: '#a3c93a', engine: '#a3c93a', titleFont: 'plain' },
     emblem: ['text', 'S7', '#ffffff'] },
   { code: 'U6', name: 'Ural Airlines', title: 'URAL AIRLINES', kinds: ['pax'], country: 'Russia',
-    hubs: ['SVX', 'SVO', 'AER', 'KZN'], regions: ['russia', 'europe', 'mideast', 'asia'],
-    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'China', 'India', 'Thailand'],
+    hubs: ['SVX', 'SVO', 'AER', 'KZN', 'IJK'], regions: ['russia', 'caucasus', 'europe', 'mideast', 'asia'],
+    abroad: ['Turkey', 'United Arab Emirates', 'Egypt', 'China', 'India', 'Thailand', 'Azerbaijan', 'Armenia', 'Kazakhstan', 'Uzbekistan', 'Kyrgyzstan', 'Tajikistan'],
     livery: { body: '#ffffff', cheat: ['#c8102e'], title: '#c8102e', tail: '#002d72', engine: '#ffffff' },
     emblem: ['bird', '#ffffff', '#c8102e'] },
   { code: 'DP', name: 'Pobeda', title: 'pobeda', kinds: ['pax'], country: 'Russia',
-    hubs: ['SVO', 'LED', 'KZN', 'AER', 'KGD', 'MMK', 'ARH'], regions: ['russia', 'europe', 'mideast'],
-    abroad: ['Turkey', 'United Arab Emirates'],
+    hubs: ['SVO', 'LED', 'KZN', 'AER', 'KGD', 'MMK', 'ARH'], regions: ['russia', 'caucasus', 'europe', 'mideast'],
+    abroad: ['Turkey', 'United Arab Emirates', 'Armenia', 'Kazakhstan', 'Uzbekistan', 'Kyrgyzstan', 'Tajikistan'],
     livery: { body: '#ffffff', title: '#1e4fa0', tail: '#1e4fa0', engine: '#ffffff', titleFont: 'lower' },
     emblem: ['text', 'P', '#ffffff', { size: 1.0 }] },
   { code: 'R3', name: 'Yakutia Airlines', title: 'YAKUTIA', kinds: ['pax'], country: 'Russia',
@@ -180,6 +180,31 @@ const AIRLINES = [
     abroad: ['China', 'South Korea', 'Thailand'],
     livery: { body: '#ffffff', title: '#1b2a5c', tail: '#1b2a5c', engine: '#ffffff' },
     emblem: ['aurora'] },
+  // ---- the Caucasus and Central Asia
+  { code: 'J2', name: 'Azerbaijan Airlines', title: 'AZERBAIJAN AIRLINES', kinds: ['pax'], country: 'Azerbaijan',
+    hubs: ['GYD'], regions: ['caucasus', 'russia', 'sweden', 'nordic', 'europe', 'mideast', 'asia'],
+    livery: { body: '#ffffff', cheat: ['#00b5e2'], title: '#00b5e2', tail: '#00b5e2', engine: '#ffffff' },
+    emblem: ['bird', '#ffffff', '#ef3340'] },
+  { code: 'A9', name: 'Georgian Airways', title: 'GEORGIAN AIRWAYS', kinds: ['pax'], country: 'Georgia',
+    hubs: ['TBS'], regions: ['caucasus', 'russia', 'europe', 'mideast'],
+    livery: { body: '#ffffff', title: '#c8102e', tail: '#ffffff', engine: '#ffffff' },
+    emblem: ['text', 'GA', '#c8102e'] },
+  { code: 'KC', name: 'Air Astana', title: 'AIR ASTANA', kinds: ['pax'], country: 'Kazakhstan',
+    hubs: ['ALA', 'NQZ'], regions: ['caucasus', 'russia', 'sweden', 'nordic', 'europe', 'mideast', 'asia'],
+    livery: { body: '#ffffff', title: '#3c3a6e', tail: '#4e5a86', engine: '#ffffff' },
+    emblem: ['bird', '#d6a63c', '#ffffff'] },
+  { code: 'HY', name: 'Uzbekistan Airways', title: 'UZBEKISTAN', kinds: ['pax', 'cargo'], country: 'Uzbekistan',
+    hubs: ['TAS'], regions: ['caucasus', 'russia', 'europe', 'mideast', 'asia'],
+    livery: { body: '#ffffff', cheat: ['#0099b5', '#1eb53a'], title: '#0099b5', tail: '#ffffff', engine: '#ffffff' },
+    emblem: ['bird', '#0099b5', '#1eb53a'] },
+  { code: 'SZ', name: 'Somon Air', title: 'SOMON AIR', kinds: ['pax'], country: 'Tajikistan',
+    hubs: ['DYU'], regions: ['caucasus', 'russia', 'mideast', 'asia'],
+    livery: { body: '#ffffff', cheat: ['#c8a046'], title: '#1d3f78', tail: '#1d3f78', engine: '#ffffff' },
+    emblem: ['text', 'S', '#c8a046', { size: 1.0 }] },
+  { code: '7L', name: 'Silk Way West Airlines', title: 'SILK WAY WEST', kinds: ['cargo'], country: 'Azerbaijan',
+    hubs: ['GYD'], regions: ALL_REGIONS,
+    livery: { body: '#ffffff', belly: '#c9ced4', title: '#0b2a5b', tail: '#0b2a5b', engine: '#0b2a5b' },
+    emblem: ['text', 'SW', '#ffffff'] },
   // ---- the Middle East and Africa
   { code: 'LY', name: 'El Al Israel Airlines', title: 'EL AL', kinds: ['pax'], country: 'Israel',
     hubs: ['TLV'], regions: ['europe', 'americas', 'mideast'],
@@ -373,8 +398,8 @@ const AIRLINES = [
     emblem: ['globe', '#ffffff', '#f2a900'] },
 
   { code: 'RU', name: 'AirBridgeCargo', title: 'AirBridgeCargo', kinds: ['cargo'], country: 'Russia',
-    hubs: ['SVO', 'KJA', 'OVB'], regions: ['russia', 'europe', 'mideast', 'asia'],
-    abroad: ['China', 'Turkey', 'United Arab Emirates', 'India'],
+    hubs: ['SVO', 'KJA', 'OVB'], regions: ['russia', 'caucasus', 'europe', 'mideast', 'asia'],
+    abroad: ['China', 'Turkey', 'United Arab Emirates', 'India', 'Kazakhstan', 'Uzbekistan'],
     livery: { body: '#ffffff', title: '#0d3b84', tail: '#0d3b84', engine: '#ffffff', titleFont: 'plain' },
     emblem: ['text', 'ABC', '#ffffff'] },
 

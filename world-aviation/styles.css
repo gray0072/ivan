@@ -946,6 +946,8 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 
 /* ---------- briefing ---------- */
 .briefTop { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.briefMap { display: block; width: 100%; max-width: 720px; aspect-ratio: 720 / 340; margin: 4px 0 14px; border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); background: #0c1a2a; }
 .bigRoute { font-size: 30px; font-weight: 800; }
 .bigPay { font-size: 24px; font-weight: 800; color: #ffd97a; }
 .briefCols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }

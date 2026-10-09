@@ -89,6 +89,7 @@ const AIRPORTS = [
   { id: 'MMK', name: 'Murmansk', city: 'Murmansk', country: 'Russia', region: 'russia', lat: 68.782, lon: 32.751, elev: 81, rwy: 31, rwyLen: 2500, aptClass: ['pax', 'cargo'], terminal: 'small', arctic: true },
   { id: 'ARH', name: 'Arkhangelsk Talagi', city: 'Arkhangelsk', country: 'Russia', region: 'russia', lat: 64.600, lon: 40.717, elev: 19, rwy: 26, rwyLen: 2500, aptClass: ['pax', 'cargo', 'bush'], terminal: 'tiny', arctic: true },
   { id: 'KZN', name: 'Kazan', city: 'Kazan', country: 'Russia', region: 'russia', lat: 55.606, lon: 49.279, elev: 125, rwy: 29, rwyLen: 3750, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'IJK', name: 'Izhevsk', city: 'Izhevsk', country: 'Russia', tz: 4, region: 'russia', lat: 56.828, lon: 53.457, elev: 158, rwy: 25, rwyLen: 2500, aptClass: ['pax', 'cargo'], terminal: 'small' },
   { id: 'AER', name: 'Sochi', city: 'Sochi', country: 'Russia', region: 'russia', lat: 43.450, lon: 39.957, elev: 27, rwy: 6, rwyLen: 2890, aptClass: ['pax'], terminal: 'medium', mountainous: true },
   { id: 'SVX', name: 'Yekaterinburg Koltsovo', city: 'Yekaterinburg', country: 'Russia', tz: 5, region: 'russia', lat: 56.743, lon: 60.803, elev: 233, rwy: 26, rwyLen: 3025, aptClass: ['pax', 'cargo'], terminal: 'medium' },
   { id: 'OVB', name: 'Novosibirsk Tolmachevo', city: 'Novosibirsk', country: 'Russia', tz: 7, region: 'russia', lat: 55.013, lon: 82.651, elev: 111, rwy: 25, rwyLen: 3600, aptClass: ['pax', 'cargo'], terminal: 'medium' },
@@ -100,6 +101,15 @@ const AIRPORTS = [
   { id: 'VVO', name: 'Vladivostok', city: 'Vladivostok', country: 'Russia', tz: 10, region: 'russia', lat: 43.399, lon: 132.148, elev: 14, rwy: 25, rwyLen: 3500, aptClass: ['pax', 'cargo'], terminal: 'medium' },
   { id: 'PKC', name: 'Petropavlovsk-Kamchatsky', city: 'Petropavlovsk', country: 'Russia', tz: 12, region: 'russia', lat: 53.168, lon: 158.454, elev: 40, rwy: 16, rwyLen: 3400, aptClass: ['pax', 'cargo', 'bush'], terminal: 'small', mountainous: true },
   { id: 'DYR', name: 'Anadyr Ugolny', city: 'Anadyr', country: 'Russia', tz: 12, region: 'russia', lat: 64.735, lon: 177.741, elev: 59, rwy: 1, rwyLen: 3500, aptClass: ['pax', 'bush'], terminal: 'tiny', arctic: true },
+  // ---- the Caucasus and Central Asia: Russia's neighbours, open to its airlines and to the West's
+  { id: 'GYD', name: 'Baku Heydar Aliyev', city: 'Baku', country: 'Azerbaijan', region: 'caucasus', lat: 40.467, lon: 50.047, elev: 3, rwy: 16, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'TBS', name: 'Tbilisi', city: 'Tbilisi', country: 'Georgia', region: 'caucasus', lat: 41.669, lon: 44.955, elev: 495, rwy: 13, rwyLen: 3000, aptClass: ['pax', 'cargo'], terminal: 'medium', mountainous: true },
+  { id: 'EVN', name: 'Yerevan Zvartnots', city: 'Yerevan', country: 'Armenia', region: 'caucasus', lat: 40.147, lon: 44.396, elev: 865, rwy: 9, rwyLen: 3850, aptClass: ['pax', 'cargo'], terminal: 'medium', mountainous: true },
+  { id: 'ALA', name: 'Almaty', city: 'Almaty', country: 'Kazakhstan', region: 'caucasus', lat: 43.352, lon: 77.040, elev: 681, rwy: 5, rwyLen: 4400, aptClass: ['pax', 'cargo'], terminal: 'medium', mountainous: true },
+  { id: 'NQZ', name: 'Astana Nursultan Nazarbayev', city: 'Astana', country: 'Kazakhstan', region: 'caucasus', lat: 51.022, lon: 71.467, elev: 355, rwy: 4, rwyLen: 3500, aptClass: ['pax', 'cargo'], terminal: 'medium' },
+  { id: 'TAS', name: 'Tashkent Islam Karimov', city: 'Tashkent', country: 'Uzbekistan', region: 'caucasus', lat: 41.258, lon: 69.281, elev: 432, rwy: 8, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
+  { id: 'FRU', name: 'Bishkek Manas', city: 'Bishkek', country: 'Kyrgyzstan', region: 'caucasus', lat: 43.061, lon: 74.478, elev: 637, rwy: 8, rwyLen: 4200, aptClass: ['pax', 'cargo'], terminal: 'small', mountainous: true },
+  { id: 'DYU', name: 'Dushanbe', city: 'Dushanbe', country: 'Tajikistan', region: 'caucasus', lat: 38.543, lon: 68.825, elev: 790, rwy: 9, rwyLen: 3100, aptClass: ['pax'], terminal: 'small', mountainous: true },
   // ---- The Middle East and Africa
   { id: 'TLV', name: 'Tel Aviv Ben Gurion', city: 'Tel Aviv', country: 'Israel', region: 'mideast', lat: 32.011, lon: 34.887, elev: 41, rwy: 30, rwyLen: 3112, aptClass: ['pax', 'cargo'], terminal: 'medium' },
   { id: 'CAI', name: 'Cairo', city: 'Cairo', country: 'Egypt', region: 'mideast', lat: 30.122, lon: 31.406, elev: 116, rwy: 5, rwyLen: 4000, aptClass: ['pax', 'cargo'], terminal: 'big' },
@@ -167,6 +177,8 @@ const REGIONS = [
     blurb: 'The busy hubs — London, Paris, Frankfurt, Amsterdam — the Alps, the Mediterranean and the Baltic.' },
   { id: 'russia', name: 'Russia', cost: 160000, rep: 22, flights: 14,
     blurb: 'Moscow and St Petersburg, the Urals and Siberia, Arctic fields from Murmansk to Norilsk and Khatanga, and on to Vladivostok, the volcanoes of Kamchatka and Anadyr by the Bering Strait.' },
+  { id: 'caucasus', name: 'The Caucasus & Central Asia', cost: 120000, rep: 24, flights: 16,
+    blurb: 'Baku on the Caspian, Tbilisi and Yerevan under the Caucasus and Ararat, and the Silk Road cities from Tashkent and Dushanbe to Almaty, Bishkek and Astana — where the Russian airlines still fly abroad.' },
   { id: 'mideast', name: 'Middle East & Africa', cost: 250000, rep: 28, flights: 18,
     blurb: 'Desert hubs in the Gulf, Cairo and Casablanca, and high, hot airfields from Addis Ababa to Johannesburg.' },
   { id: 'americas', name: 'The Americas', cost: 400000, rep: 38, flights: 25,
@@ -204,7 +216,9 @@ const AIRPORT_LOOK = {
   ARH: ['church', '#3b6a2a'], KZN: ['mosque', '#127a4c'], AER: ['palm', '#0a84a8'], SVX: ['mountain', '#8a3a1c'],
   OVB: ['dome', '#2a5d8f'], KJA: ['bridge', '#4a2f7a'], NSK: ['aurora', '#0f6b5c'], HTG: ['muskox', '#6b4a2b'],
   IKT: ['seal', '#1a6a8a'], YKS: ['mammoth', '#7a5a2a'], VVO: ['goldenGate', '#c0362c'], PKC: ['volcano', '#b2361b'],
-  DYR: ['whale', '#2d4f7c'],
+  DYR: ['whale', '#2d4f7c'], IJK: ['cathedral', '#2a6a4a'],
+  GYD: ['flameTowers', '#00a0c8'], TBS: ['church', '#b3191e'], EVN: ['ararat', '#d0702a'], ALA: ['alps', '#1f6fae'],
+  NQZ: ['baiterek', '#00a6c0'], TAS: ['minaret', '#1d8ab0'], FRU: ['yurt', '#c8102e'], DYU: ['dome', '#2a7a3a'],
   TLV: ['beach', '#1f78b4'], CAI: ['pyramids', '#b8860b'], DXB: ['burj', '#9a7b2c'], DOH: ['dhow', '#6b1238'],
   CMN: ['minaret', '#127a4c'], ADD: ['lion', '#2b8a3e'], NBO: ['giraffe', '#b0521b'], JNB: ['elephant', '#8a6a2a'],
   CPT: ['tableMountain', '#1b6a9c'], LOS: ['palm', '#1d8a4a'],
@@ -219,4 +233,19 @@ const AIRPORT_LOOK = {
   PEK: ['templeHeaven', '#1d4e89'], ICN: ['koreanGate', '#0047a0'], HND: ['fuji', '#bc002d'], TPE: ['taipei101', '#2a8a5a'],
   MNL: ['sun', '#0038a8'], SYD: ['opera', '#0b5ea8'], MEL: ['tram', '#3f7d3a'], PER: ['blackSwan', '#1b1b1b'],
   AKL: ['kiwi', '#3b3b3b']
+};
+
+// ---------- The trees round each airport ----------
+// The climate that picks the trees outside the fence (render/perimeter3d.js), where the latitude
+// alone would get it wrong (by the latitude: tropical under 20°, subtropical to 30°, warm to 42°,
+// temperate to 58°, boreal north of it and at every Arctic field)
+const AIRPORT_CLIMATE = {
+  tundra: ['LYR', 'SFJ', 'KEF', 'FAE', 'VAW', 'RET', 'HTG', 'DYR', 'NSK'],     // no trees: low willow scrub
+  larch: ['YKS', 'IKT', 'KJA'],                                               // the Siberian taiga
+  mediterranean: ['NCE', 'BCN', 'PMI', 'FCO', 'ATH', 'LIS', 'AYT', 'TLV', 'CMN', 'MAD', 'LAX', 'SFO', 'SCL', 'CPT', 'PER'],
+  subtropical: ['AER', 'MIA', 'HKG', 'TPE', 'CUN', 'HNL'],
+  desert: ['CAI', 'DXB', 'DOH', 'LIM', 'GYD'],
+  steppe: ['DEN', 'MEX', 'NQZ', 'ALA', 'TAS', 'DYU', 'FRU', 'EVN', 'TBS', 'DEL'],
+  savanna: ['NBO', 'ADD', 'JNB'],
+  eucalypt: ['SYD', 'MEL', 'BOG']
 };

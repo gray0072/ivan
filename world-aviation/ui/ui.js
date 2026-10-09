@@ -315,7 +315,7 @@ const UI = {
     const list = shown.map((c) => this.contractCard(c, this.requirement(c))).join('');
     const away = d.lastTo && d.lastTo !== d.base;
     return '<div class="hint">' + tr('Aircraft: <b>{ac}</b> ({klass} · max {nm} nm).', { ac: esc(ac.name), klass: esc(tr(ac.klass)), nm: ac.maxRangeNm }) + ' ' +
-      (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(World.byId[d.lastTo].city), base: d.base })
+      (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(aptCity(World.byId[d.lastTo])), base: d.base })
         : tr('From your base {base} · open regions: {n} — more in the Network tab.', { base: d.base, n: d.regions.length })) + '</div>' +
       Filters.boardBar() +
       (all.length && !shown.length ? Filters.empty('boardFilter', tr('No offers match the filters ({n} on the board).', { n: all.length }))
@@ -330,8 +330,9 @@ const UI = {
       '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
       esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
       '<div class="cRoute"><b>' + c.fromId + ' → ' + c.toId + '</b>' +
-      '<span>' + flagImg(from) + esc(from.city) + ' → ' + flagImg(to) + esc(to.city) + '</span></div>' +
+      '<span>' + flagImg(from) + esc(aptCity(from)) + ' → ' + flagImg(to) + esc(aptCity(to)) + '</span></div>' +
       '<div class="cGrid">' +
+      (flying && Game.flight ? row2(tr('Aircraft'), esc(Game.flight.ac.name)) : '') +
       row2(tr('Load'), loadText(c)) +
       row2(tr('Distance'), c.distanceNm + ' nm') +
       row2(tr('Payout'), fmtMoney(c.pay)) +
@@ -463,9 +464,9 @@ const UI = {
 
   // why a type does not suit an airport, in words (Career.misfit)
   misfitText(a, apt, why) {
-    if (why === 'runway') return tr('Not for {apt}: its runway is {have} m, this type needs {need} m', { apt: apt.name, have: apt.rwyLen, need: a.takeoffDist });
-    if (why === 'grass') return tr('Not for {apt}: a grass strip, and this type is not cleared for grass', { apt: apt.name });
-    return tr('Too big for {apt}: a {span} m wingspan, its stands and taxiways take up to {max} m', { apt: apt.name, span: a.dims.span, max: LAYOUT.MAX_SPAN[apt.terminal] });
+    if (why === 'runway') return tr('Not for {apt}: its runway is {have} m, this type needs {need} m', { apt: aptName(apt), have: apt.rwyLen, need: a.takeoffDist });
+    if (why === 'grass') return tr('Not for {apt}: a grass strip, and this type is not cleared for grass', { apt: aptName(apt) });
+    return tr('Too big for {apt}: a {span} m wingspan, its stands and taxiways take up to {max} m', { apt: aptName(apt), span: a.dims.span, max: LAYOUT.MAX_SPAN[apt.terminal] });
   },
 
   // The course tree, in the game's language (the exams run in it too)
@@ -509,7 +510,7 @@ const UI = {
     return '<div class="careerCols"><div>' +
       '<h3>' + tr('Pilot') + '</h3>' +
       '<div class="cGrid">' + row2(tr('Name'), esc(d.pilot.name)) +
-      row2(tr('Licence'), CAREER.PILOT_LICENSE) + row2(tr('Home base'), World.byId[d.base].name) +
+      row2(tr('Licence'), CAREER.PILOT_LICENSE) + row2(tr('Home base'), aptName(World.byId[d.base])) +
       row2(tr('Balance'), fmtMoney(d.money)) + row2(tr('Difficulty'), esc(tr(Career.difficulty.name))) + '</div>' +
       '<h3>' + tr('Reputation') + '</h3>' +
       Object.keys(FACTIONS).map((k) => {
@@ -585,9 +586,10 @@ const UI = {
       '<h2 class="clientHead">' + clientLogo(c, true) + esc(c.client) + '</h2>' +
       '<div class="briefTop"><div class="bigRoute">' + c.fromId + ' → ' + c.toId + '</div>' +
       '<div class="bigPay">' + fmtMoney(c.pay) + '</div></div>' +
+      (typeof RouteMap !== 'undefined' ? '<img class="briefMap" src="' + RouteMap.url(from, to) + '" alt="' + esc(c.fromId + ' → ' + c.toId) + '">' : '') +
       '<div class="briefCols"><div>' +
-      '<h3>' + flagImg(from) + esc(from.name) + ' · ' + from.id + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
-      '<h3>' + flagImg(to) + esc(to.name) + ' · ' + to.id + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
+      '<h3>' + flagImg(from) + esc(aptName(from)) + ' · ' + from.id + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
+      '<h3>' + flagImg(to) + esc(aptName(to)) + ' · ' + to.id + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
       '<p class="fineprint">' + (setup.weather.arr.vis < 3000
         ? tr('Low visibility at {id} — fly the ILS, the autopilot can couple to it down to 200 ft.', { id: to.id })
         : tr('Visibility is good for the approach at {id}.', { id: to.id })) + '</p>' +
@@ -597,6 +599,7 @@ const UI = {
       row2(tr('Load'), loadText(c)) +
       row2(tr('Distance'), c.distanceNm + ' nm') +
       row2(tr('En route'), tr('about {m} min at 1× — use the autopilot and time acceleration', { m: c.blockMin })) +
+      row2(tr('Arrival, local time'), this.arrivalClock(c, from, to)) +
       row2(tr('Fuel'), tr('plan {p} kg · on board {b} kg', { p: c.fuelKg, b: Math.round(setup.blockFuel) })) +
       row2(tr('Take-off weight'), tr('{w} t · max {m} t', { w: fmtTonnes(ac.emptyKg + c.payloadKg + setup.blockFuel), m: fmtTonnes(ac.mtow) })) +
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
@@ -621,6 +624,18 @@ const UI = {
       '<p class="fineprint">' + tr('Practice the landing: you start on the final at {id}, clean (gear and flaps up), the autopilot holds the glide path for {s} s and hands over {nm} nm out, then you lower the gear and the flaps, land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
         { nm: PRACTICE.HANDOVER_NM, id: to.id, s: PRACTICE.AP_SECONDS, v: SIM.ROLLOUT_EXIT_KT, who: esc(tr(FACTIONS[c.faction].name)) }) + '</p>' +
       '</div></div>');
+  },
+
+  // the clock at the arrival when the flight lands: the departure time picked below, the planned
+  // flight time, and the two airports' UTC offsets (a day later past midnight)
+  arrivalClock(c, from, to) {
+    const tod = TIME_OF_DAY[Career.timeOfDay] || TIME_OF_DAY.day;
+    const dh = utcOffset(to) - utcOffset(from);
+    const min = tod.hour * 60 + c.blockMin + dh * 60;
+    const day = Math.floor(min / 1440);
+    const zone = dh ? tr('{d} h on {id}', { d: (dh > 0 ? '+' : '−') + Math.abs(dh), id: from.id }) : tr('the same time as {id}', { id: from.id });
+    return '<b>' + fmtClock(((min % 1440) + 1440) % 1440 * 60) + '</b> ' + to.id +
+      (day > 0 ? ' · ' + tr('the next day') : day < 0 ? ' · ' + tr('the day before') : '') + ' · ' + zone;
   },
 
   // ---------- the practice landing's result ----------
@@ -728,7 +743,7 @@ const UI = {
     const c = fl.contract, s = Game.setup;
     if (!s || !s.weather) return '';
     const from = World.byId[c.fromId], to = World.byId[c.toId];
-    const block = (a, x, gate) => '<div><h3>' + flagImg(a) + esc(a.name) + ' · ' + a.id + '</h3><table class="wx">' + this.airportRows(x, a, gate) + '</table></div>';
+    const block = (a, x, gate) => '<div><h3>' + flagImg(a) + esc(aptName(a)) + ' · ' + a.id + '</h3><table class="wx">' + this.airportRows(x, a, gate) + '</table></div>';
     return '<div class="briefCols pauseApts">' + block(from, s.weather.dep, c.depGate) + block(to, s.weather.arr, c.arrGate) + '</div>';
   },
 
