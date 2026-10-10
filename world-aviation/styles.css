@@ -307,6 +307,8 @@ kbd {
 
 /* ---------- touch ---------- */
 #touch { display: none; }
+/* not over the look round an airport (Game.startTour) */
+body.touring #touch { display: none !important; }
 @media (pointer: coarse) {
   #touch { display: block; position: fixed; inset: 0; pointer-events: none; z-index: 20; }
   #stickZone {
@@ -902,6 +904,9 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .row2 .newDest { color: #7de08a; }
 
 /* how the flight starts on the briefing: two option buttons side by side, one under the other on a narrow screen */
+.tourPick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tourPick .chip { white-space: nowrap; }
+.tourPick .chip::before { content: '\25CE'; margin-right: 6px; color: #7fc4ff; }
 .startPick { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-top: 8px; }
 .startPick .chip { display: block; padding: 10px 14px; border-radius: 11px; text-align: left; line-height: 1.35; }
 .startPick .chip b { display: block; font-size: 14px; color: #eaf3fb; }

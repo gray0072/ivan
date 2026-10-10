@@ -9,7 +9,7 @@
 const AIRBORNE_PHASES = ['TAKEOFF', 'CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'];
 
 const Game = {
-  mode: 'boot',            // boot | menu | ops | briefing | flying | debrief | failed | paused
+  mode: 'boot',            // boot | menu | ops | briefing | tour | flying | debrief | failed | paused
   last: 0,
   flight: null,
   systems: null,
@@ -60,7 +60,7 @@ const Game = {
       if (document.hidden && this.mode === 'flying') this.pause();
     });
     // a tap anywhere skips the camera's flight at the start or the end
-    el('cine').addEventListener('pointerdown', (e) => { e.preventDefault(); if (this.mode === 'flying') this.skipCine(); });
+    el('cine').addEventListener('pointerdown', (e) => { e.preventDefault(); if (this.mode === 'flying' || this.mode === 'tour') this.skipCine(); });
 
     Career.load();
     this.last = performance.now();
@@ -88,6 +88,7 @@ const Game = {
       if (fe) fe.textContent = Math.round(this.fps) + ' fps · ' + Scene3D.quality.name;
     }
     if (this.mode === 'flying') this.frame(dt);
+    else if (this.mode === 'tour') this.tourFrame(dt);
     else if (Audio2.t) Audio2.update(0, null, null);   // no engine, wind or wheel sound outside a flight
     else if (this.mode === 'paused' && this.flight) {
       Scene3D.render();
@@ -729,6 +730,8 @@ const Game = {
 
   // ---------- actions ----------
   action(name, arg) {
+    // the look round an airport: Enter, Space and Esc end it
+    if (this.mode === 'tour') { if (name === 'starter' || name === 'parkBrake' || name === 'pause') this.skipCine(); return; }
     if (name === 'cheat') { this.cheat(arg); return; }
     if (this.mode === 'paused') { if (name === 'pause') this.pause(); return; }
     if (this.mode !== 'flying') return;
@@ -978,11 +981,7 @@ const Game = {
     }
     s.from = World.here[contract.fromId];
     s.to = World.here[contract.toId];
-    // the stands at both ends, drawn with the contract (a contract from an older save draws them now)
-    if (!(contract.depGate < s.from.gates.length) || !(contract.arrGate < s.to.gates.length)) {
-      Object.assign(contract, World.pickGates(s.from, s.to, makeRng(hashStr(contract.id))));
-      Career.save();
-    }
+    this.drawGates(contract, s.from, s.to);
     s.gate = s.from.gates[contract.depGate];
     reseed(s.seed);
     this.cheated = false;
@@ -1055,6 +1054,125 @@ const Game = {
     this.last = performance.now();
     // the camera flies in from a wide shot to the captain's seat (not into a practice on the final)
     if (!this.practice) this.startCine('intro');
+  },
+
+  // the stands at both ends, drawn with the contract (a contract from an older save draws them now)
+  drawGates(contract, from, to) {
+    if (contract.depGate < from.gates.length && contract.arrGate < to.gates.length) return;
+    Object.assign(contract, World.pickGates(from, to, makeRng(hashStr(contract.id))));
+    Career.save();
+  },
+
+  // ---------- a look round an airport (from the briefing, free: TOUR, render/cinematic.js) ----------
+  // end: 'dep' or 'arr'. The own aeroplane stands where the flight finds it there: at the
+  // departure stand (or the holding point, for the short start), or parked at the arrival stand;
+  // the weather and the hour are the ones it meets there, in a clear spell. Nothing runs but the
+  // camera; at the end (or Enter, Space, Esc, a tap) the briefing is back.
+  tour(contract, end) {
+    if (typeof Cinematic === 'undefined' || !Scene3D.camera) return;
+    const boot = el('bootScreen');
+    el('bootStatus').textContent = tr('Flying out to {id}…', { id: end === 'dep' ? contract.fromId : contract.toId });
+    boot.hidden = false;
+    el('screen').hidden = true;
+    this.mode = 'ops';
+    frame().then(frame).then(() => {
+      this.startTour(contract, end);
+      boot.hidden = true;
+    });
+  },
+
+  startTour(contract, end) {
+    this.stopCine();
+    const s = Career.flightSetup(contract, { seed: 0, skipPushback: Career.skipPushback });
+    if (World.key !== contract.fromId + '>' + contract.toId) {
+      World.prepare(contract.fromId, contract.toId);
+      Scene3D.setTheatre();
+    }
+    const from = World.here[contract.fromId], to = World.here[contract.toId];
+    this.drawGates(contract, from, to);
+    const dep = end === 'dep', a = dep ? from : to;
+    const atHold = dep && s.skipPushback;
+    const gate = dep ? from.gates[contract.depGate] : to.gates[contract.arrGate];
+    this.contract = contract;
+    this.practice = null;
+    this.flight = Flight.init({ aircraft: s.aircraft, from: a, to, contract, gate, blockFuel: s.blockFuel, skipPushback: atHold });
+    this.systems = Systems.init(this.flight, { rng: makeRng(s.seed), difficulty: Career.difficulty, noEmergencies: true });
+    if (atHold) this.systems.runEngines();
+    const fl = this.flight, env = fl.env, w = dep ? s.weather.dep : s.weather.arr;
+    env.surfaceWind = { dir: w.dir, speed: w.speed };
+    env.qnh = w.qnh; env.temp = w.temp; env.tempElev = a.elev;
+    env.vis = Math.max(w.vis, TOUR.MIN_VIS_M);
+    env.cloudBase = a.elev + Math.max(w.cloudBase, TOUR.MIN_CLOUD_M);
+    env.cloudTop = Math.max(a.elev + w.cloudTop, env.cloudBase + 300);
+    env.precip = w.precip; env.snowy = w.snow;
+    // the local solar hour there: the departure's, or the landing's (the flight time and the
+    // longitudes between)
+    const hour = TIME_OF_DAY[Career.timeOfDay].hour;
+    env.hour0 = dep ? hour : hour + contract.blockMin / 60 + (((to.lon - from.lon) % 360 + 540) % 360 - 180) / 15;
+    env.moonPhase = (hashStr(contract.id + '/moon') >>> 0) % 10000 / 10000;
+    env.month = Career.data.season || 0;
+
+    Scene3D.setFlightGates(atHold ? [] : [gate], dep ? null : gate);
+    Scene3D.warmup(fl);
+    Cinematic.tour(fl, a);
+    this.mode = 'tour';
+    this.helpOpen = false;
+    Input.active = true;          // Enter, Space and Esc end it (action)
+    Input.reset();
+    el('screen').hidden = true;
+    el('hud').hidden = true;
+    if (HUD.mapOpen) HUD.closeMap();
+    Audio2.update(0, null, null);
+    document.body.classList.add('touring');       // no flight controls over it (styles.css)
+    const box = el('cine');
+    box.hidden = false;
+    box.classList.add('bars');
+    const what = atHold ? tr('Your aircraft · holding point, runway {rwy}', { rwy: a.rwyName })
+      : tr('Your aircraft · {gate}', { gate: esc(gateName(gate)) });
+    const flag = typeof flagImg === 'function' ? flagImg(a) : '';
+    this.tourCaps = [
+      [0.6, Cinematic.shot.marks.runway, '<b>' + flag + esc(aptName(a)) + '</b><span>' + a.id + ' · ' + esc(aptCity(a)) + '</span>'],
+      [Cinematic.shot.marks.runway + 0.8, Cinematic.shot.marks.apron, '<b>' + tr('Runway {rwy}', { rwy: a.rwyName }) + '</b><span>' + a.rwyLen + ' m · ' + Math.round(a.elev / FT) + ' ft</span>'],
+      [Cinematic.shot.marks.own + 1.5, Infinity, '<b>' + what + '</b><span>' + esc(fl.ac.name) + '</span>']
+    ];
+    this.tourCap = -1;
+    const cap = el('cineCaption');
+    cap.classList.remove('on');
+    el('cineSkip').innerHTML = Input.isCoarse ? esc(tr('Tap to skip')) : esc(tr('Skip')) + ' <kbd>Enter</kbd>';
+    const f = el('cineFade');
+    f.classList.remove('in'); void f.offsetWidth; f.classList.add('in');
+    this.last = performance.now();
+  },
+
+  // each frame of the tour: only the camera moves (the scene round the aeroplane, which stands still)
+  tourFrame(dt) {
+    if (Cinematic.update(dt)) { this.endTour(); return; }
+    const fl = this.flight, sh = Cinematic.shot;
+    Scene3D.cine = Cinematic;
+    Scene3D.panelHidden = true;
+    Scene3D.camMode = 'cine';
+    Scene3D.pipRect = null;
+    Scene3D.update(dt, fl, this.systems);
+    Scene3D.render();
+    this.draw2d(dt);
+    const i = this.tourCaps.findIndex((c) => sh.t >= c[0] && sh.t < c[1]);
+    const cap = el('cineCaption');
+    if (i !== this.tourCap) {
+      this.tourCap = i;
+      if (i >= 0) cap.innerHTML = this.tourCaps[i][2];
+    }
+    cap.classList.toggle('on', i >= 0);
+  },
+
+  endTour() {
+    this.stopCine();
+    document.body.classList.remove('touring');
+    this.mode = 'briefing';
+    this.flight = null;
+    this.systems = null;
+    Input.active = false;
+    Input.reset();
+    UI.showBriefing(this.contract.id);
   },
 
   // ---------- the camera's flights at the start and the end (render/cinematic.js) ----------

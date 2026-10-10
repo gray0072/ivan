@@ -799,6 +799,11 @@ const UI = {
       '<p class="fineprint">' + (setup.weather.arr.vis < 3000
         ? tr('Low visibility at {id} — fly the ILS, the autopilot can couple to it down to 200 ft.', { id: to.id })
         : tr('Visibility is good for the approach at {id}.', { id: to.id })) + '</p>' +
+      // a free look round either airport (Game.tour)
+      '<div class="tourPick">' +
+      '<button class="chip" data-act="tour" data-v="dep">' + tr('Look around {id}', { id: from.id }) + '</button>' +
+      '<button class="chip" data-act="tour" data-v="arr">' + tr('Look around {id}', { id: to.id }) + '</button></div>' +
+      '<p class="fineprint">' + tr('Free: a flight round the airport — the approach, the runway, the terminal and your aircraft where the flight finds it.') + '</p>' +
       '</div><div>' +
       '<h3>' + tr('The job') + '</h3><div class="cGrid">' +
       row2(tr('Aircraft'), esc(ac.name) + ' · ' + esc(tr(ac.klass))) +
@@ -1190,6 +1195,13 @@ const UI = {
         break;
       }
       case 'brief': this.showBriefing(this.selContract); break;
+      case 'tour': {
+        const c = Career.contractById(this.selContract);
+        if (!c) { this.showOps(); break; }
+        enterFullscreen();
+        Game.tour(c, v);
+        break;
+      }
       case 'tod': Career.setTimeOfDay(v); this.showBriefing(this.selContract); break;
       case 'startMode': Career.setSkipPushback(v === 'pushback'); this.showBriefing(this.selContract); break;
       case 'retry':

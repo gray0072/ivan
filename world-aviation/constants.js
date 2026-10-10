@@ -972,6 +972,21 @@ const CINEMATIC = {
   CAPTION_S: 4.2               // the route under the intro's picture: shown this long
 };
 
+// A look round an airport from the briefing (free): the camera flies in on the approach, low
+// down the runway, round over the terminal and down to the own aeroplane at its stand (or the
+// holding point), circles it and holds, then the briefing is back. Enter, Space, Esc or a tap
+// end it sooner. The weather and the hour are the ones the flight meets there, only a clear
+// spell: at least MIN_VIS_M of visibility and the cloud base above the camera.
+const TOUR = {
+  SPEED_MS: 210,               // the camera's speed between the keys, m/s (the runway pass is as long as the runway)
+  CLOSE_S: [5, 7],             // ... but down to the aeroplane and round it at least this long, seconds
+  HOLD_S: 2,                   // the last shot holds this long
+  APPROACH_M: 2600,            // starts this far out on the approach, before the threshold ...
+  START_AGL_M: 240,            // ... this high
+  MIN_VIS_M: 9000,             // visibility at least
+  MIN_CLOUD_M: 600             // the cloud base at least this high above the field
+};
+
 // ---------- Controls and screen layout ----------
 // The time of day, chosen on the briefing: the departure's local solar time (the clock runs
 // on with the flight). The sun follows a generic path (equinox, latitude SKY_LATITUDE_DEG):

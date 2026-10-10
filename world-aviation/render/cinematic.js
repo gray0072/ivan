@@ -11,7 +11,10 @@
 //   - the outro: parked at the arrival gate, the camera rises
 //     out of the cockpit, back over the fin and out to a wide
 //     shot of the aeroplane at its gate, holds it, and the
-//     debrief follows.
+//     debrief follows;
+//   - the tour: from the briefing, a look round the departure or
+//     the arrival airport, its runway and terminal, ending at the
+//     own aeroplane (Game.startTour).
 // The path is a spline through a few keys in the aeroplane's own
 // axes (x right, y up, z forward), scaled to its size; the times
 // of the keys are part of the spline, so it eases in and out and
@@ -63,6 +66,49 @@ const Cinematic = {
     this.eval();
   },
 
+  // A look round airport a (TOUR, from the briefing): in on the approach, low down the runway
+  // on its left, a climbing turn to the right at the far end, back along the apron and the
+  // terminal, down to the own aeroplane (fl, standing at its stand or the holding point) and
+  // slowly round it from the runway side. The keys are in the world (x, y, z), each piece as
+  // long as the camera takes at TOUR.SPEED_MS; marks: when the runway, the apron and the
+  // aeroplane come into the picture (the captions, Game)
+  tour(fl, a) {
+    const H = a.half, p = World.local(a, fl.st.pos.x, fl.st.pos.z), d = fl.dims;
+    // (on a screen held upright the aeroplane is seen from further off, so it fits across)
+    const Z = Math.max(d.len, d.span) * clamp(1.2 * Scene3D.h / Math.max(1, Scene3D.w), 1, 2.2), up = d.fus;
+    const W = (t, across, h) => { const q = World.at(a, t, across); return [q.x, a.elev + h, q.z]; };
+    const key = (eye, look, fov) => [...W(...eye), ...W(...look), fov];
+    const own = [p.t, p.across, up * 0.6];
+    const T = LAYOUT.TERMINAL;
+    const keys = [
+      key([-H - TOUR.APPROACH_M, -TOUR.APPROACH_M * 0.12, TOUR.START_AGL_M], [-H + 300, 0, 0], 50),
+      key([-H - 900, -140, 80], [-H + 350, 0, 0], 54),
+      key([-H + 150, -70, 24], [-H + 1000, 0, 4], 62),                                   // over the threshold
+      key([0, -70, 26], [H, 10, 4], 62),                                                 // down the runway
+      key([H - 250, -70, 34], [H + 500, 120, 10], 60),                                   // the far end
+      key([H + 650, 160, 120], [H + 250, T + 300, 30], 58),                              // a climbing turn to the right
+      key([a.apronT1 + 450, T + 230, 135], [a.apronT, T, 15], 40),                       // the terminal's roof, zoomed in
+      key([a.apronT1 + 150, 170, 95], [a.apronT, T, 8], 55),                             // the apron
+      key([p.t + Z * 3 + 120, p.across - Z * 2 - 90, Z * 0.9 + 45], own, 50),            // down to the aeroplane
+      key([p.t + Z * 1.3 + 12, p.across - Z * 1.15 - 8, Z * 0.32 + 9], own, 46),         // and round it
+      key([p.t - Z * 1.3 - 12, p.across - Z * 1.0 - 8, Z * 0.26 + 7], own, 46)
+    ];
+    const times = [0];
+    for (let i = 1; i < keys.length; i++) {
+      const dist = Math.hypot(keys[i][0] - keys[i - 1][0], keys[i][1] - keys[i - 1][1], keys[i][2] - keys[i - 1][2]);
+      const min = i === keys.length - 2 ? TOUR.CLOSE_S[0] : i === keys.length - 1 ? TOUR.CLOSE_S[1] : 1.5;
+      times.push(times[i - 1] + Math.max(min, dist / TOUR.SPEED_MS));
+    }
+    const dur = times[times.length - 1];
+    this.shot = {
+      kind: 'tour', t: 0, dur, hold: TOUR.HOLD_S, times, keys, world: true, chord: true,
+      inT0: -1, inT1: -1,          // never inside the cockpit
+      marks: { runway: times[2] - 1.5, apron: times[5], own: times[8] }
+    };
+    this.vec = keys[0].slice();
+    this.eval();
+  },
+
   stop() { this.shot = null; },
   // to the end (Game ends the shot on the next update)
   skip() { if (this.shot) this.shot.t = this.shot.dur + this.shot.hold; },
@@ -101,6 +147,9 @@ const Cinematic = {
     const h00 = 2 * u3 - 3 * u2 + 1, h10 = u3 - 2 * u2 + u, h01 = -2 * u3 + 3 * u2, h11 = u3 - u2;
     const tan = (j, c) => {
       if (j === 0 || j === n - 1) return 0;
+      // the tour: the chord between the neighbours (pieces of very different lengths, a long
+      // straight one into a tight turn, would otherwise overshoot, below the ground)
+      if (sh.chord) return (K[j + 1][c] - K[j - 1][c]) / (T[j + 1] - T[j - 1]);
       const a = (K[j][c] - K[j - 1][c]) / (T[j] - T[j - 1]), b = (K[j + 1][c] - K[j][c]) / (T[j + 1] - T[j]);
       return (a * (T[j + 1] - T[j]) + b * (T[j] - T[j - 1])) / (T[j + 1] - T[j - 1]);
     };
@@ -112,6 +161,9 @@ const Cinematic = {
   // the camera now, in the world: Scene3D.placeCamera
   pose(fl, ax) {
     const p = fl.st.pos, v = this.vec;
+    if (this.shot && this.shot.world) {
+      return { eye: new THREE.Vector3(v[0], v[1], v[2]), look: new THREE.Vector3(v[3], v[4], v[5]), up: new THREE.Vector3(0, 1, 0), fov: v[6] };
+    }
     const W = (x, y, z) => new THREE.Vector3(
       p.x + ax.right.x * x + ax.up.x * y + ax.nose.x * z,
       p.y + ax.right.y * x + ax.up.y * y + ax.nose.y * z,
