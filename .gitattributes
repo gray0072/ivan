@@ -1,0 +1,9 @@
+# Every text file is stored in git, and checked out on every OS, with LF line endings;
+# images and other binaries are left as they are
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
