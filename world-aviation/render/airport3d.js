@@ -75,10 +75,14 @@ const Airport3D = {
 
     this.buildLights(a, rec, at);
     this.buildMarkings(a, at, tex);
+    const built = frame.children.length;
     this.buildBuildings(a, rec, at, tex, lambert, id);
     Landside3D.build(a, rec, at, tex);
     // the boards of the region's and the country's products (adverts3d.js)
     Adverts3D.build(a, rec, at, tex);
+    // the buildings, the landside and the boards never move: baked into a mesh per material
+    // (merge3d.js), all but the flags' cloth, which streams in the wind
+    Merge3D.bake(frame, frame.children.slice(built), { keep: new Set(rec.flags.map((f) => f.holder)), night: rec.night, tag: 'buildings' });
     // the perimeter fence and the trees outside it, of the airport's climate (perimeter3d.js)
     Perimeter3D.build(a, rec, at, tex, opts.quality);
     this.buildEquipment(a, rec, at, tex, lambert);
@@ -95,6 +99,8 @@ const Airport3D = {
       const type = types[gate.index];
       const al = id.airlines.length ? id.airlines[gate.index % id.airlines.length] : null;
       const plane = AircraftModels.build(type, { airline: al ? al.code : null });
+      // (it stands still: its 60-80 parts baked into a mesh per material, its lights left out)
+      Merge3D.bake(plane, null, { dropHidden: true, tag: 'parked' });
       plane.position.set(gate.standX, a.elev + aircraftDims(type).gearH, gate.standZ);
       plane.rotation.y = Math.PI - gate.parkHdg * DEG;
       group.add(plane);
