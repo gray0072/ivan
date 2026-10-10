@@ -694,34 +694,36 @@ function fuselageGeometry(L, R, hk) {
 
 // The Beluga's hold (look.bubble = k, its radius over R; bubbleSection in sim/airframe.js): an
 // elliptic section at z — its roof T, its floor B, its half width a — or null outside it. In the
-// middle the full section, a circle meeting the lower fuselage in the crease; at the front a
-// blunt forehead whose floor rides on the roof of the cockpit (the door that swings up over it)
-// before it comes down the sides to the crease; at the back the roof sinks and the sides close
-// in under the fin, rounded off at its end. u: along the body as the fuselage's (tail 0, nose 1)
+// middle the full section, a circle meeting the lower fuselage in the crease; at the front it
+// starts on the cockpit roof just behind the windscreen and its roof sweeps up from there,
+// steep at first and rounding over to the full height (the door that swings up over the
+// cockpit), its sides coming down to the crease — the head of a whale, nothing jutting out over
+// the windscreen; at the back the roof sinks and the sides close in under the fin, rounded off
+// at its end. u: along the body as the fuselage's (tail 0, nose 1)
 // (where along the body: shares of the length behind the nose)
-const BUBBLE_FRONT = 0.03;    // its front tip, over the cockpit
-const BUBBLE_FULL = 0.17;     // full section from here back
-const BUBBLE_DROP = 0.065;    // the floor leaves the cockpit roof here, coming down to the crease
+const BUBBLE_FRONT = 0.05;    // its front tip, on the cockpit roof behind the windscreen
+const BUBBLE_FULL = 0.25;     // full section from here back
 const BUBBLE_REAR = 0.54;     // the roof starts down here (over the wing's trailing edge)
 const BUBBLE_END = 0.99;      // and it ends here, under the fin
 const BUBBLE_DOOR = 0.155;    // the seam of the door round the front (on the livery)
 function bubbleRing(L, R, k, z) {
   const sec = bubbleSection(R, k);
-  const zF = L / 2 - L * BUBBLE_FRONT, zFull = L / 2 - L * BUBBLE_FULL, zD = L / 2 - L * BUBBLE_DROP;
+  const zF = L / 2 - L * BUBBLE_FRONT, zFull = L / 2 - L * BUBBLE_FULL;
   const zR = L / 2 - L * BUBBLE_REAR, zE = L / 2 - L * BUBBLE_END;
   const smooth = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
   if (z > zF || z < zE) return null;
   if (z > zFull) {
-    const roof = (zz) => { const c = fuselageRing(L, R, zz); return c.y + c.r - R * 0.03; };
-    const v = (zF - z) / (zF - zFull), e = Math.sqrt(1 - (1 - v) * (1 - v));
-    const T = roof(zF) + (sec.top - roof(zF)) * e;
-    const B = z > zD ? roof(z) : roof(zD) + (sec.bottom - roof(zD)) * smooth((zD - z) / (zD - zFull));
-    return { T: Math.max(T, B), B, a: sec.rb * e };
+    const c0 = fuselageRing(L, R, zF), y0 = c0.y + c0.r - R * 0.05;          // on the cockpit roof
+    const v = (zF - z) / (zF - zFull);
+    const T = y0 + (sec.top - y0) * (1 - Math.pow(1 - v, 2.2));
+    const B = y0 + (sec.bottom - y0) * smooth(v / 0.75);
+    return { T: Math.max(T, B), B, a: sec.rb * Math.pow(1 - (1 - v) * (1 - v), 0.7) };
   }
   if (z > zR) return { T: sec.top, B: sec.bottom, a: sec.rb };
   // the tail: down to a section under the fin's root, closing over its last metres
   const w = smooth((zR - z) / (zR - zE));
-  const T = sec.top + (R * 1.32 - sec.top) * w, B = sec.bottom + (R * 0.72 - sec.bottom) * w;
+  const finY = R * 0.72 + (sec.top - R) * BUBBLE_FIN_RISE;
+  const T = sec.top + (finY + R * 0.15 - sec.top) * w, B = sec.bottom + (R * 0.72 - sec.bottom) * w;
   let a = sec.rb + (R * 0.3 - sec.rb) * w;
   const cap = R * 0.35, q = z - zE < cap ? Math.sqrt(Math.max(0, 1 - Math.pow(1 - (z - zE) / cap, 2))) : 1;
   const c = (T + B) / 2, b = (T - B) / 2 * q;

@@ -54,8 +54,8 @@ function modelLayout(ac, look) {
   const finZ = -L * 0.5 + finRoot + L * 0.015;                     // fin leading edge at the root
   // (its root inside the tail cone all along: lower, its edge hung out under the narrow end
   // of the cone, a thin rod seen from below; a double deck's roof runs higher into the tail; the
-  // Beluga's stands on the end of its hold, 1.3 m higher than the A300's)
-  const finY = R * 0.72 + (bub ? R * 0.45 : (top - R) * 0.8);
+  // Belugas' stands on the end of the hold, the ST's 1.3 m higher than the A300's)
+  const finY = R * 0.72 + (top - R) * (bub ? BUBBLE_FIN_RISE : 0.8);
   // the tailplane's half span (real ones: 0.15 of the wing span on a T-tail, about 0.17-0.2 below;
   // the An-225's 32.65 m, 0.185 of its span)
   const tSemi = S * (twin ? 0.185 : tTop ? 0.15 : jet ? 0.19 : 0.17);
@@ -92,6 +92,7 @@ function modelLayout(ac, look) {
 // it meets the lower fuselage in a crease at CREASE of R below the axis, where the floor of the
 // hold is; top: its roof. render/models.js shapes the rest of it (bubbleRing)
 const BUBBLE_CREASE = 0.2;
+const BUBBLE_FIN_RISE = 0.4;  // the fin raised by this share of the hold's height over the fuselage
 function bubbleSection(R, k) {
   const rb = R * k, w = R * Math.sqrt(1 - BUBBLE_CREASE * BUBBLE_CREASE);    // the body's half width at the crease
   const yc = -R * BUBBLE_CREASE + Math.sqrt(Math.max(0, rb * rb - w * w));

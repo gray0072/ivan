@@ -14,7 +14,9 @@
 //   runway            across = 0
 //   parallel taxiway  across = TWY_OFFSET, with exits and the holding point
 //   apron lane        across = APRON_LANE, gate stands at across = STAND
-//   terminal          across = TERMINAL
+//   terminal          across = TERMINAL (and past the terminals, along the
+//                     same apron, the cargo stands and their cargo terminal
+//                     or shed)
 //
 // The taxi network is a small graph so the game can route from a gate to
 // the holding point and from a runway exit back to a gate, and give
@@ -48,21 +50,35 @@ const World = {
     // from one terminal with one stand (tiny) to three terminals of five (big, a long runway)
     let plan = null;
     for (const p of LAYOUT.TERMINAL_PLANS[def.terminal] || LAYOUT.TERMINAL_PLANS.small) if (def.rwyLen >= p[0] || !plan) plan = p;
-    const terminals = plan[1], gatesPerTerminal = plan[2];
+    const terminals = plan[1], gatesPerTerminal = plan[2], cargoStands = plan[3] || 1;
     return Object.assign({}, def, {
       rwyName: String(def.rwy).padStart(2, '0'),
       rwyOpposite: String(((def.rwy + 17) % 36) + 1).padStart(2, '0'),
       hdg: hdgDeg * DEG, hdgDeg, half: def.rwyLen / 2, rwyHalfWidth: RWY_HALF_WIDTH,
       mountainous: !!def.mountainous, arctic: !!def.arctic,
-      terminals, gatesPerTerminal, gateCount: terminals * gatesPerTerminal
+      // the stands: the terminals' first (paxGates), then the cargo stands (gateCount in all)
+      terminals, gatesPerTerminal, paxGates: terminals * gatesPerTerminal, cargoStands,
+      gateCount: terminals * gatesPerTerminal + cargoStands
     });
   },
-  // the terminal (1, 2, 3) of a stand, by its index
-  terminalOf(a, i) { return Math.floor(i / a.gatesPerTerminal) + 1; },
+  // the terminal (1, 2, 3) of a stand, by its index, or 'C' for a cargo stand
+  terminalOf(a, i) { return i >= a.paxGates ? 'C' : Math.floor(i / a.gatesPerTerminal) + 1; },
+  // does a contract carry freight (from and to the cargo stands), not passengers or a patient?
+  freight(c) { return !!c && c.type !== 'pax' && c.type !== 'medevac'; },
   // a flight's stands, drawn when its contract is made: the departure from the terminal nearest
-  // the departure end of the runway (T1, the first along it), the arrival at any stand
-  pickGates(from, to, rng) {
-    return { depGate: rng.int(0, from.gatesPerTerminal - 1), arrGate: rng.int(0, to.gateCount - 1) };
+  // the departure end of the runway (T1, the first along it), the arrival at any stand; freight
+  // from a cargo stand to a cargo stand
+  pickGates(from, to, rng, freight) {
+    if (freight) return { depGate: from.paxGates + rng.int(0, from.cargoStands - 1), arrGate: to.paxGates + rng.int(0, to.cargoStands - 1) };
+    return { depGate: rng.int(0, from.gatesPerTerminal - 1), arrGate: rng.int(0, to.paxGates - 1) };
+  },
+  // may a contract still use the stands it has (drawn before the cargo stands were there, or
+  // never drawn: an older save's)?
+  gatesValid(c, from, to) {
+    if (!(c.depGate >= 0 && c.arrGate >= 0)) return false;
+    const cargo = (a, i) => i >= a.paxGates && i < a.gateCount;
+    if (this.freight(c)) return cargo(from, c.depGate) && cargo(to, c.arrGate);
+    return c.depGate < from.gatesPerTerminal && c.arrGate < to.paxGates;
   },
 
   // Build the world of a flight from one airport to another
@@ -119,10 +135,21 @@ const World = {
     a.thr = this.at(a, -a.half, 0);         // the threshold: take-off and landing start here
     a.end = this.at(a, a.half, 0);          // the far end of the runway
 
-    const gates = a.gateCount;
-    a.apronT0 = -a.half + a.rwyLen * LAYOUT.APRON_START;
-    a.apronT1 = a.apronT0 + gates * LAYOUT.GATE_SPACING + (a.terminals - 1) * LAYOUT.TERMINAL_GAP + 160;
-    a.apronT = (a.apronT0 + a.apronT1) / 2;
+    const L = LAYOUT, gates = a.gateCount;
+    // the stands along the apron: the terminals' (a gap between two terminals), then the cargo
+    // stands further on (CARGO_GAP)
+    a.apronT0 = -a.half + a.rwyLen * L.APRON_START;
+    a.standT = [];
+    for (let i = 0; i < a.paxGates; i++) {
+      a.standT.push(a.apronT0 + 80 + (i + 0.5) * L.GATE_SPACING + (this.terminalOf(a, i) - 1) * L.TERMINAL_GAP);
+    }
+    const lastPax = a.standT[a.paxGates - 1], gap = L.CARGO_GAP[a.terminal] || L.CARGO_GAP.small;
+    for (let j = 0; j < a.cargoStands; j++) a.standT.push(lastPax + L.GATE_SPACING + L.CARGO_SPACING * j + gap);
+    a.apronT1 = a.standT[gates - 1] + 120;
+    // the passenger part of the apron, to paxT1 (its terminal's middle: apronT)
+    a.paxT1 = lastPax + 120;
+    a.apronT = (a.apronT0 + a.paxT1) / 2;
+    a.cargoT0 = a.standT[a.paxGates] - 70;           // the cargo part, from here to apronT1
 
     this.buildNetwork(a, gates);
     this.buildBuildings(a);
@@ -175,11 +202,7 @@ const World = {
 
     // the apron: a lane in front of the stands, and lanes off the taxiway into it (apronLanes)
     const laneChain = [];
-    const standT = [];
-    for (let i = 0; i < gateCount; i++) {
-      // (a gap between the terminals)
-      standT.push(a.apronT0 + 80 + (i + 0.5) * L.GATE_SPACING + (this.terminalOf(a, i) - 1) * L.TERMINAL_GAP);
-    }
+    const standT = a.standT;
     const lanes = this.apronLanes(a, standT, twyChain.slice());
     lanes.forEach((ln, k) => {
       laneChain.push(add('laneX' + k, ln.t, L.APRON_LANE, 'apron'));
@@ -192,15 +215,18 @@ const World = {
 
     a.gates = [];
     for (let i = 0; i < gateCount; i++) {
-      const term = this.terminalOf(a, i);
+      const term = this.terminalOf(a, i), cargo = term === 'C';
       const t = standT[i];
       const lane = add('lane' + i, t, L.APRON_LANE, 'apron');
       const stand = add('stand' + i, t, L.STAND, 'gate');
       link('lane' + i, 'stand' + i, 'stand', 40);
       laneChain.push(lane);
+      // a cargo stand is numbered C1, C2 ... at the cargo terminal (a big airport) or on the
+      // cargo apron (a smaller one); its plate on the lead-in line and its board say so
+      const number = cargo ? i - a.paxGates + 1 : i + 1;
       a.gates.push({
-        id: a.id + '-' + (i + 1), name: 'Gate ' + (i + 1), number: i + 1, index: i,
-        terminal: term, terminals: a.terminals,
+        id: a.id + '-' + (cargo ? 'C' : '') + number, name: (cargo ? 'Stand C' : 'Gate ') + number, number, index: i,
+        terminal: term, terminals: a.terminals, cargo, bigCargo: cargo && a.terminal === 'big', plate: (cargo ? 'C' : '') + number,
         t, standX: stand.x, standZ: stand.z,
         parkHdg: (a.hdgDeg + 90) % 360,              // nose-in, facing the terminal
         laneNode: lane, node: stand,
@@ -230,8 +256,9 @@ const World = {
   },
 
   // The lanes off the parallel taxiway into the apron, as [{ t, at }] along the runway: at both
-  // ends of the apron, in the gap between two terminals, and between a terminal's stands, so
-  // that at most LANE_MAX_STANDS stands lie between two lanes and every stand has one beside it.
+  // ends of the apron, in the gap between two terminals (and before the cargo stands), and
+  // between the stands of a terminal (or the cargo stands), so that at most LANE_MAX_STANDS
+  // stands lie between two lanes and every stand has one beside it.
   // A lane that would meet the taxiway just beside a runway exit meets it at the exit's node
   // (`at`: a crossing, not two junctions a few metres apart), or moves away from it, unless
   // either brings it too close to a stand; then a lane between the stands is left out (an end one
@@ -239,15 +266,18 @@ const World = {
   apronLanes(a, standT, twyNodes) {
     const L = LAYOUT, n = a.gatesPerTerminal;
     const ts = [{ t: a.apronT0 + 40, end: true }];
-    for (let k = 0; k < a.terminals; k++) {
-      const gs = standT.slice(k * n, k * n + n);
+    // the stands in rows: each terminal's, then the cargo stands
+    const rows = [];
+    for (let k = 0; k < a.terminals; k++) rows.push(standT.slice(k * n, k * n + n));
+    rows.push(standT.slice(a.paxGates));
+    rows.forEach((gs, k) => {
       const groups = Math.ceil(gs.length / L.LANE_MAX_STANDS);
       for (let j = 1; j < groups; j++) {
         const i = Math.round(j * gs.length / groups);
         ts.push({ t: (gs[i - 1] + gs[i]) / 2 });
       }
-      if (k + 1 < a.terminals) ts.push({ t: (gs[gs.length - 1] + standT[(k + 1) * n]) / 2 });
-    }
+      if (k + 1 < rows.length) ts.push({ t: (gs[gs.length - 1] + rows[k + 1][0]) / 2 });
+    });
     ts.push({ t: a.apronT1 - 40, end: true });
     const out = [];
     const clear = (t) => standT.every((s) => Math.abs(s - t) >= L.LANE_STAND_CLEAR_M) && t > a.apronT0 + 15 && t < a.apronT1 - 15;
@@ -312,18 +342,21 @@ const World = {
   },
 
   // the stands a flight takes at an airport: its own, and for an aeroplane wider than the
-  // airport's stands are made for (LAYOUT.MAX_SPAN) the ones either side of it too, kept free
-  // (no parked aeroplane there: render/scene3d.js, sim/collide.js)
+  // airport's stands are made for (LAYOUT.MAX_SPAN) the ones either side of it at the same
+  // terminal (or among the cargo stands) too, kept free (no parked aeroplane there:
+  // render/scene3d.js, sim/collide.js)
   standsFor(a, gate, ac) {
     if (!gate) return [];
     if (!ac || ac.dims.span <= (LAYOUT.MAX_SPAN[a.terminal] || LAYOUT.MAX_SPAN.big)) return [gate];
-    return a.gates.filter((g) => Math.abs(g.index - gate.index) <= 1);
+    return a.gates.filter((g) => Math.abs(g.index - gate.index) <= 1 && g.terminal === gate.terminal);
   },
 
-  // the type parked at stand i (PARKED_TYPES): drawn by render/airport3d.js, run into by sim/collide.js
+  // the type parked at stand i (PARKED_TYPES, a freighter at a cargo stand: PARKED_CARGO_TYPES):
+  // drawn by render/airport3d.js, run into by sim/collide.js
   parkedType(a, i) {
-    const kinds = PARKED_TYPES[a.terminal] || PARKED_TYPES.tiny;
-    const id = kinds[(hashStr(a.id) + i) % kinds.length];
+    const cargo = i >= a.paxGates, table = cargo ? PARKED_CARGO_TYPES : PARKED_TYPES;
+    const kinds = table[a.terminal] || table.tiny;
+    const id = kinds[(hashStr(a.id) + (cargo ? i - a.paxGates : i)) % kinds.length];
     return AIRCRAFT.find((x) => x.id === id) || null;
   },
 
@@ -337,8 +370,8 @@ const World = {
     };
     const term = a.terminal;
     const h = term === 'big' ? 26 : term === 'medium' ? 16 : 11;          // (a big one gets a roof of its own on top: render/airport3d.js)
-    // one building along the whole apron, or one per terminal round its stands (b.term, b.terms)
-    if (a.terminals === 1) put(a.apronT, L.TERMINAL, a.apronT1 - a.apronT0 - 60, 60, h, 'terminal');
+    // one building along the whole passenger apron, or one per terminal round its stands (b.term, b.terms)
+    if (a.terminals === 1) put(a.apronT, L.TERMINAL, a.paxT1 - a.apronT0 - 60, 60, h, 'terminal');
     else {
       for (let k = 1; k <= a.terminals; k++) {
         const gs = a.gates.filter((g) => g.terminal === k);
@@ -346,6 +379,16 @@ const World = {
       }
     }
     b.filter((x) => x.kind === 'terminal').forEach((x, i, all) => { x.term = i + 1; x.terms = all.length; });
+    // past them, round the cargo stands, the cargo terminal (a big airport, b.big) or the cargo
+    // shed (CARGO_BUILDING): its apron front on the terminals' line, the dock doors for the trucks
+    // in its far end, and the truck yard before them (a.cargoYard; render/cargo3d.js dresses
+    // the area: the freight, the loaders, the trucks, a crane)
+    const cs = a.gates.filter((g) => g.cargo);
+    const [ch, cd] = CARGO_BUILDING[term] || CARGO_BUILDING.small;
+    put((cs[0].t + cs[cs.length - 1].t) / 2, L.TERMINAL - 30 + cd / 2, cs.length * L.CARGO_SPACING + 20, cd, ch, 'cargo');
+    const cb = b[b.length - 1];
+    cb.big = term === 'big';
+    a.cargoYard = { t0: cb.t + cb.along / 2, t1: cb.t + cb.along / 2 + 62, a0: L.TERMINAL - 30, a1: L.TERMINAL + 36 };
     // the tower: the bigger the airport, the taller (b.size picks its design, render/airport3d.js)
     const tw = term === 'big' ? 30 : 14;
     put(a.apronT1 + 50, L.TERMINAL, tw, tw, TOWER_H[term] || 32, 'tower');
@@ -359,7 +402,6 @@ const World = {
       end -= along + 30;
     }
     put(a.apronT1 + 160, L.STAND, 60, 60, 10, 'fuel');
-    put(a.apronT1 + 270, L.STAND + 20, 110, 60, 9, 'warehouse');
     a.buildings = b;
     // the landside behind the terminal, beyond its car park (render/landside3d.js): the bigger
     // the airport, the more there is — offices, a hotel, a multi-storey car park

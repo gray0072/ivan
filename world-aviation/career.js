@@ -60,10 +60,10 @@ const Career = {
     d.selected = renamed[d.selected] || d.selected || 'B1900D';
     d.contracts = d.contracts || [];
     for (const c of d.contracts) if (renamed[c.aircraftId]) c.aircraftId = renamed[c.aircraftId];
-    // the stands of a contract from before they were drawn with it
+    // the stands of a contract from before they were drawn with it (or before freight went to the cargo stands)
     for (const c of d.contracts) {
       const from = World.byId[c.fromId], to = World.byId[c.toId];
-      if (from && to && !(c.depGate < from.gatesPerTerminal && c.arrGate < to.gateCount)) Object.assign(c, World.pickGates(from, to, makeRng(hashStr(c.id))));
+      if (from && to && !World.gatesValid(c, from, to)) Object.assign(c, World.pickGates(from, to, makeRng(hashStr(c.id)), World.freight(c)));
     }
     d.stats = d.stats || { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 };
     d.pilot = { name: (d.pilot && d.pilot.name) || this.randomPilotName() };   // older saves also had an operator name
@@ -611,7 +611,7 @@ const Career = {
     return {
       id: from.id + '-' + to.id + '-' + type + '-' + Math.round(pay),
       client: client.name, airline: client.code,
-      ...World.pickGates(from, to, rng),
+      ...World.pickGates(from, to, rng, World.freight({ type })),
       faction, type, urgent,
       fromId: from.id, toId: to.id,
       pax, payloadKg, payloadLabel: pt.label,

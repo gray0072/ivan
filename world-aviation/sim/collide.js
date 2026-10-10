@@ -6,7 +6,7 @@
 // its fuselage, wings, tail and engines (Airframe.samples), turned by its
 // heading, pitch and bank, is tested against the obstacles of the nearest
 // airport: its buildings (the terminals, the tower, the hangars, the fuel
-// farm, the cargo warehouse, the landside behind the terminal) as boxes,
+// farm, the cargo terminal or shed, the landside behind the terminal) as boxes,
 // and the aeroplanes parked at its stands (all but the stands this flight
 // uses, Flight.gatesInUse) as the prisms of their type (Airframe.solids).
 //   - in the air, or on the ground at COLLIDE.CRASH_KT or more: the flight
@@ -28,7 +28,8 @@ const OBSTACLE_NAMES = {
   tower: 'the control tower',
   hangar: 'a hangar',
   fuel: 'the fuel farm',
-  warehouse: 'the cargo warehouse',
+  cargo: 'the cargo terminal',
+  cargoShed: 'the cargo shed',
   carpark: 'the car park building',
   hotel: 'the hotel',
   office: 'an office building',
@@ -147,7 +148,8 @@ const Collide = {
   hit(fl, c, ob) {
     const st = fl.st;
     const speed = fl.groundSpeedKt();
-    const what = tr(OBSTACLE_NAMES[ob.kind] || OBSTACLE_NAMES.office, { type: ob.type ? ob.type.name : '' });
+    const kind = ob.kind === 'cargo' && !ob.bld.big ? 'cargoShed' : ob.kind;
+    const what = tr(OBSTACLE_NAMES[kind] || OBSTACLE_NAMES.office, { type: ob.type ? ob.type.name : '' });
     if (!st.onGround) { fl.fail('collision', tr('Collision — you flew into {what}.', { what })); return; }
     if (speed >= COLLIDE.CRASH_KT) { fl.fail('collision', tr('Collision — you hit {what} at {v} kt.', { what, v: Math.round(speed) })); return; }
     // a touch: stopped dead where it was last clear

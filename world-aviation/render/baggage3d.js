@@ -6,7 +6,9 @@
 // terminal; z = -t):
 //
 //   - every terminal has a baggage hall with a door in its front, at
-//     the end of the building; its trains (a tractor and three carts)
+//     the end of the building (the cargo terminal or shed one for the
+//     freight: its trains pull container dollies, a container on each
+//     instead of a cart of bags); its trains (a tractor and three carts)
 //     come out of it and drive along the service road between the
 //     stands and the building, keeping right, then turn off between
 //     two stands to the aft hold of a parked aeroplane: down past the
@@ -50,7 +52,7 @@ const Baggage = {
     const doors = kit();
     for (const term of terms) {
       const gs = a.gates.filter((g) => g.terminal === term);
-      const hall = { t: gs[0].t - 42, term };
+      const hall = { t: gs[0].t - 42, term, cargo: term === 'C' };
       // the door: a dark opening in a yellow frame, out from the window frames
       doors.box(0.3, 5.2, 9.0, front - 1.15, 2.6, -hall.t, '#e3b51c').box(0.8, 4.6, 8.0, front - 1.0, 2.3, -hall.t, '#15191d');
       const served = gs.filter((g) => stands[g.index].parked).length;
@@ -78,9 +80,12 @@ const Baggage = {
     at(tractor, 0, 0, 0);
     const carts = [], bags = [];
     for (const _ of BAG_CART_Z) {
-      const ck = kit(); Vehicles.cartBase(ck, 0);
+      // (a container dolly and its container from the cargo hall, a cart and its bags from a terminal's)
+      const ck = kit();
+      if (hall.cargo) Vehicles.uldDolly(ck, 0, rng, false); else Vehicles.cartBase(ck, 0);
       const cart = ck.mesh(mat);
-      const bk = kit(); Vehicles.bags(bk, 0, rng);
+      const bk = kit();
+      if (hall.cargo) Vehicles.uld(bk, 0, 0.65, 0, rng); else Vehicles.bags(bk, 0, rng);
       const b = bk.mesh(mat);
       cart.add(b);
       at(cart, 0, 0, 0);

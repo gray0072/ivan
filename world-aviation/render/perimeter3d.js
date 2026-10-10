@@ -44,12 +44,21 @@ const Perimeter3D = {
       .filter((b) => b.kind !== 'fuel' && Math.abs(b.across - side) < b.acrossSize / 2 - 0.5)
       .map((b) => [b.t - b.along / 2 + 0.3, b.t + b.along / 2 - 0.3])
       .sort((p, q) => p[0] - q[0]);
+    // (the truck yard by the cargo building's far end is landside: the fence goes round its
+    // airside edge, from the building's front corner)
+    const y = a.cargoYard;
+    const run = (p, q) => {
+      if (!y || q <= y.t0 || p >= y.t1) { lines.push([[p, side], [q, side]]); return; }
+      if (p < y.t0) lines.push([[p, side], [y.t0, side]]);
+      lines.push([[Math.max(p, y.t0), y.a0], [Math.min(q, y.t1), y.a0]]);
+      if (q > y.t1) lines.push([[y.t1, y.a0], [y.t1, side]], [[y.t1, side], [q, side]]);
+    };
     let t = t0;
     for (const [c0, c1] of cuts) {
-      if (c0 > t + 1) lines.push([[t, side], [Math.min(c0, t1), side]]);
+      if (c0 > t + 1) run(t, Math.min(c0, t1));
       t = Math.max(t, c1);
     }
-    if (t < t1 - 1) lines.push([[t, side], [t1, side]]);
+    if (t < t1 - 1) run(t, t1);
     return lines;
   },
 

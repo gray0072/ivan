@@ -28,6 +28,7 @@
 //   - a windsock, the localiser array, the glideslope mast, signs
 //   - the perimeter fence and the trees outside it: perimeter3d.js
 //   - the stands' bridges and vehicles, floodlights and traffic: apron3d.js
+//   - the cargo terminal or shed, the freight, the trucks: cargo3d.js
 //   - the terminal's signs, the offices, hotel and car park behind it: landside3d.js
 //   - at night (update's dark): lit windows, letters and banners
 // ============================================================
@@ -80,6 +81,8 @@ const Airport3D = {
     Landside3D.build(a, rec, at, tex);
     // the boards of the region's and the country's products (adverts3d.js)
     Adverts3D.build(a, rec, at, tex);
+    // the freight, the trucks and the crane round the cargo building (cargo3d.js)
+    Cargo3D.build(a, rec, at, tex);
     // the buildings, the landside and the boards never move: baked into a mesh per material
     // (merge3d.js), all but the flags' cloth, which streams in the wind
     Merge3D.bake(frame, frame.children.slice(built), { keep: new Set(rec.flags.map((f) => f.holder)), night: rec.night, tag: 'buildings' });
@@ -87,14 +90,16 @@ const Airport3D = {
     Perimeter3D.build(a, rec, at, tex, opts.quality);
     this.buildEquipment(a, rec, at, tex, lambert);
 
-    // ---- parked aeroplanes at the gates (hidden where the player parks): the home airlines'
-    // (the type at each stand: gate.parked, World.parkedType)
+    // ---- parked aeroplanes at the gates (hidden where the player parks): the home airlines',
+    // at the cargo stands the freighters of the cargo carriers working there (the type at each
+    // stand: gate.parked, World.parkedType)
     const types = a.gates.map((gate) => gate.parked);
     // the life round the stands: bridges, vehicles, floodlights, traffic (apron3d.js)
     Apron3D.build(a, rec, at, tex, types);
     for (const gate of a.gates) {
       const type = types[gate.index];
-      const al = id.airlines.length ? id.airlines[gate.index % id.airlines.length] : null;
+      const al = gate.cargo ? Cargo3D.carrier(a, gate.number - 1) || id.airlines[0] || null
+        : id.airlines.length ? id.airlines[gate.index % id.airlines.length] : null;
       const plane = AircraftModels.build(type, { airline: al ? al.code : null });
       // (it stands still: its 60-80 parts baked into a mesh per material, its lights left out)
       Merge3D.bake(plane, null, { dropHidden: true, tag: 'parked' });
@@ -163,7 +168,7 @@ const Airport3D = {
     // the zebra crossings from the terminal to the car park: in front of each terminal of a big
     // airport (its number is painted on the lane beside it: roadNumbers), else two along the one
     const terms = a.buildings.filter((b) => b.kind === 'terminal');
-    const crossings = terms.length > 1 ? terms.map((b) => b.t) : [r.t0 + (r.t1 - r.t0) * 0.3, r.t0 + (r.t1 - r.t0) * 0.7];
+    const crossings = terms.length > 1 ? terms.map((b) => b.t) : [r.t0 + (a.paxT1 - r.t0) * 0.3, r.t0 + (a.paxT1 - r.t0) * 0.7];
     for (const tc of crossings) {
       for (let k = -8; k <= 8; k += 1.6) W.strip(tc + k + 0.4, roadA - 9.6, tc + k + 0.4, roadA + 9.6, 0.8);
     }
@@ -230,7 +235,7 @@ const Airport3D = {
       [r.t0, r.t1, r.a0, r.a1]
     ];
     for (const b of a.buildings) {
-      if (b.kind !== 'hangar' && b.kind !== 'warehouse' && b.kind !== 'fuel') continue;
+      if (b.kind !== 'hangar' && b.kind !== 'fuel') continue;
       rects.push([b.t - b.along / 2 - 6, b.t + b.along / 2 + 6, L.TWY_OFFSET + 40, b.across - b.acrossSize / 2]);
       rects.push([b.t - 12, b.t + 12, L.TWY_OFFSET, L.TWY_OFFSET + 40]);
     }
@@ -378,16 +383,7 @@ const Airport3D = {
         for (let i = 0; i < 3; i++) {
           at(new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 11, 18), lambert(0xd9dcd8)), b.t - 18 + i * 18, b.across - 8 + (i % 2) * 16, 5.5);
         }
-      } else {
-        const m = at(new THREE.Mesh(cellBox(b.acrossSize, b.h, b.along), lambert(id.paint.hangar)), b.t, b.across, b.h / 2);
-        m.userData.kind = b.kind;
-        // the office windows along the top of the front, lit at night
-        const win = lambert(0x3a4550);
-        rec.night.push({ mat: win, color: new THREE.Color(0xfff0c8), k: 0.5 });
-        at(new THREE.Mesh(cellBox(0.3, 1.4, b.along * 0.85), win), b.t, b.across - b.acrossSize / 2 - 0.15, b.h - 2);
-        const cargo = AIRLINES.filter((x) => x.kinds.indexOf('cargo') >= 0 && !x.own && airlineWorksAt(x, a));
-        if (cargo.length) this.logoBoard(rec, at, tex, cargo[hashStr(a.id) % cargo.length], b.t, b.across - b.acrossSize / 2 - 0.2, b.h * 0.55, Math.min(b.along * 0.8, 60), b.h * 0.6);
-      }
+      } else if (b.kind === 'cargo') Cargo3D.building(a, b, rec, at, tex, lambert, id);
     }
   },
 
@@ -1254,12 +1250,19 @@ function makeGroundCanvas(a, id, ch) {
   for (const road of landsideRoads(a)) asphalt(line(road), 20, '#4a4d50');
   // the kerb in front of the doors
   g.fillStyle = '#b9b6ad'; rect(r.t0, r.t1, L.TERMINAL + 30, L.TERMINAL + 40);
-  // the car park
+  // the car park (along the terminals; behind the cargo building the truck park, its trailers
+  // are geometry: cargo3d.js)
   const c0 = roadA + 16, c1 = Math.min(aMax - 30, roadA + 130);
-  g.fillStyle = '#56595c'; rect(r.t0 - 60, r.t1 - 10, c0, c1);
+  g.fillStyle = '#56595c'; rect(r.t0 - 60, a.paxT1 - 10, c0, c1);
   const carCols = ['#c8ccd0', '#2b2f33', '#8a1d1d', '#1d3f78', '#e6e6e6', '#6b6f73', '#2e5a3a', '#b5a27a'];
+  g.fillStyle = '#5c5f61'; rect(a.cargoT0, r.t1 - 10, c0, c0 + 50);
+  g.fillStyle = 'rgba(240,240,235,0.75)';
+  for (let t = a.cargoT0 + 5.8; t < r.t1 - 12; t += 4.4) { rect(t, t + 0.25, c0 + 1, c0 + 17); rect(t, t + 0.25, c0 + 29, c0 + 45); }
+  // the truck yard by the cargo building's dock doors, open to the road
+  const y = a.cargoYard;
+  g.fillStyle = '#7e8183'; rect(y.t0, y.t1, y.a0, roadA - 8);
   for (let row = c0 + 3; row + 11 < c1; row += 26) {
-    for (let t = r.t0 - 56; t < r.t1 - 14; t += 2.7) {
+    for (let t = r.t0 - 56; t < a.paxT1 - 14; t += 2.7) {
       g.fillStyle = 'rgba(240,240,235,0.75)';
       rect(t, t + 0.25, row, row + 5); rect(t, t + 0.25, row + 6, row + 11);
       for (const off of [0.4, 6.4]) if (rng.chance(0.62)) { g.fillStyle = rng.pick(carCols); rect(t + 0.5, t + 2.3, row + off, row + off + 4.4); }
@@ -1280,7 +1283,7 @@ function makeGroundCanvas(a, id, ch) {
 
   // pads in front of the hangars, joined to the parallel taxiway
   for (const b of a.buildings) {
-    if (b.kind !== 'hangar' && b.kind !== 'warehouse' && b.kind !== 'fuel') continue;
+    if (b.kind !== 'hangar' && b.kind !== 'fuel') continue;
     g.fillStyle = '#8c8f90';
     rect(b.t - b.along / 2 - 6, b.t + b.along / 2 + 6, L.TWY_OFFSET + 40, b.across - b.acrossSize / 2);
     rect(b.t - 12, b.t + 12, L.TWY_OFFSET, L.TWY_OFFSET + 40);

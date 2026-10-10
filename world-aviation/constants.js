@@ -240,14 +240,22 @@ const LAYOUT = {
   GATE_SPACING: 80,
   TERMINAL_GAP: 70,            // between two terminals of a big airport, along the apron
   // the terminals and their stands by the airport's size and its runway, from one terminal with
-  // one stand to three with five each: [the runway at least (m), terminals, stands in each]
+  // one stand to three with five each, and the freight stands past them (C1 ...: a big airport's
+  // cargo terminal with two to five, the cargo apron of a smaller one with one or two):
+  // [the runway at least (m), terminals, stands in each, cargo stands]
   // (the last row whose runway length the airport's runway reaches)
   TERMINAL_PLANS: {
-    tiny: [[0, 1, 1]],
-    small: [[0, 1, 2]],
-    medium: [[0, 1, 3], [3000, 1, 4]],
-    big: [[0, 2, 3], [3300, 3, 3], [3600, 3, 4], [3900, 3, 5]]
+    tiny: [[0, 1, 1, 1]],
+    small: [[0, 1, 2, 1]],
+    medium: [[0, 1, 3, 1], [3000, 1, 4, 2]],
+    big: [[0, 2, 3, 2], [3300, 3, 3, 3], [3600, 3, 4, 4], [3900, 3, 5, 5]]
   },
+  // the cargo stands lie past the passenger ones, this much further on than the usual stand
+  // spacing (GATE_SPACING), so the cargo terminal or shed stands apart from the terminal
+  CARGO_GAP: { big: 90, medium: 140, small: 140, tiny: 140 },
+  // ... and stand further apart (the freighters are wide, and an A380 turning in to one must
+  // clear a 747-8F parked at the next)
+  CARGO_SPACING: 95,
   LANE_MAX_STANDS: 2,          // a lane off the taxiway into the apron at least every this many stands
   LANE_SNAP_M: 50,             // a lane this near a runway exit along the taxiway meets it at the exit (or
                                // moves this far from it)
@@ -299,6 +307,16 @@ const PARKED_TYPES = {
   small: ['CRJ200', 'AT76', 'B1900D', 'F27F'],
   tiny: ['B1900D', 'DHC6']
 };
+// ... and the freighters at the cargo stands (a cargo carrier's paint)
+const PARKED_CARGO_TYPES = {
+  big: ['B748F', 'B763F', 'B763F', 'B748F', 'B763F'],
+  medium: ['B763F', 'F27F'],
+  small: ['F27F', 'AT76'],
+  tiny: ['F27F', 'B1900D']
+};
+// the building behind the cargo stands by the airport's size: [height, depth across] in metres —
+// a big airport's cargo terminal, a smaller one's cargo shed; its apron front on the terminals'
+const CARGO_BUILDING = { big: [18, 60], medium: [13, 44], small: [11, 40], tiny: [10, 36] };
 
 // ---------- Collisions (sim/collide.js) ----------
 // the own aeroplane against the buildings and the parked aeroplanes of the nearest airport
