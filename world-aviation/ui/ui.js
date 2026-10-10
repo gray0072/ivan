@@ -704,7 +704,7 @@ const UI = {
       [fx.fbw, tr('Fly-by-wire jets — the Embraer E195-E2 and the Airbus A220-300')],
       [fx.widebody, tr('Widebody procedures — the Airbus A350-900, the Boeing 777-300ER and the Airbus A380')],
       [fx.etops, tr('ETOPS — the Airbus A330-300 and the Boeing 787-9, and +10 % on long legs in a twin')],
-      [fx.outsize, tr('Outsize cargo — the Antonov An-124 onto gravel and ice, and the Airbus Beluga')],
+      [fx.outsize, tr('Outsize cargo — the Antonov An-124 onto gravel and ice, the Airbus Beluga and the BelugaXL')],
       [fx.remote, tr('Remote strips and ice fields for every type')],
       [Career.mriyaDone(), tr('The An-225 Mriya — built again with your own hands')]
     ];

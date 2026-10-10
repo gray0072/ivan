@@ -486,6 +486,21 @@ const AircraftModels = {
       }
       this.titles(g, al, W, H, L, d.radius, !!look.freighter, dd);
     }
+    if (look.face) {
+      // the BelugaXL's smile under the cockpit windows, its corner curling up at the back
+      g.strokeStyle = lv ? lv.title : color; g.lineCap = 'round';
+      g.lineWidth = Math.max(2, 0.28 * H / (TAU * d.radius));
+      for (const s of [1, -1]) {
+        g.beginPath();
+        for (let i = 0; i <= 24; i++) {
+          const t = i / 24, x = W * (1 - FACE_SMILE[0] - (FACE_SMILE[1] - FACE_SMILE[0]) * t);
+          const a = 112 - 6 * t - 16 * Math.pow(t, 6);
+          const y = yAt(s > 0 ? a : 360 - a);
+          if (i) g.lineTo(x, y); else g.moveTo(x, y);
+        }
+        g.stroke();
+      }
+    }
     // passenger windows
     if (!look.freighter) {
       g.fillStyle = '#1d2733';
@@ -544,6 +559,18 @@ const AircraftModels = {
     g.fillRect(W * (1 - BUBBLE_DOOR), 0, 2, H);
     const R = d.radius * look.bubble;
     this.titles(g, al || { livery: lv, title: 'BELUGA' }, W, H, L, R, true, false, R * 0.6);
+    if (look.face) {
+      // the eyes: dark blue under a lid, a light in each, looking ahead
+      const ex = W * (1 - FACE_EYE), rx = 1.0 * W / L, ry = yAt(14);
+      for (const a of [FACE_EYE_DEG, 360 - FACE_EYE_DEG]) {
+        const ey = yAt(a);
+        g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(ex, ey, rx * 1.25, ry * 1.2, 0, 0, TAU); g.fill();
+        g.fillStyle = lv.title; g.beginPath(); g.ellipse(ex + rx * 0.2, ey, rx, ry, 0, 0, TAU); g.fill();
+        g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(ex + rx * 0.5, ey - ry * (a < 180 ? 0.35 : -0.35), rx * 0.28, ry * 0.28, 0, 0, TAU); g.fill();
+        g.strokeStyle = lv.title; g.lineWidth = Math.max(2, ry * 0.18);
+        g.beginPath(); g.ellipse(ex, ey, rx * 1.3, ry * 1.3, 0, a < 180 ? Math.PI * 1.1 : Math.PI * 0.1, a < 180 ? Math.PI * 1.9 : Math.PI * 0.9); g.stroke();
+      }
+    }
     const tex = paintedTexture(cv);
     this.liveries.set(key, tex);
     return tex;
@@ -705,7 +732,10 @@ const BUBBLE_FRONT = 0.05;    // its front tip, on the cockpit roof behind the w
 const BUBBLE_FULL = 0.25;     // full section from here back
 const BUBBLE_REAR = 0.54;     // the roof starts down here (over the wing's trailing edge)
 const BUBBLE_END = 0.99;      // and it ends here, under the fin
-const BUBBLE_DOOR = 0.155;    // the seam of the door round the front (on the livery)
+const BUBBLE_DOOR = 0.22;     // the seam of the door round the front (on the livery)
+const FACE_EYE = 0.12;        // the BelugaXL's eyes on the hold's forehead (look.face) ...
+const FACE_EYE_DEG = 68;      // ... this far round from the top
+const FACE_SMILE = [0.015, 0.085];   // its smile under the cockpit windows, from near the nose back to the corner
 function bubbleRing(L, R, k, z) {
   const sec = bubbleSection(R, k);
   const zF = L / 2 - L * BUBBLE_FRONT, zFull = L / 2 - L * BUBBLE_FULL;

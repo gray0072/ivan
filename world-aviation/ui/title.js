@@ -12,7 +12,7 @@
 // ============================================================
 
 // the showcase: [aircraft id, airline code]
-const TITLE_HEROES = [['A359', 'SK'], ['A388', 'EK'], ['B789', 'QF'], ['B748F', 'CV'], ['B77W', 'LH'], ['A333', 'FI'], ['A3ST', 'BGA']];
+const TITLE_HEROES = [['A359', 'SK'], ['A388', 'EK'], ['B789', 'QF'], ['B748F', 'CV'], ['B77W', 'LH'], ['A333', 'FI'], ['A3XL', 'BGA']];
 const TITLE_HERO_S = 9;            // seconds each aeroplane stays
 const TITLE_FADE_S = 1.6;          // the change-over
 

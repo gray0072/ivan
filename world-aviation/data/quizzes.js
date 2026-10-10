@@ -81,7 +81,7 @@ const COURSE_TEXT = {
     paxetops: ['ETOPS и полёты над океаном', 'Два двигателя над океаном: время до запасного аэродрома, запасные аэродромы, снижение на одном двигателе и топливо на худший случай.',
       'Открывает Airbus A330-300 и Boeing 787-9; +10% к оплате рейсов длиннее 1 500 nm на двухдвигательном реактивном.'],
     cargo5: ['Негабаритные грузы', 'Турбины, вертолёты, локомотивы и крылья самолётов: поднимающийся нос Ан-124, «приседающее» шасси и потолочные краны, дверь Beluga над кабиной и крепление грузов, которые больше никуда не влезают.',
-      'Открывает Антонов Ан-124 «Руслан» (120 тонн на длинные гравийные и ледовые полосы) и Airbus Beluga (секции самолётов для Airbus).']
+      'Открывает Антонов Ан-124 «Руслан» (120 тонн на длинные гравийные и ледовые полосы), Airbus Beluga и BelugaXL (секции самолётов для Airbus).']
   },
   sv: {
     gen1: ['Grundutbildning', 'Grundläggande teori, flygplanshantering och standardrutinerna hos ett litet flygbolag. Alla börjar här.',
@@ -123,7 +123,7 @@ const COURSE_TEXT = {
     paxetops: ['ETOPS och havsöverfarter', 'Två motorer över havet: tid till alternativ flygplats, alternativen, nedglidning på en motor och bränsle för värsta fallet.',
       'Låser upp Airbus A330-300 och Boeing 787-9; +10 % betalt för sträckor över 1 500 nm med tvåmotoriga jetplan.'],
     cargo5: ['Överdimensionerad frakt', 'Turbiner, helikoptrar, lok och flygplansvingar: An-124:ans uppfällbara nos, landställ som "knäböjer" och takkranar, Belugans dörr över cockpit och surrning av laster som inte får plats någon annanstans.',
-      'Låser upp Antonov An-124 Ruslan (120 ton till långa grus- och isbanor) och Airbus Beluga (flygplanssektioner åt Airbus).']
+      'Låser upp Antonov An-124 Ruslan (120 ton till långa grus- och isbanor), Airbus Beluga och BelugaXL (flygplanssektioner åt Airbus).']
   }
 };
 
@@ -798,6 +798,12 @@ const QUIZZES = {
       ru: ['Beluga везёт пару крыльев A350. Что заполняется первым?', 'Объём отсека — груз большой, но лёгкий', 'Топливные баки', 'Предел по весу — крылья сделаны из свинца',
         'Негабарит скорее объёмный, чем тяжёлый, а огромный фюзеляж — парус при боковом ветре: у Beluga ограничение ниже, чем у A300.'],
       sv: ['En Beluga lastar ett par A350-vingar. Vad tar slut först?', 'Lastrummets volym — lasten är stor men lätt', 'Bränsletankarna', 'Viktgränsen — vingar är gjorda av bly',
-        'Överdimensionerat gods är skrymmande snarare än tungt, och den stora kroppen är ett segel i sidvind: Belugans gräns är lägre än A300:ans.'] }
+        'Överdimensionerat gods är skrymmande snarare än tungt, och den stora kroppen är ett segel i sidvind: Belugans gräns är lägre än A300:ans.'] },
+    { en: ['Why did Airbus build the BelugaXL on the A330?', 'Its wider hold takes both wings of an A350 at once — the Beluga only one', 'To fly passengers on the upper deck', 'Because the A300 could not be painted with a smile',
+      'An A350 wing is too big for two to fit in the Beluga\'s hold; the XL\'s is a metre wider and six metres longer.'],
+      ru: ['Зачем Airbus построил BelugaXL на базе A330?', 'В его более широкий отсек входят оба крыла A350 сразу, а в Beluga — только одно', 'Чтобы возить пассажиров на верхней палубе', 'Потому что на A300 нельзя нарисовать улыбку',
+        'Два крыла A350 не помещаются в отсек Beluga; у XL он на метр шире и на шесть метров длиннее.'],
+      sv: ['Varför byggde Airbus BelugaXL på A330?', 'Dess bredare lastrum tar båda vingarna till en A350 på en gång — Belugan bara en', 'För att flyga passagerare på övre däcket', 'För att man inte kunde måla ett leende på A300',
+        'Två A350-vingar får inte plats i Belugans lastrum; XL:ens är en meter bredare och sex meter längre.'] }
   ]
 };

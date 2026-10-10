@@ -607,7 +607,8 @@ const AIRCRAFT = [
     // (wings, fuselage sections, helicopters) fill the hold long before they reach its weight. The
     // big body is drag in the cruise and a sail in a crosswind. It flies only for its operator,
     // Airbus Beluga Transport, and only in its paint (`operator`, data/airlines.js), carrying
-    // aircraft sections between the Airbus plants and outsize freight for hire (`loads`).
+    // aircraft sections between the Airbus plants and outsize freight for hire (`loads`); the
+    // BelugaXL (below) took over most of the sections.
     // dims.fus is the A300's lower lobe; look.bubble the hold's width over it (7.7 m outside).
     id: 'A3ST', name: 'Airbus A300-600ST Beluga', klass: 'Outsize freighter', branch: 'cargo', operator: 'BGA',
     blurb: 'Airbus\'s flying whale: an A300\'s wing and cockpit under a hold 7 metres across, the whole front of it swinging up over the cockpit. It carries wings and fuselage sections between the Airbus plants — light, but too big for anything else.',
@@ -652,6 +653,35 @@ const AIRCRAFT = [
     rent: 17100, price: 0, bonus: 1.3, unlock: 'cargo4',
     dims: { len: 54.94, span: 47.57, fus: 5.03 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 31, freighter: true },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
+    // The Beluga's successor, flying since 2019: an A330-200's wing, Trent 700s, lower fuselage and
+    // cockpit under a hold 8 m across and 6 m longer than the ST's, with the smile of a whale
+    // painted on (look.face). Real figures: 63.1 m long, 60.3 m span, 18.9 m tall, 361.6 m² of
+    // wing, 227 t at take-off, 127.5 t empty, 51 t of payload, two Trent 772B of 316 kN, Mach
+    // 0.69, 4 000 km with 40 t. Flown for Airbus alone: the sections of its own aircraft between
+    // its plants (the STs fly outsize freight for hire too).
+    id: 'A3XL', name: 'Airbus BelugaXL', klass: 'Outsize freighter', branch: 'cargo', operator: 'BGA',
+    blurb: 'The bigger whale, with a smile painted on: an A330\'s wing and cockpit under a hold 8 metres wide, built to carry both wings of an A350 at once between the Airbus plants.',
+    seats: 2, payloadKg: 51000, mtow: 227000, emptyKg: 127500,
+    engines: 2, engineType: 'jet', thrust: 632000,
+    wingArea: 361.6, clMaxClean: 1.35, clMaxFlap: 2.0, cd0: 0.029, kInd: 0.039,
+    cruiseAlt: 9800, cruiseTas: 420, climbRate: 8,
+    fuelCapKg: 100000, fuelFlowCruise: 3000, fuelFlowIdle: 240,
+    vne: 450, vr: 145, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.006, vfe: 240 },
+      { notch: 2, cl: 0.26, cd: 0.018, vfe: 215 },
+      { notch: 3, cl: 0.46, cd: 0.038, vfe: 196 },
+      { notch: 4, cl: 0.64, cd: 0.068, vfe: 186 },
+      { notch: 5, cl: 0.80, cd: 0.118, vfe: 180 }
+    ],
+    gearCd: 0.024, rollRate: 0.66, pitchRate: 0.5, yawRate: 0.6,
+    takeoffDist: 2400, crosswindLimit: 25, maxRangeNm: 2200, surfaces: ['asphalt'],
+    rent: 24500, price: 0, bonus: 1.38, unlock: 'cargo5', loads: ['parts'],
+    dims: { len: 63.1, span: 60.3, fus: 5.64 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#ffffff', color: '#00205b', sweep: 30, fan: 0.52, winglets: true, bubble: 1.56, tailFins: true, mainRows: 2, face: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
   },
   {
@@ -944,7 +974,7 @@ const COURSES = [
     effect: 'Unlocks the Boeing 767-300F, the Boeing 747-8F and ultra-long contracts.', course: 'cargo' },
   { id: 'cargo5', branch: 'cargo', tier: 5, name: 'Outsize Cargo', cost: 48000, requires: ['cargo4'], flights: 48, rep: 80,
     blurb: 'Turbines, helicopters, locomotives and aircraft wings: the An-124\'s lifting nose, kneeling gear and roof cranes, the Beluga\'s door over the cockpit, and tie-downs for loads that fit nothing else.',
-    effect: 'Unlocks the Antonov An-124 Ruslan (120 tonnes onto long gravel and ice runways) and the Airbus Beluga (aircraft sections for Airbus).', course: 'cargo' },
+    effect: 'Unlocks the Antonov An-124 Ruslan (120 tonnes onto long gravel and ice runways), the Airbus Beluga and the BelugaXL (aircraft sections for Airbus).', course: 'cargo' },
   // Bush & SAR
   { id: 'bush1', branch: 'bush', tier: 1, name: 'Short Field Ops', cost: 2000, requires: ['gen1'], flights: 4, rep: 0,
     blurb: 'Take-off and landing in half the distance, on grass, gravel and sand.',
