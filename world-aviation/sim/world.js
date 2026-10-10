@@ -45,7 +45,7 @@ const World = {
   meta(def) {
     const hdgDeg = (def.rwy * 10) % 360;
     // the terminals and their stands by the airport's size and runway (LAYOUT.TERMINAL_PLANS):
-    // from one terminal with one stand (tiny) to three terminals of three (big, a long runway)
+    // from one terminal with one stand (tiny) to three terminals of five (big, a long runway)
     let plan = null;
     for (const p of LAYOUT.TERMINAL_PLANS[def.terminal] || LAYOUT.TERMINAL_PLANS.small) if (def.rwyLen >= p[0] || !plan) plan = p;
     const terminals = plan[1], gatesPerTerminal = plan[2];

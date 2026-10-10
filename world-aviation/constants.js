@@ -192,13 +192,13 @@ const LAYOUT = {
   GATE_SPACING: 80,
   TERMINAL_GAP: 70,            // between two terminals of a big airport, along the apron
   // the terminals and their stands by the airport's size and its runway, from one terminal with
-  // one stand to three with three each: [the runway at least (m), terminals, stands in each]
+  // one stand to three with five each: [the runway at least (m), terminals, stands in each]
   // (the last row whose runway length the airport's runway reaches)
   TERMINAL_PLANS: {
     tiny: [[0, 1, 1]],
     small: [[0, 1, 2]],
     medium: [[0, 1, 3], [3000, 1, 4]],
-    big: [[0, 2, 2], [3200, 3, 2], [3800, 3, 3]]
+    big: [[0, 2, 3], [3300, 3, 3], [3600, 3, 4], [3900, 3, 5]]
   },
   LANE_MAX_STANDS: 2,          // a lane off the taxiway into the apron at least every this many stands
   LANE_SNAP_M: 50,             // a lane this near a runway exit along the taxiway meets it at the exit (or
