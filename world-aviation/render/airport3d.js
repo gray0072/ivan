@@ -282,6 +282,9 @@ const Airport3D = {
   buildLights(a, rec, at) {
     const pos = [], col = [];
     const add = (t, across, y, c) => { pos.push(across, y, -t); col.push(c[0], c[1], c[2]); };
+    // the taxiway lights in a set of their own: on from dusk and in poor visibility only (update)
+    const twyPos = [], twyCol = [];
+    const addTwy = (t, across, y, c) => { twyPos.push(across, y, -t); twyCol.push(c[0], c[1], c[2]); };
     const W = [1, 0.97, 0.86], Y = [1, 0.8, 0.25], R = [1, 0.12, 0.08], G = [0.2, 1, 0.35], B = [0.25, 0.45, 1];
     const h = a.half, e = RWY_HALF_WIDTH + 1.2;
     // runway edge lights every 60 m, yellow over the last 600 m; centreline every 30 m
@@ -300,7 +303,7 @@ const Airport3D = {
       const nt = (q.t - p.t) / len, na = (q.across - p.across) / len;
       for (let d = 15; d < len - 15; d += 40) for (const sd of [-1, 1]) {
         const across = p.across + na * d + nt * sd * (s.w / 2 + 1);
-        if (Math.abs(across) > RWY_HALF_WIDTH + 6) add(p.t + nt * d - na * sd * (s.w / 2 + 1), across, 0.35, B);
+        if (Math.abs(across) > RWY_HALF_WIDTH + 6) addTwy(p.t + nt * d - na * sd * (s.w / 2 + 1), across, 0.35, B);
       }
     }
     // green taxiway centreline lights, every 30 m, round the curves too
@@ -312,7 +315,7 @@ const Airport3D = {
         let d = carry;
         for (; d < len; d += 30) {
           const t = p[0] + (q[0] - p[0]) * d / len, ac = p[1] + (q[1] - p[1]) * d / len;
-          if (Math.abs(ac) > RWY_HALF_WIDTH + 4) add(t, ac, 0.25, Gc);
+          if (Math.abs(ac) > RWY_HALF_WIDTH + 4) addTwy(t, ac, 0.25, Gc);
         }
         carry = d - len;
       }
@@ -328,6 +331,15 @@ const Airport3D = {
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     const mat = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: false, vertexColors: true, fog: false });
     rec.lights = at(new THREE.Points(geo, mat), 0, 0);
+    if (twyPos.length) {
+      const tgeo = new THREE.BufferGeometry();
+      tgeo.setAttribute('position', new THREE.Float32BufferAttribute(twyPos, 3));
+      tgeo.setAttribute('color', new THREE.Float32BufferAttribute(twyCol, 3));
+      rec.twyLights = at(new THREE.Points(tgeo, new THREE.PointsMaterial({
+        size: 2.6, sizeAttenuation: false, vertexColors: true, fog: false, transparent: true, opacity: 0, depthWrite: false
+      })), 0, 0);
+      rec.twyLights.visible = false;
+    }
 
     // the sequenced flasher ("the rabbit") running towards the threshold
     const fgeo = new THREE.BufferGeometry();
@@ -865,6 +877,15 @@ const Airport3D = {
     const seen = far < Math.max(5000, (vis || 20000) * 2.5);
     for (const p of [rec.lights, rec.flasher, rec.papiPoints]) if (p) p.visible = seen;
     if (rec.lights) rec.lights.material.size = 2.6 + 1.4 * (dark || 0);
+    // the taxiway lights (blue edges, green centrelines) are switched on from dusk and in poor
+    // visibility, as at a real airfield; on a clear day they are off (bright dots on the grass
+    // in the sunshine looked out of place)
+    if (rec.twyLights) {
+      const m = rec.twyLights.material;
+      m.opacity = Math.max(smoothstep(0.08, 0.4, dark || 0), 1 - smoothstep(1500, 5000, vis || 20000));
+      m.size = 2.6 + 1.4 * (dark || 0);
+      rec.twyLights.visible = seen && m.opacity > 0.02;
+    }
     // the wind in the airport's frame: x across, z = -t
     const wx = wind.x * a.perX + wind.z * a.perZ;
     const wz = -(wind.x * a.dirX + wind.z * a.dirZ);

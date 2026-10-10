@@ -292,16 +292,13 @@ const UI = {
     if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
 
-  // what a tab shows next to its name: the hangar counts the types you may lease (and gets the
-  // gold dot too while a type a course has unlocked waits to be seen); training and the network
-  // get a gold dot when there is something you can do there right now
+  // what a tab shows next to its name: a gold dot when there is something new or something you
+  // can do there right now (the hangar: a type a course has unlocked waits to be seen)
   tabBadge(t) {
     if (t === 'hangar') {
-      const n = AIRCRAFT.filter((a) => Career.unlocked(a)).length;
       const fresh = Career.newAircraft();
-      const count = '<span class="tabCount">' + n + '</span>';
-      if (fresh.length) return { html: count + '<i class="tabDot"></i>', title: tr('New in the hangar: {list}', { list: fresh.map((a) => a.name).join(', ') }) };
-      return { html: count, title: tr('Aircraft types available: {n} of {m}', { n, m: AIRCRAFT.length }) };
+      if (fresh.length) return { html: '<i class="tabDot"></i>', title: tr('New in the hangar: {list}', { list: fresh.map((a) => a.name).join(', ') }) };
+      return null;
     }
     if (t === 'training' && COURSES.some((c) => Career.courseState(c).available && Career.canAfford(c))) {
       return { html: '<i class="tabDot"></i>', title: tr('A course is open to you') };

@@ -26,6 +26,13 @@ const Cockpit = {
   // a touch screen held upright (the panel, the buttons and the HUD lay out differently)
   portrait(w, h) { return Input.isCoarse && h > w; },
 
+  // how wide the window pillars at the sides are (thin on a phone held upright, where the view
+  // is narrow enough already): the windscreen ends there
+  pillarW(w, h) {
+    const wide = w > 900, frame = 0.055 * h + (wide ? 26 : 12);
+    return wide ? frame * 0.85 : this.portrait(w, h) ? frame * 0.2 : frame * 0.55;
+  },
+
   // where the centre window post is on the screen: the captain's eye is VIEW.COCKPIT_SEAT_X to
   // the left of it and VIEW.CENTRE_POST_AHEAD in front, seen through the camera's field of view
   postX(w, h) {
@@ -61,8 +68,8 @@ const Cockpit = {
     ctx.lineTo(w, top + 14); ctx.lineTo(0, top + 14);
     ctx.closePath(); ctx.fill();
 
-    // A-pillars (thin on a phone held upright, where the view is narrow enough already)
-    const pillarW = wide ? frame * 0.85 : this.portrait(w, h) ? frame * 0.2 : frame * 0.55;
+    // A-pillars
+    const pillarW = this.pillarW(w, h);
     ctx.fillStyle = '#1b2027';
     ctx.fillRect(0, 0, pillarW, top + 12);
     ctx.fillRect(w - pillarW, 0, pillarW, top + 12);

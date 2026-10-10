@@ -8,8 +8,8 @@
 // lights. Everything is vector-drawn so it stays sharp at any size.
 // ============================================================
 
-// on a phone the touch thrust lever (#throttleZone in styles.css: 62 px wide, 8 px from the
-// edge) covers the right edge of the panel: the gauges keep out of this many pixels
+// on a touch screen the thrust lever (#throttleZone in styles.css: 62 px wide, 8 px from the
+// edge) stands on the right edge of the panel: the gauges keep out of this many pixels
 const PHONE_THROTTLE_W = 78;
 // held upright the round gauges are this share of the size that would fill the panel's width
 const PHONE_UPRIGHT_GAUGES = 0.8;
@@ -28,11 +28,14 @@ const Instruments = {
     return Math.min((w - PHONE_THROTTLE_W - 6) / 4.3, (Math.min(h * 0.42, 360) - 36) / 4.3, 92) * PHONE_UPRIGHT_GAUGES;
   },
 
+  // a phone or a small window: no engine gauges and no heading strip, the configuration smaller
+  compact(w, h) { return w < 760 || h < 560; },
+
   draw(ctx, w, h, dpr, fl, sys) {
     if (this.hidden) return;
     this.ctx = ctx; this.w = w; this.h = h; this.dpr = dpr;
     const st = fl.st, ac = fl.ac;
-    const compact = w < 760 || h < 560;
+    const compact = this.compact(w, h);
     const top = Cockpit.panelTop(h);
     const panelH = h - top;
     ctx.save();
@@ -53,8 +56,9 @@ const Instruments = {
     // right, the round gauges in a row in the space between
     const y = top + panelH * 0.52;
     if (!compact) {
+      // (on a tablet the configuration moves left of the thrust lever)
       const engW = 160, cfgW = 160;
-      const cfgX = w - 12 - cfgW;
+      const cfgX = w - 12 - cfgW - (Input.isCoarse ? PHONE_THROTTLE_W - 8 : 0);
       const c0 = 12 + engW + 10, c1 = cfgX - 10;
       const cx = (c0 + c1) / 2;
       const r = Math.min(panelH * 0.4, (c1 - c0) / 8.96, 100);
@@ -80,16 +84,16 @@ const Instruments = {
       this.alt(ctx, cx - d, cy + d, r, fl);
       this.vsi(ctx, cx + d, cy + d, r, fl);
     } else if (Input.isCoarse) {
-      // a phone on its side: the thrust lever on the right edge, so no VSI (the climb rate is a
-      // number next to the altimeter), and the configuration keeps what the buttons do not show
+      // a phone on its side: the four gauges in a row between the configuration (what the
+      // buttons do not show) and the thrust lever on the right edge
       const cfgW = 124;
       const c0 = 6 + cfgW + 6, c1 = w - PHONE_THROTTLE_W;
-      const r = Math.min(panelH * 0.43, (c1 - c0) / 7.3, 90);
-      const cx = c0 + (c1 - c0) / 2 - 0.48 * r;
-      this.asi(ctx, cx - 2.1 * r, y, r, fl);
-      this.adi(ctx, cx, y, r, fl);
-      this.alt(ctx, cx + 2.1 * r, y, r, fl);
-      this.vsBox(ctx, cx + 3.6 * r, y, r * 0.95, fl);
+      const r = Math.min(panelH * 0.43, (c1 - c0) / 8.6, 90), s = 2.1 * r;
+      const cx = (c0 + c1) / 2;
+      this.asi(ctx, cx - 1.5 * s, y, r, fl);
+      this.adi(ctx, cx - 0.5 * s, y, r, fl);
+      this.alt(ctx, cx + 0.5 * s, y, r, fl);
+      this.vsi(ctx, cx + 1.5 * s, y, r, fl);
       this.config(ctx, 6, top + 6, cfgW, panelH - 12, fl, sys, true);
     } else {
       // a small window on a computer
@@ -624,26 +628,6 @@ const Instruments = {
       ctx.textAlign = 'left';
       ctx.fillText(value, cx + 2, y + h / 2);
     });
-    ctx.restore();
-  },
-
-  // the climb rate as a number, where a phone on its side has no room for the VSI
-  vsBox(ctx, x, y, r, fl) {
-    const metric = Units.metric;
-    const v = metric ? Math.round(fl.st.vs * 10) / 10 : Math.round(fl.st.vs / FPM / 10) * 10;
-    const w = r * 0.9, h = r * 0.62;
-    ctx.save();
-    ctx.fillStyle = 'rgba(5,7,10,0.88)';
-    ctx.strokeStyle = '#4c5561';
-    ctx.lineWidth = 1;
-    roundRect(ctx, x - w / 2, y - h / 2, w, h, 4); ctx.fill(); ctx.stroke();
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#8d99a6';
-    ctx.font = '600 ' + Math.max(8, Math.round(r * 0.15)) + 'px system-ui, sans-serif';
-    ctx.fillText('V/S ' + (metric ? 'm/s' : 'fpm'), x, y - h * 0.25);
-    ctx.fillStyle = Math.abs(v) < (metric ? 0.5 : 100) ? '#dfe7ee' : '#7de08a';
-    ctx.font = '700 ' + Math.max(9, Math.round(r * 0.22)) + 'px ui-monospace, monospace';
-    ctx.fillText((v > 0 ? '↑' : v < 0 ? '↓' : '') + Math.abs(v), x, y + h * 0.18);
     ctx.restore();
   },
 

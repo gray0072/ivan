@@ -196,10 +196,10 @@ const Game = {
   // The ILS, shown so that it reads at a glance: the localiser scale (magenta) carries a
   // little runway that sits where the runway is, the glideslope scale (cyan) a triangle that
   // sits where the glide path is, and a line of plain words says what to do. Off the view
-  // ahead: on a desktop on the right, past the centre window post (on the left while the
-  // checklist fills the right side), and so on a tablet on its side, clear of the throttle slider
-  // and under the buttons; on a phone high in the middle, between the buttons, at half the size
-  // and without the words (the scales say it, and the view needs the room).
+  // ahead, at the right edge of the windscreen (on a desktop on the left while the checklist
+  // fills the right side): the glide path scale as far from the window pillar as the whole is
+  // from the panel on a phone; on a tablet under the buttons, held upright above the heading
+  // strip. On a phone at three quarters of the size and without the words (the scales say it, and the view needs the room).
   // The landing aid setting turns it off.
   drawIls(ctx, w, h, fl) {
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
@@ -212,33 +212,40 @@ const Game = {
     const top = Cockpit.panelTop(h);
     const inside = this.camMode === 'cockpit';
     const side = !Input.isCoarse, upright = Cockpit.portrait(w, h);
-    const phone = Input.isCoarse && Math.min(w, h) < 600, k = phone ? 0.5 : 1;     // the symbols' scale
+    const phone = Input.isCoarse && Math.min(w, h) < 600;
+    const k = phone ? 0.75 : 1;                       // the symbols' scale
     const R = (side ? Math.min(90, w * 0.08) : upright ? w * 0.1 : Math.min(110, w * 0.12)) * k;
     const V = (upright ? 40 : Math.min(70, h * 0.1)) * k;
-    let cx = inside ? w / 2 : w - R - 110, cy = inside ? top * 0.5 : top * 0.56;
-    if (upright) {
-      // a phone held upright: on the right, just above the panel, clear of the prompt on the left
-      cx = w * 0.72;
-      cy = top - V - 34;
-    } else if (side) {
-      const cb = el('checklist'), qrh = cb && !cb.hidden;
-      cy = top * 0.56;
-      // the glide path scale and its label reach about R + 70 to the right of the centre
-      cx = qrh ? R + 70 : Math.min(w - R - 80, Math.max(inside ? Cockpit.postX(w, h) + R + 70 : 0, w - R - 110));
-    } else if (Math.min(w, h) >= 600) {
-      // a tablet on its side: on the right as on a desktop, clear of the throttle slider on the
-      // right edge and under the buttons in the top right corner
-      cx = Math.min(w - R - 80 - 70, Math.max(inside ? Cockpit.postX(w, h) + R + 70 : 0, w - R - 110 - 70));
+    // how far the whole reaches right of the glide path scale (its triangle; and its label but on
+    // a phone) and below the localiser scale (its runway; and the two lines of words but on a phone)
+    ctx.font = '700 11px system-ui, sans-serif';
+    const right = phone ? 13 * k : Math.max(13, ctx.measureText(tr('GLIDE PATH')).width / 2 + 4);
+    const below = phone ? 12 * k : 47;
+    // the gap to the window pillar on the right and to the glareshield below (it rises about
+    // 10 px over the panel's top out there)
+    const gap = phone ? 14 : 20, edge = (inside ? w - Cockpit.pillarW(w, h) : w) - gap, floor = top - 10 - gap;
+    let gx = edge - right;
+    let cy = inside ? top * 0.5 : top * 0.56;
+    if (side) {
+      // a computer: on the left while a QRH checklist fills the right side
+      const cb = el('checklist');
+      if (cb && !cb.hidden) gx = 2 * R + 70 + 18;
+    } else if (phone) {
+      // a phone: just above the panel, under the buttons on its side
+      cy = floor - below - 16 * k - V;
+    } else if (upright) {
+      // a tablet held upright: above the heading strip and its window (about 60 px over the
+      // panel), where the panel has them
+      cy = (Instruments.compact(w, h) ? floor : top - 62) - below - 16 - V;
+    } else {
+      // a tablet on its side: under the buttons in the top right corner
       cy = Math.max(top * 0.56, (HUD.buttonsH || 170) + V + 40);
-    } else if (inside) {
-      // a phone on its side: between the left column (strip and prompt) and the buttons
-      const left = Math.min(300, w * 0.34) + 20, right = w - (HUD.buttonsW || 232) - 16;
-      cx = (left + right) / 2;
     }
+    const cx = gx - 18 * k - R;
     const LOC = '#e65cf0', GS = '#4fd8ff';
     const loc = clamp(-d.locDeg / 2.5, -1, 1);       // + : the runway is to the right
     const gs = clamp(-d.gsDeg / 0.7, -1, 1);         // + : the glide path is above you
-    const ly = cy + V + 16 * k, gx = cx + R + 18 * k;
+    const ly = cy + V + 16 * k;
     ctx.save();
     // dark outlines instead of a panel: the colours read against a bright sky, the view stays open
     ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
@@ -286,17 +293,19 @@ const Game = {
     ctx.font = '700 12px system-ui, sans-serif';
     const both = Math.abs(d.locDeg) < 0.6 && Math.abs(d.gsDeg) < 0.25;
     // the words stay on the screen however long they are in the game's language
-    const at = (t) => clamp(cx, ctx.measureText(t).width / 2 + 12, w - ctx.measureText(t).width / 2 - 12);
+    const at = (t) => clamp(cx, ctx.measureText(t).width / 2 + 12, edge - ctx.measureText(t).width / 2);
     const all = tr('ON THE CENTRELINE AND THE GLIDE PATH');
     if (both) say(all, at(all), ly + 30, '#54d68a');
     else words.forEach(([t, c], i) => say(t, at(t), ly + 28 + i * 15, c));
     ctx.restore();
   },
 
-  // The approach in the world: a dot on the extended centreline at the height of the glide
-  // path every nautical mile out to 12 nm, and the threshold. Projected through whichever
-  // camera is in use, so it works from the cockpit and from every outside view; flying down
-  // the line of dots is flying the ILS.
+  // The approach in the world: a ring on the extended centreline at the height of the glide
+  // path every nautical mile out to 12 nm, and the threshold with the runway's name. Projected
+  // through whichever camera is in use, so it works from the cockpit and from every outside
+  // view; flying down the line of rings is flying the ILS. The rings are see-through, so the
+  // airport shows through them, and where they crowd together far out the ones that would
+  // overlap are left out, and so are the distances that would run into another label.
   drawApproachPath(ctx, w, h, fl) {
     const p = fl.phase;
     if (fl.st.onGround || fl.navFailed || !(p === 'DESCENT' || p === 'APPROACH' || p === 'CRUISE')) return;
@@ -318,34 +327,56 @@ const Game = {
       if (v.z > 1 || v.z < -1) { pts.push(null); continue; }
       // the dots grow as they come closer
       const dist = Math.hypot(q.x - cam.position.x, a.elev + k * NM * 0.05 - cam.position.y, q.z - cam.position.z);
-      pts.push({ x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h, k, r: clamp(5000 / Math.max(1, dist), 2, 8) });
+      pts.push({ x: (v.x + 1) / 2 * w, y: (1 - v.y) / 2 * h, k, r: clamp(4500 / Math.max(1, dist), 1.8, 6.5) });
     }
     ctx.save();
     ctx.beginPath();
     ctx.rect(0, 0, w, top);
     ctx.clip();
     ctx.globalAlpha = fade;
-    ctx.strokeStyle = 'rgba(230,92,240,0.45)'; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(230,92,240,0.35)'; ctx.lineWidth = 1.2;
     ctx.beginPath();
     let pen = false;
     for (const q of pts) { if (!q) { pen = false; continue; } if (pen) ctx.lineTo(q.x, q.y); else ctx.moveTo(q.x, q.y); pen = true; }
     ctx.stroke();
     ctx.font = '700 11px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    for (const q of pts) {
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    const boxes = [];                           // the labels drawn so far: [x0, y0, x1, y1]
+    const free = (b) => boxes.every((o) => b[2] < o[0] || b[0] > o[2] || b[3] < o[1] || b[1] > o[3]);
+    // the threshold's tag with the runway's name (drawn over the rings, its place kept first)
+    const th = pts[0];
+    const tag = th && tr('Runway {rwy}', { rwy: a.rwyName }), tagW = th ? ctx.measureText(tag).width + 12 : 0;
+    if (th) boxes.push([th.x + 12, th.y - 13, th.x + 12 + tagW, th.y + 4]);
+    // the rings, the nearest (the biggest) first
+    const drawn = [];
+    for (let i = pts.length - 1; i >= 1; i--) {
+      const q = pts[i];
       if (!q) continue;
-      if (q.k === 0) {
-        // the threshold: the runway's number
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.moveTo(q.x, q.y + 2); ctx.lineTo(q.x - 6, q.y - 8); ctx.lineTo(q.x + 6, q.y - 8); ctx.closePath(); ctx.fill();
-        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,12,18,0.8)'; ctx.strokeText('RWY ' + a.rwyName, q.x + 9, q.y - 2);
-        ctx.fillText('RWY ' + a.rwyName, q.x + 9, q.y - 2);
-        continue;
-      }
-      const r = q.r;
-      ctx.fillStyle = '#e65cf0';
-      ctx.beginPath(); ctx.arc(q.x, q.y, r, 0, TAU); ctx.fill();
-      if (q.k % 4 === 0) { ctx.fillStyle = 'rgba(240,200,250,0.9)'; ctx.fillText(Units.dist(q.k), q.x + r + 4, q.y + 4); }
+      if (drawn.some((o) => Math.hypot(q.x - o.x, q.y - o.y) < q.r + o.r + 2)) continue;
+      drawn.push(q);
+      ctx.fillStyle = 'rgba(230,92,240,0.22)';
+      ctx.strokeStyle = 'rgba(240,120,250,0.9)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(q.x, q.y, q.r, 0, TAU); ctx.fill(); ctx.stroke();
+    }
+    // the distance every 4 nm, where it has room
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,12,18,0.7)'; ctx.fillStyle = 'rgba(240,200,250,0.95)';
+    for (const q of drawn) {
+      if (q.k % 4) continue;
+      const t = Units.dist(q.k), tw = ctx.measureText(t).width, x = q.x + q.r + 5;
+      const b = [x - 2, q.y - 8, x + tw + 2, q.y + 8];
+      if (!free(b)) continue;
+      boxes.push(b);
+      ctx.strokeText(t, x, q.y); ctx.fillText(t, x, q.y);
+    }
+    // the threshold: a white marker pointing down at it and the runway's name on a dark tag
+    if (th) {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.moveTo(th.x, th.y + 1); ctx.lineTo(th.x - 5, th.y - 7); ctx.lineTo(th.x + 5, th.y - 7); ctx.closePath(); ctx.fill();
+      const [bx, by] = boxes[0];
+      ctx.fillStyle = 'rgba(10,14,20,0.62)';
+      roundRect(ctx, bx, by, tagW, 17, 8.5); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(tag, bx + 6, by + 9);
     }
     ctx.restore();
   },

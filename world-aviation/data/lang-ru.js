@@ -105,7 +105,6 @@ const TEXT_RU = {
   'Spoiler in for the landing — <kbd>/</kbd>': 'Уберите интерцептор перед посадкой — <kbd>/</kbd>',
   'Off the runway — spoiler in <kbd>/</kbd>': 'Полоса освобождена — уберите интерцептор <kbd>/</kbd>',
   'idle <kbd>0</kbd>, spoiler <kbd>/</kbd> (it puts the weight on the wheels), brakes <kbd>B</kbd> — slow below {v} kt': 'малый газ <kbd>0</kbd>, интерцептор <kbd>/</kbd> (прижимает к полосе), тормоза <kbd>B</kbd> — скорость меньше {v} kt',
-  'Aircraft types available: {n} of {m}': 'Доступно типов самолётов: {n} из {m}',
   'A course is open to you': 'Есть курс, который можно пройти',
   'Traffic rights ready to buy': 'Можно купить права на полёты',
   'Passenger airlines': 'Пассажирские авиакомпании',

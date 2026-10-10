@@ -105,7 +105,6 @@ const TEXT_SV = {
   'Spoiler in for the landing — <kbd>/</kbd>': 'Spoiler in före landningen — <kbd>/</kbd>',
   'Off the runway — spoiler in <kbd>/</kbd>': 'Banan lämnad — spoiler in <kbd>/</kbd>',
   'idle <kbd>0</kbd>, spoiler <kbd>/</kbd> (it puts the weight on the wheels), brakes <kbd>B</kbd> — slow below {v} kt': 'tomgång <kbd>0</kbd>, spoiler <kbd>/</kbd> (trycker ner hjulen), bromsar <kbd>B</kbd> — sakta under {v} kt',
-  'Aircraft types available: {n} of {m}': 'Tillgängliga flygplanstyper: {n} av {m}',
   'A course is open to you': 'En kurs är öppen för dig',
   'Traffic rights ready to buy': 'Trafikrättigheter att köpa',
   'Passenger airlines': 'Passagerarflygbolag',

@@ -334,12 +334,14 @@ kbd {
     background: rgba(220, 235, 250, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.5);
   }
+  /* the thrust lever stands on the right edge of the panel (the gauges keep out of it,
+     PHONE_THROTTLE_W in ui/instruments.js), off the view */
   #throttleZone {
     position: absolute;
     right: 8px;
-    bottom: 12%;
+    bottom: calc(10px + env(safe-area-inset-bottom));
     width: 62px;
-    height: 34%;
+    height: calc(var(--panelH, 130px) - 20px);
     border: 1px solid rgba(200, 220, 240, 0.25);
     border-radius: 32px;
     background: rgba(12, 18, 26, 0.5);
@@ -450,8 +452,8 @@ kbd {
   #strip.compact .stripRow.route::after { content: " ▸"; color: #8d99a6; font-size: 11px; }
 }
 /* a phone held upright: the buttons across the top, the strip and the prompt under them on the
-   left, the messages on the right, the thrust lever on the right of the panel (the gauges keep
-   out of it, PHONE_THROTTLE_W in ui/instruments.js) */
+   left, the messages on the right, the thrust lever on the right of the panel under its
+   configuration line */
 @media (pointer: coarse) and (orientation: portrait) {
   #touchButtons { left: calc(8px + env(safe-area-inset-left)); gap: 5px; }
   #touchButtons button { min-width: 0; min-height: 36px; padding: 6px 2px; }
@@ -468,7 +470,7 @@ kbd {
     right: calc(6px + env(safe-area-inset-right)); width: auto;
     max-height: calc(100vh - var(--buttonsH, 170px) - var(--panelH, 350px) - 30px);
   }
-  #throttleZone { bottom: calc(10px + env(safe-area-inset-bottom)); height: calc(var(--panelH, 350px) - 40px); }
+  #throttleZone { height: calc(var(--panelH, 350px) - 40px); }
 }
 /* a tablet (a touch screen at least 600 px both ways): the messages in the left column under the
    prompt, the last five, as on a desktop */
@@ -828,16 +830,6 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .tab:hover { background: rgba(140, 170, 200, 0.08); color: #dbe7f2; }
 .tab.on { background: rgba(140, 180, 220, 0.1); border-bottom-color: #ffd97a; color: #ffffff; }
 .tab { display: inline-flex; align-items: center; gap: 7px; }
-/* the hangar's count of types you may lease */
-.tabCount {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 19px; height: 19px; padding: 0 5px;
-  border-radius: 10px;
-  background: rgba(140, 180, 220, 0.16);
-  color: #cfe0f0;
-  font: 700 11px ui-monospace, monospace;
-}
-.tab.on .tabCount { background: rgba(140, 180, 220, 0.28); color: #eaf3fb; }
 /* something to do on that tab: a course to take, traffic rights to buy */
 .tabDot {
   width: 8px; height: 8px;
