@@ -1050,4 +1050,5 @@ const PALETTE = {
 };
 
 const UI_KEY_LOCK_MS = 700;     // ms a screen that has just come up over the flight (debrief, failure, pause) ignores the arrows, Space and Enter (ui/ui.js)
+const UI_FOLD_MS = 260;        // ms a training branch takes to fold or unfold (ui/ui.js; the same in styles.css)
 const CURSOR_HIDE_MS = 3000;    // ms the mouse must stay still in fullscreen before the cursor hides (core/cursor.js)

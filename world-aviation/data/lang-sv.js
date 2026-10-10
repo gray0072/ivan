@@ -248,6 +248,7 @@ const TEXT_SV = {
   'Next to open': 'Öppnas härnäst',
   'Every course passed.': 'Alla kurser godkända.',
   'Level {n}': 'Nivå {n}',
+  'Show or hide the courses': 'Visa eller fäll ihop kurserna',
   'Course: {name}': 'Kurs: {name}',
   'Reputation (any group)': 'Rykte (valfri grupp)',
   'Reputation · {group}': 'Rykte · {group}',

@@ -526,6 +526,8 @@ body.touring #touch { display: none !important; }
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
 }
 .panel.narrow { width: min(560px, 100%); }
+/* the career hub: wide enough on a computer for the four training branches side by side */
+.panel.ops { width: min(1240px, 100%); }
 /* on a phone (upright, or held sideways) the menus take the whole screen: no frame round the panel
    eating its width — only the glass panels of the title screen and the pause keep theirs */
 @media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
@@ -1018,9 +1020,51 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .trNext .coIcon { width: 34px; height: 34px; opacity: 0.85; }
 .trNext .coIcon svg { width: 18px; height: 18px; }
 
-.branches { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: start; }
-.branch { display: flex; flex-direction: column; gap: 10px; }
-.brHead { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; color: var(--bc); }
+/* the branches by the width they get: one column on a phone, two on a tablet (each a pair of
+   branches: general + cargo, passenger + bush), all four side by side on a computer */
+.trTree { container-type: inline-size; }
+.branches { display: flex; flex-direction: column; gap: 14px; }
+.brPair { display: contents; }
+@container (min-width: 540px) {
+  .branches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .brPair { display: flex; flex-direction: column; gap: 14px; }
+}
+@container (min-width: 1000px) {
+  .branches { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .brPair { display: contents; }
+}
+.branch { display: flex; flex-direction: column; min-width: 0; }
+/* the branch's head folds and unfolds it: its picture, name, passed / all and a chevron; folded,
+   a row of the courses' small badges under it shows how far the branch has come */
+.brHead {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
+  width: 100%; margin: 0; padding: 7px 8px; border: 1px solid transparent; border-radius: 12px;
+  background: none; color: var(--bc); font-size: 14px; font-weight: 700; line-height: 1.2; text-transform: uppercase; letter-spacing: 1px;
+  text-align: left; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background-color 0.15s, border-color 0.15s;
+}
+.brName { min-width: 0; }
+.brHead:focus-visible { outline: 2px solid var(--bc); outline-offset: 2px; }
+@media (hover: hover) { .brHead:hover { background: color-mix(in srgb, var(--bc) 9%, transparent); } }
+.brHead:active { background: color-mix(in srgb, var(--bc) 14%, transparent); }
+.brChev { width: 9px; height: 9px; margin: 0 4px 3px 2px; border: solid currentColor; border-width: 0 2px 2px 0; opacity: 0.8;
+  transform: rotate(45deg); transition: transform 0.26s, margin 0.26s; }
+.folded .brChev { transform: rotate(-45deg); margin: 0 5px 0 1px; }
+.brMini { display: none; grid-column: 1 / -1; flex-wrap: wrap; gap: 5px; }
+.folded .brHead { border-color: color-mix(in srgb, var(--bc) 28%, transparent); background: linear-gradient(180deg, #151e28, #111820); }
+.folded .brMini { display: flex; }
+.miniCo .coIcon { width: 26px; height: 26px; border-width: 1.5px; }
+.miniCo .courseSvg { width: 14px; height: 14px; }
+.miniCo.done .coIcon { border-color: #7de08a; color: #9be8ac; }
+.miniCo.open .coIcon { border-color: #ffd97a; color: #ffd97a; box-shadow: 0 0 8px rgba(255, 217, 122, 0.4); }
+.miniCo.locked .coIcon { filter: grayscale(0.7); opacity: 0.5; }
+/* the courses slide shut and open (UI_FOLD_MS); they are clipped only while they slide */
+.brBody { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.26s ease, visibility 0s; }
+.brInner { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding-top: 10px; transition: padding-top 0.26s ease; }
+.folded .brBody { grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 0.26s ease, visibility 0s 0.26s; }
+.folded .brInner { padding-top: 0; }
+.folded .brInner, .sliding .brInner { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .brBody, .folded .brBody, .brInner, .brChev { transition: none; } }
 .brIcon { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--bc) 16%, transparent); box-shadow: inset 0 0 0 1px var(--bc); }
 .brIcon svg { width: 15px; height: 15px; fill: currentColor; fill-opacity: 0.2; stroke: currentColor; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
 

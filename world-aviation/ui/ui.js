@@ -108,7 +108,7 @@ const UI = {
 
   // the buttons that can be focused now
   buttons() {
-    return Array.from(this.screen.querySelectorAll('button:not([disabled])')).filter((b) => b.offsetParent !== null);
+    return Array.from(this.screen.querySelectorAll('button:not([disabled])')).filter((b) => b.offsetParent !== null && !b.closest('.folded .brBody'));
   },
   // which screen is showing: the mode, the ops tab and the heading
   viewKey() {
@@ -285,7 +285,7 @@ const UI = {
         return '<button class="tab' + (this.tab === t ? ' on' : '') + '" data-act="tab" data-v="' + t + '"' +
           (b ? ' title="' + esc(b.title) + '"' : '') + '>' + tr(t.charAt(0).toUpperCase() + t.slice(1)) + (b ? b.html : '') + '</button>';
       }).join('') + '</div>' +
-      '<div class="tabBody">' + body + '</div>');
+      '<div class="tabBody">' + body + '</div>', 'ops');
     // on a phone the tabs scroll sideways: bring the open one into view, in the middle of the row
     const row = this.screen.querySelector('.tabs'), on = row && row.querySelector('.tab.on');
     if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
@@ -582,9 +582,16 @@ const UI = {
         this.courseNeeds(next, true) + '</span></p>'
         : passed === COURSES.length ? '<p class="trOpen ok">' + tr('Every course passed.') + '</p>' : '') +
       '</div></div>';
-    const columns = ['general', 'pax', 'cargo', 'bush'].map((b) => {
+    const fold = Career.settings.trainingFold || {};
+    const branch = (b, order) => {
       const courses = COURSES.filter((c) => c.branch === b).sort((x, y) => x.tier - y.tier || (x.flights || 0) - (y.flights || 0));
       const done = courses.filter((c) => Career.has(c.id)).length;
+      // folded: as the pilot left it, or else a branch passed to the end
+      const folded = typeof fold[b] === 'boolean' ? fold[b] : done === courses.length;
+      const mini = courses.map((c) => {
+        const st = Career.courseState(c);
+        return '<span class="miniCo ' + (st.bought ? 'done' : st.available ? 'open' : 'locked') + '" title="' + esc(this.courseText(c, lang).name) + '">' + icon(c) + '</span>';
+      }).join('');
       const items = courses.map((c) => {
         const st = Career.courseState(c);
         const afford = Career.canAfford(c);
@@ -606,11 +613,35 @@ const UI = {
               (can ? '' : ' disabled') + '>' + esc(afford ? T.take : T.noMoney) + '</button>' : '')) +
           '</div>';
       }).join('');
-      return '<div class="branch" style="--bc:' + COURSE_COLOR[b] + '"><h3 class="brHead"><span class="brIcon">' +
-        (b === 'general' ? CourseIcons.svg('general') : UseIcons.svg(b)) + '</span>' + esc(T.branches[b]) +
-        '<span class="cvCount">' + done + ' / ' + courses.length + '</span></h3>' + items + '</div>';
-    }).join('');
-    return head + '<div class="hint">' + esc(T.intro) + '</div><div class="branches">' + columns + '</div>';
+      return '<section class="branch' + (folded ? ' folded' : '') + '" data-b="' + b + '" style="--bc:' + COURSE_COLOR[b] + ';order:' + order + '">' +
+        '<button class="brHead" data-act="branch" data-v="' + b + '" aria-expanded="' + !folded + '" title="' + esc(tr('Show or hide the courses')) + '">' +
+        '<span class="brIcon">' + (b === 'general' ? CourseIcons.svg('general') : UseIcons.svg(b)) + '</span>' +
+        '<span class="brName">' + esc(T.branches[b]) + '</span>' +
+        '<span class="cvCount">' + done + ' / ' + courses.length + '</span><i class="brChev"></i>' +
+        '<span class="brMini">' + mini + '</span></button>' +
+        '<div class="brBody"><div class="brInner">' + items + '</div></div></section>';
+    };
+    // two columns on a tablet hold two branches each, of about the same length: the general and
+    // the cargo courses, the passenger and the bush ones; one or four columns undo the pairs and
+    // take the branches in their own order (styles.css)
+    return head + '<div class="hint">' + esc(T.intro) + '</div><div class="trTree"><div class="branches">' +
+      '<div class="brPair">' + branch('general', 1) + branch('cargo', 3) + '</div>' +
+      '<div class="brPair">' + branch('pax', 2) + branch('bush', 4) + '</div></div></div>';
+  },
+  // a branch folded or unfolded where it is, without drawing the tab anew (so it slides), and
+  // remembered: a branch never touched folds by itself once every course in it is passed
+  foldBranch(b) {
+    const el = this.screen.querySelector('.branch[data-b="' + b + '"]');
+    if (!el) return;
+    const folded = !el.classList.contains('folded');
+    Career.settings.trainingFold = Object.assign({}, Career.settings.trainingFold, { [b]: folded });
+    Career.saveSettings();
+    // the courses are clipped only while they slide, so the open course's glow is not cut off
+    el.classList.add('sliding');
+    clearTimeout(el.slideTimer);
+    el.slideTimer = setTimeout(() => el.classList.remove('sliding'), UI_FOLD_MS + 60);
+    el.classList.toggle('folded', folded);
+    el.querySelector('.brHead').setAttribute('aria-expanded', String(!folded));
   },
   // what a course asks for, ticked off as it is met: the courses before it, the flights flown in
   // all, the reputation with its clients — each with how far the pilot has come; `short`: only
@@ -1154,6 +1185,7 @@ const UI = {
       case 'acFor': Filters.hangarFor(v); this.tab = 'hangar'; this.showOps(); break;
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;
       case 'course': this.showQuiz(v); break;
+      case 'branch': this.foldBranch(v); break;
       case 'answer': {
         const q = this.quiz;
         if (!q || q.answer !== null) break;

@@ -248,6 +248,7 @@ const TEXT_RU = {
   'Next to open': 'Откроется следующим',
   'Every course passed.': 'Все курсы сданы.',
   'Level {n}': 'Уровень {n}',
+  'Show or hide the courses': 'Показать или свернуть курсы',
   'Course: {name}': 'Курс: {name}',
   'Reputation (any group)': 'Репутация (любая группа)',
   'Reputation · {group}': 'Репутация · {group}',
