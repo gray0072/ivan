@@ -102,11 +102,18 @@ Each project folder must contain:
 
 ## Testing the games
 
-- No Playwright/Puppeteer is installed. Drive a page in headless Chrome over raw CDP: spawn `C:/Program Files/Google/Chrome/Application/chrome.exe --headless=new --remote-debugging-port=N --user-data-dir=<temp>`, fetch `http://127.0.0.1:N/json`, open the page's websocket and send `Runtime.evaluate`, `Page.captureScreenshot`, `Input.dispatchKeyEvent`, `Emulation.setDeviceMetricsOverride` / `setTouchEmulationEnabled` (phone, `pointer: coarse`). Node 20 needs `node --experimental-websocket` for the global `WebSocket`. Pages open fine from `file:///D:/Projects/my/ivan/<game>/index.html`.
-- Stop Chrome with `taskkill /PID <pid> /T /F` — killing only the main process leaves the GPU/renderer children running.
+- No Playwright/Puppeteer is installed. Drive a page in headless Chrome over raw CDP with `tools/cdp.js`: write a small steps file (an exported async function, see the header of `tools/cdp.js`) and run `node --experimental-websocket tools/cdp.js <steps.js> [out-dir]` (Node 20 needs the flag for the global `WebSocket`). It opens `<folder>/index.html` from `file://`, gives the steps `phone(w, h)` / `desktop(w, h)` (a phone: touch and `pointer: coarse`), `ev(js)`, `shot(name)`, `tap`, `click`, `key`, prints the page's uncaught errors, and stops Chrome with all its children (`taskkill /T /F`; killing only the main process leaves the GPU/renderer ones running) — also when its wall-clock limit (`--limit`, 120 s) runs out. Keep steps files in a temp folder, not in the repo; a game's own recipes for putting it into a state (a career, a screen, a flight) are in its `SPEC.md`.
 - Headless Chrome renders WebGL in software (SwiftShader): 5–20 fps and 100 % CPU. Keep browser runs short (boot, a few screenshots, about a minute) and never run several in parallel.
 - Long gameplay tests (e.g. whole `world-aviation` flights) run in Node instead: load the game's logic files (constants, data/airports, data/countries, data/airlines, data/emergencies, data/lang-ru, data/lang-sv, core/i18n, core/utils, data/geodata, sim/terrain, sim/world, core/audio, sim/flight, sim/systems, sim/guidance, career, core/input, game) into a `vm` context with stub `HUD` / `Scene3D` / `UI` / DOM objects, replace `Input.axes` with a bot, and call `Game.frame(1 / 30)` in a plain loop under `os.setPriority(BELOW_NORMAL)` with a wall-clock limit. A gate-to-gate flight takes 7–25 s that way. `world-aviation/tools/approach-check.js` is such a harness for the approaches: it flies the autopilot into every airport from four sides and checks the terrain round each field — run it after changing the terrain, the map data or the autopilot.
 - Headless Chrome on this machine has speech voices: Microsoft en-GB (George, Hazel, Susan), Microsoft Bengt sv-SE, plus online Google voices (incl. Russian).
+- Headless Chrome takes its language from the system, so a translated game may open in Swedish or Russian: switch it to English first (`I18N.set('en')` in `world-aviation`) before screenshots meant for the repo.
+
+## Pitfalls
+
+- **Line endings are LF.** `.gitattributes` (`* text=auto eol=lf`) stores and checks out every text file with LF on every OS, so an editor or a script that writes CRLF does not turn a one-line change into a whole-file diff. Write LF; never commit CRLF.
+- **Edit with the editing tools, not `sed -i` or `python -c` one-liners.** Shell quoting mangles escapes: a `'\00d7'` meant for CSS once reached `styles.css` as a NUL byte (git then calls the file binary and the cross never shows). For a scripted change put the script in a file and run it.
+- **Bump `?v=N`** in `index.html` for every CSS/JS file a change touches (see Version query strings) — forgetting it leaves players on the old file.
+- **A translated game:** run `node tools/i18n-check.js <folder>` before committing; it does not see texts passed to `tr()` through a variable (titles from `data/` tables, rank names), and it does not list keys no longer used — drop those by hand.
 
 ## Docs to keep in sync
 

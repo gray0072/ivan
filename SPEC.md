@@ -50,6 +50,8 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 ├── manifest.webmanifest      # PWA manifest of the gallery (icons from assets/)
 ├── tools/pwa-icons.sh        # renders a folder's PWA PNG icons from its SVGs with headless Chrome
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
+├── tools/cdp.js              # drives a page in headless Chrome (phone or desktop) from a steps file: screenshots, page errors
+├── .gitattributes            # every text file stored with LF line endings
 ├── assets/                  # gallery.css, gallery-lang.js (the gallery's texts in English, Russian and Swedish), gallery.js (the language switcher, remembered as ivanGallery.lang; picks up a new deploy via update.js), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
 ├── flight-simulator/
 │   ├── SPEC.md               # the game's own spec
