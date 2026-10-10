@@ -182,6 +182,7 @@ const UI = {
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
       (has ? '<button class="btn" data-act="wipe">' + tr('Delete career') + '</button>' : '') +
+      this.cloudButtons() +
       '</div>' +
       '<p class="fineprint">' + esc(tr(CAREER.INTRO)) + '</p>' +
       '</div>', 'title');
@@ -204,10 +205,85 @@ const UI = {
   },
 
   confirmWipe() {
+    const inCloud = Cloud.user && Cloud.linkedTo === Cloud.user.id && Cloud.hasRow;
     this.panel(
-      '<h2>' + tr('Delete this career?') + '</h2><p class="lead">' + tr('The money, the reputation and every course you have passed will be gone.') + '</p>' +
+      '<h2>' + tr('Delete this career?') + '</h2><p class="lead">' + tr('The money, the reputation and every course you have passed will be gone.') +
+      (inCloud ? ' ' + tr('Its copy in the cloud is deleted too.') : '') + '</p>' +
       '<div class="btnRow"><button class="btn danger" data-act="wipeyes">' + tr('Delete it') + '</button>' +
       '<button class="btn default" data-act="back" data-esc>' + tr('Keep it') + '</button></div>', 'narrow');
+  },
+
+  // ---------- the cloud copy (core/cloud.js) ----------
+  // the sign-in on the title screen: the button, or how the sync goes and the way out
+  cloudButtons() {
+    if (!Cloud.available) return '';
+    if (!Cloud.user) {
+      return '<button class="btn cloudIn" data-act="cloudIn" title="' + esc(tr('Keep the career in the cloud and fly it on any device.')) + '">' +
+        GOOGLE_G_SVG + tr('Sign in with Google') + '</button>';
+    }
+    return '<span class="cloudState ' + Cloud.status + '" title="' + esc(Cloud.user.email) + '">' + esc(this.cloudStatusText()) + '</span>' +
+      '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button>';
+  },
+  cloudStatusText() {
+    switch (Cloud.status) {
+      case 'syncing': return tr('Syncing…');
+      case 'synced': return tr('Synced');
+      case 'error': return tr('Sync failed — it tries again later');
+      case 'conflict': return tr('Another career in the cloud');
+      default: return '';
+    }
+  },
+  // the Career tab's card: what the cloud is for, who is signed in and how the sync goes
+  cloudCard() {
+    if (!Cloud.available) return '';
+    const u = Cloud.user;
+    return '<section class="cvCard cloudCard"><h3>' + tr('Cloud save') + '</h3>' +
+      (u ? '<p><span class="cloudState ' + Cloud.status + '">' + esc(this.cloudStatusText()) + '</span></p>' +
+        '<p class="fineprint">' + esc(tr('Signed in as {email}', { email: u.email })) + '</p>' +
+        '<div class="btnRow">' + (Cloud.status === 'conflict' ? '<button class="btn default" data-act="cloudChoose">' + tr('Choose a career') + '</button>' : '') +
+        '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button></div>'
+        : '<p class="fineprint">' + esc(tr('Keep the career in the cloud and fly it on any device.')) + ' ' +
+          esc(tr('Each career has its own sign-in: a new career starts signed out.')) + '</p>' +
+          '<div class="btnRow"><button class="btn cloudIn" data-act="cloudIn">' + GOOGLE_G_SVG + tr('Sign in with Google') + '</button></div>') +
+      '</section>';
+  },
+  // the account keeps another career: which one flies on — the cloud's, here, or this one, over it
+  showCloudConflict() {
+    const r = Cloud.remote && Cloud.remote.data;
+    if (!r || !Career.data) return;
+    const who = (d) => esc((d.pilot && d.pilot.name) || '') + '<small>' + tr('{n} flights', { n: (d.stats && d.stats.flights) || 0 }) + ' · ' + fmtMoney(d.money || 0) + '</small>';
+    this.panel(
+      '<h2>' + tr('Another career in the cloud') + '</h2>' +
+      '<p class="lead">' + esc(tr('{email} already keeps another career in the cloud. Which one flies on?', { email: Cloud.user.email })) + '</p>' +
+      '<div class="cardRow">' +
+      '<button class="bigBtn" data-act="cloudTake">' + tr('Load the cloud career') + '<small>' + who(r) + '</small>' +
+      '<small>' + tr('the career on this device is replaced') + '</small></button>' +
+      '<button class="bigBtn" data-act="cloudKeep">' + tr('Keep this career') + '<small>' + who(Career.data) + '</small>' +
+      '<small>' + tr('the career in the cloud is replaced') + '</small></button>' +
+      '</div>' +
+      '<div class="btnRow"><button class="btn" data-act="cloudOut" data-esc>' + tr('Cancel and sign out') + '</button></div>', 'narrow');
+    this.screen.dataset.view = 'cloud';
+  },
+  // the sync's status changed (and maybe the career with it): the screen showing it is drawn again
+  cloudChanged(careerChanged) {
+    if (this.screen.hidden || Game.mode === 'flying' || Game.mode === 'paused') return;
+    const view = this.screen.dataset.view;
+    const free = (Game.mode === 'menu' || Game.mode === 'ops') && !this.quiz && !this.onLeave && !this.renaming;
+    if (Cloud.status === 'conflict' && Cloud.remote && free) {
+      this.showCloudConflict();
+    } else if (view === 'cloud') {
+      this.refreshCloud();
+    } else if (view === 'title') {
+      this.showTitle();
+    } else if (Game.mode === 'ops' && free && (careerChanged || this.tab === 'career')) {
+      const y = this.screen.scrollTop;
+      this.showOps();
+      this.screen.scrollTop = y;
+    }
+  },
+  // after a sign-out or a choice: the Career tab if it was open, else the title
+  refreshCloud() {
+    if (Game.mode === 'ops' && Career.data) this.showOps(); else this.showTitle();
   },
 
   showHowTo() {
@@ -756,6 +832,7 @@ const UI = {
       '</div><div>' +
       '<section class="cvCard"><h3>' + tr('Unlocked by your courses') + count(opened, unlocks.length) + '</h3><ul class="unlocks">' +
       unlocks.map((u) => unlockLine(u[0], u[1])).join('') + '</ul></section>' +
+      this.cloudCard() +
       '</div></div>' +
       '<div class="btnRow"><button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>';
   },
@@ -1104,6 +1181,7 @@ const UI = {
         const pilot = (el('pilotName') || {}).value || '';
         reseed(hashStr(pilot) ^ Date.now());
         Career.new({ pilot, difficulty: Career.settings.difficulty });
+        Cloud.careerStarted();
         enterFullscreen();
         this.tab = 'dispatch';
         this.showOps();
@@ -1168,7 +1246,12 @@ const UI = {
       case 'howto': this.backTo = 'title'; this.showHowTo(); break;
       case 'howto2': this.backTo = 'pause'; this.showHowTo(); break;
       case 'wipe': this.confirmWipe(); break;
-      case 'wipeyes': Career.reset(); this.showTitle(); break;
+      case 'wipeyes': Cloud.careerDeleted(Career.data && Career.data.id); Career.reset(); this.showTitle(); break;
+      case 'cloudIn': Cloud.signIn(); break;
+      case 'cloudOut': Cloud.signOut(); this.refreshCloud(); break;
+      case 'cloudChoose': this.showCloudConflict(); break;
+      case 'cloudTake': Cloud.takeRemote(); this.refreshCloud(); break;
+      case 'cloudKeep': Cloud.keepLocal(); this.refreshCloud(); break;
       case 'back':
         if (this.backTo === 'pause' && Game.mode === 'paused') { this.backTo = null; this.showPause(); }
         else this.showTitle();
@@ -1249,7 +1332,7 @@ const UI = {
         if (Game.contract && Game.practice) { this.selContract = Game.contract.id; this.action('practice'); }
         else if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
         break;
-      case 'gameover': Career.reset(); Game.mode = 'menu'; this.showTitle(); break;
+      case 'gameover': Cloud.careerDeleted(Career.data && Career.data.id); Career.reset(); Game.mode = 'menu'; this.showTitle(); break;
       default: break;
     }
   },
@@ -1301,6 +1384,12 @@ function epaulette(r) {
 }
 // the pencil of "change the name"
 const PENCIL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+// Google's "G", on the sign-in buttons
+const GOOGLE_G_SVG = '<svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true">' +
+  '<path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/>' +
+  '<path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.5 5.8c4.4-4 6.8-10 6.8-17.3z"/>' +
+  '<path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6.1z"/>' +
+  '<path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
 // the training branches' colours: the client groups' own, a light blue for the general courses
 const COURSE_COLOR = { general: '#8fc0ea', pax: FACTIONS.pax.color, cargo: FACTIONS.cargo.color, bush: FACTIONS.bush.color };
 // what kind of entry a log line is, for its dot on the Career tab's timeline

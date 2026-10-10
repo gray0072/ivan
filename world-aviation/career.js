@@ -47,11 +47,18 @@ const Career = {
     if (this.data) this.migrate();
     return this.data;
   },
+  // every save is stamped with its time (the cloud's merge takes the later one as its base) and
+  // told to whoever listens (core/cloud.js sends it up; headless, nobody does)
   save() {
+    if (this.data) this.data.updatedAt = new Date().toISOString();
     try { localStorage.setItem(CAREER_KEY, JSON.stringify(this.data)); } catch (err) { /* ignore */ }
+    if (this.onSave) this.onSave();
   },
+  onSave: null,
   migrate() {
     const d = this.data;
+    // the career's own id: the cloud keeps one career per account and tells this one from another by it
+    if (!d.id) { d.id = careerId(); this.save(); }
     d.rep = d.rep || { pax: 0, cargo: 0, bush: 0 };
     d.courses = d.courses || ['gen1'];
     // the fictional types of older versions became the real ones closest to them
@@ -107,6 +114,7 @@ const Career = {
 
   new(opts) {
     this.data = {
+      id: careerId(),
       pilot: { name: (opts.pilot || '').trim() || this.randomPilotName() },
       money: CONTRACTS.START_MONEY,
       rep: { pax: 0, cargo: 0, bush: 0 },
@@ -196,6 +204,47 @@ const Career = {
   reset() {
     try { localStorage.removeItem(CAREER_KEY); } catch (err) { /* ignore */ }
     this.data = null;
+  },
+
+  // ---------- the cloud copy (core/cloud.js) ----------
+  // a career from the cloud taken as it is, in place of this one (or of none)
+  adopt(data) {
+    this.data = data;
+    this.migrate();
+    this.save();
+    return this.data;
+  },
+  // The same career saved on another device, merged in so the progress of both survives: the one
+  // saved last is the base, taken as it is (money, reputation, contracts, the aeroplane and where it
+  // is, the log), and what only ever grows is kept from both — the courses, the aircraft, the regions,
+  // the Mriya's parts and finishes, the flights in each type and to each airport, the records and the
+  // rank. Counts take the larger, never the sum, so merging again changes nothing.
+  mergeCloud(remote) {
+    const local = this.data;
+    this.data = remote;
+    this.migrate();
+    const other = this.data;
+    const d = (local.updatedAt || '') >= (other.updatedAt || '') ? local : other;
+    const o = d === local ? other : local;
+    const union = (a, b) => a.concat(b.filter((x) => a.indexOf(x) < 0));
+    const maxEach = (a, b) => { for (const k in b) a[k] = Math.max(a[k] || 0, b[k]); };
+    d.courses = union(d.courses, o.courses);
+    d.aircraft = union(d.aircraft, o.aircraft);
+    d.regions = union(d.regions, o.regions);
+    d.mriya.finishes = union(d.mriya.finishes, o.mriya.finishes);
+    d.mriya.placed = union(d.mriya.placed, o.mriya.placed);
+    d.mriya.bought = union(d.mriya.bought, o.mriya.bought).filter((id) => d.mriya.placed.indexOf(id) < 0);
+    d.mriya.done = !!(d.mriya.done || o.mriya.done);
+    if (o.mriya.cheated) d.mriya.cheated = true;
+    maxEach(d.typeFlights, o.typeFlights);
+    maxEach(d.visits, o.visits);
+    const order = ['F', 'E', 'D', 'C', 'B', 'A', 'A+'];
+    for (const k of ['flights', 'blockTime', 'landings', 'perfect', 'crashes', 'cheats', 'bestPay']) d.stats[k] = Math.max(d.stats[k] || 0, o.stats[k] || 0);
+    if (order.indexOf(o.stats.bestGrade) > order.indexOf(d.stats.bestGrade)) d.stats.bestGrade = o.stats.bestGrade;
+    d.rank = Math.max(d.rank || 0, o.rank || 0);
+    this.data = d;
+    this.save();
+    return d;
   },
 
   // the career's own level, kept in its save like the other habits (set on the title screen and in
@@ -770,6 +819,11 @@ const Career = {
 };
 
 const CONTRACTS_PAX_FILL = [0.5, 1.0];
+
+// a new career's id: random, long enough never to meet another one
+function careerId() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10);
+}
 
 // the Mriya's finish by its id (data/mriya.js), its own one (the first) when there is no such;
 // what one costs (its price in units of MRIYA.FINISH_KR)

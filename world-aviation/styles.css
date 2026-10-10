@@ -714,7 +714,19 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .form input { -webkit-user-select: text; user-select: text; }
 .btnRow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .btnRow.split { justify-content: space-between; }
-.titleFoot { display: flex; gap: 10px; }
+.titleFoot { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* ---------- the cloud copy of the career (core/cloud.js): the sign-in, the sync's status ---------- */
+.btn.cloudIn { display: inline-flex; align-items: center; gap: 8px; }
+.gLogo { width: 16px; height: 16px; flex: none; }
+.cloudState { display: inline-flex; align-items: center; gap: 7px; color: #c3d1de; font-size: 13px; }
+.titleFoot .cloudState { margin-left: auto; }
+.cloudState::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #6f8193; }
+.cloudState.synced::before { background: #7de08a; }
+.cloudState.syncing::before { background: #6fb1e8; }
+.cloudState.error::before, .cloudState.conflict::before { background: #f0c36a; }
+.cloudCard p { margin: 8px 0; }
+.cloudCard .btnRow { margin-top: 10px; }
 
 /* ---------- the title screen: a glass panel over the moving sky (ui/title.js) ---------- */
 #titleSky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 59; display: block; background: #0b1017; }

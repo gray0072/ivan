@@ -1330,5 +1330,25 @@ const TEXT_SV = {
   'Instrument-rated pilot': 'Pilot med instrumentbehörighet',
   'Airline transport pilot': 'Trafikpilot',
   'Captain': 'Kapten',
-  'Senior captain': 'Senior kapten'
+  'Senior captain': 'Senior kapten',
+  // the cloud copy of the career (core/cloud.js)
+  'Keep the career in the cloud and fly it on any device.': 'Spara karriären i molnet och flyg den på vilken enhet som helst.',
+  'Sign in with Google': 'Logga in med Google',
+  'Sign out': 'Logga ut',
+  'Syncing…': 'Synkar…',
+  'Synced': 'Synkad',
+  'Sync failed — it tries again later': 'Synken misslyckades — den försöker igen senare',
+  'Another career in the cloud': 'En annan karriär i molnet',
+  'Cloud save': 'Molnsparning',
+  'Signed in as {email}': 'Inloggad som {email}',
+  'Choose a career': 'Välj karriär',
+  'Each career has its own sign-in: a new career starts signed out.': 'Varje karriär har sin egen inloggning: en ny karriär börjar utloggad.',
+  '{n} flights': '{n} flygningar',
+  '{email} already keeps another career in the cloud. Which one flies on?': '{email} har redan en annan karriär i molnet. Vilken flyger vidare?',
+  'Load the cloud career': 'Hämta karriären från molnet',
+  'the career on this device is replaced': 'karriären på den här enheten ersätts',
+  'Keep this career': 'Behåll den här karriären',
+  'the career in the cloud is replaced': 'karriären i molnet ersätts',
+  'Cancel and sign out': 'Avbryt och logga ut',
+  'Its copy in the cloud is deleted too.': 'Dess kopia i molnet raderas också.'
 };

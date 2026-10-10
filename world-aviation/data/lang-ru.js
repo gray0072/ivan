@@ -1330,5 +1330,25 @@ const TEXT_RU = {
   'Instrument-rated pilot': 'Пилот с допуском по приборам',
   'Airline transport pilot': 'Линейный пилот',
   'Captain': 'Капитан',
-  'Senior captain': 'Старший капитан'
+  'Senior captain': 'Старший капитан',
+  // the cloud copy of the career (core/cloud.js)
+  'Keep the career in the cloud and fly it on any device.': 'Храните карьеру в облаке и летайте на любом устройстве.',
+  'Sign in with Google': 'Войти через Google',
+  'Sign out': 'Выйти',
+  'Syncing…': 'Синхронизация…',
+  'Synced': 'Синхронизировано',
+  'Sync failed — it tries again later': 'Синхронизация не удалась — попробуем позже',
+  'Another career in the cloud': 'В облаке другая карьера',
+  'Cloud save': 'Сохранение в облаке',
+  'Signed in as {email}': 'Вход выполнен: {email}',
+  'Choose a career': 'Выбрать карьеру',
+  'Each career has its own sign-in: a new career starts signed out.': 'У каждой карьеры свой вход: новая карьера начинается без входа.',
+  '{n} flights': 'полётов: {n}',
+  '{email} already keeps another career in the cloud. Which one flies on?': 'В облаке {email} уже хранится другая карьера. Какую продолжить?',
+  'Load the cloud career': 'Загрузить карьеру из облака',
+  'the career on this device is replaced': 'карьера на этом устройстве будет заменена',
+  'Keep this career': 'Оставить эту карьеру',
+  'the career in the cloud is replaced': 'карьера в облаке будет заменена',
+  'Cancel and sign out': 'Отмена и выход',
+  'Its copy in the cloud is deleted too.': 'Её копия в облаке тоже будет удалена.'
 };

@@ -69,6 +69,10 @@ const Game = {
     // A new deploy reloads the page only on the title or the operations screen, never from the
     // briefing to the debrief of a flight (core/update.js)
     AppUpdate.watch(() => this.mode === 'menu' || this.mode === 'ops');
+    // the cloud copy of the career is pulled in and merged only where the career may change under
+    // the player: the title or the operations screen, not in an exam or the Mriya's hall (core/cloud.js)
+    Cloud.onChange = (careerChanged) => UI.cloudChanged(careerChanged);
+    Cloud.init(() => (this.mode === 'menu' || this.mode === 'ops') && !UI.quiz && !UI.onLeave && !UI.renaming);
     UI.showTitle();
     this.loop();
   },
