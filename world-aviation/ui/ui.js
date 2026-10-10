@@ -23,6 +23,10 @@ const UI = {
     if (this.screen.hidden || Game.mode === 'flying') return;
     // a screen with keys of its own first (the Mriya's hall while a part is carried)
     if (this.keyHook && this.keyHook(e)) return;
+    if (e.key === 'Escape' && this.renaming) {
+      e.preventDefault(); e.stopPropagation(); this.renaming = false; this.showOps();
+      return;
+    }
     if (e.key === 'Escape') {
       const back = this.screen.querySelector('button[data-esc]:not([disabled])');
       if (back) { e.preventDefault(); e.stopPropagation(); back.click(); }
@@ -30,7 +34,7 @@ const UI = {
     }
     const tag = document.activeElement && document.activeElement.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') {
-      if (e.key === 'Enter') { const b = this.screen.querySelector('.btn.default'); if (b) { e.preventDefault(); b.click(); } }
+      if (e.key === 'Enter') { const b = this.screen.querySelector('[data-enter]') || this.screen.querySelector('.btn.default'); if (b) { e.preventDefault(); b.click(); } }
       return;
     }
     // keys still held or pressed from the flight (the arrows steer, Space is the parking brake) must not
@@ -188,7 +192,7 @@ const UI = {
   showNewCareer() {
     this.panel(
       '<h2>' + tr('New career') + '</h2>' +
-      '<p class="lead">' + tr('You have an EASA ATPL, one leased turboprop and a base at Stockholm Arlanda. What is your name?') + '</p>' +
+      '<p class="lead">' + tr('You have a fresh commercial licence (EASA CPL), one leased turboprop and a base at Stockholm Arlanda. What is your name?') + '</p>' +
       '<div class="form">' +
       '<label>' + tr('Pilot name') + '<span class="nameLine"><input id="pilotName" value="' + esc(Career.randomPilotName()) + '" maxlength="24">' +
       '<button class="chip" data-act="rerollName" title="' + esc(tr('Another name')) + '" aria-label="' + esc(tr('Another name')) + '">🎲</button></span></label>' +
@@ -229,7 +233,7 @@ const UI = {
       keyRow('N', tr('autopilot NAV: fly the route and the ILS')) +
       keyRow(', / .', tr('selected altitude down / up')) +
       keyRow('; / \'', tr('selected heading (autopilot HDG mode)')) +
-      keyRow('T / R', tr('time faster / slower: up to ×128 on the autopilot, ×512 in the cruise on NAV, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft')) +
+      keyRow('T / R', tr('time faster / slower: up to ×512 on the autopilot at any height, by hand ×2 / ×4 / ×8 / ×16 / ×32 / ×64 above 1 000 / 3 000 / 6 000 / 8 000 / 9 000 / 10 000 ft')) +
       keyRow('C / X / Z · M · I', tr('camera: next / back / straight to the cockpit · map (on a big screen: mini, big, off) · instrument lights: dim, medium, bright, hidden')) +
       keyRow('H', tr('controls card')) +
       keyRow('Esc', tr('pause')) +
@@ -246,7 +250,7 @@ const UI = {
       '<h3>' + tr('How a flight goes') + '</h3><ul>' +
       '<li>' + tr('At the gate press Enter for the push back and to start the engines, release the parking brake with Space and taxi along the arrow to the holding point.') + '</li>' +
       '<li>' + tr('Set take-off flaps, ask for the clearance, line up, full power, rotate at Vr, gear up.') + '</li>' +
-      '<li>' + tr('Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×128 on the autopilot, ×512 in the cruise.') + '</li>' +
+      '<li>' + tr('Engage the autopilot (Y): it flies the route in NAV mode, captures the ILS and descends on the glideslope. Speed up the time with T (slow it down with R) — up to ×512 on the autopilot, at any height.') + '</li>' +
       '<li>' + tr('When a warning sounds, a checklist opens: do the lit step with the control shown next to it — Enter (Go) for its switches, the real controls (0, K, G, /, Y…) for the rest. The clock is running.') + '</li>' +
       '<li>' + tr('Flaps and gear down on the approach, land by hand from 200 ft, brake, and leave the runway below 35 kt.') + '</li>' +
       '<li>' + tr('The <b>spoiler</b> (/) is a speed brake: out when you are too high or too fast on the descent, in again before the landing. After touchdown put it out with idle and the brakes — it puts the weight on the wheels, so they stop you sooner.') + '</li>' +
@@ -268,7 +272,7 @@ const UI = {
       '<div class="opsHead">' +
       '<button class="btn back" data-act="backtitle" data-esc>' + tr('Menu') + '</button>' +
       '<div><div class="opsWho">' + esc(d.pilot.name) + '</div>' +
-      '<div class="opsSub">' + CAREER.PILOT_LICENSE + ' · ' + tr('base {id}', { id: d.base }) +
+      '<div class="opsSub">' + Career.rank().licence + ' · ' + tr('base {id}', { id: d.base }) +
       (d.lastTo && d.lastTo !== d.base ? ' · ' + tr('now at {id}', { id: d.lastTo }) : '') + '</div></div>' +
       '<div class="opsMoney">' + fmtMoney(d.money) + '</div>' +
       '<div class="opsReps">' +
@@ -362,8 +366,8 @@ const UI = {
     return '<div class="contract' + (!flying && this.selContract === c.id ? ' sel' : '') + '">' +
       '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
       UseIcons.svg(c.faction) + esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
-      '<div class="cRoute"><b>' + c.fromId + ' → ' + c.toId + '</b>' +
-      '<span>' + flagImg(from) + esc(aptCity(from)) + ' → ' + flagImg(to) + esc(aptCity(to)) + '</span></div>' +
+      '<div class="cRoute"><b>' + routeHtml(c.fromId, c.toId) + '</b>' +
+      '<span>' + routeHtml(flagImg(from) + esc(aptCity(from)), flagImg(to) + esc(aptCity(to)), 'soft') + '</span></div>' +
       '<div class="cGrid">' +
       (flying && Game.flight ? row2(tr('Aircraft'), esc(Game.flight.ac.name)) : '') +
       row2(tr('Load'), loadText(c)) +
@@ -372,7 +376,7 @@ const UI = {
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
       row2(tr('Fuel plan'), c.fuelKg + ' kg') +
       row2(tr('Flown there'), Career.visitsTo(c.toId) ? Career.visitsTo(c.toId) + '×' : '<span class="newDest">' + tr('never — new') + '</span>') +
-      (c.depGate !== undefined ? row2(tr('Stands'), gateLabel(from, c.depGate) + ' → ' + gateLabel(to, c.arrGate)) : '') +
+      (c.depGate !== undefined ? row2(tr('Stands'), routeHtml(gateLabel(from, c.depGate), gateLabel(to, c.arrGate), 'soft')) : '') +
       '</div>' +
       '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
       (flying ? '' : (need ? '<span class="need">' + esc(need) + '</span>' : '') +
@@ -677,12 +681,21 @@ const UI = {
       [Career.mriyaDone(), tr('The An-225 Mriya — built again with your own hands')]
     ];
     const opened = unlocks.filter((u) => u[0]).length;
-    const log = (d.log || []).map((l) => '<li class="' + logKind(l) + '">' + esc(logText(l)) + '</li>').join('');
+    const log = (d.log || []).map((l) => '<li class="' + logKind(l) + '">' + arrowsHtml(esc(logText(l)), 'soft') + '</li>').join('');
     const count = (n, m) => '<span class="cvCount">' + n + ' / ' + m + '</span>';
+    const rank = Career.rank();
+    const name = this.renaming
+      ? '<div class="cvRename"><input id="pilotRename" value="' + esc(d.pilot.name) + '" maxlength="24" aria-label="' + esc(tr('Pilot name')) + '">' +
+        '<button class="chip" data-act="rerollName" title="' + esc(tr('Another name')) + '" aria-label="' + esc(tr('Another name')) + '">🎲</button>' +
+        '<button class="btn small default" data-act="renameSave" data-enter>' + tr('Save') + '</button>' +
+        '<button class="btn small" data-act="renameCancel">' + tr('Cancel') + '</button></div>'
+      : '<div class="cvName">' + esc(d.pilot.name) + '<button class="cvEdit" data-act="rename" title="' + esc(tr('Change the name')) + '" aria-label="' +
+        esc(tr('Change the name')) + '">' + PENCIL_SVG + '</button></div>';
     return '<div class="cvHero">' +
-      '<div class="cvBadge"><span>' + esc(initials) + '</span></div>' +
-      '<div class="cvWho"><div class="cvName">' + esc(d.pilot.name) + '</div>' +
-      '<div class="cvChips"><span class="cvChip gold">' + CAREER.PILOT_LICENSE + '</span>' +
+      '<div class="cvBadge"><span>' + esc(initials) + '</span>' + epaulette(rank) + '</div>' +
+      '<div class="cvWho">' + name +
+      '<div class="cvChips"><span class="cvChip gold">' + rank.licence + '</span>' +
+      '<span class="cvChip">' + esc(tr(rank.title)) + '</span>' +
       '<span class="cvChip">' + (base ? flagImg(base) : '') + esc(tr('Home base')) + ': <b>' + (base ? esc(aptName(base)) : d.base) + '</b></span>' +
       '<span class="cvChip">' + esc(tr('Difficulty')) + ': <b>' + esc(tr(Career.difficulty.name)) + '</b></span></div></div>' +
       '<div class="cvBal"><span>' + esc(tr('Balance')) + '</span><b>' + fmtMoney(d.money) + '</b></div>' +
@@ -698,6 +711,7 @@ const UI = {
       tile(tr('Cheats used'), s.cheats, s.cheats ? ' warn' : '') +
       '</div>' +
       '<div class="careerCols"><div>' +
+      this.rankCard() +
       '<section class="cvCard"><h3>' + tr('Reputation') + '</h3>' +
       Object.keys(FACTIONS).map((k) => {
         const v = Math.max(0, Math.min(100, d.rep[k]));
@@ -716,6 +730,34 @@ const UI = {
       unlocks.map((u) => unlockLine(u[0], u[1])).join('') + '</ul></section>' +
       '</div></div>' +
       '<div class="btnRow"><button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>';
+  },
+
+  // the licence and the rank: the ladder of the ranks with their stripes (passed, held, still to
+  // earn), then what the next one asks for, ticked off as it is met
+  rankCard() {
+    const now = Career.data.rank || 0, next = PILOT_RANKS[now + 1];
+    const steps = PILOT_RANKS.map((r, i) => '<li class="' + (i < now ? 'done' : i === now ? 'cur' : 'later') + '">' + epaulette(r) +
+      '<b>' + esc(tr(r.title)) + '</b><small>' + r.licence + '</small></li>').join('');
+    let needs = '';
+    if (next) {
+      const rows = Career.rankNeeds(next).map((n) => {
+        const c = n.course && COURSES.find((x) => x.id === n.course);
+        const text = c ? tr('Course: {name}', { name: this.courseText(c).name })
+          : n.flights ? tr('Flights flown') : n.all ? tr('Every course passed') : tr('Courses passed');
+        const need = n.flights || n.passed;
+        return '<li class="' + (n.ok ? 'ok' : 'need') + '"><i>' + (n.ok ? '✓' : '·') + '</i><span>' + esc(text) + '</span>' +
+          (need ? '<em>' + Math.min(n.have, need) + ' / ' + need + '</em><span class="reqBar"><i style="width:' +
+            Math.round(Math.min(1, n.have / need) * 100) + '%"></i></span>' : '') + '</li>';
+      }).join('');
+      needs = '<p class="rankNext">' + tr('Next: <b>{rank}</b> · {licence}', { rank: esc(tr(next.title)), licence: next.licence }) + '</p>' +
+        '<ul class="coNeeds">' + rows + '</ul>';
+    } else needs = '<p class="rankNext ok">' + tr('The highest rank there is.') + '</p>';
+    return '<section class="cvCard rankCard"><h3>' + tr('Rank') + '<span class="cvCount">' + (now + 1) + ' / ' + PILOT_RANKS.length + '</span></h3>' +
+      '<ol class="rankLadder">' + steps + '</ol>' + needs + '</section>';
+  },
+  // a new rank, on the screen after the flight or the exam that earned it
+  promoHtml(r) {
+    return r ? '<div class="promo">' + epaulette(r) + '<div><small>' + tr('Promoted') + '</small><b>' + esc(tr(r.title)) + '</b><span>' + r.licence + '</span></div></div>' : '';
   },
 
   // an airport's table, in the briefing and in the pause: the stand, the runway in use, the
@@ -751,7 +793,7 @@ const UI = {
     this.panel(
       '<div class="screenBar"><button class="btn back" data-act="tab" data-v="dispatch" data-esc>' + tr('Back to the board') + '</button></div>' +
       '<h2 class="clientHead">' + clientLogo(c, true) + esc(c.client) + '</h2>' +
-      '<div class="briefTop"><div class="bigRoute">' + c.fromId + ' → ' + c.toId + '</div>' +
+      '<div class="briefTop"><div class="bigRoute">' + routeHtml(c.fromId, c.toId) + '</div>' +
       '<div class="bigPay">' + fmtMoney(c.pay) + '</div></div>' +
       (typeof RouteMap !== 'undefined' ? '<img class="briefMap" src="' + RouteMap.url(from, to) + '" alt="' + esc(c.fromId + ' → ' + c.toId) + '">' : '') +
       '<div class="briefCols"><div>' +
@@ -849,7 +891,7 @@ const UI = {
       '<div class="debriefTop">' +
       '<div class="' + gradeCls + '">' + (failed ? tr('LOST') : result.grade) + '</div>' +
       '<div class="debriefTitle">' + (failed ? esc(Game.failure ? Game.failure.text : tr('The flight was lost'))
-        : tr('Flight complete · {from} → {to}', { from: result.contract.fromId, to: result.contract.toId })) + '</div>' +
+        : arrowsHtml(tr('Flight complete · {from} → {to}', { from: result.contract.fromId, to: result.contract.toId }))) + '</div>' +
       '</div>' +
       (failed ? '' :
         '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(landed) +
@@ -866,6 +908,7 @@ const UI = {
       '<tr class="total"><td>' + tr(p.total < 0 ? 'Cost to you' : 'Paid to you') + '</td><td>' +
       (p.total < 0 ? '−' : '') + fmtMoney(Math.abs(p.total)) + '</td></tr>' +
       '</table>' +
+      this.promoHtml(p.promoted) +
       (p.rep ? '<p class="repGain">' + tr('Reputation with {who}', { who: esc(tr(FACTIONS[result.contract.faction].name)) }) +
         ': <b>' + (p.rep > 0 ? '+' : '') + p.rep.toFixed(1) + '</b></p>' : '') +
       (p.bankrupt ? '<p class="need">' + tr('Your balance is below −50 000 kr. Nobody will lease you an aeroplane any more — this career is over.') + '</p>' : '') +
@@ -883,7 +926,7 @@ const UI = {
     const fl = Game.flight;
     this.panel(
       '<h2>' + tr('Paused') + '</h2>' +
-      '<p class="lead">' + (fl ? esc(fl.contract.client) + ' · ' + fl.contract.fromId + ' → ' + fl.contract.toId : '') + '</p>' +
+      '<p class="lead">' + (fl ? esc(fl.contract.client) + ' · ' + routeHtml(fl.contract.fromId, fl.contract.toId) : '') + '</p>' +
       '<div class="btnRow"><button class="btn default" data-act="resume">' + tr('Resume') + '</button>' +
       (fl ? '<button class="btn" data-act="pauseFlight">' + tr('The flight') + '</button>' +
         '<button class="btn" data-act="pauseAircraft">' + tr('The aircraft') + '</button>' : '') +
@@ -978,7 +1021,7 @@ const UI = {
     const lang = this.quizLang(), T = QUIZ_TEXT[lang], tx = this.courseText(q.course, lang);
     if (q.index >= q.questions.length) {
       const pass = q.correct >= 3 || q.questions.length === 0;
-      if (pass && !q.paid) { Career.buyCourse(q.course); q.paid = true; Audio2.cue('good'); }
+      if (pass && !q.paid) { Career.buyCourse(q.course); q.paid = true; q.promoted = Career.promotion; Audio2.cue('good'); }
       if (!pass && !q.told) { q.told = true; Audio2.cue('bad'); }
       this.panel((pass
         ? '<div class="badgeWon">' + this.courseIcon(q.course) + '<b>' + esc(tx.name) + '</b></div>'
@@ -987,7 +1030,7 @@ const UI = {
           ? esc(T.passed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '.' +
             (q.course.cost ? ' ' + esc(T.fee) + ' ' + fmtMoney(q.course.cost) + '.' : '')
           : esc(T.failed) + ' — ' + q.correct + ' / ' + q.questions.length + ' ' + esc(T.correct) + '. ' + esc(T.need)) + '</p>' +
-        (pass ? '<p class="ok">' + esc(tx.effect) + '</p>' : '') +
+        (pass ? '<p class="ok">' + esc(tx.effect) + '</p>' + this.promoHtml(q.promoted) : '') +
         '<div class="btnRow">' + (pass ? (Career.newAircraft().length
           ? '<button class="btn default fwd" data-act="tab" data-v="hangar">' + tr('To the hangar') + '</button>' +
             '<button class="btn" data-act="quizdone" data-esc>' + esc(T.back) + '</button>'
@@ -1052,8 +1095,21 @@ const UI = {
         Audio2.setMuted(!Career.settings.sound);
         if (Game.mode === 'paused') this.showPause(); else this.showTitle();
         break;
+      case 'rename': {
+        this.renaming = true; this.showOps();
+        const inp = el('pilotRename');
+        if (inp) { inp.focus(); inp.select(); }
+        break;
+      }
+      case 'renameSave': {
+        const inp = el('pilotRename');
+        if (inp && Career.rename(inp.value)) Audio2.cue('good');
+        this.renaming = false; this.showOps();
+        break;
+      }
+      case 'renameCancel': this.renaming = false; this.showOps(); break;
       case 'rerollName': {
-        const inp = el('pilotName');
+        const inp = el('pilotName') || el('pilotRename');
         if (inp) { inp.value = Career.randomPilotName(inp.value); inp.focus(); }
         break;
       }
@@ -1085,7 +1141,7 @@ const UI = {
         else this.showTitle();
         break;
       case 'backtitle': Game.mode = 'menu'; this.showTitle(); break;
-      case 'tab': this.quiz = null; this.tab = v; this.showOps(); break;
+      case 'tab': this.quiz = null; this.renaming = false; this.tab = v; this.showOps(); break;
       case 'briefing': this.showBriefing(v); break;
       case 'selectAc': Career.select(v); this.showOps(); break;
       case 'mriya': MriyaScreen.show(); break;
@@ -1197,13 +1253,20 @@ function logText(l) {
 function row2(k, v) { return '<div class="row2"><span>' + esc(k) + '</span><b>' + v + '</b></div>'; }
 function keyRow(k, d) { return '<li><kbd>' + esc(k) + '</kbd> ' + esc(d) + '</li>'; }
 function unlockLine(on, text) { return '<li class="' + (on ? 'ok' : 'off') + '"><i>' + (on ? '✓' : '🔒') + '</i>' + esc(text) + '</li>'; }
+// a rank's sleeve: a navy patch with its gold stripes, and the senior captain's star above them
+function epaulette(r) {
+  return '<span class="epaulette' + (r.star ? ' star' : '') + '" title="' + esc(tr(r.title)) + '">' +
+    (r.star ? '<b>★</b>' : '') + '<i></i>'.repeat(r.stripes) + '</span>';
+}
+// the pencil of "change the name"
+const PENCIL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
 // the training branches' colours: the client groups' own, a light blue for the general courses
 const COURSE_COLOR = { general: '#8fc0ea', pax: FACTIONS.pax.color, cargo: FACTIONS.cargo.color, bush: FACTIONS.bush.color };
 // what kind of entry a log line is, for its dot on the Career tab's timeline
 function logKind(l) {
   const t = l.tpl || l.text || '';
   if (/lost/.test(t)) return 'lost';
-  if (/Mriya/.test(t)) return 'legend';
+  if (/Mriya/.test(t) || /^Promoted/.test(t)) return 'legend';
   if (/^Traffic rights/.test(t)) return 'rights';
   if (l.args && l.args.g) return l.args.g === 'A+' || l.args.g === 'A' ? 'top' : l.args.g === 'E' || l.args.g === 'F' ? 'bad' : 'flight';
   return 'note';

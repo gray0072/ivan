@@ -1044,7 +1044,7 @@ const Game = {
     const cap = el('cineCaption');
     cap.classList.remove('on');
     cap.innerHTML = kind === 'intro'
-      ? '<b>' + flag(fl.world) + esc(aptCity(fl.world)) + ' → ' + flag(fl.arrival) + esc(aptCity(fl.arrival)) + '</b><span>' + esc(c.client) + ' · ' + esc(fl.ac.name) + '</span>'
+      ? '<b>' + routeHtml(flag(fl.world) + esc(aptCity(fl.world)), flag(fl.arrival) + esc(aptCity(fl.arrival))) + '</b><span>' + esc(c.client) + ' · ' + esc(fl.ac.name) + '</span>'
       : '<b>' + flag(fl.arrival) + esc(aptCity(fl.arrival)) + '</b><span>' + fl.arrival.id + ' · ' + esc(gateName(this.arrivalGate)) + '</span>';
     el('cineSkip').innerHTML = Input.isCoarse ? esc(tr('Tap to skip')) : esc(tr('Skip')) + ' <kbd>Enter</kbd>';
     if (kind === 'intro') {

@@ -35,6 +35,15 @@ const HUD = {
     // and a tap anywhere on the big map closes it (it covers the buttons, the Map one too)
     const mo = el('mapOverlay');
     if (mo) mo.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); this.closeMap(); });
+    // a checklist's result (done or lost) goes away with a click or a tap, before its time is up;
+    // the checklist itself stays, its steps are worked with the controls
+    if (this.checklistBox) this.checklistBox.addEventListener('pointerdown', (e) => {
+      const b = this.checklistBox;
+      if (!b.classList.contains('qrhDone') && !b.classList.contains('qrhLost')) return;
+      e.preventDefault(); e.stopPropagation();
+      this.outcomeGone = this.outcomeT;
+      b.hidden = true; b.innerHTML = ''; this.checklistKey = '';
+    });
   },
 
   reset() {
@@ -116,7 +125,7 @@ const HUD = {
         (fl.practice ? '<div class="stripRow big"><span class="good">' + tr('PRACTICE LANDING') + '</span></div>' : '') +
         '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + esc(tr(PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type).toUpperCase()) + '</span></div>' +
         '<div class="stripRow"><span>' + tr('AIRCRAFT') + '</span><b>' + esc(fl.ac.name) + '</b></div>' +
-        '<div class="stripRow big route">' + c.fromId + ' → ' + c.toId + '</div>' +
+        '<div class="stripRow big route">' + routeHtml(c.fromId, c.toId) + '</div>' +
         apt(c.fromId) + apt(c.toId) +
         '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
         '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
@@ -234,7 +243,8 @@ const HUD = {
     if (!box) return;
     const c = sys && sys.checklist;
     const fl = sys && sys.flight;
-    const out = !c && sys && sys.outcome && fl && fl.realElapsed - sys.outcome.t < QRH.OUTCOME_SEC ? sys.outcome : null;
+    const out = !c && sys && sys.outcome && fl && fl.realElapsed - sys.outcome.t < QRH.OUTCOME_SEC &&
+      sys.outcome.t !== this.outcomeGone ? sys.outcome : null;
     if (!c && !out) {
       if (!box.hidden) { box.hidden = true; box.innerHTML = ''; this.checklistKey = ''; }
       return;
@@ -247,6 +257,7 @@ const HUD = {
       box.hidden = false;
       box.classList.toggle('qrhDone', !c && out.ok);
       box.classList.toggle('qrhLost', !c && !out.ok);
+      this.outcomeT = out ? out.t : null;
       if (!c) {
         box.innerHTML = '<div class="qrhTitle">' + (out.ok ? '&#10003; ' : '&#10007; ') + esc(tr(out.title)) + '</div>' +
           (out.ok ? '<div class="qrhSub">' + tr('Checklist complete in {a} s of {b} s', { a: out.used, b: out.limit }) + '</div>' : '') +
@@ -391,33 +402,50 @@ const HUD = {
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     this.paintMap(g, w, h, fl, true);
   },
+  // the big map: 680 × 420 on a large desktop window; elsewhere (a phone, a tablet, a small
+  // window) as big as the screen allows, drawn at the screen's pixel density so it stays sharp
   drawMap(fl, sys) {
     if (!this.mapOpen || !this.mapCtx) return;
-    const cv = this.mapCanvas;
-    this.paintMap(this.mapCtx, cv.width, cv.height, fl, false);
+    const cv = this.mapCanvas, g = this.mapCtx;
+    let w = 680, h = 420, dpr = 1;
+    if (!this.bigScreen()) {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = Math.round(window.innerWidth * 0.94); h = Math.round(window.innerHeight - 44);
+    }
+    const sw = w + 'px', sh = h + 'px';
+    if (cv.style.width !== sw || cv.style.height !== sh) { cv.style.width = sw; cv.style.height = sh; }
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.paintMap(g, w, h, fl, false);
   },
   paintMap(g, w, h, fl, mini) {
     g.clearRect(0, 0, w, h);
     const from = fl.world, to = fl.arrival;
     const p0 = { x: from.x, z: from.z }, p1 = { x: to.x, z: to.z };
     const st = fl.st;
-    // What the map frames. The big map: departure, arrival and the aeroplane. The mini map
-    // follows the flight: the whole route for the first half, then only the aeroplane, the
-    // arrival and its final approach, so the map zooms in as you get closer and the runway
-    // and its arrow stay big enough to read; it glides from one framing to the next.
+    // What the map frames. The big map of a large desktop window (with the mini map beside it):
+    // departure, arrival and the aeroplane. The mini map, and the big map wherever there is no
+    // mini map (a phone, a tablet, a small window), follow the flight: the whole route for the
+    // first half, then only the aeroplane, the arrival and its final approach, so the map zooms
+    // in as you get closer and the runway and its arrow stay big enough to read; it glides from
+    // one framing to the next (MAP_GLIDE of the way a mini map frame, as smooth at any frame rate).
+    const follow = mini || !this.bigScreen();
     const fin = World.at(to, -to.half - 12 * NM, 0);
     const pts = [p1, st.pos];
-    if (!mini || fl.distToDestNm() > fl.routeNm() * 0.5) pts.push(p0);
-    if (mini) pts.push(fin);
+    if (!follow || fl.distToDestNm() > fl.routeNm() * 0.5) pts.push(p0);
+    if (follow) pts.push(fin);
     const bx0 = Math.min(...pts.map((p) => p.x)), bx1 = Math.max(...pts.map((p) => p.x));
     const bz0 = Math.min(...pts.map((p) => p.z)), bz1 = Math.max(...pts.map((p) => p.z));
-    const pad = mini ? Math.max(3000, Math.max(bx1 - bx0, bz1 - bz0) * 0.12) : 20000;
+    const pad = follow ? Math.max(3000, Math.max(bx1 - bx0, bz1 - bz0) * 0.12) : 20000;
     const want = [bx0 - pad, bx1 + pad, bz0 - pad, bz1 + pad];
     let b = want;
-    if (mini) {
-      const cur = this.miniBox && this.miniBoxFlight === fl ? this.miniBox : want;
-      b = cur.map((v, i) => v + (want[i] - v) * 0.15);
-      this.miniBox = b; this.miniBoxFlight = fl;
+    if (follow) {
+      const key = mini ? 'mini' : 'big', box = (this.mapBoxes = this.mapBoxes || {})[key];
+      const now = performance.now();
+      const fresh = !box || box.fl !== fl || now - box.t > 2000;      // a new flight, or the map opened again
+      const k = 1 - Math.pow(1 - CONTROLS.MAP_GLIDE, fresh ? 1e9 : (now - box.t) / 1000 * CONTROLS.MINIMAP_FPS);
+      b = fresh ? want : box.b.map((v, i) => v + (want[i] - v) * k);
+      this.mapBoxes[key] = { b, fl, t: now };
     }
     const [minX, maxX, minZ, maxZ] = b;
     const sc = Math.min(w / (maxX - minX), h / (maxZ - minZ));
@@ -521,13 +549,13 @@ const HUD = {
     g.moveTo(0, -9); g.lineTo(7, 7); g.lineTo(0, 3); g.lineTo(-7, 7);
     g.closePath(); g.fill();
     g.restore();
-    if (mini) {
-      // instead of a scale bar: how far to go
+    if (follow) {
+      // how far to go (the mini map shows it instead of a scale bar)
       g.fillStyle = '#c8d4df';
-      g.font = '600 11px system-ui, sans-serif';
+      g.font = '600 ' + (mini ? 11 : 13) + 'px system-ui, sans-serif';
       g.textAlign = 'right';
-      g.fillText(tr('{d} to {id}', { d: Units.dist(fl.distToDestNm()), id: to.id }), w - 8, h - 8);
-      return;
+      g.fillText(tr('{d} to {id}', { d: Units.dist(fl.distToDestNm()), id: to.id }), w - (mini ? 8 : 14), h - (mini ? 8 : 16));
+      if (mini) return;
     }
     // scale bar, in real nautical miles (world metres are WORLD.SCALE real metres)
     const pxPerUnit = sc * WORLD.SCALE * (Units.metric ? 1000 : NM);     // real km or nm
@@ -544,6 +572,19 @@ const HUD = {
 function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
+
+// The arrow of a flight's way, from where it goes to where it lands (ARN → LED): a contrail
+// fading in behind a small aeroplane flying to the right, drawn in the text's colour, so it is
+// the same on every phone instead of a font's thin arrow character. `cls`: 'soft' dims it.
+function routeArrow(cls) {
+  return '<svg class="rtArrow' + (cls ? ' ' + cls : '') + '" viewBox="0 0 40 20" aria-hidden="true">' +
+    '<path class="rtTrail" d="M1.5 10h3"/><path class="rtTrail" d="M8 10h4"/><path class="rtTrail" d="M15.5 10h5"/>' +
+    '<path class="rtPlane" d="M38.5 10Q38.5 11.3 36.4 11.3H32.4L28.6 18.4H26.5L28.7 11.3H25.3L23.8 14.2H22.3L23.1 11V9L22.3 5.8H23.8L25.3 8.7H28.7L26.5 1.6H28.6L32.4 8.7H36.4Q38.5 8.7 38.5 10Z"/></svg>';
+}
+// a route, its two ends (html) with the drawn arrow between them, kept together on one line
+function routeHtml(from, to, cls) { return '<span class="rt">' + from + routeArrow(cls) + to + '</span>'; }
+// every " → " of an html text (a translated line with a route in it) as the drawn arrow
+function arrowsHtml(html, cls) { return String(html).split(' → ').join(routeArrow(cls)); }
 
 // On a touch screen the prompts name the on-screen buttons instead of the keys
 // (the button names as on the buttons, in the game's language)

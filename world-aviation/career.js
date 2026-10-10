@@ -93,6 +93,8 @@ const Career = {
       d.visits = {};
       for (const l of d.log || []) if (l.args && l.args.to && l.args.g) d.visits[l.args.to] = (d.visits[l.args.to] || 0) + 1;
     }
+    // the licence and rank the pilot has earned (an older save: taken as it is, without a promotion)
+    if (d.rank === undefined) d.rank = this.rankIndex();
     // (a board from before it grew to six offers is dealt again)
     if (d.contracts.length < 5 || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
@@ -120,6 +122,7 @@ const Career = {
       newAircraft: [],
       mriya: { bought: [], placed: [], finish: MRIYA_FINISHES[0].id, finishes: [MRIYA_FINISHES[0].id] },
       visits: {},
+      rank: 0,
       difficulty: DIFFICULTY[opts.difficulty] ? opts.difficulty : 'medium',
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
@@ -128,6 +131,49 @@ const Career = {
     this.save();
     this.generateContracts();
     return this.data;
+  },
+
+  // a new name for the pilot (the first line of the log, where they started flying, takes it too)
+  rename(name) {
+    const n = String(name || '').trim().slice(0, 24);
+    if (!n || n === this.data.pilot.name) return false;
+    this.data.pilot.name = n;
+    for (const l of this.data.log) {
+      if (l.tpl === '{name} starts flying. Base: Stockholm Arlanda.') { l.args = { name: n }; l.text = logLine(l.tpl, l.args).text; }
+    }
+    this.save();
+    return true;
+  },
+
+  // ---------- the licence and the rank (PILOT_RANKS) ----------
+  // what a rank asks for of its own, each with whether it is met: { course } passed, { flights }
+  // flown, { passed } courses passed, { all } courses passed (have / need for the counts)
+  rankNeeds(r) {
+    const d = this.data, out = [];
+    for (const id of r.courses || []) out.push({ course: id, ok: this.has(id) });
+    if (r.flights) out.push({ flights: r.flights, have: d.stats.flights, ok: d.stats.flights >= r.flights });
+    if (r.passed) out.push({ passed: r.passed, have: d.courses.length, ok: d.courses.length >= r.passed });
+    if (r.all) out.push({ all: true, passed: COURSES.length, have: d.courses.length, ok: COURSES.every((c) => this.has(c.id)) });
+    return out;
+  },
+  // the highest rank whose needs, and those of every rank below it, are met
+  rankIndex() {
+    let i = 0;
+    while (i + 1 < PILOT_RANKS.length && this.rankNeeds(PILOT_RANKS[i + 1]).every((n) => n.ok)) i++;
+    return i;
+  },
+  rank() { return PILOT_RANKS[Math.min(this.data.rank || 0, PILOT_RANKS.length - 1)]; },
+  // after a flight or a course: a new rank earned is written in the log and returned (to be
+  // celebrated on the screen that follows), else null; a rank once earned is kept
+  checkRank() {
+    const d = this.data, i = this.rankIndex();
+    if (i <= (d.rank || 0)) return null;
+    d.rank = i;
+    const r = PILOT_RANKS[i];
+    d.log.unshift(logLine('Promoted: {rank} · {licence}', { rank: r.title, licence: r.licence }, d.log.length));
+    d.log = d.log.slice(0, 24);
+    this.save();
+    return r;
   },
 
   // how this pilot starts a flight: at the gate (the full ground procedure) or after pushback;
@@ -238,6 +284,7 @@ const Career = {
     // the last course: a Mriya already built may now be flown
     const legend = AIRCRAFT.find((a) => a.legend);
     if (legend && this.mriyaDone() && this.mriyaOpen() && this.data.newAircraft.indexOf(legend.id) < 0) this.data.newAircraft.push(legend.id);
+    this.promotion = this.checkRank();     // shown on the exam's result
     this.save();
     this.generateContracts();
     return true;
@@ -691,9 +738,10 @@ const Career = {
     d.log.unshift(dayLabel(c, result, d.log.length));
     d.log = d.log.slice(0, 24);
     const bankrupt = d.money < CONTRACTS.START_DEBT_LIMIT;
+    const promoted = this.checkRank();
     this.generateContracts();
     this.save();
-    return { lines, total, rep, grade: result.grade, records: true, bankrupt };
+    return { lines, total, rep, grade: result.grade, records: true, bankrupt, promoted };
   },
 
   failFlight(result) {

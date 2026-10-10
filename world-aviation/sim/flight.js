@@ -87,8 +87,6 @@ const Flight = {
     this.timeAccelIndex = 0;
     this.timeAccelResume = 0;        // the step an emergency cut the time from, to climb back to
     this.resumeT = 0;
-    this.timeAccelWant = 0;          // a step asked for in the climb, given once in the cruise on NAV
-    this.wantT = 0;
     this.cheatAccel = false;
     this.guidance = null;
     this.navFailed = false; this.cargoShift = false; this.medical = false;
@@ -336,36 +334,21 @@ const Flight = {
     if (tr.length > 2400) this.track = tr.filter((p, i) => i % 2 === 0 || i === tr.length - 1);
   },
 
-  // The fastest step allowed now: up to x128 on the autopilot in any phase, up to x512 in the
-  // cruise on its NAV (back at x128 by the top of descent, todAccelMax); flying by hand it
-  // depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the ground, low down, in a checklist or
-  // with ice building and the anti-ice off,
-  // and closing on the arrival it comes down by itself (approachAccelMax).
+  // The fastest step allowed now: on the autopilot the fastest of all (x512) at any height and in
+  // any phase; flying by hand it depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the
+  // ground, low down, in a checklist or with ice building and the anti-ice off, and closing on
+  // the arrival it comes down by itself (approachAccelMax).
   timeAccelMax() {
     this.approachCapped = false;
-    this.todCapped = false;
     if (this.st.onGround || this.timeHeld()) return 1;
     const agl = this.altAgl();
     if (agl < SIM.TIME_ACCEL_MIN_ALT_M) return 1;
     let max = 1;
-    if (this.ap.on) {
-      max = SIM.TIME_ACCEL_AP_MAX;
-      if (this.cruiseNav()) {
-        const tod = this.todAccelMax();
-        max = Math.min(SIM.TIME_ACCEL_CRUISE_MAX, tod);
-        this.todCapped = tod < SIM.TIME_ACCEL_CRUISE_MAX;
-      }
-    } else for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
+    if (this.ap.on) max = SIM.TIME_ACCEL_AP_MAX;
+    else for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
     const near = this.approachAccelMax();
-    if (near < max) { max = near; this.approachCapped = true; this.todCapped = false; }
+    if (near < max) { max = near; this.approachCapped = true; }
     return max;
-  },
-  // in the cruise on the autopilot's NAV: where the steps above x128 are allowed
-  cruiseNav() { return this.phase === 'CRUISE' && this.ap.on && this.ap.nav && !this.navFailed && !!this.arrival; },
-  // on the autopilot's NAV on the way up to the cruise (or in it): a faster step asked for now is
-  // given there (timeAccelWant)
-  wantsCruise() {
-    return this.ap.on && this.ap.nav && !this.navFailed && !!this.arrival && (this.phase === 'TAKEOFF' || this.phase === 'CLIMB' || this.phase === 'CRUISE');
   },
   // The time slows down one step at a time, a step every TIME_ACCEL_SLOWDOWN_S real seconds, to
   // the step `floor` when `left` metres are flown: at every step the distance left must hold
@@ -388,11 +371,6 @@ const Flight = {
     if (!this.arrival) return SIM.TIME_ACCEL_STEPS[SIM.TIME_ACCEL_STEPS.length - 1];
     const left = (this.accelDistNm() - SIM.TIME_ACCEL_X1_NM) * NM;
     return left <= 0 ? 1 : this.ladderMax(left, 1);
-  },
-  // and the steps above x128 are taken back to x128 by the top of descent
-  todAccelMax() {
-    const left = (this.distToDestNm() - this.descentStartNm()) * NM;
-    return left <= 0 ? SIM.TIME_ACCEL_AP_MAX : this.ladderMax(left, SIM.TIME_ACCEL_AP_MAX);
   },
   // how far out the descent starts: on the descent profile (aboveProfileFt), at least DESCENT_START_NM
   descentStartNm() {
@@ -443,24 +421,10 @@ const Flight = {
       }
     } else this.resumeT = 0;
     if (this.timeAccelIndex >= this.timeAccelResume) this.timeAccelResume = 0;
-    // T pressed past x128 in the climb: once level in the cruise on NAV the time goes on up to
-    // the step asked for, a step a second (gone with the autopilot, or past the cruise)
-    if (this.timeAccelWant > this.timeAccelIndex) {
-      if (!this.wantsCruise()) this.timeAccelWant = 0;
-      else if (this.timeAccelIndex < this.timeAccelTop() && !this.timeHeld()) {
-        this.wantT += dtReal;
-        if (this.wantT >= SIM.TIME_ACCEL_RESUME_S) {
-          this.wantT = 0;
-          this.timeAccelIndex++;
-          e.timeAccel = SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
-          this.info(tr('TIME x{n}', { n: e.timeAccel }), 'TIME');
-        }
-      } else this.wantT = 0;
-    } else { this.timeAccelWant = 0; this.wantT = 0; }
     if (this.timeAccelIndex === 0 && !this.cheatAccel) { e.timeAccel = 1; return 1; }
     const top = this.timeAccelTop();
     const was = e.timeAccel;
-    // (the cheat holds while the autopilot may run at x128 or faster: extrapolated in a steady
+    // (the cheat holds while the autopilot may run at its fastest: extrapolated in a steady
     // cruise, elsewhere as fast as the physics steps of a frame go)
     if (this.cheatAccel && (!this.ap.on || SIM.TIME_ACCEL_STEPS[top] < SIM.TIME_ACCEL_AP_MAX)) this.cheatAccel = false;
     // the conditions got stricter (the autopilot is off, lower down, an emergency): step down to what is allowed
@@ -468,9 +432,7 @@ const Flight = {
     e.timeAccel = this.cheatAccel ? SIM.TIME_ACCEL_CHEAT : SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
     if (e.timeAccel < was) {
       this.info(tr('TIME x{n}', { n: e.timeAccel }) + (this.approachCapped ? ' — ' + tr('approaching {id}', { id: this.arrival.id })
-        : this.todCapped ? ' — ' + tr('top of descent ahead')
-        : e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height')
-        : e.timeAccel === SIM.TIME_ACCEL_AP_MAX ? ' — ' + tr('faster only in the cruise on NAV') : ''), 'TIME');
+        : e.timeAccel > 1 && !this.ap.on ? ' — ' + tr('the most by hand at this height') : ''), 'TIME');
     }
     return e.timeAccel;
   },
@@ -481,17 +443,7 @@ const Flight = {
     // T refused while a checklist or the ice holds the time: it still climbs back once that is done
     if (dir > 0 && this.timeHeld()) { this.warn('TIME', this.timeAccelLimitText()); return; }
     this.timeAccelResume = 0;                // the pilot sets the time: no climbing back after an emergency
-    if (dir < 0) this.timeAccelWant = 0;
     if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = dir < 0 ? top : this.timeAccelIndex; }
-    else if (dir > 0 && this.timeAccelIndex >= top && this.timeAccelIndex < steps.length - 1 &&
-      steps[this.timeAccelIndex] >= SIM.TIME_ACCEL_AP_MAX && !this.cruiseNav() && this.wantsCruise() && !this.approachCapped &&
-      !this.timeHeld()) {
-      // on the autopilot in the climb: x128 now, and the step asked for once in the cruise
-      this.timeAccelWant = Math.min(Math.max(this.timeAccelWant, this.timeAccelIndex) + 1, steps.indexOf(SIM.TIME_ACCEL_CRUISE_MAX));
-      this.info(tr('Time x{n} in the climb — x{want} once level in the cruise, it speeds up by itself',
-        { n: steps[this.timeAccelIndex], want: steps[this.timeAccelWant] }), 'TIME');
-      return;
-    }
     else if (dir > 0 && this.timeAccelIndex >= top) { this.warn('TIME', this.timeAccelLimitText()); return; }
     else if (dir < 0 && this.timeAccelIndex === 0) { this.info(tr('TIME x{n}', { n: 1 }), 'TIME'); return; }
     else this.timeAccelIndex = clamp(this.timeAccelIndex + dir, 0, top);
@@ -506,9 +458,7 @@ const Flight = {
     if (this.systems && this.systems.checklist) return tr('Work the checklist first — time runs at x1');
     if (this.systems && this.systems.iceHold) return tr('Anti-ice first (K) — time runs at x1');
     if (this.approachCapped) return tr('Approaching {id} — the time slows down by itself, x1 from {nm} out', { id: this.arrival.id, nm: Units.dist(SIM.TIME_ACCEL_X1_NM) });
-    if (this.todCapped) return tr('Top of descent ahead — the time slows down by itself, x{n} from there', { n: SIM.TIME_ACCEL_AP_MAX });
-    if (this.cruiseNav()) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_CRUISE_MAX });
-    if (this.ap.on) return tr('Time x{n} is the fastest here — up to x{max} in the cruise on the autopilot NAV', { n: SIM.TIME_ACCEL_AP_MAX, max: SIM.TIME_ACCEL_CRUISE_MAX });
+    if (this.ap.on) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_AP_MAX });
     const max = this.timeAccelMax();
     const next = SIM.TIME_ACCEL_MANUAL.find((t) => t.max > max);
     return next

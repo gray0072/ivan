@@ -9,15 +9,26 @@
 // ============================================================
 
 // ---------- The pilot and the home base ----------
-// You are a Swedish pilot with an EASA ATPL, based at Stockholm Arlanda.
-// Every contract is flown out of, or back to, your home base.
+// You are a young Swedish pilot with a fresh commercial licence (EASA CPL), based at Stockholm
+// Arlanda. Every contract is flown out of, or back to, your home base.
 const CAREER = {
   HOME_BASE: 'ARN',
-  PILOT_LICENSE: 'EASA ATPL',
   PILOT_COUNTRY: 'Sweden',
   PILOT_CITY: 'Stockholm',
-  INTRO: 'You are a Swedish commercial pilot with an EASA ATPL, based at Stockholm Arlanda with one leased turboprop. Start with Sweden, win Scandinavia, then buy the traffic rights to the rest of the world, one region at a time.'
+  INTRO: 'You are a young Swedish pilot with a fresh commercial licence, based at Stockholm Arlanda with one leased turboprop. Start with Sweden, win Scandinavia, then buy the traffic rights to the rest of the world, one region at a time — and earn the instrument rating, the ATPL and a captain\'s four stripes on the way.'
 };
+
+// The pilot's licence and rank, one after the other (Career.rankIndex): each asks for everything
+// the one before it did, and for its `courses` passed (by id), `flights` flown in all and
+// `passed` courses passed in all (`all`: every course). `stripes`: the gold stripes on the
+// sleeve, `star`: the senior captain's star above them.
+const PILOT_RANKS = [
+  { id: 'cpl', licence: 'EASA CPL', title: 'Commercial pilot', stripes: 1 },
+  { id: 'cplir', licence: 'EASA CPL/IR', title: 'Instrument-rated pilot', stripes: 2, courses: ['pax2'] },
+  { id: 'atpl', licence: 'EASA ATPL', title: 'Airline transport pilot', stripes: 3, courses: ['gen4'], flights: 30 },
+  { id: 'captain', licence: 'EASA ATPL', title: 'Captain', stripes: 4, flights: 50, passed: 12 },
+  { id: 'senior', licence: 'EASA ATPL', title: 'Senior captain', stripes: 4, star: true, all: true }
+];
 
 // Money is in Swedish kronor.
 const CURRENCY = { code: 'SEK', symbol: 'kr', name: 'Swedish krona', locale: 'sv-SE' };
@@ -41,10 +52,9 @@ const SIM = {
   GRAVITY: 9.80665,
   RHO_SL: 1.225,               // sea level air density, kg/m^3
   TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512],   // T one step faster, R one step slower
-  TIME_ACCEL_CHEAT: 1024,      // the Alt+6 cheat (where x512 is allowed)
+  TIME_ACCEL_CHEAT: 1024,      // the Alt+6 cheat (on the autopilot, where x512 is allowed)
   TIME_ACCEL_MIN_ALT_M: 150,   // time acceleration only above this height AGL
-  TIME_ACCEL_AP_MAX: 128,      // with the autopilot engaged: up to x128 in any phase ...
-  TIME_ACCEL_CRUISE_MAX: 512,  // ... and up to x512 in the cruise on NAV, back at x128 by the top of descent
+  TIME_ACCEL_AP_MAX: 512,      // with the autopilot engaged: up to x512 at any height and in any phase
   TIME_ACCEL_X1_NM: 2.7,       // closing on the arrival the time is back at x1 this far out (5 km) ...
   TIME_ACCEL_SLOWDOWN_S: 3,    // ... slowing one step every this many real seconds (the same before the top of descent)
   // From x256 a steady cruise is extrapolated (Flight.coast): the physics flies only
@@ -1000,6 +1010,7 @@ const CONTROLS = {
   MINIMAP_MIN_W: 1100,         // the mini map in the corner: desktop windows at least this wide ...
   MINIMAP_MIN_H: 640,          // ... and this tall
   MINIMAP_FPS: 6,              // the mini map is redrawn this often
+  MAP_GLIDE: 0.15,             // a following map moves this share of the way to its new framing each mini map frame
   // a touch screen's row of buttons that changes with the flight (HUD.updateButtons): after the
   // lift-off the autopilot and the time come up this high above the ground (where the climb starts)
   TOUCH_AP_ROW_AGL_M: 150,
