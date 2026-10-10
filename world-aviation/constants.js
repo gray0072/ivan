@@ -948,6 +948,11 @@ const VIEW = {
   // random length in the range), from the nearest tower within TOWER_M, en route the fly-by shots
   // in this ORDER; a pass only while the aeroplane flies at most PASS_MAX_M in half a shot
   FLYBY: { SHOT_S: [3, 5], TOWER_M: 14000, PASS_MAX_M: 3000, ORDER: ['pass', 'lead', 'side', 'trail'] },
+  // the taxi arrow lies on the ground as the camera sees it (HUD.groundArrow): tilted back by
+  // the camera's look at the ground, at most this far (degrees: 90 would be edge-on), in a
+  // perspective this deep (px; less is a stronger 3D look)
+  TAXI_ARROW_MAX_TILT_DEG: 58,
+  TAXI_ARROW_PERSPECTIVE_PX: 140,
   NEAR_CLIP: 0.7,
   // the haze is about HAZE_M deep: above it the fog thins as the height grows, to HAZE_MIN of
   // its density, so from the cruise the ground below still shows (Scene3D)

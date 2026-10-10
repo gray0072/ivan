@@ -332,11 +332,35 @@ const HUD = {
     const outside = typeof Game !== 'undefined' && Game.camMode !== 'cockpit';
     const top = outside ? Math.round(Cockpit.panelTop(window.innerHeight) - 118) + 'px' : '';
     if (elx.style.top !== top) elx.style.top = top;
-    const rel = wrapDeg(guide.bearing - fl.headingDeg());
-    elx.querySelector('svg').style.transform = 'rotate(' + rel + 'deg)';
+    // on the ground lying on the ground, as the camera sees it; in the air turned in the
+    // screen's plane, up the screen the nose
+    const svg = elx.querySelector('svg');
+    const tf = (fl.st.onGround && this.groundArrow(guide.bearing)) || 'rotate(' + wrapDeg(guide.bearing - fl.headingDeg()).toFixed(1) + 'deg)';
+    if (svg.style.transform !== tf) svg.style.transform = tf;
     elx.classList.toggle('near', guide.dist < 90);
     const d = guide.dist;
     elx.querySelector('b').textContent = d >= NM * 2 ? Units.dist(d / NM) : d > 999 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
+  },
+  // The arrow lying on the ground, as the camera sees it: turned by the way to the carrot (the
+  // bearing, degrees) against where the camera looks along the ground (not the nose: a view
+  // from the tower, the wing or the front sees the way from its own side), and tilted back by
+  // how flat the camera looks at the ground — flat from straight above, laid back in a view
+  // along the ground (no more than VIEW.TAXI_ARROW_MAX_TILT_DEG, so it stays an arrow) — in
+  // perspective, its far end smaller. A CSS transform, or null without the 3D view.
+  groundArrow(bearing) {
+    const cam = typeof Scene3D !== 'undefined' && Scene3D.camera;
+    if (!cam) return null;
+    const e = cam.matrixWorld.elements;
+    // the camera's forward (-z) and up (y) in the world; looking straight down, the screen's up
+    // is what lies ahead on the ground
+    let hx = -e[8], hz = -e[10];
+    const look = Math.min(1, Math.max(-1, -e[9]));
+    if (hx * hx + hz * hz < 0.02) { hx = e[4]; hz = e[6]; }
+    if (hx * hx + hz * hz < 1e-9) return null;
+    const rel = wrapDeg(bearing - bearingDeg(0, 0, hx, hz));
+    const down = Math.max(0, -Math.asin(look) / DEG);             // how far below the horizon it looks
+    const tilt = Math.min(VIEW.TAXI_ARROW_MAX_TILT_DEG, 90 - down);
+    return 'perspective(' + VIEW.TAXI_ARROW_PERSPECTIVE_PX + 'px) rotateX(' + tilt.toFixed(1) + 'deg) rotateZ(' + rel.toFixed(1) + 'deg)';
   },
 
   // ---------- map ----------
