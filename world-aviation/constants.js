@@ -251,21 +251,39 @@ const LAYOUT = {
     big: [[0, 2, 3, 2], [3300, 3, 3, 3], [3600, 3, 4, 4], [3900, 3, 5, 5]]
   },
   // the cargo stands lie past the passenger ones, this much further on than the usual stand
-  // spacing (GATE_SPACING), so the cargo terminal or shed stands apart from the terminal
-  CARGO_GAP: { big: 90, medium: 140, small: 140, tiny: 140 },
+  // spacing (GATE_SPACING), so the cargo terminal or shed stands apart from the terminal: at a big
+  // or a medium airport the control tower stands in that open stretch of apron, halfway between
+  // the two buildings; at a small or a tiny one it rises from the terminal's far end (TOWER_ON_TERMINAL)
+  CARGO_GAP: { big: 160, medium: 180, small: 140, tiny: 140 },
   // ... and stand further apart (the freighters are wide, and an A380 turning in to one must
   // clear a 747-8F parked at the next)
   CARGO_SPACING: 95,
+  // past the cargo area, the general aviation and rescue area (the bush, air ambulance and
+  // search-and-rescue base): GA_STANDS stands for the light aeroplanes (G1 ...) GA_SPACING apart,
+  // the first GA_GAP past the cargo part of the apron, then the air ambulance's own stand, the
+  // helicopter pads (GA_PADS of them, PAD_SPACING apart) in front of the rescue station, and the
+  // airport's fire station with its forecourt (FIRE_ALONG) at the end of the row
+  GA_STANDS: { big: 4, medium: 3, small: 2, tiny: 2 },
+  GA_GAP: 60,
+  GA_SPACING: 45,
+  GA_MAX_SPAN: 36,             // the widest aeroplane the GA stands take (ICAO code C); a wider one works from the cargo stands
+  MEDEVAC_GAP: 52,             // from the last GA stand to the air ambulance's stand
+  GA_PADS: { big: 2, medium: 2, small: 1, tiny: 1 },
+  PAD_GAP: 56,                 // from the air ambulance's stand to the first helicopter pad
+  PAD_SPACING: 45,
+  FIRE_GAP: 62,                // from the last pad to the fire station's middle
+  FIRE_ALONG: 54,              // the fire station's length along the apron
   LANE_MAX_STANDS: 2,          // a lane off the taxiway into the apron at least every this many stands
+  LANE_MAX_GA: 4,              // ... and among the GA stands, every this many
   LANE_SNAP_M: 50,             // a lane this near a runway exit along the taxiway meets it at the exit (or
                                // moves this far from it)
   LANE_STAND_CLEAR_M: 25,      // ... if it stays this far from every stand's lead-in
   // the wingspan an airport's stands and taxiways take (ICAO Annex 14 codes: C under 36 m, D under
   // 52 m, E under 65 m, F under 80 m); a bigger aeroplane may still be flown there, with a warning
   MAX_SPAN: { tiny: 36, small: 52, medium: 65, big: 80 },
-  FILLET_R: 38,                // the centreline radius where taxiways meet at an angle
-  FILLET_STAND_R: 30,          // ... and where a stand's lead-in leaves the apron lane
-  FILLET_EXIT_R: 60,           // ... and where a runway exit (or the line-up) leaves the runway, on both sides
+  FILLET_R: 55,                // the centreline radius where taxiways meet at an angle
+  FILLET_STAND_R: 45,          // ... and where a stand's lead-in leaves the apron lane
+  FILLET_EXIT_R: 70,           // ... and where a runway exit (or the line-up) leaves the runway, on both sides
   CORRIDOR_LEN: 32000,         // approach / departure corridors cut into the terrain, metres from the runway ends
   CORRIDOR_HALF_WIDTH: 1200,   // plus 12 % of the distance, then 2.5 km to blend into the terrain
   APPROACH_SLOPE_DEG: 2.4,     // the ground stays under this slope before the threshold (the glideslope is 3°)
@@ -298,7 +316,20 @@ const HANGARS = {
 // (QUALITY's aptTrees scales it); which trees: the airport's climate (AIRPORT_CLIMATE)
 const AIRPORT_TREES = { tiny: 450, small: 650, medium: 900, big: 1200 };
 // the control tower by the terminal's size: the height of the cab's floor, metres
-const TOWER_H = { tiny: 10, small: 20, medium: 32, big: 56 };
+const TOWER_H = { tiny: 22, small: 28, medium: 32, big: 56 };
+// at these airports the tower rises from the terminal's far end (the cargo side), high over its roof
+// and the flags on it, instead of standing on its own between the terminal and the cargo building
+const TOWER_ON_TERMINAL = { tiny: true, small: true };
+// the buildings of the general aviation and rescue area by the airport's size: [height, depth across]
+// in metres — the GA terminal and hangar behind the GA stands, the air ambulance's hangar, the
+// rescue station (its hangar for the helicopters) and the fire station; their apron fronts on the
+// terminals' line
+const GA_BUILDINGS = {
+  ga: { big: [10, 40], medium: [9, 38], small: [8, 36], tiny: [7, 34] },
+  medevac: { big: [11, 38], medium: [10, 36], small: [9, 34], tiny: [8, 34] },
+  rescue: { big: [13, 42], medium: [12, 40], small: [11, 38], tiny: [10, 36] },
+  fire: { big: [9, 36], medium: [9, 36], small: [8, 34], tiny: [8, 34] }
+};
 // the aeroplanes parked at the stands by the terminal's size (the home airlines' paint): stand i
 // of an airport gets the type (hash of its code + i) along its list (World.buildNetwork)
 const PARKED_TYPES = {
@@ -317,6 +348,19 @@ const PARKED_CARGO_TYPES = {
 // the building behind the cargo stands by the airport's size: [height, depth across] in metres —
 // a big airport's cargo terminal, a smaller one's cargo shed; its apron front on the terminals'
 const CARGO_BUILDING = { big: [18, 60], medium: [13, 44], small: [11, 40], tiny: [10, 36] };
+// ... the light aeroplanes at the GA stands (a bush operator's paint), and the air ambulance's
+// aeroplane at its stand
+const PARKED_GA_TYPES = ['DHC6', 'B1900D', 'DHC6', 'F27F', 'B1900D'];
+const PARKED_MEDEVAC_TYPE = 'B1900D';
+// the helicopters on the pads in front of the rescue station (render/ga3d.js draws them, sim/collide.js
+// runs into them): the search-and-rescue one on the first pad, the air ambulance's on the second;
+// in metres — the main rotor's radius, the length of the fuselage with the tail boom, the height to
+// the top of the rotor head
+const HELICOPTERS = {
+  sar: { rotorR: 10.4, len: 17.4, h: 5.1, name: 'rescue helicopter' },          // an AW139 / Super Puma size; a Mi-8 in Russia
+  sarRu: { rotorR: 10.6, len: 18.2, h: 5.6, name: 'rescue helicopter' },
+  hems: { rotorR: 5.1, len: 10.2, h: 3.6, name: 'air ambulance helicopter' }   // an EC135 size
+};
 
 // ---------- Collisions (sim/collide.js) ----------
 // the own aeroplane against the buildings and the parked aeroplanes of the nearest airport

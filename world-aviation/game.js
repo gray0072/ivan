@@ -1128,7 +1128,7 @@ const Game = {
   // the stands at both ends, drawn with the contract (a contract from an older save draws them now)
   drawGates(contract, from, to) {
     if (World.gatesValid(contract, from, to)) return;
-    Object.assign(contract, World.pickGates(from, to, makeRng(hashStr(contract.id)), World.freight(contract)));
+    Object.assign(contract, World.pickGates(from, to, makeRng(hashStr(contract.id)), World.zoneFor(contract)));
     Career.save();
   },
 
@@ -1420,9 +1420,12 @@ const Game = {
 
 function frame() { return new Promise((r) => requestAnimationFrame(() => r())); }
 function fmtAltFt(ft) { return Math.round(ft).toLocaleString('en-US'); }
-// a stand's name in the game's language ("Gate 3", "Terminal 2, gate 3", "Cargo terminal, stand C2")
+// a stand's name in the game's language ("Gate 3", "Terminal 2, gate 3", "Cargo terminal, stand C2",
+// "General aviation, stand G1", "Air ambulance stand G4")
 function gateName(g) {
   if (!g.number) return tr(g.name);
+  if (g.medevac) return tr('Air ambulance stand G{n}', { n: g.number });
+  if (g.ga) return tr('General aviation, stand G{n}', { n: g.number });
   if (g.cargo) return g.bigCargo ? tr('Cargo terminal, stand C{n}', { n: g.number }) : tr('Cargo apron, stand C{n}', { n: g.number });
   return g.terminals > 1 ? tr('Terminal {t}, gate {n}', { n: g.number, t: g.terminal }) : tr('Gate {n}', { n: g.number });
 }

@@ -87,8 +87,8 @@ const Cinematic = {
       key([0, -70, 26], [H, 10, 4], 62),                                                 // down the runway
       key([H - 250, -70, 34], [H + 500, 120, 10], 60),                                   // the far end
       key([H + 650, 160, 120], [H + 250, T + 300, 30], 58),                              // a climbing turn to the right
-      key([a.apronT1 + 450, T + 230, 135], [a.apronT, T, 15], 40),                       // the terminal's roof, zoomed in
-      key([a.apronT1 + 150, 170, 95], [a.apronT, T, 8], 55),                             // the apron
+      key([a.cargoT1 + 450, T + 230, 135], [a.apronT, T, 15], 40),                       // the terminal's roof, zoomed in
+      key([a.cargoT1 + 150, 170, 95], [a.apronT, T, 8], 55),                             // the apron
       key([p.t + Z * 3 + 120, p.across - Z * 2 - 90, Z * 0.9 + 45], own, 50),            // down to the aeroplane
       key([p.t + Z * 1.3 + 12, p.across - Z * 1.15 - 8, Z * 0.32 + 9], own, 46),         // and round it
       key([p.t - Z * 1.3 - 12, p.across - Z * 1.0 - 8, Z * 0.26 + 7], own, 46)

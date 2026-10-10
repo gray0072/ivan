@@ -284,7 +284,7 @@ const Cargo3D = {
     const cap = { big: 34, medium: 14, small: 6, tiny: 3 }[a.terminal] || 4;
     let n = 0;
     for (const row of [c0 + 9, c0 + 37]) {
-      for (let t = a.cargoT0 + 8; t < a.apronT1 - 30 && n < cap; t += 4.4) {
+      for (let t = a.cargoT0 + 8; t < a.cargoT1 - 30 && n < cap; t += 4.4) {
         if (rng.next() < 0.45) continue;
         k.push(row, 0, -t, row === c0 + 9 ? Math.PI / 2 : -Math.PI / 2);
         Vehicles.trailer(k, TRAILER_COLORS[(rng.next() * TRAILER_COLORS.length) | 0]);

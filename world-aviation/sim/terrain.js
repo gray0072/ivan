@@ -275,7 +275,8 @@ const Terrain = {
       const along = dx * a.dirX + dz * a.dirZ;
       const across = dx * a.perX + dz * a.perZ;
       // the airport itself: level at the field elevation
-      const halfLen = a.rwyLen / 2 + 500;
+      // (and whatever stands past the runway's ends: a short strip's apron runs on beyond it)
+      const halfLen = Math.max(a.rwyLen / 2 + 500, (a.tMax || 0) + 300, -(a.tMin || 0) + 300);
       const blend = 5000;
       const tAlong = smoothstep(halfLen, halfLen + blend, Math.abs(along));
       const tAcross = smoothstep(1400, 1400 + blend, Math.abs(across - LAYOUT.TERMINAL / 2));

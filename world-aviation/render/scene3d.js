@@ -851,6 +851,8 @@ const Scene3D = {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
       if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis, own);
       Responders3D.update(rec, fl, rec.a.id === fl.arrival.id ? this.arrivalGate : null, this.time, dark);
+      // (the van, the pickup or the ambulance for the load at a GA stand: ga3d.js)
+      Ga3D.updateLoad(rec, fl, fl.world && rec.a.id === fl.world.id ? fl.startGate : null, rec.a.id === fl.arrival.id ? this.arrivalGate : null);
     }
     // ---- own aircraft for the chase and wing views
     const airline = fl.contract && fl.contract.airline && AIRLINE_BY_CODE[fl.contract.airline] ? fl.contract.airline : null;

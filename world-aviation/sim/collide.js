@@ -6,9 +6,12 @@
 // its fuselage, wings, tail and engines (Airframe.samples), turned by its
 // heading, pitch and bank, is tested against the obstacles of the nearest
 // airport: its buildings (the terminals, the tower, the hangars, the fuel
-// farm, the cargo terminal or shed, the landside behind the terminal) as boxes,
-// and the aeroplanes parked at its stands (all but the stands this flight
-// uses, Flight.gatesInUse) as the prisms of their type (Airframe.solids).
+// farm, the cargo terminal or shed, the GA terminal, the air ambulance's
+// hangar, the rescue station, the fire station, the landside behind the
+// terminal) as boxes, the aeroplanes parked at its stands (all but the stands
+// this flight uses, Flight.gatesInUse) as the prisms of their type
+// (Airframe.solids), and the helicopters on their pads (their body and the
+// disc of the main rotor).
 //   - in the air, or on the ground at COLLIDE.CRASH_KT or more: the flight
 //     is lost (Flight.fail 'collision');
 //   - slower, on the ground: a touch — the aeroplane stops dead where it
@@ -30,6 +33,11 @@ const OBSTACLE_NAMES = {
   fuel: 'the fuel farm',
   cargo: 'the cargo terminal',
   cargoShed: 'the cargo shed',
+  ga: 'the general aviation terminal',
+  medevac: 'the air ambulance hangar',
+  rescue: 'the rescue station',
+  fire: 'the fire station',
+  heli: 'a parked {type}',
   carpark: 'the car park building',
   hotel: 'the hotel',
   office: 'an office building',
@@ -61,6 +69,18 @@ const Collide = {
       // the model's x is its left wing, its z the nose
       out.push({ kind: 'parked', ox: gate.standX, oz: gate.standZ, ax: { x: -Math.cos(h), z: -Math.sin(h) }, az: { x: Math.sin(h), z: -Math.cos(h) },
         base, solids, rad, top: base + top, gate, type });
+    }
+    // the helicopters: the body along the across axis (the nose out to the apron), the rotor's disc
+    // round the mast a little ahead of the middle
+    for (const p of a.helipads || []) {
+      const H = p.heli, oct = [];
+      for (let i = 0; i < 8; i++) oct.push([Math.cos(i * TAU / 8) * H.rotorR, -H.len * 0.08 + Math.sin(i * TAU / 8) * H.rotorR]);
+      const solids = [
+        convexPrism([[-1.6, -H.len / 2], [1.6, -H.len / 2], [1.6, H.len / 2], [-1.6, H.len / 2]], 0, H.h - 0.8),
+        convexPrism(oct, H.h - 0.9, H.h)
+      ];
+      const rad = Math.max(solids[0].rad, solids[1].rad);
+      out.push({ kind: 'heli', ox: p.x, oz: p.z, ax: along, az: across, base: a.elev, solids, rad, top: a.elev + H.h, heli: H });
     }
     a.obstacleTop = out.reduce((m, o) => Math.max(m, o.top), a.elev) - a.elev;
     a.obstacleReach = out.reduce((m, o) => Math.max(m, Math.hypot(o.ox - a.x, o.oz - a.z) + o.rad), 0);
@@ -99,14 +119,15 @@ const Collide = {
     this.keepClear(c, st);
   },
 
-  // is a point within `margin` metres of a building of the airport (the parked aeroplanes left
-  // out)? The cameras riding with the aeroplane keep out of them (render/scene3d.js). A terminal
-  // counts with its roof as drawn (b.roofAt, set by render/airport3d.js: a big one's rises up to
-  // 18 m over the box and overhangs the apron by up to COLLIDE.ROOF_LIP_M)
+  // is a point within `margin` metres of a building of the airport (the parked aeroplanes and
+  // the helicopters left out)? The cameras riding with the aeroplane keep out of them
+  // (render/scene3d.js). A terminal counts with its roof as drawn (b.roofAt, set by
+  // render/airport3d.js: a big one's rises up to 18 m over the box and overhangs the apron by up
+  // to COLLIDE.ROOF_LIP_M)
   nearBuilding(a, p, margin) {
     const probe = [{ x: p.x, y: p.y, z: p.z, r: margin }];
     for (const ob of this.obstacles(a)) {
-      if (ob.kind === 'parked') continue;
+      if (ob.kind === 'parked' || ob.kind === 'heli') continue;
       const b = ob.bld;
       if (ob.kind === 'terminal' && b && b.roofAt) {
         const rx = p.x - ob.ox, rz = p.z - ob.oz;
@@ -149,7 +170,7 @@ const Collide = {
     const st = fl.st;
     const speed = fl.groundSpeedKt();
     const kind = ob.kind === 'cargo' && !ob.bld.big ? 'cargoShed' : ob.kind;
-    const what = tr(OBSTACLE_NAMES[kind] || OBSTACLE_NAMES.office, { type: ob.type ? ob.type.name : '' });
+    const what = tr(OBSTACLE_NAMES[kind] || OBSTACLE_NAMES.office, { type: ob.type ? ob.type.name : ob.heli ? tr(ob.heli.name) : '' });
     if (!st.onGround) { fl.fail('collision', tr('Collision — you flew into {what}.', { what })); return; }
     if (speed >= COLLIDE.CRASH_KT) { fl.fail('collision', tr('Collision — you hit {what} at {v} kt.', { what, v: Math.round(speed) })); return; }
     // a touch: stopped dead where it was last clear

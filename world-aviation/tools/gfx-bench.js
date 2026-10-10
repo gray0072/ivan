@@ -72,7 +72,7 @@ module.exports = async ({ page, phone, ev, shot, log }) => {
     const from = '${process.env.GFX_FROM || ''}', to = '${process.env.GFX_TO || ''}';
     if (from) c.fromId = from;
     if (to) c.toId = to;
-    if (from || to) Object.assign(c, World.pickGates(World.byId[c.fromId], World.byId[c.toId], makeRng(hashStr(c.id)), World.freight(c)));
+    if (from || to) Object.assign(c, World.pickGates(World.byId[c.fromId], World.byId[c.toId], makeRng(hashStr(c.id)), World.zoneFor(c)));
     const gl = Scene3D.renderer.getContext(), dbg = gl.getExtension('WEBGL_debug_renderer_info');
     return { gpu: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '?', contract: c.id, from: c.fromId, to: c.toId, aircraft: Career.aircraft().id };
   })()`);

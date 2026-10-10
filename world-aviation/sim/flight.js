@@ -95,6 +95,8 @@ const Flight = {
     this.collide = null;             // the last pose clear of everything, the last touch (sim/collide.js)
     this.navFailed = false; this.cargoShift = false; this.medical = false;
     this.meet = [];                  // who waits at the arrival stand: 'ambulance', 'fire', 'police' (Systems.finishChecklist)
+    // (a patient on board: the ambulance is called from the start, to meet the aeroplane)
+    if (opts.contract && opts.contract.type === 'medevac') this.meet.push('ambulance');
     this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0;
     this.warnedBank = false;
     this.locCaptured = false; this.overRunway = false;

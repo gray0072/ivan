@@ -14,6 +14,12 @@
 //     engines of the type flown (modelLayout), and clear of the
 //     service road in front of the terminal — a big aeroplane's wing
 //     sends them further out to the side
+//   - they drive there from where they are kept, when they are called:
+//     the fire engine and the police car out of the airport's fire
+//     station, the ambulance out of the air ambulance's hangar (both in
+//     the general aviation and rescue area, ga3d.js), along the apron's
+//     service road and round into their places; a flight with a patient
+//     on board has its ambulance called from the start (Flight.meet)
 //   - their blue lights flash in double flashes, each vehicle on its
 //     own beat, with a glow round every lamp that grows at night
 //
@@ -26,6 +32,7 @@ const RESP_GAP = 1.5;           // from the wing or an engine's intake to a vehi
 const RESP_FRONT = 19;          // a vehicle's front at most this far past the stand towards the terminal (the service road's lane: 21)
 const RESP_FLASH_S = 0.9;       // one cycle of the lights: a double flash on one side, then on the other
 const RESP_BLUE = '#3f7dff';
+const RESP_SPEED_K = 2.2;       // they drive this many times as fast as a baggage train (makeTrack's speeds)
 
 // the vehicles: the side of the aeroplane (+1 left, -1 right), how far out from the fuselage they
 // stand (police: beyond the ambulance when both are there), their width and length, and the blue
@@ -55,12 +62,22 @@ const Responders3D = {
     const key = gate && fl.meet && fl.meet.length ? gate.index + ':' + fl.meet.join(',') : '';
     const r = rec.responders;
     if (r && (r.fl !== fl || r.key !== key)) {
+      // (those already on their way, or there, stay where they are when another one is called)
+      rec.respDrive = r.fl === fl && r.gate === gate ? { fl, gate, s: Object.fromEntries(r.vehicles.map((v) => [v.kind, v.s])) } : null;
       rec.frame.remove(r.group);
       r.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
       rec.responders = null;
     }
     if (!key) return;
     if (!rec.responders) rec.responders = this.build(rec, fl, gate, key);
+    // on their way: along the track out of the depot, slowing for the turns
+    const dt = clamp(time - (rec.responders.time === undefined ? time : rec.responders.time), 0, 0.2);
+    rec.responders.time = time;
+    for (const v of rec.responders.vehicles) {
+      if (!v.track || v.s >= v.track.len) continue;
+      v.s = Math.min(v.track.len, v.s + dt * trackSpeed(v.track, v.s) * RESP_SPEED_K);
+      this.pose(v);
+    }
     // the lights: a double flash of set A, then of set B
     const size = 2.2 + 2.8 * dark, op = 0.5 + 0.5 * dark;
     for (const v of rec.responders.vehicles) {
@@ -94,6 +111,12 @@ const Responders3D = {
       holder.position.set(LAYOUT.STAND + p.z, 0, -(gate.t + spec.side * p.y));
       holder.rotation.y = -Math.PI / 2;
       holder.add(mesh);
+      // the way there from its depot: out onto the service road's lane on the stands' side, along
+      // it and round into its place, facing out to the apron
+      const from = Ga3D.depot(rec.a, kind), tEnd = gate.t + spec.side * p.y, aEnd = LAYOUT.STAND + p.z;
+      const lane = LAYOUT.SERVICE_ROAD - BAG_LANE;
+      const track = from ? makeTrack([from, [from[0], lane], [tEnd, lane], [tEnd, aEnd]]) : null;
+      const was = rec.respDrive && rec.respDrive.fl === fl && rec.respDrive.gate === gate ? rec.respDrive.s[kind] : undefined;
       const sets = spec.lamps.map((lamps) => {
         const lk = kit();
         for (const [x, y, z] of lamps) lk.box(0.42, 0.2, 0.3, x, y, z, RESP_BLUE);
@@ -109,10 +132,19 @@ const Responders3D = {
         return { mat, glow };
       });
       group.add(holder);
-      vehicles.push({ kind, sets, phase: n * 0.37 });
+      const v = { kind, sets, phase: n * 0.37, holder, track, s: track ? (was !== undefined ? was : 0) : 0 };
+      if (track) this.pose(v);
+      vehicles.push(v);
     });
     rec.frame.add(group);
-    return { fl, key, group, vehicles };
+    return { fl, gate, key, group, vehicles };
+  },
+
+  // a vehicle at s along its track, turned the way it goes (in the airport's frame: x across, z -t)
+  pose(v) {
+    const q = trackAt(v.track, v.s), b = trackAt(v.track, Math.max(0, v.s - 1)), f = trackAt(v.track, Math.min(v.track.len, v.s + 1));
+    v.holder.position.set(q.across, 0, -q.t);
+    if (Math.hypot(f.t - b.t, f.across - b.across) > 1e-3) v.holder.rotation.y = Math.atan2(f.across - b.across, -(f.t - b.t));
   },
 
   // Where a vehicle w wide and len long stands, its inner side y0 out from the aeroplane's axis:

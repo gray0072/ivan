@@ -11,7 +11,7 @@
 // nosewheel-steered pure pursuit of the guidance's carrot, along every taxi route the game
 // gives: from every stand's push-back point on the apron lane to the line-up, and from every
 // runway exit to every stand, then parked on the stand. Each pose is tested against the
-// airport's buildings and parked aeroplanes the way sim/collide.js tests it (the stand the
+// airport's buildings, helicopters and parked aeroplanes the way sim/collide.js tests it (the stand the
 // flight uses, World.standsFor, has no parked aeroplane). Reports every touch: the airport, the type, the route,
 // what was touched and where along the route. A clean layout prints only the summary.
 // ============================================================
@@ -97,6 +97,8 @@ const run = vm.runInContext(`(function (ids, typeList, step) {
         return { x, z, hdg };
       };
       for (const gate of a.gates) {
+        // (a GA stand takes only the types up to LAYOUT.GA_MAX_SPAN: World.zoneFor)
+        if (gate.ga && ac.dims.span > LAYOUT.GA_MAX_SPAN) continue;
         // out: from the push-back point on the apron lane (the tug's last pose) to the line-up
         const lane = gate.laneNode, used = World.standsFor(a, gate, ac);
         const out = World.findRoute(a, lane, a.nodes.rwyStart);

@@ -7,15 +7,18 @@
 //
 //   - the stand numbers: a sharp plate on the lead-in line and a
 //     board on the terminal above each stand (C1, C2 … at the cargo
-//     stands, on the cargo building)
+//     stands, on the cargo building; G1, G2 … at the GA stands, on the
+//     GA terminal and the air ambulance's hangar)
 //   - at every stand with a parked aeroplane: a jet bridge to its
 //     front door (at a small terminal an airstair truck; at a cargo
 //     stand a main-deck loader at the freighter's cargo door, or a
 //     forklift with a pallet at a small one), a GPU, a belt loader at
 //     the aft hold, a fuel truck under the wing of a jet, a catering
-//     truck, cones at the nose, the wingtips and the tail; at the
-//     stands the player uses this flight the bridge is retracted and
-//     the stand is empty
+//     truck, cones at the nose, the wingtips and the tail; at a GA
+//     stand only the GPU, the cones and a pickup (the light aeroplanes
+//     have their own steps), at the air ambulance's an ambulance by the
+//     door; at the stands the player uses this flight the bridge is
+//     retracted and the stand is empty
 //   - floodlight masts on both sides of the apron: their lamps and
 //     the pools of light they throw on the apron at night
 //   - traffic: the baggage trains between the baggage halls and the
@@ -221,9 +224,10 @@ const Apron3D = {
     const rng = makeRng(hashStr(a.id + 'apron'));
     const term = a.buildings.find((b) => b.kind === 'terminal');
     const front = term ? term.across - term.acrossSize / 2 : L.TERMINAL - 30;
-    // the building behind a stand (or a mast): a terminal, or the cargo terminal or shed
-    // (their apron fronts all on one line)
-    const behind = (t) => a.buildings.find((b) => (b.kind === 'terminal' || b.kind === 'cargo') && Math.abs(b.t - t) <= b.along / 2) || term;
+    // the building behind a stand (or a mast): a terminal, the cargo terminal or shed, or one of
+    // the GA and rescue area's (their apron fronts all on one line)
+    const FRONTS = ['terminal', 'cargo', 'ga', 'medevac', 'rescue', 'fire'];
+    const behind = (t) => a.buildings.find((b) => FRONTS.indexOf(b.kind) >= 0 && Math.abs(b.t - t) <= b.along / 2) || term;
     const bridges = a.terminal === 'big' || a.terminal === 'medium';
     rec.gateKits = []; rec.bridges = [];
     const bagStands = [];
@@ -263,8 +267,8 @@ const Apron3D = {
       // the hold: a belt loader at the aft door on the right side (-t); the baggage trains
       // come and stop beside it (baggage3d.js)
       const holdA = L.STAND - Lc * 0.22;
-      if (Lc > 15) { k.push(holdA, 0, -(gate.t - R - 4.6), Math.PI); Vehicles.beltLoader(k); k.pop(); }
-      bagStands.push({ t: gate.t, hold: holdA, R, parked: Lc > 15, inUse: false });
+      if (Lc > 15 && !gate.ga) { k.push(holdA, 0, -(gate.t - R - 4.6), Math.PI); Vehicles.beltLoader(k); k.pop(); }
+      bagStands.push({ t: gate.t, hold: holdA, R, parked: Lc > 15 && !gate.ga, inUse: false });
       // fuel under the right wing of a jet (clear of the baggage trains' way up beside the
       // hold, 10 m out from the fuselage), catering at the rear right door of a big one
       if (jet && S > 25) {
@@ -280,6 +284,12 @@ const Apron3D = {
         const cargoDoor = doorAcross - Math.min(8, Lc * 0.2);
         if (sill > 2.4) { k.push(cargoDoor, 0, -(gate.t + R + 5.2), 0); Vehicles.highLoader(k, sill, rng); k.pop(); }
         else { k.push(cargoDoor, 0, -(gate.t + R + 3.2), 0); Vehicles.forklift(k, true, rng); k.pop(); }
+      } else if (gate.medevac) {
+        // the air ambulance's stand: an ambulance beside the door, facing out to the apron
+        k.push(doorAcross - 2.5, 0, -(gate.t + R + 2.4), -Math.PI / 2); Vehicles.ambulance(k); k.pop();
+      } else if (gate.ga) {
+        // a GA stand: the operator's pickup by the nose, now and then
+        if (i % 2 === 0) { k.push(L.STAND + Lc / 2 + 4, 0, -(gate.t - R - 6), Math.PI); Vehicles.pickup(k, '#e9e9e4'); k.pop(); }
       } else if (!bridges) { k.push(doorAcross, 0, -(gate.t + R + 4.2), 0); Vehicles.stairs(k, sill); k.pop(); }
       const gm = k.mesh();
       at(gm, 0, 0, 0);
@@ -289,7 +299,7 @@ const Apron3D = {
       // terminal, between the glass and the service road, clear of both. Docked, the cab is
       // turned square to the fuselage and the bellows meet its side where it is widest under
       // them (by the nose the body narrows: the bellows reach 1.55 m either side of the door)
-      if (bridges && !gate.cargo) {
+      if (bridges && !gate.cargo && !gate.ga) {
         const rot = [front - 4, gate.t + 14];
         let side = 0;
         for (const dz of [-1.55, 0, 1.55]) side = Math.max(side, fuselageRing(Lc, R, Lc / 2 - doorBack + dz).r);
@@ -326,7 +336,7 @@ const Apron3D = {
     const termA = front - 7.5;
     for (let i = 0; i <= a.gates.length; i++) {
       // (the first one a little nearer its stand, clear of the welcome banner)
-      const sp = (g) => (g.cargo ? L.CARGO_SPACING : L.GATE_SPACING) / 2;
+      const sp = (g) => (g.cargo ? L.CARGO_SPACING : g.ga ? L.GA_SPACING : L.GATE_SPACING) / 2;
       const t = i === 0 ? a.gates[0].t - 30 : i < a.gates.length ? a.gates[i].t - sp(a.gates[i]) : a.gates[i - 1].t + sp(a.gates[i - 1]);
       masts.push([t, termA, true]);
     }

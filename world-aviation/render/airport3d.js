@@ -29,6 +29,9 @@
 //   - the perimeter fence and the trees outside it: perimeter3d.js
 //   - the stands' bridges and vehicles, floodlights and traffic: apron3d.js
 //   - the cargo terminal or shed, the freight, the trucks: cargo3d.js
+//   - the general aviation and rescue area (the GA terminal, the air
+//     ambulance's hangar, the rescue station and its helicopters, the
+//     fire station) and a remote strip's house: ga3d.js
 //   - the terminal's signs, the offices, hotel and car park behind it: landside3d.js
 //   - at night (update's dark): lit windows, letters and banners
 // ============================================================
@@ -83,6 +86,8 @@ const Airport3D = {
     Adverts3D.build(a, rec, at, tex);
     // the freight, the trucks and the crane round the cargo building (cargo3d.js)
     Cargo3D.build(a, rec, at, tex);
+    // the helicopters on their pads, the fire engines, the GA area's vehicles (ga3d.js)
+    Ga3D.build(a, rec, at, tex);
     // the buildings, the landside and the boards never move: baked into a mesh per material
     // (merge3d.js), all but the flags' cloth, which streams in the wind
     Merge3D.bake(frame, frame.children.slice(built), { keep: new Set(rec.flags.map((f) => f.holder)), night: rec.night, tag: 'buildings' });
@@ -91,7 +96,8 @@ const Airport3D = {
     this.buildEquipment(a, rec, at, tex, lambert);
 
     // ---- parked aeroplanes at the gates (hidden where the player parks): the home airlines',
-    // at the cargo stands the freighters of the cargo carriers working there (the type at each
+    // at the cargo stands the freighters of the cargo carriers working there, at the GA stands
+    // the bush operators' and at the air ambulance's stand its operator's (the type at each
     // stand: gate.parked, World.parkedType)
     const types = a.gates.map((gate) => gate.parked);
     // the life round the stands: bridges, vehicles, floodlights, traffic (apron3d.js)
@@ -99,6 +105,8 @@ const Airport3D = {
     for (const gate of a.gates) {
       const type = types[gate.index];
       const al = gate.cargo ? Cargo3D.carrier(a, gate.number - 1) || id.airlines[0] || null
+        : gate.medevac ? Ga3D.ambulanceOperator(a)
+        : gate.ga ? Ga3D.operator(a, gate.number - 1)
         : id.airlines.length ? id.airlines[gate.index % id.airlines.length] : null;
       const plane = AircraftModels.build(type, { airline: al ? al.code : null });
       // (it stands still: its 60-80 parts baked into a mesh per material, its lights left out)
@@ -374,16 +382,20 @@ const Airport3D = {
   buildBuildings(a, rec, at, tex, lambert, id) {
     const L = LAYOUT;
     for (const b of a.buildings) {
-      if (b.kind === 'terminal') this.terminal(a, b, rec, at, tex, lambert, id);
-      else if (b.kind === 'tower') this.tower(a, b, rec, at, tex, lambert, id);
+      if (b.kind === 'terminal') {
+        if (a.remote) Ga3D.remoteTerminal(a, b, rec, at, tex, lambert, id);
+        else this.terminal(a, b, rec, at, tex, lambert, id);
+      } else if (b.kind === 'tower') this.tower(a, b, rec, at, tex, lambert, id);
       else if (b.kind === 'hangar') {
         const n = a.buildings.filter((x) => x.kind === 'hangar').indexOf(b);
         this.hangar(a, b, rec, at, tex, lambert, id, id.airlines[n % Math.max(1, id.airlines.length)]);
-      } else if (b.kind === 'fuel') {
+      } else if (b.kind === 'fuel' && a.remote) Ga3D.fuelDepot(a, b, rec, at, lambert);
+      else if (b.kind === 'fuel') {
         for (let i = 0; i < 3; i++) {
           at(new THREE.Mesh(new THREE.CylinderGeometry(9, 9, 11, 18), lambert(0xd9dcd8)), b.t - 18 + i * 18, b.across - 8 + (i % 2) * 16, 5.5);
         }
       } else if (b.kind === 'cargo') Cargo3D.building(a, b, rec, at, tex, lambert, id);
+      else if (GA_BUILDINGS[b.kind]) Ga3D.building(a, b, rec, at, tex, lambert, id);
     }
   },
 
@@ -657,7 +669,8 @@ const Airport3D = {
   },
 
   // The control tower, by the airport's size (b.size): b.h is the height of the cab's floor,
-  // the national flag flies on the roof
+  // the national flag flies on the roof (a tower on a terminal's end, b.onTerminal, rises out of
+  // its roof: no building of its own)
   //   tiny   - a square concrete post beside a low operations building, a small flared cab
   //   small  - a slender round shaft, a balcony in the airport's colour, an eight-sided cab
   //   medium - a round shaft, a collar in the airport's colour, a wide cab
@@ -674,7 +687,7 @@ const Airport3D = {
       return m;
     };
     if (b.size === 'tiny') {
-      at(new THREE.Mesh(cellBox(12, 6, 16), lambert(P.terminal)), T, A + 8.5, 3);
+      if (!b.onTerminal) at(new THREE.Mesh(cellBox(12, 6, 16), lambert(P.terminal)), T, A + 8.5, 3);
       at(new THREE.Mesh(cellBox(5, h, 5), lambert(P.tower)), T, A, h / 2);
       at(new THREE.Mesh(cellBox(5.4, 1, 5.4), accent), T, A, h - 0.5);
       // (four-sided cylinders turned square to the runway: the cab leans out at the top)
@@ -1165,7 +1178,7 @@ function truncateInBox(pts, t0, t1, a0, a1) {
 
 // the area the ground texture covers, metres along (t) and across the runway
 function groundBox(a) {
-  return { tMin: -a.half - 700, tMax: a.half + 700, aMin: -500, aMax: LAYOUT.TERMINAL + 400 };
+  return { tMin: Math.min(-a.half, a.tMin || 0) - 700, tMax: Math.max(a.half, a.tMax || 0) + 700, aMin: -500, aMax: LAYOUT.TERMINAL + 400 };
 }
 
 // the landside roads as [t, across] polylines: in front of the terminal and out to the
@@ -1255,9 +1268,9 @@ function makeGroundCanvas(a, id, ch) {
   const c0 = roadA + 16, c1 = Math.min(aMax - 30, roadA + 130);
   g.fillStyle = '#56595c'; rect(r.t0 - 60, a.paxT1 - 10, c0, c1);
   const carCols = ['#c8ccd0', '#2b2f33', '#8a1d1d', '#1d3f78', '#e6e6e6', '#6b6f73', '#2e5a3a', '#b5a27a'];
-  g.fillStyle = '#5c5f61'; rect(a.cargoT0, r.t1 - 10, c0, c0 + 50);
+  g.fillStyle = '#5c5f61'; rect(a.cargoT0, a.cargoT1 - 10, c0, c0 + 50);
   g.fillStyle = 'rgba(240,240,235,0.75)';
-  for (let t = a.cargoT0 + 5.8; t < r.t1 - 12; t += 4.4) { rect(t, t + 0.25, c0 + 1, c0 + 17); rect(t, t + 0.25, c0 + 29, c0 + 45); }
+  for (let t = a.cargoT0 + 5.8; t < a.cargoT1 - 12; t += 4.4) { rect(t, t + 0.25, c0 + 1, c0 + 17); rect(t, t + 0.25, c0 + 29, c0 + 45); }
   // the truck yard by the cargo building's dock doors, open to the road
   const y = a.cargoYard;
   g.fillStyle = '#7e8183'; rect(y.t0, y.t1, y.a0, roadA - 8);
@@ -1296,8 +1309,9 @@ function makeGroundCanvas(a, id, ch) {
   });
   // and the fillets in the corners (World.buildFillets)
   for (const f of a.fillets || []) if (!f.apron) segPaths.push({ path: line(f.pts), w: f.w });
+  // (a remote strip's are gravel)
   for (const s of segPaths) asphalt(s.path, s.w + 15, '#8a8574');
-  for (const s of segPaths) asphalt(s.path, s.w, '#65696d');
+  for (const s of segPaths) asphalt(s.path, s.w, a.remote ? '#857c6c' : '#65696d');
   for (let i = 0; i < 1600; i++) {          // a little texture on the pavement
     g.fillStyle = rng.chance(0.5) ? 'rgba(40,42,45,0.12)' : 'rgba(150,150,150,0.08)';
     const q = P(rng.range(-a.half, a.half), rng.range(L.TWY_OFFSET - 12, L.TWY_OFFSET + 12));
@@ -1305,7 +1319,7 @@ function makeGroundCanvas(a, id, ch) {
   }
 
   // the apron: concrete slabs with joints, a service road along the terminal, the stands
-  g.fillStyle = '#9b9e9e'; rect(r.t0, r.t1, r.a0, r.a1);
+  g.fillStyle = a.remote ? '#928a7a' : '#9b9e9e'; rect(r.t0, r.t1, r.a0, r.a1);
   for (let t = r.t0; t < r.t1; t += 7.5) for (let ac = r.a0; ac < r.a1; ac += 7.5) {
     g.fillStyle = 'rgba(' + (rng.chance(0.5) ? '255,255,250' : '60,60,60') + ',' + rng.range(0.02, 0.09).toFixed(3) + ')';
     rect(t, t + 7.5, ac, ac + 7.5);
@@ -1394,6 +1408,17 @@ function makeRunwayCanvas(a, ch) {
     g.strokeStyle = 'rgba(15,15,16,' + rng.range(0.15, 0.4).toFixed(2) + ')';
     g.lineWidth = rng.range(1, 2.5);
     g.beginPath(); g.moveTo(X(ac), Y(t)); g.lineTo(X(ac + rng.range(-0.6, 0.6)), Y(t + rng.range(30, 120))); g.stroke();
+  }
+  // a remote strip is gravel: packed grey-brown stones, two worn wheel tracks down the middle
+  if (a.remote) {
+    g.fillStyle = '#7b7264'; rect(-h - RWY_BLAST, h + RWY_BLAST, -e - RWY_SHOULDER, e + RWY_SHOULDER);
+    for (let i = 0; i < 14000; i++) {
+      const v = rng.range(-22, 22) | 0;
+      g.fillStyle = 'rgba(' + (128 + v) + ',' + (118 + v) + ',' + (102 + v) + ',0.5)';
+      g.fillRect(rng.range(0, cw), rng.range(0, ch), rng.range(1, 3), rng.range(1, 3));
+    }
+    g.fillStyle = 'rgba(70,64,56,0.3)';
+    for (const ac of [-4, 4]) rect(-h, h, ac - 1.5, ac + 1.5);
   }
 
   // markings: white (the edge lines and the centreline are geometry: Airport3D.buildMarkings)

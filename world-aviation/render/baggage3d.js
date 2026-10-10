@@ -48,7 +48,9 @@ const Baggage = {
     rec.bagStands = stands;
     rec.trains = [];
     const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-    const terms = [...new Set(a.gates.map((g) => g.terminal))];
+    // (the GA stands have no baggage hall: their light aeroplanes are loaded by hand; nor has a
+    // remote strip's little terminal)
+    const terms = [...new Set(a.gates.filter((g) => !g.ga && !(a.remote && g.zone === 'pax')).map((g) => g.terminal))];
     const doors = kit();
     for (const term of terms) {
       const gs = a.gates.filter((g) => g.terminal === term);

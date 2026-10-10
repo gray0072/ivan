@@ -1330,6 +1330,8 @@ function clientLogo(c, big) {
 // a stand by its index at an airport (static data): "T2 · gate 3" where there are several
 // terminals, "Cargo · C2" for a cargo stand
 function gateLabel(apt, i) {
+  if (i >= apt.medevacGate) return tr('Air ambulance · G{n}', { n: i - apt.gaFirst + 1 });
+  if (i >= apt.gaFirst) return tr('GA · G{n}', { n: i - apt.gaFirst + 1 });
   if (i >= apt.paxGates) return tr('Cargo · C{n}', { n: i - apt.paxGates + 1 });
   const n = i + 1;
   return apt.terminals > 1 ? tr('T{t} · gate {n}', { t: World.terminalOf(apt, i), n }) : tr('Gate {n}', { n });
