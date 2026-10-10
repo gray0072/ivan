@@ -152,12 +152,15 @@ const GroundLights = {
   },
 
   // dark: 0 by day, 1 at night
-  update(dark) {
+  // half: the Auto quality has shed half of them (AUTO_QUALITY): the cities' half is drawn, the
+  // roads and the villages (the points' second half) are left out
+  update(dark, half) {
     if (!this.points) return;
     const m = this.points.material;
     m.opacity = smoothstep(0.05, 0.6, dark);
     m.size = 1.8 + 1.0 * dark;
     this.points.visible = m.opacity > 0.01;
+    this.points.geometry.setDrawRange(0, half ? Math.ceil(this.count() / 2) : Infinity);
   },
 
   count() { return this.points ? this.points.geometry.attributes.position.count : 0; }

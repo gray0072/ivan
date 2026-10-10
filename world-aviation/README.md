@@ -120,7 +120,7 @@ On the approach the **ILS** scales and the **glide path rings** show the way to 
 
 ## Graphics
 
-**Auto** (the default) picks Medium on phones and High elsewhere and steps down if the frame rate drops; **Low**, **Medium** and **High** set the terrain detail, draw distance, clouds and trees.
+**Auto** (the default) picks Medium on phones and High elsewhere; if the frame rate drops it first leaves out what is missed least — the trees in the dark, every other cloud, half the lights of the towns at night — then lowers the resolution a little, and only then the level; when the frame rate is back up it brings them back. **Low**, **Medium** and **High** set the terrain detail, draw distance, clouds and trees.
 
 ## Tech stack
 

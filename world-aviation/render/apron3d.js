@@ -339,11 +339,17 @@ const Apron3D = {
       blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -4
     });
     rec.poolMat = pool;
+    // (one mesh for them all, drawn only after dusk: by day they cost the whole apron's fill for nothing)
+    rec.pools = at(new THREE.Group(), 0, 0, 0);
     for (const [t, ac] of masts) {
       const g = new THREE.PlaneGeometry(150, 150, 6, 6);
       g.rotateX(-Math.PI / 2);
-      at(new THREE.Mesh(g, pool), t, ac + (ac < L.STAND ? 35 : -45), 0.3);
+      const m = new THREE.Mesh(g, pool);
+      m.position.set(ac + (ac < L.STAND ? 35 : -45), 0.3, -t);
+      rec.pools.add(m);
     }
+    Merge3D.bake(rec.pools);
+    rec.pools.visible = false;
 
     // ---- traffic: the baggage trains on the service road between the stands and the
     // building (its middle 25 m beyond the stands: airport3d.js), the cars on the landside roads
@@ -400,6 +406,7 @@ const Apron3D = {
       if (v.lights) v.lights.visible = dark > 0.25;
     }
     if (rec.poolMat) rec.poolMat.opacity = dark * 0.3;
+    if (rec.pools) rec.pools.visible = dark > 0.01;
     if (rec.lamps) rec.lamps.visible = dark > 0.15;
     for (const n of rec.night || []) n.mat.emissive.copy(n.color).multiplyScalar(dark * n.k);
   },

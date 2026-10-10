@@ -85,7 +85,7 @@ const Game = {
       this.fps = this.fpsN / this.fpsAcc; this.fpsAcc = 0; this.fpsN = 0;
       if (this.mode === 'flying') this.autoQuality();
       const fe = el('fps');
-      if (fe) fe.textContent = Math.round(this.fps) + ' fps · ' + Scene3D.quality.name;
+      if (fe) fe.textContent = Math.round(this.fps) + ' fps · ' + Scene3D.quality.name + (Scene3D.shed.size ? ' −' + Scene3D.shed.size : '');
     }
     if (this.mode === 'flying') this.frame(dt);
     else if (this.mode === 'tour') this.tourFrame(dt);
@@ -1390,14 +1390,29 @@ const Game = {
   },
 
   // ---------- quality ----------
+  // (every half second of a flight, with the frame rate: AUTO_QUALITY)
   autoQuality() {
-    if (Career.settings.quality !== 'auto') return;
-    this.lowFps = this.fps < 30 ? (this.lowFps || 0) + 1 : 0;
-    if (this.lowFps >= 6 && this.quality !== 'low') {
-      this.quality = this.quality === 'high' ? 'medium' : 'low';
-      Scene3D.setQuality(this.quality);
-      if (this.flight) Scene3D.warmup(this.flight);
+    if (Career.settings.quality !== 'auto') { if (Scene3D.shed.size) Scene3D.setShed([]); return; }
+    const A = AUTO_QUALITY, now = performance.now(), per = 2;      // samples a second
+    // a stutter while something big was built is not the scene being too heavy
+    if (now - Scene3D.builtAt < A.GRACE_S * 1000) { this.lowFps = this.highFps = 0; return; }
+    this.lowFps = this.fps < A.LOW_FPS ? (this.lowFps || 0) + 1 : 0;
+    this.highFps = this.fps > A.HIGH_FPS ? (this.highFps || 0) + 1 : 0;
+    const n = Scene3D.shed.size;
+    if (this.lowFps >= A.LOW_S * per) {
       this.lowFps = 0;
+      // slow again soon after a step was taken back: that one stays shed
+      if (now - (this.raisedAt || -Infinity) < A.RELAPSE_S * 1000) this.shedFloor = n + 1;
+      if (n < A.STEPS.length) Scene3D.setShed(A.STEPS.slice(0, n + 1));
+      else if (this.quality !== 'low') {
+        this.quality = this.quality === 'high' ? 'medium' : 'low';
+        Scene3D.setQuality(this.quality);
+        if (this.flight) Scene3D.warmup(this.flight);
+      }
+    } else if (this.highFps >= A.HIGH_S * per && n > (this.shedFloor || 0)) {
+      this.highFps = 0;
+      this.raisedAt = now;
+      Scene3D.setShed(A.STEPS.slice(0, n - 1));
     }
   }
 };

@@ -194,7 +194,7 @@ const Perimeter3D = {
     const tint = new THREE.Color();
     for (const kd of kinds) {
       if (!kd.list.length) continue;
-      const geo = treeGeometry(kd.kind, leaves);
+      const geo = treeGeometry(kd.kind, leaves, quality && quality.treeDetail !== undefined ? quality.treeDetail : 1);
       const im = new THREE.InstancedMesh(geo, mat, kd.list.length);
       kd.list.forEach(([t, ac, y], i) => {
         const hgt = rng.range(kd.h0, kd.h1), wide = kd.kind === 'broad' ? rng.range(1.1, 1.4) : rng.range(0.85, 1.15);
@@ -208,6 +208,7 @@ const Perimeter3D = {
       });
       im.frustumCulled = false;                        // (the unit tree's bounds are at the frame's origin)
       at(im, 0, 0, 0);
+      (rec.trees = rec.trees || []).push(im);          // (hidden in the dark when the Auto quality sheds them: Scene3D.applyShed)
     }
   }
 };
@@ -256,7 +257,8 @@ function makeChainLinkCanvas() {
 
 // ---------- the trees, one of each kind ----------
 // A tree one unit tall, its foot at the origin, vertex-coloured: the trunk and the crown in the
-// colours of the kind (and of the season, for the deciduous ones)
+// colours of the kind (and of the season, for the deciduous ones); detail: how round the round
+// crowns are (QUALITY's treeDetail: 0 = an icosahedron's 20 faces, 1 = 80)
 const LEAF_COLOURS = {
   oak: { green: ['#4b7432', '#527c36', '#466e2f', '#5a8439'], autumn: ['#b8742a', '#c98f2e', '#a5552a', '#c9a23a'], bare: ['#6f6253', '#76695a', '#6a5e50', '#7b6e5e'] },
   birch: { green: ['#6e9a44', '#77a24a'], autumn: ['#d9b23c', '#e0c04a'], bare: ['#7d7266', '#857a6d'] },
@@ -264,7 +266,7 @@ const LEAF_COLOURS = {
   larch: { green: ['#6f9548', '#7aa052', '#83a85a'], autumn: ['#c9a03a', '#d4ad44', '#bf9230'], bare: ['#6b5e4c', '#72644f', '#786a55'] },
   broad: { green: ['#2f6a2a', '#357530', '#2b6226', '#3c7d33'] }
 };
-function treeGeometry(kind, leaves) {
+function treeGeometry(kind, leaves, detail) {
   const parts = [];
   const add = (geo, color, x, y, z, sx, sy, sz, rx, rz) => {
     const g = geo.index ? geo.toNonIndexed() : geo;
@@ -275,7 +277,7 @@ function treeGeometry(kind, leaves) {
     parts.push({ g, color });
   };
   const trunk = (r0, r1, h, color, rz) => add(new THREE.CylinderGeometry(r0, r1, h, 6, 1), color, rz ? Math.sin(rz) * h / 2 : 0, h / 2, 0, 1, 1, 1, 0, -(rz || 0));
-  const blob = (color, x, y, z, sx, sy, sz, detail) => add(new THREE.IcosahedronGeometry(1, detail === undefined ? 1 : detail), color, x, y, z, sx, sy, sz);
+  const blob = (color, x, y, z, sx, sy, sz, d) => add(new THREE.IcosahedronGeometry(1, d === undefined ? (detail === undefined ? 1 : detail) : d), color, x, y, z, sx, sy, sz);
   const cone = (color, r, h, y) => add(new THREE.ConeGeometry(r, h, 7, 1), color, 0, y + h / 2, 0);
   const lc = (k) => (LEAF_COLOURS[k][leaves] || LEAF_COLOURS[k].green);
   switch (kind) {

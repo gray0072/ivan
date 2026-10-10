@@ -66,6 +66,7 @@ const GfxProbe = {
     if (!rec) { for (const r of Scene3D.airports3D.values()) this.retag(r); return; }
     for (const o of rec.frame.children) if (!o.userData.gfx) o.userData.gfx = o.userData.baked === 'buildings' ? 'apt.buildings' : 'apt.ground';
     rec.frame.traverse((o) => { if (o.isMesh && o.material === rec.poolMat) o.userData.gfx = 'apt.pools'; });
+    if (rec.pools) rec.pools.userData.gfx = 'apt.pools';
     if (rec.lamps) rec.lamps.userData.gfx = 'apt.lamps';
     for (const v of rec.traffic || []) if (v.kind === 'road') v.mesh.userData.gfx = 'apt.cars';
     for (const p of rec.parked) p.userData.gfx = 'apt.parked';

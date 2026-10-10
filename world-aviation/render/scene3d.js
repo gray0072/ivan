@@ -34,6 +34,9 @@ const Scene3D = {
   airports3D: new Map(),          // id -> the airport's 3D record (Airport3D.build)
   ownAircraft: null,
   w: 0, h: 0, dpr: 1,
+  shed: new Set(),                // what the Auto quality has shed (AUTO_QUALITY.STEPS: setShed)
+  resScale: 1,                    // ... the pixel ratio's share it leaves
+  builtAt: 0,                     // when something big was last built (performance.now()): Game.autoQuality waits
   camMode: 'cockpit',
   cine: null,                     // Cinematic while the camera flies in or out (Game), else null
   panelHidden: false,             // the instrument panel is hidden (Game): no need to aim above it
@@ -386,6 +389,7 @@ const Scene3D = {
     for (const id of Array.from(this.airports3D.keys())) this.dropAirport(id);
     this.nearBuild = null;
     this.treeKey = null;
+    this.builtAt = performance.now();
   },
 
   // build the whole near mesh at once (start of a flight, a teleport)
@@ -395,6 +399,7 @@ const Scene3D = {
     let guard = 0;
     while (this.nearBuild && !this.nearBuild.done && guard++ < 12) this.updateNearTerrain(st.pos.x, st.pos.z, Math.max(0, fl.altAgl()), false);
     this.treeKey = null;
+    this.builtAt = performance.now();
   },
 
   // ---------- airports (airport3d.js) ----------
@@ -409,6 +414,7 @@ const Scene3D = {
     this.scene.add(rec.group);
     this.airports3D.set(a.id, rec);
     this.applyGates(rec);
+    this.builtAt = performance.now();
     return rec;
   },
 
@@ -459,6 +465,7 @@ const Scene3D = {
       z = ((z - pz + span / 2) % span + span) % span - span / 2 + pz;
       const y = lerp(cloudBase, Math.max(cloudBase + 200, cloudTop), d.base) + d.h * 400;
       s.position.set(x, y, z);
+      s.visible = !(i % 2 && this.shed.has('clouds'));
       const dd = Math.hypot(x - px, z - pz);
       s.scale.set(d.r * 2.1, d.r * 1.25, 1);
       if (dd < d.r * 0.62 && this.aircraftY !== undefined && this.aircraftY > y - 500 && this.aircraftY < y + 500) {
@@ -511,6 +518,7 @@ const Scene3D = {
     for (let i = placed; i < n; i++) { m.makeScale(0, 0, 0); this.trees.setMatrixAt(i, m); }
     this.trees.count = n;
     this.trees.instanceMatrix.needsUpdate = true;
+    this.treesPlaced = placed;
     this.trees.visible = placed > 0;
   },
 
@@ -528,6 +536,15 @@ const Scene3D = {
     this.buildTrees();
     this.buildClouds();
     for (const id of Array.from(this.airports3D.keys())) this.dropAirport(id);
+    this.builtAt = performance.now();
+  },
+
+  // The Auto quality's steps (AUTO_QUALITY, Game.autoQuality): the trees in the dark, every other
+  // cloud and half the ground lights are hidden each frame (update); the resolution goes down here
+  setShed(steps) {
+    this.shed = new Set(steps);
+    const r = AUTO_QUALITY.RES, k = this.shed.has('res2') ? r[1] : this.shed.has('res1') ? r[0] : 1;
+    if (k !== this.resScale) { this.resScale = k; this.resize(); }
   },
 
   resize() {
@@ -536,7 +553,8 @@ const Scene3D = {
     let w = cw, h = ch;
     const scale = Math.min(1, q.maxCanvas / Math.max(cw, ch));
     w = Math.round(cw * scale); h = Math.round(ch * scale);
-    this.dpr = Math.min(window.devicePixelRatio || 1, q.pixelRatio);
+    const full = Math.min(window.devicePixelRatio || 1, q.pixelRatio);
+    this.dpr = full > 1 ? Math.max(1, full * this.resScale) : full;
     this.renderer.setPixelRatio(this.dpr);
     this.renderer.setSize(w, h, true);
     this.canvas.style.width = '100%';
@@ -721,7 +739,7 @@ const Scene3D = {
     const dark = 1 - smoothstep(-0.16, 0.03, sun.el);                   // 1 at night: lights on
     const warm = smoothstep(-0.14, 0.0, sun.el) * (1 - smoothstep(0.05, 0.4, sun.el));   // dusk colours
     this.dark = dark;
-    GroundLights.update(dark);
+    GroundLights.update(dark, this.shed.has('lights'));
     LandCover.update(dark);
     const lit = day > 0.05 ? sd : md.y > 0.05 ? md : NIGHT_GLOW_DIR;    // the moon lights the night, or the sky's glow when it is down
     this.sun.position.copy(eye).addScaledVector(lit, 50000);
@@ -746,6 +764,7 @@ const Scene3D = {
       .scale(STAR_S.setScalar(290000)).setPosition(this.camera.position);
     this.stars.matrixWorldNeedsUpdate = true;
     this.stars.material.uniforms.opacity.value = dark * 0.95 * clamp((env.vis - 2000) / 8000, 0, 1);
+    this.stars.visible = this.stars.material.uniforms.opacity.value > 0.002;
 
     // ---- the sky's colours, the fog and the light: day, dusk and night mixed by the hour
     const vis = clamp(env.vis, 400, this.quality.drawFar);
@@ -791,6 +810,10 @@ const Scene3D = {
       const key = Math.round(st.pos.x / 700) + ',' + Math.round(st.pos.z / 700);
       this.updateTrees(st.pos.x, st.pos.z, key);
     }
+    // (shed by the Auto quality: in the dark they are black on black)
+    const treesOff = this.shed.has('trees') && dark > 0.6;
+    if (this.trees) this.trees.visible = this.treesPlaced > 0 && !treesOff;
+    for (const rec of this.airports3D.values()) for (const t of rec.trees || []) t.visible = !treesOff;
 
     // ---- airports in view
     for (const a of World.airports) {

@@ -959,11 +959,28 @@ const WEATHER = {
 };
 
 // ---------- Camera / rendering presets ----------
-// (landTex: the size of the land cover's tiles, texels: render/landcover.js)
+// (landTex: the size of the land cover's tiles, texels: render/landcover.js; treeDetail: how round the
+// crowns of the trees round an airport are, render/perimeter3d.js: 0 = 20 faces a crown, 1 = 80)
 const QUALITY = {
-  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000, landTex: 512, aptTrees: 0.4 },
-  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000, landTex: 1024, aptTrees: 0.75 },
-  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000, landTex: 1024, aptTrees: 1 }
+  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000, landTex: 512, aptTrees: 0.4, treeDetail: 0 },
+  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000, landTex: 1024, aptTrees: 0.75, treeDetail: 0 },
+  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000, landTex: 1024, aptTrees: 1, treeDetail: 1 }
+};
+
+// The Auto quality (Game.autoQuality): a flight running below LOW_FPS for LOW_S seconds sheds
+// the next of STEPS, the least missed first, each only hidden or thinned (nothing is built again,
+// so a step costs no stutter); above HIGH_FPS for HIGH_S it takes the last one back, but one that
+// brings the low frame rate back within RELAPSE_S stays shed for the session. With every step
+// shed and still slow the preset goes down (High, Medium, Low: built again). The first GRACE_S
+// after something big was built (an airport, the terrain) do not count: that stutter passes.
+//   trees   - the trees (round the airports too) in the dark, where they are black on black
+//   clouds  - every other cloud
+//   lights  - half the ground lights of the towns and villages at night (the villages first)
+//   res1, res2 - the pixel ratio down to RES[0], then RES[1] of the preset's (never below 1)
+const AUTO_QUALITY = {
+  LOW_FPS: 30, LOW_S: 3, HIGH_FPS: 50, HIGH_S: 20, RELAPSE_S: 10, GRACE_S: 2,
+  STEPS: ['trees', 'clouds', 'lights', 'res1', 'res2'],
+  RES: [0.88, 0.8]
 };
 
 const VIEW = {
