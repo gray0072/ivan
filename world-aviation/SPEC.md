@@ -151,7 +151,7 @@ Overall grade A+ … F feeds the payout multiplier (0.4 … 1.35).
 
 ## Emergencies (the point of the game)
 
-Every flight draws its emergencies from the weighted list in `data/emergencies.js` (Easy: one, Medium: one or two, Hard: two), each pinned to one of its phases and a random moment in it (the gear failure only on aircraft with retractable gear). An emergency **interrupts the flight**: time acceleration is cut to 1×, the master caution lights, a caution chime sounds, and the **QRH checklist** panel opens:
+Every flight draws its emergencies from the weighted list in `data/emergencies.js` (Easy: one, Medium: one or two, Hard: two), each pinned to one of its phases and a random moment in it (the gear failure only on aircraft with retractable gear, the load shift only on a cargo contract, the trouble with passengers — `paxOnly` — never on one). An emergency **interrupts the flight**: time acceleration is cut to 1×, the master caution lights, a caution chime sounds, and the **QRH checklist** panel opens:
 
 - the title, a timer bar, and one line on **what happened** ("Fire warning on engine 2: the bell is ringing and its EGT is climbing.") — with the real engine number;
 - the steps **top to bottom, in QRH order**, each with the **control that works it** on the right: the current step is lit, done steps are ticked;
@@ -167,11 +167,13 @@ Every flight draws its emergencies from the weighted list in `data/emergencies.j
 
 The checklist clock is real time; its length is the emergency's limit × the course bonuses × the difficulty factor. The result card (green: done, red: lost) stays `QRH.OUTCOME_SEC` seconds, or goes at once with a click or a tap on it (a × in its corner says so; `HUD.outcomeGone`). The tuning (the chances, how long a ticked step stays, how long the result stays) is `QRH` in `constants.js`.
 
-What the emergencies actually do to the aeroplane: an engine fire or failure removes that engine's thrust, a fuel leak drains 40–80 % of the tank capacity per hour, hydraulic failure weakens the brakes, depressurisation raises the cabin altitude, the gear failure locks the gear up until the checklist is done, a nav failure hides the route guidance, a bird strike limits one engine to 70 % N1, icing keeps building ice (lift down, drag and stall speed up) until anti-ice is on, windshear is a 14 s downdraft with a loss of headwind, a load shift pitches the nose down, an overspeed is a gust that pushes the speed 8 kt past Vne.
+What the emergencies actually do to the aeroplane: an engine fire or failure removes that engine's thrust, a fuel leak drains 40–80 % of the tank capacity per hour, hydraulic failure weakens the brakes, depressurisation raises the cabin altitude, the gear failure locks the gear up until the checklist is done, a nav failure hides the route guidance, a bird strike limits one engine to 70 % N1, icing keeps building ice (lift down, drag and stall speed up) until anti-ice is on, windshear is a 14 s downdraft with a loss of headwind, a load shift pitches the nose down, an overspeed is a gust that pushes the speed 8 kt past Vne. The cabin and the ground trouble (a lithium battery fire, an unruly passenger, lavatory smoke, a laser attack, a passenger in labour) change nothing on the aeroplane: they cost time and attention, and mishandled they cost reputation and pay (a diversion), a little damage (two extinguishers in the lavatory, a hard landing half blinded by the laser).
+
+**Who meets the aeroplane.** An emergency's `meet` (`ambulance`, `fire`, `police`) names who its `done` text calls to the gate; once its checklist is worked they are added to `Flight.meet` (`Systems.finishChecklist`; a checklist that ran out of time calls nobody) and `render/responders3d.js` puts them at the arrival stand (`Scene3D.setFlightGates(gates, arrival)`), into the arrival airport's frame: an ambulance (a white box van, yellow and green checks, red crosses), an airport fire engine (a red crash tender with a water cannon on the roof) and a police car (white, blue and yellow checks, a light bar). They stand along the fuselage facing out to the apron — the ambulance on the left (the front door's side), the police car further out beyond it, the fire engine on the right — each as near the front door as the wing and the engines of the type flown allow (`modelLayout`: its back 1.5 m ahead of the leading edge, an engine's intake or a propeller in its lane), its front at most 19 m past the stand, clear of the service road; where that does not fit (a big jet's wing) it stands 2 m further out to the side, again and again. Their blue lights flash in double flashes, side to side, each vehicle on its own beat, a glow round each lamp that grows at night. Engine fire → the fire service; medical emergency and baby on the way → an ambulance; lithium battery fire → the fire service and an ambulance; unruly passenger, lavatory smoke and laser attack → the police.
 
 | Emergency | Steps (the control) |
 | --- | --- |
-| Engine fire | thrust levers idle (0) · fire handle pull (Enter) · fire bottle 1 (Enter) · maybe bottle 2 (Enter) |
+| Engine fire | thrust levers idle (0) · fire handle pull (Enter) · fire bottle 1 (Enter) · maybe bottle 2 (Enter) — the fire service at the gate |
 | Engine failure | confirm on the gauges · check the fuel · relight (Enter each; 40 % it starts again) |
 | Fuel leak | compare fuel used and on board · crossfeed open · pumps on the leaking side off (Enter) |
 | Fuel state | check fuel to destination · "minimum fuel" to ATC (Enter) |
@@ -182,10 +184,15 @@ What the emergencies actually do to the aeroplane: an engine fire or failure rem
 | Gear will not extend (approach only) | gear lever down (G) · alternate extension (Enter — the gear drops) · three green (Enter) |
 | Hydraulic failure | find the failed system · brake accumulator arm · landing distance +50 % (Enter) |
 | Nav/comm failure | note heading and time · radio 2 · restart the navigation computer (Enter) |
-| Medical emergency | cabin crew first aid · PAN PAN medical to ATC (Enter) |
+| Medical emergency | cabin crew first aid · PAN PAN medical to ATC (Enter) — an ambulance at the gate |
 | Load shifted (cargo) | seat belts on, turbulence speed · pitch trim reset (Enter) |
 | Overweight / misload (on the ground) | parking brake set (Space) · check the load sheet · offload (Enter) |
 | Overspeed | thrust idle (0) · speed brake out (/) · speed below Vne |
+| Lithium battery fire (passengers) | extinguisher on the power bank · cool it with water, into a fire bag · fire service to the gate (Enter) — the fire service and an ambulance at the gate |
+| Unruly passenger (passengers) | flight deck door locked · calm the passenger, no more alcohol · police to the gate (Enter) — the police at the gate |
+| Lavatory smoke (passengers, cruise and descent) | check the lavatory · check the bin for fire · police to the gate (Enter) — the police at the gate |
+| Laser attack (approach only) | eyes away from the light · cockpit lights full bright · report to ATC (Enter) — 25 s; the police at the gate |
+| Baby on the way (passengers, cruise and descent) | ask for a doctor or a midwife · clear a row, blankets, medical kit · PAN PAN medical (Enter) — an ambulance at the gate |
 
 Courses change this: e.g. *Advanced Systems* adds the checklist hints, *De-icing & Winter Survival* slows ice accretion, *CRM & Cabin Safety* gives more response time.
 
@@ -430,6 +437,7 @@ world-aviation/
 │   ├── airport3d.js        an airport in 3D: runway and ground textures, lights and PAPI, buildings, flags, banners, signs
 │   ├── apron3d.js          life on the apron: jet bridges, vehicles, stand plates, floodlights, traffic, the pushback tug
 │   ├── baggage3d.js        the baggage trains between the baggage halls and the stands
+│   ├── responders3d.js     the ambulance, fire engine and police car a checklist called to the arrival stand
 │   ├── landside3d.js       the terminal's signs and the buildings behind it: offices, a hotel, a multi-storey car park
 │   ├── adverts3d.js        the local products' boards: on the terminal front, by the access road, on the office roofs
 │   ├── perimeter3d.js      the perimeter fence and the trees of the airport's climate outside it

@@ -18,6 +18,8 @@
 //     dusk colours; at night the aircraft lights and the pool of the
 //     landing lights on the ground ahead
 //   - the pushback tug at the nose during the push back
+//   - the ambulance, fire engine or police car a checklist called to
+//     the arrival stand (responders3d.js)
 // The cockpit itself is drawn in 2D on a canvas over the top.
 // ============================================================
 
@@ -407,9 +409,11 @@ const Scene3D = {
     return rec;
   },
 
-  // hide the parked aeroplanes at the stands the player uses this flight
-  setFlightGates(gates) {
+  // hide the parked aeroplanes at the stands the player uses this flight; arrival: the stand it
+  // parks at in the end, where the emergency services called on the way wait (responders3d.js)
+  setFlightGates(gates, arrival) {
     this.flightGates = gates || [];
+    this.arrivalGate = arrival || null;
     for (const rec of this.airports3D.values()) this.applyGates(rec);
   },
   applyGates(rec) {
@@ -802,6 +806,7 @@ const Scene3D = {
     for (const rec of this.airports3D.values()) {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
       if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis, own);
+      Responders3D.update(rec, fl, rec.a.id === fl.arrival.id ? this.arrivalGate : null, this.time, dark);
     }
     // ---- own aircraft for the chase and wing views
     const airline = fl.contract && fl.contract.airline && AIRLINE_BY_CODE[fl.contract.airline] ? fl.contract.airline : null;

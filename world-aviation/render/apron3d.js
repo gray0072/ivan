@@ -166,7 +166,47 @@ const Vehicles = {
     for (const x of [-0.95, 0.95]) for (const z of [-3.4, 1.6]) k.wheel(x, z, 0.45);
     return k;
   },
-  cone(k, x, z) { return k.cyl(0.03, 0.2, 0.75, 8, x, 0.375, z, '#ff6a1a').box(0.42, 0.04, 0.42, x, 0.02, z, '#ff6a1a'); }
+  cone(k, x, z) { return k.cyl(0.03, 0.2, 0.75, 8, x, 0.375, z, '#ff6a1a').box(0.42, 0.04, 0.42, x, 0.02, z, '#ff6a1a'); },
+
+  // ---- the emergency services (responders3d.js adds their flashing blue lights)
+  // an ambulance: a box van, white, yellow and green checks along the sides, a red cross on
+  // the sides and the back doors (6.2 m long, 2.4 wide)
+  ambulance(k) {
+    const W = '#f4f4ef', RED = '#c8282a', DK = '#202a33';
+    k.box(2.1, 0.5, 6.0, 0, 0.6, 0, '#3a3d40')
+      .box(2.1, 0.9, 1.0, 0, 1.0, 2.5, W).box(2.1, 1.15, 1.3, 0, 1.75, 1.55, W)
+      .box(1.96, 0.62, 0.06, 0, 1.9, 2.21, DK).box(2.12, 0.55, 0.9, 0, 1.9, 1.6, DK)
+      .box(2.36, 2.35, 3.9, 0, 1.62, -1.1, W)
+      .box(2.38, 0.12, 3.9, 0, 1.52, -1.1, RED);
+    for (let i = 0; i < 6; i++) k.box(2.38, 0.5, 0.65, 0, 1.1, -2.72 + i * 0.65, i % 2 ? '#2f9a46' : '#e8d21a');
+    k.box(2.4, 0.8, 0.26, 0, 2.12, -1.6, RED).box(2.4, 0.26, 0.8, 0, 2.12, -1.6, RED)
+      .box(0.26, 0.8, 0.04, 0, 2.05, -3.07, RED).box(0.8, 0.26, 0.04, 0, 2.05, -3.07, RED)
+      .box(0.04, 2.0, 0.03, 0, 1.55, -3.06, '#9a9ea2');
+    for (const x of [-1.0, 1.0]) for (const z of [-1.95, 1.95]) k.wheel(x, z, 0.42);
+    return k;
+  },
+  // an airport fire engine (a crash tender): red, a white line, grey lockers, a cab with a big
+  // windscreen, a water cannon on the roof and one on the bumper, three axles (11 m long, 3 wide)
+  fireEngine(k) {
+    const RED = '#c41e24', DK = '#1d252d', MET = '#cfd2d4';
+    k.box(2.8, 0.7, 10.6, 0, 0.95, 0, '#2b2e31')
+      .box(3.0, 2.3, 7.4, 0, 2.15, -1.5, RED).box(3.0, 2.1, 2.8, 0, 2.05, 3.7, RED)
+      .box(2.9, 0.95, 0.08, 0, 2.55, 5.12, DK).box(3.02, 0.85, 1.9, 0, 2.6, 3.85, DK)
+      .box(3.02, 0.2, 10.2, 0, 1.45, -0.1, '#f2f2ea')
+      .box(3.02, 1.15, 2.5, 0, 2.3, -0.5, '#c9ccd0').box(3.02, 1.15, 2.5, 0, 2.3, -3.4, '#c9ccd0')
+      .cyl(0.35, 0.42, 0.4, 10, 0, 3.3, 3.0, MET)
+      .cyl(0.11, 0.15, 1.7, 8, 0, 3.6, 3.75, MET, Math.PI / 2 - 0.2)
+      .cyl(0.08, 0.1, 0.9, 8, 0, 1.0, 5.6, MET, Math.PI / 2);
+    for (const x of [-1.25, 1.25]) for (const z of [-3.5, -1.8, 3.7]) k.wheel(x, z, 0.6);
+    return k;
+  },
+  // a police car: white, blue and yellow checks along the sides, the light bar on the roof
+  policeCar(k) {
+    Vehicles.car(k, '#f4f4f4');
+    for (let i = 0; i < 7; i++) k.box(1.82, 0.32, 0.6, 0, 0.62, -1.8 + i * 0.6, i % 2 ? '#f2d21a' : '#1d4fb8');
+    k.box(1.3, 0.1, 0.32, 0, 1.6, -0.2, '#222428');
+    return k;
+  }
 };
 
 const Apron3D = {

@@ -215,7 +215,8 @@ const Systems = {
   schedule() {
     if (this.noEmergencies) return;
     const fl = this.flight;
-    const pool = EMERGENCIES.filter((d) => !(d.cargoOnly && (!fl.contract || fl.contract.faction !== 'cargo')) &&
+    const cargo = !!fl.contract && fl.contract.faction === 'cargo';
+    const pool = EMERGENCIES.filter((d) => !(d.cargoOnly && !cargo) && !(d.paxOnly && cargo) &&
       !(d.retractGear && fl.ac.look && fl.ac.look.fixedGear));
     const d = this.diff;
     const count = d.emergencyOverlap >= 2 ? 2 : d.emergencyOverlap >= 1 ? (this.rng.chance(0.4) ? 2 : 1) : 1;
@@ -417,6 +418,8 @@ const Systems = {
       case 'overweight': st.overweight = false; break;
       default: break;
     }
+    // the ambulance, the fire service or the police called to the arrival stand
+    for (const k of def.meet || []) if (fl.meet.indexOf(k) < 0) fl.meet.push(k);
     this.checklistDone.push(def.id);
     const used = Math.max(1, Math.round(c.limit - c.timeLeft));
     // the outcome keeps the English text and the engine: the HUD shows it in the game's language

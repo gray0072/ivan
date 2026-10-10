@@ -1007,7 +1007,7 @@ const Game = {
       this.takeoffClearance();
     }
 
-    Scene3D.setFlightGates(s.skipPushback ? [this.arrivalGate] : [s.gate, this.arrivalGate]);
+    Scene3D.setFlightGates(s.skipPushback ? [this.arrivalGate] : [s.gate, this.arrivalGate], this.arrivalGate);
     Scene3D.warmup(this.flight);
     HUD.reset();
     HUD.setPrompt('');

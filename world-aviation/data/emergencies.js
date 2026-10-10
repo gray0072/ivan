@@ -22,12 +22,15 @@
 // effect (on a switch): 'bottle' — the fire may need the second bottle; 'relight' — the engine
 // may start again; 'freefall' — the gear drops on its own weight.
 // why: one line on the reason, shown under the current step with checklist hints.
+// meet: who waits at the arrival stand once the checklist is worked ('ambulance', 'fire',
+// 'police'; drawn by render/responders3d.js) — only where its `done` text says so.
+// paxOnly: only on a flight with passengers (never a cargo contract); cargoOnly the other way.
 const EMERGENCIES = [
   {
-    id: 'eng_fire', title: 'ENGINE FIRE', weight: 1.0, phase: ['CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'],
+    id: 'eng_fire', title: 'ENGINE FIRE', weight: 1.0, phase: ['CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'], meet: ['fire'],
     alert: 'continuous', limit: 25, escTitle: 'Engine fire not contained',
     what: 'Fire warning on engine {e}: the bell is ringing and its EGT is climbing.',
-    done: 'Fire out. Engine {e} is shut down — set the thrust again and fly on with the other one.',
+    done: 'Fire out. Engine {e} is shut down — set the thrust again and fly on with the other one. The fire service will meet you at the gate.',
     esc: 'The fire burns through the nacelle, the engine shuts down and you fly the rest on one engine with a fire warning you cannot clear.',
     penalty: { damage: 0.18, fuel: 0.1 },
     steps: [
@@ -166,7 +169,7 @@ const EMERGENCIES = [
     ]
   },
   {
-    id: 'medical', title: 'MEDICAL EMERGENCY', weight: 0.6, phase: ['CLIMB', 'CRUISE', 'DESCENT'],
+    id: 'medical', title: 'MEDICAL EMERGENCY', weight: 0.6, phase: ['CLIMB', 'CRUISE', 'DESCENT'], meet: ['ambulance'],
     alert: 'single', limit: 120, escTitle: 'Passenger critical',
     what: 'The cabin crew call: a passenger has collapsed.',
     done: 'Help is on the way: an ambulance will meet the aeroplane at the gate.',
@@ -213,6 +216,73 @@ const EMERGENCIES = [
       { kind: 'idle', text: 'Thrust levers — IDLE', why: 'Stop adding energy.' },
       { kind: 'spoiler', text: 'Speed brake — OUT', why: 'Drag takes the speed off quickly.' },
       { kind: 'slowVne', value: -15, text: 'Speed — below Vne', why: 'Keep the speed brake out until the needle is back below the red line.' }
+    ]
+  },
+  // ---- trouble in the cabin and from the ground: the ambulance, the fire service or the police
+  // waits at the gate (meet)
+  {
+    id: 'battery', title: 'LITHIUM BATTERY FIRE', weight: 0.5, phase: ['CLIMB', 'CRUISE', 'DESCENT'], paxOnly: true, meet: ['fire', 'ambulance'],
+    alert: 'continuous', limit: 45, escTitle: 'Battery fire flared up',
+    what: 'Smoke in the cabin: a passenger\'s power bank is hissing and burning in a seat pocket.',
+    done: 'The power bank is out and cooling in a bag of water. The fire service and an ambulance will meet the aeroplane at the gate — its owner burnt a hand.',
+    esc: 'Nobody cooled the battery: it flared up again and again, smoke filled the cabin and you diverted to the nearest airport.',
+    penalty: { penaltyRep: 8, moneyFactor: -0.2, damage: 0.05 },
+    steps: [
+      { kind: 'switch', text: 'Cabin crew — fire extinguisher on the power bank', why: 'It puts the flames out, but the cells inside stay hot.' },
+      { kind: 'switch', text: 'Power bank — COOL it with water, into a fire bag', why: 'Water cools the cells, so they do not catch fire one after another.' },
+      { kind: 'switch', text: 'Fire service to the gate — TELL ATC', why: 'A lithium battery can flare up again: the firefighters will check it on the ground.' }
+    ]
+  },
+  {
+    id: 'unruly', title: 'UNRULY PASSENGER', weight: 0.5, phase: ['CLIMB', 'CRUISE', 'DESCENT'], paxOnly: true, meet: ['police'],
+    alert: 'single', limit: 60, escTitle: 'Passenger out of control',
+    what: 'The purser calls: a drunk passenger is shouting at the crew and will not sit down.',
+    done: 'The passenger is belted in and calm, the crew keeps an eye on them. The police will meet the aeroplane at the gate.',
+    esc: 'The passenger tried to force the way to the flight deck. You diverted to have them taken off, and the delay cost the contract.',
+    penalty: { penaltyRep: 6, moneyFactor: -0.15 },
+    steps: [
+      { kind: 'switch', text: 'Flight deck door — LOCKED', why: 'Whatever happens in the cabin, the pilots stay at the controls.' },
+      { kind: 'switch', text: 'Cabin crew — calm the passenger, no more alcohol', why: 'Most trouble ends with a calm word and no more drinks.' },
+      { kind: 'switch', text: 'Police to the gate — TELL ATC', why: 'A passenger who endangers a flight is met by the police: a fine, or a ban from flying.' }
+    ]
+  },
+  {
+    id: 'lavsmoke', title: 'LAVATORY SMOKE', weight: 0.5, phase: ['CRUISE', 'DESCENT'], paxOnly: true, meet: ['police'],
+    alert: 'single', limit: 50, escTitle: 'Fire in the lavatory',
+    what: 'The smoke detector in the rear lavatory is beeping: someone is smoking in there.',
+    done: 'Only a cigarette, and the bin is checked: no fire. The police will meet the smoker at the gate.',
+    esc: 'Nobody checked the lavatory. The cigarette end set the paper towels in the bin alight, and the crew needed two extinguishers.',
+    penalty: { damage: 0.08, penaltyRep: 5 },
+    steps: [
+      { kind: 'switch', text: 'Cabin crew — CHECK the lavatory', why: 'Smoking on board is forbidden: a cigarette in the bin is how lavatory fires start.' },
+      { kind: 'switch', text: 'Waste bin — CHECK for fire, extinguisher ready', why: 'The paper towels in the bin burn quickly and out of sight.' },
+      { kind: 'switch', text: 'Police to the gate — TELL ATC', why: 'Smoking on an aeroplane is against the law: the police deal with the smoker.' }
+    ]
+  },
+  {
+    id: 'laser', title: 'LASER ATTACK', weight: 0.5, phase: ['APPROACH'], meet: ['police'],
+    alert: 'single', limit: 25, escTitle: 'Dazzled by a laser',
+    what: 'A bright green laser beam from the ground sweeps across the cockpit windows.',
+    done: 'Reported. The police are looking for the person with the laser, and an officer will meet you at the gate to take your statement.',
+    esc: 'You looked into the beam. Half blinded, you landed long and hard, and your eyes hurt for the rest of the day.',
+    penalty: { damage: 0.15 },
+    steps: [
+      { kind: 'switch', text: 'Eyes — AWAY from the light, on the instruments', why: 'Looking into the beam dazzles you for minutes.' },
+      { kind: 'switch', text: 'Cockpit lights — FULL BRIGHT', why: 'Bright light inside narrows your pupils, so the next flash dazzles you less.' },
+      { kind: 'switch', text: 'Laser attack — REPORT to ATC, and where it came from', why: 'ATC sends the police to the place and warns the aeroplanes behind you.' }
+    ]
+  },
+  {
+    id: 'labour', title: 'BABY ON THE WAY', weight: 0.35, phase: ['CRUISE', 'DESCENT'], paxOnly: true, meet: ['ambulance'],
+    alert: 'single', limit: 120, escTitle: 'Birth without help',
+    what: 'The cabin crew call: a passenger has gone into labour — the baby is coming early.',
+    done: 'A doctor from among the passengers is with the mother. An ambulance will meet the aeroplane at the gate — perhaps with one more passenger than you took off with.',
+    esc: 'Nobody organised help. The crew coped alone, you diverted to the nearest airport, and the delay cost the contract.',
+    penalty: { penaltyRep: 6, moneyFactor: -0.2 },
+    steps: [
+      { kind: 'switch', text: 'Cabin crew — ask for a doctor or a midwife', why: 'There is often someone among the passengers who has helped a baby into the world.' },
+      { kind: 'switch', text: 'Cabin crew — clear a row, blankets and the medical kit', why: 'The mother needs room to lie down, and the kit has what a birth needs.' },
+      { kind: 'switch', text: 'PAN PAN, medical — TELL ATC', why: 'Gives you priority, and the ambulance is called to the gate.' }
     ]
   }
 ];
