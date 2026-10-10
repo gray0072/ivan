@@ -158,12 +158,14 @@ const Instruments = {
 
   // ---------- airspeed ----------
   // The dial starts at zero (so the needle never sits on a number it is not showing), in knots
-  // or km/h; the needle is pointed, its tip exactly on the speed.
+  // or km/h; the needle is pointed, its tip exactly on the speed. Taxiing it shows the ground
+  // speed (the wind moves the airspeed, not the aeroplane), the taxi speed limit as a gold bug
+  // (sim/taxilimit.js) and the digits in amber over the limit, red well over it.
   asi(ctx, x, y, r, fl) {
-    const st = fl.st, ac = fl.ac;
+    const st = fl.st, ac = fl.ac, taxi = fl.taxi;
     const k = Units.metric ? 1.852 : 1;
-    const v = st.ias / KTS * k;
-    this.bezel(ctx, x, y, r, 'AIRSPEED', Units.metric ? 'km/h' : 'kt', { x: 0, y: 0.7 });
+    const v = (taxi ? taxi.gs : st.ias / KTS) * k;
+    this.bezel(ctx, x, y, r, taxi ? 'GND SPEED' : 'AIRSPEED', Units.metric ? 'km/h' : 'kt', { x: 0, y: 0.7 });
     ctx.save();
     ctx.beginPath(); ctx.arc(x, y, r * 0.93, 0, TAU); ctx.clip();
     ctx.translate(x, y);
@@ -215,21 +217,24 @@ const Instruments = {
       ctx.closePath(); ctx.fill();
       ctx.restore();
     };
-    bug(fl.vRef(), '#54d68a');
-    bug(fl.vr(), '#7fc4ff');
-    if (fl.ap.on && fl.ap.speed) bug(fl.ap.speed, '#e65cf0');
+    if (taxi) bug(taxi.shown, '#ffd97a');
+    else {
+      bug(fl.vRef(), '#54d68a');
+      bug(fl.vr(), '#7fc4ff');
+      if (fl.ap.on && fl.ap.speed) bug(fl.ap.speed, '#e65cf0');
+    }
     // digital window (under the needle)
     ctx.fillStyle = '#05070a';
     ctx.strokeStyle = '#4c5561';
     ctx.lineWidth = 1;
     roundRect(ctx, -win.w / 2, win.y, win.w, win.h, 3);
     ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#7de08a';
+    ctx.fillStyle = taxi ? ['#7de08a', '#ffb03a', '#ff4d3d'][taxi.level] : '#7de08a';
     ctx.font = '700 ' + Math.round(r * 0.18) + 'px ui-monospace, monospace';
     ctx.fillText(String(Math.round(v)), 0, r * 0.37);
     // the true airspeed over the centre: high up the needle (IAS) reads far below it, and the
     // type's cruise speed in the hangar is a true airspeed
-    if (r > 40 && st.tas / KTS > 30) {
+    if (!taxi && r > 40 && st.tas / KTS > 30) {
       ctx.fillStyle = '#8fb8d8';
       ctx.font = '600 ' + Math.max(8, Math.round(r * 0.12)) + 'px system-ui, sans-serif';
       ctx.fillText('TAS ' + Math.round(st.tas / KTS * k), 0, -r * 0.3);

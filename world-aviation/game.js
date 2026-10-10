@@ -104,31 +104,14 @@ const Game = {
     const shot = this.cineShot();
 
     if (!paused && !shot) {
-      // controls (the autopilot flies the surfaces when it is engaged)
-      if (!fl.ap.on) {
-        // the surfaces follow the stick at their actuators' rate
-        const rate = CONTROLS.SURFACE_RATE;
-        st.elevator = approach(st.elevator, ax.pitch, rate.elevator * dt);
-        st.aileron = approach(st.aileron, ax.roll, rate.aileron * dt);
-        // on the ground the arrows / the stick steer the nosewheel too
-        st.rudder = approach(st.rudder, st.onGround && !ax.rudder ? ax.roll : ax.rudder, rate.rudder * dt);
-      } else if (Math.abs(ax.pitch) > 0.5 || Math.abs(ax.roll) > 0.5) {
-        fl.ap.on = false;
-        fl.warn('AP', tr('Autopilot disconnected — you have control'));
-      }
-      // the keys move the lever, which maps to thrust on a curve (finer at low power)
-      if (ax.throttle) fl.setThrottle(throttleFromLever(leverFromThrottle(st.throttle) + ax.throttle * dt * CONTROLS.THROTTLE_KEY_RATE));
-      // the slider sets a target; once there (or when the autothrottle takes over) it lets go of the levers
-      const tt = Input.touchThrottle;
-      if (tt !== null) {
-        if (fl.ap.on && !Input.touch.thr) Input.touchThrottle = null;
-        else {
-          fl.setThrottle(approach(st.throttle, tt, dt * 0.8));
-          if (!Input.touch.thr && Math.abs(st.throttle - tt) < 0.002) Input.touchThrottle = null;
-        }
-      }
-      Input.syncThrottle(st.throttle);
-      st.brakeInput = ax.brake;
+      // the first officer taxiing: the stick, the brakes or the throttle take the controls back
+      if (fl.copilot && fl.copilot.on && (Math.abs(ax.roll) > COPILOT.TAKEOVER_INPUT || ax.brake > COPILOT.TAKEOVER_INPUT ||
+        ax.throttle || Input.touch.thr)) this.copilotOff(tr('You have control — the first officer let go'));
+      if (fl.copilot && fl.copilot.on) {
+        Input.touchThrottle = null;
+        Copilot.update(fl, dt * fl.env.timeAccel);
+        Input.syncThrottle(st.throttle);
+      } else this.pilotControls(dt, ax);
 
       if (fl.phase === 'PUSHBACK') this.updatePushback(dt);
       const simDt = fl.update(dt);
@@ -136,6 +119,7 @@ const Game = {
       if (this.practice) this.updatePractice(simDt);
       this.updatePhase(dt);
       Guidance.update(this);
+      TaxiLimit.update(fl);
     }
     if (shot && !paused) this.updateCine(dt);
     const cine = this.cineShot();
@@ -162,6 +146,35 @@ const Game = {
     HUD.updateMini(fl, sys, this.helpOpen);
 
     if (fl.failure && this.mode === 'flying') this.failFlight(fl.failure);
+  },
+
+  // the pilot's controls (the autopilot flies the surfaces when it is engaged)
+  pilotControls(dt, ax) {
+    const fl = this.flight, st = fl.st;
+    if (!fl.ap.on) {
+      // the surfaces follow the stick at their actuators' rate
+      const rate = CONTROLS.SURFACE_RATE;
+      st.elevator = approach(st.elevator, ax.pitch, rate.elevator * dt);
+      st.aileron = approach(st.aileron, ax.roll, rate.aileron * dt);
+      // on the ground the arrows / the stick steer the nosewheel too
+      st.rudder = approach(st.rudder, st.onGround && !ax.rudder ? ax.roll : ax.rudder, rate.rudder * dt);
+    } else if (Math.abs(ax.pitch) > 0.5 || Math.abs(ax.roll) > 0.5) {
+      fl.ap.on = false;
+      fl.warn('AP', tr('Autopilot disconnected — you have control'));
+    }
+    // the keys move the lever, which maps to thrust on a curve (finer at low power)
+    if (ax.throttle) fl.setThrottle(throttleFromLever(leverFromThrottle(st.throttle) + ax.throttle * dt * CONTROLS.THROTTLE_KEY_RATE));
+    // the slider sets a target; once there (or when the autothrottle takes over) it lets go of the levers
+    const tt = Input.touchThrottle;
+    if (tt !== null) {
+      if (fl.ap.on && !Input.touch.thr) Input.touchThrottle = null;
+      else {
+        fl.setThrottle(approach(st.throttle, tt, dt * 0.8));
+        if (!Input.touch.thr && Math.abs(st.throttle - tt) < 0.002) Input.touchThrottle = null;
+      }
+    }
+    Input.syncThrottle(st.throttle);
+    st.brakeInput = ax.brake;
   },
 
   hintOn() { return !!(Career.difficulty.qrhHint || (this.systems && this.systems.hint)); },
@@ -468,13 +481,15 @@ const Game = {
       return;
     }
 
-    // taxiing at twice the limit (off the runway, where a take-off roll is not taxiing): reported
-    // once a flight and fined on the debrief, the fastest speed remembered
-    if ((p === 'ENGINE_START' || p === 'TAXI_OUT' || p === 'HOLD_SHORT' || p === 'EXIT') && st.onGround && speed > SIM.TAXI_OVERSPEED_KT) {
+    // taxiing at TAXI.FINE_OVER times the limit there (sim/taxilimit.js; off the runway, where a
+    // take-off or a landing roll is not taxiing): reported once a flight and fined on the
+    // debrief, the fastest speed remembered
+    const taxi = fl.taxi;
+    if (taxi && st.onGround && speed > taxi.limit * TAXI.FINE_OVER) {
       const here = fl.nearestApt(), loc = here ? World.local(here, st.pos.x, st.pos.z) : null;
       const onRunway = loc && Math.abs(loc.across) < here.rwyHalfWidth + 10 && Math.abs(loc.t) < here.half + 100;
       if (!onRunway) {
-        if (!fl.taxiOverspeed) fl.warn('TAXISPEED', tr('Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported', { v: Math.round(speed), max: SIM.TAXI_LIMIT_KT }));
+        if (!fl.taxiOverspeed) fl.warn('TAXISPEED', tr('Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported', { v: Math.round(speed), max: taxi.limit }));
         fl.taxiOverspeed = Math.max(fl.taxiOverspeed || 0, Math.round(speed));
       }
     }
@@ -506,8 +521,7 @@ const Game = {
       }
       HUD.setPrompt(tr('<b>Taxi</b> to the holding point of runway {rwy}', { rwy: apt.rwyName }) +
         ' · ' + tr('throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>') +
-        (g && g.visible ? '<br>' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') +
-        (speed > 25 ? ' · <b class="bad">' + tr('too fast — keep below 20 kt') + '</b>' : ''));
+        (g && g.visible ? '<br>' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') + this.taxiSpeedHint());
     } else if (p === 'HOLD_SHORT') {
       HUD.setPrompt('<b>' + tr('Holding point runway {rwy}', { rwy: apt.rwyName }) + '</b>' + (speed > 2 ? ' · <b>' + tr('stop here') + '</b>' : '') +
         '<br>' + tr('set flaps {n} <kbd>F</kbd>, then <kbd>Enter</kbd> for the take-off clearance', { n: this.takeoffFlaps() }));
@@ -604,11 +618,17 @@ const Game = {
       }
     } else if (p === 'EXIT') {
       if (st.spoiler && !this.spoilerTold) { this.spoilerTold = true; fl.info(tr('Off the runway — spoiler in <kbd>/</kbd>')); }
-      const gate = this.arrivalGate;
+      const gate = this.arrivalGate, g = fl.guidance, fo = fl.copilot;
       const d = Math.hypot(st.pos.x - gate.standX, st.pos.z - gate.standZ);
       const align = Math.abs(wrapDeg(fl.headingDeg() - gate.parkHdg));
       const inBox = d < SIM.PARK_RADIUS_M && align < SIM.PARK_ALIGN_DEG;
-      if (inBox && speed < 1.5) {
+      if (fo && fo.on && fo.done) this.copilotOff(tr('First officer: your controls — turn in to {gate} and stop on the stop bar', { gate: gateName(gate) }));
+      if (fo && fo.on) {
+        HUD.setPrompt('<b>' + tr('The first officer is taxiing to {gate}', { gate: gateName(gate) }) + '</b>' +
+          (g && g.visible ? ' · ' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') + '<br>' +
+          (Input.isCoarse ? tr('<kbd>Enter</kbd> takes the controls back')
+            : tr('time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n}) · <kbd>Enter</kbd> takes the controls back', { n: fl.env.timeAccel })));
+      } else if (inBox && speed < 1.5) {
         if (!st.parkingBrake) HUD.setPrompt(tr('<b>In the parking box</b><br>set the parking brake — <kbd>Space</kbd>'));
         else {
           fl.setPhase('SHUTDOWN');
@@ -616,8 +636,13 @@ const Game = {
           fl.info(tr('Parking brake set — engines shutting down'));
         }
       } else {
-        HUD.setPrompt('<b>' + tr('Taxi to {gate}', { gate: gateName(gate) }) + '</b> · ' + tr('follow the arrow, keep below 20 kt') +
-          (d < 80 ? '<br>' + tr('stop on the stop bar — {d} m', { d: Math.round(d) }) + (align > SIM.PARK_ALIGN_DEG ? ', ' + tr('straighten up') : '') : ''));
+        const flights = Career.flightsIn(fl.ac.id);
+        const help = d < 80 ? '<br>' + tr('stop on the stop bar — {d} m', { d: Math.round(d) }) + (align > SIM.PARK_ALIGN_DEG ? ', ' + tr('straighten up') : '')
+          : Copilot.left(fl) < COPILOT.HANDOVER_M ? ''
+          : flights >= COPILOT.FLIGHTS ? '<br>' + tr('<kbd>Enter</kbd> — the first officer taxis, time x{n}', { n: COPILOT.TIME_ACCEL })
+          : '<br>' + tr('after {n} flights in this type the first officer taxis for you ({k} of {n})', { n: COPILOT.FLIGHTS, k: flights });
+        HUD.setPrompt('<b>' + tr('Taxi to {gate}', { gate: gateName(gate) }) + '</b> · ' +
+          tr(fl.followMe && Copilot.left(fl) > 0 ? 'follow the FOLLOW ME car' : 'follow the arrow') + this.taxiSpeedHint() + help);
       }
     } else if (p === 'SHUTDOWN') {
       HUD.setPrompt(tr('<b>Shutting down</b> · {ac} at {gate}', { ac: fl.ac.name, gate: gateName(this.arrivalGate) }));
@@ -634,6 +659,15 @@ const Game = {
     if (!st.onGround && fl.altAgl() > 30 && !(p === 'APPROACH' && fl.onCorridor()) && p !== 'TAKEOFF' && fl.terrainAhead() < 120) {
       fl.warn('TERRAIN', tr('TERRAIN — PULL UP'));
     }
+  },
+
+  // the prompt's word on the taxi speed (sim/taxilimit.js): over the limit (amber), or more
+  // than TAXI.RED_OVER times over it (red)
+  taxiSpeedHint() {
+    const t = this.flight.taxi;
+    if (!t || !t.level) return '';
+    const v = Math.round(t.shown);
+    return ' · <b' + (t.level > 1 ? ' class="bad">' + tr('too fast — slow down to {v} kt', { v }) : '>' + tr('slow down to {v} kt', { v })) + '</b>';
   },
 
   // When the spoiler (the speed brake) helps, and when it has to go in: high on the descent it
@@ -725,7 +759,8 @@ const Game = {
     const exit = Guidance.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
     this.arrivalRoute = World.findRoute(a, exit, this.arrivalGate.node);
     fl.setPhase('EXIT');
-    fl.info(tr('Leave the runway at the next exit and taxi to {gate}', { gate: gateName(this.arrivalGate) }));
+    fl.info(tr(fl.followMe ? 'Ground: welcome to {id} — a FOLLOW ME car waits past the exit and leads you to {gate}'
+      : 'Leave the runway at the next exit and taxi to {gate}', { id: a.id, gate: gateName(this.arrivalGate) }));
   },
 
   // ---------- actions ----------
@@ -781,6 +816,7 @@ const Game = {
         break;
       case 'parkBrake':
         if (fl.phase === 'PUSHBACK') break;
+        if (fl.copilot && fl.copilot.on) this.copilotOff(tr('You have control — the first officer let go'));
         st.parkingBrake = !st.parkingBrake;
         fl.info(tr(st.parkingBrake ? 'Parking brake set' : 'Parking brake released'));
         Audio2.cue('parkbrake', st.parkingBrake);
@@ -801,7 +837,10 @@ const Game = {
         fl.info(tr('Autopilot back on the programme — NAV to {id} · ALT {alt} ft', { id: fl.arrival.id, alt: fmtAltFt(fl.ap.alt) }), 'AP');
         Audio2.cue('click');
         break;
-      case 'throttlePreset': fl.setThrottle(arg); break;
+      case 'throttlePreset':
+        if (fl.copilot && fl.copilot.on) this.copilotOff(tr('You have control — the first officer let go'));
+        fl.setThrottle(arg);
+        break;
       case 'starter':
         // with a checklist open, Enter / Go works its current switch
         if (sys.checklist) this.doChecklistStep(sys.checklist.stepIndex);
@@ -837,7 +876,34 @@ const Game = {
       this.takeoffClearance();
     } else if (p === 'TAXI_OUT') {
       fl.warn('HOLD', tr('Taxi to the holding point first'));
+    } else if (p === 'EXIT') {
+      this.toggleCopilot();
     }
+  },
+
+  // Enter after the landing: the first officer taxis in (sim/copilot.js), once the pilot has flown
+  // COPILOT.FLIGHTS flights in the type; Enter again takes the controls back
+  toggleCopilot() {
+    const fl = this.flight, c = fl.copilot;
+    if (c && c.on) { this.copilotOff(tr('You have control — the first officer let go')); return; }
+    const flights = Career.flightsIn(fl.ac.id);
+    if (flights < COPILOT.FLIGHTS) {
+      fl.warn('COPILOT', tr('The first officer taxis in once you have flown {n} flights in the {ac} — {k} so far', { n: COPILOT.FLIGHTS, ac: fl.ac.name, k: flights }));
+      return;
+    }
+    if (Copilot.left(fl) < COPILOT.HANDOVER_M) { fl.info(tr('Nearly there — park it yourself')); return; }
+    fl.copilot = { on: true, thrI: 0, done: false };
+    fl.copilotTime(true);
+    fl.info(tr('First officer: my controls — taxiing to {gate}', { gate: gateName(this.arrivalGate) }));
+    Audio2.cue('click');
+  },
+  // the first officer lets go: the time back to x1, the brakes off, the throttle where it is
+  copilotOff(text) {
+    const fl = this.flight;
+    fl.copilot.on = false;
+    fl.st.brakeInput = 0;
+    fl.copilotTime(false);
+    fl.info(text);
   },
 
   takeoffClearance() {
@@ -998,6 +1064,8 @@ const Game = {
     this.arrivalRoute = null;
     this.practice = opts.practice ? { t: 0, handed: false, fee: opts.fee || 0 } : null;
     this.flight.practice = !!this.practice;
+    // the first landing at an airport: a FOLLOW ME car leads the way to the stand
+    this.flight.followMe = !this.practice && Career.visitsTo(contract.toId) === 0;
 
     // weather into the flight environment
     const env = this.flight.env;

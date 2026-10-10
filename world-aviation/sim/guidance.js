@@ -16,7 +16,9 @@
 //   - lining up, it leads onto the centreline ahead, never back to
 //     the line-up point.
 // In the air without the autopilot it gives the bearing to the
-// runway. No drawing: ui/hud.js shows fl.guidance. Used by game.js.
+// runway. No drawing: ui/hud.js shows fl.guidance. Used by game.js;
+// the route and how far along it the aeroplane is serve the taxi
+// speed limits (sim/taxilimit.js) and the first officer (sim/copilot.js).
 // ============================================================
 
 const Guidance = {
@@ -26,6 +28,9 @@ const Guidance = {
     const g = fl.guidance;
     g.visible = false;
     g.remaining = 0;
+    g.route = null;             // the taxi route followed now, and how far along it the aeroplane is
+    g.along = 0;                // (metres; less than 0 still rolling down the runway to its exit)
+    g.target = null;            // the point the arrow points at (the first officer steers for it too)
     let target = null;
     const p = fl.phase;
     const look = Math.max(30, fl.dims.len * 0.65);         // the carrot, this far ahead on the taxi line
@@ -36,7 +41,10 @@ const Guidance = {
         const r = this.routeAhead(a, st, a.nodes.hold);
         if (r) { fl.route = r; prog = World.routeProgress(a, r, st.pos.x, st.pos.z, look); }
       }
-      if (prog) { target = prog.carrot; g.remaining = prog.remaining; g.deviation = prog.deviation; }
+      if (prog) {
+        target = prog.carrot; g.remaining = prog.remaining; g.deviation = prog.deviation;
+        g.route = fl.route; g.along = prog.totalLength - prog.remaining;
+      }
     } else if (p === 'HOLD_SHORT') {
       target = fl.world.nodes.hold;
       if (Math.hypot(target.x - st.pos.x, target.z - st.pos.z) < 12) target = null;
@@ -53,8 +61,10 @@ const Guidance = {
       const rolling = Math.abs(loc.across) < RWY_HALF_WIDTH + 5 && Math.abs(wrapDeg(fl.headingDeg() - a.hdgDeg)) < SIM.EXIT_COMMIT_DEG;
       let lead = 0;
       if (rolling) {
-        // still on the runway and not turning off yet: the first exit still reachable
-        const exit = this.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
+        // still on the runway and not turning off yet: the first exit still reachable (the first
+        // officer taxiing slows down for the one picked when it took over, so that one stays)
+        const fo = fl.copilot && fl.copilot.on && game.arrivalRoute[0].t > loc.t;
+        const exit = fo ? game.arrivalRoute[0] : this.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
         if (exit !== game.arrivalRoute[0]) game.arrivalRoute = World.findRoute(a, exit, game.arrivalGate.node);
         lead = exit.t - loc.t;
       }
@@ -71,6 +81,7 @@ const Guidance = {
         target = lead > look ? World.at(a, game.arrivalRoute[0].t - SIM.EXIT_AIM_BACK_M, RWY_HALF_WIDTH)
           : prog.remaining < look * 0.6 ? stand : prog.carrot;
         g.remaining = prog.remaining + Math.max(0, lead); g.deviation = prog.deviation;
+        g.route = game.arrivalRoute; g.along = prog.totalLength - prog.remaining - Math.max(0, lead);
       }
     } else if (!st.onGround && !fl.ap.on && !fl.navFailed && (p === 'DESCENT' || p === 'APPROACH' || p === 'CRUISE')) {
       g.visible = true;
@@ -80,6 +91,7 @@ const Guidance = {
     }
     if (!target) return;
     g.visible = true;
+    g.target = target;
     g.bearing = bearingDeg(st.pos.x, st.pos.z, target.x, target.z);
     g.dist = g.remaining || Math.hypot(target.x - st.pos.x, target.z - st.pos.z);
   },

@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=2">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <meta name="theme-color" content="#0e141c">
-<link rel="stylesheet" href="styles.css?v=44">
+<link rel="stylesheet" href="styles.css?v=45">
 </head>
 <body>
 
@@ -25,7 +25,7 @@
     <div id="prompt" hidden></div>
     <div id="messages"></div>
   </div>
-  <div id="taxiArrow" hidden><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L33 34 L20 26 L7 34 Z"/></svg><b></b></div>
+  <div id="taxiArrow" hidden><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 L33 34 L20 26 L7 34 Z"/></svg><b></b><span class="taxiSpd" hidden></span></div>
   <div id="checklist" class="panelBox" hidden></div>
   <div id="banner" class="banner" hidden></div>
   <canvas id="miniMap" hidden></canvas>
@@ -113,15 +113,15 @@
 </div>
 
 <script src="lib/three.min.js?v=1"></script>
-<script src="constants.js?v=58"></script>
+<script src="constants.js?v=59"></script>
 <script src="data/airports.js?v=6"></script>
 <script src="data/airport-names.js?v=2"></script>
 <script src="data/countries.js?v=5"></script>
 <script src="data/airlines.js?v=4"></script>
 <script src="data/regions.js?v=1"></script>
 <script src="data/quizzes.js?v=9"></script>
-<script src="data/lang-ru.js?v=50"></script>
-<script src="data/lang-sv.js?v=50"></script>
+<script src="data/lang-ru.js?v=51"></script>
+<script src="data/lang-sv.js?v=51"></script>
 <script src="data/emergencies.js?v=2"></script>
 <script src="data/pilots.js?v=1"></script>
 <script src="data/mriya.js?v=3"></script>
@@ -134,9 +134,11 @@
 <script src="core/audio.js?v=9"></script>
 <script src="core/crowd.js?v=1"></script>
 <script src="core/fanfare.js?v=1"></script>
-<script src="sim/flight.js?v=34"></script>
+<script src="sim/flight.js?v=35"></script>
 <script src="sim/systems.js?v=12"></script>
-<script src="sim/guidance.js?v=2"></script>
+<script src="sim/guidance.js?v=3"></script>
+<script src="sim/taxilimit.js?v=1"></script>
+<script src="sim/copilot.js?v=1"></script>
 <script src="art/flags.js?v=2"></script>
 <script src="art/landmarks.js?v=4"></script>
 <script src="art/emblems.js?v=2"></script>
@@ -154,16 +156,17 @@
 <script src="render/apron3d.js?v=11"></script>
 <script src="render/baggage3d.js?v=1"></script>
 <script src="render/responders3d.js?v=1"></script>
+<script src="render/followme3d.js?v=1"></script>
 <script src="render/landside3d.js?v=4"></script>
 <script src="render/adverts3d.js?v=1"></script>
 <script src="render/perimeter3d.js?v=2"></script>
 <script src="render/lights3d.js?v=1"></script>
 <script src="render/landcover.js?v=1"></script>
 <script src="render/cinematic.js?v=2"></script>
-<script src="render/scene3d.js?v=29"></script>
-<script src="ui/instruments.js?v=16"></script>
+<script src="render/scene3d.js?v=30"></script>
+<script src="ui/instruments.js?v=17"></script>
 <script src="ui/cockpit.js?v=10"></script>
-<script src="ui/hud.js?v=32"></script>
+<script src="ui/hud.js?v=33"></script>
 <script src="ui/cabin.js?v=3"></script>
 <script src="career.js?v=33"></script>
 <script src="core/input.js?v=9"></script>
@@ -174,6 +177,6 @@
 <script src="ui/mriya.js?v=2"></script>
 <script src="ui/ui.js?v=54"></script>
 <script src="core/update.js?v=1"></script>
-<script src="game.js?v=44"></script>
+<script src="game.js?v=45"></script>
 </body>
 </html>

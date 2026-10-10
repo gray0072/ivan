@@ -78,9 +78,7 @@ const SIM = {
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
     { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],
-  TAXI_LIMIT_KT: 20,           // the taxi speed limit the prompts give
-  TAXI_OVERSPEED_KT: 40,       // twice the limit off the runway: a taxi overspeed, reported and fined
-  TAXI_OVERSPEED_FINE: 0.03,   // ... of the contract's pay
+  TAXI_OVERSPEED_FINE: 0.03,   // a taxi overspeed (TAXI.FINE_OVER times the limit) costs this share of the contract's pay
   NO_CLEARANCE_FINE: 0.05,     // lifting off before the take-off clearance costs this share of the contract pay
   MAX_STEPS_PER_FRAME: 300,    // physics steps per rendered frame at most (x128 at 25 fps)
   CRUISE_ALT_MIN: 2500,
@@ -164,6 +162,46 @@ const SIM = {
 // crying baby (hard); a bank past BANK_DEG makes it one worse, a touchdown off the paved
 // surface hard; a bounce within BOUNCE_S seconds of the graded touchdown gets a "whoa"
 const CABIN_REACTION = { OVATION_FPM: 100, APPLAUSE_FPM: 200, POLITE_FPM: 320, FIRM_FPM: 450, BANK_DEG: 5, BOUNCE_S: 6 };
+
+// ---------- Taxiing ----------
+// The taxi speed limits (sim/taxilimit.js), by the ground speed: on a straight taxiway, in a turn
+// of the taxi route and on the apron. Before a slower stretch the limit comes down along a gentle
+// braking (DECEL_MS2), so it never drops by a step under the wheels. Over the limit the speed shows
+// amber, over RED_OVER times it red; FINE_OVER times it, off the runway, is a taxi overspeed —
+// reported, and fined on the debrief (SIM.TAXI_OVERSPEED_FINE).
+const TAXI = {
+  STRAIGHT_KT: 30,
+  TURN_KT: 15,
+  APRON_KT: 10,
+  TURN_MIN_DEG: 30,            // a corner of the route turning more than this is a turn ...
+  TURN_PAD_M: 10,              // ... from this far before its curve to this far after it
+  DECEL_MS2: 0.8,
+  RED_OVER: 1.5,
+  FINE_OVER: 2
+};
+
+// The first officer taxis in after the landing (sim/copilot.js), once the pilot has flown
+// FLIGHTS flights in the type: Enter hands over, the time may run up to TIME_ACCEL, and the first
+// officer stops HANDOVER_M before the turn into the stand and gives the controls back.
+const COPILOT = {
+  FLIGHTS: 5,
+  TIME_ACCEL: 4,
+  HANDOVER_M: 40,
+  SPEED_SHARE: 0.85,           // taxis at this share of the limit ...
+  DECEL_MS2: 0.55,             // ... slowing down for a slower stretch earlier than TAXI.DECEL_MS2 asks
+  MAX_THROTTLE: 0.6,
+  THROTTLE_P: 0.08,            // the throttle per m/s short of the speed wanted ...
+  THROTTLE_I: 0.04,            // ... and its integral (per m/s·s): a heavy aeroplane needs more to get rolling
+  BRAKE_FROM_MS: 0.3,          // the brakes from this much too fast (idle thrust alone rolls a light type on) ...
+  BRAKE_P: 0.3,                // ... and more by this per m/s
+  TAKEOVER_INPUT: 0.5          // the stick or the brakes past this: the pilot takes the controls back
+};
+
+// The FOLLOW ME car on a first visit to an airport (render/followme3d.js): it waits on the
+// taxiway past the runway exit and drives ahead of the aeroplane along the taxi route, GAP_M plus
+// LEAD_S seconds of the aeroplane's speed ahead of its nose; by the stand it drives on PARK_M along
+// the apron lane and stops there.
+const FOLLOW_ME = { GAP_M: 30, LEAD_S: 4,MAX_KT: 45, ACCEL_MS2: 1.5, BRAKE_MS2: 3, PARK_M: 70, WAIT_M: 25, FLASH_S: 0.8 };
 
 // ---------- Airport layout (metres) ----------
 // Every airport is drawn from the same template around its runway:

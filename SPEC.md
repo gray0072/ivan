@@ -115,8 +115,8 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio, crowd, fanfare, update (picks up a new deploy)
 │   ├── data/                 # airports, countries, airlines, emergencies, quizzes, mriya (the An-225's parts), lang-ru / lang-sv (translations), geodata (coastlines, mountains)
 │   ├── art/                  # flags, landmarks (city symbols), airline emblems, region maps, the Mriya's blueprint
-│   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems
-│   ├── render/               # three.js: aircraft models, hangar pictures, the Mriya's hologram, airport3d, apron3d, baggage3d, responders3d, landcover, scene3d
+│   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems, guidance, taxilimit (taxi speeds), copilot (the first officer taxiing in)
+│   ├── render/               # three.js: aircraft models, hangar pictures, the Mriya's hologram, airport3d, apron3d, baggage3d, responders3d, followme3d, landcover, scene3d
 │   ├── ui/                   # instruments, cockpit, hud, ui (screens), filters (board and hangar), title (the title's sky), mriya (the assembly hall), fireworks
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── docs/                 # instrument screenshots (English UI) used by the READMEs

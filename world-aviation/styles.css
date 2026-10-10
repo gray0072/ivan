@@ -112,6 +112,22 @@ kbd {
 #taxiArrow svg { width: 38px; height: 38px; fill: #ffd97a; opacity: 0.92; filter: drop-shadow(0 1px 2px #000); }
 #taxiArrow.near svg { fill: #7de08a; }
 #taxiArrow b { display: block; font-size: 11px; color: #e6edf4; text-shadow: 0 1px 2px #000; }
+#taxiArrow.noArrow svg, #taxiArrow.noArrow > b { display: none; }
+/* the ground speed and the limit under the arrow: green, amber over the limit, red well over it */
+#taxiArrow .taxiSpd {
+  display: inline-block;
+  margin: 4px -60px 0;
+  padding: 2px 8px 3px;
+  border-radius: 7px;
+  background: rgba(9, 14, 20, 0.62);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+#taxiArrow .taxiSpd[hidden] { display: none; }
+#taxiArrow .taxiSpd strong { display: block; font-size: 15px; color: #7de08a; }
+#taxiArrow .taxiSpd small { display: block; font-size: 10px; color: #c8d2dc; }
+#taxiArrow .taxiSpd.lv1 strong { color: #ffb03a; }
+#taxiArrow .taxiSpd.lv2 strong { color: #ff4d3d; }
 
 #fps {
   position: absolute;

@@ -89,6 +89,9 @@ const Flight = {
     this.resumeT = 0;
     this.cheatAccel = false;
     this.guidance = null;
+    this.taxi = null;                // the taxi speed and its limit (sim/taxilimit.js)
+    this.copilot = null;             // the first officer taxiing in (sim/copilot.js)
+    this.followMe = false;           // a FOLLOW ME car leads the taxi in (a first visit; render/followme3d.js)
     this.navFailed = false; this.cargoShift = false; this.medical = false;
     this.meet = [];                  // who waits at the arrival stand: 'ambulance', 'fire', 'police' (Systems.finishChecklist)
     this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0;
@@ -337,11 +340,13 @@ const Flight = {
 
   // The fastest step allowed now: on the autopilot the fastest of all (x512) at any height and in
   // any phase; flying by hand it depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the
-  // ground, low down, in a checklist or with ice building and the anti-ice off, and closing on
-  // the arrival it comes down by itself (approachAccelMax).
+  // ground (but up to COPILOT.TIME_ACCEL while the first officer taxis), low down, in a checklist
+  // or with ice building and the anti-ice off, and closing on the arrival it comes down by itself
+  // (approachAccelMax).
   timeAccelMax() {
     this.approachCapped = false;
-    if (this.st.onGround || this.timeHeld()) return 1;
+    if (this.timeHeld()) return 1;
+    if (this.st.onGround) return this.copilot && this.copilot.on ? COPILOT.TIME_ACCEL : 1;
     const agl = this.altAgl();
     if (agl < SIM.TIME_ACCEL_MIN_ALT_M) return 1;
     let max = 1;
@@ -451,8 +456,17 @@ const Flight = {
     this.env.timeAccel = steps[this.timeAccelIndex];
     this.info(tr('TIME x{n}', { n: this.env.timeAccel }), 'TIME');
   },
+  // The first officer takes the taxi (on: the time goes to COPILOT.TIME_ACCEL) or gives it back
+  // (the time back to x1)
+  copilotTime(on) {
+    this.timeAccelResume = 0; this.cheatAccel = false;
+    this.timeAccelIndex = on ? Math.max(0, SIM.TIME_ACCEL_STEPS.indexOf(COPILOT.TIME_ACCEL)) : 0;
+    this.env.timeAccel = SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
+    this.info(tr('TIME x{n}', { n: this.env.timeAccel }), 'TIME');
+  },
   // why T cannot go any faster
   timeAccelLimitText() {
+    if (this.st.onGround && this.copilot && this.copilot.on && !this.timeHeld()) return tr('Time x{n} is the fastest on the ground', { n: COPILOT.TIME_ACCEL });
     if (this.st.onGround || this.altAgl() < SIM.TIME_ACCEL_MIN_ALT_M) {
       return tr('Time acceleration only in the air, above {alt} ft', { alt: fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) });
     }

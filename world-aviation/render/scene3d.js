@@ -18,6 +18,7 @@
 //     dusk colours; at night the aircraft lights and the pool of the
 //     landing lights on the ground ahead
 //   - the pushback tug at the nose during the push back
+//   - the FOLLOW ME car on a first landing at an airport (followme3d.js)
 //   - the ambulance, fire engine or police car a checklist called to
 //     the arrival stand (responders3d.js)
 // The cockpit itself is drawn in 2D on a canvas over the top.
@@ -77,6 +78,8 @@ const Scene3D = {
     this.tug = Apron3D.makeTug();
     this.tug.visible = false;
     this.scene.add(this.tug);
+    // the FOLLOW ME car on a first landing at an airport
+    FollowMe3D.init(this.scene);
     this.treeTex = makeTreeTexture();
     this.cloudTex = makeCloudTexture();
   },
@@ -837,6 +840,7 @@ const Scene3D = {
     }
     this.updateLandingPool(fl, sys, ax, dark);
     this.updateTug(fl, ax);
+    FollowMe3D.update(fl, dt, this.time, dark);
   },
 
   // the own aircraft's lights, as a crew would have them: the navigation lights and the beacon

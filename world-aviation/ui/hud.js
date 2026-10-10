@@ -324,14 +324,20 @@ const HUD = {
   updateGuidance(fl, dt) {
     const elx = this.arrow;
     if (!elx) return;
-    const guide = fl.guidance;
-    if (!guide || !guide.visible) { elx.hidden = true; return; }
+    const guide = fl.guidance, taxi = fl.taxi;
+    const arrow = !!(guide && guide.visible);
+    if (!arrow && !taxi) { elx.hidden = true; return; }
     elx.hidden = false;
+    this.updateTaxiSpeed(elx, taxi);
     // in the cockpit over the windshield; in the views from outside centred just above the
-    // heading strip, under the aeroplane, so it never covers it (the top-down view)
+    // heading strip (with the speed under it, higher up), under the aeroplane, so it never
+    // covers it (the top-down view)
     const outside = typeof Game !== 'undefined' && Game.camMode !== 'cockpit';
-    const top = outside ? Math.round(Cockpit.panelTop(window.innerHeight) - 118) + 'px' : '';
+    const top = outside ? Math.round(Cockpit.panelTop(window.innerHeight) - 118 - (taxi ? 40 : 0)) + 'px' : '';
     if (elx.style.top !== top) elx.style.top = top;
+    // (taxiing with no arrow, at the holding point or starting the engines: the speed alone)
+    elx.classList.toggle('noArrow', !arrow);
+    if (!arrow) return;
     // on the ground lying on the ground, as the camera sees it; in the air turned in the
     // screen's plane, up the screen the nose
     const svg = elx.querySelector('svg');
@@ -340,6 +346,20 @@ const HUD = {
     elx.classList.toggle('near', guide.dist < 90);
     const d = guide.dist;
     elx.querySelector('b').textContent = d >= NM * 2 ? Units.dist(d / NM) : d > 999 ? (d / 1000).toFixed(1) + ' km' : Math.round(d) + ' m';
+  },
+  // Under the arrow while taxiing: the ground speed (the wind does not move it, as it moves the
+  // airspeed) and the limit (sim/taxilimit.js) — the one here, or the slower one coming up once it
+  // is time to slow down for it; the speed in green, amber over the limit, red well over it
+  updateTaxiSpeed(elx, taxi) {
+    const box = elx.querySelector('.taxiSpd');
+    if (!box) return;
+    if (!taxi) { if (!box.hidden) box.hidden = true; return; }
+    box.hidden = false;
+    const what = { taxiway: 'Taxiway', turn: taxi.ahead ? 'Turn ahead' : 'Turn', apron: taxi.ahead ? 'Apron ahead' : 'Apron' }[taxi.shownKind] || 'Taxiway';
+    const html = '<strong>' + Units.spd(taxi.gs) + '</strong><small>' + tr(what) + ' ≤ ' + Units.spd(taxi.shown) + '</small>';
+    if (html !== this.taxiSpdHtml) { this.taxiSpdHtml = html; box.innerHTML = html; }
+    const cls = 'taxiSpd lv' + taxi.level;
+    if (box.className !== cls) box.className = cls;
   },
   // The arrow lying on the ground, as the camera sees it: turned by the way to the carrot (the
   // bearing, degrees) against where the camera looks along the ground (not the nose: a view
