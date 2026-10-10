@@ -142,8 +142,12 @@ const AircraftModels = {
       fair.position.set(0, fy, wingZ - rootC * 0.5);
       g.add(tag('fairing', fair));
     } else {
-      const fair = new THREE.Mesh(new THREE.BoxGeometry(R * 1.7, R * 0.3, rootC * 0.9), base);
-      fair.position.set(0, R * 0.85, wingZ - rootC * 0.5);
+      // the high wing's fairing over the body: a low rounded hump from one root to the other,
+      // filling the valley between the roof and the wing's upper surface (a box there stood out
+      // past the sides of the narrower roof, a slab on each side seen from above)
+      const fair = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), base);
+      fair.scale.set(R * 0.84, R * 0.3, rootC * 0.56);
+      fair.position.set(0, wingY + R * 0.12, wingZ - rootC * 0.48);
       g.add(tag('fairing', fair));
     }
 
@@ -209,11 +213,16 @@ const AircraftModels = {
       // 0.42 of the fan at the back), from near the intake to a little past the exhaust: lower,
       // it hung into the exhaust and showed as a box through the back of the engine
       // (its top at the wing's middle: a big fan pulled up to the wing put it through the top
-      // of the wing)
+      // of the wing); a thin streamlined blade, rounded at both ends, its leading edge raked back
+      // from the cowling up to the wing's — a box showed its corners and a square front on the
+      // long pylons under a high wing
       const foot = e.y + e.dia * ((look.flatNacelles ? 0.86 : 1) * 0.42 - 0.03);
       const head = Math.max(foot + e.dia * 0.12, Math.min(e.y + e.dia * 0.72, yAt(e.f)));
-      const py = new THREE.Mesh(new THREE.BoxGeometry(e.dia * 0.14, head - foot, e.dia * 1.35), metal);
-      py.position.set(e.x, (head + foot) / 2, e.z - e.dia * 0.575);
+      const topLen = Math.min(e.dia * 1.35, e.dia * 0.1 + leAt(e.f) - (e.z - e.dia * 1.25));
+      const py = new THREE.Mesh(pylonGeometry(foot, head,
+        { z: e.z - e.dia * 0.575, len: e.dia * 1.35, w: e.dia * 0.14 },
+        { z: leAt(e.f) - topLen / 2, len: topLen, w: e.dia * 0.11 }), metal);
+      py.position.x = e.x;
       g.add(tag('pylon', py));
     }
     if (look.engines === 'rear2') {
@@ -453,7 +462,7 @@ const AircraftModels = {
           });
         }
       }
-      this.titles(g, { livery: { title: fin.title }, title: 'AN-225 MRIYA' }, W, H, L, d.radius, true, false);
+      this.titles(g, { livery: { title: fin.title }, title: 'AN-225 MRIYA' }, W, H, L, d.radius, true, false, 0, this.titleSpan(ac, look, L));
     } else if (!lv) {
       // belly
       g.fillStyle = 'rgba(150,160,170,0.55)';
@@ -484,7 +493,7 @@ const AircraftModels = {
         g.beginPath(); g.moveTo(0, 0); g.lineTo(W * 0.17, 0); g.lineTo(W * 0.1, yAt(40)); g.lineTo(0, yAt(60)); g.fill();
         g.beginPath(); g.moveTo(0, H); g.lineTo(W * 0.17, H); g.lineTo(W * 0.1, yAt(320)); g.lineTo(0, yAt(300)); g.fill();
       }
-      this.titles(g, al, W, H, L, d.radius, !!look.freighter, dd);
+      this.titles(g, al, W, H, L, d.radius, !!look.freighter, dd, 0, this.titleSpan(ac, look, L));
     }
     if (look.face) {
       // the BelugaXL's smile under the cockpit windows, its corner curling up at the back
@@ -576,10 +585,19 @@ const AircraftModels = {
     return tex;
   },
 
+  // where along the body the titles go ([from, to] as shares of its length, tail 0 → nose 1), or
+  // null for the default: under a high wing they would sit in its shadow, half hidden by it, so
+  // there they go between the wing's leading edge and the cockpit, as the real ones are painted
+  titleSpan(ac, look, L) {
+    if (look.wing !== 'high') return null;
+    const lay = modelLayout(ac, look);
+    return [(lay.wingZ + L / 2) / L + 0.025, 1 - Math.min(0.09, 2.6 / L) - 0.03];
+  },
+
   // the airline's titles on both sides, above the windows (on the right side, -x, the canvas
   // runs upside down and backwards); dd: a double-deck body; hBig: the letters' height, metres
-  // (the Beluga's hold), else by the body's size
-  titles(g, al, W, H, L, R, freighter, dd, hBig) {
+  // (the Beluga's hold), else by the body's size; span: [from, to] along the body (titleSpan)
+  titles(g, al, W, H, L, R, freighter, dd, hBig, span) {
     const lv = al.livery;
     const pxAlong = W / L, pxAround = H / (TAU * R);
     const hM = hBig || Math.min(1.4, Math.max(0.45, R * (freighter ? 0.62 : 0.42)));     // letter height, metres
@@ -588,7 +606,8 @@ const AircraftModels = {
     const font = lv.titleFont === 'serif' ? 'bold ' + size + 'px Georgia, serif'
       : lv.titleFont ? 'bold ' + size + 'px Arial, sans-serif'
         : '900 ' + size + 'px Arial, sans-serif';
-    const cx = W * 0.6, maxW = W * (freighter ? 0.6 : 0.5);
+    const cx = span ? W * (span[0] + span[1]) / 2 : W * 0.6;
+    const maxW = span ? W * (span[1] - span[0]) : W * (freighter ? 0.6 : 0.5);
     for (const side of [1, -1]) {
       const a = dd ? 40 : freighter ? 62 : 58;                // above the windows (a double deck: above the upper deck's)
       const cy = (side > 0 ? a : 360 - a) / 360 * H;
@@ -1002,6 +1021,21 @@ function fanFaceTextures() {
   });
   fanTextures = { fan, spinner };
   return fanTextures;
+}
+
+// An engine's pylon, upright from y0 (on the cowling) to y1 (in the wing): a loft between two
+// horizontal ellipses ({ z: centre, len: length, w: width }), so its ends are rounded and its
+// edges run straight from the one to the other
+function pylonGeometry(y0, y1, bot, top) {
+  const geo = new THREE.CylinderGeometry(0.5, 0.5, 1, 20);
+  const p = geo.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const t = p.getY(i) + 0.5;
+    const lerp = (k) => bot[k] + (top[k] - bot[k]) * t;
+    p.setXYZ(i, p.getX(i) * lerp('w'), y0 + (y1 - y0) * t, lerp('z') + p.getZ(i) * lerp('len'));
+  }
+  geo.computeVertexNormals();
+  return geo;
 }
 
 // A turbofan: the cowling with its lip, a bright inlet lining, the fan behind it (blades and a

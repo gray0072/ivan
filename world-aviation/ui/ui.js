@@ -277,7 +277,7 @@ const UI = {
       '<div class="opsMoney">' + fmtMoney(d.money) + '</div>' +
       '<div class="opsReps">' +
       Object.keys(FACTIONS).map((k) =>
-        '<span class="rep" title="' + esc(tr(FACTIONS[k].name)) + '"><i style="background:' + FACTIONS[k].color + '"></i>' +
+        '<span class="rep" title="' + esc(tr(FACTIONS[k].name)) + '"><span class="use ' + k + '">' + UseIcons.svg(k) + '</span>' +
         Math.round(d.rep[k]) + '</span>').join('') +
       '</div></div>' +
       '<div class="tabs">' + tabs.map((t) => {

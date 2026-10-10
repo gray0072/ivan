@@ -180,13 +180,21 @@ const TAXI = {
   FINE_OVER: 2
 };
 
+// The ILS on a computer (Game.drawIls): the sizes it may take in the bottom right corner of the
+// view, the first that fits under the checklist and the map — [the symbols' scale, with the
+// labels and the words]; where none fits, it is not shown
+const ILS_DESKTOP_SIZES = [[1, true], [0.9, true], [0.8, true], [1, false], [0.85, false], [0.7, false], [0.55, false], [0.45, false]];
+
 // The first officer taxis in after the landing (sim/copilot.js), once the pilot has flown
 // FLIGHTS flights in the type: Enter hands over, the time may run up to TIME_ACCEL, and the first
-// officer stops HANDOVER_M before the turn into the stand and gives the controls back.
+// officer stops on the stand's lead-in once the turn into it is behind and gives the controls back.
 const COPILOT = {
   FLIGHTS: 5,
   TIME_ACCEL: 4,
-  HANDOVER_M: 40,
+  AFTER_TURN_M: 8,             // stops this far past the end of the turn into the stand ...
+  AFTER_TURN_LEN: 0.25,        // ... and this share of the aeroplane's length more ...
+  PARK_LEFT_M: 25,             // ... but at least this far short of the stand
+  MIN_RUN_M: 40,               // Enter hands over only with at least this far to taxi before that
   SPEED_SHARE: 0.85,           // taxis at this share of the limit ...
   DECEL_MS2: 0.55,             // ... slowing down for a slower stretch earlier than TAXI.DECEL_MS2 asks
   MAX_THROTTLE: 0.6,
@@ -840,7 +848,7 @@ const AIRCRAFT = [
     takeoffDist: 2800, crosswindLimit: 30, maxRangeNm: 3800, surfaces: ['asphalt', 'grass', 'ice'],
     rent: 36000, price: 0, bonus: 1.5, unlock: 'cargo5',
     dims: { len: 68.96, span: 73.3, fus: 7.3 },
-    look: { wing: 'high', engines: 'wing4', tail: 'low', base: '#e9ecef', color: '#1f4fa0', sweep: 32, dihedral: -3, tall: 1.1, mainRows: 5, freighter: true },
+    look: { wing: 'high', engines: 'wing4', tail: 'low', base: '#e9ecef', color: '#1f4fa0', sweep: 32, dihedral: -3, tall: 1.1, mainRows: 5, sponsons: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
   },
   {

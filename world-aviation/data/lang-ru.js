@@ -615,7 +615,7 @@ const TEXT_RU = {
   'Autopilot disconnected — you have control': 'Автопилот отключён — управление у вас',
   'You have control — the first officer let go': 'Управление у вас — второй пилот отпустил',
   'First officer: my controls — taxiing to {gate}': 'Второй пилот: управление беру — рулю к {gate}',
-  'First officer: your controls — turn in to {gate} and stop on the stop bar': 'Второй пилот: управление ваше — заруливайте на {gate} и встаньте у стоп-линии',
+  'First officer: your controls — straight on to {gate}, stop on the stop bar': 'Второй пилот: управление ваше — прямо на {gate}, встаньте у стоп-линии',
   'The first officer taxis in once you have flown {n} flights in the {ac} — {k} so far': 'Второй пилот будет рулить, когда у вас будет {n} рейсов на {ac} — пока {k}',
   'Nearly there — park it yourself': 'Почти на месте — заруливайте сами',
   'Ground: welcome to {id} — a FOLLOW ME car waits past the exit and leads you to {gate}': 'Руление: добро пожаловать в {id} — за съездом ждёт машина FOLLOW ME, она проводит вас к {gate}',

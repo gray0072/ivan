@@ -8,27 +8,56 @@
 // brakes and the nosewheel: steers for the guidance arrow's point
 // (pure pursuit, sim/guidance.js) and keeps COPILOT.SPEED_SHARE of the
 // taxi speed limit (sim/taxilimit.js), while the time may run up to
-// COPILOT.TIME_ACCEL (Flight.timeAccelMax). COPILOT.HANDOVER_M before
-// the stand's lead-in leaves the apron lane the first officer stops
-// and gives the controls back: parking is the pilot's. The stick or
-// the brakes, or Enter again, take them back at any moment (game.js).
+// COPILOT.TIME_ACCEL (Flight.timeAccelMax). On the stand's lead-in it
+// keeps to the lead-in's line, and COPILOT.AFTER_TURN_M plus
+// COPILOT.AFTER_TURN_LEN of the aeroplane's length past the end of the
+// turn into it (at least COPILOT.PARK_LEFT_M short of the stand) it
+// stops and gives the controls back: only the straight run onto the
+// stop bar is left, and parking is the pilot's. The stick or the
+// brakes, or Enter again, take them back at any moment (game.js).
 // State in fl.copilot: { on, thrI, done }. No drawing; used by game.js.
 // ============================================================
 
 const Copilot = {
-  // how far along the route the first officer stops: COPILOT.HANDOVER_M before the stand's
-  // lead-in (the route's last leg) leaves the apron lane
-  handoverAt(route) {
+  // where along the route the stand's lead-in (the route's last leg) leaves the apron lane, and
+  // its length
+  leadIn(route) {
     const n = route.length;
-    if (n < 2) return 0;
     let total = 0;
     for (let i = 0; i + 1 < n; i++) total += Math.hypot(route[i + 1].x - route[i].x, route[i + 1].z - route[i].z);
-    return total - Math.hypot(route[n - 1].x - route[n - 2].x, route[n - 1].z - route[n - 2].z) - COPILOT.HANDOVER_M;
+    const len = Math.hypot(route[n - 1].x - route[n - 2].x, route[n - 1].z - route[n - 2].z);
+    return { at: total - len, len };
+  },
+  // how far along the route the first officer stops (len: the aeroplane's length): on the
+  // lead-in, past where the turn into it ends (the curve of LAYOUT.FILLET_STAND_R at that corner,
+  // sim/world.js buildFillets; none when the lead-in goes straight on; a route that starts on the
+  // apron lane, planned anew there, turns off it square) by COPILOT.AFTER_TURN_M and a share of
+  // the length, so that a long aeroplane has straightened up too — but at least
+  // COPILOT.PARK_LEFT_M short of the stand
+  handoverAt(route, len) {
+    const n = route.length;
+    if (n < 2) return 0;
+    const li = this.leadIn(route);
+    let turn = LAYOUT.FILLET_STAND_R;
+    if (n > 2) {
+      turn = 0;
+      const a = route[n - 3], b = route[n - 2], c = route[n - 1];
+      const ux = b.x - a.x, uz = b.z - a.z, vx = c.x - b.x, vz = c.z - b.z;
+      const ang = Math.acos(clamp((ux * vx + uz * vz) / ((Math.hypot(ux, uz) * Math.hypot(vx, vz)) || 1), -1, 1));
+      if (ang > 25 * DEG && ang < 155 * DEG) turn = LAYOUT.FILLET_STAND_R * Math.tan(ang / 2);
+    }
+    const past = COPILOT.AFTER_TURN_M + COPILOT.AFTER_TURN_LEN * (len || 0);
+    return li.at + Math.max(0, Math.min(turn + past, li.len - COPILOT.PARK_LEFT_M));
   },
   // the metres still to taxi before the handover (none without a route)
   left(fl) {
     const g = fl.guidance;
-    return g && g.route && g.route.length > 1 ? this.handoverAt(g.route) - g.along : 0;
+    return g && g.route && g.route.length > 1 ? this.handoverAt(g.route, fl.dims.len) - g.along : 0;
+  },
+  // the metres still to taxi before the turn into the stand begins (none without a route)
+  toTurnIn(fl) {
+    const g = fl.guidance;
+    return g && g.route && g.route.length > 1 ? this.leadIn(g.route).at - LAYOUT.FILLET_STAND_R - g.along : 0;
   },
 
   // Each frame, instead of the pilot's controls (dt: the simulated seconds of the frame). Sets
@@ -60,10 +89,18 @@ const Copilot = {
     // the nosewheel: the curve that meets the arrow's point (pure pursuit), as a share of the
     // steering the speed allows (Flight.groundStep); rolling down the runway to the exit, the
     // centreline a carrot ahead until the exit's curve begins (the arrow leans towards the exit
-    // from far down the runway)
+    // from far down the runway); on the stand's lead-in its line a carrot ahead, past the stand if
+    // need be (aimed at the stand itself, the nose points at it from a metre or two aside and
+    // never lines up with the stand)
     const a = fl.arrival, carrot = Math.max(30, fl.dims.len * 0.65);
     let tgt = g.target;
     if (g.along < -carrot - LAYOUT.FILLET_EXIT_R) tgt = World.at(a, World.local(a, st.pos.x, st.pos.z).t + carrot, 0);
+    else if (g.along > this.leadIn(g.route).at) {
+      const r = g.route, A = r[r.length - 2], B = r[r.length - 1], len = Math.hypot(B.x - A.x, B.z - A.z);
+      const ux = (B.x - A.x) / len, uz = (B.z - A.z) / len;
+      const k = (st.pos.x - A.x) * ux + (st.pos.z - A.z) * uz + carrot;
+      tgt = { x: A.x + ux * k, z: A.z + uz * k };
+    }
     const alpha = wrapDeg(bearingDeg(st.pos.x, st.pos.z, tgt.x, tgt.z) - fl.headingDeg()) * DEG;
     const look = clamp(Math.hypot(tgt.x - st.pos.x, tgt.z - st.pos.z), 10, carrot);
     const steer = Math.atan(2 * fl.dims.len * 0.38 * Math.sin(alpha) / look);

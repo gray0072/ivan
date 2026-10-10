@@ -830,8 +830,8 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .opsSub { font-size: 12px; color: #8fa1b3; }
 .opsMoney { margin-left: auto; font-size: 22px; font-weight: 800; color: #ffd97a; }
 .opsReps { display: flex; gap: 10px; }
-.rep { display: inline-flex; align-items: center; gap: 4px; font: 700 12px ui-monospace, monospace; }
-.rep i { width: 8px; height: 8px; border-radius: 50%; }
+.rep { display: inline-flex; align-items: center; gap: 5px; font: 700 12px ui-monospace, monospace; }
+.rep .use { width: 22px; height: 22px; }
 
 /* the hub's tabs: a row over a line, the open one lit and underlined in gold */
 .tabs { position: relative; display: flex; gap: 2px; margin: 0 0 14px; flex-wrap: wrap; border-bottom: 1px solid rgba(140, 170, 200, 0.18); }
@@ -905,7 +905,8 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .use.cargo { background: rgba(232, 161, 58, 0.14); }
 .use.bush { background: rgba(99, 214, 168, 0.14); }
 .use.off { opacity: 0.45; background: none; box-shadow: none; outline: 1px dashed currentColor; outline-offset: -1px; }
-.cRoute { margin: 8px 0 6px; display: flex; align-items: baseline; gap: 10px; }
+/* the codes on one line, the cities and their flags under them: two arrows side by side read as two flights */
+.cRoute { margin: 8px 0 6px; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .cRoute b { font-size: 19px; }
 .cRoute > span { font-size: 12px; color: #8fa1b3; }
 .cGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; font-size: 12px; }

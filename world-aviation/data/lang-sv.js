@@ -615,7 +615,7 @@ const TEXT_SV = {
   'Autopilot disconnected — you have control': 'Autopiloten urkopplad — du har kontrollen',
   'You have control — the first officer let go': 'Du har kontrollen — andrepiloten släppte',
   'First officer: my controls — taxiing to {gate}': 'Andrepiloten: jag tar över — taxar till {gate}',
-  'First officer: your controls — turn in to {gate} and stop on the stop bar': 'Andrepiloten: du tar över — sväng in till {gate} och stanna på stopplinjen',
+  'First officer: your controls — straight on to {gate}, stop on the stop bar': 'Andrepiloten: du tar över — rakt fram till {gate}, stanna på stopplinjen',
   'The first officer taxis in once you have flown {n} flights in the {ac} — {k} so far': 'Andrepiloten taxar in när du har flugit {n} flygningar med {ac} — hittills {k}',
   'Nearly there — park it yourself': 'Nästan framme — parkera själv',
   'Ground: welcome to {id} — a FOLLOW ME car waits past the exit and leads you to {gate}': 'Marken: välkommen till {id} — en FOLLOW ME-bil väntar efter avfarten och leder dig till {gate}',

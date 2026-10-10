@@ -210,11 +210,13 @@ const Game = {
   // The ILS, shown so that it reads at a glance: the localiser scale (magenta) carries a
   // little runway that sits where the runway is, the glideslope scale (cyan) a triangle that
   // sits where the glide path is, and a line of plain words says what to do. Off the view
-  // ahead, at the right edge of the windscreen (on a desktop on the left while the checklist
-  // fills the right side): the glide path scale as far from the window pillar as the whole is
-  // from the panel on a phone; on a tablet under the buttons, held upright above the heading
-  // strip. On a phone at three quarters of the size and without the words (the scales say it, and the view needs the room).
-  // The landing aid setting turns it off.
+  // ahead, at the right edge of the windscreen: the glide path scale as far from the window
+  // pillar as the whole is from the panel. On a phone and on a computer in the bottom right
+  // corner of the view, on a tablet under the buttons, held upright above the heading strip. On
+  // a phone at three quarters of the size and without the words (the scales say it, and the view
+  // needs the room); on a computer full size with the words, with its gaps the phone's in scale,
+  // and where the checklist or the map above it leaves too little room smaller, then without the
+  // words, then not at all — never moved anywhere else. The landing aid setting turns it off.
   drawIls(ctx, w, h, fl) {
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
     if (Career.settings.landingAid === false) return;
@@ -227,25 +229,43 @@ const Game = {
     const inside = this.camMode === 'cockpit';
     const side = !Input.isCoarse, upright = Cockpit.portrait(w, h);
     const phone = Input.isCoarse && Math.min(w, h) < 600;
-    const k = phone ? 0.75 : 1;                       // the symbols' scale
-    const R = (side ? Math.min(90, w * 0.08) : upright ? w * 0.1 : Math.min(110, w * 0.12)) * k;
-    const V = (upright ? 40 : Math.min(70, h * 0.1)) * k;
-    // how far the whole reaches right of the glide path scale (its triangle; and its label but on
-    // a phone) and below the localiser scale (its runway; and the two lines of words but on a phone)
+    let k = phone ? 0.75 : 1;                         // the symbols' scale ...
+    let text = !phone;                                // ... and the labels and the words with them
+    const R0 = side ? Math.min(90, w * 0.08) : upright ? w * 0.1 : Math.min(110, w * 0.12);
+    const V0 = upright ? 40 : Math.min(70, h * 0.1);
+    // how far the whole reaches right of the glide path scale (its triangle, and its label),
+    // below the localiser scale (its runway, and the two lines of words) and above the glide
+    // path scale (its dots, and its label)
     ctx.font = '700 11px system-ui, sans-serif';
-    const right = phone ? 13 * k : Math.max(13, ctx.measureText(tr('GLIDE PATH')).width / 2 + 4);
-    const below = phone ? 12 * k : 47;
+    const label = ctx.measureText(tr('GLIDE PATH')).width / 2 + 4;
+    const reach = (k, text) => text ? { right: Math.max(13 * k, label), below: 47, above: 20 } : { right: 13 * k, below: 12 * k, above: 4 * k };
     // the gap to the window pillar on the right and to the glareshield below (it rises about
-    // 10 px over the panel's top out there)
-    const gap = phone ? 14 : 20, edge = (inside ? w - Cockpit.pillarW(w, h) : w) - gap, floor = top - 10 - gap;
-    let gx = edge - right;
-    let cy = inside ? top * 0.5 : top * 0.56;
+    // 10 px over the panel's top out there): 14 px on a phone, at three quarters of the size, and
+    // as much in scale on a computer
+    const gapAt = (k) => Math.round(14 * k / 0.75);
+    const right0 = inside ? w - Cockpit.pillarW(w, h) : w;
     if (side) {
-      // a computer: on the left while a QRH checklist fills the right side
-      const cb = el('checklist');
-      if (cb && !cb.hidden) gx = 2 * R + 70 + 18;
-    } else if (phone) {
-      // a phone: just above the panel, under the buttons on its side
+      // a computer: what the checklist and the map (or the cockpit inset) above leave of the
+      // right side, and the biggest of the ILS that fits in there
+      let roof = 0;
+      for (const id of ['checklist', 'miniMap', 'pipFrame']) {
+        const e = el(id), r = e && e.getBoundingClientRect();
+        if (r && r.width > 0 && r.height > 0 && r.left < right0) roof = Math.max(roof, r.bottom);
+      }
+      const fit = ILS_DESKTOP_SIZES.find(([k, text]) => {
+        const g = gapAt(k), rc = reach(k, text);
+        return top - 10 - g - roof - g >= 2 * V0 * k + 16 * k + rc.below + rc.above;
+      });
+      if (!fit) return;
+      [k, text] = fit;
+    }
+    const R = R0 * k, V = V0 * k;
+    const { right, below } = reach(k, text);
+    const gap = side || phone ? gapAt(k) : 20, edge = right0 - gap, floor = top - 10 - gap;
+    const gx = edge - right;
+    let cy;
+    if (side || phone) {
+      // a computer or a phone: just above the panel (on a phone under the buttons on its side)
       cy = floor - below - 16 * k - V;
     } else if (upright) {
       // a tablet held upright: above the heading strip and its window (about 60 px over the
@@ -286,13 +306,13 @@ const Game = {
     ctx.beginPath(); ctx.moveTo(rx - 3 * k, ly - 12 * k); ctx.lineTo(rx + 3 * k, ly - 12 * k); ctx.lineTo(rx + 7 * k, ly + 12 * k); ctx.lineTo(rx - 7 * k, ly + 12 * k); ctx.closePath(); ctx.fill();
     if (!phone) {
       ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
-      ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(rx, ly - 10); ctx.lineTo(rx, ly + 11); ctx.stroke(); ctx.setLineDash([]);
+      ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(rx, ly - 10 * k); ctx.lineTo(rx, ly + 11 * k); ctx.stroke(); ctx.setLineDash([]);
     }
     // the glide path on the glideslope scale: a triangle pointing at the scale
     const gy = cy - gs * V;
     ctx.fillStyle = Math.abs(gs) >= 1 ? '#ff7a5c' : GS;
     ctx.beginPath(); ctx.moveTo(gx - 3 * k, gy); ctx.lineTo(gx + 13 * k, gy - 8 * k); ctx.lineTo(gx + 13 * k, gy + 8 * k); ctx.closePath(); ctx.fill();
-    if (phone) { ctx.restore(); return; }
+    if (!text) { ctx.restore(); return; }
     // labels and plain words
     ctx.font = '700 11px system-ui, sans-serif';
     ctx.textAlign = 'center';
@@ -622,7 +642,7 @@ const Game = {
       const d = Math.hypot(st.pos.x - gate.standX, st.pos.z - gate.standZ);
       const align = Math.abs(wrapDeg(fl.headingDeg() - gate.parkHdg));
       const inBox = d < SIM.PARK_RADIUS_M && align < SIM.PARK_ALIGN_DEG;
-      if (fo && fo.on && fo.done) this.copilotOff(tr('First officer: your controls — turn in to {gate} and stop on the stop bar', { gate: gateName(gate) }));
+      if (fo && fo.on && fo.done) this.copilotOff(tr('First officer: your controls — straight on to {gate}, stop on the stop bar', { gate: gateName(gate) }));
       if (fo && fo.on) {
         HUD.setPrompt('<b>' + tr('The first officer is taxiing to {gate}', { gate: gateName(gate) }) + '</b>' +
           (g && g.visible ? ' · ' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') + '<br>' +
@@ -638,11 +658,11 @@ const Game = {
       } else {
         const flights = Career.flightsIn(fl.ac.id);
         const help = d < 80 ? '<br>' + tr('stop on the stop bar — {d} m', { d: Math.round(d) }) + (align > SIM.PARK_ALIGN_DEG ? ', ' + tr('straighten up') : '')
-          : Copilot.left(fl) < COPILOT.HANDOVER_M ? ''
+          : Copilot.left(fl) < COPILOT.MIN_RUN_M ? ''
           : flights >= COPILOT.FLIGHTS ? '<br>' + tr('<kbd>Enter</kbd> — the first officer taxis, time x{n}', { n: COPILOT.TIME_ACCEL })
           : '<br>' + tr('after {n} flights in this type the first officer taxis for you ({k} of {n})', { n: COPILOT.FLIGHTS, k: flights });
         HUD.setPrompt('<b>' + tr('Taxi to {gate}', { gate: gateName(gate) }) + '</b> · ' +
-          tr(fl.followMe && Copilot.left(fl) > 0 ? 'follow the FOLLOW ME car' : 'follow the arrow') + this.taxiSpeedHint() + help);
+          tr(fl.followMe && Copilot.toTurnIn(fl) > 0 ? 'follow the FOLLOW ME car' : 'follow the arrow') + this.taxiSpeedHint() + help);
       }
     } else if (p === 'SHUTDOWN') {
       HUD.setPrompt(tr('<b>Shutting down</b> · {ac} at {gate}', { ac: fl.ac.name, gate: gateName(this.arrivalGate) }));
@@ -891,7 +911,7 @@ const Game = {
       fl.warn('COPILOT', tr('The first officer taxis in once you have flown {n} flights in the {ac} — {k} so far', { n: COPILOT.FLIGHTS, ac: fl.ac.name, k: flights }));
       return;
     }
-    if (Copilot.left(fl) < COPILOT.HANDOVER_M) { fl.info(tr('Nearly there — park it yourself')); return; }
+    if (Copilot.left(fl) < COPILOT.MIN_RUN_M) { fl.info(tr('Nearly there — park it yourself')); return; }
     fl.copilot = { on: true, thrI: 0, done: false };
     fl.copilotTime(true);
     fl.info(tr('First officer: my controls — taxiing to {gate}', { gate: gateName(this.arrivalGate) }));
