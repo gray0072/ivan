@@ -198,10 +198,16 @@ const COPILOT = {
 };
 
 // The FOLLOW ME car on a first visit to an airport (render/followme3d.js): it waits on the
-// taxiway past the runway exit and drives ahead of the aeroplane along the taxi route, GAP_M plus
-// LEAD_S seconds of the aeroplane's speed ahead of its nose; by the stand it drives on PARK_M along
-// the apron lane and stops there.
-const FOLLOW_ME = { GAP_M: 30, LEAD_S: 4,MAX_KT: 45, ACCEL_MS2: 1.5, BRAKE_MS2: 3, PARK_M: 70, WAIT_M: 25, FLASH_S: 0.8 };
+// taxiway past the runway exit and drives ahead of the aeroplane along the taxi route, its back
+// GAP_M plus LEAD_S seconds of the aeroplane's speed ahead of its nose, setting off early enough
+// to get up to that speed at ACCEL_MS2; caught up (closer than that) it may go up to RUN_KT, and
+// closer than GAP_M it speeds up at RUN_ACCEL_MS2. By the stand it drives on along the apron lane
+// past the wingtip (half the span plus PARK_CLEAR_M, at least PARK_MIN_M), pulls PULL_M off the
+// lane to the runway side over the last PULL_RUN_M and waits there.
+const FOLLOW_ME = {
+  GAP_M: 30, LEAD_S: 2, MAX_KT: 45, RUN_KT: 70, ACCEL_MS2: 2.5, RUN_ACCEL_MS2: 4, BRAKE_MS2: 3,
+  PARK_CLEAR_M: 20, PARK_MIN_M: 35, PULL_M: 12, PULL_RUN_M: 20, WAIT_M: 25, FLASH_S: 0.8
+};
 
 // ---------- Airport layout (metres) ----------
 // Every airport is drawn from the same template around its runway:
