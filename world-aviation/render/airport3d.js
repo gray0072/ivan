@@ -170,9 +170,9 @@ const Airport3D = {
     if (terms.length > 1) this.roadNumbers(a, terms, at, tex, roadA);
     // the apron service road between the stands and the building (the baggage trains' road,
     // render/baggage3d.js)
-    W.strip(r.t0, L.STAND + 18.2, r.t1, L.STAND + 18.2, 0.4);
-    W.strip(r.t0, L.STAND + 31.8, r.t1, L.STAND + 31.8, 0.4);
-    for (let t = r.t0; t + 4.5 <= r.t1; t += 9) W.strip(t, L.STAND + 25, t + 4.5, L.STAND + 25, 0.4);
+    W.strip(r.t0, L.SERVICE_ROAD - 6.8, r.t1, L.SERVICE_ROAD - 6.8, 0.4);
+    W.strip(r.t0, L.SERVICE_ROAD + 6.8, r.t1, L.SERVICE_ROAD + 6.8, 0.4);
+    for (let t = r.t0; t + 4.5 <= r.t1; t += 9) W.strip(t, L.SERVICE_ROAD, t + 4.5, L.SERVICE_ROAD, 0.4);
 
     for (const [b, color] of [[Y, '#f2c832'], [W, '#e9e8e2'], [Rd, '#c8282a']]) {
       if (!b.pos.length) continue;
@@ -385,7 +385,7 @@ const Airport3D = {
         const win = lambert(0x3a4550);
         rec.night.push({ mat: win, color: new THREE.Color(0xfff0c8), k: 0.5 });
         at(new THREE.Mesh(cellBox(0.3, 1.4, b.along * 0.85), win), b.t, b.across - b.acrossSize / 2 - 0.15, b.h - 2);
-        const cargo = AIRLINES.filter((x) => x.kinds.indexOf('cargo') >= 0 && airlineWorksAt(x, a));
+        const cargo = AIRLINES.filter((x) => x.kinds.indexOf('cargo') >= 0 && !x.own && airlineWorksAt(x, a));
         if (cargo.length) this.logoBoard(rec, at, tex, cargo[hashStr(a.id) % cargo.length], b.t, b.across - b.acrossSize / 2 - 0.2, b.h * 0.55, Math.min(b.along * 0.8, 60), b.h * 0.6);
       }
     }
@@ -1311,7 +1311,7 @@ function makeGroundCanvas(a, id, ch) {
   for (let t = r.t0; t < r.t1; t += 7.5) rect(t, t + 0.25, r.a0, r.a1);
   for (let ac = r.a0; ac < r.a1; ac += 7.5) rect(r.t0, r.t1, ac, ac + 0.25);
   // the service road between the stands and the building
-  g.fillStyle = 'rgba(60,62,64,0.5)'; rect(r.t0, r.t1, L.STAND + 18, L.STAND + 32);
+  g.fillStyle = 'rgba(60,62,64,0.5)'; rect(r.t0, r.t1, L.SERVICE_ROAD - 7, L.SERVICE_ROAD + 7);
   // (the service road lines, the yellow centrelines, the stand lead-in lines, stop bars and
   // the holding position lines are thin strips of geometry: Airport3D.buildMarkings)
   // the stands: an oil stain (the red safety box and the stand number are geometry, sharp)

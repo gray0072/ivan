@@ -564,6 +564,21 @@ const Scene3D = {
     this.w = w; this.h = h;
   },
 
+  // the eye moved along the line to `to` (over the aeroplane) until it is VIEW.BUILDING_CLEAR_M
+  // clear of every building of the nearest airport (Collide.nearBuilding); as it was away from one
+  clearOfBuildings(fl, eye, to) {
+    const a = fl.nearestApt();
+    if (!a || !a.buildings || Math.hypot(eye.x - a.x, eye.z - a.z) > (a.obstacleReach || Infinity) + 50) return eye;
+    const m = VIEW.BUILDING_CLEAR_M;
+    if (!Collide.nearBuilding(a, eye, m)) return eye;
+    const p = new THREE.Vector3();
+    for (let k = 1; k <= 20; k++) {
+      p.lerpVectors(eye, to, k / 20);
+      if (!Collide.nearBuilding(a, p, m)) return p;
+    }
+    return p;
+  },
+
   // ---------- the camera (VIEW.MODES) ----------
   // Most views ride with the aeroplane, in its own axes (x right, y up, z forward) scaled to
   // its size; the top-down view keeps the nose up, and the tower view stands on the
@@ -620,6 +635,9 @@ const Scene3D = {
         eye = c.eye; look = c.look;
       }
     }
+    // the views riding with the aeroplane never inside a building (in front of the nose at a stand
+    // the front view stood in the terminal): pulled in towards the aeroplane until clear of it
+    if (mode === 'chase' || mode === 'front' || mode === 'wing') eye = this.clearOfBuildings(fl, eye, P(0, R, 0));
     // never below the ground
     const gEye = Terrain.surfaceAt(eye.x, eye.z) + minAgl;
     if (eye.y < gEye) eye.y = gEye;

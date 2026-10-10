@@ -4,7 +4,8 @@
 // World Aviation — an aeroplane's shape, worked out from its type's
 // real dimensions (`dims`) and exterior (`look`), without any meshes:
 //   - modelLayout(ac): where the main parts are (the wing, the
-//     engines, the tail, the gear), in the model's own axes; the 3D
+//     engines, the tail, the gear, the Beluga's hold: bubbleSection),
+//     in the model's own axes; the 3D
 //     model is built by it (render/models.js), the Mriya's blueprint
 //     drawn by it (art/mriyaplan.js), the emergency vehicles placed
 //     clear of it (render/responders3d.js)
@@ -25,7 +26,9 @@ function modelLayout(ac, look) {
   const d = aircraftDims(ac);
   const L = d.len, R = d.radius, S = d.span;
   const hk = look.tall || 1;                                       // body height over width
-  const top = R * (2 * hk - 1);                                    // the roof above the axis
+  const bub = look.bubble ? bubbleSection(R, look.bubble) : null;  // the Beluga's hold over the body
+  const top = bub ? bub.top : R * (2 * hk - 1);                    // the roof above the axis
+  const halfW = bub ? bub.rb : R;                                  // the body's half width
   const jet = ac.engineType === 'jet';
   const high = look.wing === 'high';
   const four = look.engines === 'wing4' || look.engines === 'wing6';
@@ -50,8 +53,9 @@ function modelLayout(ac, look) {
   const finSweep = (twin ? 32 : jet ? 38 : 30) * DEG;
   const finZ = -L * 0.5 + finRoot + L * 0.015;                     // fin leading edge at the root
   // (its root inside the tail cone all along: lower, its edge hung out under the narrow end
-  // of the cone, a thin rod seen from below; a double deck's roof runs higher into the tail)
-  const finY = R * 0.72 + (top - R) * 0.8;
+  // of the cone, a thin rod seen from below; a double deck's roof runs higher into the tail; the
+  // Beluga's stands on the end of its hold, 1.3 m higher than the A300's)
+  const finY = R * 0.72 + (bub ? R * 0.45 : (top - R) * 0.8);
   // the tailplane's half span (real ones: 0.15 of the wing span on a T-tail, about 0.17-0.2 below;
   // the An-225's 32.65 m, 0.185 of its span)
   const tSemi = S * (twin ? 0.185 : tTop ? 0.15 : jet ? 0.19 : 0.17);
@@ -76,11 +80,22 @@ function modelLayout(ac, look) {
   // the gear: the wheels, the main legs and the nose leg
   const wheelR = Math.max(0.28, d.fus * 0.13);
   return {
-    L, R, S, hk, top, jet, high, sweep, semi, rootC, tipC, thick, wingY, wingZ, dihedral, spanAt, leAt, yAt,
+    L, R, S, hk, top, halfW, bub, jet, high, sweep, semi, rootC, tipC, thick, wingY, wingZ, dihedral, spanAt, leAt, yAt,
     twin, tTop, finRoot, finTip, finH, finSweep, finZ, finY, tSemi, tRoot, tTip, tSweep, tailZ, tailY,
     engines, wheelR, gearH: d.gearH, noseZ: L * 0.38, mainRows: look.mainRows || 2,
     mainX: high ? R * 1.05 : R * (S > 50 ? 1.15 : 0.95), mainZ: -L * 0.03
   };
+}
+
+// The Beluga's hold in its full cross-section (look.bubble: its radius over the radius R of the
+// A300's fuselage under it): a circle of radius rb whose centre sits yc above the axis, so that
+// it meets the lower fuselage in a crease at CREASE of R below the axis, where the floor of the
+// hold is; top: its roof. render/models.js shapes the rest of it (bubbleRing)
+const BUBBLE_CREASE = 0.2;
+function bubbleSection(R, k) {
+  const rb = R * k, w = R * Math.sqrt(1 - BUBBLE_CREASE * BUBBLE_CREASE);    // the body's half width at the crease
+  const yc = -R * BUBBLE_CREASE + Math.sqrt(Math.max(0, rb * rb - w * w));
+  return { rb, yc, top: yc + rb, bottom: yc - rb };
 }
 
 const Airframe = {
@@ -100,7 +115,8 @@ const Airframe = {
     const L = lay.L, R = lay.R, tan = Math.tan;
     const put = (pts, y0, y1) => out.push(convexPrism(pts, y0, y1));
     // the fuselage, from the belly to the roof
-    put([[-R, -L / 2], [R, -L / 2], [R, L / 2], [-R, L / 2]], -R, lay.top);
+    const W = lay.halfW;
+    put([[-W, -L / 2], [W, -L / 2], [W, L / 2], [-W, L / 2]], -R, lay.top);
     // the wings: root and tip, leading and trailing edges, over the dihedral
     const tipX = lay.spanAt(1), tipLe = lay.leAt(1);
     const wy0 = Math.min(lay.wingY, lay.yAt(1)) - lay.thick, wy1 = Math.max(lay.wingY, lay.yAt(1)) + lay.thick;
@@ -141,7 +157,7 @@ const Airframe = {
     // the fuselage: a row of spheres as wide as it is, the nose and the tail just touching its ends
     const fy = (lay.top - R) / 2;
     const nF = Math.max(2, Math.ceil((L - 2 * R) / R) + 1);
-    for (let i = 0; i < nF; i++) out.push({ x: 0, y: fy, z: -L / 2 + R + (L - 2 * R) * i / (nF - 1), r: R });
+    for (let i = 0; i < nF; i++) out.push({ x: 0, y: fy, z: -L / 2 + R + (L - 2 * R) * i / (nF - 1), r: lay.halfW });
     // a swept surface from its root to its tip: the leading edge, the middle and the trailing edge
     const surface = (x0, x1, le0, le1, c0, c1, y0, y1) => {
       const n = Math.max(2, Math.ceil(Math.abs(x1 - x0) / step) + 1);

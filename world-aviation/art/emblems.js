@@ -444,6 +444,15 @@ const EMBLEM_KINDS = {
     emPath(g, b, 'M10 66 C24 56 36 50 46 50 C52 38 62 30 74 30 L90 34 L76 38 C72 46 66 54 58 58 L70 74 L54 64 C40 66 24 68 10 66 Z', color);
   },
   orca(g, b, al, color) { emSymbol(g, b, 'orca', color, al.livery.tail); },
+  // Airbus Beluga Transport: a beluga whale — the big round forehead to the right, no dorsal fin,
+  // a flipper and the flukes — with an eye and a smile
+  beluga(g, b, al, color) {
+    emPath(g, b, 'M95 57 C97 46 91 31 76 31 C62 31 46 37 34 45 C26 50 18 53 12 54 L3 46 C6 52 6 57 4 64 L12 58 ' +
+      'C22 61 34 67 52 68 C70 70 86 66 92 62 C94 61 95 59 95 57 Z', color);
+    emPath(g, b, 'M66 66 C64 72 59 77 52 79 C56 73 58 69 58 67 Z', color);
+    emCircle(g, b, 80, 47, 2.8, al.livery.tail);
+    emStroke(g, b, 'M84 59 C88 60.5 91 59.5 93.5 57.5', al.livery.tail, 2);
+  },
   wingsCross(g, b, al) {
     emPath(g, b, 'M42 30 H58 V46 H74 V62 H58 V78 H42 V62 H26 V46 H42 Z', '#e4002b');
     emPath(g, b, 'M24 50 C16 44 8 42 2 42 C10 48 14 54 22 56 Z M76 50 C84 44 92 42 98 42 C90 48 86 54 78 56 Z', '#ffffff');

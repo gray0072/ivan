@@ -402,6 +402,13 @@ const AIRLINES = [
     abroad: ['China', 'Turkey', 'United Arab Emirates', 'India', 'Kazakhstan', 'Uzbekistan'],
     livery: { body: '#ffffff', title: '#0d3b84', tail: '#0d3b84', engine: '#ffffff', titleFont: 'plain' },
     emblem: ['text', 'ABC', '#ffffff'] },
+  // Airbus's own airline: it flies only the Beluga (its `operator`) and never hires another type
+  // (`own`). Its bases are the Airbus plants the Belugas link: Hamburg Finkenwerder, Broughton
+  // (by Manchester) and Getafe (by Madrid); Toulouse, its home, is not on the map.
+  { code: 'BGA', name: 'Airbus Beluga Transport', title: 'AIRBUS', kinds: ['cargo'], country: 'France', own: true,
+    hubs: ['HAM', 'MAN', 'MAD'], regions: WORLDWIDE,
+    livery: { body: '#ffffff', belly: '#d9dee4', title: '#00205b', tail: '#00205b', engine: '#ffffff' },
+    emblem: ['beluga', '#ffffff'] },
 
   // ---- bush flying and air ambulance
   { code: 'KAX', name: 'Kallax Flyg', title: 'KALLAX FLYG', kinds: ['bush'], country: 'Sweden',
@@ -497,12 +504,19 @@ function airlineMayFly(al, faction, from, to) {
   return faction === 'cargo' || al.bases.indexOf(a) >= 0 || al.bases.indexOf(b) >= 0;   // no fifth freedoms
 }
 
+// The airlines that may hire a type: a type with an `operator` (the Beluga) works for that one
+// alone; any other for every airline but those that fly only their own types (`own`)
+function clientAirlines(ac) {
+  if (ac && ac.operator) return AIRLINE_BY_CODE[ac.operator] ? [AIRLINE_BY_CODE[ac.operator]] : [];
+  return AIRLINES.filter((al) => !al.own);
+}
+
 // The client for a contract among the airlines of that client group that may fly the route:
 // one based at either end of it most likely, then one from either country, then any other.
-// null when none may fly it.
-function pickAirline(faction, from, to, rng) {
+// null when none may fly it. ac: the type flown (clientAirlines)
+function pickAirline(faction, from, to, rng, ac) {
   const pool = [];
-  for (const al of AIRLINES) {
+  for (const al of clientAirlines(ac)) {
     if (al.kinds.indexOf(faction) < 0 || !airlineMayFly(al, faction, from, to)) continue;
     let w = 1;
     if (al.hubs.indexOf(from.id) >= 0 || al.hubs.indexOf(to.id) >= 0) w = 6;
@@ -515,7 +529,7 @@ function pickAirline(faction, from, to, rng) {
 // The airlines whose aeroplanes stand at an airport's gates: its home carriers first
 function airlinesAt(apt) {
   const list = [];
-  for (const al of AIRLINES) if (al.hubs.indexOf(apt.id) >= 0 && al.kinds.indexOf('bush') < 0) list.push(al);
+  for (const al of AIRLINES) if (al.hubs.indexOf(apt.id) >= 0 && al.kinds.indexOf('bush') < 0 && !al.own) list.push(al);
   if (list.length < 2) {
     for (const al of AIRLINES) {
       if (list.length >= 3) break;

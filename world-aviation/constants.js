@@ -217,9 +217,12 @@ const LAYOUT = {
   HOLD_OFFSET: 80,             // holding point, from the runway centreline
   HOLD_T: 90,                  // holding point, from the runway start
   EXITS: [0.45, 0.65, 0.85],   // runway exits as a fraction of the length
-  APRON_LANE: 300,             // taxi lane on the apron (95 m lead-in to the stands: room for a 747 to straighten up)
-  STAND: 395,                  // the parking position (nose-in towards the terminal; the An-225's nose stops 3 m
-                               // short of the terminal's front, TERMINAL - 30)
+  APRON_LANE: 285,             // taxi lane on the apron (95 m lead-in to the stands: room for a 747 to straighten up)
+  STAND: 380,                  // the parking position (nose-in towards the terminal; up to the A330 and the 787 the noses
+                               // stop short of the service road, the An-225's 18 m short of the terminal's front,
+                               // TERMINAL - 30)
+  SERVICE_ROAD: 420,           // the middle of the apron service road, 14 m wide, between the stands and the
+                               // terminal's glass (the baggage trains' road)
   TERMINAL: 470,               // terminal building centre
   HANGAR_DOORS: 425,           // the line of the hangar doors (HANGARS)
   FENCE_FAR: -455,             // the perimeter fence on the far side of the runway (across) ...
@@ -300,7 +303,8 @@ const COLLIDE = {
   BUMP_REPEAT_S: 3,            // the same obstacle damages again only after this long clear of it
   SAMPLE_M: 1.2,               // the spheres along a wing, the tail and the fin: this far apart ...
   WING_R: 0.6,                 // ... and this thick (metres)
-  TOWER_CAB_M: 6               // the tower's cab above its floor (TOWER_H)
+  TOWER_CAB_M: 6,              // the tower's cab above its floor (TOWER_H)
+  ROOF_LIP_M: 16               // a terminal's roof overhangs the apron (and its ends) by up to this (the cameras' test)
 };
 
 // ---------- Difficulty ----------
@@ -572,6 +576,38 @@ const AIRCRAFT = [
     propRpmIdle: 0.0, propRpmCruise: 0.0
   },
   {
+    // Airbus's own outsize freighter: an A300-600's wing, engines, lower fuselage and cockpit (set
+    // lower), under a hold 7.1 m across, with a door over the cockpit that swings the whole front
+    // up. Real figures: 56.15 m long, 44.84 m span, 260 m² of wing, 155 t at take-off, 86.5 t empty,
+    // 47 t of payload, two CF6-80C2A8 of 262 kN, Mach 0.69 (420 kt), 2 700 km with 26 t — its loads
+    // (wings, fuselage sections, helicopters) fill the hold long before they reach its weight. The
+    // big body is drag in the cruise and a sail in a crosswind. It flies only for its operator,
+    // Airbus Beluga Transport, and only in its paint (`operator`, data/airlines.js), carrying
+    // aircraft sections between the Airbus plants and outsize freight for hire (`loads`).
+    // dims.fus is the A300's lower lobe; look.bubble the hold's width over it (7.7 m outside).
+    id: 'A3ST', name: 'Airbus A300-600ST Beluga', klass: 'Outsize freighter', branch: 'cargo', operator: 'BGA',
+    blurb: 'Airbus\'s flying whale: an A300\'s wing and cockpit under a hold 7 metres across, the whole front of it swinging up over the cockpit. It carries wings and fuselage sections between the Airbus plants — light, but too big for anything else.',
+    seats: 2, payloadKg: 47000, mtow: 155000, emptyKg: 86500,
+    engines: 2, engineType: 'jet', thrust: 524000,
+    wingArea: 260, clMaxClean: 1.35, clMaxFlap: 2.0, cd0: 0.029, kInd: 0.04,
+    cruiseAlt: 9400, cruiseTas: 420, climbRate: 8,
+    fuelCapKg: 49000, fuelFlowCruise: 2700, fuelFlowIdle: 200,
+    vne: 450, vr: 145, vsRatio: 1.2, vrefAdd: 5, vlo: 250,
+    flaps: [
+      { notch: 1, cl: 0.10, cd: 0.006, vfe: 230 },
+      { notch: 2, cl: 0.26, cd: 0.018, vfe: 215 },
+      { notch: 3, cl: 0.46, cd: 0.038, vfe: 200 },
+      { notch: 4, cl: 0.64, cd: 0.068, vfe: 185 },
+      { notch: 5, cl: 0.80, cd: 0.118, vfe: 175 }
+    ],
+    gearCd: 0.024, rollRate: 0.7, pitchRate: 0.52, yawRate: 0.62,
+    takeoffDist: 2400, crosswindLimit: 25, maxRangeNm: 1500, surfaces: ['asphalt'],
+    rent: 19500, price: 0, bonus: 1.35, unlock: 'cargo5', loads: ['parts', 'parts', 'outsize'],
+    dims: { len: 56.15, span: 44.84, fus: 5.64 },
+    look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#ffffff', color: '#00205b', sweep: 28, bubble: 1.37, tailFins: true, mainRows: 2, freighter: true },
+    propRpmIdle: 0.0, propRpmCruise: 0.0
+  },
+  {
     id: 'B763F', name: 'Boeing 767-300F', klass: 'Widebody freighter', branch: 'cargo',
     blurb: 'Fifty-two tonnes of freight on the main deck and in the holds, two big fans and a cruise that eats the horizon.',
     seats: 2, payloadKg: 52000, mtow: 186880, emptyKg: 86180,
@@ -804,7 +840,10 @@ const PAYLOAD = {
   hazmat: { name: 'Dangerous goods', ratePerKg: 3.1, label: 'kg of dangerous goods', hazard: true },
   mail: { name: 'Mail and light freight', ratePerKg: 2.2, label: 'kg of mail' },
   medevac: { name: 'Medevac', ratePerKg: 6.5, label: 'kg of medevac load', urgent: true },
-  fish: { name: 'Fresh fish', ratePerKg: 1.5, label: 'kg of fish', coldChain: true }
+  fish: { name: 'Fresh fish', ratePerKg: 1.5, label: 'kg of fish', coldChain: true },
+  // the loads of a type with loads of its own (the Beluga's): bulky rather than heavy, paid for the hold they fill
+  parts: { name: 'Aircraft sections', ratePerKg: 2.0, label: 'kg of aircraft sections' },
+  outsize: { name: 'Outsize freight', ratePerKg: 2.3, label: 'kg of outsize freight' }
 };
 
 // ---------- Client factions ----------
@@ -880,8 +919,8 @@ const COURSES = [
     blurb: 'Main-deck loading, fifty tonnes of freight and the most demanding schedules in the north.',
     effect: 'Unlocks the Boeing 767-300F, the Boeing 747-8F and ultra-long contracts.', course: 'cargo' },
   { id: 'cargo5', branch: 'cargo', tier: 5, name: 'Outsize Cargo', cost: 48000, requires: ['cargo4'], flights: 48, rep: 80,
-    blurb: 'Turbines, helicopters and locomotives: the An-124\'s lifting nose, kneeling gear, roof cranes and tie-downs for loads that fit nothing else.',
-    effect: 'Unlocks the Antonov An-124 Ruslan: 120 tonnes onto long gravel and ice runways.', course: 'cargo' },
+    blurb: 'Turbines, helicopters, locomotives and aircraft wings: the An-124\'s lifting nose, kneeling gear and roof cranes, the Beluga\'s door over the cockpit, and tie-downs for loads that fit nothing else.',
+    effect: 'Unlocks the Antonov An-124 Ruslan (120 tonnes onto long gravel and ice runways) and the Airbus Beluga (aircraft sections for Airbus).', course: 'cargo' },
   // Bush & SAR
   { id: 'bush1', branch: 'bush', tier: 1, name: 'Short Field Ops', cost: 2000, requires: ['gen1'], flights: 4, rep: 0,
     blurb: 'Take-off and landing in half the distance, on grass, gravel and sand.',
@@ -1006,6 +1045,7 @@ const AUTO_QUALITY = {
 
 const VIEW = {
   FOV_DEG: 68,
+  BUILDING_CLEAR_M: 3,          // the chase, front and wing views keep this far out of the buildings (Scene3D.clearOfBuildings)
   // the pilot's eye in the aircraft's own axes: x = right, y = up, z = forward (metres, an 18 m aeroplane)
   COCKPIT_EYE: { x: 0, y: 1.6, z: 5.5 },
   // the captain's seat: this far left of the centreline, as a fraction of the fuselage diameter

@@ -80,8 +80,8 @@ const COURSE_TEXT = {
       'Открывает Embraer E195-E2 и Airbus A220-300.'],
     paxetops: ['ETOPS и полёты над океаном', 'Два двигателя над океаном: время до запасного аэродрома, запасные аэродромы, снижение на одном двигателе и топливо на худший случай.',
       'Открывает Airbus A330-300 и Boeing 787-9; +10% к оплате рейсов длиннее 1 500 nm на двухдвигательном реактивном.'],
-    cargo5: ['Негабаритные грузы', 'Турбины, вертолёты и локомотивы: поднимающийся нос Ан-124, «приседающее» шасси, потолочные краны и крепление грузов, которые больше никуда не влезают.',
-      'Открывает Антонов Ан-124 «Руслан»: 120 тонн на длинные гравийные и ледовые полосы.']
+    cargo5: ['Негабаритные грузы', 'Турбины, вертолёты, локомотивы и крылья самолётов: поднимающийся нос Ан-124, «приседающее» шасси и потолочные краны, дверь Beluga над кабиной и крепление грузов, которые больше никуда не влезают.',
+      'Открывает Антонов Ан-124 «Руслан» (120 тонн на длинные гравийные и ледовые полосы) и Airbus Beluga (секции самолётов для Airbus).']
   },
   sv: {
     gen1: ['Grundutbildning', 'Grundläggande teori, flygplanshantering och standardrutinerna hos ett litet flygbolag. Alla börjar här.',
@@ -122,8 +122,8 @@ const COURSE_TEXT = {
       'Låser upp Embraer E195-E2 och Airbus A220-300.'],
     paxetops: ['ETOPS och havsöverfarter', 'Två motorer över havet: tid till alternativ flygplats, alternativen, nedglidning på en motor och bränsle för värsta fallet.',
       'Låser upp Airbus A330-300 och Boeing 787-9; +10 % betalt för sträckor över 1 500 nm med tvåmotoriga jetplan.'],
-    cargo5: ['Överdimensionerad frakt', 'Turbiner, helikoptrar och lok: An-124:ans uppfällbara nos, landställ som "knäböjer", takkranar och surrning av laster som inte får plats någon annanstans.',
-      'Låser upp Antonov An-124 Ruslan: 120 ton till långa grus- och isbanor.']
+    cargo5: ['Överdimensionerad frakt', 'Turbiner, helikoptrar, lok och flygplansvingar: An-124:ans uppfällbara nos, landställ som "knäböjer" och takkranar, Belugans dörr över cockpit och surrning av laster som inte får plats någon annanstans.',
+      'Låser upp Antonov An-124 Ruslan (120 ton till långa grus- och isbanor) och Airbus Beluga (flygplanssektioner åt Airbus).']
   }
 };
 
@@ -786,6 +786,18 @@ const QUIZZES = {
       ru: ['Почему негабаритный груз так крепко закрепляют?', 'Если он сдвинется, сместится центр тяжести и самолётом станет трудно управлять', 'Чтобы ему не было скучно', 'Чтобы его не украли ночью',
         'Шестьдесят тонн, съехавшие назад, задирают нос — это и есть аварийная ситуация «смещение груза».'],
       sv: ['Varför måste överdimensionerat gods surras så hårt?', 'Flyttar det sig flyttas tyngdpunkten och planet blir svårt att styra', 'Så att det inte blir uttråkat', 'Så att ingen stjäl det på natten',
-        'Sextio ton som glider bakåt får nosen att resa sig — det är vad en lastförskjutning är.'] }
+        'Sextio ton som glider bakåt får nosen att resa sig — det är vad en lastförskjutning är.'] },
+    { en: ['Why does the Airbus Beluga sit its cockpit below the cargo deck?', 'So the whole front of the hold can swing up and wings slide straight in over it', 'So the pilots can see the wheels', 'To keep the pilots warm',
+      'The cockpit is the A300\'s, set lower; the door above it opens the full 7-metre hold from the front.'],
+      ru: ['Почему кабина Airbus Beluga сидит ниже грузовой палубы?', 'Чтобы вся передняя часть отсека поднималась и крылья заезжали прямо над кабиной', 'Чтобы пилотам были видны колёса', 'Чтобы пилотам было теплее',
+        'Кабина взята у A300 и опущена ниже; дверь над ней открывает весь семиметровый отсек спереди.'],
+      sv: ['Varför sitter cockpit på Airbus Beluga under lastdäcket?', 'Så att hela fronten på lastrummet kan fällas upp och vingar skjutas rakt in över den', 'Så att piloterna ser hjulen', 'För att hålla piloterna varma',
+        'Cockpit är A300:ans, flyttad nedåt; dörren ovanför öppnar hela det sju meter breda lastrummet framifrån.'] },
+    { en: ['A Beluga carries a pair of A350 wings. What fills up first?', 'The volume of the hold — the load is big but light', 'The fuel tanks', 'The weight limit — wings are made of lead',
+      'Outsize cargo is bulky rather than heavy, and the huge body is a sail in a crosswind: the Beluga\'s limit is lower than the A300\'s.'],
+      ru: ['Beluga везёт пару крыльев A350. Что заполняется первым?', 'Объём отсека — груз большой, но лёгкий', 'Топливные баки', 'Предел по весу — крылья сделаны из свинца',
+        'Негабарит скорее объёмный, чем тяжёлый, а огромный фюзеляж — парус при боковом ветре: у Beluga ограничение ниже, чем у A300.'],
+      sv: ['En Beluga lastar ett par A350-vingar. Vad tar slut först?', 'Lastrummets volym — lasten är stor men lätt', 'Bränsletankarna', 'Viktgränsen — vingar är gjorda av bly',
+        'Överdimensionerat gods är skrymmande snarare än tungt, och den stora kroppen är ett segel i sidvind: Belugans gräns är lägre än A300:ans.'] }
   ]
 };

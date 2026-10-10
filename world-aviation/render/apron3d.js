@@ -352,8 +352,8 @@ const Apron3D = {
     rec.pools.visible = false;
 
     // ---- traffic: the baggage trains on the service road between the stands and the
-    // building (its middle 25 m beyond the stands: airport3d.js), the cars on the landside roads
-    Baggage.build(a, rec, at, bagStands, front, L.STAND + 25, rng);
+    // building (LAYOUT.SERVICE_ROAD: airport3d.js), the cars on the landside roads
+    Baggage.build(a, rec, at, bagStands, front, L.SERVICE_ROAD, rng);
     rec.traffic = [];
     const box = groundBox(a), FADE = 150;
     const roads = landsideRoads(a).map((rd) => polylineLength(truncateInBox(rd, box.tMin + FADE, box.tMax - FADE, box.aMin + FADE, box.aMax - FADE)));

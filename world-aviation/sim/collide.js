@@ -48,7 +48,7 @@ const Collide = {
     for (const b of (a.buildings || []).concat(a.landside || [])) {
       const h = b.h + (b.kind === 'tower' ? COLLIDE.TOWER_CAB_M : 0);
       const solid = convexPrism([[-b.along / 2, -b.acrossSize / 2], [b.along / 2, -b.acrossSize / 2], [b.along / 2, b.acrossSize / 2], [-b.along / 2, b.acrossSize / 2]], 0, h);
-      out.push({ kind: b.kind, ox: b.x, oz: b.z, ax: along, az: across, base: a.elev, solids: [solid], rad: solid.rad, top: a.elev + h });
+      out.push({ kind: b.kind, ox: b.x, oz: b.z, ax: along, az: across, base: a.elev, solids: [solid], rad: solid.rad, top: a.elev + h, bld: b });
     }
     for (const gate of a.gates || []) {
       const type = gate.parked;
@@ -96,6 +96,30 @@ const Collide = {
       if (this.touches(ob, pts, samples.length)) { this.hit(fl, c, ob); return; }
     }
     this.keepClear(c, st);
+  },
+
+  // is a point within `margin` metres of a building of the airport (the parked aeroplanes left
+  // out)? The cameras riding with the aeroplane keep out of them (render/scene3d.js). A terminal
+  // counts with its roof as drawn (b.roofAt, set by render/airport3d.js: a big one's rises up to
+  // 18 m over the box and overhangs the apron by up to COLLIDE.ROOF_LIP_M)
+  nearBuilding(a, p, margin) {
+    const probe = [{ x: p.x, y: p.y, z: p.z, r: margin }];
+    for (const ob of this.obstacles(a)) {
+      if (ob.kind === 'parked') continue;
+      const b = ob.bld;
+      if (ob.kind === 'terminal' && b && b.roofAt) {
+        const rx = p.x - ob.ox, rz = p.z - ob.oz;
+        const lx = rx * ob.ax.x + rz * ob.ax.z, lz = rx * ob.az.x + rz * ob.az.z;
+        if (Math.abs(lx) > b.along / 2 + COLLIDE.ROOF_LIP_M + margin) continue;
+        if (lz < -b.acrossSize / 2 - COLLIDE.ROOF_LIP_M - margin || lz > b.acrossSize / 2 + margin) continue;
+        if (p.y - ob.base < b.roofAt(b.t + lx, b.across + lz) + margin) return true;
+        continue;
+      }
+      if (p.y - margin > ob.top) continue;
+      if (Math.hypot(ob.ox - p.x, ob.oz - p.z) > ob.rad + margin) continue;
+      if (this.touches(ob, probe, 1)) return true;
+    }
+    return false;
   },
 
   keepClear(c, st) {

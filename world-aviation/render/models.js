@@ -23,6 +23,10 @@
 //   - a tall body (look.tall: its height over its width) that grows
 //     upwards from the same belly; with look.decks = 2 two rows of
 //     windows and the cockpit between them
+//   - the Beluga's hold (look.bubble): a body of its own over the
+//     A300's lower fuselage, its front over the cockpit, its end under
+//     the fin, in its own canvas; end plates on the tailplane
+//     (look.tailFins); always in its operator's paint (ac.operator)
 //   - the An-225's own shapes: six engines (look.engines 'wing6'), a
 //     twin tail with a fin at each end of the tailplane (look.tail
 //     'twin'), the main gear in side sponsons (look.sponsons), and its
@@ -46,13 +50,15 @@ const AircraftModels = {
   liveries: new Map(),       // aircraft id | airline code -> canvas texture
   finArt: new Map(),         // the same -> the two fin decal textures
 
-  // opts.airline: an airline code, to paint the aeroplane in its colours (never the Mriya);
-  // opts.finish: the Mriya's finish (an id of MRIYA_FINISHES; its own one without)
+  // opts.airline: an airline code, to paint the aeroplane in its colours (never the Mriya; a type
+  // with an operator, the Beluga, always in the operator's); opts.finish: the Mriya's finish (an
+  // id of MRIYA_FINISHES; its own one without)
   build(ac, opts) {
     opts = opts || {};
     const d = aircraftDims(ac);
     const fin = ac.look && ac.look.finish ? mriyaFinish(opts.finish) : null;
-    const al = opts.airline && !fin ? AIRLINE_BY_CODE[opts.airline] : null;
+    const alCode = ac.operator || opts.airline;
+    const al = alCode && !fin ? AIRLINE_BY_CODE[alCode] : null;
     const look = fin ? Object.assign({}, ac.look, { base: fin.base, color: fin.accent })
       : al ? Object.assign({}, ac.look, { base: al.livery.body, color: al.livery.tail }) : (ac.look || {});
     const lay = modelLayout(ac, look);
@@ -87,6 +93,10 @@ const AircraftModels = {
       hump.scale.set(R * 0.74, R * 0.9, L * 0.22);                 // its roof 1.4 R above the axis
       hump.position.set(0, R * 0.5, L * 0.26);
       g.add(tag('fuselage', hump));
+    }
+    if (look.bubble) {
+      // the Beluga's hold over the lower fuselage, from over the cockpit to under the fin
+      g.add(tag('fuselage', new THREE.Mesh(bubbleGeometry(L, R, look.bubble), mat({ map: this.bubbleLivery(ac, d, al) }))));
     }
 
     // ---- wings
@@ -172,6 +182,18 @@ const AircraftModels = {
         const tipZ = lay.tailZ - tSemi * Math.tan(lay.tSweep);
         f.position.set(side * (R * 0.05 + tSemi + 0.05), lay.tailY - finH * 0.3, tipZ + finRoot * 0.25 + finH * 0.3 * Math.tan(finSweep));
         g.add(tag('fin', f));
+      }
+      if (look.tailFins) {
+        // the Beluga's end plates near the tips of the tailplane: the big body ahead of the fin
+        // took away some of its grip, and they give it back; a third of each below the tailplane
+        const f = 0.86, h = R * 1.05, c = tRoot + (tTip - tRoot) * f;
+        const ep = liftingSurface({
+          semi: h, rootC: c * 1.05, tipC: c * 0.6, sweep: 38 * DEG, tRoot: c * 0.08, tTip: c * 0.05, cut: 1, pieces: [], sym: true
+        }, paint, surf, side);
+        ep.rotation.z = Math.PI / 2;
+        const x = side * (R * 0.15 + tSemi * f), le = lay.tailZ - tSemi * f * Math.tan(lay.tSweep);
+        ep.position.set(x, lay.tailY + tSemi * f * Math.sin(5 * DEG) - h * 0.33, le + h * 0.33 * Math.tan(38 * DEG) + c * 0.1);
+        g.add(tag('fin', ep));
       }
     }
 
@@ -288,7 +310,7 @@ const AircraftModels = {
       g.add(tag(name, pivot));
       gear.push({ pivot, axis: fold[0], angle: fold[1] });
     };
-    const big = S > 50;
+    const big = S > 50 || !!look.mainRows;                           // (the Beluga's A300 bogies, though its span is under 50 m)
     const FWD = ['x', -Math.PI / 2];                                   // the foot swings forwards and up
     // a bogie: pairs of wheels in rows, two with the leg at the front row, more (the 777's
     // main gear and the A380's body gear have three, the An-124's five) with the leg in the middle
@@ -497,12 +519,43 @@ const AircraftModels = {
     return tex;
   },
 
+  // The Beluga's hold: a canvas of its own like the fuselage's (x = along, the nose at the right;
+  // y = around, the top at 0) in its operator's paint — the body colour, the tail colour running
+  // up from the fin over its end, the seam of the door round its front behind the cockpit, and
+  // the titles big on its sides
+  bubbleLivery(ac, d, al) {
+    const key = ac.id + '|' + (al ? al.code : '') + '|hold';
+    if (this.liveries.has(key)) return this.liveries.get(key);
+    const look = ac.look || {};
+    const lv = al ? al.livery : { body: look.base || '#ffffff', title: look.color || '#1f5fa0', tail: look.color || '#1f5fa0' };
+    const W = 1024, H = 256, L = d.len;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    const yAt = (deg) => deg / 360 * H;
+    g.fillStyle = lv.body;
+    g.fillRect(0, 0, W, H);
+    if (lv.tail !== lv.body) {
+      g.fillStyle = lv.tail;
+      g.beginPath(); g.moveTo(0, 0); g.lineTo(W * 0.2, 0); g.lineTo(W * 0.1, yAt(50)); g.lineTo(0, yAt(70)); g.fill();
+      g.beginPath(); g.moveTo(0, H); g.lineTo(W * 0.2, H); g.lineTo(W * 0.1, yAt(310)); g.lineTo(0, yAt(290)); g.fill();
+    }
+    g.fillStyle = 'rgba(60,70,80,0.55)';
+    g.fillRect(W * (1 - BUBBLE_DOOR), 0, 2, H);
+    const R = d.radius * look.bubble;
+    this.titles(g, al || { livery: lv, title: 'BELUGA' }, W, H, L, R, true, false, R * 0.6);
+    const tex = paintedTexture(cv);
+    this.liveries.set(key, tex);
+    return tex;
+  },
+
   // the airline's titles on both sides, above the windows (on the right side, -x, the canvas
-  // runs upside down and backwards); dd: a double-deck body
-  titles(g, al, W, H, L, R, freighter, dd) {
+  // runs upside down and backwards); dd: a double-deck body; hBig: the letters' height, metres
+  // (the Beluga's hold), else by the body's size
+  titles(g, al, W, H, L, R, freighter, dd, hBig) {
     const lv = al.livery;
     const pxAlong = W / L, pxAround = H / (TAU * R);
-    const hM = Math.min(1.4, Math.max(0.45, R * (freighter ? 0.62 : 0.42)));     // letter height, metres
+    const hM = hBig || Math.min(1.4, Math.max(0.45, R * (freighter ? 0.62 : 0.42)));     // letter height, metres
     const size = hM * pxAround;
     const text = al.title || al.name;
     const font = lv.titleFont === 'serif' ? 'bold ' + size + 'px Georgia, serif'
@@ -637,6 +690,70 @@ function fuselageGeometry(L, R, hk) {
   geo.setIndex(idx);
   geo.computeVertexNormals();
   return { geo };
+}
+
+// The Beluga's hold (look.bubble = k, its radius over R; bubbleSection in sim/airframe.js): an
+// elliptic section at z — its roof T, its floor B, its half width a — or null outside it. In the
+// middle the full section, a circle meeting the lower fuselage in the crease; at the front a
+// blunt forehead whose floor rides on the roof of the cockpit (the door that swings up over it)
+// before it comes down the sides to the crease; at the back the roof sinks and the sides close
+// in under the fin, rounded off at its end. u: along the body as the fuselage's (tail 0, nose 1)
+// (where along the body: shares of the length behind the nose)
+const BUBBLE_FRONT = 0.03;    // its front tip, over the cockpit
+const BUBBLE_FULL = 0.17;     // full section from here back
+const BUBBLE_DROP = 0.065;    // the floor leaves the cockpit roof here, coming down to the crease
+const BUBBLE_REAR = 0.54;     // the roof starts down here (over the wing's trailing edge)
+const BUBBLE_END = 0.99;      // and it ends here, under the fin
+const BUBBLE_DOOR = 0.155;    // the seam of the door round the front (on the livery)
+function bubbleRing(L, R, k, z) {
+  const sec = bubbleSection(R, k);
+  const zF = L / 2 - L * BUBBLE_FRONT, zFull = L / 2 - L * BUBBLE_FULL, zD = L / 2 - L * BUBBLE_DROP;
+  const zR = L / 2 - L * BUBBLE_REAR, zE = L / 2 - L * BUBBLE_END;
+  const smooth = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+  if (z > zF || z < zE) return null;
+  if (z > zFull) {
+    const roof = (zz) => { const c = fuselageRing(L, R, zz); return c.y + c.r - R * 0.03; };
+    const v = (zF - z) / (zF - zFull), e = Math.sqrt(1 - (1 - v) * (1 - v));
+    const T = roof(zF) + (sec.top - roof(zF)) * e;
+    const B = z > zD ? roof(z) : roof(zD) + (sec.bottom - roof(zD)) * smooth((zD - z) / (zD - zFull));
+    return { T: Math.max(T, B), B, a: sec.rb * e };
+  }
+  if (z > zR) return { T: sec.top, B: sec.bottom, a: sec.rb };
+  // the tail: down to a section under the fin's root, closing over its last metres
+  const w = smooth((zR - z) / (zR - zE));
+  const T = sec.top + (R * 1.32 - sec.top) * w, B = sec.bottom + (R * 0.72 - sec.bottom) * w;
+  let a = sec.rb + (R * 0.3 - sec.rb) * w;
+  const cap = R * 0.35, q = z - zE < cap ? Math.sqrt(Math.max(0, 1 - Math.pow(1 - (z - zE) / cap, 2))) : 1;
+  const c = (T + B) / 2, b = (T - B) / 2 * q;
+  a *= q;
+  return { T: c + b, B: c - b, a };
+}
+function bubbleGeometry(L, R, k) {
+  const N = 72, SEG = 32;
+  const zA = L / 2 - L * BUBBLE_END, zB = L / 2 - L * BUBBLE_FRONT;
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i <= N; i++) {
+    const z = zA + (zB - zA) * (0.5 - 0.5 * Math.cos(Math.PI * i / N));
+    const s = bubbleRing(L, R, k, Math.min(zB, Math.max(zA, z))) || { T: 0, B: 0, a: 0 };
+    const c = (s.T + s.B) / 2, b = (s.T - s.B) / 2;
+    for (let j = 0; j <= SEG; j++) {
+      const th = j / SEG * TAU;
+      // round from the top towards -x, as the fuselage, so the triangles face outwards
+      pos.push(-Math.sin(th) * s.a, c + Math.cos(th) * b, z);
+      uv.push((z + L / 2) / L, 1 - j / SEG);
+    }
+  }
+  const w = SEG + 1;
+  for (let i = 0; i < N; i++) for (let j = 0; j < SEG; j++) {
+    const a = i * w + j, b = a + 1, c = a + w, e = c + 1;
+    idx.push(a, b, c, b, e, c);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
 }
 
 // A half wing (or tailplane, or a fin on its side) towards +x: tapered and swept, the leading

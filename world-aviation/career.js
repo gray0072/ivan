@@ -455,7 +455,7 @@ const Career = {
     const ac = this.aircraft(), from = this.here();
     if (this.suits(ac).indexOf(faction) < 0) return faction === 'pax' ? 'seats' : faction === 'cargo' ? 'payload' : 'surface';
     if (faction === 'bush' && !this.bushRated()) return 'rating';
-    const any = World.list.some((a) => this.legOk(from, a, ac) && this.clientGroups([faction], from, a).length);
+    const any = World.list.some((a) => this.legOk(from, a, ac) && this.clientGroups([faction], from, a, ac).length);
     return any ? 'luck' : 'clients';
   },
   // The client group of the next offer to `to`: the one furthest below its share of the board so
@@ -489,7 +489,7 @@ const Career = {
     // the legs this type may fly that some client may fly too (traffic rights, data/airlines.js);
     // if none of them has a client, the legs alone, for the light mail run below
     const legs = World.list.filter((a) => this.legOk(from, a, ac));
-    const served = legs.filter((a) => this.clientGroups(kinds, from, a).length);
+    const served = legs.filter((a) => this.clientGroups(kinds, from, a, ac).length);
     const all = served.length ? served : legs;
     const picks = [];
     const offers = this.offerCount();
@@ -520,7 +520,7 @@ const Career = {
       const dist = geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon);
       const f = this.dealFaction(kinds, counts, dest, rng);
       // no client of that group may fly it: another group's offer instead
-      for (const k of [f].concat(this.clientGroups(kinds, from, dest).filter((g) => g !== f))) {
+      for (const k of [f].concat(this.clientGroups(kinds, from, dest, ac).filter((g) => g !== f))) {
         const c = this.makeContract(rng, from, dest, dist, ac, fx, null, k);
         if (c) return c;
       }
@@ -529,7 +529,7 @@ const Career = {
     // never leave a pilot with nothing to fly: fall back to a light mail run
     if (!this.data.contracts.length && all.length) {
       const dest = away && all.indexOf(home) >= 0 ? home : all[0];
-      const groups = this.clientGroups(kinds, from, dest);
+      const groups = this.clientGroups(kinds, from, dest, ac);
       const c = this.makeContract(rng, from, dest, geoDistanceNm(from.lat, from.lon, dest.lat, dest.lon), ac, fx, 'mail',
         groups[0] || kinds[0], !groups.length);
       if (c) this.data.contracts.push(c);
@@ -537,16 +537,16 @@ const Career = {
     this.save();
   },
 
-  // the client groups of `kinds` with an airline that may fly this route (pickAirline), passengers
-  // only to an airport with passenger traffic
-  clientGroups(kinds, from, to) {
+  // the client groups of `kinds` with an airline that may fly this route in this type
+  // (pickAirline, clientAirlines), passengers only to an airport with passenger traffic
+  clientGroups(kinds, from, to, ac) {
     return kinds.filter((k) => (k !== 'pax' || to.aptClass.indexOf('pax') >= 0) &&
-      AIRLINES.some((al) => al.kinds.indexOf(k) >= 0 && airlineMayFly(al, k, from, to)));
+      clientAirlines(ac).some((al) => al.kinds.indexOf(k) >= 0 && airlineMayFly(al, k, from, to)));
   },
 
-  // the airlines of any group that may fly this route, or null
-  mayFly(from, to, faction) {
-    const list = AIRLINES.filter((al) => airlineMayFly(al, faction, from, to));
+  // the airlines of any group that may fly this route in this type, or null
+  mayFly(from, to, faction, ac) {
+    const list = clientAirlines(ac).filter((al) => airlineMayFly(al, faction, from, to));
     return list.length ? list : null;
   },
 
@@ -562,14 +562,15 @@ const Career = {
 
     let type;
     if (urgent) type = 'medevac';
+    else if (ac.loads) type = rng.pick(ac.loads);                // a type with loads of its own (the Beluga's)
     else type = rng.pick(faction === 'cargo' ? CONTRACTS.CARGO_TYPES : faction === 'bush' ? CONTRACTS.BUSH_TYPES : CONTRACTS.PAX_TYPES);
     if (type === 'hazmat' && !fx.hazmat) type = 'cargo';
     if ((type === 'reefer' || type === 'fish') && !this.has('cargo3')) type = 'cargo';
     if ((type === 'pax') && ac.seats < 6) type = 'mail';
-    if (forceType) type = forceType;
+    if (forceType) type = ac.loads ? ac.loads[0] : forceType;
 
-    const client = pickAirline(faction, from, to, rng) || (anyClient ? rng.pick(this.mayFly(from, to, faction) ||
-      AIRLINES.filter((al) => al.kinds.indexOf(faction) >= 0)) : null);
+    const client = pickAirline(faction, from, to, rng, ac) || (anyClient ? rng.pick(this.mayFly(from, to, faction, ac) ||
+      clientAirlines(ac).filter((al) => al.kinds.indexOf(faction) >= 0)) : null);
     if (!client) return null;
 
     // what you actually fly (WORLD.SCALE of the real distance; 1 = the world at its real size)
