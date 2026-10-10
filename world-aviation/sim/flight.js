@@ -92,6 +92,7 @@ const Flight = {
     this.taxi = null;                // the taxi speed and its limit (sim/taxilimit.js)
     this.copilot = null;             // the first officer taxiing in (sim/copilot.js)
     this.followMe = false;           // a FOLLOW ME car leads the taxi in (a first visit; render/followme3d.js)
+    this.collide = null;             // the last pose clear of everything, the last touch (sim/collide.js)
     this.navFailed = false; this.cargoShift = false; this.medical = false;
     this.meet = [];                  // who waits at the arrival stand: 'ambulance', 'fire', 'police' (Systems.finishChecklist)
     this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0;
@@ -104,6 +105,8 @@ const Flight = {
       altSet: false     // the pilot (or a checklist) chose the altitude: engaging keeps it
     };
     this.startGate = opts.gate || this.world.gates[0];
+    // the stands this flight uses, their parked aeroplanes gone (Game adds the arrival's)
+    this.gatesInUse = opts.skipPushback ? [] : World.standsFor(this.world, this.startGate, ac);
     // the short start: at the holding point, the engines running (Game), brakes off, cleared for take-off
     if (opts.skipPushback) { this.placeAtHold(); this.st.parkingBrake = false; this.setPhase('TAKEOFF'); }
     else { this.placeAtGate(this.startGate); this.setPhase('GATE'); }
@@ -274,6 +277,7 @@ const Flight = {
     else this.acc -= steps * dt;
     for (let i = 0; i < steps && !this.failure; i++) {
       this.step(dt);
+      Collide.step(this);
       this.simTime += dt;
       this.elapsed += dt;
       this.phaseTime += dt;

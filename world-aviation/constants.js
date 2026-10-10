@@ -217,8 +217,9 @@ const LAYOUT = {
   HOLD_OFFSET: 80,             // holding point, from the runway centreline
   HOLD_T: 90,                  // holding point, from the runway start
   EXITS: [0.45, 0.65, 0.85],   // runway exits as a fraction of the length
-  APRON_LANE: 300,             // taxi lane on the apron (100 m lead-in to the stands: room for a 747 to straighten up)
-  STAND: 400,                  // the parking position (nose-in towards the terminal)
+  APRON_LANE: 300,             // taxi lane on the apron (95 m lead-in to the stands: room for a 747 to straighten up)
+  STAND: 395,                  // the parking position (nose-in towards the terminal; the An-225's nose stops 3 m
+                               // short of the terminal's front, TERMINAL - 30)
   TERMINAL: 470,               // terminal building centre
   HANGAR_DOORS: 425,           // the line of the hangar doors (HANGARS)
   FENCE_FAR: -455,             // the perimeter fence on the far side of the runway (across) ...
@@ -281,6 +282,26 @@ const HANGARS = {
 const AIRPORT_TREES = { tiny: 450, small: 650, medium: 900, big: 1200 };
 // the control tower by the terminal's size: the height of the cab's floor, metres
 const TOWER_H = { tiny: 10, small: 20, medium: 32, big: 56 };
+// the aeroplanes parked at the stands by the terminal's size (the home airlines' paint): stand i
+// of an airport gets the type (hash of its code + i) along its list (World.buildNetwork)
+const PARKED_TYPES = {
+  big: ['A320NEO', 'B738', 'A359', 'A320', 'B789', 'B77W', 'BCS3', 'A333', 'E295', 'CRJ200'],
+  medium: ['B738', 'A320NEO', 'E295', 'CRJ200', 'BCS3', 'AT76', 'B1900D'],
+  small: ['CRJ200', 'AT76', 'B1900D', 'F27F'],
+  tiny: ['B1900D', 'DHC6']
+};
+
+// ---------- Collisions (sim/collide.js) ----------
+// the own aeroplane against the buildings and the parked aeroplanes of the nearest airport
+const COLLIDE = {
+  CRASH_KT: 6,                 // on the ground at this ground speed or more a collision loses the flight
+                               // (in the air always); slower it is a touch: stopped dead, damaged
+  BUMP_DAMAGE: 0.3,            // the damage of a touch at CRASH_KT (0..1; a quarter of it at a crawl)
+  BUMP_REPEAT_S: 3,            // the same obstacle damages again only after this long clear of it
+  SAMPLE_M: 1.2,               // the spheres along a wing, the tail and the fin: this far apart ...
+  WING_R: 0.6,                 // ... and this thick (metres)
+  TOWER_CAB_M: 6               // the tower's cab above its floor (TOWER_H)
+};
 
 // ---------- Difficulty ----------
 const DIFFICULTY = {

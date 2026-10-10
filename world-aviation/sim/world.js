@@ -203,7 +203,8 @@ const World = {
         terminal: term, terminals: a.terminals,
         t, standX: stand.x, standZ: stand.z,
         parkHdg: (a.hdgDeg + 90) % 360,              // nose-in, facing the terminal
-        laneNode: lane, node: stand
+        laneNode: lane, node: stand,
+        parked: this.parkedType(a, i)                // the aeroplane parked there (hidden on the stands a flight uses)
       });
     }
     // chain the taxiway and the apron lane in order along the runway
@@ -213,7 +214,7 @@ const World = {
     for (let i = 0; i + 1 < laneChain.length; i++) link(laneChain[i].id, laneChain[i + 1].id, 'apron', 40);
 
     // the paved surface, for the cheap ground test at 60 Hz
-    a.apronRect = { t0: a.apronT0, t1: a.apronT1, a0: L.APRON_LANE - 45, a1: L.STAND + 40 };
+    a.apronRect = { t0: a.apronT0, t1: a.apronT1, a0: L.APRON_LANE - 45, a1: L.TERMINAL - 30 };   // (up to the terminal's front)
     a.twySegs = [];
     const seen = {};
     for (const n of a.nodeList) {
@@ -308,6 +309,22 @@ const World = {
       }
     }
     return out;
+  },
+
+  // the stands a flight takes at an airport: its own, and for an aeroplane wider than the
+  // airport's stands are made for (LAYOUT.MAX_SPAN) the ones either side of it too, kept free
+  // (no parked aeroplane there: render/scene3d.js, sim/collide.js)
+  standsFor(a, gate, ac) {
+    if (!gate) return [];
+    if (!ac || ac.dims.span <= (LAYOUT.MAX_SPAN[a.terminal] || LAYOUT.MAX_SPAN.big)) return [gate];
+    return a.gates.filter((g) => Math.abs(g.index - gate.index) <= 1);
+  },
+
+  // the type parked at stand i (PARKED_TYPES): drawn by render/airport3d.js, run into by sim/collide.js
+  parkedType(a, i) {
+    const kinds = PARKED_TYPES[a.terminal] || PARKED_TYPES.tiny;
+    const id = kinds[(hashStr(a.id) + i) % kinds.length];
+    return AIRCRAFT.find((x) => x.id === id) || null;
   },
 
   buildBuildings(a) {

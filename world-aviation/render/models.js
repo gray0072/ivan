@@ -32,79 +32,15 @@
 // The main parts are tagged (g.userData.tags: fuselage, wing, fairing,
 // fin, tailplane, nacelle, pylon, gearNose, gearMain, sponson, …) for
 // the Mriya's assembly hall (render/mriya3d.js), which gilds them one
-// part at a time; modelLayout() gives the same layout without the
-// meshes (its blueprint, ui/mriya.js).
+// part at a time; build() places the parts by modelLayout()
+// (sim/airframe.js), which gives the same layout without the meshes
+// (the Mriya's blueprint, ui/mriya.js; the collisions, sim/collide.js).
 //
 // Model axes: +z = nose, +y = up, +x = left wing. The origin is the
 // centre of gravity, and the wheels touch y = -gearH.
 // ============================================================
 
 // (mriyaFinish: the Mriya's finish by its id, in career.js)
-
-// Where the main parts of a type's model are, in its own axes (metres): the wing, the engines,
-// the tail and the gear. build() places the parts by it; the Mriya's blueprint draws it.
-function modelLayout(ac, look) {
-  look = look || ac.look || {};
-  const d = aircraftDims(ac);
-  const L = d.len, R = d.radius, S = d.span;
-  const hk = look.tall || 1;                                       // body height over width
-  const top = R * (2 * hk - 1);                                    // the roof above the axis
-  const jet = ac.engineType === 'jet';
-  const high = look.wing === 'high';
-  const four = look.engines === 'wing4' || look.engines === 'wing6';
-  const sweep = (look.sweep !== undefined ? look.sweep : jet ? 25 : 3) * DEG;
-  const semi = S / 2 - R * 0.8;
-  const rootC = jet ? S * (four ? 0.2 : 0.17) : S * 0.115;
-  const tipC = rootC * (jet ? 0.28 : 0.55);
-  const thick = rootC * (jet ? 0.1 : 0.13);                        // for placing the engines and the gear
-  const wingY = high ? R * 0.82 : -R * 0.55;
-  const wingZ = L * (jet ? 0.08 : 0.1) + rootC * 0.45;             // leading edge at the root
-  // the wing's dihedral (the 787's flexes up, the An-124's droops)
-  const dihedral = (look.dihedral !== undefined ? look.dihedral : high ? 1 : jet ? 5 : 4) * DEG;
-  const spanAt = (f) => R * 0.8 + semi * f;                        // x of a point at a fraction of the semispan
-  const leAt = (f) => wingZ - semi * f * Math.tan(sweep);           // leading edge z there
-  const yAt = (f) => wingY + semi * f * Math.sin(dihedral);
-  // the tail: one fin on the body (a T-tail's tailplane on top of it), or a twin tail — the
-  // tailplane on the roof of the tail and a fin at each end of it, clear of the wake of a load
-  // carried on the back (the An-225's Buran)
-  const twin = look.tail === 'twin', tTop = look.tail === 't';
-  const finRoot = L * (jet ? 0.17 : 0.2) * (twin ? 0.6 : 1), finTip = finRoot * (jet ? 0.36 : 0.5) * (twin ? 1.5 : 1);
-  const finH = twin ? R * 2.4 : jet ? R * 2.1 + L * 0.06 : R * 1.6 + L * 0.06;
-  const finSweep = (twin ? 32 : jet ? 38 : 30) * DEG;
-  const finZ = -L * 0.5 + finRoot + L * 0.015;                     // fin leading edge at the root
-  // (its root inside the tail cone all along: lower, its edge hung out under the narrow end
-  // of the cone, a thin rod seen from below; a double deck's roof runs higher into the tail)
-  const finY = R * 0.72 + (top - R) * 0.8;
-  // the tailplane's half span (real ones: 0.15 of the wing span on a T-tail, about 0.17-0.2 below;
-  // the An-225's 32.65 m, 0.185 of its span)
-  const tSemi = S * (twin ? 0.185 : tTop ? 0.15 : jet ? 0.19 : 0.17);
-  const tRoot = twin ? L * 0.105 : finRoot * 0.75, tTip = tRoot * (twin ? 0.55 : 0.42);
-  const tSweep = (twin ? 30 : jet ? 32 : 6) * DEG;
-  const tailZ = twin ? -L * 0.5 + tRoot + L * 0.045 : -L * 0.5 + tRoot + L * 0.02;
-  const tailY = twin ? top - R * 0.1 : R * 0.42;
-  // the engines under the wing: their stations along the semispan, the fan and the nacelle
-  const stations = look.engines === 'wing6' ? [0.2, 0.4, 0.6] : look.engines === 'wing4' ? [0.3, 0.6] : [0.33];
-  const dia = d.fus * (look.fan || (four ? 0.42 : look.bigFans ? 0.56 : 0.5));
-  const engines = [];
-  if (look.engines === 'wing2' || four) {
-    for (const f of stations) for (const side of [1, -1]) {
-      // hung below the wing; a big fan that would come too close to the ground is pulled up
-      // level with the wing and forwards out of it, as the real ones are
-      let ny = yAt(f) - thick * 0.5 - dia * 0.62;
-      const lift = Math.max(0, -d.gearH + dia * 0.65 - ny);
-      ny += lift;
-      engines.push({ f, side, x: side * spanAt(f), y: ny, z: leAt(f) + dia * 0.75 + lift * 1.2, dia, len: dia * (four ? 2.0 : 1.75) });
-    }
-  }
-  // the gear: the wheels, the main legs and the nose leg
-  const wheelR = Math.max(0.28, d.fus * 0.13);
-  return {
-    L, R, S, hk, top, jet, high, sweep, semi, rootC, tipC, thick, wingY, wingZ, dihedral, spanAt, leAt, yAt,
-    twin, tTop, finRoot, finTip, finH, finSweep, finZ, finY, tSemi, tRoot, tTip, tSweep, tailZ, tailY,
-    engines, wheelR, gearH: d.gearH, noseZ: L * 0.38, mainRows: look.mainRows || 2,
-    mainX: high ? R * 1.05 : R * (S > 50 ? 1.15 : 0.95), mainZ: -L * 0.03
-  };
-}
 
 const AircraftModels = {
   liveries: new Map(),       // aircraft id | airline code -> canvas texture

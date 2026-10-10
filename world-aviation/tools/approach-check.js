@@ -28,7 +28,7 @@ try { os.setPriority(os.constants.priority.PRIORITY_BELOW_NORMAL); } catch (e) {
 
 const ROOT = path.join(__dirname, '..');
 const FILES = ['constants.js', 'data/airports.js', 'data/airport-names.js', 'data/countries.js', 'data/geodata.js', 'core/i18n.js', 'core/utils.js',
-  'sim/terrain.js', 'sim/world.js', 'core/audio.js', 'sim/flight.js', 'sim/systems.js'];
+  'sim/terrain.js', 'sim/world.js', 'core/audio.js', 'sim/flight.js', 'sim/airframe.js', 'sim/collide.js', 'sim/systems.js'];
 
 const args = process.argv.slice(2);
 const verbose = args.includes('--verbose');

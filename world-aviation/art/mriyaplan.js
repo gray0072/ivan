@@ -3,7 +3,7 @@
 // ============================================================
 // World Aviation — the Mriya's blueprint: the An-225 seen from
 // above, worked out from the same layout as its 3D model
-// (modelLayout in render/models.js), so a part's place on the
+// (modelLayout in sim/airframe.js), so a part's place on the
 // blueprint is where it is on the hologram.
 //
 // Plan coordinates are metres: px across (right = the right wing),
