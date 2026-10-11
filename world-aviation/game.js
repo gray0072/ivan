@@ -9,7 +9,7 @@
 const AIRBORNE_PHASES = ['TAKEOFF', 'CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'];
 
 const Game = {
-  mode: 'boot',            // boot | menu | ops | briefing | tour | flying | incident | debrief | failed | paused
+  mode: 'boot',            // boot | menu | ops | briefing | tour | showcase | flying | incident | debrief | failed | paused
   last: 0,
   flight: null,
   systems: null,
@@ -58,14 +58,16 @@ const Game = {
     window.addEventListener('resize', () => { Scene3D.resize(); });
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.mode === 'flying') this.pause();
+      // (a look round an airport or an aircraft waits for the player)
+      if (document.hidden && (this.mode === 'tour' || this.mode === 'showcase') && !this.tourPaused) this.toggleTourPause();
     });
     // a tap anywhere skips the camera's flight at the start or the end
     el('cine').addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      if (this.mode === 'flying' || this.mode === 'tour') this.skipCine();
+      if (this.mode === 'flying' || this.mode === 'tour' || this.mode === 'showcase') this.skipCine();
       else if (this.mode === 'incident') Incident.action(this, 'tap');
     });
-    // the tour's pause button: its own tap, not a tap that ends the tour
+    // the tour's pause button (an aircraft's look round too): its own tap, not a tap that ends the tour
     const pb = el('cinePause');
     // (on pointerup: the touch handlers keep a touch from turning into a click)
     pb.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); });
@@ -108,6 +110,7 @@ const Game = {
     }
     if (this.mode === 'flying') this.frame(dt);
     else if (this.mode === 'tour') this.tourFrame(dt);
+    else if (this.mode === 'showcase') Showcase.frame(dt);   // a look round an aircraft (ui/showcase.js)
     else if (this.mode === 'incident') Incident.frame(this, dt);   // after a collision (ui/incident.js)
     else if (Audio2.t) Audio2.update(0, null, null);   // no engine, wind or wheel sound outside a flight
     else if (this.mode === 'paused' && this.flight) {
@@ -814,8 +817,8 @@ const Game = {
 
   // ---------- actions ----------
   action(name, arg) {
-    // the look round an airport: Enter, Space and Esc end it
-    if (this.mode === 'tour') {
+    // the look round an airport or an aircraft: Enter, Space and Esc end it, P pauses it
+    if (this.mode === 'tour' || this.mode === 'showcase') {
       if (name === 'tourPause') this.toggleTourPause();
       else if (name === 'starter' || name === 'parkBrake' || name === 'pause') this.skipCine();
       return;
@@ -1279,7 +1282,7 @@ const Game = {
   tourFrame(dt) {
     if (this.tourPaused) dt = 0;
     if (Cinematic.update(dt)) { this.endTour(); return; }
-    const fl = this.flight, sh = Cinematic.shot;
+    const fl = this.flight;
     Scene3D.cine = Cinematic;
     Scene3D.panelHidden = true;
     Scene3D.camMode = 'cine';
@@ -1287,6 +1290,11 @@ const Game = {
     Scene3D.update(dt, fl, this.systems);
     Scene3D.render();
     this.draw2d(dt);
+    this.tourCaption();
+  },
+  // the caption of the moment (tourCaps: [from, to, html], the shot's seconds), faded in and out
+  tourCaption() {
+    const sh = Cinematic.shot;
     const i = this.tourCaps.findIndex((c) => sh.t >= c[0] && sh.t < c[1]);
     const cap = el('cineCaption');
     if (i !== this.tourCap) {
@@ -1296,9 +1304,9 @@ const Game = {
     cap.classList.toggle('on', i >= 0);
   },
 
-  // the tour's pause: its button over the lower bar, or P
+  // the tour's pause (and an aircraft's look round: ui/showcase.js): its button over the lower bar, or P
   toggleTourPause() {
-    if (this.mode !== 'tour') return;
+    if (this.mode !== 'tour' && this.mode !== 'showcase') return;
     this.tourPaused = !this.tourPaused;
     this.tourPauseButton();
   },

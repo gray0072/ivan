@@ -618,6 +618,7 @@ const UI = {
       '<span class="tag lgTag">★ ' + tr('Legend') + '</span>' +
       '<span class="acMtow">' + Math.round(a.mtow / 1000) + ' t</span>' +
       (sel ? '<span class="acBadge sel">✓ ' + tr('Selected') + '</span>' : '') +
+      (done ? this.lookButton(a) : '') +
       '</div><div class="lgMain">' +
       '<div class="lgKicker">' + (done ? tr('Built with your own hands') : tr('The heaviest aeroplane ever flown')) + '</div>' +
       '<h3 class="lgName">' + esc(a.name) + ' <i lang="uk">' + MRIYA_LEGEND.native + '</i></h3>' +
@@ -664,6 +665,7 @@ const UI = {
       (sel ? '<span class="acBadge sel">✓ ' + tr('Selected') + '</span>'
         : fresh ? '<span class="acBadge fresh">★ ' + tr('New') + '</span>'
         : locked ? '<span class="acBadge lock">🔒 ' + esc(this.courseText(course).name) + '</span>' : '') +
+      (flying ? '' : this.lookButton(a)) +
       '</div><div class="acMain">' +
       '<div class="acHead"><b>' + esc(a.name) + '</b>' + this.useBadges(a) + '</div>' +
       '<p class="acBlurb">' + esc(tr(a.blurb)) + '</p>' +
@@ -688,6 +690,12 @@ const UI = {
             '<span class="ok">' + tr(sel ? 'Selected' : 'Available to lease') + '</span>' +
             '<button class="btn' + (sel ? ' picked' : ' default') + '" data-act="selectAc" data-v="' + a.id + '">' + (sel ? '✓ ' + tr('Selected') : tr('Select')) + '</button></div>') +
       '</div></div>';
+  },
+
+  // a small button over a type's picture: a free look round it in flight (ui/showcase.js)
+  lookButton(a) {
+    const t = esc(tr('See it in flight from every side — free'));
+    return '<button class="acLook" data-act="showcase" data-v="' + a.id + '" title="' + t + '" aria-label="' + t + '">' + tr('360° view') + '</button>';
   },
 
   // what a type is built for (Career.suits): a round badge per client group; bush work dimmed
@@ -1398,6 +1406,7 @@ const UI = {
         Game.tour(c, v);
         break;
       }
+      case 'showcase': enterFullscreen(); Showcase.open(v); break;
       case 'tod': Career.setTimeOfDay(v); this.showBriefing(this.selContract); break;
       case 'startMode': Career.setSkipPushback(v === 'pushback'); this.showBriefing(this.selContract); break;
       case 'retry':

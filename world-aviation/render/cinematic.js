@@ -15,6 +15,8 @@
 //   - the tour: from the briefing, a look round the departure or
 //     the arrival airport, its runway and terminal, ending at the
 //     own aeroplane (Game.startTour);
+//   - around: from the hangar, round a type in flight from every
+//     side, over it and under it (ui/showcase.js);
 //   - after a collision (ui/incident.js): crash — outside on the
 //     spot, shaken at first, circling it slowly; tow — beside the
 //     nose while a tug pulls the aeroplane back; toward — the camera
@@ -110,6 +112,29 @@ const Cinematic = {
       inT0: -1, inT1: -1,          // never inside the cockpit
       marks: { runway: times[2] - 1.5, apron: times[5], own: times[8] }
     };
+    this.vec = keys[0].slice();
+    this.eval();
+  },
+
+  // A look at the own aeroplane in flight (SHOWCASE, from the hangar: ui/showcase.js): the
+  // camera goes SWEEP_DEG round it from START_DEG, its height a sine through over it and under
+  // its belly, coming in from a little further off; keys in the aeroplane's own axes every
+  // KEY_S or so along that orbit. shot.reach: the farthest the camera gets from it, metres.
+  around(fl) {
+    const d = fl.dims, S = SHOWCASE;
+    // (on a screen held upright it is seen from further off, so it fits across)
+    const R = (Math.max(d.len, d.span) * S.DIST + S.DIST_M) * clamp(1.2 * Scene3D.h / Math.max(1, Scene3D.w), 1, 2.2);
+    const n = Math.max(4, Math.round(S.DUR_S / S.KEY_S));
+    const keys = [], times = [];
+    for (let i = 0; i <= n; i++) {
+      const u = i / n;
+      const az = (S.START_DEG - S.SWEEP_DEG * u) * DEG;
+      const el = (S.MID_DEG + S.SWING_DEG * Math.sin(2 * Math.PI * u)) * DEG;
+      const r = R * (1 + S.IN * (1 - smoothstep(0, 0.15, u)));
+      keys.push([r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az), 0, d.fus * 0.15, 0, S.FOV_DEG]);
+      times.push(u * S.DUR_S);
+    }
+    this.shot = { kind: 'around', t: 0, dur: S.DUR_S, hold: S.HOLD_S, times, keys, inT0: -1, inT1: -1, reach: R * (1 + S.IN) };
     this.vec = keys[0].slice();
     this.eval();
   },

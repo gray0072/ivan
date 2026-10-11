@@ -1274,6 +1274,30 @@ const TOUR = {
   MIN_CLOUD_M: 600             // the cloud base at least this high above the field
 };
 
+// A look at an aircraft type from the hangar (free, ui/showcase.js): it flies straight and
+// level over the airport the pilot is at, gear up, on a clear afternoon, while the camera
+// circles it (Cinematic.around) from ahead on its left, up over it, down under its belly and
+// back up to ahead on its right, then the hangar is back. Enter, Space, Esc or a tap end it
+// sooner, P (or its button) pauses it.
+const SHOWCASE = {
+  DUR_S: 44,                   // the camera's flight round it, seconds
+  HOLD_S: 2,                   // the last shot holds this long
+  KEY_S: 1.1,                  // a key of the camera's path about this often, seconds
+  START_DEG: -35,              // where the camera starts: degrees round from the nose (negative: its left)
+  SWEEP_DEG: 645,              // ... and how far it goes round (to ahead on the right)
+  MID_DEG: 6,                  // the camera's height over it, degrees: a sine round this ...
+  SWING_DEG: 66,               // ... this far up (over it, a quarter in) and down (under it, three quarters in)
+  DIST: 1.15,                  // the camera's distance: this times the type's length or span (the larger) ...
+  DIST_M: 14,                  // ... plus this, metres
+  IN: 0.35,                    // it starts this much further off and comes in
+  FOV_DEG: 46,                 // the field of view
+  SPEED_VREF: 1.3,             // the speed: this times its landing speed (Vref)
+  AGL_M: 320,                  // the height over the ground at least, metres
+  HOUR: 15.5,                  // the local solar hour (an afternoon light)
+  VIS_M: 30000,                // visibility
+  CLOUD_M: 1800                // the cloud base above the field
+};
+
 // ---------- Controls and screen layout ----------
 // The time of day, chosen on the briefing: the departure's local solar time (the clock runs
 // on with the flight). The sun follows a generic path (equinox, latitude SKY_LATITUDE_DEG):
