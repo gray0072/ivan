@@ -61,6 +61,7 @@ const Systems = {
     this.hydraulics = true; this.brakeFactor = 1;
     this.antiIce = false;
     this.iceHold = false;            // ice building with the anti-ice off: the time is held at x1
+    this.fuelWasLow = undefined;     // the low fuel light a frame ago (undefined: not looked yet)
     this.depressurised = false;
     this.pressurised = true;
     this.cabinAlt = flight.world.elev;
@@ -177,7 +178,7 @@ const Systems = {
     if (!fuelOk && e.running) {
       // starved: the engine flames out in a second or two
       e.n1 = approach(e.n1, 0, 0.3 * dt);
-      if (e.n1 < 0.1) { e.running = false; e.startPhase = 'off'; fl.warn('FLAMEOUT', tr('Engine {n} flameout — fuel exhausted', { n: e.i + 1 })); }
+      if (e.n1 < 0.1) { e.running = false; e.startPhase = 'off'; fl.warn('FLAMEOUT', tr('Engine {n} flameout — fuel exhausted', { n: e.i + 1 })); fl.realTime(); }
     }
   },
 
@@ -200,7 +201,7 @@ const Systems = {
     const hold = inIcing && !this.antiIce && (e.iceAmount > 0.15 || this.iceHold);
     if (hold && !this.iceHold && (fl.env.timeAccel > 1 || fl.cheatAccel)) fl.interruptTime();
     this.iceHold = hold;
-    if (hold) fl.warn('ICE', tr('Ice building — engine anti-ice K'));
+    if (hold && !(this.checklist && this.checklist.def.id === 'icing')) fl.warn('ICE', tr('Ice building — engine anti-ice <kbd>K</kbd>'));
   },
 
   updatePressurisation(dt) {
@@ -243,6 +244,11 @@ const Systems = {
         let ready = fl.phaseTime > item.delay;
         if (item.phase === 'CRUISE' || item.phase === 'DESCENT') ready = ready && progress > item.when * 0.8;
         if (item.phase === 'APPROACH') ready = fl.distToRunwayNm() < 3 + item.when * 8;
+        if (item.def.id === 'gear') {
+          // the gear fails as it is lowered (or, still up, in its window), never once it is down and locked
+          if (fl.st.gear >= 1) { item.done = true; continue; }
+          ready = ready || fl.st.gearTarget === 1;
+        }
         if (item.phase === 'TAKEOFF') ready = !fl.st.onGround && fl.altAgl() > 120;
         if (!ready) continue;
         this.trigger(item.def);
@@ -294,13 +300,15 @@ const Systems = {
       case 'fuel_leak': st.leakRate = fl.ac.fuelCapKg * this.rng.range(0.4, 0.8); break;   // kg per hour
       case 'hydraulic': this.hydraulics = false; this.brakeFactor = 0.35; break;
       case 'depress': this.depressurised = true; break;
-      case 'gear': st.gearFailed = true; st.gearSelected = false; if (st.gearTarget === 1 && st.gear < 1) st.gearTarget = st.gear; break;
+      // (selected down, it hangs where it is; G is then the lever down, the checklist's first step)
+      case 'gear': st.gearFailed = true; st.gearSelected = st.gearTarget === 1; st.gearTarget = st.gear; break;
       case 'nav': fl.navFailed = true; break;
       case 'bird': eng = this.pickEngine(); eng.bird = true; break;
       case 'icing': fl.env.forcedIce = true; this.antiIce = false; break;
       case 'windshear': fl.env.shearT = 14; break;
       case 'cargoshift': fl.cargoShift = true; break;
       case 'medical': fl.medical = true; break;
+      case 'low_fuel': st.fuel *= 1 - QRH.LOW_FUEL_SHARE; break;
       case 'overweight': st.overweight = true; break;
       case 'overspeed': {
         // a gust: the speed jumps past Vne
@@ -354,14 +362,16 @@ const Systems = {
       // (so many feet lower in the climb: lower than the level it climbs to, not back down to the
       // ground, which the arrival's floor then held for the whole leg)
       const base = step.kind === 'setAltBy' && fl.phase === 'CLIMB' ? Math.max(fl.st.pos.y / FT, fl.ap.alt) : fl.st.pos.y / FT;
-      const ft = step.kind === 'setAlt' ? step.value : Math.round((base + step.value) / 100) * 100;
+      const here = Math.round(fl.st.pos.y / FT / 100) * 100;
+      const ft = step.kind === 'setAlt' ? Math.min(step.value, here) : Math.round((base + step.value) / 100) * 100;
       const floor = Math.round((fl.arrival.elev + 600) / FT / 100) * 100;
       fl.ap.alt = Math.max(floor, Math.min(fl.ap.alt, ft));
       fl.ap.altSet = true;            // chosen for the emergency: <kbd>N</kbd> goes back to the programme
       // ... and only while it lasts: Game.releaseEmergencyAlt gives the flight plan's altitude back
       fl.ap.emergency = c.def.id; fl.ap.emergencyOver = null;
       if (!fl.ap.on && !fl.apEngageRefusal()) { fl.ap.on = true; fl.ap.vsI = 0; }
-      fl.info(tr('Autopilot ALT {alt} ft — descending', { alt: fmtAltFt(fl.ap.alt) }));
+      const dAlt = fl.ap.alt - fl.st.pos.y / FT;
+      fl.info(tr(dAlt < -150 ? 'Autopilot ALT {alt} ft — descending' : dAlt > 150 ? 'Autopilot ALT {alt} ft — climbing' : 'Autopilot ALT {alt} ft — holding', { alt: fmtAltFt(fl.ap.alt) }), 'AP');
     }
     Audio2.cue('click');
     this.advance();
@@ -416,6 +426,13 @@ const Systems = {
       case 'medical': fl.medicalResolved = true; break;
       case 'cargoshift': fl.cargoShift = false; break;
       case 'overweight': st.overweight = false; break;
+      case 'windshear': {
+        // out of the shear and climbing: a go-around (as Game's over the runway), the approach flown again
+        fl.overRunway = false; fl.locCaptured = false; fl.ap.gs = false;
+        fl.ap.alt = Math.round((fl.arrival.elev + 2500 * FT) / FT / 100) * 100; fl.ap.altSet = false;
+        fl.setPhase('DESCENT');
+        break;
+      }
       default: break;
     }
     // the ambulance, the fire service or the police called to the arrival stand
@@ -425,7 +442,6 @@ const Systems = {
     // the outcome keeps the English text and the engine: the HUD shows it in the game's language
     this.outcome = { title: def.title, text: c.outcome || def.done, engine: c.engine, ok: true,
       t: fl.realElapsed, used, limit: Math.round(c.limit) };
-    fl.info(tr('{title} — checklist complete in {s} s', { title: tr(def.title), s: used }));
     Audio2.cue('resolved');
   },
 
@@ -477,7 +493,15 @@ const Systems = {
     if (this.engines.some((e) => e.failed || e.fire || e.bird || (e.startPhase === 'off' && fl.phase !== 'GATE' && fl.phase !== 'PUSHBACK' && fl.phase !== 'ENGINE_START' && fl.phase !== 'SHUTDOWN' && fl.phase !== 'PARKED'))) w.engine = true;
     // low fuel: under 6 % of the tanks, or half an hour of cruise for the big tanks (the Mriya's
     // 6 % is 18 t, more than a short leg loads: its light was on from the gate)
-    if (st.fuel < Math.min(this.ac.fuelCapKg * 0.06, this.ac.fuelFlowCruise * this.ac.engines * 0.5)) w.fuelLow = true;
+    const fuelLow = st.fuel < Math.min(this.ac.fuelCapKg * 0.06, this.ac.fuelFlowCruise * this.ac.engines * 0.5);
+    if (fuelLow) w.fuelLow = true;
+    // the light coming on in the air (not one already on at the gate) says so and drops the time
+    // to x1: at x256 the rest would be gone in seconds
+    if (fuelLow && this.fuelWasLow === false && !st.onGround) {
+      fl.warn('FUELLOW', tr('LOW FUEL — {kg} kg left', { kg: Math.round(st.fuel) }));
+      fl.realTime();
+    }
+    this.fuelWasLow = fuelLow;
     if (st.damage > 0.15) w.damage = true;
     if (st.gearFailed) w.gear = true;
     this.anyWarning = Object.keys(w).length > 0;

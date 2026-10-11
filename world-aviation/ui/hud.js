@@ -286,7 +286,7 @@ const HUD = {
         '<div class="qrhWhat">' + esc(Units.text(sys.qrhText(tr(c.def.what || '')))) + '</div>' +
         rows +
         (nudge ? '<div class="qrhNudge">' + esc(nudge) + '</div>'
-          : '<div class="qrhSub">' + tr(coarse ? 'Tap the lit switch (or Go); the other steps tick when you use the control shown.'
+          : '<div class="qrhSub">' + tr(coarse ? 'Tap the lit switch; the other steps tick when you use the control shown.'
             : '<kbd>Enter</kbd> works the lit switch; the other steps tick when you use the control shown.') + '</div>');
       box.querySelectorAll('[data-step]').forEach((b) => {
         b.addEventListener('click', () => Game.doChecklistStep(parseInt(b.getAttribute('data-step'), 10)));
@@ -650,7 +650,8 @@ function keysHtml(text) {
   const html = esc(text).replace(/&lt;kbd&gt;(.*?)&lt;\/kbd&gt;/g, '<kbd>$1</kbd>');
   return Input.isCoarse ? touchPrompt(html) : html;
 }
+// (a button by its name in bold, a gesture in brackets: "full power (throttle slider up)")
 function touchPrompt(html) {
-  for (const [k, t, btn] of TOUCH_KEYS) html = html.split(k).join(btn ? '<b>' + tr(t) + '</b>' : tr(t));
+  for (const [k, t, btn] of TOUCH_KEYS) html = html.split(k).join(btn ? '<b>' + tr(t) + '</b>' : '(' + tr(t) + ')');
   return html.replace(/<kbd>[^<]*<\/kbd>/g, '');
 }

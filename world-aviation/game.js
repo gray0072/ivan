@@ -547,14 +547,16 @@ const Game = {
       const dHold = Math.hypot(st.pos.x - hold.x, st.pos.z - hold.z);
       if (dHold < 30) {
         fl.setPhase('HOLD_SHORT');
-        fl.info(tr('Holding point runway {rwy} — stop and wait for the clearance', { rwy: apt.rwyName }));
+        fl.info(tr('Holding point runway {rwy} — stop here', { rwy: apt.rwyName }));
       }
       HUD.setPrompt(tr('<b>Taxi</b> to the holding point of runway {rwy}', { rwy: apt.rwyName }) +
-        ' · ' + tr('throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>') +
+        (st.parkingBrake ? ' · <b>' + tr('release the parking brake <kbd>Space</kbd>') + '</b>'
+          : ' · ' + tr(Input.isCoarse ? 'a little throttle on the slider, steer with the stick, brake <kbd>B</kbd>' : 'throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>')) +
         (g && g.visible ? '<br>' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') + this.taxiSpeedHint());
     } else if (p === 'HOLD_SHORT') {
       HUD.setPrompt('<b>' + tr('Holding point runway {rwy}', { rwy: apt.rwyName }) + '</b>' + (speed > 2 ? ' · <b>' + tr('stop here') + '</b>' : '') +
-        '<br>' + tr('set flaps {n} <kbd>F</kbd>, then <kbd>Enter</kbd> for the take-off clearance', { n: this.takeoffFlaps() }));
+        '<br>' + (st.flapsTarget >= this.takeoffFlaps() ? tr('press <kbd>Enter</kbd> for the take-off clearance')
+          : tr('set flaps {n} <kbd>F</kbd>, then <kbd>Enter</kbd> for the take-off clearance', { n: this.takeoffFlaps() })));
     } else if (p === 'TAKEOFF') {
       // on the ground the steps still to do, in order, the next one in bold: the take-off
       // flaps, onto the runway and lined up on the centreline, full power and rotate at Vr
@@ -571,25 +573,24 @@ const Game = {
       }
       HUD.setPrompt(st.onGround
         ? '<b>' + tr('Runway {rwy}', { rwy: apt.rwyName }) + ' · ' + tr(fl.noClearance ? 'no clearance!' : 'cleared for take-off') + '</b><br>' + steps
-        : tr('<b>Positive climb</b> · gear up <kbd>G</kbd>'));
+        : st.gearTarget === 1 ? tr('<b>Positive climb</b> · gear up <kbd>G</kbd>') : tr('<b>Positive climb</b>'));
+      // (what to do next is the prompt's: no message repeats it)
       if (!st.onGround && fl.altAgl() > 150) {
         fl.setPhase('CLIMB');
         fl.ap.alt = this.cruiseAltFt(); fl.ap.altSet = false;
-        fl.info(tr('Climb to {alt} ft — engage the autopilot <kbd>Y</kbd>', { alt: fmtAltFt(fl.ap.alt) }), 'AP');
       }
     } else if (p === 'CLIMB') {
       HUD.setPrompt(tr('<b>Climb</b> to {alt} ft', { alt: fmtAltFt(fl.ap.alt) }) +
         (st.gearTarget === 1 ? ' · ' + tr('gear up <kbd>G</kbd>') : '') + (st.flapsTarget > 0 && st.ias / KTS > fl.vr() + 25 ? ' · ' + tr('flaps up <kbd>V</kbd>') : '') +
         (!fl.ap.on ? ' · ' + tr('autopilot <kbd>Y</kbd>') : ''));
-      if (Math.abs(st.pos.y / FT - fl.ap.alt) < 300) {
-        fl.setPhase('CRUISE');
-        fl.info(tr('Cruise · time acceleration: <kbd>T</kbd> faster, <kbd>R</kbd> slower'), 'TIME');
-      }
+      if (Math.abs(st.pos.y / FT - fl.ap.alt) < 300) fl.setPhase('CRUISE');
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'CRUISE') {
       const low = fl.ap.emergency && fl.ap.alt < this.cruiseAltFt() - 1000;
       HUD.setPrompt('<b>' + tr('Cruise · {nm} nm to {id}', { nm: Math.round(fl.distToDestNm()), id: arr.id }) + '</b><br>' +
-        (fl.ap.on ? tr('autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel }) : tr('autopilot <kbd>Y</kbd> flies the route')) +
+        (fl.ap.on && !fl.ap.nav ? tr('autopilot HDG {h}° · <kbd>N</kbd> back to the route · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { h: String(fl.ap.hdg).padStart(3, '0'), n: fl.env.timeAccel })
+          : fl.ap.on ? tr('autopilot NAV · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel })
+          : tr('autopilot <kbd>Y</kbd> flies the route · time <kbd>T</kbd> faster, <kbd>R</kbd> slower (x{n})', { n: fl.env.timeAccel })) +
         (low ? '<br>' + tr('{alt} ft for the emergency — back to {cruise} ft when it is over, or now with <kbd>N</kbd>', { alt: fmtAltFt(fl.ap.alt), cruise: fmtAltFt(this.cruiseAltFt()) }) : ''));
       if (fl.distToDestNm() < this.descentNm()) this.startDescent();
     } else if (p === 'DESCENT') {
@@ -639,7 +640,8 @@ const Game = {
       }
     } else if (p === 'ROLLOUT') {
       HUD.setPrompt('<b>' + tr('Touchdown') + ' ' + (fl.landed ? fl.landed.fpm + ' fpm' : '') + '</b><br>' +
-        tr('idle <kbd>0</kbd>, spoiler <kbd>/</kbd> (it puts the weight on the wheels), brakes <kbd>B</kbd> — slow below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
+        tr(st.spoiler ? 'idle <kbd>0</kbd>, brakes <kbd>B</kbd> — slow below {v} kt'
+          : 'idle <kbd>0</kbd>, spoiler <kbd>/</kbd> (it puts the weight on the wheels), brakes <kbd>B</kbd> — slow below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
       if (!st.onGround && fl.altAgl() > 15) {
         // touch-and-go: the next landing is the one that counts (a practice is over)
         if (this.practice) { this.endPractice(false, tr('You took off again — the landing did not hold')); return; }
@@ -650,7 +652,7 @@ const Game = {
         else this.beginTaxiIn();
       }
     } else if (p === 'EXIT') {
-      if (st.spoiler && !this.spoilerTold) { this.spoilerTold = true; fl.info(tr('Off the runway — spoiler in <kbd>/</kbd>')); }
+      if (st.spoiler && !this.spoilerTold) { this.spoilerTold = true; fl.info(tr('Leaving the runway — spoiler in <kbd>/</kbd>')); }
       const gate = this.arrivalGate, g = fl.guidance, fo = fl.copilot;
       const d = Math.hypot(st.pos.x - gate.standX, st.pos.z - gate.standZ);
       const align = Math.abs(wrapDeg(fl.headingDeg() - gate.parkHdg));
@@ -808,7 +810,7 @@ const Game = {
     const fl = this.flight;
     const sys = this.systems, st = fl.st;
     switch (name) {
-      case 'gear': fl.setGear(st.gearTarget < 0.5); Audio2.cue('lever'); break;
+      case 'gear': fl.setGear(st.gearFailed || st.gearTarget < 0.5); Audio2.cue('lever'); break;
       case 'flapsDown': fl.setFlaps(st.flapsTarget + 1); Audio2.cue('lever'); break;
       case 'flapsUp': fl.setFlaps(st.flapsTarget - 1); Audio2.cue('lever'); break;
       case 'ap':
@@ -1457,7 +1459,8 @@ const Game = {
 };
 
 function frame() { return new Promise((r) => requestAnimationFrame(() => r())); }
-function fmtAltFt(ft) { return Math.round(ft).toLocaleString('en-US'); }
+// an altitude in feet written as Units.alt writes it (3000, 13 500: no comma, which reads as a decimal point in Russian and Swedish)
+function fmtAltFt(ft) { return fmtNum(Math.round(ft)); }
 // a stand's name in the game's language ("Gate 3", "Terminal 2, gate 3", "Cargo terminal, stand C2",
 // "General aviation, stand G1", "Air ambulance stand G4")
 function gateName(g) {

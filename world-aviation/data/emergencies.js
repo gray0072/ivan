@@ -30,7 +30,7 @@ const EMERGENCIES = [
     id: 'eng_fire', title: 'ENGINE FIRE', weight: 1.0, phase: ['CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'], meet: ['fire'],
     alert: 'continuous', limit: 25, escTitle: 'Engine fire not contained',
     what: 'Fire warning on engine {e}: the bell is ringing and its EGT is climbing.',
-    done: 'Fire out. Engine {e} is shut down — set the thrust again and fly on with the other one. The fire service will meet you at the gate.',
+    done: 'Fire out. Engine {e} is shut down — set the thrust again and fly on without it. The fire service will meet you at the gate.',
     esc: 'The fire burns through the nacelle, the engine shuts down and you fly the rest on one engine with a fire warning you cannot clear.',
     penalty: { damage: 0.18, fuel: 0.1 },
     steps: [
@@ -43,7 +43,7 @@ const EMERGENCIES = [
     id: 'eng_fail', title: 'ENGINE FAILURE', weight: 1.2, phase: ['CLIMB', 'CRUISE', 'DESCENT'],
     alert: 'continuous', limit: 40, escTitle: 'Engine failure mishandled',
     what: 'Engine {e} has failed: its N1 and EGT are falling and the nose swings towards it.',
-    done: 'No relight. Engine {e} is secured — fly on with the other one to the destination.',
+    done: 'No relight. Engine {e} is secured — fly on without it to the destination.',
     esc: 'You never secured the dead engine. Its windmilling drag cost you height you did not have.',
     penalty: { damage: 0.25 },
     steps: [
@@ -61,7 +61,7 @@ const EMERGENCIES = [
     penalty: { fuel: 0.35, damage: 0.05 },
     steps: [
       { kind: 'switch', text: 'Fuel used vs fuel on board — COMPARE', why: 'If the tanks lose more than the engines use, it is a leak, not a thirsty engine.' },
-      { kind: 'switch', text: 'Crossfeed — OPEN', why: 'Lets both engines drink from the good tank.' },
+      { kind: 'switch', text: 'Crossfeed — OPEN', why: 'Lets every engine drink from the good tank.' },
       { kind: 'switch', text: 'Fuel pumps, leaking side — OFF', why: 'Stops pumping fuel out through the hole.' }
     ]
   },
@@ -196,7 +196,7 @@ const EMERGENCIES = [
     id: 'overweight', title: 'OVERWEIGHT / MISLOAD', weight: 0.6, phase: ['TAXI_OUT', 'HOLD_SHORT'], preflight: true,
     alert: 'single', limit: 75, escTitle: 'Rotated overweight',
     what: 'The final load sheet: you are heavier than the maximum take-off weight.',
-    done: 'The extra load is off. You are inside the limits — ask for take-off when ready.',
+    done: 'The extra load is off. You are inside the limits — release the parking brake and carry on to the runway.',
     esc: 'You took off over the maximum weight. The aeroplane used every metre of the runway and only just cleared the fence.',
     penalty: { damage: 0.2 },
     steps: [

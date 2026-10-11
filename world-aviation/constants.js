@@ -54,6 +54,7 @@ const SIM = {
   TIME_ACCEL_STEPS: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512],   // T one step faster, R one step slower
   TIME_ACCEL_CHEAT: 1024,      // the Alt+6 cheat (on the autopilot, where x512 is allowed)
   TIME_ACCEL_MIN_ALT_M: 150,   // time acceleration only above this height AGL
+  WARN_REPEAT_S: 3,            // the same warning is given again at most this often (real seconds)
   TIME_ACCEL_AP_MAX: 512,      // with the autopilot engaged: up to x512 at any height and in any phase
   TIME_ACCEL_X1_NM: 2.7,       // closing on the arrival the time is back at x1 this far out (5 km) ...
   TIME_ACCEL_SLOWDOWN_S: 3,    // ... slowing one step every this many real seconds (the same before the top of descent)
@@ -969,6 +970,7 @@ const QRH = {
   RELIGHT_CHANCE: 0.4,      // a failed engine starts again
   CLIMB_FPM: 500,           // the 'climb' step: at least this climb rate
   IDLE_MAX: 0.05,           // the 'idle' step: the thrust levers at or below this
+  LOW_FUEL_SHARE: 0.1,      // FUEL STATE: the share of the fuel on board the headwinds and the routing took beyond the plan
   OUTCOME_SEC: 9            // how long the result of a checklist stays on the screen
 };
 

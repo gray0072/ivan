@@ -77,6 +77,7 @@ const Flight = {
       surfaceWind: { dir: 240, speed: 6 }, altWind: { dir: 250, speed: 40 }
     };
     this.events = [];
+    this.warnSeen = {};              // when each warning (id and text) was last given, real seconds
     this.track = [];                 // the flown track for the map: {x, z, air}
     this.landed = null;
     this.failure = null;
@@ -154,7 +155,11 @@ const Flight = {
   toggleSpoiler() { this.st.spoiler = this.st.spoiler > 0.5 ? 0 : 1; if (this.ap) this.ap.spoiler = false; },
 
   warn(id, text) {
-    if (this.events.some((e) => e.id === id && this.realElapsed - e.t < 6)) return;
+    // the same warning at most every WARN_REPEAT_S: a state warned of every frame stays on the
+    // screen without being pushed again each frame (the events are taken off every frame)
+    const key = id + '|' + text, seen = this.warnSeen || (this.warnSeen = {});
+    if (seen[key] !== undefined && this.realElapsed - seen[key] < SIM.WARN_REPEAT_S) return;
+    seen[key] = this.realElapsed;
     this.events.push({ id, text, t: this.realElapsed });
     this.recent = (this.recent || []).filter((e) => this.realElapsed - e.t < 6);
     if (!this.recent.some((e) => e.id === id)) Audio2.cue('warning');
@@ -417,6 +422,15 @@ const Flight = {
     this.timeAccelIndex = 0; this.cheatAccel = false;
     this.env.timeAccel = 1;
   },
+  // something the pilot has to see at once and fly by hand (an engine flamed out, the autopilot
+  // let go, the fuel low): real time, and it stays there until the pilot speeds it up again
+  realTime() {
+    this.timeAccelResume = 0;
+    if (this.env.timeAccel <= 1 && !this.cheatAccel) return;
+    this.timeAccelIndex = 0; this.cheatAccel = false;
+    this.env.timeAccel = 1;
+    this.info(tr('TIME x{n}', { n: 1 }), 'TIME');
+  },
   timeAccel(dtReal = 0) {
     const e = this.env;
     // after an emergency the time climbs back to where it was, a step a second, once the checklist is
@@ -477,7 +491,7 @@ const Flight = {
       return tr('Time acceleration only in the air, above {alt} ft', { alt: fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) });
     }
     if (this.systems && this.systems.checklist) return tr('Work the checklist first — time runs at x1');
-    if (this.systems && this.systems.iceHold) return tr('Anti-ice first (K) — time runs at x1');
+    if (this.systems && this.systems.iceHold) return tr('Anti-ice first <kbd>K</kbd> — time runs at x1');
     if (this.approachCapped) return tr('Approaching {id} — the time slows down by itself, x1 from {nm} out', { id: this.arrival.id, nm: Units.dist(SIM.TIME_ACCEL_X1_NM) });
     if (this.ap.on) return tr('Time x{n} is the fastest', { n: SIM.TIME_ACCEL_AP_MAX });
     const max = this.timeAccelMax();
@@ -687,10 +701,18 @@ const Flight = {
       FLAPSPEED: st.flaps > 0.5 && ias > this.flapVfeNow() + 10,
       GEARSPEED: st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround,
       SPOILERLAND: st.spoiler > 0.5 && !st.onGround,
-      GEAR: gr === 'ground' ? st.onGround : gr === 'failed' ? !!st.gearFailed : false
+      GEAR: gr === 'ground' ? st.onGround : gr === 'failed' ? !!st.gearFailed : false,
+      TOOLOWGEAR: st.gearTarget < 1 && !st.onGround,
+      ICE: !!(this.systems && this.systems.iceHold),
+      TERRAIN: !st.onGround && this.terrainAhead() < 120
     };
     const was = this.liveWarn || {};
-    for (const id in live) if (was[id] && !live[id]) this.events.push({ id: 'clear', clear: id, t: this.realElapsed });
+    for (const id in live) {
+      if (!was[id] || live[id]) continue;
+      this.events.push({ id: 'clear', clear: id, t: this.realElapsed });
+      // (put right, then wrong again: warned again at once)
+      for (const k in this.warnSeen) if (k.startsWith(id + '|')) delete this.warnSeen[k];
+    }
     if (!live.GEAR) this.gearReject = null;
     this.liveWarn = live;
   },
@@ -1189,7 +1211,7 @@ const Flight = {
     const want = idleDescent && ias > target - 10 ? -1                // idle in the descent (thrust only if far too slow)
       : (target - ias) * 0.03 - ap.accF * 0.35 - (e < -4 ? 0.3 : 0);
     st.throttle = clamp(st.throttle + clamp(want, -1, 1) * 0.12 * dt, 0, 1);
-    if (st.stallWarn) { ap.on = false; this.warn('AP', tr('Autopilot disconnect — stall warning')); }
+    if (st.stallWarn) { ap.on = false; this.warn('AP', tr('Autopilot disconnect — stall warning')); this.realTime(); }
   }
 };
 

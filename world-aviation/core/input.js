@@ -4,7 +4,7 @@
 // World Aviation — input: keyboard, touch, fullscreen
 //
 // The aeroplane is flown with the arrow keys or WASD, the throttle
-// with Z/X (or 1-9), the rudder with Q/E; T and R make the time run
+// with − / + or PageDown / PageUp (or 1-9, 0), the rudder with Q/E; C / X / Z are the views; T and R make the time run
 // faster and slower; the pitch can be flipped (settings.noseUp). On a phone the left half
 // of the screen is a floating joystick for pitch and roll, the
 // right edge is a throttle slider, and the upper right has big
@@ -103,15 +103,15 @@ const Input = {
     let pitch = ax('ArrowDown', 'ArrowUp') + ax('s', 'w');           // pull back = nose up
     let roll = ax('ArrowRight', 'ArrowLeft') + ax('d', 'a');
     let rud = ax('e', 'q');
-    // the touch stick overrides when it is being used
+    // the touch stick overrides when it is being used (pulled down = pull back, like ↓)
     if (this.touch.stick) {
-      pitch = -this.touch.stick.y;
+      pitch = this.touch.stick.y;
       roll = this.touch.stick.x;
     }
     if (this.invertPitch) pitch = -pitch;
     let thr = 0;
-    if (k.z || k.PageDown || k['_'] || k['-']) thr -= 1;
-    if (k.x || k.PageUp || k['+'] || k['=']) thr += 1;
+    if (k.PageDown || k['_'] || k['-']) thr -= 1;
+    if (k.PageUp || k['+'] || k['=']) thr += 1;
     let brake = k.b ? 1 : 0;
     if (this.touchBrake) brake = 1;
     this.pitch = clamp(pitch, -1, 1);
