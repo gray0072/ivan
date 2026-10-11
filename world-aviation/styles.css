@@ -727,6 +727,22 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .cloudState.error::before, .cloudState.conflict::before { background: #f0c36a; }
 .cloudCard p { margin: 8px 0; }
 .cloudCard .btnRow { margin-top: 10px; }
+.cloudState.signedOut::before { background: #f0c36a; }
+
+/* ---------- the careers on this device (UI.showCareers) ---------- */
+.careerList { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }
+.careerItem {
+  display: flex; align-items: center; gap: 14px; padding: 12px 14px;
+  border: 1px solid rgba(140, 170, 200, 0.16); border-radius: 12px; background: #131b24;
+}
+.careerItem.cur { border-color: rgba(255, 217, 122, 0.45); }
+.careerItem .epaulette { flex: none; }
+.ciWho { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ciWho b { color: #eef4fa; font-size: 15px; overflow-wrap: anywhere; }
+.ciWho .cvChip { margin-left: 6px; font-size: 11px; font-weight: 600; vertical-align: 2px; }
+.ciWho small { color: #9fb0c3; font-size: 12px; overflow-wrap: anywhere; }
+.ciWho .ciCloud { color: #7f8fa1; }
+.careerItem .btn { flex: none; }
 
 /* ---------- the title screen: a glass panel over the moving sky (ui/title.js) ---------- */
 #titleSky { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 59; display: block; background: #0b1017; }

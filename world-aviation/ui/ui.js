@@ -130,9 +130,9 @@ const UI = {
     btns[Math.min(Math.max(before.index, 0), btns.length - 1)].focus({ preventScroll: true });
   },
 
-  // the career's level; on the new career screen the level that career will start at (the last pick)
+  // the career's level; on the new career screen the level that career will start at
   difficultyChips(forNew) {
-    const cur = forNew ? (DIFFICULTY[Career.settings.difficulty] || DIFFICULTY.medium) : Career.difficulty;
+    const cur = forNew ? (DIFFICULTY[this.newDifficulty] || DIFFICULTY.medium) : Career.difficulty;
     return '<div class="setGroup"><span>' + tr('Difficulty') + '</span>' + ['easy', 'medium', 'hard'].map((d) =>
       '<button class="chip' + (cur.id === d ? ' on' : '') + '" data-act="difficulty" data-v="' + d + '">' +
       esc(tr(DIFFICULTY[d].name)) + '</button>').join('') + '</div>' +
@@ -151,6 +151,7 @@ const UI = {
   showTitle() {
     if (Game.mode !== 'flying' && Game.mode !== 'paused') Game.mode = 'menu';
     const has = !!Career.data;
+    const n = Career.list().length;
     const s = Career.settings;
     const qualBtns = ['auto', 'low', 'medium', 'high'].map((d) =>
       '<button class="chip' + (s.quality === d ? ' on' : '') + '" data-act="quality" data-v="' + d + '">' +
@@ -171,6 +172,8 @@ const UI = {
       (has ? '<button class="bigBtn default" data-act="continue">' + tr('Continue career') + '<small>' + esc(Career.data.pilot.name) + ' · ' +
         fmtMoney(Career.data.money) + '</small></button>' +
         '<button class="bigBtn" data-act="newcareer">' + tr('New career') + '<small>' + tr('different pilot, fresh start') + '</small></button>'
+        : n ? '<button class="bigBtn default" data-act="careers">' + tr('Choose a career') + '<small>' + tr('{n} on this device', { n }) + '</small></button>' +
+          '<button class="bigBtn" data-act="newcareer">' + tr('New career') + '<small>' + tr('different pilot, fresh start') + '</small></button>'
         : '<button class="bigBtn default" data-act="newcareer">' + tr('Start your career') + '<small>' + tr('based at Stockholm Arlanda') + '</small></button>') +
       '</div>' +
       '<div class="titleSettings">' +
@@ -181,6 +184,7 @@ const UI = {
       '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
+      (has && (n > 1 || Cloud.available) ? '<button class="btn" data-act="careers">' + tr('Careers') + ' · ' + n + '</button>' : '') +
       (has ? '<button class="btn" data-act="wipe">' + tr('Delete career') + '</button>' : '') +
       this.cloudButtons() +
       '</div>' +
@@ -199,13 +203,14 @@ const UI = {
       '<button class="chip" data-act="rerollName" title="' + esc(tr('Another name')) + '" aria-label="' + esc(tr('Another name')) + '">🎲</button></span></label>' +
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips(true) + '</div>' +
+      '<p class="fineprint">' + tr('A new career starts with every setting at its default; your other careers stay in the list.') + '</p>' +
       '<div class="btnRow split"><button class="btn back" data-act="back" data-esc>' + tr('Back') + '</button>' +
       '<button class="btn default fwd" data-act="startcareer">' + tr('Start flying') + '</button></div>', 'narrow');
     this.screen.dataset.view = 'newcareer';
   },
 
   confirmWipe() {
-    const inCloud = Cloud.user && Cloud.linkedTo === Cloud.user.id && Cloud.hasRow;
+    const inCloud = Cloud.available && !!(Career.data && Career.data.cloud);
     this.panel(
       '<h2>' + tr('Delete this career?') + '</h2><p class="lead">' + tr('The money, the reputation and every course you have passed will be gone.') +
       (inCloud ? ' ' + tr('Its copy in the cloud is deleted too.') : '') + '</p>' +
@@ -213,15 +218,57 @@ const UI = {
       '<button class="btn default" data-act="back" data-esc>' + tr('Keep it') + '</button></div>', 'narrow');
   },
 
+  // ---------- the careers on this device ----------
+  // each with its pilot, rank, flights, money and the Google account it syncs with; the open one first
+  showCareers() {
+    const list = Career.list().sort((a, b) => (b.current - a.current) || (b.updatedAt > a.updatedAt ? 1 : b.updatedAt < a.updatedAt ? -1 : 0));
+    const rows = list.map((c) => {
+      const r = PILOT_RANKS[Math.min(c.rank, PILOT_RANKS.length - 1)];
+      return '<div class="careerItem' + (c.current ? ' cur' : '') + '">' + epaulette(r) +
+        '<div class="ciWho"><b>' + esc(c.name) + (c.current ? ' <span class="cvChip">' + tr('open now') + '</span>' : '') + '</b>' +
+        '<small>' + r.licence + ' · ' + tr('{n} flights', { n: c.flights }) + ' · ' + fmtMoney(c.money) + '</small>' +
+        (Cloud.available ? '<small class="ciCloud">' + (c.cloud ? '☁ ' + esc(c.cloud.email) : tr('on this device only')) + '</small>' : '') + '</div>' +
+        '<button class="btn fwd' + (c.current ? ' default' : '') + '" data-act="openCareer" data-v="' + esc(c.id) + '">' + tr(c.current ? 'Continue' : 'Fly') + '</button></div>';
+    }).join('');
+    this.panel(
+      '<div class="screenBar"><button class="btn back" data-act="back" data-esc>' + tr('Back') + '</button></div>' +
+      '<h2>' + tr('Careers') + '</h2>' +
+      '<p class="lead">' + tr('Each career keeps its own progress, settings and Google account; the language is the game\'s.') + '</p>' +
+      '<div class="careerList">' + (rows || '<p class="cvNone">' + tr('No careers on this device yet.') + '</p>') + '</div>' +
+      '<div class="btnRow"><button class="btn" data-act="newcareer">' + tr('New career') + '</button>' +
+      (Cloud.available ? '<button class="btn cloudIn" data-act="cloudIn" data-v="list">' + GOOGLE_G_SVG + tr('Careers from a Google account') + '</button>' : '') + '</div>' +
+      (Cloud.available ? '<p class="fineprint">' + tr('Sign in with a Google account to bring its careers to this device.') + '</p>' : ''), 'narrow');
+    this.screen.dataset.view = 'careers';
+  },
+  // another career opened: its settings and its Google account come with it
+  openCareer(id) {
+    if (!Career.data || Career.data.id !== id) {
+      Cloud.flush();
+      if (!Career.open(id)) { this.showCareers(); return; }
+      Cloud.careerOpened();
+      this.selContract = null; this.lastContract = null; this.renaming = false; this.quiz = null;
+    }
+    enterFullscreen();
+    this.tab = 'dispatch';
+    this.showOps();
+  },
+
   // ---------- the cloud copy (core/cloud.js) ----------
-  // the sign-in on the title screen: the button, or how the sync goes and the way out
+  // the title's foot: the open career's sign-in or how its sync goes; with no career open, a sign-in
+  // that brings an account's careers here
   cloudButtons() {
     if (!Cloud.available) return '';
-    if (!Cloud.user) {
-      return '<button class="btn cloudIn" data-act="cloudIn" title="' + esc(tr('Keep the career in the cloud and fly it on any device.')) + '">' +
+    const st = Cloud.status;
+    if (!Career.data) {
+      return '<button class="btn cloudIn" data-act="cloudIn" data-v="list" title="' + esc(tr('Sign in with a Google account to bring its careers to this device.')) + '">' +
         GOOGLE_G_SVG + tr('Sign in with Google') + '</button>';
     }
-    return '<span class="cloudState ' + Cloud.status + '" title="' + esc(Cloud.user.email) + '">' + esc(this.cloudStatusText()) + '</span>' +
+    if (st === 'off' || st === 'signedOut') {
+      return (st === 'signedOut' ? '<span class="cloudState signedOut">' + esc(this.cloudStatusText()) + '</span>' : '') +
+        '<button class="btn cloudIn" data-act="cloudIn" data-v="career" title="' + esc(tr('Keep the career in the cloud and fly it on any device.')) + '">' +
+        GOOGLE_G_SVG + tr('Sign in with Google') + '</button>';
+    }
+    return '<span class="cloudState ' + st + '" title="' + esc(Career.data.cloud.email) + '">' + esc(this.cloudStatusText()) + '</span>' +
       '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button>';
   },
   cloudStatusText() {
@@ -229,59 +276,49 @@ const UI = {
       case 'syncing': return tr('Syncing…');
       case 'synced': return tr('Synced');
       case 'error': return tr('Sync failed — it tries again later');
-      case 'conflict': return tr('Another career in the cloud');
+      case 'signedOut': return tr('Signed out — sign in again to sync');
       default: return '';
     }
   },
-  // the Career tab's card: what the cloud is for, who is signed in and how the sync goes
+  // the Career tab's card: what the cloud is for, the account this career syncs with and how it goes;
+  // not linked yet: the accounts this device knows, one press each, or Google
   cloudCard() {
     if (!Cloud.available) return '';
-    const u = Cloud.user;
-    return '<section class="cvCard cloudCard"><h3>' + tr('Cloud save') + '</h3>' +
-      (u ? '<p><span class="cloudState ' + Cloud.status + '">' + esc(this.cloudStatusText()) + '</span></p>' +
-        '<p class="fineprint">' + esc(tr('Signed in as {email}', { email: u.email })) + '</p>' +
-        '<div class="btnRow">' + (Cloud.status === 'conflict' ? '<button class="btn default" data-act="cloudChoose">' + tr('Choose a career') + '</button>' : '') +
-        '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button></div>'
-        : '<p class="fineprint">' + esc(tr('Keep the career in the cloud and fly it on any device.')) + ' ' +
-          esc(tr('Each career has its own sign-in: a new career starts signed out.')) + '</p>' +
-          '<div class="btnRow"><button class="btn cloudIn" data-act="cloudIn">' + GOOGLE_G_SVG + tr('Sign in with Google') + '</button></div>') +
-      '</section>';
+    const c = Career.data.cloud, st = Cloud.status;
+    let body;
+    if (c) {
+      body = '<p><span class="cloudState ' + st + '">' + esc(this.cloudStatusText()) + '</span></p>' +
+        '<p class="fineprint">' + esc(tr('Syncs with {email}', { email: c.email })) + '</p>' +
+        '<div class="btnRow">' + (st === 'signedOut' ? '<button class="btn cloudIn" data-act="cloudIn" data-v="career">' + GOOGLE_G_SVG + tr('Sign in with Google') + '</button>' : '') +
+        '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button></div>';
+    } else {
+      const known = Cloud.accounts();
+      body = '<p class="fineprint">' + esc(tr('Keep the career in the cloud and fly it on any device.')) + ' ' +
+        esc(tr('Each career has its own sign-in: a new career starts signed out.')) + '</p>' +
+        '<div class="btnRow">' + known.map((a) => '<button class="btn" data-act="cloudLink" data-v="' + esc(a.user) + '">☁ ' + esc(tr('Sync with {email}', { email: a.email })) + '</button>').join('') +
+        '<button class="btn cloudIn" data-act="cloudIn" data-v="career">' + GOOGLE_G_SVG + tr(known.length ? 'Another Google account' : 'Sign in with Google') + '</button></div>';
+    }
+    return '<section class="cvCard cloudCard"><h3>' + tr('Cloud save') + '</h3>' + body + '</section>';
   },
-  // the account keeps another career: which one flies on — the cloud's, here, or this one, over it
-  showCloudConflict() {
-    const r = Cloud.remote && Cloud.remote.data;
-    if (!r || !Career.data) return;
-    const who = (d) => esc((d.pilot && d.pilot.name) || '') + '<small>' + tr('{n} flights', { n: (d.stats && d.stats.flights) || 0 }) + ' · ' + fmtMoney(d.money || 0) + '</small>';
-    this.panel(
-      '<h2>' + tr('Another career in the cloud') + '</h2>' +
-      '<p class="lead">' + esc(tr('{email} already keeps another career in the cloud. Which one flies on?', { email: Cloud.user.email })) + '</p>' +
-      '<div class="cardRow">' +
-      '<button class="bigBtn" data-act="cloudTake">' + tr('Load the cloud career') + '<small>' + who(r) + '</small>' +
-      '<small>' + tr('the career on this device is replaced') + '</small></button>' +
-      '<button class="bigBtn" data-act="cloudKeep">' + tr('Keep this career') + '<small>' + who(Career.data) + '</small>' +
-      '<small>' + tr('the career in the cloud is replaced') + '</small></button>' +
-      '</div>' +
-      '<div class="btnRow"><button class="btn" data-act="cloudOut" data-esc>' + tr('Cancel and sign out') + '</button></div>', 'narrow');
-    this.screen.dataset.view = 'cloud';
-  },
-  // the sync's status changed (and maybe the career with it): the screen showing it is drawn again
-  cloudChanged(careerChanged) {
+  // the sync's status changed (and maybe the careers with it): the screen showing it is drawn again
+  cloudChanged(careersChanged) {
     if (this.screen.hidden || Game.mode === 'flying' || Game.mode === 'paused') return;
     const view = this.screen.dataset.view;
     const free = (Game.mode === 'menu' || Game.mode === 'ops') && !this.quiz && !this.onLeave && !this.renaming;
-    if (Cloud.status === 'conflict' && Cloud.remote && free) {
-      this.showCloudConflict();
-    } else if (view === 'cloud') {
-      this.refreshCloud();
+    if (Cloud.showList && view === 'title') {
+      Cloud.showList = false;
+      this.showCareers();
     } else if (view === 'title') {
       this.showTitle();
-    } else if (Game.mode === 'ops' && free && (careerChanged || this.tab === 'career')) {
+    } else if (view === 'careers') {
+      this.showCareers();
+    } else if (Game.mode === 'ops' && free && (careersChanged || this.tab === 'career')) {
       const y = this.screen.scrollTop;
       this.showOps();
       this.screen.scrollTop = y;
     }
   },
-  // after a sign-out or a choice: the Career tab if it was open, else the title
+  // after a sign-out or a link: the Career tab if it was open, else the title
   refreshCloud() {
     if (Game.mode === 'ops' && Career.data) this.showOps(); else this.showTitle();
   },
@@ -1176,12 +1213,16 @@ const UI = {
   action(name, v) {
     switch (name) {
       case 'continue': enterFullscreen(); Game.mode = 'ops'; this.showOps(); break;
-      case 'newcareer': this.showNewCareer(); break;
+      case 'newcareer': this.newDifficulty = 'medium'; this.showNewCareer(); break;
+      case 'careers': this.showCareers(); break;
+      case 'openCareer': this.openCareer(v); break;
       case 'startcareer': {
         const pilot = (el('pilotName') || {}).value || '';
         reseed(hashStr(pilot) ^ Date.now());
-        Career.new({ pilot, difficulty: Career.settings.difficulty });
-        Cloud.careerStarted();
+        Cloud.flush();
+        Career.new({ pilot, difficulty: this.newDifficulty });
+        Cloud.careerOpened();
+        this.selContract = null; this.lastContract = null;
         enterFullscreen();
         this.tab = 'dispatch';
         this.showOps();
@@ -1189,7 +1230,7 @@ const UI = {
       }
       case 'difficulty':
         // (the new career screen picks the next career's level, not the one being left)
-        if (this.screen.dataset.view === 'newcareer') { Career.settings.difficulty = v; Career.saveSettings(); }
+        if (this.screen.dataset.view === 'newcareer') this.newDifficulty = v;
         else if (v !== Career.difficulty.id) {
           Career.setDifficulty(v);
           if (Career.data && (Game.mode === 'menu' || Game.mode === 'debrief' || Game.mode === 'failed')) Career.generateContracts();
@@ -1246,12 +1287,10 @@ const UI = {
       case 'howto': this.backTo = 'title'; this.showHowTo(); break;
       case 'howto2': this.backTo = 'pause'; this.showHowTo(); break;
       case 'wipe': this.confirmWipe(); break;
-      case 'wipeyes': Cloud.careerDeleted(Career.data && Career.data.id); Career.reset(); this.showTitle(); break;
-      case 'cloudIn': Cloud.signIn(); break;
+      case 'wipeyes': Cloud.careerDeleted(); Career.reset(); Cloud.careerOpened(); this.showTitle(); break;
+      case 'cloudIn': Cloud.signIn(v === 'career'); break;
+      case 'cloudLink': Cloud.linkTo(Cloud.accounts().find((a) => a.user === v)); this.refreshCloud(); break;
       case 'cloudOut': Cloud.signOut(); this.refreshCloud(); break;
-      case 'cloudChoose': this.showCloudConflict(); break;
-      case 'cloudTake': Cloud.takeRemote(); this.refreshCloud(); break;
-      case 'cloudKeep': Cloud.keepLocal(); this.refreshCloud(); break;
       case 'back':
         if (this.backTo === 'pause' && Game.mode === 'paused') { this.backTo = null; this.showPause(); }
         else this.showTitle();
@@ -1332,7 +1371,7 @@ const UI = {
         if (Game.contract && Game.practice) { this.selContract = Game.contract.id; this.action('practice'); }
         else if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
         break;
-      case 'gameover': Cloud.careerDeleted(Career.data && Career.data.id); Career.reset(); Game.mode = 'menu'; this.showTitle(); break;
+      case 'gameover': Cloud.careerDeleted(); Career.reset(); Cloud.careerOpened(); Game.mode = 'menu'; this.showTitle(); break;
       default: break;
     }
   },

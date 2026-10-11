@@ -4,61 +4,125 @@
 // World Aviation — the career: money, reputation, the training
 // tree, contracts and the payout after every landing.
 //
-// One object in localStorage holds the whole career. Everything
-// here is pure logic: ui.js draws it, game.js flies it.
+// Each career is one object in localStorage, with its own settings;
+// a device keeps several side by side. Everything here is pure
+// logic: ui.js draws it, game.js flies it.
 // ============================================================
 
-const CAREER_KEY = 'worldaviation.career.v1';
-const SETTINGS_KEY = 'worldaviation.settings.v1';
+const CAREER_KEY = 'worldaviation.career.v1';        // the one career of older versions: moved into the list on load
+const CAREERS_KEY = 'worldaviation.careers.v1';      // the careers on this device: { ids, current }
+const CAREER_SLOT = 'worldaviation.career.';         // + a career's id: that career
+const SETTINGS_KEY = 'worldaviation.settings.v1';    // the device's language, and the settings with no career open
+// a new career's settings (the language is the device's, above the careers)
+const SETTINGS_DEFAULT = { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', landingAid: true, noseUp: 'down' };
 
 const Career = {
   data: null,
-  settings: { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', lang: '', landingAid: true, noseUp: 'down' },
+  settings: Object.assign({ lang: '' }, SETTINGS_DEFAULT),
+  onSave: null,        // a career was saved (its id): core/cloud.js sends it up; headless, nobody listens
+  onSettings: null,    // the settings in force changed: game.js applies the sound and the graphics
 
   // ---------- persistence ----------
+  // Several careers live side by side on a device, each under its own key with its own settings
+  // (all but the language, which is the device's and stays above the careers); the list says
+  // which there are and which one is open.
+  readJson(key) {
+    try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (err) { return null; }
+  },
+  writeJson(key, v) {
+    try { localStorage.setItem(key, JSON.stringify(v)); } catch (err) { /* storage full or blocked */ }
+  },
+  index() {
+    const x = this.readJson(CAREERS_KEY);
+    return x && Array.isArray(x.ids) ? x : { ids: [], current: null };
+  },
+
+  // at boot: the device's settings (the language, and what is in force with no career open)
   loadSettings() {
-    try {
-      const raw = localStorage.getItem(SETTINGS_KEY);
-      if (raw) Object.assign(this.settings, JSON.parse(raw));
-      delete this.settings.unit;
-    } catch (err) { /* first run */ }
+    const s = this.readJson(SETTINGS_KEY) || {};
     // the game's language: picked on the title screen; the first time the old exam language or the browser's
-    if (!LANGS[this.settings.lang]) {
-      const q = this.settings.quizLang;
-      this.settings.lang = q && q !== 'en' && LANGS[q] ? q : I18N.guess();
-    }
-    delete this.settings.quizLang;
-    I18N.set(this.settings.lang);
-    Units.metric = this.settings.units === 'metric';
-    Input.invertPitch = this.settings.noseUp === 'up';
+    let lang = s.lang;
+    if (!LANGS[lang]) lang = s.quizLang && s.quizLang !== 'en' && LANGS[s.quizLang] ? s.quizLang : I18N.guess();
+    this.useSettings(s, lang);
     return this.settings;
   },
+  // the settings in force: a career's own (missing ones at their defaults) and the device's language
+  useSettings(s, lang) {
+    const out = Object.assign({}, SETTINGS_DEFAULT, s || {});
+    delete out.unit; delete out.quizLang;
+    out.lang = lang || this.settings.lang || I18N.guess();
+    this.settings = out;
+    I18N.set(out.lang);
+    Units.metric = out.units === 'metric';
+    Input.invertPitch = out.noseUp === 'up';
+    if (this.onSettings) this.onSettings();
+  },
   saveSettings() {
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings)); } catch (err) { /* ignore */ }
+    this.writeJson(SETTINGS_KEY, this.settings);
+    if (!this.data) return;
+    this.data.settings = careerSettings(this.settings);
+    this.save();
   },
-  exists() {
-    try { return !!localStorage.getItem(CAREER_KEY); } catch (err) { return false; }
-  },
+
   load() {
-    try {
-      const raw = localStorage.getItem(CAREER_KEY);
-      this.data = raw ? JSON.parse(raw) : null;
-    } catch (err) { this.data = null; }
-    if (this.data) this.migrate();
-    return this.data;
+    // the one career of older versions joins the list (and stays the one open)
+    const old = this.readJson(CAREER_KEY);
+    if (old) {
+      if (!old.id) old.id = careerId();
+      this.writeJson(CAREER_SLOT + old.id, old);
+      const x = this.index();
+      if (x.ids.indexOf(old.id) < 0) x.ids.push(old.id);
+      if (!x.current) x.current = old.id;
+      this.writeJson(CAREERS_KEY, x);
+      try { localStorage.removeItem(CAREER_KEY); } catch (err) { /* ignore */ }
+    }
+    return this.open(this.index().current);
   },
-  // every save is stamped with its time (the cloud's merge takes the later one as its base) and
-  // told to whoever listens (core/cloud.js sends it up; headless, nobody does)
+  // open a career of this device (null: none), with its settings
+  open(id) {
+    const d = id ? this.readJson(CAREER_SLOT + id) : null;
+    this.data = d;
+    const x = this.index();
+    x.current = d ? d.id : null;
+    this.writeJson(CAREERS_KEY, x);
+    if (d) this.migrate();
+    if (d) this.useSettings(d.settings);
+    return d;
+  },
+  // the careers on this device, for the list: who, how far, and the Google account each one syncs with
+  list() {
+    const cur = this.data && this.data.id;
+    return this.index().ids.map((id) => {
+      const d = id === cur ? this.data : this.readJson(CAREER_SLOT + id);
+      if (!d) return null;
+      return {
+        id, current: id === cur, name: (d.pilot && d.pilot.name) || '', money: d.money || 0,
+        flights: (d.stats && d.stats.flights) || 0, rank: d.rank || 0, updatedAt: d.updatedAt || '', cloud: d.cloud || null
+      };
+    }).filter(Boolean);
+  },
+  read(id) { return this.data && this.data.id === id ? this.data : this.readJson(CAREER_SLOT + id); },
+  // work on a career that is not the open one (its migrate and save go to its own key)
+  withCareer(d, fn) {
+    const cur = this.data;
+    this.data = d;
+    try { return fn(); } finally { this.data = cur; }
+  },
+  // every save is stamped with its time (the cloud's merge takes the later one as its base)
   save() {
-    if (this.data) this.data.updatedAt = new Date().toISOString();
-    try { localStorage.setItem(CAREER_KEY, JSON.stringify(this.data)); } catch (err) { /* ignore */ }
-    if (this.onSave) this.onSave();
+    if (!this.data) return;
+    this.data.updatedAt = new Date().toISOString();
+    this.writeJson(CAREER_SLOT + this.data.id, this.data);
+    const x = this.index();
+    if (x.ids.indexOf(this.data.id) < 0) { x.ids.push(this.data.id); this.writeJson(CAREERS_KEY, x); }
+    if (this.onSave) this.onSave(this.data.id);
   },
-  onSave: null,
   migrate() {
     const d = this.data;
-    // the career's own id: the cloud keeps one career per account and tells this one from another by it
+    // the career's own id: the cloud and the list tell this career from another by it
     if (!d.id) { d.id = careerId(); this.save(); }
+    // its own settings (a career from before they were its own takes the ones in force)
+    if (!d.settings) d.settings = careerSettings(this.settings);
     d.rep = d.rep || { pax: 0, cargo: 0, bush: 0 };
     d.courses = d.courses || ['gen1'];
     // the fictional types of older versions became the real ones closest to them
@@ -112,9 +176,13 @@ const Career = {
     return pool[Math.floor(Math.random() * pool.length)];
   },
 
+  // a new career, opened at once, with every setting at its default; the careers before it stay in the list
   new(opts) {
+    const level = DIFFICULTY[opts.difficulty] ? opts.difficulty : 'medium';
+    this.useSettings({ difficulty: level });
     this.data = {
       id: careerId(),
+      settings: careerSettings(this.settings),
       pilot: { name: (opts.pilot || '').trim() || this.randomPilotName() },
       money: CONTRACTS.START_MONEY,
       rep: { pax: 0, cargo: 0, bush: 0 },
@@ -131,12 +199,15 @@ const Career = {
       mriya: { bought: [], placed: [], finish: MRIYA_FINISHES[0].id, finishes: [MRIYA_FINISHES[0].id] },
       visits: {},
       rank: 0,
-      difficulty: DIFFICULTY[opts.difficulty] ? opts.difficulty : 'medium',
+      difficulty: level,
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
     };
     this.data.log.push(logLine('{name} starts flying. Base: Stockholm Arlanda.', { name: this.data.pilot.name }, 0));
     this.save();
+    const x = this.index();
+    x.current = this.data.id;
+    this.writeJson(CAREERS_KEY, x);
     this.generateContracts();
     return this.data;
   },
@@ -201,18 +272,38 @@ const Career = {
     this.save();
   },
 
+  // the open career deleted from this device (the others stay)
   reset() {
-    try { localStorage.removeItem(CAREER_KEY); } catch (err) { /* ignore */ }
+    if (this.data) {
+      try { localStorage.removeItem(CAREER_SLOT + this.data.id); } catch (err) { /* ignore */ }
+      const x = this.index();
+      x.ids = x.ids.filter((id) => id !== this.data.id);
+      x.current = null;
+      this.writeJson(CAREERS_KEY, x);
+    }
     this.data = null;
   },
 
   // ---------- the cloud copy (core/cloud.js) ----------
-  // a career from the cloud taken as it is, in place of this one (or of none)
-  adopt(data) {
-    this.data = data;
-    this.migrate();
-    this.save();
-    return this.data;
+  // a career of the account not yet on this device joins the list (not opened), linked to the account;
+  // the graphics level is this device's
+  importCareer(data, cloud) {
+    this.withCareer(data, () => {
+      this.migrate();
+      this.data.cloud = cloud;
+      this.data.settings.quality = this.settings.quality;
+      this.save();
+    });
+  },
+  // the cloud's copy of a career on this device merged in (the open one: its settings applied again)
+  mergeCareer(id, remote) {
+    if (this.data && this.data.id === id) {
+      this.mergeCloud(remote);
+      this.useSettings(this.data.settings);
+      return;
+    }
+    const d = this.readJson(CAREER_SLOT + id);
+    if (d) this.withCareer(d, () => { this.migrate(); this.mergeCloud(remote); });
   },
   // The same career saved on another device, merged in so the progress of both survives: the one
   // saved last is the base, taken as it is (money, reputation, contracts, the aeroplane and where it
@@ -242,13 +333,16 @@ const Career = {
     for (const k of ['flights', 'blockTime', 'landings', 'perfect', 'crashes', 'cheats', 'bestPay']) d.stats[k] = Math.max(d.stats[k] || 0, o.stats[k] || 0);
     if (order.indexOf(o.stats.bestGrade) > order.indexOf(d.stats.bestGrade)) d.stats.bestGrade = o.stats.bestGrade;
     d.rank = Math.max(d.rank || 0, o.rank || 0);
+    // the link to the Google account and the graphics level belong to this device
+    d.cloud = local.cloud;
+    d.settings.quality = local.settings.quality;
     this.data = d;
     this.save();
     return d;
   },
 
   // the career's own level, kept in its save like the other habits (set on the title screen and in
-  // every restart dialog); settings.difficulty is only the last pick, the level a new career starts at
+  // every restart dialog; a new career picks its own on the new career screen)
   get difficulty() {
     const v = this.data && this.data.difficulty;
     return DIFFICULTY[v] || DIFFICULTY[this.settings.difficulty] || DIFFICULTY.medium;
@@ -819,6 +913,13 @@ const Career = {
 };
 
 const CONTRACTS_PAX_FILL = [0.5, 1.0];
+
+// the settings a career keeps: all but the language, which is the device's
+function careerSettings(s) {
+  const out = Object.assign({}, s);
+  delete out.lang;
+  return out;
+}
 
 // a new career's id: random, long enough never to meet another one
 function careerId() {

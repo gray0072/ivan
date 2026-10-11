@@ -62,6 +62,12 @@ const Game = {
     // a tap anywhere skips the camera's flight at the start or the end
     el('cine').addEventListener('pointerdown', (e) => { e.preventDefault(); if (this.mode === 'flying' || this.mode === 'tour') this.skipCine(); });
 
+    // each career keeps its own settings: opening one (or starting one) brings its sound and graphics
+    Career.onSettings = () => {
+      Audio2.setMuted(!Career.settings.sound);
+      this.quality = pickQuality(Career.settings.quality);
+      Scene3D.setQuality(this.quality);
+    };
     Career.load();
     this.last = performance.now();
     this.mode = 'menu';

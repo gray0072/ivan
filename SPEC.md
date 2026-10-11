@@ -112,8 +112,8 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── styles.css
 │   ├── constants.js, game.js, career.js  # tuning, main loop and phase machine, the career
 │   ├── lib/                  # three.min.js — three.js r147 (UMD), supabase.min.js — supabase-js (the cloud save), vendored
-│   ├── supabase/             # schema.sql — the cloud save's table (worldaviation_careers), run once in Supabase
-│   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio, crowd, fanfare, update (picks up a new deploy), cloud (the cloud save: Google sign-in, sync)
+│   ├── supabase/             # schema.sql — the cloud save's table (worldaviation_careers, a row per career), run in Supabase
+│   ├── core/                 # i18n (the game's language), utils, input, cursor (hidden in fullscreen while still), audio, crowd, fanfare, update (picks up a new deploy), cloud (the cloud save: a Google sign-in per career, sync)
 │   ├── data/                 # airports, countries, airlines, emergencies, quizzes, mriya (the An-225's parts), lang-ru / lang-sv (translations), geodata (coastlines, mountains)
 │   ├── art/                  # flags, landmarks (city symbols), airline emblems, region maps, the Mriya's blueprint
 │   ├── sim/                  # world (airports, taxiing, weather), terrain, flight dynamics, systems, guidance, taxilimit (taxi speeds), copilot (the first officer taxiing in), airframe (an aeroplane's shape), collide (collisions with the buildings and the parked aeroplanes)
