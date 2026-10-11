@@ -182,10 +182,6 @@ const UI = {
     if (Game.mode !== 'flying' && Game.mode !== 'paused') Game.mode = 'menu';
     const has = !!Career.data;
     const n = Career.list().length;
-    const s = Career.settings;
-    const qualBtns = ['auto', 'low', 'medium', 'high'].map((d) =>
-      '<button class="chip' + (s.quality === d ? ' on' : '') + '" data-act="quality" data-v="' + d + '">' +
-      esc(tr(d === 'auto' ? 'Auto' : QUALITY[d].name)) + '</button>').join('');
     const nRegions = REGIONS.length;
     this.panel(
       '<div class="titleWrap">' +
@@ -209,8 +205,7 @@ const UI = {
       '<div class="titleSettings">' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="settingsRow">' +
-      '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + qualBtns + '</div>' +
-      this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() +
+      this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() +
       '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
@@ -1137,7 +1132,7 @@ const UI = {
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
       '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
@@ -1162,6 +1157,15 @@ const UI = {
     const from = World.byId[c.fromId], to = World.byId[c.toId];
     const block = (a, x, gate) => '<div><h3>' + flagImg(a) + esc(aptName(a)) + ' · ' + a.id + '</h3><table class="wx">' + this.airportRows(x, a, gate) + '</table></div>';
     return '<div class="briefCols pauseApts">' + block(from, s.weather.dep, c.depGate) + block(to, s.weather.arr, c.arrGate) + '</div>';
+  },
+
+  // the graphics: Auto (the default: by the device, then by the frame rate in flight) or a fixed preset
+  // (on the title and in the pause)
+  qualityChips() {
+    const q = Career.settings.quality;
+    return '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + ['auto', 'low', 'medium', 'high'].map((d) =>
+      '<button class="chip' + (q === d ? ' on' : '') + '" data-act="quality" data-v="' + d + '">' +
+      esc(tr(d === 'auto' ? 'Auto' : QUALITY[d].name)) + '</button>').join('') + '</div>';
   },
 
   // aviation units (ft, kt, nm) or metric (m, km/h, km)
@@ -1300,7 +1304,8 @@ const UI = {
       case 'quality':
         Career.settings.quality = v; Career.saveSettings();
         Game.quality = pickQuality(v); Scene3D.setQuality(Game.quality);
-        this.showTitle();
+        if (Game.mode === 'paused' && Game.flight) Scene3D.warmup(Game.flight);
+        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
         break;
       case 'sound':
         Career.settings.sound = !Career.settings.sound; Career.saveSettings();
