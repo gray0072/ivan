@@ -156,6 +156,7 @@ const Career = {
     d.mriya = d.mriya || { bought: [], placed: [] };   // the An-225's parts: bought, and fitted on the blueprint
     // ... and its finishes: the ones bought (its own is always there) and the one it wears
     d.mriya.finishes = d.mriya.finishes || [MRIYA_FINISHES[0].id];
+    d.rtw = Rtw.fix(d.rtw);                    // round the world (sim/rtw.js): the expedition, the marks, the records
     if (d.mriya.finishes.indexOf(d.mriya.finish) < 0) d.mriya.finish = MRIYA_FINISHES[0].id;
     // (the level was a setting of the browser once: an older save takes the one picked last)
     if (!DIFFICULTY[d.difficulty]) d.difficulty = DIFFICULTY[this.settings.difficulty] ? this.settings.difficulty : 'medium';
@@ -197,6 +198,7 @@ const Career = {
       typeFlights: {},
       newAircraft: [],
       mriya: { bought: [], placed: [], finish: MRIYA_FINISHES[0].id, finishes: [MRIYA_FINISHES[0].id] },
+      rtw: Rtw.blank(),
       visits: {},
       rank: 0,
       difficulty: level,
@@ -308,8 +310,8 @@ const Career = {
   // The same career saved on another device, merged in so the progress of both survives: the one
   // saved last is the base, taken as it is (money, reputation, contracts, the aeroplane and where it
   // is, the log), and what only ever grows is kept from both — the courses, the aircraft, the regions,
-  // the Mriya's parts and finishes, the flights in each type and to each airport, the records and the
-  // rank. Counts take the larger, never the sum, so merging again changes nothing.
+  // the Mriya's parts and finishes, the flights in each type and to each airport, the records, the
+  // rank and the round-the-world marks, records and history. Counts take the larger, never the sum, so merging again changes nothing.
   mergeCloud(remote) {
     const local = this.data;
     this.data = remote;
@@ -327,6 +329,7 @@ const Career = {
     d.mriya.bought = union(d.mriya.bought, o.mriya.bought).filter((id) => d.mriya.placed.indexOf(id) < 0);
     d.mriya.done = !!(d.mriya.done || o.mriya.done);
     if (o.mriya.cheated) d.mriya.cheated = true;
+    Rtw.merge(d.rtw, o.rtw);
     maxEach(d.typeFlights, o.typeFlights);
     maxEach(d.visits, o.visits);
     const order = ['F', 'E', 'D', 'C', 'B', 'A', 'A+'];
@@ -356,6 +359,9 @@ const Career = {
     this.save();
   },
   aircraft() { return AIRCRAFT.find((a) => a.id === this.data.selected) || AIRCRAFT.find((a) => !a.unlock); },
+  // the type a contract is flown in: the one it was dealt for (a round-the-world leg: the
+  // expedition's), else the selected one
+  acOf(c) { return (c && AIRCRAFT.find((a) => a.id === c.aircraftId)) || this.aircraft(); },
   owns(id) { return this.data.aircraft.indexOf(id) >= 0; },
   // (the Mriya: built, and flown only by a pilot with every course passed)
   unlocked(ac) { return !ac.unlock || (ac.legend ? this.mriyaDone() && this.mriyaOpen() : this.has(ac.unlock)); },
@@ -526,7 +532,7 @@ const Career = {
   hasMriyaFinish(id) { return !!(this.data && this.data.mriya.finishes.indexOf(id) >= 0); },
   buyMriyaFinish(id) {
     const f = MRIYA_FINISHES.find((x) => x.id === id);
-    if (!f || this.hasMriyaFinish(id) || this.data.money < finishPrice(f)) return false;
+    if (!f || f.rtw || this.hasMriyaFinish(id) || this.data.money < finishPrice(f)) return false;
     this.data.money -= finishPrice(f);
     this.data.mriya.finishes.push(id);
     this.data.mriya.finish = id;
@@ -696,8 +702,8 @@ const Career = {
   // faction: the client group the board dealt this offer to (dealFaction); without one, any the
   // aeroplane and the destination allow. null when no airline of that group may fly the route,
   // unless `anyClient` (the last-resort mail run: then an airline of another group that may fly
-  // it, else any of the group)
-  makeContract(rng, from, to, distNm, ac, fx, forceType, faction, anyClient) {
+  // it, else any of the group). client: the client given (a round-the-world leg's sponsor)
+  makeContract(rng, from, to, distNm, ac, fx, forceType, faction, anyClient, client) {
     if (!faction) faction = this.dealFaction(this.factionsFor(ac, fx), {}, to, rng);
     // urgent medevac only with the SAR course
     let urgent = false;
@@ -712,7 +718,7 @@ const Career = {
     if ((type === 'pax') && ac.seats < 6) type = 'mail';
     if (forceType) type = ac.loads ? ac.loads[0] : forceType;
 
-    const client = pickAirline(faction, from, to, rng, ac) || (anyClient ? rng.pick(this.mayFly(from, to, faction, ac) ||
+    client = client || pickAirline(faction, from, to, rng, ac) || (anyClient ? rng.pick(this.mayFly(from, to, faction, ac) ||
       clientAirlines(ac).filter((al) => al.kinds.indexOf(faction) >= 0)) : null);
     if (!client) return null;
 
@@ -766,7 +772,8 @@ const Career = {
     };
   },
 
-  contractById(id) { return (this.data.contracts || []).find((c) => c.id === id); },
+  // a contract on the board, or the next leg of the expedition round the world
+  contractById(id) { return (this.data.contracts || []).find((c) => c.id === id) || Rtw.legById(id); },
 
   // ---------- the practice landing ----------
   // a simulator session in the selected aircraft: a share of its hourly lease
@@ -774,8 +781,8 @@ const Career = {
     ac = ac || this.aircraft();
     return Math.max(PRACTICE.FEE_MIN, Math.round(ac.rent * PRACTICE.FEE_LEASE_SHARE / 10) * 10);
   },
-  payPractice() {
-    const fee = this.practiceFee();
+  payPractice(ac) {
+    const fee = this.practiceFee(ac);
     this.data.money -= fee;
     this.save();
     return fee;
@@ -797,7 +804,7 @@ const Career = {
 
   // ---------- flying it ----------
   flightSetup(contract, opts) {
-    const ac = this.aircraft();
+    const ac = this.acOf(contract);
     const from = World.byId[contract.fromId], to = World.byId[contract.toId];
     const rng = makeRng(hashStr(contract.id) ^ (opts.seed || 0));
     const fx = this.effects();
@@ -836,11 +843,13 @@ const Career = {
     const ac = AIRCRAFT.find((a) => a.id === c.aircraftId) || this.aircraft();
     if (result.cheated) {
       d.stats.cheats += result.cheatsUsed || 1;
-      // not paid, but the aeroplane is there: the board is dealt again from the arrival
+      // not paid, but the aeroplane is there: the board is dealt again from the arrival (a
+      // round-the-world leg does not count)
       d.lastTo = c.toId;
+      const rtw = Rtw.legCheated(c);
       this.generateContracts();
       this.save();
-      return { lines: [{ label: 'Cheated run — not paid', value: 0 }], total: 0, rep: 0, grade: result.grade, records: false };
+      return { lines: [{ label: 'Cheated run — not paid', value: 0 }], total: 0, rep: 0, grade: result.grade, records: false, rtw };
     }
     const gm = CONTRACTS.GRADE_MULT[result.grade] || 1;
     const lines = [];
@@ -869,6 +878,9 @@ const Career = {
     }
     if (result.noClearance) lines.push({ label: 'Took off without a clearance (fine)', value: -Math.round(base * SIM.NO_CLEARANCE_FINE) });
     if (result.taxiOverspeed) lines.push({ label: 'Taxi overspeed, {v} kt (fine)', args: { v: result.taxiOverspeed }, value: -Math.round(base * SIM.TAXI_OVERSPEED_FINE) });
+    // a round-the-world leg: stamped in the passport; the last one pays the expedition's reward
+    const rtw = Rtw.legLanded(c, result);
+    if (rtw && rtw.finish) lines.push({ label: rtw.finish.iron ? 'Iron round the world: the reward' : 'Round the world: the reward', value: rtw.finish.kr });
     const total = lines.reduce((s, l) => s + l.value, 0);
     d.money += total;
     let rep = c.repGain * (0.6 + 0.4 * gm);
@@ -892,13 +904,15 @@ const Career = {
     if (total > d.stats.bestPay) d.stats.bestPay = total;
     d.lastTo = c.toId;
     if (c.toId === d.base) d.lastTo = d.base;
+    // (the expedition's finish, logged as it ended, stays on top of the flight's line)
+    const done = rtw && rtw.finish ? d.log.splice(0, rtw.finish.legend ? 2 : 1) : [];
     d.log.unshift(dayLabel(c, result, d.log.length));
-    d.log = d.log.slice(0, 24);
+    d.log = done.concat(d.log).slice(0, 24);
     const bankrupt = d.money < CONTRACTS.START_DEBT_LIMIT;
     const promoted = this.checkRank();
     this.generateContracts();
     this.save();
-    return { lines, total, rep, grade: result.grade, records: true, bankrupt, promoted };
+    return { lines, total, rep, grade: result.grade, records: true, bankrupt, promoted, rtw };
   },
 
   // result.kind: the failure's reason ('police': stopped by the police after a collision, a small
@@ -917,12 +931,15 @@ const Career = {
       d.rep[result.contract.faction] = clamp((d.rep[result.contract.faction] || 0) - rep, 0, 100);
       d.log.unshift(logLine('Flight {from} → {to} lost: {reason}', { from: result.contract.fromId, to: result.contract.toId, reason: result.reason }, d.log.length));
       d.log = d.log.slice(0, 24);
+      // a round-the-world leg: flown again, or (Iron) the expedition is over
+      const rtw = Rtw.legLost(result.contract, result.reason);
       this.save();
-      return { lines, total, rep: -rep, bankrupt: d.money < CONTRACTS.START_DEBT_LIMIT };
+      return { lines, total, rep: -rep, bankrupt: d.money < CONTRACTS.START_DEBT_LIMIT, rtw };
     }
     d.stats.cheats += result.cheated ? 1 : 0;
+    const rtw = result.contract ? Rtw.legCheated(result.contract) : null;
     this.save();
-    return { lines: [{ label: 'Cheated run', value: 0 }], total: 0, rep: 0 };
+    return { lines: [{ label: 'Cheated run', value: 0 }], total: 0, rep: 0, rtw };
   },
 
   resetStats() {

@@ -153,6 +153,7 @@ const UI = {
     else if (r === 'new') { this.newDifficulty = 'medium'; this.showNewCareer(); }
     else if (r === 'howto') { this.backTo = 'title'; this.showHowTo(); }
     else if (Career.data && this.tabs.indexOf(r) >= 0) { this.tab = r; this.showOps(); }
+    else if (Career.data && r === 'rtw') RtwScreen.show();
     else if (Career.data && r === 'briefing') {
       this.tab = 'dispatch';
       if (arg && Career.contractById(arg)) this.showBriefing(arg); else this.showOps();
@@ -195,7 +196,7 @@ const UI = {
       '<span><b>' + World.list.length + '</b>' + tr('airports') + '</span>' +
       '<span><b>' + AIRCRAFT.length + '</b>' + tr('aircraft types') + '</span>' +
       '<span><b>' + nRegions + '</b>' + tr('regions of the world') + '</span>' +
-      '<span><b>' + Object.keys(AIRLINE_BY_CODE).length + '</b>' + tr('real airlines') + '</span>' +
+      '<span><b>' + AIRLINES.length + '</b>' + tr('real airlines') + '</span>' +
       '</div>' +
       '<div class="cardRow">' +
       (has ? '<button class="bigBtn default" data-act="continue">' + tr('Continue career') + '<small>' + esc(Career.data.pilot.name) + ' · ' +
@@ -452,6 +453,7 @@ const UI = {
     if (t === 'network' && REGIONS.some((rg) => { const st = Career.regionState(rg); return st.available && st.afford; })) {
       return { html: '<i class="tabDot"></i>', title: tr('Traffic rights ready to buy') };
     }
+    if (t === 'network' && Rtw.fresh()) return { html: '<i class="tabDot"></i>', title: tr('Round the world is open to you') };
     return null;
   },
 
@@ -475,6 +477,7 @@ const UI = {
     return '<div class="hint">' + tr('Aircraft: <b>{ac}</b> ({klass} · max {nm} nm).', { ac: esc(ac.name), klass: esc(tr(ac.klass)), nm: ac.maxRangeNm }) + ' ' +
       (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(aptCity(World.byId[d.lastTo])), base: d.base })
         : tr('From your base {base} · open regions: {n} — more in the Network tab.', { base: d.base, n: d.regions.length })) + '</div>' +
+      RtwScreen.pinned() +
       Filters.boardBar() +
       (!shown.length && FACTIONS[Filters.board().type] ? this.boardGap(Filters.board().type, all.length)
         : '<div class="contracts">' + (list || '<p class="lead">' + tr('No contracts for this aircraft right now — try another type in the hangar.') + '</p>') + '</div>');
@@ -556,11 +559,12 @@ const UI = {
         '<div class="cFoot">' + status + btn + '</div></div></div>';
     }).join('');
     return '<div class="hint">' + tr('You start with Swedish domestic flying out of Arlanda. Each region of the world needs traffic rights: earn the reputation and the flights, then buy them. A leg may be up to {nm} nm — further than that, fly there in legs and the board offers onward flights.',
-      { nm: CONTRACTS.MAX_NM.toLocaleString('en-US') }) + '</div><div class="cards planes">' + cards + '</div>';
+      { nm: CONTRACTS.MAX_NM.toLocaleString('en-US') }) + '</div>' + RtwScreen.card() + '<div class="cards planes">' + cards + '</div>';
   },
 
   requirement(c) {
-    const ac = Career.aircraft();
+    // (a leg round the world is flown in the expedition's type, whatever is selected)
+    const ac = c.rtw ? Career.acOf(c) : Career.aircraft();
     if (c.aircraftId && c.aircraftId !== ac.id) return tr('Offered for another aircraft type');
     if (c.payloadKg + ac.emptyKg > ac.mtow) return tr('Too heavy for {ac}', { ac: ac.name });
     if (c.distanceNm > ac.maxRangeNm) return tr('Beyond the range of {ac}', { ac: ac.name });
@@ -635,7 +639,7 @@ const UI = {
       '<div class="lgFinishes"><span>' + tr('Colour') + '</span>' + MRIYA_FINISHES.map((f) => {
         const own = Career.hasMriyaFinish(f.id), on = Career.mriyaFinish().id === f.id;
         return '<button class="lgSwatch' + (on ? ' on' : '') + (own ? '' : ' buy') + '" data-act="' + (own ? 'mriyaFinish' : 'mriyaTry') + '" data-v="' + f.id + '" aria-pressed="' + on + '" title="' +
-          esc(tr(f.name) + (own ? '' : ' · ' + fmtMoney(finishPrice(f)))) + '" aria-label="' + esc(tr(f.name)) + '">' + finishDot(f) + '</button>';
+          esc(tr(f.name) + (own ? '' : ' · ' + (f.rtw ? tr('Earned by flying the Dream round the world') : fmtMoney(finishPrice(f))))) + '" aria-label="' + esc(tr(f.name)) + '">' + finishDot(f) + '</button>';
       }).join('') + '<b class="lgFinName">' + esc(tr(Career.mriyaFinish().name)) + '</b></div>' +
       '<div class="cFoot">' + (misfit ? '<p class="fitWarn">⚠ ' + esc(this.misfitText(a, here, misfit)) + '</p>' : '') +
       (done ? '<button class="btn" data-act="mriya">' + tr('Assembly hall') + '</button>' +
@@ -874,7 +878,7 @@ const UI = {
       : '<div class="cvName">' + esc(d.pilot.name) + '<button class="cvEdit" data-act="rename" title="' + esc(tr('Change the name')) + '" aria-label="' +
         esc(tr('Change the name')) + '">' + PENCIL_SVG + '</button></div>';
     return '<div class="cvHero">' +
-      '<div class="cvBadge"><span>' + esc(initials) + '</span>' + epaulette(rank) + '</div>' +
+      '<div class="cvBadge"><span>' + esc(initials) + '</span>' + epaulette(rank) + (Rtw.medal() ? rtwMedal(Rtw.medal()) : '') + '</div>' +
       '<div class="cvWho">' + name +
       '<div class="cvChips"><span class="cvChip gold">' + rank.licence + '</span>' +
       '<span class="cvChip">' + esc(tr(rank.title)) + '</span>' +
@@ -910,6 +914,7 @@ const UI = {
       '</div><div>' +
       '<section class="cvCard"><h3>' + tr('Unlocked by your courses') + count(opened, unlocks.length) + '</h3><ul class="unlocks">' +
       unlocks.map((u) => unlockLine(u[0], u[1])).join('') + '</ul></section>' +
+      RtwScreen.careerCard() +
       this.cloudCard() +
       '</div></div>' +
       '<div class="btnRow"><button class="btn danger" data-act="wipe">' + tr('Delete career') + '</button></div>';
@@ -970,13 +975,13 @@ const UI = {
   showBriefing(contractId) {
     const c = Career.contractById(contractId);
     if (!c) return;
-    const ac = Career.aircraft();
+    const ac = Career.acOf(c);
     if (this.requirement(c)) { this.showOps(); return; }
     Game.mode = 'briefing';
     this.selContract = c.id;
     const from = World.byId[c.fromId], to = World.byId[c.toId];
     const setup = Career.flightSetup(c, { seed: 0 });
-    const fee = Career.practiceFee();
+    const fee = Career.practiceFee(ac);
     const w = (x, a) => this.airportRows(x, a, a === from ? c.depGate : c.arrGate);
     this.panel(
       '<div class="screenBar"><button class="btn back" data-act="tab" data-v="dispatch" data-esc>' + tr('Back to the board') + '</button></div>' +
@@ -984,6 +989,7 @@ const UI = {
       '<div class="briefTop"><div class="bigRoute">' + routeHtml(c.fromId, c.toId) + '</div>' +
       '<div class="bigPay">' + fmtMoney(c.pay) + '</div></div>' +
       (typeof RouteMap !== 'undefined' ? '<img class="briefMap" src="' + RouteMap.url(from, to) + '" alt="' + esc(c.fromId + ' → ' + c.toId) + '">' : '') +
+      RtwScreen.briefHtml(c) +
       '<div class="briefCols"><div>' +
       '<h3>' + flagImg(from) + esc(aptName(from)) + ' · ' + from.id + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
       '<h3>' + flagImg(to) + esc(aptName(to)) + ' · ' + to.id + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
@@ -1068,8 +1074,8 @@ const UI = {
       '<p class="fineprint">' + tr('Practice fee {fee}', { fee: fmtMoney(r.fee) }) +
       (best ? ' · ' + tr('best practice on this contract: +{r} reputation', { r: best.toFixed(1) }) : '') + '</p>' +
       '<div class="btnRow">' +
-      '<button class="btn default" data-act="practice"' + (Career.data.money < Career.practiceFee() ? ' disabled' : '') + '>' +
-      tr('Try again · {fee}', { fee: fmtMoney(Career.practiceFee()) }) + '</button>' +
+      '<button class="btn default" data-act="practice"' + (Career.data.money < Career.practiceFee(Career.acOf(c)) ? ' disabled' : '') + '>' +
+      tr('Try again · {fee}', { fee: fmtMoney(Career.practiceFee(Career.acOf(c))) }) + '</button>' +
       '<button class="btn fwd" data-act="fly">' + tr('Fly it for real') + '</button>' +
       '</div>', 'narrow');
   },
@@ -1096,6 +1102,7 @@ const UI = {
         '<li>' + tr('Damage {p} %', { p: Math.round(result.damage * 100) }) + '</li>' +
         (result.cheated ? '<li class="need">' + tr('Cheats used — no pay, no reputation, no records') + '</li>' : '') +
         '</ul></div></div>') +
+      RtwScreen.debriefHtml(p.rtw) +
       '<h3>' + tr('Invoice') + '</h3><table class="money">' +
       p.lines.map((l) => '<tr><td>' + esc(tr(l.label, l.args)) + '</td><td class="' + (l.value < 0 ? 'neg' : '') + '">' +
         (l.value < 0 ? '−' : '') + fmtMoney(Math.abs(l.value)) + '</td></tr>').join('') +
@@ -1109,10 +1116,13 @@ const UI = {
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="btnRow">' +
       (p.bankrupt ? '<button class="btn default" data-act="gameover">' + tr('Start again') + '</button>'
-        : failed ? '<button class="btn default" data-act="retry">' + tr('Try again') + '</button><button class="btn" data-act="ops">' + tr('Back to ops') + '</button>'
+        : failed && !(p.rtw && p.rtw.lost) ? '<button class="btn default" data-act="retry">' + tr('Try again') + '</button><button class="btn" data-act="ops">' + tr('Back to ops') + '</button>'
+          : failed ? '<button class="btn default" data-act="ops">' + tr('Back to ops') + '</button>'
           : '<button class="btn default fwd" data-act="ops">' + tr('Next flight') + '</button>') +
       '</div>';
     this.panel(body, 'debrief');
+    // the last leg round the world: the finish over the debrief, once
+    if (p.rtw && p.rtw.finish && !result.rtwShown) { result.rtwShown = true; RtwScreen.finale(p.rtw.finish); }
   },
 
   // ---------- pause ----------
@@ -1352,6 +1362,8 @@ const UI = {
       case 'mriya': MriyaScreen.show(); break;
       case 'mriyaFinish': Career.setMriyaFinish(v); this.showOps(); break;
       case 'mriyaTry': MriyaScreen.show(v); break;
+      case 'rtw': RtwScreen.act(v); break;
+      case 'rtwQuit': RtwScreen.quit(v); break;
       case 'boardFilter': Filters.boardAction(v); this.showOps(); break;
       case 'hangarFilter': Filters.hangarAction(v); this.showOps(); break;
       case 'acFor': Filters.hangarFor(v); this.tab = 'hangar'; this.showOps(); break;
@@ -1390,9 +1402,9 @@ const UI = {
         // from the briefing or the practice result: the same contract, a new paid session
         const c = Career.contractById(this.selContract) || this.lastContract;
         if (!c) { this.showOps(); break; }
-        if (Career.data.money < Career.practiceFee()) break;
+        if (Career.data.money < Career.practiceFee(Career.acOf(c))) break;
         this.lastContract = c;
-        const fee = Career.payPractice();
+        const fee = Career.payPractice(Career.acOf(c));
         enterFullscreen();
         Game.mode = 'ops';
         Game.launch(c, { practice: true, fee });
@@ -1410,9 +1422,15 @@ const UI = {
       case 'tod': Career.setTimeOfDay(v); this.showBriefing(this.selContract); break;
       case 'startMode': Career.setSkipPushback(v === 'pushback'); this.showBriefing(this.selContract); break;
       case 'retry':
+        // (a leg round the world only while it is still the expedition's next one)
+        if (this.lastContract && this.lastContract.rtw && !Rtw.isLeg(this.lastContract)) { Game.abortToOps(); break; }
         if (this.lastContract) { enterFullscreen(); Game.launch(this.lastContract, { skipPushback: Career.skipPushback }); }
         break;
-      case 'ops': Game.abortToOps(); break;
+      case 'ops':
+        // leaving an Iron leg in the air loses the expedition: asked first
+        if (Game.mode === 'paused' && Game.contract && Rtw.ironAtStake(Game.contract)) { RtwScreen.confirmQuit('ops'); break; }
+        Game.abortToOps();
+        break;
       case 'resume': Game.pause(); break;
       case 'pauseFlight': if (Game.mode === 'paused') this.showPauseCard('flight'); break;
       case 'pauseAircraft': if (Game.mode === 'paused') this.showPauseCard('aircraft'); break;
@@ -1420,6 +1438,7 @@ const UI = {
       case 'restart':
         // a practice restarts as a practice (a new session, paid again)
         if (Game.contract && Game.practice) { this.selContract = Game.contract.id; this.action('practice'); }
+        else if (Game.contract && Rtw.ironAtStake(Game.contract)) RtwScreen.confirmQuit('restart');
         else if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
         break;
       case 'gameover': Cloud.careerDeleted(); Career.reset(); Cloud.careerOpened(); Game.mode = 'menu'; this.showTitle(); break;
@@ -1486,7 +1505,7 @@ const COURSE_COLOR = { general: '#8fc0ea', pax: FACTIONS.pax.color, cargo: FACTI
 function logKind(l) {
   const t = l.tpl || l.text || '';
   if (/lost/.test(t)) return 'lost';
-  if (/Mriya/.test(t) || /^Promoted/.test(t)) return 'legend';
+  if (/Mriya/.test(t) || /^Promoted/.test(t) || /round the world in|Dream has flown/.test(t)) return 'legend';
   if (/^Traffic rights/.test(t)) return 'rights';
   if (l.args && l.args.g) return l.args.g === 'A+' || l.args.g === 'A' ? 'top' : l.args.g === 'E' || l.args.g === 'F' ? 'bad' : 'flight';
   return 'note';

@@ -1744,3 +1744,161 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 .lgFinishes { gap: 3px; }
 .lgSwatch { padding: 1px; }
 .lgSwatch .mDot { width: 20px; height: 20px; }
+
+/* ---------- round the world (ui/rtw.js): its screen, its cards, the passport, the finish ---------- */
+.banner.rtw { background: rgba(10, 26, 50, 0.92); border-color: #e0bb5a; color: #fbeec4; }
+.rtwTitle { color: #fff3cf; }
+.rtwHero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: center; margin: 6px 0 14px; }
+.rtwGlobeBox { position: relative; aspect-ratio: 1 / 1; max-height: 460px; width: 100%; margin: 0 auto; }
+.rtwGlobeBox canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.rtwGlobeBox canvas:active { cursor: grabbing; }
+.rtwTurn { position: absolute; left: 0; right: 0; bottom: 2px; text-align: center; font-size: 11px; color: #8fa3b8; pointer-events: none; }
+.rtwToast { position: absolute; left: 50%; top: 8px; max-width: 90%; transform: translateX(-50%); padding: 5px 12px; border-radius: 8px;
+  background: rgba(60, 20, 12, 0.92); border: 1px solid #ff7a5c; color: #ffd0c2; font-size: 12px; font-weight: 600;
+  opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+.rtwToast.on { opacity: 1; }
+.rtwGauges { display: grid; gap: 14px; justify-items: center; }
+.rtwRing { --p: 0%; display: grid; place-items: center; width: 168px; height: 168px; border-radius: 50%;
+  background: conic-gradient(#f1c75b var(--p), rgba(140, 170, 200, 0.16) 0); box-shadow: 0 0 24px rgba(241, 199, 91, 0.18); }
+.rtwRing > div { display: grid; place-items: center; align-content: center; width: 138px; height: 138px; border-radius: 50%; background: #0f1720; text-align: center; }
+.rtwRing b { font-size: 34px; color: #ffe7a6; line-height: 1; }
+.rtwRing span { margin-top: 4px; max-width: 110px; font-size: 11px; color: #9fb0c3; line-height: 1.3; }
+.rtwKm { width: 100%; max-width: 320px; text-align: center; }
+.rtwKm b { display: block; margin-top: 6px; font-size: 20px; color: #eaf3fb; }
+.rtwKm span { font-size: 12px; color: #9fb0c3; }
+.rtwKmBar { position: relative; height: 10px; border-radius: 6px; background: #252e38; }
+.rtwKmBar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #b88a2c, #ffe08a); box-shadow: 0 0 10px rgba(255, 217, 122, 0.5); }
+.rtwKmBar em { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: #ffffff; border-radius: 1px; }
+.rtwKmBar.small { height: 7px; margin: 6px 0; max-width: 320px; }
+.rtwVerdict { margin: 0; max-width: 320px; text-align: center; font-size: 13px; color: #ffcfae; line-height: 1.45; }
+.rtwVerdict.ok { color: #9be8ac; }
+.rtwSec { margin: 4px 0 12px; }
+.rtwTypes { display: flex; flex-wrap: wrap; gap: 6px; }
+.rtwTypes .chip small { margin-left: 4px; color: #9fb0c3; font-weight: 500; }
+.rtwRoutes { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.rtwRoute { display: grid; grid-template-columns: 64px 1fr; grid-template-rows: auto auto 1fr; gap: 2px 10px; align-items: start; padding: 10px 12px;
+  border: 1px solid rgba(140, 170, 200, 0.2); border-radius: 12px; background: #131b24; color: #c3d1de; text-align: left; cursor: pointer; font: inherit; }
+.rtwRoute img { grid-row: 1 / 4; width: 64px; height: 64px; }
+.rtwRoute b { font-size: 15px; color: #eaf3fb; }
+.rtwRoute span { font-size: 12px; color: #ffd97a; }
+.rtwRoute small { font-size: 12px; line-height: 1.4; color: #9fb0c3; }
+.rtwRoute em { grid-column: 2; font-size: 12px; font-style: normal; color: #ffb59e; }
+.rtwRoute.own { grid-template-columns: 1fr; }
+.rtwRoute.own img { display: none; }
+.rtwRoute.on { border-color: #ffd97a; box-shadow: 0 0 0 1px #ffd97a, 0 0 18px rgba(255, 217, 122, 0.18); background: #1a1d17; }
+.rtwRoute.no { opacity: 0.75; }
+.rtwRoute:focus-visible { outline: 2px solid #ffd97a; outline-offset: 2px; }
+@media (hover: hover) { .rtwRoute:hover { border-color: rgba(255, 217, 122, 0.55); } }
+.rtwLegs { margin: 10px 0 6px; padding: 7px 10px; list-style: none; border-radius: 10px; background: rgba(9, 14, 20, 0.55); font-size: 13px; }
+.rtwLegs li { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 2px 8px; padding: 4px 0; border-bottom: 1px dashed rgba(140, 170, 200, 0.09); color: #c3d1de; }
+.rtwLegs li:last-child { border-bottom: 0; }
+.rtwLegs li i { font-style: normal; font-weight: 700; text-align: center; color: #8fa3b8; }
+.rtwLegs li span { font: 600 12px ui-monospace, monospace; color: #9fb0c3; }
+.rtwLegs li em { grid-column: 2 / 4; font-size: 12px; font-style: normal; color: #ffb59e; }
+.rtwLegs li.done i { color: #9be8ac; }
+.rtwLegs li.next { color: #fff3cf; }
+.rtwLegs li.next i { color: #ffd97a; }
+.rtwLegs li.later { color: #8fa3b8; }
+.rtwLegs li.bad i { color: #ff8a73; }
+.rtwAdd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; }
+.rtwAdd label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #c3d1de; }
+.rtwAdd select { max-width: min(340px, 70vw); padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(140, 170, 200, 0.3); background: #0f1720; color: #eaf3fb; font: inherit; font-size: 13px; }
+.rtwNext { margin: 4px 0 12px; padding: 10px 14px 12px; border: 1px solid rgba(255, 217, 122, 0.35); border-radius: 12px; background: linear-gradient(135deg, #1b1810 0%, #11161d 70%); }
+.rtwNextHead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 4px; }
+.rtwNextHead b { color: #fff3cf; }
+.rtwMode { padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.4px; background: rgba(255, 217, 122, 0.16); color: #ffd97a; white-space: nowrap; }
+.rtwMode.iron { background: #3b434c; color: #e3e8ee; box-shadow: inset 0 0 0 1px #8a949e; }
+.rtwConfirm { margin: 8px 0; padding: 10px 14px; border: 1px solid #ff7a5c; border-radius: 12px; background: rgba(60, 20, 12, 0.5); }
+.rtwConfirm p { margin: 0 0 4px; color: #ffd0c2; }
+/* the passport: a stamp per leg, tilted a little, the airport's colour round it */
+.rtwPassport { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; padding: 12px; border-radius: 12px;
+  background: repeating-linear-gradient(0deg, #101923 0 23px, #13202c 23px 24px); }
+.rtwStamp { position: relative; display: grid; justify-items: center; gap: 1px; padding: 8px 6px 7px; border: 2px solid var(--c); border-radius: 10px;
+  background: #152131; transform: rotate(var(--tilt)); box-shadow: inset 0 0 0 3px #152131, inset 0 0 0 4px var(--c); text-align: center; }
+.rtwStamp .rtwSym { width: 34px; height: 34px; }
+.rtwStamp b { font: 800 17px ui-monospace, monospace; color: #f2f6fa; letter-spacing: 1px; }
+.rtwStamp span { font-size: 11px; color: #c3d1de; }
+.rtwStamp small { font-size: 10px; color: #8fa3b8; }
+.rtwStamp em.g { position: absolute; right: 5px; top: 4px; font: 800 12px system-ui, sans-serif; font-style: normal; color: #c3d1de; }
+.rtwStamp em.g.top { color: #9be8ac; }
+.rtwStamp em.g.bad { color: #ffb59e; }
+.rtwNeptune { position: absolute; left: 6px; top: 4px; font-style: normal; font-size: 13px; }
+.rtwTable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rtwTable th, .rtwTable td { padding: 5px 6px; border-bottom: 1px dashed rgba(140, 170, 200, 0.12); text-align: center; color: #c3d1de; }
+.rtwTable th:first-child { text-align: left; color: #eaf3fb; font-weight: 600; }
+.rtwTable thead th { font-size: 11px; font-weight: 700; color: #8fa3b8; text-transform: uppercase; letter-spacing: 0.6px; }
+.rtwMarks td.on { color: #ffd97a; font-weight: 800; }
+.rtwMarks td.on.iron { color: #e3e8ee; }
+.rtwMedalLine { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 13px; color: #e2d3a8; }
+.rtwHistory { margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.rtwHistory li { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; padding: 6px 0; border-bottom: 1px dashed rgba(140, 170, 200, 0.12); }
+.rtwHistory li:last-child { border-bottom: 0; }
+.rtwHistory li b { color: #eaf3fb; }
+.rtwHistory li span { grid-column: 1; font-size: 12px; color: #9fb0c3; }
+.rtwHistory li .btn { grid-row: 1 / 3; grid-column: 2; }
+.rtwHistory li.done b { color: #ffd97a; }
+.rtwHistory li.lost b { color: #ffb59e; }
+.rtwHistory li.abandoned b { color: #9fb0c3; }
+/* the medal: a globe in silver, iron or gold */
+.rtwMedal { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #c9d1d9 45%, #7d8792); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); }
+.rtwMedal svg { width: 18px; height: 18px; fill: none; stroke: #2a3440; stroke-width: 1.4; }
+.rtwMedal.iron { background: radial-gradient(circle at 35% 30%, #9aa3ad, #4b535c 50%, #23292f); }
+.rtwMedal.iron svg { stroke: #dfe5ea; }
+.rtwMedal.gold { background: radial-gradient(circle at 35% 30%, #fff4c8, #e6b84a 45%, #9a6d1c); }
+.rtwMedal.gold svg { stroke: #4a3208; }
+.cvBadge .rtwMedal { position: absolute; left: -10px; bottom: -6px; }
+/* its card on top of the Network tab */
+.rtwCard { position: relative; display: grid; grid-template-columns: 200px minmax(0, 1fr); margin-bottom: 14px; overflow: hidden;
+  border: 1px solid rgba(140, 170, 200, 0.22); border-radius: 14px; background: linear-gradient(135deg, #101b2b 0%, #11161d 65%); }
+.rtwCard.open { border-color: #c9a44a; animation: lgGlow 4.5s ease-in-out infinite; }
+.rtwCard.fresh { box-shadow: 0 0 0 2px #ffd97a, 0 0 30px rgba(255, 217, 122, 0.35); }
+.rtwCardPic { position: relative; display: grid; place-items: center; padding: 10px;
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(80, 150, 220, 0.25), transparent 75%), #0b1520; }
+.rtwCardPic img { width: 100%; max-width: 180px; aspect-ratio: 1 / 1; }
+.rtwCard:not(.open) .rtwCardPic img { filter: grayscale(0.6) brightness(0.8); }
+.rtwCardMedal { position: absolute; right: 10px; top: 10px; }
+.rtwCardMain { display: flex; flex-direction: column; padding: 14px 16px; }
+.rtwCardMain .cFoot { margin-top: auto; padding-top: 10px; }
+.rtwChips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.rtwChip { padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #6f8193; background: #1c2631; }
+.rtwChip.on { color: #2a1f05; background: #ffd97a; }
+.rtwChip.iron { color: #f2f5f8; background: #4b535c; box-shadow: inset 0 0 0 1px #9aa3ad; }
+@media (max-width: 640px) { .rtwCard { grid-template-columns: 1fr; } .rtwCardPic img { max-width: 160px; } }
+@media (max-width: 760px) { .rtwHero { grid-template-columns: 1fr; } .rtwGlobeBox { max-width: 420px; } }
+@media (prefers-reduced-motion: reduce) { .rtwCard.open { animation: none; box-shadow: 0 0 0 1px #c9a44a; } }
+/* the next leg pinned over the board */
+.contract.rtwPin { border-color: #c9a44a; background: linear-gradient(135deg, #1b1810 0%, #131b24 70%); margin-bottom: 12px; }
+/* in a leg's briefing and debrief */
+.rtwBrief { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; margin: 10px 0; padding: 10px 12px;
+  border: 1px solid rgba(255, 217, 122, 0.3); border-radius: 12px; background: rgba(255, 217, 122, 0.05); }
+.rtwBrief img { width: 110px; height: 110px; }
+.rtwBrief b { color: #fff3cf; }
+.rtwBrief p { margin: 4px 0 0; font-size: 13px; color: #c3d1de; line-height: 1.45; }
+.rtwDebrief { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; margin: 12px 0; padding: 12px 14px;
+  border: 1px solid rgba(255, 217, 122, 0.35); border-radius: 12px; background: rgba(255, 217, 122, 0.06); }
+.rtwDebrief.lost, .rtwDebrief:not(:has(.rtwDebriefStamp)) { grid-template-columns: 1fr; }
+.rtwDebrief.lost { border-color: #ff7a5c; background: rgba(60, 20, 12, 0.45); }
+.rtwDebrief b { color: #fff3cf; }
+.rtwDebrief p { margin: 4px 0 0; font-size: 13px; color: #c3d1de; }
+.rtwDebriefStamp .rtwStamp { width: 118px; }
+/* the finish and the certificate, over the debrief */
+.rtwFinale, .rtwCert { position: fixed; inset: 0; z-index: 110; display: grid; place-items: center; padding: 16px; overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 50%, rgba(10, 24, 50, 0.45), rgba(0, 0, 0, 0.65)); animation: mFade 0.6s ease-out; }
+.rtwCert { z-index: 120; }
+.rtwFinaleCard { position: relative; max-width: 560px; padding: 18px 22px 18px; text-align: center; border: 1px solid #ffd97a; border-radius: 18px;
+  background: rgba(10, 20, 38, 0.9); box-shadow: 0 0 60px rgba(255, 200, 90, 0.3), 0 30px 80px rgba(0, 0, 0, 0.6); animation: mPop 0.9s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.rtwFinaleGlobe { width: min(260px, 60vw); height: min(260px, 60vw); }
+.rtwFinaleMedal { position: absolute; left: 50%; top: calc(min(260px, 60vw) + 6px); transform: translate(-50%, -60%); }
+.rtwFinaleMedal .rtwMedal { width: 52px; height: 52px; }
+.rtwFinaleMedal .rtwMedal svg { width: 36px; height: 36px; }
+.rtwFinaleCard h2 { margin: 18px 0 6px; font-size: 26px; color: #fff3cf; }
+.rtwFinaleCard p { margin: 0 0 4px; color: #d6dfe9; line-height: 1.5; }
+.rtwFinaleReward { color: #ffd97a !important; font-weight: 600; }
+.rtwFinaleCard .btnRow { justify-content: center; }
+.rtwCertCard { max-width: min(980px, 100%); text-align: center; }
+.rtwCertCard img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
+.rtwCertCard .btnRow { justify-content: center; }
+.rtwCertCard a.btn { text-decoration: none; }
+@media (prefers-reduced-motion: reduce) { .rtwFinale, .rtwCert, .rtwFinaleCard { animation: none; } }
+.stripRow.rtw span:first-child { color: #ffd97a; }

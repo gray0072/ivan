@@ -28,6 +28,7 @@
 
 const Scene3D = {
   renderer: null, scene: null, camera: null,
+  salute: null,                // the water salute at the arrival ({ route }: render/salute3d.js), set by game.js
   quality: QUALITY.medium,
   sun: null, hemi: null, sky: null,
   farMesh: null, nearMesh: null, water: null,
@@ -427,6 +428,7 @@ const Scene3D = {
   setFlightGates(gates, arrival) {
     this.flightGates = gates || [];
     this.arrivalGate = arrival || null;
+    this.salute = null;
     for (const rec of this.airports3D.values()) this.applyGates(rec);
   },
   applyGates(rec) {
@@ -855,6 +857,8 @@ const Scene3D = {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
       if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis, own);
       Responders3D.update(rec, fl, rec.a.id === fl.arrival.id ? this.arrivalGate : null, this.time, dark);
+      // (coming home from round the world: the fire engines' water arch, salute3d.js)
+      Salute3D.update(rec, fl, this.salute, this.time, dark);
       // (the van, the pickup or the ambulance for the load at a GA stand: ga3d.js)
       Ga3D.updateLoad(rec, fl, fl.world && rec.a.id === fl.world.id ? fl.startGate : null, rec.a.id === fl.arrival.id ? this.arrivalGate : null);
     }

@@ -462,6 +462,23 @@ const AircraftModels = {
           });
         }
       }
+      // (the Meridian finish: a globe with its meridians on each side by the tail, round on the
+      // body although the canvas has more pixels to the metre along it than round it)
+      if (fin.globe) {
+        const rm = d.radius * 0.62, rx = rm * px, ry = rm * H / (TAU * d.radius);
+        g.strokeStyle = fin.globe; g.lineWidth = Math.max(2, ry * 0.09);
+        for (const deg of [70, 290]) {
+          const cx = W * 0.17, cy = yAt(deg);
+          g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, 0, TAU); g.stroke();
+          g.beginPath(); g.ellipse(cx, cy, rx * 0.45, ry, 0, 0, TAU); g.stroke();
+          g.beginPath(); g.moveTo(cx, cy - ry); g.lineTo(cx, cy + ry); g.stroke();
+          g.beginPath(); g.moveTo(cx - rx, cy); g.lineTo(cx + rx, cy); g.stroke();
+          for (const k of [-0.55, 0.55]) {
+            const w = Math.sqrt(1 - k * k);
+            g.beginPath(); g.moveTo(cx - rx * w, cy + ry * k); g.lineTo(cx + rx * w, cy + ry * k); g.stroke();
+          }
+        }
+      }
       this.titles(g, { livery: { title: fin.title }, title: 'AN-225 MRIYA' }, W, H, L, d.radius, true, false, 0, this.titleSpan(ac, look, L));
     } else if (!lv) {
       // belly

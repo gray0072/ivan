@@ -164,12 +164,15 @@ const MriyaScreen = {
   },
 
   // the finishes: a swatch each, the one it wears lit; one not bought yet is tried on first, with
-  // its price and Buy under the swatches
+  // its price and Buy under the swatches (Meridian is never sold: earned round the world, sim/rtw.js)
   drawFinishes() {
     const cur = Career.mriyaFinish().id, shown = this.trying || cur;
     const f = mriyaFinish(shown);
     let line;
-    if (this.trying) {
+    if (this.trying && f.rtw) {
+      line = '<b>' + esc(tr(f.name)) + '</b> — ' + esc(tr(f.blurb)) + ' <span class="mFinPrice">🌐 ' + tr('Earned by flying the Dream round the world') + '</span>' +
+        '<span class="mFinBtns"><button class="btn small" data-m="finishCancel">' + tr('Back to {name}', { name: esc(tr(mriyaFinish(cur).name)) }) + '</button></span>';
+    } else if (this.trying) {
       const why = Career.data.money < finishPrice(f) ? tr('Needs {kr}', { kr: fmtMoney(finishPrice(f)) }) : null;
       line = '<b>' + esc(tr(f.name)) + '</b> — ' + esc(tr(f.blurb)) + ' <span class="mFinPrice">' + fmtMoney(finishPrice(f)) + '</span>' +
         '<span class="mFinBtns"><button class="btn small' + (why ? ' disabled' : ' default') + '" data-m="finishBuy"' + (why ? ' disabled' : '') + '>' +
@@ -178,7 +181,7 @@ const MriyaScreen = {
     el('mFin').innerHTML = '<div class="mSwatches">' + MRIYA_FINISHES.map((x) => {
       const own = Career.hasMriyaFinish(x.id);
       return '<button class="mSwatch' + (x.id === shown ? ' on' : '') + (own ? ' own' : '') + '" data-m="finish" data-id="' + x.id + '" aria-pressed="' + (x.id === shown) + '" title="' + esc(tr(x.name)) + '">' +
-        finishDot(x) + '<span>' + esc(tr(x.name)) + '</span><small>' + (x.id === cur ? '✓ ' + tr('On it') : own ? tr('Yours') : fmtMoney(finishPrice(x))) + '</small></button>';
+        finishDot(x) + '<span>' + esc(tr(x.name)) + '</span><small>' + (x.id === cur ? '✓ ' + tr('On it') : own ? tr('Yours') : x.rtw ? '🌐 ' + tr('Round the world') : fmtMoney(finishPrice(x))) + '</small></button>';
     }).join('') + '</div><p class="mFinLine">' + line + '</p>';
   },
   // a swatch pressed: one the pilot has goes on at once; another is tried on

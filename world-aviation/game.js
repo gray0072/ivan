@@ -80,6 +80,7 @@ const Game = {
       Scene3D.setQuality(this.quality);
     };
     Career.load();
+    Rtw.atBoot();           // (an Iron leg left in the air by a closed page is lost: sim/rtw.js)
     this.last = performance.now();
     this.mode = 'menu';
     el('bootScreen').hidden = true;
@@ -157,6 +158,8 @@ const Game = {
     // a flight that ended in this frame (a practice landing, the debrief) is already silenced: keep it so
     Audio2.update(dt, this.mode === 'flying' ? fl : null, sys);
     if (!cine) Cabin.update(this.mode === 'flying' ? fl : null, sys, this);
+    // a leg round the world: its take-off, the equator, the date line, halfway round (ui/rtw.js)
+    if (typeof RtwFlight !== 'undefined') RtwFlight.update(this.mode === 'flying' ? fl : null, this);
 
     // messages and panels (the tower's clearance at the runway waits for the end of the intro)
     if (!cine) while (fl.events.length) HUD.push(fl.events.shift());
@@ -811,6 +814,12 @@ const Game = {
     const exit = Guidance.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
     this.arrivalRoute = World.findRoute(a, exit, this.arrivalGate.node);
     fl.setPhase('EXIT');
+    // home from round the world: the fire engines' water arch over the way to the stand
+    const c = this.contract;
+    if (!this.practice && c && c.rtw && c.rtw.leg === c.rtw.of - 1 && Rtw.isLeg(c)) {
+      Scene3D.salute = { route: this.arrivalRoute };
+      HUD.showBanner('🌐 ' + tr('Welcome home — round the world! The fire engines greet you with a water arch.'), 'rtw', RTW.BANNER_MS);
+    }
     fl.info(tr(fl.followMe ? 'Ground: welcome to {id} — a FOLLOW ME car waits past the exit and leads you to {gate}'
       : 'Leave the runway at the next exit and taxi to {gate}', { id: a.id, gate: gateName(this.arrivalGate) }));
   },

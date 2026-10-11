@@ -1124,6 +1124,20 @@ const MRIYA = {
   FINISH_KR: 1000000           // a finish (data/mriya.js) costs its `price` times this, kronor, once (1 to 5 million)
 };
 
+// ---------- Round the world (sim/rtw.js, ui/rtw.js; the routes and the sponsor: data/rtw.js) ----------
+// A chain of legs in one aeroplane from the home base round the globe and back, by the rules of
+// the real round-the-world records: every leg the same way round, 360° of longitude in all, at
+// least the length of the Tropic of Cancer.
+const RTW = {
+  MIN_KM: 36788,               // the shortest route that counts: the Tropic of Cancer, km
+  COURSE: 'paxetops',          // opens with this course (ETOPS & Ocean Crossings) and every region's rights
+  REWARD_KR: 1500000,          // a finish pays this ...
+  REWARD_REP: 5,               // ... and this much reputation with every client group
+  IRON_MULT: 2,                // an Iron finish: the reward times this
+  HISTORY_MAX: 30,             // expeditions kept in the history
+  BANNER_MS: 6000              // the equator, the date line and halfway round: their banner in the flight, ms
+};
+
 // ---------- Contract generation ----------
 // All money is Swedish kronor (SEK).
 const CONTRACTS = {

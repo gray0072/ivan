@@ -65,7 +65,11 @@ const MRIYA_FINISHES = [
   { id: 'aurora', price: 4, name: 'Aurora', blurb: 'Arctic white with the northern lights flowing along its sides, green into blue into violet.',
     light: '#ffffff', base: '#edf3f6', shade: '#c4d3dc', accent: '#2f9e8f', lines: ['#36d1a6', '#3a8fd9', '#8a5ad9'], flow: true, title: '#2a6f8f', specular: 0xffffff, shininess: 60 },
   { id: 'gold', price: 5, name: 'Gold', blurb: 'Polished gold from nose to tail, a dark gold line along it. Nobody will miss it.',
-    light: '#f3d27a', base: '#c99a3e', shade: '#8a6420', accent: '#c99a3e', lines: ['#6e4c10'], title: '#6e4c10', specular: 0xfff0c8, shininess: 90 }
+    light: '#f3d27a', base: '#c99a3e', shade: '#8a6420', accent: '#c99a3e', lines: ['#6e4c10'], title: '#6e4c10', specular: 0xfff0c8, shininess: 90 },
+  // not sold: earned by flying the Mriya round the world (sim/rtw.js, RTW_FINISH)
+  { id: 'meridian', price: 0, rtw: true, name: 'Meridian', blurb: 'Midnight navy, a gold line flowing along the sides and a gold globe with its meridians by the tail: earned by flying the Dream round the world.',
+    light: '#2b4475', base: '#14244a', shade: '#08122a', accent: '#c9a24a', lines: ['#a87f2c', '#f1d488', '#a87f2c'], flow: true, globe: '#e0bb5a',
+    title: '#e6c770', specular: 0xffe6b0, shininess: 85 }
 ];
 
 // the legend, on the assembly hall's first screen

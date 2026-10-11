@@ -126,6 +126,8 @@ const HUD = {
         '<div class="stripRow"><b>' + esc(c.client) + '</b><span>' + esc(tr(PAYLOAD[c.type] ? PAYLOAD[c.type].name : c.type).toUpperCase()) + '</span></div>' +
         '<div class="stripRow"><span>' + tr('AIRCRAFT') + '</span><b>' + esc(fl.ac.name) + '</b></div>' +
         '<div class="stripRow big route">' + routeHtml(c.fromId, c.toId) + '</div>' +
+        // (a leg round the world: its place in the chain, ui/rtw.js)
+        (c.rtw && !fl.practice ? '<div class="stripRow rtw"><span>🌐 ' + tr('ROUND THE WORLD') + '</span><b>' + tr('leg {n} / {m}', { n: c.rtw.leg + 1, m: c.rtw.of }) + '</b></div>' : '') +
         apt(c.fromId) + apt(c.toId) +
         '<div class="stripRow"><span>' + (c.pax ? tr('{n} pax', { n: c.pax }) + ' · ' : '') + Math.round(c.payloadKg).toLocaleString('sv-SE') + ' kg</span>' +
         '<span>' + Units.dist(c.distanceNm) + '</span></div>' +
@@ -151,7 +153,9 @@ const HUD = {
         fmtTonnes(fl.weight()) + ' / ' + fmtTonnes(fl.ac.mtow) + ' t</span></div>' +
       '<div class="stripRow"><span>' + tr('LOCAL TIME, {id}', { id: dep.id }) + '</span><span>' + fmtClock(clock % 86400) + '</span></div>' +
       '<div class="stripRow"><span>' + tr('LOCAL TIME, {id}', { id: arr.id }) + '</span><span>' + fmtClock(arrClock) + '</span></div>' +
-      '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>';
+      '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +
+      (c.rtw && !fl.practice && typeof RtwFlight !== 'undefined' && RtwFlight.fl === fl
+        ? '<div class="stripRow rtw"><span>' + tr('ROUND THE WORLD') + '</span><span>' + Math.round(RtwFlight.deg) + '° / 360°</span></div>' : '');
     if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
   },
 
