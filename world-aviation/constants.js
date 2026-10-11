@@ -96,7 +96,9 @@ const SIM = {
   SPOILER_BRAKE_GAIN: 0.35,    // the spoiler out on the ground: the wheel brakes this much stronger
   FLARE_TRIM_HOLD_M: 150,      // by hand on the approach below this height (AGL) the pitch trim stays put
   RADIO_ALT_MAX_FT: 2500,      // the radio altitude (height above the ground) shows in the attitude indicator below this
-  DECISION_HEIGHT_FT: 200,     // ... and turns amber below this on the way down to land
+  // ... and turns amber below this on the way down to land; the autopilot lets go of the glide
+  // path here and engages only above it (by keys and on the touch buttons alike)
+  DECISION_HEIGHT_FT: 200,
   CRASH_PITCH_DEG: -6,         // nose-first ground contact below this pitch is a crash
   AIRPORT_RADIUS_M: 2200,      // ground contact further than this from a runway is off-airport
   PARK_RADIUS_M: 18,           // the parking box at the gate
@@ -1253,9 +1255,6 @@ const CONTROLS = {
   MINIMAP_MIN_H: 640,          // ... and this tall
   MINIMAP_FPS: 6,              // the mini map is redrawn this often
   MAP_GLIDE: 0.15,             // a following map moves this share of the way to its new framing each mini map frame
-  // a touch screen's row of buttons that changes with the flight (HUD.updateButtons): after the
-  // lift-off the autopilot and the time come up this high above the ground (where the climb starts)
-  TOUCH_AP_ROW_AGL_M: 150,
   // a phone shows the fuel only when it is short (HUD.fuelShort): leaking, the low-fuel light, or
   // less on board than this many times what the rest of the route takes as the contract planned
   // it (a flight starts with at least 1.15 times its trip fuel, CONTRACTS.FUEL_MIN_FACTOR)

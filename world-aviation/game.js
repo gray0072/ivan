@@ -616,7 +616,10 @@ const Game = {
           : cfg.length ? cfg.join(' · ') + ' · ' + tr('slow to Vref')
             : tr('practice: land, then idle <kbd>0</kbd> and brake <kbd>B</kbd> below {v} kt', { v: SIM.ROLLOUT_EXIT_KT })));
       } else {
-        HUD.setPrompt(head + (need.length ? '<br>' + need.join(' · ') : (fl.ap.on ? '<br>' + tr('autopilot flies the ILS down to 200 ft') : '')) + this.spoilerHint());
+        // (switched off above the decision height — for a windshear, say — it can be engaged again)
+        const apText = fl.ap.on ? tr('autopilot flies the ILS down to 200 ft')
+          : !fl.apEngageRefusal() ? tr('autopilot <kbd>Y</kbd> flies the ILS down to 200 ft') : '';
+        HUD.setPrompt(head + (need.length ? '<br>' + need.join(' · ') : apText ? '<br>' + apText : '') + this.spoilerHint());
       }
       if (st.spoiler && !st.onGround && fl.altAgl() < 150) fl.warn('SPOILERLAND', tr('Spoiler in for the landing — <kbd>/</kbd>'));
       if (nm < 1.5 && fl.altAgl() < 90 && st.gearTarget < 1) fl.warn('TOOLOWGEAR', tr('TOO LOW — GEAR'));
@@ -809,7 +812,10 @@ const Game = {
       case 'flapsDown': fl.setFlaps(st.flapsTarget + 1); Audio2.cue('lever'); break;
       case 'flapsUp': fl.setFlaps(st.flapsTarget - 1); Audio2.cue('lever'); break;
       case 'ap':
-        if (st.onGround) { fl.warn('AP', tr('The autopilot engages in the air only')); break; }
+      {
+        // (switching it off always works; on only in the air above the decision height)
+        const no = !fl.ap.on && fl.apEngageRefusal();
+        if (no) { fl.warn('AP', no); break; }
         fl.ap.on = !fl.ap.on;
         if (fl.ap.on) {
           fl.ap.vsI = 0;
@@ -821,6 +827,7 @@ const Game = {
         }
         fl.info(tr('Autopilot') + ' ' + (fl.ap.on ? 'CMD · ' + (fl.ap.nav ? 'NAV' : 'HDG ' + fl.ap.hdg) + ' · ALT ' + Units.alt(fl.ap.alt) : tr('off')), 'AP');
         Audio2.cue('click');
+      }
         break;
       case 'timeFaster': fl.changeTimeAccel(1); break;
       case 'timeSlower': fl.changeTimeAccel(-1); break;
@@ -861,6 +868,7 @@ const Game = {
       case 'nav':
         // back on the programme: NAV along the route and the altitude for this phase of the flight
         if (st.onGround) { fl.info(tr('NAV: the autopilot flies the route once you are in the air')); break; }
+        if (!fl.ap.on && fl.apEngageRefusal()) { fl.warn('AP', fl.apEngageRefusal()); break; }
         fl.ap.nav = true; fl.locCaptured = false;
         fl.ap.alt = this.programAltFt(); fl.ap.altSet = false;
         if (!fl.ap.on) { fl.ap.on = true; fl.ap.vsI = 0; }

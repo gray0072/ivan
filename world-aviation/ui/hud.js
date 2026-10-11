@@ -210,11 +210,15 @@ const HUD = {
     }
     const st = fl.st;
     // the last row changes with the flight: Go and the brakes on the ground, gone after the
-    // lift-off; the autopilot and the time from the climb (CONTROLS.TOUCH_AP_ROW_AGL_M up, where the
-    // CLIMB phase starts) until the autopilot lets go on the approach, when the brakes come back
-    // for the landing (the row keeps its place in between, so nothing jumps)
-    const row = st.onGround || (fl.phase === 'APPROACH' && !fl.ap.on) ? 'ground'
-      : fl.phase === 'TAKEOFF' && fl.altAgl() < CONTROLS.TOUCH_AP_ROW_AGL_M ? 'none' : 'air';
+    // lift-off; the autopilot and the time from the decision height up — where the autopilot can
+    // be engaged, as with the keys — so on the approach they stay while it is off above it (switched
+    // off for a windshear, it can be engaged again) and the brakes come back below it for the
+    // landing (the row keeps its place in between, so nothing jumps; a little more height to
+    // bring the autopilot back, so the row does not flicker at that height)
+    const dh = SIM.DECISION_HEIGHT_FT * FT + (this.btnRow === 'air' ? 0 : 10);
+    const low = !fl.ap.on && fl.altAgl() < dh;
+    const row = st.onGround || (fl.phase === 'APPROACH' && low) ? 'ground'
+      : fl.phase === 'TAKEOFF' && low ? 'none' : 'air';
     if (row !== this.btnRow) {
       this.btnRow = row;
       const tb = el('touchButtons');

@@ -360,7 +360,7 @@ const Systems = {
       fl.ap.altSet = true;            // chosen for the emergency: <kbd>N</kbd> goes back to the programme
       // ... and only while it lasts: Game.releaseEmergencyAlt gives the flight plan's altitude back
       fl.ap.emergency = c.def.id; fl.ap.emergencyOver = null;
-      if (!fl.ap.on && !fl.st.onGround) { fl.ap.on = true; fl.ap.vsI = 0; }
+      if (!fl.ap.on && !fl.apEngageRefusal()) { fl.ap.on = true; fl.ap.vsI = 0; }
       fl.info(tr('Autopilot ALT {alt} ft — descending', { alt: fmtAltFt(fl.ap.alt) }));
     }
     Audio2.cue('click');

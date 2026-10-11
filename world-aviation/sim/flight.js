@@ -1091,6 +1091,13 @@ const Flight = {
   },
 
   // ---------- autopilot ----------
+  // why the autopilot cannot be engaged now (null: it can): in the air only, and above the
+  // decision height, where it lets go of the glide path itself — lower down it is flown by hand
+  apEngageRefusal() {
+    if (this.st.onGround) return tr('The autopilot engages in the air only');
+    if (this.altAgl() < SIM.DECISION_HEIGHT_FT * FT) return tr('The autopilot engages above {alt} ft AGL — below it, fly by hand', { alt: SIM.DECISION_HEIGHT_FT });
+    return null;
+  },
   // HDG / NAV laterally (NAV flies to the final fix and captures the localiser),
   // ALT hold or G/S vertically, and an autothrottle on the speed.
   updateAutopilot(dt) {
@@ -1136,7 +1143,7 @@ const Flight = {
       if (!ap.gs) { ap.gs = true; this.info(tr('Glideslope captured')); }
       const gsV = -st.tas * Math.sin(SIM.GLIDESLOPE_DEG * DEG);
       vsT = gsV + (ils.targetAlt - (st.pos.y - st.gearH)) * 0.12;
-      if (this.altAgl() < 60) {
+      if (this.altAgl() < SIM.DECISION_HEIGHT_FT * FT) {
         ap.on = false; ap.gs = false;
         this.warn('AP', tr('Autopilot disconnect — decision height, land it by hand'));
         return;
