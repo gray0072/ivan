@@ -392,6 +392,8 @@ Mouse cursor: in fullscreen it hides once the mouse has been still for `CURSOR_H
 
 Updates: a page left open (above all the installed Android app, resumed from the background) looks for a new deploy on every return to the foreground and once an hour, and reloads into it only on the title or the operations screen — never from the briefing to the debrief of a flight (`core/update.js`).
 
+The address: every menu screen writes itself into the URL's hash (`UI.route`, `history.replaceState`, so no history entries pile up) — none for the title, `#careers`, `#new` (New career), `#howto`, an ops tab (`#dispatch`, `#network`, `#hangar`, `#training`, `#career`; an exam and the Mriya's hall keep their tab's), `#briefing/<contract id>`. A reload (a new deploy's too) opens that screen again (`UI.showRoute` at boot); a tab or a briefing with no career open is the title, a briefing whose contract is no longer on the board is the board. The flight, its pause and the debrief leave the hash alone, so a reload there lands on the flight's briefing (or the board, once the contract is flown). A hash typed by hand opens its screen on the menus, never over a flight.
+
 ## Views
 
 **C** / **X** (or **Shift+C**) (touch: **View**) cycle through `VIEW.MODES` forwards / backwards, **Z** jumps straight to the cockpit (`scene3d.js` `placeCamera`); the views riding with the aeroplane are in its own axes, scaled to its length, span and fuselage:

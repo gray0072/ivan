@@ -10,10 +10,15 @@
 
 const UI = {
   screen: null, tab: 'dispatch', selContract: null, quiz: null, lastContract: null, keyLockUntil: 0,
+  tabs: ['dispatch', 'network', 'hangar', 'training', 'career'],
 
   init() {
     this.screen = el('screen');
     window.addEventListener('keydown', (e) => this.key(e), true);
+    // a hash typed or followed by hand opens its screen, but never over a flight
+    window.addEventListener('hashchange', () => {
+      if (Game.mode === 'menu' || Game.mode === 'ops' || Game.mode === 'briefing') this.showRoute();
+    });
   },
 
   // Arrow keys move the focus between buttons; Space / Enter press the focused
@@ -130,6 +135,30 @@ const UI = {
     btns[Math.min(Math.max(before.index, 0), btns.length - 1)].focus({ preventScroll: true });
   },
 
+  // ---------- the address ----------
+  // Every menu screen writes itself into the URL's hash (#careers, #hangar, #briefing/<id>…) without a
+  // history entry, so a reload — a new deploy's too (core/update.js) — opens the same screen again.
+  // The flight, its pause and the debrief leave it alone: a reload there brings back the briefing.
+  route(r) {
+    if (Game.mode !== 'menu' && Game.mode !== 'ops' && Game.mode !== 'briefing') return;
+    const hash = r ? '#' + r : '';
+    if (location.hash === hash) return;
+    try { history.replaceState(null, '', location.pathname + location.search + hash); } catch (err) { /* ignore */ }
+  },
+  // the screen the hash names; anything else (or an ops tab with no career open) is the title
+  showRoute() {
+    const [r, arg] = decodeURIComponent(location.hash.slice(1)).split('/');
+    Game.mode = 'menu'; this.quiz = null; this.renaming = false;
+    if (r === 'careers') this.showCareers();
+    else if (r === 'new') { this.newDifficulty = 'medium'; this.showNewCareer(); }
+    else if (r === 'howto') { this.backTo = 'title'; this.showHowTo(); }
+    else if (Career.data && this.tabs.indexOf(r) >= 0) { this.tab = r; this.showOps(); }
+    else if (Career.data && r === 'briefing') {
+      this.tab = 'dispatch';
+      if (arg && Career.contractById(arg)) this.showBriefing(arg); else this.showOps();
+    } else this.showTitle();
+  },
+
   // the career's level; on the new career screen the level that career will start at
   difficultyChips(forNew) {
     const cur = forNew ? (DIFFICULTY[this.newDifficulty] || DIFFICULTY.medium) : Career.difficulty;
@@ -191,6 +220,7 @@ const UI = {
       '<p class="fineprint">' + esc(tr(CAREER.INTRO)) + '</p>' +
       '</div>', 'title');
     this.screen.dataset.view = 'title';
+    this.route('');
     TitleSky.show();
   },
 
@@ -207,6 +237,7 @@ const UI = {
       '<div class="btnRow split"><button class="btn back" data-act="back" data-esc>' + tr('Back') + '</button>' +
       '<button class="btn default fwd" data-act="startcareer">' + tr('Start flying') + '</button></div>', 'narrow');
     this.screen.dataset.view = 'newcareer';
+    this.route('new');
   },
 
   confirmWipe() {
@@ -239,6 +270,7 @@ const UI = {
       (Cloud.available ? '<button class="btn cloudIn" data-act="cloudIn" data-v="list">' + GOOGLE_G_SVG + tr('Careers from a Google account') + '</button>' : '') + '</div>' +
       (Cloud.available ? '<p class="fineprint">' + tr('Sign in with a Google account to bring its careers to this device.') + '</p>' : ''), 'narrow');
     this.screen.dataset.view = 'careers';
+    this.route('careers');
   },
   // another career opened: its settings and its Google account come with it
   openCareer(id) {
@@ -369,6 +401,7 @@ const UI = {
       '<li>' + tr('Taxi to your gate, stop in the parking box and set the parking brake.') + '</li>' +
       '</ul></div></div>' +
       '<div class="btnRow"><button class="btn default" data-act="back" data-esc>' + tr('Got it') + '</button></div>');
+    this.route('howto');
   },
 
   // ---------- ops hub ----------
@@ -377,7 +410,7 @@ const UI = {
     Input.active = false;
     const d = Career.data;
     if (!d) { this.showTitle(); return; }
-    const tabs = ['dispatch', 'network', 'hangar', 'training', 'career'];
+    const tabs = this.tabs;
     if (this.tab !== 'hangar') this.freshAc = null;     // the new types' frames last while the hangar is open
     const body = this.tabBody();
     this.panel(
@@ -402,6 +435,7 @@ const UI = {
     const row = this.screen.querySelector('.tabs'), on = row && row.querySelector('.tab.on');
     if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
     if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
+    this.route(this.tab);
   },
 
   // what a tab shows next to its name: a gold dot when there is something new or something you
@@ -987,6 +1021,7 @@ const UI = {
       '<p class="fineprint">' + tr('Practice the landing: you start on the final at {id}, clean (gear and flaps up), the autopilot holds the glide path for {s} s and hands over {nm} nm out, then you lower the gear and the flaps, land and brake below {v} kt. Nothing is lost if it goes wrong; a good landing earns a little reputation with {who}.',
         { nm: PRACTICE.HANDOVER_NM, id: to.id, s: PRACTICE.AP_SECONDS, v: SIM.ROLLOUT_EXIT_KT, who: esc(tr(FACTIONS[c.faction].name)) }) + '</p>' +
       '</div></div>');
+    this.route('briefing/' + encodeURIComponent(c.id));
   },
 
   // the clock at the arrival when the flight lands: the departure time picked below, the planned

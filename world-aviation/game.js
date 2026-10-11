@@ -88,7 +88,7 @@ const Game = {
     // the player: the title or the operations screen, not in an exam or the Mriya's hall (core/cloud.js)
     Cloud.onChange = (careerChanged) => UI.cloudChanged(careerChanged);
     Cloud.init(() => (this.mode === 'menu' || this.mode === 'ops') && !UI.quiz && !UI.onLeave && !UI.renaming);
-    UI.showTitle();
+    UI.showRoute();         // the screen in the hash (UI.route), else the title
     this.loop();
   },
 
