@@ -291,11 +291,15 @@ const TEXT_RU = {
   '{from} → {to} · {type} · grade {g}': '{from} → {to} · {type} · оценка {g}',
 
   // ---------- briefing ----------
-  '{v} kt from {d}°': '{v} kt с {d}°',
+  '{v} kt from {d}° ({point})': '{v} kt с {d}° ({point})',
+  'north': 'северный', 'north-east': 'северо-восточный', 'east': 'восточный', 'south-east': 'юго-восточный',
+  'south': 'южный', 'south-west': 'юго-западный', 'west': 'западный', 'north-west': 'северо-западный',
   'gusting {v}': 'порывы до {v}',
   'Runway in use': 'Рабочая полоса',
   'Wind': 'Ветер',
-  'crosswind {v} kt': 'боковой {v} kt',
+  'crosswind {v} kt from the right': 'боковой {v} kt справа',
+  'crosswind {v} kt from the left': 'боковой {v} kt слева',
+  'tailwind {v} kt': 'попутный {v} kt',
   'Visibility': 'Видимость',
   'Cloud': 'Облачность',
   'base {b} ft, tops {t} ft': 'нижняя граница {b} ft, верхняя {t} ft',

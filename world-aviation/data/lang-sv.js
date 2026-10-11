@@ -291,11 +291,15 @@ const TEXT_SV = {
   '{from} → {to} · {type} · grade {g}': '{from} → {to} · {type} · betyg {g}',
 
   // ---------- briefing ----------
-  '{v} kt from {d}°': '{v} kt från {d}°',
+  '{v} kt from {d}° ({point})': '{v} kt från {d}° ({point})',
+  'north': 'nordlig', 'north-east': 'nordostlig', 'east': 'ostlig', 'south-east': 'sydostlig',
+  'south': 'sydlig', 'south-west': 'sydvästlig', 'west': 'västlig', 'north-west': 'nordvästlig',
   'gusting {v}': 'byar {v}',
   'Runway in use': 'Bana i bruk',
   'Wind': 'Vind',
-  'crosswind {v} kt': 'sidvind {v} kt',
+  'crosswind {v} kt from the right': 'sidvind {v} kt från höger',
+  'crosswind {v} kt from the left': 'sidvind {v} kt från vänster',
+  'tailwind {v} kt': 'medvind {v} kt',
   'Visibility': 'Sikt',
   'Cloud': 'Moln',
   'base {b} ft, tops {t} ft': 'bas {b} ft, toppar {t} ft',

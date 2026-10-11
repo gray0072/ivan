@@ -903,15 +903,20 @@ const UI = {
   },
 
   // an airport's table, in the briefing and in the pause: the stand, the runway in use, the
-  // elevation and the weather x
+  // elevation and the weather x. The wind says where it blows from (degrees and the compass
+  // point) and, on the runway (take-off and landing are flown the same way), the crosswind and
+  // the side it comes from, or a tailwind
   airportRows(x, a, gate) {
-    const wind = tr('{v} kt from {d}°', { v: Math.round(x.speed), d: String(Math.round(x.dir)).padStart(3, '0') }) +
+    const pt = ['north', 'north-east', 'east', 'south-east', 'south', 'south-west', 'west', 'north-west'][Math.round(x.dir / 45) % 8];
+    const wind = tr('{v} kt from {d}° ({point})', { v: Math.round(x.speed), d: String(Math.round(x.dir)).padStart(3, '0'), point: tr(pt) }) +
       (x.gust > 2 ? ', ' + tr('gusting {v}', { v: Math.round(x.speed + x.gust) }) : '');
-    const cross = Math.abs(Math.sin((x.dir - a.hdgDeg) * DEG) * x.speed);
+    const off = wrapDeg(x.dir - a.hdgDeg);
+    const cross = Math.abs(Math.sin(off * DEG) * x.speed), tail = -Math.cos(off * DEG) * x.speed;
+    const side = cross > 4 ? ' · ' + tr(off > 0 ? 'crosswind {v} kt from the right' : 'crosswind {v} kt from the left', { v: Math.round(cross) }) : '';
     return (gate !== undefined ? '<tr><td>' + tr('Stand') + '</td><td>' + gateLabel(a, gate) + '</td></tr>' : '') +
       '<tr><td>' + tr('Runway in use') + '</td><td>' + a.rwyName + ' · ' + a.rwyLen + ' m</td></tr>' +
       '<tr><td>' + tr('Elevation') + '</td><td>' + Math.round(a.elev / FT) + ' ft</td></tr>' +
-      '<tr><td>' + tr('Wind') + '</td><td>' + wind + (cross > 4 ? ' · ' + tr('crosswind {v} kt', { v: Math.round(cross) }) : '') + '</td></tr>' +
+      '<tr><td>' + tr('Wind') + '</td><td>' + wind + side + (tail > 2 ? ' · ' + tr('tailwind {v} kt', { v: Math.round(tail) }) : '') + '</td></tr>' +
       '<tr><td>QNH</td><td>' + x.qnh + ' hPa</td></tr>' +
       '<tr><td>' + tr('Visibility') + '</td><td>' + (x.vis / 1000).toFixed(1) + ' km</td></tr>' +
       '<tr><td>' + tr('Cloud') + '</td><td>' + tr('base {b} ft, tops {t} ft', { b: fmtAlt(x.cloudBase), t: fmtAlt(x.cloudTop) }) + '</td></tr>' +
