@@ -120,36 +120,12 @@ const AircraftModels = {
         g.add(tag('wing', wl));
       }
     }
-    // the wing's centre section through the body, the root's section from one root to the other:
-    // where the body is narrower than the roots at the wing's height (a double deck's belly, the
-    // lower surface of a thick root) it closes what was a gap between the wing and the body
-    if (!high) {
-      const centre = liftingSurface({
-        semi: R * 1.6, rootC, tipC: rootC, sweep: 0, tRoot: wingDef.tRoot, tTip: wingDef.tRoot, cut: 1, pieces: [], noCap: true
-      }, metal, surf, 1);
-      centre.position.set(-R * 0.8, wingY, wingZ);
-      centre.name = 'wingCentre';
-      g.add(tag('wing', centre));
-    }
-    // wing-to-body fairing for the low wing: in the belly's colour, as wide as the fuselage at its
-    // height and a little more (a double deck is narrower down there), just below the belly — a
-    // white ball wider than the body, stuck on the grey belly, looked like a bump
-    if (!high) {
-      const fy = -R * 0.66, c = (fy / R + 1 - hk) / hk;
-      const fw = R * Math.sqrt(Math.max(0, 1 - c * c)) + R * 0.06;
-      const fair = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), new THREE.MeshLambertMaterial({ color: col(bellyColour(look, al)) }));
-      fair.scale.set(fw, R * 0.4, rootC * 0.85);
-      fair.position.set(0, fy, wingZ - rootC * 0.5);
-      g.add(tag('fairing', fair));
-    } else {
-      // the high wing's fairing over the body: a low rounded hump from one root to the other,
-      // filling the valley between the roof and the wing's upper surface (a box there stood out
-      // past the sides of the narrower roof, a slab on each side seen from above)
-      const fair = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), base);
-      fair.scale.set(R * 0.84, R * 0.3, rootC * 0.56);
-      fair.position.set(0, wingY + R * 0.12, wingZ - rootC * 0.48);
-      g.add(tag('fairing', fair));
-    }
+    // the wing-to-body fairing (wingFairingGeometry): the root's section carried across the body
+    // from one root to the other and faired into it — under a low wing a fillet down to the belly,
+    // over a high wing a saddle across the roof and a fillet down each side. (A ball under the
+    // belly, a lens on the roof and a centre section whose flat ends stood out of the narrower
+    // belly left bumps, slabs and slots where the wing met the body.)
+    g.add(tag('fairing', new THREE.Mesh(wingFairingGeometry(L, R, hk, lay, wingDef.tRoot, 1.15, 0.85), metal)));
 
     // ---- tail: fin and tailplane (T-tail on top of the fin; a twin tail: a fin at each end of the tailplane)
     const finRoot = lay.finRoot, finTip = lay.finTip, finH = lay.finH, finSweep = lay.finSweep, finZ = lay.finZ, finY = lay.finY;
@@ -209,19 +185,21 @@ const AircraftModels = {
       n.position.set(e.x, e.y, e.z);
       g.add(tag('nacelle', n));
       g.userData.fans.push(n.userData.fan);
-      // the pylon sits on top of the cowling (its foot just inside the cowl, which narrows to
-      // 0.42 of the fan at the back), from near the intake to a little past the exhaust: lower,
-      // it hung into the exhaust and showed as a box through the back of the engine
-      // (its top at the wing's middle: a big fan pulled up to the wing put it through the top
-      // of the wing); a thin streamlined blade, rounded at both ends, its leading edge raked back
-      // from the cowling up to the wing's — a box showed its corners and a square front on the
-      // long pylons under a high wing
-      const foot = e.y + e.dia * ((look.flatNacelles ? 0.86 : 1) * 0.42 - 0.03);
-      const head = Math.max(foot + e.dia * 0.12, Math.min(e.y + e.dia * 0.72, yAt(e.f)));
-      const topLen = Math.min(e.dia * 1.35, e.dia * 0.1 + leAt(e.f) - (e.z - e.dia * 1.25));
+      // the pylon grows out of the top of the cowling (its foot just inside the cowl, which
+      // narrows to 0.42 of the fan at the back) from behind the intake to the cowl's back edge —
+      // not on over the exhaust, where it hung into the jet — and into the wing just under its
+      // middle (higher, a big fan pulled up to the wing put it through the top of the wing): a
+      // thin streamlined blade, its leading edge rising from the cowl and curving back into the
+      // wing's, faired into both (pylonGeometry) — a slab stood on the cowl like a plank
+      const fy = look.flatNacelles ? 0.86 : 1, tLoc = wingDef.tRoot + (wingDef.tTip - wingDef.tRoot) * e.f;
+      const chordLoc = rootC + (tipC - rootC) * e.f;
+      const foot = e.y + e.dia * (fy * 0.42 - 0.03);
+      const head = Math.max(foot + e.dia * 0.12, yAt(e.f) - tLoc * 0.1);
+      const rear = e.z - e.len / 2 + e.dia * 0.04;
       const py = new THREE.Mesh(pylonGeometry(foot, head,
-        { z: e.z - e.dia * 0.575, len: e.dia * 1.35, w: e.dia * 0.14 },
-        { z: leAt(e.f) - topLen / 2, len: topLen, w: e.dia * 0.11 }), metal);
+        { front: e.z + e.dia * 0.1, rear, w: e.dia * 0.14 },
+        { front: leAt(e.f) - tLoc * 0.5, rear: Math.min(rear, leAt(e.f)) - Math.max(e.dia * 0.45, chordLoc * 0.25), w: e.dia * 0.11 },
+        { at0: e.y + e.dia * 0.46 * fy, at1: yAt(e.f) - tLoc * 0.3, r: e.dia * 0.12, k0: 0.9, k1: 0.5, bow: 2.4 }), metal);
       py.position.x = e.x;
       g.add(tag('pylon', py));
     }
@@ -232,9 +210,17 @@ const AircraftModels = {
         n.position.set(side * (R + dia * 0.75), R * 0.35, -L * 0.24);
         g.add(n);
         g.userData.fans.push(n.userData.fan);
-        const py = new THREE.Mesh(new THREE.BoxGeometry(dia * 0.9, dia * 0.16, dia * 1.1), metal);
-        py.position.set(side * (R + dia * 0.1), R * 0.35, -L * 0.25);
-        g.add(py);
+        // the pylon out of the side of the tail into the cowling, faired into both (a box went
+        // into the engine): pylonGeometry built upright, then laid on its side
+        const nz = -L * 0.24, rIn = R + dia * 0.75;
+        const geo = pylonGeometry(R * 0.8, rIn - dia * 0.39,
+          { front: nz + dia * 0.4, rear: nz - dia * 0.7, w: dia * 0.17 },
+          { front: nz + dia * 0.25, rear: nz - dia * 0.6, w: dia * 0.14 },
+          { at0: R * 0.9, at1: rIn - dia * 0.46, r: dia * 0.12, k0: 0.9, k1: 1.1, bow: 1 });
+        geo.rotateZ(-side * Math.PI / 2);
+        geo.translate(0, R * 0.35, 0);
+        const py = new THREE.Mesh(geo, metal);
+        g.add(tag('pylon', py));
       }
     } else if (!lay.engines.length) {
       // turboprops: a nacelle on the wing, a spinner and four blades
@@ -687,14 +673,6 @@ const AircraftModels = {
   }
 };
 
-// The colour of the belly as the livery paints it (an airline's belly colour, or the grey wash
-// over the body colour), for the parts under it: the wing-to-body fairing
-function bellyColour(look, al) {
-  if (al && al.livery.belly) return al.livery.belly;
-  const a = al ? 0.45 : 0.55, b = new THREE.Color(look.base || '#f3f5f7');
-  return '#' + b.lerp(new THREE.Color(150 / 255, 160 / 255, 170 / 255), a).getHexString();
-}
-
 // The front passenger door (painted on the livery, its forward edge at FRONT_DOOR_U of the body
 // from the tail, 0.85 m wide): its middle, metres back from the nose tip. The jet bridges and the
 // airstairs of the parked aeroplanes (apron3d.js) dock there.
@@ -884,7 +862,7 @@ function liftingSurface(def, mat, surf, side) {
   const grp = new THREE.Group();
   const tanS = Math.tan(def.sweep);
   const up = def.sym ? 1 : 1.15, lo = def.sym ? 1 : 0.85;
-  const yt = (x) => (0.2969 * Math.sqrt(x) - 0.126 * x - 0.3516 * x * x + 0.2843 * x * x * x - 0.1036 * x * x * x * x) / 0.1003 * 0.5;
+  const yt = airfoilT;
   // a point of the surface: span fraction f, chord fraction x, upper (+1) or lower (-1)
   const P = (f, x, s) => {
     const c = def.rootC + (def.tipC - def.rootC) * f, t = def.tRoot + (def.tTip - def.tRoot) * f;
@@ -1090,17 +1068,113 @@ function fanFaceTextures() {
   return fanTextures;
 }
 
-// An engine's pylon, upright from y0 (on the cowling) to y1 (in the wing): a loft between two
-// horizontal ellipses ({ z: centre, len: length, w: width }), so its ends are rounded and its
-// edges run straight from the one to the other
-function pylonGeometry(y0, y1, bot, top) {
-  const geo = new THREE.CylinderGeometry(0.5, 0.5, 1, 20);
-  const p = geo.attributes.position;
-  for (let i = 0; i < p.count; i++) {
-    const t = p.getY(i) + 0.5;
-    const lerp = (k) => bot[k] + (top[k] - bot[k]) * t;
-    p.setXYZ(i, p.getX(i) * lerp('w'), y0 + (y1 - y0) * t, lerp('z') + p.getZ(i) * lerp('len'));
+// An engine's pylon, upright from y0 (inside the cowling) to y1 (inside the wing; y1 > y0): a
+// loft of horizontal ellipses from bot to top ({ front, rear: z of its ends, w: its width}), so
+// it is rounded all round. Its edges rise from the cowling and curve back into the wing (fit.bow:
+// the power of that curve, 1 = straight; the trailing edge keeps to the cowl's back edge until
+// it is up under the wing, not hanging over the exhaust), and it flares out into a fillet where it meets the cowling (at height fit.at0, fit.k0 times as wide
+// again) and the wing (at fit.at1, fit.k1), fading out over fit.r: it grows out of both
+function pylonGeometry(y0, y1, bot, top, fit) {
+  const N = 20, SEG = 24, pos = [], idx = [];
+  const fillet = (d) => (d <= 0 ? 1 : Math.pow(Math.max(0, 1 - d / fit.r), 2));
+  for (let i = 0; i <= N; i++) {
+    const t = i / N, y = y0 + (y1 - y0) * t;
+    const front = top.front + (bot.front - top.front) * (1 - Math.pow(t, fit.bow));
+    const rear = Math.min(front - 0.05, bot.rear + (top.rear - bot.rear) * Math.pow(t, fit.bow));
+    const w = (bot.w + (top.w - bot.w) * t) * (1 + fit.k0 * fillet(y - fit.at0) + fit.k1 * fillet(fit.at1 - y));
+    for (let j = 0; j < SEG; j++) {
+      const a = j / SEG * TAU;
+      pos.push(Math.sin(a) * w / 2, y, (front + rear) / 2 + Math.cos(a) * (front - rear) / 2);
+    }
   }
+  for (let i = 0; i < N; i++) for (let j = 0; j < SEG; j++) {
+    const a = i * SEG + j, b = i * SEG + (j + 1) % SEG;
+    idx.push(a, b, a + SEG, b, b + SEG, a + SEG);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// The thickness of the lifting surfaces' section (NACA-like, 0.5 at its thickest, 30 % of the
+// chord back) at the chord fraction x
+function airfoilT(x) {
+  return (0.2969 * Math.sqrt(x) - 0.126 * x - 0.3516 * x * x + 0.2843 * x * x * x - 0.1036 * x * x * x * x) / 0.1003 * 0.5;
+}
+
+// The convex hull of 2D points ([x, y]), anticlockwise
+function convexHull(pts) {
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [], upper = [];
+  for (const q of p) { while (lower.length > 1 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0) lower.pop(); lower.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) {
+    const q = p[i];
+    while (upper.length > 1 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0) upper.pop();
+    upper.push(q);
+  }
+  return lower.slice(0, -1).concat(upper.slice(0, -1));
+}
+
+// The wing-to-body fairing, lofted along the root chord (lay: modelLayout; tRoot, up, lo: the
+// wing root's thickness and its upper and lower share, as liftingSurface makes it). Each section
+// is the convex hull of the body's section (just inside it) and the root's section carried
+// across from one root to the other (just inside the wing, a little past its root), so the wing
+// runs into the body with no slot and no step: under a low wing a fillet from its lower surface
+// down to the belly (and over it where the body is narrower than the roots, a double deck's),
+// over a high wing a saddle across the roof and a fillet down each side. Ahead of the leading
+// edge and behind the trailing edge it narrows back into the body, round in plan. Its sections
+// are taken round from the top towards -x, as the fuselage's, so its triangles face outwards.
+const FAIRING_FWD = 0.12, FAIRING_AFT = 0.2;   // how far it reaches ahead and behind, in root chords
+function wingFairingGeometry(L, R, hk, lay, tRoot, up, lo) {
+  const SEG = 96, M = 72;
+  const x0 = R * 0.8, xw = R * 0.86, eps = tRoot * 0.012, yw = lay.wingY;      // the root, and a little past it
+  const us = [];
+  for (let i = 0; i < 5; i++) us.push(-FAIRING_FWD * Math.cos(Math.PI / 2 * i / 5));
+  for (let i = 0; i <= 16; i++) us.push((i / 16) * (i / 16));
+  for (let i = 1; i <= 5; i++) us.push(1 + FAIRING_AFT * Math.sin(Math.PI / 2 * i / 5));
+  us.reverse();                                                    // tail to nose, as the fuselage
+  const pos = [], idx = [];
+  for (const u of us) {
+    const z = lay.wingZ - u * lay.rootC;
+    const fr = fuselageRing(L, R, z);
+    const ea = fr.r * 0.97, eb = fr.r * hk * 0.97, ec = fr.y + (hk - 1) * fr.r;
+    const pts = [];
+    for (let k = 0; k < M; k++) { const a = k / M * TAU; pts.push([Math.sin(a) * ea, ec + Math.cos(a) * eb]); }
+    if (u >= 0 && u <= 1) {
+      // (at the very edges no further out than the root, which the swept wing leaves behind)
+      const h = tRoot * airfoilT(u), x = x0 + (xw - x0) * Math.min(1, u / 0.04, (1 - u) / 0.04);
+      const t = Math.max(yw, yw + h * up - eps), b = Math.min(yw, yw - h * lo + eps);
+      pts.push([x, t], [-x, t], [x, b], [-x, b]);
+    } else {
+      // ahead and behind: the root's edge drawn in to the body's side, round in plan
+      const q = (yw - ec) / eb, hw = Math.abs(q) < 1 ? ea * Math.sqrt(1 - q * q) : 0;
+      const v = u < 0 ? u / FAIRING_FWD : (u - 1) / FAIRING_AFT, x = hw + (x0 - hw) * Math.max(0, 1 - v * v);
+      pts.push([x, yw], [-x, yw]);
+    }
+    const hull = convexHull(pts);
+    for (let j = 0; j <= SEG; j++) {
+      const th = j / SEG * TAU, dx = -Math.sin(th), dy = Math.cos(th);
+      // from the body's centre out to the hull's edge
+      let d = Infinity;
+      for (let k = 0; k < hull.length; k++) {
+        const p = hull[k], q = hull[(k + 1) % hull.length];
+        const nx = q[1] - p[1], ny = p[0] - q[0], nd = nx * dx + ny * dy;
+        if (nd > 1e-12) d = Math.min(d, (nx * p[0] + ny * (p[1] - ec)) / nd);
+      }
+      pos.push(dx * d, ec + dy * d, z);
+    }
+  }
+  const w = SEG + 1;
+  for (let i = 0; i + 1 < us.length; i++) for (let j = 0; j < SEG; j++) {
+    const a = i * w + j, b = a + 1, c = a + w, e = c + 1;
+    idx.push(a, b, c, b, e, c);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
   geo.computeVertexNormals();
   return geo;
 }
