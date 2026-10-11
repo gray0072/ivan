@@ -305,6 +305,15 @@ kbd {
 #cine .cineBar.bottom { bottom: 0; transform: translateY(100%); display: flex; align-items: center; justify-content: flex-end; padding: 0 max(20px, env(safe-area-inset-right)) env(safe-area-inset-bottom) 20px; }
 #cine.bars .cineBar { transform: none; }
 #cineSkip { color: rgba(255, 255, 255, 0.55); font-size: 12px; letter-spacing: 0.06em; }
+/* the look round an airport: its pause (Game.toggleTourPause), left of the skip hint */
+#cinePause {
+  margin-right: auto; padding: 0 16px; height: 32px; border-radius: 16px; cursor: pointer;
+  border: 1px solid rgba(200, 222, 255, 0.25); background: rgba(13, 27, 42, 0.85); color: #e8eef5;
+  font: 600 13px system-ui, sans-serif; letter-spacing: 0.04em;
+}
+#cinePause[hidden] { display: none; }
+#cinePause.on { background: #f2c14e; border-color: #f2c14e; color: #15191d; }
+#cinePause kbd { margin-left: 6px; opacity: 0.7; }
 #cineSkip kbd { opacity: 0.85; }
 #cineCaption {
   position: absolute;
@@ -320,11 +329,13 @@ kbd {
 #cineFade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
 #cineFade.in { animation: cineFadeIn 1.1s ease-out; }
 @keyframes cineFadeIn { from { opacity: 1; } to { opacity: 0; } }
+/* after a collision: a fade to black between the shots (ui/incident.js) */
+#cineFade.black { opacity: 1; transition: opacity 0.45s ease; }
 
 /* ---------- touch ---------- */
 #touch { display: none; }
-/* not over the look round an airport (Game.startTour) */
-body.touring #touch { display: none !important; }
+/* not over the look round an airport (Game.startTour), nor over the shots after a collision (ui/incident.js) */
+body.touring #touch, body.incident #touch { display: none !important; }
 @media (pointer: coarse) {
   #touch { display: block; position: fixed; inset: 0; pointer-events: none; z-index: 20; }
   #stickZone {
@@ -525,7 +536,13 @@ body.touring #touch { display: none !important; }
   place-items: center;
   background: radial-gradient(ellipse at 50% 45%, rgba(4, 8, 14, 0.28) 0%, rgba(4, 8, 14, 0.5) 70%, rgba(4, 8, 14, 0.62) 100%);
 }
-#screen[data-view="pause"] .panel {
+/* after a touch the choice sits low over the shot of the collision, which goes on circling above it */
+#screen[data-view="incident"] {
+  place-items: end center;
+  background: linear-gradient(to top, rgba(4, 8, 14, 0.6) 0%, rgba(4, 8, 14, 0) 65%);
+}
+#screen[data-view="incident"] .panel { margin: auto auto 9vh; }
+#screen[data-view="pause"] .panel, #screen[data-view="incident"] .panel {
   background: rgba(12, 18, 27, 0.7);
   border-color: rgba(200, 222, 255, 0.18);
   -webkit-backdrop-filter: blur(10px) saturate(1.2);
@@ -547,12 +564,12 @@ body.touring #touch { display: none !important; }
 /* on a phone (upright, or held sideways) the menus take the whole screen: no frame round the panel
    eating its width — only the glass panels of the title screen and the pause keep theirs */
 @media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
-  #screen:not([data-view="title"]):not([data-view="pause"]) {
+  #screen:not([data-view="title"]):not([data-view="pause"]):not([data-view="incident"]) {
     padding-left: max(10px, env(safe-area-inset-left));
     padding-right: max(10px, env(safe-area-inset-right));
     padding-top: max(10px, env(safe-area-inset-top));
   }
-  #screen:not([data-view="title"]):not([data-view="pause"]) > .panel {
+  #screen:not([data-view="title"]):not([data-view="pause"]):not([data-view="incident"]) > .panel {
     padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
   }
 }

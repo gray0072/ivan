@@ -14,7 +14,12 @@
 //     debrief follows;
 //   - the tour: from the briefing, a look round the departure or
 //     the arrival airport, its runway and terminal, ending at the
-//     own aeroplane (Game.startTour).
+//     own aeroplane (Game.startTour);
+//   - after a collision (ui/incident.js): crash — outside on the
+//     spot, shaken at first, circling it slowly; tow — beside the
+//     nose while a tug pulls the aeroplane back; toward — the camera
+//     turning from where it is to look at something new (the police
+//     driving up).
 // The path is a spline through a few keys in the aeroplane's own
 // axes (x right, y up, z forward), scaled to its size; the times
 // of the keys are part of the spline, so it eases in and out and
@@ -109,6 +114,67 @@ const Cinematic = {
     this.eval();
   },
 
+  // After a collision (ui/incident.js): c, the contact (sim/collide.js: where it touched, the
+  // obstacle's middle). The camera comes in on the spot from a little further off, shaken at
+  // first (opts.shake: 0..1 of INCIDENT.SHAKE_M), and circles it slowly (INCIDENT.ORBIT_S,
+  // ORBIT_DEG), looking between the spot and the aeroplane's middle, from the side of the spot
+  // away from the obstacle turned so both are seen — the first side clear of the buildings. It
+  // never ends by itself: Game ends it.
+  crash(fl, c, opts) {
+    const st = fl.st, d = fl.dims, Z = Math.max(d.len, d.span);
+    const look = [lerp(c.x, st.pos.x, 0.35), lerp(c.y, st.pos.y, 0.35), lerp(c.z, st.pos.z, 0.35)];
+    const D = clamp(Z * 0.6 + 16, 24, 95), H = D * 0.42 + 3;
+    let bx = c.x - c.ox, bz = c.z - c.oz;
+    if (Math.hypot(bx, bz) < 0.5) { bx = c.x - st.pos.x; bz = c.z - st.pos.z; }
+    if (Math.hypot(bx, bz) < 0.5) { bx = Math.sin(st.hdg); bz = -Math.cos(st.hdg); }
+    const base = Math.atan2(bx, bz);
+    const at = (ang, dist, h) => [look[0] + Math.sin(ang) * dist, look[1] + h, look[2] + Math.cos(ang) * dist];
+    const a = fl.nearestApt();
+    const clear = (p) => !a || !Collide.nearBuilding(a, new THREE.Vector3(p[0], p[1], p[2]), 6);
+    let deg = 60;
+    for (const t of [60, -60, 90, -90, 30, -30, 120, -120, 0, 150, -150, 180]) {
+      const ang = base + t * DEG;
+      if (clear(at(ang, D, H)) && clear(at(ang, D * 0.6, H * 0.8)) && clear(at(ang, D * 1.35, H * 1.2))) { deg = t; break; }
+    }
+    const ang = base + deg * DEG, s = deg < 0 ? -1 : 1;
+    const keys = [
+      [...at(ang, D * 1.35, H * 1.2), ...look, 52],
+      [...at(ang, D, H), ...look, 50],
+      [...at(ang + s * INCIDENT.ORBIT_DEG * DEG, D * 0.95, H), ...look, 48]
+    ];
+    this.shot = {
+      kind: 'crash', t: 0, dur: INCIDENT.ORBIT_S, hold: Infinity, times: [0, INCIDENT.CRASH_S, INCIDENT.ORBIT_S], keys, world: true,
+      inT0: -1, inT1: -1, shake: INCIDENT.SHAKE_M * ((opts && opts.shake) || 0)
+    };
+    this.vec = keys[0].slice();
+    this.eval();
+  },
+
+  // the tug pulling the aeroplane back (dur seconds): beside the nose on one side (side: +1 the
+  // right), a little ahead, looking back along the aeroplane, drifting in; rides with the
+  // aeroplane as it moves. It never ends by itself.
+  tow(fl, side, dur) {
+    const d = fl.dims, L = d.len, S = d.span, R = d.fus / 2;
+    const x = side * (S * 0.5 + 12), y = R * 2 + L * 0.12 + 4;
+    const keys = [
+      [x * 1.08, y * 1.1, L * 0.9 + 10, 0, 0, L * 0.25, 50],
+      [x, y, L * 0.6 + 8, 0, 0, L * 0.05, 50]
+    ];
+    this.shot = { kind: 'tow', t: 0, dur: Math.max(1, dur), hold: Infinity, times: [0, Math.max(1, dur)], keys, inT0: -1, inT1: -1 };
+    this.vec = keys[0].slice();
+    this.eval();
+  },
+
+  // from the camera where it is now (a world shot) to look at `look` (world [x, y, z]) in
+  // INCIDENT.FADE_S * 3, the eye moved by `move` [dx, dy, dz] meanwhile. It never ends by itself.
+  toward(look, move) {
+    const v = this.vec.slice(), m = move || [0, 0, 0], T = INCIDENT.FADE_S * 3;
+    const keys = [v, [v[0] + m[0], v[1] + m[1], v[2] + m[2], look[0], look[1], look[2], v[6]]];
+    this.shot = { kind: 'toward', t: 0, dur: T, hold: Infinity, times: [0, T], keys, world: true, inT0: -1, inT1: -1 };
+    this.vec = keys[0].slice();
+    this.eval();
+  },
+
   stop() { this.shot = null; },
   // to the end (Game ends the shot on the next update)
   skip() { if (this.shot) this.shot.t = this.shot.dur + this.shot.hold; },
@@ -162,7 +228,13 @@ const Cinematic = {
   pose(fl, ax) {
     const p = fl.st.pos, v = this.vec;
     if (this.shot && this.shot.world) {
-      return { eye: new THREE.Vector3(v[0], v[1], v[2]), look: new THREE.Vector3(v[3], v[4], v[5]), up: new THREE.Vector3(0, 1, 0), fov: v[6] };
+      const eye = new THREE.Vector3(v[0], v[1], v[2]), sh = this.shot;
+      // shaken at the impact, dying away
+      if (sh.shake && sh.t < INCIDENT.SHAKE_S) {
+        const k = sh.shake * Math.pow(1 - sh.t / INCIDENT.SHAKE_S, 2), t = sh.t;
+        eye.x += Math.sin(t * 47) * k; eye.y += Math.sin(t * 61 + 1) * k * 0.6; eye.z += Math.sin(t * 53 + 2) * k;
+      }
+      return { eye, look: new THREE.Vector3(v[3], v[4], v[5]), up: new THREE.Vector3(0, 1, 0), fov: v[6] };
     }
     const W = (x, y, z) => new THREE.Vector3(
       p.x + ax.right.x * x + ax.up.x * y + ax.nose.x * z,

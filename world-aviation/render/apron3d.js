@@ -259,38 +259,40 @@ const Apron3D = {
       const sill = Math.max(1.0, d.gearH - R * 0.3);
       const doorBack = frontDoorFromNose(Lc), doorAcross = L.STAND + Lc / 2 - doorBack;
       const k = kit();
+      // (each vehicle solid for the own aeroplane, but for the stands the flight uses: sim/collide.js)
+      const solid = (kind, x, z, ry) => Collide.placeVehicle(Collide.vehicle(a, kind, gate), a, x, z, ry);
       // the GPU by the nose, the cones
-      k.push(L.STAND + Lc / 2 - 1, 0, -(gate.t + R + 3.5), 0); Vehicles.gpu(k); k.pop();
+      k.push(L.STAND + Lc / 2 - 1, 0, -(gate.t + R + 3.5), 0); Vehicles.gpu(k); k.pop(); solid('gpu', L.STAND + Lc / 2 - 1, -(gate.t + R + 3.5), 0);
       Vehicles.cone(k, L.STAND + Lc / 2 + 1.6, -gate.t);
       for (const s of [-1, 1]) Vehicles.cone(k, L.STAND - Lc * 0.05, -(gate.t + s * (S / 2 + 1.2)));
       Vehicles.cone(k, L.STAND - Lc / 2 - 1.6, -gate.t);
       // the hold: a belt loader at the aft door on the right side (-t); the baggage trains
       // come and stop beside it (baggage3d.js)
       const holdA = L.STAND - Lc * 0.22;
-      if (Lc > 15 && !gate.ga) { k.push(holdA, 0, -(gate.t - R - 4.6), Math.PI); Vehicles.beltLoader(k); k.pop(); }
+      if (Lc > 15 && !gate.ga) { k.push(holdA, 0, -(gate.t - R - 4.6), Math.PI); Vehicles.beltLoader(k); k.pop(); solid('beltLoader', holdA, -(gate.t - R - 4.6), Math.PI); }
       bagStands.push({ t: gate.t, hold: holdA, R, parked: Lc > 15 && !gate.ga, inUse: false });
       // fuel under the right wing of a jet (clear of the baggage trains' way up beside the
       // hold, 10 m out from the fuselage), catering at the rear right door of a big one
       if (jet && S > 25) {
-        k.push(L.STAND + Lc * 0.02, 0, -(gate.t - R - Math.max(S * 0.2, 13.5)), Math.PI / 2); Vehicles.fuelTruck(k); k.pop();
+        k.push(L.STAND + Lc * 0.02, 0, -(gate.t - R - Math.max(S * 0.2, 13.5)), Math.PI / 2); Vehicles.fuelTruck(k); k.pop(); solid('fuelTruck', L.STAND + Lc * 0.02, -(gate.t - R - Math.max(S * 0.2, 13.5)), Math.PI / 2);
       }
       if (jet && Lc > 35 && i % 2 === 0 && !gate.cargo) {
-        k.push(L.STAND - Lc * 0.38, 0, -(gate.t - R - 3.8), Math.PI); Vehicles.catering(k); k.pop();
+        k.push(L.STAND - Lc * 0.38, 0, -(gate.t - R - 3.8), Math.PI); Vehicles.catering(k); k.pop(); solid('catering', L.STAND - Lc * 0.38, -(gate.t - R - 3.8), Math.PI);
       }
       // no bridge: an airstair truck at the front door (left side, +t); a freighter's main deck
       // is loaded through its cargo door just behind it, by a main-deck loader (a small one's by a
       // forklift with a pallet)
       if (gate.cargo) {
         const cargoDoor = doorAcross - Math.min(8, Lc * 0.2);
-        if (sill > 2.4) { k.push(cargoDoor, 0, -(gate.t + R + 5.2), 0); Vehicles.highLoader(k, sill, rng); k.pop(); }
-        else { k.push(cargoDoor, 0, -(gate.t + R + 3.2), 0); Vehicles.forklift(k, true, rng); k.pop(); }
+        if (sill > 2.4) { k.push(cargoDoor, 0, -(gate.t + R + 5.2), 0); Vehicles.highLoader(k, sill, rng); k.pop(); solid('highLoader', cargoDoor, -(gate.t + R + 5.2), 0); }
+        else { k.push(cargoDoor, 0, -(gate.t + R + 3.2), 0); Vehicles.forklift(k, true, rng); k.pop(); solid('forklift', cargoDoor, -(gate.t + R + 3.2), 0); }
       } else if (gate.medevac) {
         // the air ambulance's stand: an ambulance beside the door, facing out to the apron
-        k.push(doorAcross - 2.5, 0, -(gate.t + R + 2.4), -Math.PI / 2); Vehicles.ambulance(k); k.pop();
+        k.push(doorAcross - 2.5, 0, -(gate.t + R + 2.4), -Math.PI / 2); Vehicles.ambulance(k); k.pop(); solid('ambulance', doorAcross - 2.5, -(gate.t + R + 2.4), -Math.PI / 2);
       } else if (gate.ga) {
         // a GA stand: the operator's pickup by the nose, now and then
-        if (i % 2 === 0) { k.push(L.STAND + Lc / 2 + 4, 0, -(gate.t - R - 6), Math.PI); Vehicles.pickup(k, '#e9e9e4'); k.pop(); }
-      } else if (!bridges) { k.push(doorAcross, 0, -(gate.t + R + 4.2), 0); Vehicles.stairs(k, sill); k.pop(); }
+        if (i % 2 === 0) { k.push(L.STAND + Lc / 2 + 4, 0, -(gate.t - R - 6), Math.PI); Vehicles.pickup(k, '#e9e9e4'); k.pop(); solid('pickup', L.STAND + Lc / 2 + 4, -(gate.t - R - 6), Math.PI); }
+      } else if (!bridges) { k.push(doorAcross, 0, -(gate.t + R + 4.2), 0); Vehicles.stairs(k, sill); k.pop(); solid('stairs', doorAcross, -(gate.t + R + 4.2), 0); }
       const gm = k.mesh();
       at(gm, 0, 0, 0);
       rec.gateKits.push(gm);

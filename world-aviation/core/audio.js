@@ -415,6 +415,15 @@ const Audio2 = {
       // the passengers' reaction to the landing (core/crowd.js; arg: { mood, pax })
       case 'cabin': if (typeof Crowd !== 'undefined') Crowd.play(arg.mood, arg.pax); break;
       case 'crash': this.thump(w, 40, 1.4, 0.6); this.noiseHit(w, 500, 0.5, 1.5, 0.5, 'lowpass'); break;
+      // a touch at a crawl: a dull knock and a scrape
+      case 'bump': this.thump(w, 62, 0.5, 0.4); this.noiseHit(w, 1100, 0.6, 0.55, 0.16, 'lowpass'); break;
+      // the police car drives up: two rises and falls of its siren
+      case 'siren':
+        for (let i = 0; i < 2; i++) {
+          later(i * 900, () => beep(620, 0.45, 'square', 0.035, 1180));
+          later(i * 900 + 450, () => beep(1180, 0.45, 'square', 0.035, 620));
+        }
+        break;
       case 'gear': case 'gearDown':
         this.thump(w, 75, 0.2, 0.28); later(140, () => this.thump(w, 65, 0.25, 0.3));    // down and locked
         break;

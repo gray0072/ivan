@@ -21,6 +21,8 @@
 //   - the FOLLOW ME car on a first landing at an airport (followme3d.js)
 //   - the ambulance, fire engine or police car a checklist called to
 //     the arrival stand (responders3d.js)
+//   - after a collision the tug pulling the aeroplane back, the police
+//     car driving up, the smoke of a lost flight (incident3d.js)
 // The cockpit itself is drawn in 2D on a canvas over the top.
 // ============================================================
 
@@ -39,6 +41,7 @@ const Scene3D = {
   builtAt: 0,                     // when something big was last built (performance.now()): Game.autoQuality waits
   camMode: 'cockpit',
   cine: null,                     // Cinematic while the camera flies in or out (Game), else null
+  incident: null,                 // after a collision: the tug, the police car, the smoke (ui/incident.js; render/incident3d.js)
   panelHidden: false,             // the instrument panel is hidden (Game): no need to aim above it
   texCanvas: null, texCtx: null,
   time: 0,
@@ -83,6 +86,7 @@ const Scene3D = {
     this.scene.add(this.tug);
     // the FOLLOW ME car on a first landing at an airport
     FollowMe3D.init(this.scene);
+    Incident3D.init(this.scene);
     this.treeTex = makeTreeTexture();
     this.cloudTex = makeCloudTexture();
   },
@@ -884,6 +888,7 @@ const Scene3D = {
     this.updateLandingPool(fl, sys, ax, dark);
     this.updateTug(fl, ax);
     FollowMe3D.update(fl, dt, this.time, dark);
+    Incident3D.update(fl, this.incident, this.time, dark);
   },
 
   // the own aircraft's lights, as a crew would have them: the navigation lights and the beacon

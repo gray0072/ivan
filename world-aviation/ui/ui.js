@@ -1216,6 +1216,9 @@ const UI = {
   // ---------- every button ----------
   action(name, v) {
     switch (name) {
+      // after a touch: pay and go on, or end the flight (ui/incident.js)
+      case 'incidentPay': Incident.choose(Game, true); break;
+      case 'incidentStop': Incident.choose(Game, false); break;
       case 'continue': enterFullscreen(); Game.mode = 'ops'; this.showOps(); break;
       case 'newcareer': this.newDifficulty = 'medium'; this.showNewCareer(); break;
       case 'careers': this.showCareers(); break;

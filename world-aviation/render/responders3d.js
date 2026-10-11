@@ -65,6 +65,7 @@ const Responders3D = {
       // (those already on their way, or there, stay where they are when another one is called)
       rec.respDrive = r.fl === fl && r.gate === gate ? { fl, gate, s: Object.fromEntries(r.vehicles.map((v) => [v.kind, v.s])) } : null;
       rec.frame.remove(r.group);
+      for (const v of r.vehicles) Collide.dropVehicle(rec.a, v.solid);
       r.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
       rec.responders = null;
     }
@@ -132,8 +133,10 @@ const Responders3D = {
         return { mat, glow };
       });
       group.add(holder);
-      const v = { kind, sets, phase: n * 0.37, holder, track, s: track ? (was !== undefined ? was : 0) : 0 };
+      // (solid for the own aeroplane: sim/collide.js)
+      const v = { kind, sets, phase: n * 0.37, holder, track, s: track ? (was !== undefined ? was : 0) : 0, a: rec.a, solid: Collide.vehicle(rec.a, kind) };
       if (track) this.pose(v);
+      else Collide.placeVehicle(v.solid, rec.a, holder.position.x, holder.position.z, holder.rotation.y);
       vehicles.push(v);
     });
     rec.frame.add(group);
@@ -145,6 +148,7 @@ const Responders3D = {
     const q = trackAt(v.track, v.s), b = trackAt(v.track, Math.max(0, v.s - 1)), f = trackAt(v.track, Math.min(v.track.len, v.s + 1));
     v.holder.position.set(q.across, 0, -q.t);
     if (Math.hypot(f.t - b.t, f.across - b.across) > 1e-3) v.holder.rotation.y = Math.atan2(f.across - b.across, -(f.t - b.t));
+    if (v.solid) Collide.placeVehicle(v.solid, v.a, v.holder.position.x, v.holder.position.z, v.holder.rotation.y);
   },
 
   // Where a vehicle w wide and len long stands, its inner side y0 out from the aeroplane's axis:

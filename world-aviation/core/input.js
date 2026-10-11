@@ -64,6 +64,7 @@ const Input = {
       case ' ': this.fire('parkBrake'); break;
       case 'Escape': this.fire('pause'); break;
       case 'h': this.fire('help'); break;
+      case 'p': this.fire('tourPause'); break;
       case ',': case '<': this.fire('altDown'); break;
       case '.': case '>': this.fire('altUp'); break;
       case ';': case ':': this.fire('hdgDown'); break;

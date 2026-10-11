@@ -43,7 +43,8 @@ const Flight = {
   elapsed: 0,           // flight time, simulated seconds
   realElapsed: 0,       // flight time, real seconds
   landed: null,         // touchdown record
-  failure: null,        // set when the flight is lost
+  failure: null,        // set when the flight is lost: { reason, text, contact (a collision: sim/collide.js) }
+  incident: null,       // a touch waiting for the pilot's choice (sim/collide.js, ui/incident.js): the flight stands still
 
   // ---------- setup ----------
   init(opts) {
@@ -93,7 +94,9 @@ const Flight = {
     this.taxi = null;                // the taxi speed and its limit (sim/taxilimit.js)
     this.copilot = null;             // the first officer taxiing in (sim/copilot.js)
     this.followMe = false;           // a FOLLOW ME car leads the taxi in (a first visit; render/followme3d.js)
-    this.collide = null;             // the last pose clear of everything, the last touch (sim/collide.js)
+    this.collide = null;             // the last pose clear of everything, the way it came (sim/collide.js)
+    this.incident = null;
+    this.compensations = [];         // the touches paid for: { what, cost } (ui/incident.js, the debrief)
     this.navFailed = false; this.cargoShift = false; this.medical = false;
     this.meet = [];                  // who waits at the arrival stand: 'ambulance', 'fire', 'police' (Systems.finishChecklist)
     // (a patient on board: the ambulance is called from the start, to meet the aeroplane)
@@ -283,7 +286,7 @@ const Flight = {
     let steps = Math.floor(this.acc / dt);
     if (steps > SIM.MAX_STEPS_PER_FRAME) { steps = SIM.MAX_STEPS_PER_FRAME; this.acc = 0; }
     else this.acc -= steps * dt;
-    for (let i = 0; i < steps && !this.failure; i++) {
+    for (let i = 0; i < steps && !this.failure && !this.incident; i++) {
       this.step(dt);
       Collide.step(this);
       this.simTime += dt;
@@ -909,9 +912,9 @@ const Flight = {
     return { type: 'grass', roll: 0.07, brake: 0.35, onPavement: false, allowed: ac.surfaces.includes('grass') };
   },
 
-  fail(reason, text) {
+  fail(reason, text, contact) {
     if (this.failure) return;
-    this.failure = { reason, text };
+    this.failure = { reason, text, contact: contact || null };
     Audio2.cue('crash');
   },
 

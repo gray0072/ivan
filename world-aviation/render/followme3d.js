@@ -70,7 +70,7 @@ const FollowMe3D = {
     if (!car) return;
     if (this.fl !== fl) { this.fl = fl; this.path = null; this.route = null; this.s = 0; this.v = 0; this.moved = false; }
     const p = fl.phase, g = fl.guidance;
-    if (!fl.followMe || !(p === 'EXIT' || p === 'SHUTDOWN' || p === 'PARKED')) { car.visible = false; return; }
+    if (!fl.followMe || !(p === 'EXIT' || p === 'SHUTDOWN' || p === 'PARKED')) { car.visible = false; this.unsolid(); return; }
     if (p === 'EXIT' && g && g.route && g.route.length > 2) {
       if (g.route !== this.route) this.follow(fl, g.route);
       // ahead of the nose by the gap and the lead, setting off in time to get up to the aeroplane's
@@ -87,11 +87,13 @@ const FollowMe3D = {
       // the aeroplane on its stand: on to the car's own waiting place beside it
       this.drive(FOLLOW_ME.MAX_KT * KTS, FOLLOW_ME.ACCEL_MS2, dt * fl.env.timeAccel);
     }
-    if (!this.path) { car.visible = false; return; }
+    if (!this.path) { car.visible = false; this.unsolid(); return; }
     const q = this.at(this.s), a = this.at(this.s - 3), b = this.at(this.s + 3);
     car.visible = true;
     car.position.set(q.x, Terrain.surfaceAt(q.x, q.z), q.z);
     car.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
+    // (solid once it waits at its place by the stand: leading, it keeps its own distance ahead)
+    if (this.s >= this.end - 0.1) this.solidAt(fl, q.x, q.z, car.rotation.y); else this.unsolid();
     // the beacon: a flash a cycle, brighter at night
     const on = ((time % FOLLOW_ME.FLASH_S) / FOLLOW_ME.FLASH_S) < 0.35;
     this.beaconMat.color.setHex(on ? 0xffb030 : 0x5a3208);
@@ -99,6 +101,17 @@ const FollowMe3D = {
     this.glow.material.size = 2.4 + 2.6 * dark;
     this.glow.material.opacity = 0.55 + 0.45 * dark;
   },
+
+  // solid for the own aeroplane (sim/collide.js): in the arrival airport's vehicles while it is seen
+  solidAt(fl, x, z, ry) {
+    const a = fl.arrival;
+    if (!this.solid || this.solidApt !== a || !a.vehicles || a.vehicles.indexOf(this.solid) < 0) {
+      this.solid = Collide.vehicle(a, 'followMe');
+      this.solidApt = a;
+    }
+    Collide.placeVehicleWorld(this.solid, x, z, ry);
+  },
+  unsolid() { if (this.solid) this.solid.on = false; },
 
   // towards the speed `want` (m/s) at `accel`, braking to stop at the end of its way; never backs up
   drive(want, accel, sdt) {

@@ -367,15 +367,16 @@ const Ga3D = {
     if (v && (v.fl !== fl || v.key !== key)) {
       rec.frame.remove(v.group);
       v.group.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+      Collide.dropVehicle(rec.a, v.solid);
       rec.loadVehicle = null;
     }
     if (!key || rec.loadVehicle) return;
     const k = kit(), rng = makeRng(hashStr(c.id || 'load'));
     const post = POST_VANS[rec.a.country] || ['#f2c418', '#1d3f78'];
-    let w = 2.1, len = 5.6;
-    if (type === 'medevac') { Vehicles.ambulance(k); w = 2.4; len = 6.2; } else if (type === 'mail') Vehicles.panelVan(k, post[0], post[1], false);
+    let w = 2.1, len = 5.6, kind = 'van';
+    if (type === 'medevac') { Vehicles.ambulance(k); w = 2.4; len = 6.2; kind = 'ambulance'; } else if (type === 'mail') Vehicles.panelVan(k, post[0], post[1], false);
     else if (type === 'fish' || type === 'reefer') Vehicles.panelVan(k, '#f4f4f0', '#2e6fb0', true);
-    else { Vehicles.pickup(k, '#e9e9e4', true, rng); w = 1.95; len = 5.3; }
+    else { Vehicles.pickup(k, '#e9e9e4', true, rng); w = 1.95; len = 5.3; kind = 'pickup'; }
     const lay = modelLayout(fl.ac);
     const p = Responders3D.place(lay, lay.R + 3.5, w, len);
     const group = new THREE.Group();
@@ -384,7 +385,10 @@ const Ga3D = {
     mesh.rotation.y = -Math.PI / 2;
     group.add(mesh);
     rec.frame.add(group);
-    rec.loadVehicle = { fl, key, group };
+    // (solid for the own aeroplane: sim/collide.js)
+    const solid = Collide.vehicle(rec.a, kind);
+    Collide.placeVehicle(solid, rec.a, mesh.position.x, mesh.position.z, mesh.rotation.y);
+    rec.loadVehicle = { fl, key, group, solid };
   }
 };
 

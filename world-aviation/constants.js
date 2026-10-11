@@ -395,14 +395,55 @@ const HELICOPTERS = {
 // ---------- Collisions (sim/collide.js) ----------
 // the own aeroplane against the buildings and the parked aeroplanes of the nearest airport
 const COLLIDE = {
-  CRASH_KT: 6,                 // on the ground at this ground speed or more a collision loses the flight
-                               // (in the air always); slower it is a touch: stopped dead, damaged
+  CRASH_KT: 6,                 // on the ground below this ground speed a collision is a touch: stopped dead,
+                               // damaged, pay the compensation and go on (or end the flight); at it or more
+                               // a building or an aeroplane loses the flight (in the air always)
+  POLICE_KT: 15,               // a vehicle hit from CRASH_KT up to this: the police stop the flight (a small fine);
+                               // at it or more the flight is lost as in a crash
   BUMP_DAMAGE: 0.3,            // the damage of a touch at CRASH_KT (0..1; a quarter of it at a crawl)
-  BUMP_REPEAT_S: 3,            // the same obstacle damages again only after this long clear of it
+  // the compensation for a touch: this share of the contract's pay for what was hit, from half of
+  // it at a crawl to all of it at CRASH_KT, times the difficulty's damageFactor, at least COMP_MIN
+  COMP_SHARE: { vehicle: 0.04, building: 0.08, parked: 0.12, heli: 0.12 },
+  COMP_MIN: 300,
+  COMP_REP: 3,                 // each touch paid for: the reputation the flight loses, tenths of a point
+  POLICE_FINE: 0.05,           // stopped by the police: this share of the contract's pay ...
+  POLICE_REP: 0.5,             // ... and this much reputation (a crash: 12 % and CONTRACTS.CRASH_REP)
+  TRAIL_STEP_M: 2,             // the way the aeroplane came, a pose this far apart ...
+  TRAIL_M: 80,                 // ... kept this far back, for the tug to pull it back along
+  TOW_M: 20,                   // after a touch a tug pulls the aeroplane back this far along its way ...
+  TOW_MS: 2.2,                 // ... at this speed (m/s)
   SAMPLE_M: 1.2,               // the spheres along a wing, the tail and the fin: this far apart ...
   WING_R: 0.6,                 // ... and this thick (metres)
   TOWER_CAB_M: 6,              // the tower's cab above its floor (TOWER_H)
-  ROOF_LIP_M: 16               // a terminal's roof overhangs the apron (and its ends) by up to this (the cameras' test)
+  ROOF_LIP_M: 16,              // a terminal's roof overhangs the apron (and its ends) by up to this (the cameras' test)
+  // the vehicles on the apron as boxes in their own frame (x across, z forward): [width, back z,
+  // front z, height], metres, as render/apron3d.js, baggage3d.js, ga3d.js and responders3d.js draw them
+  VEHICLES: {
+    tug: [2.8, -2.9, 3.2, 2.6], tractor: [1.6, -1.3, 1.3, 2.2], cart: [1.5, -2.2, 1.4, 1.9],
+    beltLoader: [2.0, -3.1, 4.4, 3.2], fuelTruck: [2.5, -5.3, 5.8, 3.7], catering: [2.5, -4.2, 4.7, 5.1],
+    gpu: [1.4, -1.1, 1.1, 1.4], stairs: [2.3, -4.5, 4.1, 4.0], highLoader: [3.3, -5.9, 5.0, 4.5],
+    forklift: [1.2, -1.3, 2.5, 2.6], ambulance: [2.4, -3.1, 3.0, 2.9], pickup: [1.95, -2.65, 2.65, 2.4],
+    van: [2.0, -2.8, 2.8, 2.9], car: [1.8, -2.2, 2.2, 1.6], followMe: [1.8, -2.2, 2.2, 2.1],
+    police: [1.8, -2.3, 2.3, 1.7], fire: [3.0, -5.3, 5.6, 3.6]
+  }
+};
+
+// After a collision the camera goes outside to show it (ui/incident.js, Cinematic.crash): it
+// comes in on the spot, shaken at first, and circles it slowly; a touch then asks to pay or to
+// end the flight, a tug pulls the aeroplane back (Cinematic.tow), the police drive up when the
+// flight is stopped; then the view the pilot had is back, or the debrief follows
+const INCIDENT = {
+  CRASH_S: 3.2,                // the first shot of the collision, seconds (Enter, Space or a tap skip it)
+  CRASH_HOLD_S: 1.6,           // a lost flight: the shot holds this long more before the debrief
+  ORBIT_S: 40,                 // the camera circles the spot this slowly while the choice is asked ...
+  ORBIT_DEG: 35,               // ... this far round
+  SHAKE_M: 0.9,                // the camera shaken at the impact, metres (a touch a third of it) ...
+  SHAKE_S: 0.7,                // ... for about this long
+  FADE_S: 0.5,                 // a fade to black and back between the shots
+  POLICE_S: 5.5,               // the police car drives up: the shot lasts this long
+  POLICE_FROM_M: 70,           // ... from this far away
+  TUG_WAIT_S: 1.0,             // the tug stands at the nose this long before pulling, and after
+  SMOKE_S: 9                   // a lost flight: smoke rises from the spot for this long
 };
 
 // ---------- Difficulty ----------
@@ -1117,6 +1158,7 @@ const CONTRACTS = {
   // saves those minutes on the ground (and their lease) but earns neither
   FULL_GROUND_BONUS: 0.06,
   FULL_GROUND_REP: 0.3,
+  CRASH_REP: 1,                // a lost flight: the reputation it costs with the client group (stopped by the police: COLLIDE.POLICE_REP)
   MAX_NM: 4500,                  // the longest contract, real nm (further: fly there in legs)
   FUEL_RESERVE_FACTOR: 1.45,     // block fuel = trip fuel x this + taxi fuel
   FUEL_MIN_FACTOR: 1.15,         // the load is cut so that the trip fuel x this still fits under the maximum take-off weight

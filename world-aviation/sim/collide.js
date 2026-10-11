@@ -1,7 +1,8 @@
 'use strict';
 
 // ============================================================
-// World Aviation — collisions with the buildings and the parked aeroplanes
+// World Aviation — collisions with the buildings, the parked aeroplanes
+// and the vehicles on the apron
 // Every physics step (Flight.update) the own aeroplane, as spheres along
 // its fuselage, wings, tail and engines (Airframe.samples), turned by its
 // heading, pitch and bank, is tested against the obstacles of the nearest
@@ -10,17 +11,28 @@
 // hangar, the rescue station, the fire station, the landside behind the
 // terminal) as boxes, the aeroplanes parked at its stands (all but the stands
 // this flight uses, Flight.gatesInUse) as the prisms of their type
-// (Airframe.solids), and the helicopters on their pads (their body and the
-// disc of the main rotor).
-//   - in the air, or on the ground at COLLIDE.CRASH_KT or more: the flight
-//     is lost (Flight.fail 'collision');
+// (Airframe.solids), the helicopters on their pads (their body and the
+// disc of the main rotor), and the vehicles (a.vehicles: the ones standing
+// at the stands, the baggage trains, the FOLLOW ME car, the emergency
+// services and the van for the load; the scene places them and keeps the
+// moving ones where it draws them — with no scene, as in the headless
+// runs, there are none).
+//   - in the air, or on the ground at COLLIDE.CRASH_KT or more (a vehicle:
+//     COLLIDE.POLICE_KT): the flight is lost (Flight.fail 'collision');
+//   - a vehicle from CRASH_KT up to POLICE_KT: the police stop the flight
+//     (Flight.fail 'police', a small fine);
 //   - slower, on the ground: a touch — the aeroplane stops dead where it
 //     was last clear, the damage grows with the speed (COLLIDE.BUMP_DAMAGE
-//     at CRASH_KT, a quarter of it at a crawl), once per obstacle until it
-//     has been clear of it for COLLIDE.BUMP_REPEAT_S; repairs on the debrief.
-// Not tested while the tug has the aeroplane (GATE, PUSHBACK) or once it is
-// parked (SHUTDOWN, PARKED). No drawing: the messages go through
-// Flight.warn / Flight.fail. Used by sim/flight.js.
+//     at CRASH_KT, a quarter of it at a crawl) and the flight waits
+//     (Flight.incident) for the pilot to pay the compensation and go on, or
+//     to end it (ui/incident.js); going on, a tug pulls the aeroplane back
+//     along the way it came (towPath / towAt: the trail of its poses).
+// What happened goes with the failure or the incident as its `contact`
+// (where, what, how fast) for the camera that shows it. Not tested while the
+// tug has the aeroplane (GATE, PUSHBACK) or once it is parked (SHUTDOWN,
+// PARKED). No drawing: the messages go through Flight.fail and
+// Flight.incident. Used by sim/flight.js; the vehicles are placed by the
+// render/ files that draw them (vehicle, placeVehicle).
 // ============================================================
 
 const COLLIDE_SKIP_PHASES = ['GATE', 'PUSHBACK', 'SHUTDOWN', 'PARKED'];
@@ -42,6 +54,27 @@ const OBSTACLE_NAMES = {
   hotel: 'the hotel',
   office: 'an office building',
   parked: 'a parked {type}'
+};
+
+// the vehicles, by their COLLIDE.VEHICLES kind (translated by hand in data/lang-*.js)
+const VEHICLE_NAMES = {
+  tug: 'a pushback tug',
+  tractor: 'a baggage tractor',
+  cart: 'a baggage cart',
+  beltLoader: 'a belt loader',
+  fuelTruck: 'a fuel truck',
+  catering: 'a catering truck',
+  gpu: 'a ground power unit',
+  stairs: 'an airstair truck',
+  highLoader: 'a cargo loader',
+  forklift: 'a forklift',
+  ambulance: 'an ambulance',
+  pickup: 'a pickup',
+  van: 'a van',
+  car: 'a car',
+  followMe: 'the FOLLOW ME car',
+  police: 'the police car',
+  fire: 'a fire engine'
 };
 
 const Collide = {
@@ -88,15 +121,62 @@ const Collide = {
     return out;
   },
 
+  // ---------- the vehicles (placed by the scene) ----------
+  // a new vehicle of airport a, of a COLLIDE.VEHICLES kind; gate: the stand it stands at (left
+  // out with the stand's parked aeroplane when the flight uses that stand). Off until placed.
+  vehicle(a, kind, gate) {
+    const v = { kind, gate: gate || null, on: false, x: 0, z: 0, fx: 0, fz: -1, ob: null };
+    (a.vehicles || (a.vehicles = [])).push(v);
+    return v;
+  },
+  // gone (the scene took it away)
+  dropVehicle(a, v) {
+    const i = a.vehicles ? a.vehicles.indexOf(v) : -1;
+    if (i >= 0) a.vehicles.splice(i, 1);
+  },
+  // places it at (x, z) of the airport's frame as the scene builds it (x across, z = -t), turned
+  // by ry about the vertical (its forward: +z turned by ry)
+  placeVehicle(v, a, x, z, ry) {
+    const p = World.at(a, -z, x), ft = -Math.cos(ry), fa = Math.sin(ry);
+    v.x = p.x; v.z = p.z;
+    v.fx = a.dirX * ft + a.perX * fa; v.fz = a.dirZ * ft + a.perZ * fa;
+    v.on = true;
+  },
+  // ... or in the world, its forward turned by ry from +z (as three.js turns it)
+  placeVehicleWorld(v, x, z, ry) {
+    v.x = x; v.z = z; v.fx = Math.sin(ry); v.fz = Math.cos(ry);
+    v.on = true;
+  },
+  // its box as an obstacle, where it is now
+  vehicleOb(a, v) {
+    let ob = v.ob;
+    if (!ob) {
+      const [w, z0, z1, h] = COLLIDE.VEHICLES[v.kind] || COLLIDE.VEHICLES.car;
+      const solid = convexPrism([[-w / 2, z0], [w / 2, z0], [w / 2, z1], [-w / 2, z1]], 0, h);
+      ob = v.ob = { kind: 'vehicle', vehicle: v, ox: 0, oz: 0, ax: { x: 0, z: 0 }, az: { x: 0, z: 0 }, base: a.elev, solids: [solid], rad: solid.rad, top: a.elev + h };
+    }
+    ob.ox = v.x; ob.oz = v.z;
+    ob.az.x = v.fx; ob.az.z = v.fz;
+    ob.ax.x = -v.fz; ob.ax.z = v.fx;
+    return ob;
+  },
+
   step(fl) {
     const st = fl.st;
-    const c = fl.collide || (fl.collide = { clear: null, last: null, count: 0 });
-    if (fl.failure) return;
-    if (COLLIDE_SKIP_PHASES.indexOf(fl.phase) >= 0) { this.keepClear(c, st); return; }
+    const c = fl.collide || (fl.collide = { clear: null, trail: [] });
+    if (fl.failure || fl.incident) return;
+    if (COLLIDE_SKIP_PHASES.indexOf(fl.phase) >= 0) {
+      if (fl.phase === 'GATE') c.trail.length = 0;
+      this.keepClear(c, st);
+      return;
+    }
     const a = fl.nearestApt();
     const obs = this.obstacles(a);
     const reach = Math.max(fl.dims.len, fl.dims.span) / 2 + 2;
-    if (st.pos.y - reach > a.elev + a.obstacleTop || Math.hypot(st.pos.x - a.x, st.pos.z - a.z) > a.obstacleReach + reach) {
+    const nearObs = !(st.pos.y - reach > a.elev + a.obstacleTop || Math.hypot(st.pos.x - a.x, st.pos.z - a.z) > a.obstacleReach + reach);
+    // (the vehicles are all low, on the ground)
+    const vs = a.vehicles && a.vehicles.length && st.pos.y - reach < a.elev + 6 ? a.vehicles : null;
+    if (!nearObs && !vs) {
       this.keepClear(c, st);
       return;
     }
@@ -111,10 +191,23 @@ const Collide = {
       p.r = s.r;
     }
     const used = fl.gatesInUse || [];
-    for (const ob of obs) {
-      if (ob.gate && used.indexOf(ob.gate) >= 0) continue;
-      if (Math.hypot(ob.ox - st.pos.x, ob.oz - st.pos.z) > ob.rad + reach || st.pos.y - reach > ob.top) continue;
-      if (this.touches(ob, pts, samples.length)) { this.hit(fl, c, ob); return; }
+    if (nearObs) {
+      for (const ob of obs) {
+        if (ob.gate && used.indexOf(ob.gate) >= 0) continue;
+        if (Math.hypot(ob.ox - st.pos.x, ob.oz - st.pos.z) > ob.rad + reach || st.pos.y - reach > ob.top) continue;
+        const k = this.touchAt(ob, pts, samples.length);
+        if (k >= 0) { this.hit(fl, c, ob, pts[k]); return; }
+      }
+    }
+    if (vs) {
+      for (const v of vs) {
+        if (!v.on || (v.gate && used.indexOf(v.gate) >= 0)) continue;
+        if (Math.hypot(v.x - st.pos.x, v.z - st.pos.z) > reach + 8) continue;
+        const ob = this.vehicleOb(a, v);
+        if (st.pos.y - reach > ob.top) continue;
+        const k = this.touchAt(ob, pts, samples.length);
+        if (k >= 0) { this.hit(fl, c, ob, pts[k]); return; }
+      }
     }
     this.keepClear(c, st);
   },
@@ -144,13 +237,21 @@ const Collide = {
     return false;
   },
 
+  // the pose clear of everything, and the way the aeroplane came: a pose every TRAIL_STEP_M,
+  // TRAIL_M of them kept
   keepClear(c, st) {
     if (!c.clear) c.clear = {};
     c.clear.x = st.pos.x; c.clear.z = st.pos.z; c.clear.hdg = st.hdg;
+    const tr = c.trail, last = tr[tr.length - 1];
+    if (last && Math.hypot(st.pos.x - last.x, st.pos.z - last.z) < COLLIDE.TRAIL_STEP_M) return;
+    tr.push({ x: st.pos.x, z: st.pos.z, hdg: st.hdg });
+    if (tr.length > COLLIDE.TRAIL_M / COLLIDE.TRAIL_STEP_M + 1) tr.shift();
   },
 
-  // does any sphere reach into one of the obstacle's prisms?
-  touches(ob, pts, count) {
+  // does any sphere reach into one of the obstacle's prisms? touchAt: the first that does (its
+  // index), or -1
+  touches(ob, pts, count) { return this.touchAt(ob, pts, count) >= 0; },
+  touchAt(ob, pts, count) {
     for (let i = 0; i < count; i++) {
       const p = pts[i];
       const rx = p.x - ob.ox, rz = p.z - ob.oz;
@@ -160,28 +261,98 @@ const Collide = {
         if (lx * lx + lz * lz > (s.rad + p.r) * (s.rad + p.r)) continue;
         let out = -Infinity;
         for (const e of s.edges) out = Math.max(out, e.nx * lx + e.nz * lz - e.d);
-        if (out <= p.r) return true;
+        if (out <= p.r) return i;
       }
     }
-    return false;
+    return -1;
   },
 
-  hit(fl, c, ob) {
+  // the obstacle as the messages name it
+  nameOf(ob) {
+    if (ob.kind === 'vehicle') return tr(VEHICLE_NAMES[ob.vehicle.kind] || VEHICLE_NAMES.car);
+    const kind = ob.kind === 'cargo' && !ob.bld.big ? 'cargoShed' : ob.kind;
+    return tr(OBSTACLE_NAMES[kind] || OBSTACLE_NAMES.office, { type: ob.type ? ob.type.name : ob.heli ? tr(ob.heli.name) : '' });
+  },
+
+  // p: the sphere that touched
+  hit(fl, c, ob, p) {
     const st = fl.st;
     const speed = fl.groundSpeedKt();
-    const kind = ob.kind === 'cargo' && !ob.bld.big ? 'cargoShed' : ob.kind;
-    const what = tr(OBSTACLE_NAMES[kind] || OBSTACLE_NAMES.office, { type: ob.type ? ob.type.name : ob.heli ? tr(ob.heli.name) : '' });
-    if (!st.onGround) { fl.fail('collision', tr('Collision — you flew into {what}.', { what })); return; }
-    if (speed >= COLLIDE.CRASH_KT) { fl.fail('collision', tr('Collision — you hit {what} at {v} kt.', { what, v: Math.round(speed) })); return; }
-    // a touch: stopped dead where it was last clear
+    const what = this.nameOf(ob);
+    const vehicle = ob.kind === 'vehicle';
+    // what the camera shows (ui/incident.js): the spot, the obstacle's middle, what it was
+    const contact = {
+      kind: vehicle ? 'vehicle' : ob.kind === 'parked' || ob.kind === 'heli' ? ob.kind : 'building',
+      what, speed, air: !st.onGround, x: p.x, y: p.y, z: p.z, ox: ob.ox, oz: ob.oz, top: ob.top
+    };
+    if (!st.onGround) { contact.tier = 'crash'; fl.fail('collision', tr('Collision — you flew into {what}.', { what }), contact); return; }
+    const v = Math.max(1, Math.round(speed));
+    if (speed >= (vehicle ? COLLIDE.POLICE_KT : COLLIDE.CRASH_KT)) {
+      contact.tier = 'crash';
+      fl.fail('collision', tr('Collision — you hit {what} at {v} kt.', { what, v }), contact);
+      return;
+    }
+    // stopped dead where it was last clear
     if (c.clear) { st.pos.x = c.clear.x; st.pos.z = c.clear.z; st.hdg = c.clear.hdg; }
     st.vel.x = 0; st.vel.z = 0; st.yawRate = 0; st.turnRate = 0;
-    if (!c.last || c.last.ob !== ob || fl.elapsed - c.last.t > COLLIDE.BUMP_REPEAT_S) {
-      const dmg = COLLIDE.BUMP_DAMAGE * Math.max(0.25, speed / COLLIDE.CRASH_KT);
-      st.damage = Math.min(1, st.damage + dmg);
-      c.count++;
-      fl.warn('COLLIDE', tr('You touched {what} at {v} kt — the aircraft is damaged', { what, v: Math.max(1, Math.round(speed)) }));
+    st.damage = Math.min(1, st.damage + COLLIDE.BUMP_DAMAGE * clamp(speed / COLLIDE.CRASH_KT, 0.25, 1));
+    if (speed >= COLLIDE.CRASH_KT) {
+      contact.tier = 'police';
+      fl.fail('police', tr('You hit {what} at {v} kt — the police stopped the flight.', { what, v }), contact);
+      return;
     }
-    c.last = { ob, t: fl.elapsed };
+    contact.tier = 'touch';
+    contact.text = tr('You touched {what} at {v} kt — the aircraft is damaged', { what, v });
+    fl.incident = contact;
+    Audio2.cue('bump');
+  },
+
+  // ---------- the tug after a touch ----------
+  // the way back: from where the aeroplane stands back along its trail, COLLIDE.TOW_M (or as far
+  // as the trail goes): { pts: [{ x, z, hdg }], len, keep (the trail's poses left after it) }
+  towPath(fl) {
+    const c = fl.collide, st = fl.st;
+    const pts = [{ x: st.pos.x, z: st.pos.z, hdg: st.hdg }];
+    const trail = c ? c.trail : [];
+    let len = 0, keep = trail.length;
+    for (let i = trail.length - 1; i >= 0 && len < COLLIDE.TOW_M; i--) {
+      const q = trail[i], p = pts[pts.length - 1];
+      const d = Math.hypot(q.x - p.x, q.z - p.z);
+      keep = i + 1;
+      if (d < 0.05) continue;
+      // (no further than TOW_M: the last piece cut short)
+      if (len + d > COLLIDE.TOW_M) {
+        const k = (COLLIDE.TOW_M - len) / d;
+        pts.push({ x: lerp(p.x, q.x, k), z: lerp(p.z, q.z, k), hdg: lerpAngle(p.hdg, q.hdg, k) });
+        len = COLLIDE.TOW_M;
+        break;
+      }
+      pts.push(q);
+      len += d;
+    }
+    return { pts, len, keep };
+  },
+  // the aeroplane at s metres along the way back, nose the way it was when it passed there
+  towAt(fl, path, s) {
+    const st = fl.st, P = path.pts;
+    let i = 0, d = clamp(s, 0, path.len);
+    while (i < P.length - 2) {
+      const l = Math.hypot(P[i + 1].x - P[i].x, P[i + 1].z - P[i].z);
+      if (d <= l) break;
+      d -= l; i++;
+    }
+    const p = P[i], q = P[Math.min(i + 1, P.length - 1)];
+    const l = Math.hypot(q.x - p.x, q.z - p.z), k = l > 1e-6 ? clamp(d / l, 0, 1) : 1;
+    st.pos.x = lerp(p.x, q.x, k); st.pos.z = lerp(p.z, q.z, k);
+    st.hdg = lerpAngle(p.hdg, q.hdg, k);
+    st.vel.x = 0; st.vel.z = 0; st.yawRate = 0; st.turnRate = 0;
+  },
+  // pulled clear: the trail goes on from there
+  towDone(fl, path) {
+    const c = fl.collide;
+    this.towAt(fl, path, path.len);
+    if (!c) return;
+    c.trail.length = Math.min(c.trail.length, path.keep);
+    this.keepClear(c, fl.st);
   }
 };

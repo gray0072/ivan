@@ -47,6 +47,8 @@ const Airport3D = {
     const id = { symbol: look[0], color: look[1], airlines: airlinesAt(a), paint: buildingPaint(a) };
     // night: materials that light up after dark ({ mat, color, k }: emissive = color x dark x k)
     const rec = { a, id, label: roofLabel(a), textures: [], flags: [], parked: [], night: [], frame: null, group: null };
+    // the vehicles solid for the own aeroplane, added as they are built (sim/collide.js)
+    a.vehicles = [];
 
     const group = new THREE.Group();
     const frame = new THREE.Group();

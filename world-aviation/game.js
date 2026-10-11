@@ -9,7 +9,7 @@
 const AIRBORNE_PHASES = ['TAKEOFF', 'CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'];
 
 const Game = {
-  mode: 'boot',            // boot | menu | ops | briefing | tour | flying | debrief | failed | paused
+  mode: 'boot',            // boot | menu | ops | briefing | tour | flying | incident | debrief | failed | paused
   last: 0,
   flight: null,
   systems: null,
@@ -60,7 +60,16 @@ const Game = {
       if (document.hidden && this.mode === 'flying') this.pause();
     });
     // a tap anywhere skips the camera's flight at the start or the end
-    el('cine').addEventListener('pointerdown', (e) => { e.preventDefault(); if (this.mode === 'flying' || this.mode === 'tour') this.skipCine(); });
+    el('cine').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (this.mode === 'flying' || this.mode === 'tour') this.skipCine();
+      else if (this.mode === 'incident') Incident.action(this, 'tap');
+    });
+    // the tour's pause button: its own tap, not a tap that ends the tour
+    const pb = el('cinePause');
+    // (on pointerup: the touch handlers keep a touch from turning into a click)
+    pb.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); });
+    pb.addEventListener('pointerup', (e) => { e.stopPropagation(); this.toggleTourPause(); });
 
     // each career keeps its own settings: opening one (or starting one) brings its sound and graphics
     Career.onSettings = () => {
@@ -99,6 +108,7 @@ const Game = {
     }
     if (this.mode === 'flying') this.frame(dt);
     else if (this.mode === 'tour') this.tourFrame(dt);
+    else if (this.mode === 'incident') Incident.frame(this, dt);   // after a collision (ui/incident.js)
     else if (Audio2.t) Audio2.update(0, null, null);   // no engine, wind or wheel sound outside a flight
     else if (this.mode === 'paused' && this.flight) {
       Scene3D.render();
@@ -155,6 +165,8 @@ const Game = {
     if (HUD.mapOpen) HUD.drawMap(fl, sys);
     HUD.updateMini(fl, sys, this.helpOpen);
 
+    // a touch waits for the pilot's choice; a collision that lost the flight is shown first (ui/incident.js)
+    if (fl.incident && !fl.failure && this.mode === 'flying') Incident.begin(this, fl.incident, null);
     if (fl.failure && this.mode === 'flying') this.failFlight(fl.failure);
   },
 
@@ -803,9 +815,14 @@ const Game = {
   // ---------- actions ----------
   action(name, arg) {
     // the look round an airport: Enter, Space and Esc end it
-    if (this.mode === 'tour') { if (name === 'starter' || name === 'parkBrake' || name === 'pause') this.skipCine(); return; }
+    if (this.mode === 'tour') {
+      if (name === 'tourPause') this.toggleTourPause();
+      else if (name === 'starter' || name === 'parkBrake' || name === 'pause') this.skipCine();
+      return;
+    }
     if (name === 'cheat') { this.cheat(arg); return; }
     if (this.mode === 'paused') { if (name === 'pause') this.pause(); return; }
+    if (this.mode === 'incident') { Incident.action(this, name); return; }
     if (this.mode !== 'flying') return;
     // the camera's flight: Enter, Space and Esc skip it, the rest waits for the cockpit
     if (this.cineShot()) { if (name === 'starter' || name === 'parkBrake' || name === 'pause') this.skipCine(); return; }
@@ -1247,6 +1264,8 @@ const Game = {
       [Cinematic.shot.marks.own + 1.5, Infinity, '<b>' + what + '</b><span>' + esc(fl.ac.name) + '</span>']
     ];
     this.tourCap = -1;
+    this.tourPaused = false;
+    this.tourPauseButton();
     const cap = el('cineCaption');
     cap.classList.remove('on');
     el('cineSkip').innerHTML = Input.isCoarse ? esc(tr('Tap to skip')) : esc(tr('Skip')) + ' <kbd>Enter</kbd>';
@@ -1255,8 +1274,10 @@ const Game = {
     this.last = performance.now();
   },
 
-  // each frame of the tour: only the camera moves (the scene round the aeroplane, which stands still)
+  // each frame of the tour: only the camera moves (the scene round the aeroplane, which stands still);
+  // paused, nothing moves (the picture is still drawn: the window may change)
   tourFrame(dt) {
+    if (this.tourPaused) dt = 0;
     if (Cinematic.update(dt)) { this.endTour(); return; }
     const fl = this.flight, sh = Cinematic.shot;
     Scene3D.cine = Cinematic;
@@ -1273,6 +1294,19 @@ const Game = {
       if (i >= 0) cap.innerHTML = this.tourCaps[i][2];
     }
     cap.classList.toggle('on', i >= 0);
+  },
+
+  // the tour's pause: its button over the lower bar, or P
+  toggleTourPause() {
+    if (this.mode !== 'tour') return;
+    this.tourPaused = !this.tourPaused;
+    this.tourPauseButton();
+  },
+  tourPauseButton() {
+    const b = el('cinePause');
+    b.hidden = false;
+    b.classList.toggle('on', !!this.tourPaused);
+    b.innerHTML = esc(this.tourPaused ? '▶ ' + tr('Resume') : '❚❚ ' + tr('Pause')) + (Input.isCoarse ? '' : ' <kbd>P</kbd>');
   },
 
   endTour() {
@@ -1344,6 +1378,7 @@ const Game = {
     box.hidden = true;
     box.classList.remove('bars');
     el('cineCaption').classList.remove('on');
+    el('cinePause').hidden = true;
     el('ui').style.opacity = '';
   },
 
@@ -1366,10 +1401,11 @@ const Game = {
       blockSec: fl.elapsed, realSec: fl.realElapsed, pushbackSkipped: this.setup.skipPushback, timeOfDay: this.setup.timeOfDay,
       cheated: this.cheated, cheatsUsed: this.cheatsUsed,
       moneyFactor: fl.moneyFactor || 1, repPenalty: (fl.pendingRepPenalty || 0) + (fl.noClearance ? 5 : 0) + (fl.taxiOverspeed ? 2 : 0),
-      noClearance: !!fl.noClearance, taxiOverspeed: fl.taxiOverspeed || 0
+      noClearance: !!fl.noClearance, taxiOverspeed: fl.taxiOverspeed || 0, compensations: fl.compensations || []
     };
     const payout = failed
-      ? Career.failFlight({ contract: this.contract, reason: this.failure ? this.failure.text : tr('Failed'), cheated: this.cheated })
+      ? Career.failFlight({ contract: this.contract, reason: this.failure ? this.failure.text : tr('Failed'), cheated: this.cheated,
+        kind: this.failure ? this.failure.reason : '', compensations: fl.compensations || [] })
       : Career.payout(result);
     this.result = Object.assign({}, result, { payout });
     Audio2.update(0, null, null);
@@ -1398,6 +1434,8 @@ const Game = {
   },
 
   failFlight(f) {
+    // a collision: the camera shows it first (ui/incident.js), then this again
+    if (f.contact && !f.shown) { f.shown = true; Incident.begin(this, f.contact, f); return; }
     // a practice that goes wrong costs nothing more than its fee
     if (this.practice) { this.endPractice(false, f.text); return; }
     this.failure = f;

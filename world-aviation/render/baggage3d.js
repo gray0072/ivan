@@ -59,11 +59,20 @@ const Baggage = {
       doors.box(0.3, 5.2, 9.0, front - 1.15, 2.6, -hall.t, '#e3b51c').box(0.8, 4.6, 8.0, front - 1.0, 2.3, -hall.t, '#15191d');
       const served = gs.filter((g) => stands[g.index].parked).length;
       const n = Math.max(1, Math.min(3, Math.round(served * 0.7)));
-      for (let i = 0; i < n; i++) rec.trains.push(this.makeTrain(at, mat, rng, hall, i));
+      for (let i = 0; i < n; i++) {
+        const tr = this.makeTrain(at, mat, rng, hall, i);
+        // (solid for the own aeroplane: sim/collide.js)
+        tr.a = a;
+        tr.solids = [Collide.vehicle(a, 'tractor')].concat(BAG_CART_Z.map(() => Collide.vehicle(a, 'cart')));
+        rec.trains.push(tr);
+      }
     }
     // the follow-me car waits beside the first hall's door
     const h0 = rec.trains.length ? rec.trains[0].hall : null;
-    if (h0) { doors.push(front - 4.2, 0, -(h0.t - 14), Math.PI); Vehicles.followMe(doors); doors.pop(); }
+    if (h0) {
+      doors.push(front - 4.2, 0, -(h0.t - 14), Math.PI); Vehicles.followMe(doors); doors.pop();
+      Collide.placeVehicle(Collide.vehicle(a, 'followMe'), a, front - 4.2, -(h0.t - 14), Math.PI);
+    }
     at(doors.mesh(mat), 0, 0, 0);
     rec.bagFront = front; rec.bagRoad = road;
   },
@@ -104,6 +113,7 @@ const Baggage = {
   show(tr, on) {
     tr.tractor.visible = on;
     for (const c of tr.carts) c.visible = on;
+    if (tr.solids && !on) for (const v of tr.solids) v.on = false;
   },
   // the bags on the first n carts
   setLoad(tr, n) {
@@ -217,6 +227,7 @@ const Baggage = {
     };
     put(tr.tractor, tr.s);
     tr.carts.forEach((c, i) => put(c, tr.s + BAG_CART_Z[i]));
+    if (tr.solids) [tr.tractor].concat(tr.carts).forEach((m, i) => Collide.placeVehicle(tr.solids[i], tr.a, m.position.x, m.position.z, m.rotation.y));
   },
 
   // another train just ahead on this one's track

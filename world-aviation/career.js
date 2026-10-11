@@ -817,6 +817,18 @@ const Career = {
     };
   },
 
+  // ---------- collisions (sim/collide.js, ui/incident.js) ----------
+  // the compensation for a touch (contact: Flight.incident): COLLIDE.COMP_SHARE of the contract's
+  // pay for what was hit, half of it at a crawl up to all of it at CRASH_KT, by the difficulty
+  compensation(contract, contact) {
+    const share = COLLIDE.COMP_SHARE[contact.kind] || COLLIDE.COMP_SHARE.building;
+    const k = 0.5 + 0.5 * clamp(contact.speed / COLLIDE.CRASH_KT, 0, 1);
+    const v = (contract ? contract.pay : 0) * share * k * this.difficulty.damageFactor;
+    return Math.max(COLLIDE.COMP_MIN, Math.round(v / 10) * 10);
+  },
+  // stopped by the police
+  policeFine(contract) { return Math.round((contract ? contract.pay : 0) * COLLIDE.POLICE_FINE / 10) * 10; },
+
   // ---------- the debrief ----------
   payout(result) {
     const d = this.data;
@@ -849,6 +861,7 @@ const Career = {
       const dmg = -Math.round(c.pay * result.damage * 0.7);
       lines.push({ label: 'Repairs and downtime', value: dmg });
     }
+    for (const comp of result.compensations || []) lines.push({ label: 'Compensation for {what}', args: { what: comp.what }, value: -comp.cost });
     if (result.mishandled > 0) lines.push({ label: 'Checklists mishandled', value: -Math.round(c.pay * 0.1 * result.mishandled) });
     if (result.handled > 0) lines.push({ label: 'Emergencies handled', value: Math.round(c.pay * 0.06 * result.handled) });
     if (result.moneyFactor && result.moneyFactor < 1) {
@@ -888,17 +901,24 @@ const Career = {
     return { lines, total, rep, grade: result.grade, records: true, bankrupt, promoted };
   },
 
+  // result.kind: the failure's reason ('police': stopped by the police after a collision, a small
+  // fine instead of a crash's costs); result.compensations: the touches paid for on the way
   failFlight(result) {
     const d = this.data;
     if (result.contract && !result.cheated) {
       d.stats.crashes++;
-      const cost = Math.round(result.contract.pay * 0.12);
-      d.money -= cost;
-      d.rep[result.contract.faction] = clamp((d.rep[result.contract.faction] || 0) - 1.5, 0, 100);
+      const police = result.kind === 'police';
+      const lines = [police ? { label: 'Stopped by the police (fine)', value: -this.policeFine(result.contract) }
+        : { label: 'Recovery, investigation and the client', value: -Math.round(result.contract.pay * 0.12) }];
+      for (const c of result.compensations || []) lines.push({ label: 'Compensation for {what}', args: { what: c.what }, value: -c.cost });
+      const total = lines.reduce((sum, l) => sum + l.value, 0);
+      const rep = police ? COLLIDE.POLICE_REP : CONTRACTS.CRASH_REP;
+      d.money += total;
+      d.rep[result.contract.faction] = clamp((d.rep[result.contract.faction] || 0) - rep, 0, 100);
       d.log.unshift(logLine('Flight {from} → {to} lost: {reason}', { from: result.contract.fromId, to: result.contract.toId, reason: result.reason }, d.log.length));
       d.log = d.log.slice(0, 24);
       this.save();
-      return { lines: [{ label: 'Recovery, investigation and the client', value: -cost }], total: -cost, rep: -1.5, bankrupt: d.money < CONTRACTS.START_DEBT_LIMIT };
+      return { lines, total, rep: -rep, bankrupt: d.money < CONTRACTS.START_DEBT_LIMIT };
     }
     d.stats.cheats += result.cheated ? 1 : 0;
     this.save();
