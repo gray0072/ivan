@@ -740,9 +740,10 @@ function fuselageGeometry(L, R, hk) {
 
 // The Beluga's hold (look.bubble = k, its radius over R; bubbleSection in sim/airframe.js): an
 // elliptic section at z — its roof T, its floor B, its half width a — or null outside it. In the
-// middle the full section, a circle meeting the lower fuselage in the crease; at the front it
-// starts on the cockpit roof just behind the windscreen and its roof sweeps up from there,
-// steep at first and rounding over to the full height (the door that swings up over the
+// middle the full section, a circle (its sides faired down onto the lower fuselage by
+// bubbleGeometry, bubbleHull); at the front it starts on the cockpit roof just behind the
+// windscreen and its roof sweeps up from there, near-vertical at first, a blunt forehead
+// rounding over to the full height (the door that swings up over the
 // cockpit), its sides coming down to the crease — the head of a whale, nothing jutting out over
 // the windscreen; at the back the roof sinks and the sides close in under the fin, rounded off
 // at its end. u: along the body as the fuselage's (tail 0, nose 1)
@@ -752,6 +753,8 @@ const BUBBLE_FULL = 0.25;     // full section from here back
 const BUBBLE_REAR = 0.54;     // the roof starts down here (over the wing's trailing edge)
 const BUBBLE_END = 0.99;      // and it ends here, under the fin
 const BUBBLE_DOOR = 0.22;     // the seam of the door round the front (on the livery)
+const BUBBLE_HULL = [0.05, 0.08];    // its sides faired down onto the fuselage (bubbleHull), growing in over these shares
+const BUBBLE_BROW = 0.55;     // how blunt its forehead is: the roof's rise over a quarter ellipse to this power
 const FACE_EYE = 0.12;        // the BelugaXL's eyes on the hold's forehead (look.face) ...
 const FACE_EYE_DEG = 68;      // ... this far round from the top
 const FACE_SMILE = [0.015, 0.085];   // its smile under the cockpit windows, from near the nose back to the corner
@@ -764,7 +767,7 @@ function bubbleRing(L, R, k, z) {
   if (z > zFull) {
     const c0 = fuselageRing(L, R, zF), y0 = c0.y + c0.r - R * 0.05;          // on the cockpit roof
     const v = (zF - z) / (zF - zFull);
-    const T = y0 + (sec.top - y0) * (1 - Math.pow(1 - v, 2.2));
+    const T = y0 + (sec.top - y0) * Math.pow(1 - (1 - v) * (1 - v), BUBBLE_BROW);
     const B = y0 + (sec.bottom - y0) * smooth(v / 0.75);
     return { T: Math.max(T, B), B, a: sec.rb * Math.pow(1 - (1 - v) * (1 - v), 0.7) };
   }
@@ -779,19 +782,66 @@ function bubbleRing(L, R, k, z) {
   a *= q;
   return { T: c + b, B: c - b, a };
 }
+// The side of the hold below its widest point, where it comes down onto the lower fuselage: not
+// the ellipse cutting into the fuselage (a long groove from the cockpit to the tail) but its
+// skin running on straight, a tangent to both, down to the fuselage — the section is the convex
+// hull of the two, as the real holds are faired in. Returns the tangent at the right side
+// (x > 0): the ellipse's angle from the top where it leaves it (th), the points on the ellipse
+// (e) and on the fuselage (f) and the line's outward normal (phi) — or null where the ellipse
+// already reaches below the fuselage, or the fuselage holds all of it
+function bubbleHull(c, b, a, fy, r) {
+  if (a < 1e-3 || b < 1e-3 || c - b <= fy - r) return null;
+  const hE = (p) => c * Math.sin(p) + Math.sqrt(a * a * Math.cos(p) ** 2 + b * b * Math.sin(p) ** 2);
+  const hF = (p) => fy * Math.sin(p) + r;
+  // the normals towards the bottom are the fuselage's, those higher up the ellipse's: find where they swap
+  let lo = -Math.PI / 2, hi = null;
+  for (let p = lo; p <= Math.PI / 2 + 1e-9; p += Math.PI / 64) { if (hE(p) >= hF(p)) { hi = p; break; } lo = p; }
+  if (hi === null) return null;
+  for (let n = 0; n < 30; n++) { const m = (lo + hi) / 2; if (hE(m) >= hF(m)) hi = m; else lo = m; }
+  const phi = hi, D = Math.sqrt(a * a * Math.cos(phi) ** 2 + b * b * Math.sin(phi) ** 2);
+  const e = [a * a * Math.cos(phi) / D, c + b * b * Math.sin(phi) / D];
+  return { th: Math.atan2(e[0] / a, (e[1] - c) / b), e, f: [r * Math.cos(phi), fy + r * Math.sin(phi)], phi };
+}
 function bubbleGeometry(L, R, k) {
-  const N = 72, SEG = 32;
+  // round each side from the top: the ellipse in E steps down to where the straight skin leaves it,
+  // that skin in S steps down to the fuselage, then in the rest round just inside the fuselage
+  // to the bottom — a vertex right on both ends of the skin, so the fuselage shows nowhere through it
+  const N = 72, E = 16, S = 2, HALF = 24, SEG = HALF * 2;
   const zA = L / 2 - L * BUBBLE_END, zB = L / 2 - L * BUBBLE_FRONT;
+  const smooth = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
   const pos = [], uv = [], idx = [];
   for (let i = 0; i <= N; i++) {
     const z = zA + (zB - zA) * (0.5 - 0.5 * Math.cos(Math.PI * i / N));
     const s = bubbleRing(L, R, k, Math.min(zB, Math.max(zA, z))) || { T: 0, B: 0, a: 0 };
     const c = (s.T + s.B) / 2, b = (s.T - s.B) / 2;
+    const fr = fuselageRing(L, R, z), hull = bubbleHull(c, b, s.a, fr.y, fr.r);
+    // the skin grows in from the front (BUBBLE_HULL); where there is none, the plain ellipse, evenly round
+    const hw = hull ? smooth(((L / 2 - z) / L - BUBBLE_HULL[0]) / (BUBBLE_HULL[1] - BUBBLE_HULL[0])) : 0;
+    const th0 = Math.PI * E / HALF, thE = th0 + ((hull ? hull.th : th0) - th0) * hw;
     for (let j = 0; j <= SEG; j++) {
-      const th = j / SEG * TAU;
+      const n = j <= HALF ? j : SEG - j;
+      let t, x, y;
+      if (n <= E) {
+        t = thE * n / E;
+        x = Math.sin(t) * s.a; y = c + Math.cos(t) * b;
+      } else {
+        t = thE + (Math.PI - thE) * (n - E) / (HALF - E);
+        x = Math.sin(t) * s.a; y = c + Math.cos(t) * b;
+        if (hw > 0) {
+          let hx, hy;
+          if (n <= E + S) {
+            const u = (n - E) / S;
+            hx = hull.e[0] + (hull.f[0] - hull.e[0]) * u; hy = hull.e[1] + (hull.f[1] - hull.e[1]) * u;
+          } else {
+            const p = hull.phi + (-Math.PI / 2 - hull.phi) * (n - E - S) / (HALF - E - S), rr = fr.r * 0.97;
+            hx = rr * Math.cos(p); hy = fr.y + rr * Math.sin(p);
+          }
+          x += (hx - x) * hw; y += (hy - y) * hw;
+        }
+      }
       // round from the top towards -x, as the fuselage, so the triangles face outwards
-      pos.push(-Math.sin(th) * s.a, c + Math.cos(th) * b, z);
-      uv.push((z + L / 2) / L, 1 - j / SEG);
+      pos.push(j <= HALF ? -x : x, y, z);
+      uv.push((z + L / 2) / L, j <= HALF ? 1 - t / TAU : t / TAU);
     }
   }
   const w = SEG + 1;
