@@ -60,6 +60,14 @@ const Copilot = {
     return g && g.route && g.route.length > 1 ? this.leadIn(g.route).at - LAYOUT.FILLET_STAND_R - g.along : 0;
   },
 
+  // the fastest the nosewheel steering (Flight.groundStep: the angle shrinks with the speed) still
+  // turns this aeroplane on a curve of radius R (metres), kt — a long one (the A380) takes the
+  // turn into a stand at walking pace, a short one at the limit
+  turnKt(fl, R) {
+    const steer = Math.atan(fl.dims.len * 0.38 / Math.max(R, 1));
+    return Math.max(3, 26 * (1 - steer / (SIM.NOSEWHEEL_MAX_STEER_DEG * DEG))) / KTS;
+  },
+
   // Each frame, instead of the pilot's controls (dt: the simulated seconds of the frame). Sets
   // fl.copilot.done once the aeroplane stands still at the handover point.
   update(fl, dt) {
@@ -71,9 +79,10 @@ const Copilot = {
       fl.setThrottle(0); st.brakeInput = 1; st.rudder = 0;
       return;
     }
-    // the speed: the limit with what is coming, and a stop at the handover point
+    // the speed: the limit with what is coming (a turn no faster than this aeroplane's nosewheel
+    // holds its curve: turnKt), and a stop at the handover point
     const left = this.left(fl);
-    const lim = TaxiLimit.along(fl.arrival, g.route, g.along, COPILOT.DECEL_MS2);
+    const lim = TaxiLimit.along(fl.arrival, g.route, g.along, COPILOT.DECEL_MS2, (R) => this.turnKt(fl, R));
     let want = Math.min(lim.now * KTS * COPILOT.SPEED_SHARE, Math.sqrt(2 * COPILOT.DECEL_MS2 * Math.max(0, left)));
     if (left < 1.5) want = 0;
     const err = want - speed;
@@ -94,7 +103,7 @@ const Copilot = {
     // never lines up with the stand)
     const a = fl.arrival, carrot = Math.max(30, fl.dims.len * 0.65);
     let tgt = g.target;
-    if (g.along < -carrot - LAYOUT.FILLET_EXIT_R) tgt = World.at(a, World.local(a, st.pos.x, st.pos.z).t + carrot, 0);
+    if (g.along < -carrot - (g.route[0].turnBack || LAYOUT.FILLET_EXIT_R)) tgt = World.at(a, World.local(a, st.pos.x, st.pos.z).t + carrot, 0);
     else if (g.along > this.leadIn(g.route).at) {
       const r = g.route, A = r[r.length - 2], B = r[r.length - 1], len = Math.hypot(B.x - A.x, B.z - A.z);
       const ux = (B.x - A.x) / len, uz = (B.z - A.z) / len;

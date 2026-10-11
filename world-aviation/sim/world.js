@@ -12,7 +12,8 @@
 //   across metres to the right of the centreline
 //
 //   runway            across = 0
-//   parallel taxiway  across = TWY_OFFSET, with exits and the holding point
+//   parallel taxiway  across = TWY_OFFSET, with the holding point, the rapid
+//                     exits slanting onto it ahead and the last exit square
 //   apron lane        across = APRON_LANE, gate stands at across = STAND
 //   terminal          across = TERMINAL (and past the terminals, along the
 //                     same apron, the tower, the cargo stands and their cargo
@@ -21,8 +22,8 @@
 //                     helicopter pads, the fire station)
 //
 // The taxi network is a small graph so the game can route from a gate to
-// the holding point and from a runway exit back to a gate, and give
-// centreline guidance while you taxi.
+// the holding point and from a runway exit back to a gate (the quickest
+// way, sharp turns avoided), and give centreline guidance while you taxi.
 //
 // World.list / World.byId hold every airport's static data (for the career
 // and the screens). World.prepare(from, to) builds one flight's world: the
@@ -210,11 +211,11 @@ const World = {
       a.nodeList.push(n);
       return n;
     };
-    const link = (id1, id2, kind, width) => {
+    const link = (id1, id2, kind, width, rapid) => {
       const n1 = nodes[id1], n2 = nodes[id2];
       const w = width || L.TWY_WIDTHS[a.terminal] || L.TWY_WIDTH;
-      n1.edges.push({ to: n2, kind, width: w });
-      n2.edges.push({ to: n1, kind, width: w });
+      n1.edges.push({ to: n2, kind, width: w, rapid: !!rapid });
+      n2.edges.push({ to: n1, kind, width: w, rapid: !!rapid });
     };
 
     const t0 = -a.half + L.HOLD_T;
@@ -227,14 +228,36 @@ const World = {
     const rwyChain = ['rwyStart'];
     const twyChain = [nodes.twyStart];
     a.exits = [];
-    L.EXITS.forEach((f, i) => {
-      const t = -a.half + a.rwyLen * f;
-      add('exR' + i, t, 0, 'exit');
-      twyChain.push(add('exT' + i, t, L.TWY_OFFSET, 'taxi'));
-      link('exR' + i, 'exT' + i, 'connector');
+    // the rapid exits: off the runway EXIT_ANGLE_DEG ahead, onto the taxiway ahead. Each meets the
+    // taxiway where a lane goes on into the apron, when one is near (moved up to EXIT_SHIFT_M for
+    // it; one that would meet it past the apron's end moves back to its last lane, up to
+    // EXIT_SHIFT_BACK_M): to a stand behind, the way goes on through the lane and back along the
+    // apron lane, turning no more than a right angle at a time. One that would meet the taxiway
+    // too near its end (a short strip), or too near the exit before it, is left out.
+    const slant = L.TWY_OFFSET / Math.tan(L.EXIT_ANGLE_DEG * DEG);
+    const spots = this.laneSpots(a, a.standT).filter((s) => this.laneClear(a, a.standT, s.t));
+    const taken = new Set();
+    L.EXITS.forEach((f) => {
+      let tj = -a.half + a.rwyLen * f + slant;
+      const prev = a.exits.length ? a.exits[a.exits.length - 1].t + slant : -Infinity;
+      const beyond = tj > a.apronT1 - 15;
+      let near = null;
+      for (const s of spots) {
+        const d = s.t - tj;
+        if (taken.has(s) || s.t < prev + L.EXIT_MIN_GAP_M || !(Math.abs(d) <= L.EXIT_SHIFT_M || (beyond && d < 0 && -d <= L.EXIT_SHIFT_BACK_M))) continue;
+        if (!near || Math.abs(d) < Math.abs(near.t - tj)) near = s;
+      }
+      if (near) { tj = near.t; taken.add(near); }
+      if (tj > a.half - 60 - L.EXIT_END_CLEAR_M || tj < prev + L.EXIT_MIN_GAP_M) return;
+      const i = a.exits.length;
+      const ex = add('exR' + i, tj - slant, 0, 'exit');
+      twyChain.push(add('exT' + i, tj, L.TWY_OFFSET, 'taxi'));
+      link('exR' + i, 'exT' + i, 'connector', 0, true);
+      ex.rapid = true;
       rwyChain.push('exR' + i);
-      a.exits.push(nodes['exR' + i]);
+      a.exits.push(ex);
     });
+    // the last one at the runway's end, a right angle
     add('rwyEnd', a.half - 60, 0, 'exit');
     twyChain.push(add('twyEnd', a.half - 60, L.TWY_OFFSET, 'taxi'));
     link('rwyEnd', 'twyEnd', 'connector');
@@ -299,6 +322,31 @@ const World = {
       }
     }
     a.fillets = this.buildFillets(a);
+    // each exit's turn off the runway (its curve on the landing side): the radius (exitR), how far
+    // before the node it leaves the centreline (turnBack) and where it crosses the runway's edge
+    // (aimT, the arrow's point on the landing roll)
+    for (const n of a.exits) {
+      const off = n.edges.find((e) => e.kind !== 'runway').to;
+      const f = this.filletAt(a, n, this.runwayBehind(n), off);
+      const R = f ? f.R : 0, d = f ? f.d : 0;
+      const turn = Math.atan2(Math.abs(off.across - n.across), off.t - n.t), e = RWY_HALF_WIDTH;
+      n.exitR = R || LAYOUT.FILLET_R;
+      n.turnBack = d;
+      n.aimT = R * (1 - Math.cos(turn)) >= e ? n.t - d + Math.sqrt(R * R - (R - e) * (R - e)) : n.t + e / Math.tan(turn);
+    }
+  },
+
+  // the node behind n along the runway (the way a landing rolls in from)
+  runwayBehind(n) {
+    const e = n.edges.find((x) => x.kind === 'runway' && x.to.t < n.t);
+    return e ? e.to : null;
+  },
+  // the fillet (World.buildFillets) at node n between the lines to p and to q, if there is one
+  filletAt(a, n, p, q) {
+    for (const f of (a.filletsAt && a.filletsAt[n.id]) || []) {
+      if ((f.ends[0] === p && f.ends[1] === q) || (f.ends[0] === q && f.ends[1] === p)) return f;
+    }
+    return null;
   },
 
   // The lanes off the parallel taxiway into the apron, as [{ t, at }] along the runway: at both
@@ -308,8 +356,34 @@ const World = {
   // A lane that would meet the taxiway just beside a runway exit meets it at the exit's node
   // (`at`: a crossing, not two junctions a few metres apart), or moves away from it, unless
   // either brings it too close to a stand; then a lane between the stands is left out (an end one
-  // stays where it was).
+  // stays where it was). A rapid exit was already moved to meet the taxiway at a lane's place
+  // (laneSpots), so that lane crosses there.
   apronLanes(a, standT, twyNodes) {
+    const L = LAYOUT;
+    const ts = this.laneSpots(a, standT);
+    const out = [], used = new Set();
+    const clear = (t) => this.laneClear(a, standT, t);
+    for (const ln of ts) {
+      let near = null;
+      for (const nd of twyNodes) if (Math.abs(nd.t - ln.t) < L.LANE_SNAP_M && (!near || Math.abs(nd.t - ln.t) < Math.abs(near.t - ln.t))) near = nd;
+      if (near) {
+        // onto the exit, else far enough from it for two junctions, else (between stands) none
+        const away = near.t + Math.sign(ln.t - near.t || 1) * L.LANE_SNAP_M;
+        if (clear(near.t)) { if (!used.has(near)) { used.add(near); out.push({ t: near.t, at: near }); } continue; }
+        if (clear(away)) { out.push({ t: away, at: null }); continue; }
+        if (!ln.end) continue;
+      }
+      out.push({ t: ln.t, at: null });
+    }
+    return out;
+  },
+  // may a lane into the apron meet the apron lane at t: far enough from every stand, inside the apron?
+  laneClear(a, standT, t) {
+    return standT.every((s) => Math.abs(s - t) >= LAYOUT.LANE_STAND_CLEAR_M) && t > a.apronT0 + 15 && t < a.apronT1 - 15;
+  },
+  // where the lanes into the apron go, before they meet the taxiway's junctions (apronLanes), as
+  // [{ t, end }]
+  laneSpots(a, standT) {
     const L = LAYOUT, n = a.gatesPerTerminal;
     const ts = [{ t: a.apronT0 + 40, end: true }];
     // the stands in rows: each terminal's, then the cargo stands, then the GA stands with the
@@ -327,20 +401,7 @@ const World = {
       if (k + 1 < rows.length) ts.push({ t: (gs[gs.length - 1] + rows[k + 1][0]) / 2 });
     });
     ts.push({ t: a.apronT1 - 40, end: true });
-    const out = [];
-    const clear = (t) => standT.every((s) => Math.abs(s - t) >= L.LANE_STAND_CLEAR_M) && t > a.apronT0 + 15 && t < a.apronT1 - 15;
-    for (const ln of ts) {
-      const near = twyNodes.find((nd) => Math.abs(nd.t - ln.t) < L.LANE_SNAP_M);
-      if (near) {
-        // onto the exit, else far enough from it for two junctions, else (between stands) none
-        const away = near.t + Math.sign(ln.t - near.t || 1) * L.LANE_SNAP_M;
-        if (clear(near.t)) { out.push({ t: near.t, at: near }); continue; }
-        if (clear(away)) { out.push({ t: away, at: null }); continue; }
-        if (!ln.end) continue;
-      }
-      out.push({ t: ln.t, at: null });
-    }
-    return out;
+    return ts;
   },
 
   // Where two taxi lines meet at an angle (a corner, a T, the stands off the apron lane, an exit
@@ -348,9 +409,13 @@ const World = {
   // tangent to both lines, so the turns are round, as on a real airfield (off the runway a wide
   // one on each side, its yellow line leading off the runway centreline). Each fillet: its arc
   // as [t, across] points and as world points, the pavement width, and whether it is on the
-  // apron (already paved).
-  // The arc's radius is the one for that kind of turn (FILLET_R, FILLET_STAND_R, FILLET_EXIT_R),
-  // less where a line is too short for it: where it meets each line it must stay on that line's
+  // apron (already paved), and for the taxi limits (sim/taxilimit.js) its node, the two nodes its
+  // lines lead to (ends), its radius R and how far from the node it meets each line (d); by node
+  // in a.filletsAt. Off a rapid exit only the turn the landing roll takes gets one (not back
+  // against the landing).
+  // The arc's radius is the one for that kind of turn (FILLET_R, FILLET_STAND_R, FILLET_EXIT_R;
+  // FILLET_RAPID_R for a rapid exit's turns of up to a right angle), less where a line is too
+  // short for it: where it meets each line it must stay on that line's
   // straight run from the node (past the nodes in line with it). On a taxiway that run ends at
   // the next junction, and the arc takes at most 0.45 of it, so the curves of two junctions never
   // meet; on the apron the run goes on to the end of the lane and the arc may take 0.9 of it
@@ -386,11 +451,18 @@ const World = {
         const v = [(e2.to.t - n.t) / l2, (e2.to.across - n.across) / l2];
         const ang = Math.acos(clamp(u[0] * v[0] + u[1] * v[1], -1, 1));
         if (ang < 25 * DEG || ang > 155 * DEG) continue;           // nearly straight on, or a hairpin
+        if (exit && ang < 80 * DEG) continue;                      // off the runway back against the landing
         const apron = e1.kind === 'apron' || e1.kind === 'stand' || e2.kind === 'apron' || e2.kind === 'stand';
+        const rapid = (e1.rapid || e2.rapid) && ang > 89 * DEG;
+        // (turning back off a rapid exit: the exit's own run shared with its curve off the
+        // runway, the taxiway's run behind with nothing as long as itself)
+        const back = (e1.rapid || e2.rapid) && !exit && ang <= 89 * DEG;
         const half = Math.tan(ang / 2);
         // (along the runway itself the run is its whole length: an exit's arc starts on it)
         const r1 = e1.kind === 'runway' ? Infinity : run(n, e1, apron), r2 = e2.kind === 'runway' ? Infinity : run(n, e2, apron);
-        const R = Math.min(exit ? LAYOUT.FILLET_EXIT_R : apron ? LAYOUT.FILLET_STAND_R : LAYOUT.FILLET_R, (apron ? 0.9 : 0.45) * Math.min(r1, r2) * half);
+        const want = rapid ? LAYOUT.FILLET_RAPID_R : back ? LAYOUT.FILLET_BACK_R : exit ? LAYOUT.FILLET_EXIT_R : apron ? LAYOUT.FILLET_STAND_R : LAYOUT.FILLET_R;
+        const share = (e, r) => (back ? (e.rapid ? 0.5 : 0.75) : apron ? 0.9 : 0.45) * r;
+        const R = Math.min(want, Math.min(share(e1, r1), share(e2, r2)) * half);
         const d = R / half;                                        // from the node to where the arc meets each line
         const bis = [u[0] + v[0], u[1] + v[1]], bl = Math.hypot(bis[0], bis[1]);
         const cDist = R / Math.sin(ang / 2);
@@ -400,15 +472,17 @@ const World = {
         let da = Math.atan2(p2[1] - c[1], p2[0] - c[0]) - a1;
         while (da > Math.PI) da -= TAU;
         while (da < -Math.PI) da += TAU;
-        const steps = Math.max(4, Math.ceil(Math.abs(da) / (8 * DEG)));
+        const steps = Math.max(4, Math.ceil(Math.abs(da) / (8 * DEG)), Math.ceil(Math.abs(da) * R / 12));
         const pts = [];
         for (let k = 0; k <= steps; k++) {
           const q = a1 + da * k / steps;
           pts.push([c[0] + Math.cos(q) * R, c[1] + Math.sin(q) * R]);
         }
-        out.push({ pts, world: pts.map(([t, ac]) => this.at(a, t, ac)), w: Math.min(e1.width, e2.width), apron });
+        out.push({ pts, world: pts.map(([t, ac]) => this.at(a, t, ac)), w: Math.min(e1.width, e2.width), apron, node: n, ends: [e1.to, e2.to], R, d });
       }
     }
+    a.filletsAt = {};
+    for (const f of out) (a.filletsAt[f.node.id] = a.filletsAt[f.node.id] || []).push(f);
     return out;
   },
 
@@ -519,31 +593,55 @@ const World = {
     });
   },
 
-  // Dijkstra over the airport node graph
-  findRoute(a, startNode, endNode) {
+  // The quickest taxi route from one node to another: Dijkstra over the node graph, a node reached
+  // along an edge being the state, so the turns count. A leg costs its time at its limit
+  // (TAXI.STRAIGHT_KT, the apron lane APRON_KT, a stand's lead-in STAND_KT; along the runway four
+  // times the taxiway's), a turn TAXI.ROUTE_TURN_S for a right angle, by the square of the angle
+  // (a gentle one costs little), one sharper than a right angle ROUTE_SHARP_K times more, and one
+  // sharper than ROUTE_MAX_TURN_DEG is never taken. dir: the way the aeroplane faces at the start, [x, z] (off a runway exit the runway's
+  // heading when not given); with no route that way, any.
+  findRoute(a, startNode, endNode, dir) {
     if (!startNode || !endNode) return [];
-    const dist = new Map(), prev = new Map(), done = new Set();
-    for (const n of a.nodeList) dist.set(n, Infinity);
-    dist.set(startNode, 0);
-    while (true) {
-      let best = null, bestD = Infinity;
-      for (const n of a.nodeList) {
-        if (done.has(n)) continue;
-        const d = dist.get(n);
-        if (d < bestD) { bestD = d; best = n; }
-      }
-      if (!best || best === endNode) break;
-      done.add(best);
-      for (const e of best.edges) {
-        const w = Math.hypot(e.to.x - best.x, e.to.z - best.z) * (e.kind === 'runway' ? 4 : 1);
-        const nd = bestD + w;
-        if (nd < dist.get(e.to)) { dist.set(e.to, nd); prev.set(e.to, best); }
+    if (!dir && startNode.kind === 'exit') dir = [a.dirX, a.dirZ];
+    const T = TAXI, maxCos = Math.cos(T.ROUTE_MAX_TURN_DEG * DEG);
+    const speed = (k) => KTS * (k === 'apron' ? T.APRON_KT : k === 'stand' ? T.STAND_KT : k === 'runway' ? T.STRAIGHT_KT / 4 : T.STRAIGHT_KT);
+    const states = new Map();
+    const start = { n: startNode, from: null, cost: 0, prev: null, done: false };
+    states.set(startNode.id + '<', start);
+    const open = [start];
+    let found = startNode === endNode ? start : null;
+    while (open.length && !found) {
+      let bi = 0;
+      for (let i = 1; i < open.length; i++) if (open[i].cost < open[bi].cost) bi = i;
+      const s = open[bi];
+      open[bi] = open[open.length - 1]; open.pop();
+      if (s.done) continue;
+      s.done = true;
+      if (s.n === endNode) { found = s; break; }
+      let ix = 0, iz = 0;
+      if (s.from) { const l = Math.hypot(s.n.x - s.from.x, s.n.z - s.from.z) || 1; ix = (s.n.x - s.from.x) / l; iz = (s.n.z - s.from.z) / l; }
+      else if (dir) { const l = Math.hypot(dir[0], dir[1]) || 1; ix = dir[0] / l; iz = dir[1] / l; }
+      for (const e of s.n.edges) {
+        if (e.to === s.from) continue;
+        const len = Math.hypot(e.to.x - s.n.x, e.to.z - s.n.z);
+        if (len < 0.01) continue;
+        let turn = 0;
+        if (ix || iz) {
+          const cos = clamp((ix * (e.to.x - s.n.x) + iz * (e.to.z - s.n.z)) / len, -1, 1);
+          if (cos < maxCos) continue;
+          const k = Math.acos(cos) / (Math.PI / 2);
+          turn = T.ROUTE_TURN_S * k * k * (k > 1.05 ? T.ROUTE_SHARP_K : 1);
+        }
+        const c = s.cost + turn + len / speed(e.kind);
+        const key = e.to.id + '<' + s.n.id;
+        let st = states.get(key);
+        if (!st) { st = { n: e.to, from: s.n, cost: Infinity, prev: null, done: false }; states.set(key, st); }
+        if (!st.done && c < st.cost) { st.cost = c; st.prev = s; open.push(st); }
       }
     }
-    if (dist.get(endNode) === Infinity) return [startNode];
+    if (!found) return dir && (dir[0] || dir[1]) ? this.findRoute(a, startNode, endNode, [0, 0]) : [startNode];
     const path = [];
-    let cur = endNode, guard = 0;
-    while (cur && guard++ < 200) { path.unshift(cur); cur = prev.get(cur); }
+    for (let s = found, guard = 0; s && guard++ < 400; s = s.prev) path.unshift(s.n);
     return path;
   },
 
@@ -554,14 +652,19 @@ const World = {
   // back one leg only when the previous one is much nearer. So a later leg that passes close by
   // (the apron lane beside the taxiway) never takes over, and at a corner, even one you missed
   // a little, the carrot is already on the next leg.
+  // (The legs' lengths are worked out once and kept on the route, route.lens / route.total: a
+  // route is never changed, only replaced.)
   routeProgress(a, route, x, z, look) {
     if (!route || route.length < 2) return null;
-    let total = 0;
-    const lens = [];
-    for (let i = 0; i < route.length - 1; i++) {
-      const l = Math.hypot(route[i + 1].x - route[i].x, route[i + 1].z - route[i].z);
-      lens.push(l); total += l;
+    if (!route.lens || route.lens.length !== route.length - 1) {
+      route.lens = [];
+      route.total = 0;
+      for (let i = 0; i < route.length - 1; i++) {
+        const dx = route[i + 1].x - route[i].x, dz = route[i + 1].z - route[i].z, l = Math.sqrt(dx * dx + dz * dz);
+        route.lens.push(l); route.total += l;
+      }
     }
+    const lens = route.lens, total = route.total;
     const proj = (i) => {
       const p1 = route[i], p2 = route[i + 1];
       const dx = p2.x - p1.x, dz = p2.z - p1.z;

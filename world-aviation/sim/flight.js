@@ -98,7 +98,7 @@ const Flight = {
     this.meet = [];                  // who waits at the arrival stand: 'ambulance', 'fire', 'police' (Systems.finishChecklist)
     // (a patient on board: the ambulance is called from the start, to meet the aeroplane)
     if (opts.contract && opts.contract.type === 'medevac') this.meet.push('ambulance');
-    this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0;
+    this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0; this.taxiRedS = 0;
     this.warnedBank = false;
     this.locCaptured = false; this.overRunway = false;
     this.ap = {
@@ -123,7 +123,8 @@ const Flight = {
     this.st.pos.x = gate.standX; this.st.pos.z = gate.standZ;
     this.st.pos.y = a.elev + this.st.gearH;
     this.st.hdg = gate.parkHdg * DEG;
-    this.route = World.findRoute(a, gate.laneNode, a.nodes.hold);
+    // (pushed back onto the apron lane facing the threshold's way: Game.next)
+    this.route = World.findRoute(a, gate.laneNode, a.nodes.hold, [-a.dirX, -a.dirZ]);
   },
   placeAtHold() {
     const a = this.world;

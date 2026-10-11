@@ -359,7 +359,8 @@ const HUD = {
     if (!box) return;
     if (!taxi) { if (!box.hidden) box.hidden = true; return; }
     box.hidden = false;
-    const what = { taxiway: 'Taxiway', turn: taxi.ahead ? 'Turn ahead' : 'Turn', apron: taxi.ahead ? 'Apron ahead' : 'Apron' }[taxi.shownKind] || 'Taxiway';
+    const what = { taxiway: 'Taxiway', turn: taxi.ahead ? 'Turn ahead' : 'Turn', apron: taxi.ahead ? 'Apron ahead' : 'Apron',
+      stand: taxi.ahead ? 'Stand ahead' : 'Stand' }[taxi.shownKind] || 'Taxiway';
     const html = '<strong>' + Units.spd(taxi.gs) + '</strong><small>' + tr(what) + ' ≤ ' + Units.spd(taxi.shown) + '</small>';
     if (html !== this.taxiSpdHtml) { this.taxiSpdHtml = html; box.innerHTML = html; }
     const cls = 'taxiSpd lv' + taxi.level;

@@ -617,6 +617,7 @@ const TEXT_RU = {
   'Turn ahead': 'Впереди поворот',
   'Apron': 'Перрон',
   'Apron ahead': 'Впереди перрон',
+  'Stand ahead': 'Впереди стоянка',
   'stop on the stop bar — {d} m': 'остановитесь у стоп-линии — {d} m',
   'straighten up': 'выровняйтесь',
   '<b>Shutting down</b> · {ac} at {gate}': '<b>Выключение двигателей</b> · {ac} у {gate}',

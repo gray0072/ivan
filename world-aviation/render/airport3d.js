@@ -859,9 +859,10 @@ const Airport3D = {
     // signs: the runway holding position (red) and the exits (yellow)
     const hold = a.nodes.hold;
     this.sign(rec, at, tex, a.rwyName + '-' + a.rwyOpposite, '#c8102e', '#ffffff', hold.t - 20, hold.across);
+    // (a rapid exit's beside the runway where its curve leaves the centreline, before it)
     a.exits.forEach((n, i) => {
       if (n === a.nodes.rwyEnd) return;
-      this.sign(rec, at, tex, 'A' + (i + 1), '#111111', '#f6c700', n.t + 22, RWY_HALF_WIDTH + 30);
+      this.sign(rec, at, tex, 'A' + (i + 1), '#111111', '#f6c700', n.rapid ? n.t - 25 : n.t + 22, RWY_HALF_WIDTH + 30);
     });
   },
 

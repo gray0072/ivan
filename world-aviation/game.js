@@ -511,17 +511,19 @@ const Game = {
       return;
     }
 
-    // taxiing at TAXI.FINE_OVER times the limit there (sim/taxilimit.js; off the runway, where a
-    // take-off or a landing roll is not taxiing): reported once a flight and fined on the
-    // debrief, the fastest speed remembered
+    // taxiing in the red (sim/taxilimit.js: TAXI.RED_OVER times the limit with what is coming) for
+    // TAXI.FINE_HOLD_S, off the runway (a take-off or a landing roll is not taxiing): reported once
+    // a flight and fined on the debrief, the fastest speed remembered
     const taxi = fl.taxi;
-    if (taxi && st.onGround && speed > taxi.limit * TAXI.FINE_OVER) {
+    let red = false;
+    if (taxi && st.onGround && taxi.level > 1) {
       const here = fl.nearestApt(), loc = here ? World.local(here, st.pos.x, st.pos.z) : null;
-      const onRunway = loc && Math.abs(loc.across) < here.rwyHalfWidth + 10 && Math.abs(loc.t) < here.half + 100;
-      if (!onRunway) {
-        if (!fl.taxiOverspeed) fl.warn('TAXISPEED', tr('Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported', { v: Math.round(speed), max: taxi.limit }));
-        fl.taxiOverspeed = Math.max(fl.taxiOverspeed || 0, Math.round(speed));
-      }
+      red = !(loc && Math.abs(loc.across) < here.rwyHalfWidth + 10 && Math.abs(loc.t) < here.half + 100);
+    }
+    fl.taxiRedS = red ? (fl.taxiRedS || 0) + dt : 0;
+    if (fl.taxiRedS > TAXI.FINE_HOLD_S) {
+      if (!fl.taxiOverspeed) fl.warn('TAXISPEED', tr('Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported', { v: Math.round(speed), max: Math.round(taxi.shown) }));
+      fl.taxiOverspeed = Math.max(fl.taxiOverspeed || 0, Math.round(speed));
     }
 
     if (p === 'GATE') {

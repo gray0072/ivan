@@ -617,6 +617,7 @@ const TEXT_SV = {
   'Turn ahead': 'Sväng snart',
   'Apron': 'Plattan',
   'Apron ahead': 'Plattan snart',
+  'Stand ahead': 'Uppställningsplats snart',
   'stop on the stop bar — {d} m': 'stanna på stopplinjen — {d} m',
   'straighten up': 'räta upp',
   '<b>Shutting down</b> · {ac} at {gate}': '<b>Motorerna stängs av</b> · {ac} vid {gate}',

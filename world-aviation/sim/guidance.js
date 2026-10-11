@@ -9,9 +9,9 @@
 //     a new route on from the nearest junction ahead, so the arrow
 //     never points back at a turn already passed;
 //   - on the landing roll the exit is the first one still reachable
-//     at the present speed (room to slow down and to turn); roll
-//     past it and the arrow moves on to the next one — until you
-//     turn off, then the exit you took stays; while it is still
+//     at the present speed (room to slow down to its turn-off speed
+//     before its curve); roll past it and the arrow moves on to the
+//     next one — until you turn onto it, then it stays; while it is still
 //     far, the arrow leans towards it (its turn-off at the edge);
 //   - lining up, it leads onto the centreline ahead, never back to
 //     the line-up point.
@@ -62,9 +62,13 @@ const Guidance = {
       let lead = 0;
       if (rolling) {
         // still on the runway and not turning off yet: the first exit still reachable (the first
-        // officer taxiing slows down for the one picked when it took over, so that one stays)
-        const fo = fl.copilot && fl.copilot.on && game.arrivalRoute[0].t > loc.t;
-        const exit = fo ? game.arrivalRoute[0] : this.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
+        // officer taxiing slows down for the one picked when it took over, so that one stays; so
+        // does the one whose curve you are already turning onto — a rapid exit's is long)
+        const cur = game.arrivalRoute[0];
+        const fo = fl.copilot && fl.copilot.on && cur.t > loc.t;
+        const onCurve = cur.kind === 'exit' && loc.t > cur.t - cur.turnBack && loc.t < cur.t + 30 &&
+          (loc.across > 3 || wrapDeg(fl.headingDeg() - a.hdgDeg) > 3);
+        const exit = fo || onCurve ? cur : this.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
         if (exit !== game.arrivalRoute[0]) game.arrivalRoute = World.findRoute(a, exit, game.arrivalGate.node);
         lead = exit.t - loc.t;
       }
@@ -78,7 +82,7 @@ const Guidance = {
         // while the exit is still more than a carrot ahead: at the point where its turn-off
         // meets the runway's edge (the arrow leans towards the exit, more as it comes up, and
         // never off the paving); into the stand, the stop bar itself for the last few metres
-        target = lead > look ? World.at(a, game.arrivalRoute[0].t - SIM.EXIT_AIM_BACK_M, RWY_HALF_WIDTH)
+        target = lead > look ? World.at(a, game.arrivalRoute[0].aimT, RWY_HALF_WIDTH)
           : prog.remaining < look * 0.6 ? stand : prog.carrot;
         g.remaining = prog.remaining + Math.max(0, lead); g.deviation = prog.deviation;
         g.route = game.arrivalRoute; g.along = prog.totalLength - prog.remaining - Math.max(0, lead);
@@ -96,12 +100,15 @@ const Guidance = {
     g.dist = g.remaining || Math.hypot(target.x - st.pos.x, target.z - st.pos.z);
   },
 
-  // the runway exit to take from t at this speed (m/s): the first one still ahead by the room
-  // needed to slow to the taxi speed and make the turn; the runway's end if none is left
+  // the runway exit to take from t at this speed (m/s): the first one whose curve (SIM.EXIT_CUT
+  // of it cut) still begins far enough ahead to slow to its turn-off speed (its radius's limit,
+  // sim/taxilimit.js) at SIM.EXIT_DECEL_MS2; the runway's end if none is left
   exitFor(a, t, speed) {
-    const v0 = LAYOUT.TAXI_KT * KTS;
-    const lead = Math.max(SIM.EXIT_MIN_LEAD_M, Math.max(0, speed * speed - v0 * v0) / (2 * SIM.EXIT_DECEL_MS2) + SIM.EXIT_TURN_M);
-    for (const n of a.exits) if (n.t > t + lead) return n;
+    for (const n of a.exits) {
+      const v0 = TaxiLimit.turnKt(n.exitR) * KTS;
+      const room = Math.max(SIM.EXIT_MIN_LEAD_M, Math.max(0, speed * speed - v0 * v0) / (2 * SIM.EXIT_DECEL_MS2));
+      if (n.t - n.turnBack * (1 - SIM.EXIT_CUT) - t > room) return n;
+    }
     return a.exits[a.exits.length - 1];
   },
 
@@ -126,7 +133,7 @@ const Guidance = {
       if (score < bestScore) { bestScore = score; best = n; }
     }
     if (!best) return null;
-    const r = World.findRoute(a, best, dest);
+    const r = World.findRoute(a, best, dest, [fx, fz]);
     return r.length > 1 || best === dest ? r : null;
   }
 };

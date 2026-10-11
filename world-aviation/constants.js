@@ -79,7 +79,7 @@ const SIM = {
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
     { aglFt: 8000, max: 16 }, { aglFt: 9000, max: 32 }, { aglFt: 10000, max: 64 }],
-  TAXI_OVERSPEED_FINE: 0.03,   // a taxi overspeed (TAXI.FINE_OVER times the limit) costs this share of the contract's pay
+  TAXI_OVERSPEED_FINE: 0.03,   // a taxi overspeed (in the red for TAXI.FINE_HOLD_S) costs this share of the contract's pay
   NO_CLEARANCE_FINE: 0.05,     // lifting off before the take-off clearance costs this share of the contract pay
   MAX_STEPS_PER_FRAME: 300,    // physics steps per rendered frame at most (x128 at 25 fps)
   CRUISE_ALT_MIN: 2500,
@@ -151,11 +151,9 @@ const SIM = {
   LINEUP_ACROSS_M: 6,          // lined up: this close to the runway centreline ...
   LINEUP_HDG_DEG: 10,          // ... and within this of the runway heading
   REROUTE_DEVIATION_M: 25,     // this far off the taxi route with it behind you: a missed turn, a new route from here
-  EXIT_DECEL_MS2: 1.5,         // braking assumed to slow down for a runway exit ...
-  EXIT_TURN_M: 25,             // ... plus the room for the turn itself
-  EXIT_MIN_LEAD_M: 30,         // an exit nearer than this ahead is never the one to take
-  EXIT_AIM_BACK_M: 13,         // the arrow on the landing roll aims at the runway's edge this far before the exit
-                               // (where its turn-off, LAYOUT.FILLET_EXIT_R, leaves the paving)
+  EXIT_DECEL_MS2: 1.5,         // braking assumed to slow down to an exit's turn-off speed before its curve ...
+  EXIT_CUT: 0.5,               // ... of which this share may be cut (begun that much later)
+  EXIT_MIN_LEAD_M: 30,         // an exit whose curve (so cut) begins nearer than this ahead is never the one to take
   EXIT_COMMIT_DEG: 20          // turned this far off the runway heading: you are taking this exit, it stays
 };
 
@@ -167,20 +165,29 @@ const SIM = {
 const CABIN_REACTION = { OVATION_FPM: 100, APPLAUSE_FPM: 200, POLITE_FPM: 320, FIRM_FPM: 450, BANK_DEG: 5, BOUNCE_S: 6 };
 
 // ---------- Taxiing ----------
-// The taxi speed limits (sim/taxilimit.js), by the ground speed: on a straight taxiway, in a turn
-// of the taxi route and on the apron. Before a slower stretch the limit comes down along a gentle
-// braking (DECEL_MS2), so it never drops by a step under the wheels. Over the limit the speed shows
-// amber, over RED_OVER times it red; FINE_OVER times it, off the runway, is a taxi overspeed —
-// reported, and fined on the debrief (SIM.TAXI_OVERSPEED_FINE).
+// The taxi speed limits (sim/taxilimit.js), by the ground speed: on a straight taxiway, on the
+// apron lane, on a stand's lead-in, and in a turn of the taxi route by the radius of its curve
+// (the turn off the runway too: 35 kt off a rapid exit, 20 kt off the last one; 15 kt into a
+// lane). Before a slower stretch the limit comes down along a gentle braking (DECEL_MS2), so it
+// never drops by a step under the wheels. Over the limit the speed shows amber, over RED_OVER
+// times it red; in the red for FINE_HOLD_S, off the runway, is a taxi overspeed — reported, and
+// fined on the debrief (SIM.TAXI_OVERSPEED_FINE).
+// The taxi routes (World.findRoute) are the quickest at these limits, every turn costing time.
 const TAXI = {
-  STRAIGHT_KT: 30,
-  TURN_KT: 15,
-  APRON_KT: 10,
+  STRAIGHT_KT: 40,
+  APRON_KT: 20,                // the apron lane in front of the stands
+  STAND_KT: 10,                // a stand's lead-in, on to the stop bar
+  TURN_LAT_MS2: 1.4,           // a turn's limit: the speed at this sideways acceleration on its curve's radius ...
+  TURN_MIN_KT: 10,             // ... in 5 kt steps, at least this
   TURN_MIN_DEG: 30,            // a corner of the route turning more than this is a turn ...
   TURN_PAD_M: 10,              // ... from this far before its curve to this far after it
   DECEL_MS2: 0.8,
-  RED_OVER: 1.5,
-  FINE_OVER: 2
+  RED_OVER: 1.25,
+  FINE_HOLD_S: 2,              // seconds in the red that make a taxi overspeed
+  ROUTE_TURN_S: 20,            // a taxi route's turn costs this many seconds for a right angle (by the square
+                               // of the angle: a gentle one little) ...
+  ROUTE_SHARP_K: 3,            // ... one sharper than a right angle (turning back) this many times more ...
+  ROUTE_MAX_TURN_DEG: 160      // ... and a sharper one than this is never taken
 };
 
 // The ILS on a computer (Game.drawIls): the sizes it may take in the bottom right corner of the
@@ -233,7 +240,18 @@ const LAYOUT = {
   TWY_WIDTHS: { big: 25, medium: 23, small: 18, tiny: 15 },
   HOLD_OFFSET: 80,             // holding point, from the runway centreline
   HOLD_T: 90,                  // holding point, from the runway start
-  EXITS: [0.45, 0.65, 0.85],   // runway exits as a fraction of the length
+  // the rapid exits, where they leave the runway as a fraction of its length: EXIT_ANGLE_DEG off
+  // it, ahead, onto the parallel taxiway (the last exit, at the runway's end, is a right angle);
+  // each moves up to EXIT_SHIFT_M to meet the taxiway where a lane goes on into the apron (one
+  // that would meet it past the apron's end back up to EXIT_SHIFT_BACK_M, to its last lane), one
+  // that would meet it within EXIT_END_CLEAR_M of its end (a short strip) or less than
+  // EXIT_MIN_GAP_M past the exit before it is left out
+  EXITS: [0.45, 0.65, 0.85],
+  EXIT_ANGLE_DEG: 45,
+  EXIT_SHIFT_M: 100,
+  EXIT_SHIFT_BACK_M: 250,
+  EXIT_MIN_GAP_M: 200,
+  EXIT_END_CLEAR_M: 120,
   APRON_LANE: 285,             // taxi lane on the apron (95 m lead-in to the stands: room for a 747 to straighten up)
   STAND: 380,                  // the parking position (nose-in towards the terminal; up to the A330 and the 787 the noses
                                // stop short of the service road, the An-225's 18 m short of the terminal's front,
@@ -294,14 +312,15 @@ const LAYOUT = {
   MAX_SPAN: { tiny: 36, small: 52, medium: 65, big: 80 },
   FILLET_R: 55,                // the centreline radius where taxiways meet at an angle
   FILLET_STAND_R: 45,          // ... and where a stand's lead-in leaves the apron lane
-  FILLET_EXIT_R: 70,           // ... and where a runway exit (or the line-up) leaves the runway, on both sides
+  FILLET_EXIT_R: 70,           // ... and where the last exit (or the line-up) leaves the runway, on both sides
+  FILLET_RAPID_R: 240,         // ... and a rapid exit's gentle curves: off the runway, onto the taxiway, into the lane
+  FILLET_BACK_R: 45,           // ... and the turn back off a rapid exit onto the taxiway behind it (135°)
   CORRIDOR_LEN: 32000,         // approach / departure corridors cut into the terrain, metres from the runway ends
   CORRIDOR_HALF_WIDTH: 1200,   // plus 12 % of the distance, then 2.5 km to blend into the terrain
   APPROACH_SLOPE_DEG: 2.4,     // the ground stays under this slope before the threshold (the glideslope is 3°)
   APPROACH_FLOOR_FT: 1500,     // ... and at most this far over the field: 1 000 ft under the 2 500 ft the
                                // autopilot levels at before it meets the glide path
-  DEPARTURE_SLOPE_DEG: 3.5,    // and under this one past the far end of the runway
-  TAXI_KT: 15                  // comfortable taxi speed, knots
+  DEPARTURE_SLOPE_DEG: 3.5     // and under this one past the far end of the runway
 };
 // the buildings behind the terminal, beyond the car park, by the terminal's size:
 // [t from the apron's middle, across (from the runway centreline), along, across size, height] in metres, kind
