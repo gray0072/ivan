@@ -608,7 +608,7 @@ const Scene3D = {
     switch (mode) {
       case 'cine': { const c = this.cine.pose(fl, ax); eye = c.eye; look = c.look; up = c.up; fov = c.fov; minAgl = 2; break; }
       case 'chase': eye = P(0, S * 0.5, -S * 1.62); look = P(0, 0, 4); break;
-      case 'front': eye = P(0, L * 0.42, L * 0.9); look = P(0, 0, -L * 0.1); break;
+      case 'front': eye = P(0, L * 0.5, L * 1.25); look = P(0, 0, -L * 0.1); break;
       case 'wing': eye = P(-S * 0.69, S * 0.15, -S * 0.19); look = P(0, 0, 4); break;
       case 'tail': eye = P(0, R * 2.9 + L * 0.06 + 1.5, -L * 0.44); look = P(0, -R * 2, L * 1.4); fov = 75; break;
       case 'gear': eye = P(R * 0.4, -(R + (d.gearH - R) * 0.5), L * 0.3); look = P(0, -d.gearH * 0.85, -L * 0.2); fov = 80; minAgl = 0.3; break;
@@ -857,7 +857,8 @@ const Scene3D = {
     // (the apron traffic gives way to the own aeroplane while it is on the ground)
     const dims = fl.dims;
     const own = fl.st.onGround ? {
-      pos: st.pos, vel: st.vel, r: Math.max(dims.len, dims.span) / 2, len: dims.len, rad: dims.radius, landed: !!fl.landed
+      pos: st.pos, vel: st.vel, r: Math.max(dims.len, dims.span) / 2, len: dims.len, rad: dims.radius, landed: !!fl.landed,
+      crewIn: Turnaround3D.arrived()
     } : null;
     const parkedM = this.quality.parkedM || 0;
     for (const rec of this.airports3D.values()) {

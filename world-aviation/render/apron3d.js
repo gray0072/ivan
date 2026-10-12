@@ -409,9 +409,9 @@ const Apron3D = {
   },
 
   // per frame: the traffic moves, and at night (dark 0..1) the lights come on. own: the
-  // player's aeroplane in the airport's frame ({ t, across, r, vt, va, len, rad, landed }: r
-  // about half its size, its velocity along and across, its length and fuselage radius, landed
-  // here) — the baggage trains give way to it while it moves: a train whose track ahead runs
+  // player's aeroplane in the airport's frame ({ t, across, r, vt, va, len, rad, landed, crewIn }:
+  // r about half its size, its velocity along and across, its length and fuselage radius, landed
+  // here, the ground crew's vehicles in their places by it: turnaround3d.js) — the baggage trains give way to it while it moves: a train whose track ahead runs
   // into the ground the aeroplane covers now or in the next few seconds stops well short of it
   // and waits; one already on that ground drives on and clears it, so none is left standing
   // across the aeroplane's way. At rest at its stand the aeroplane is served like the others.

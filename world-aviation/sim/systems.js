@@ -190,8 +190,10 @@ const Systems = {
     const cold = temp > WEATHER.ICING_TEMP_MIN && temp < WEATHER.ICING_TEMP_MAX;
     const inIcing = (!st.onGround && wet && cold) || e.forcedIce;
     if (inIcing && !this.antiIce) {
+      // (on the real clock while the time is fast: at x512 the wings were white before the time
+      // was back at x1 to do anything about it)
       const rate = WEATHER.ICING_RATE * this.iceFactor * (fl.ac.engineType === 'prop' ? 1.3 : 1);
-      e.iceAmount = clamp(e.iceAmount + rate * dt, 0, 1);
+      e.iceAmount = clamp(e.iceAmount + rate * dt / Math.max(1, fl.env.timeAccel), 0, 1);
     } else {
       e.iceAmount = approach(e.iceAmount, 0, (this.antiIce ? 0.03 : 0.004) * dt);
     }

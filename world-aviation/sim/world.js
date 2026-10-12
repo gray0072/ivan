@@ -684,7 +684,9 @@ const World = {
   },
 
   // Where am I on this route, and where do I steer next? `look` (metres) adds a carrot: the
-  // point that far ahead along the route line, so following it keeps you on the line.
+  // point that far ahead along the route line, so following it keeps you on the line (driven: that
+  // far along the line as it is driven, round the fillets' arcs, from its nearest point — the first
+  // officer's, who steers for it closely; the arrow's point is the route line's taken onto the arcs).
   // The leg you are on is remembered on the route (route.seg) and moves on in order: onto the
   // next leg once that one is nearer and this one mostly behind you (past its end, or near it),
   // back one leg only when the previous one is much nearer. So a later leg that passes close by
@@ -692,7 +694,7 @@ const World = {
   // a little, the carrot is already on the next leg.
   // (The legs' lengths are worked out once and kept on the route, route.lens / route.total: a
   // route is never changed, only replaced.)
-  routeProgress(a, route, x, z, look) {
+  routeProgress(a, route, x, z, look, driven) {
     if (!route || route.length < 2) return null;
     if (!route.lens || route.lens.length !== route.length - 1) {
       route.lens = [];
@@ -727,30 +729,52 @@ const World = {
     done += lens[bestSeg] * bestT;
     const nextIdx = Math.min(bestSeg + 1, route.length - 1);
     const tgt = route[nextIdx];
+    const sm = a && a.filletsAt ? this.smoothRoute(a, route) : null;
     // walk `look` metres along the route from the closest point
     let carrot = null;
-    if (look) {
+    if (look && sm && driven) {
+      // (the first officer's: `look` metres along the line as it is driven from its nearest point)
+      const P = sm.pts, S = sm.S, fi = sm.first;
+      const near = this.nearestOn(sm, x, z, fi[bestSeg], (fi[bestSeg + 2] !== undefined ? fi[bestSeg + 2] : P.length) + 1);
+      const s = near.s + look;
+      let k = 0;
+      while (k < P.length - 2 && S[k + 1] < s) k++;
+      const f = clamp((s - S[k]) / ((S[k + 1] - S[k]) || 1), 0, 1);
+      carrot = { x: lerp(P[k].x, P[k + 1].x, f), z: lerp(P[k].z, P[k + 1].z, f) };
+    } else if (look) {
       let s = done + look, i = 0;
       while (i < lens.length - 1 && s > lens[i]) { s -= lens[i]; i++; }
       const f = clamp(s / (lens[i] || 1), 0, 1);
       carrot = { x: lerp(route[i].x, route[i + 1].x, f), z: lerp(route[i].z, route[i + 1].z, f) };
       // on the curve where the corner has one (the fillet's arc), so the arrow and the first
       // officer steering for it go round it, not to the corner and across
-      if (a && a.filletsAt) {
-        const sm = this.smoothRoute(a, route), fi = sm.first;
+      if (sm) {
+        const fi = sm.first;
         const c = this.nearestOn(sm, carrot.x, carrot.z, fi[i], (fi[i + 2] !== undefined ? fi[i + 2] : sm.pts.length) + 1);
         carrot = { x: c.x, z: c.z };
       }
     }
+    // how far off the route, from the line as it is driven too (round the corners on the fillets'
+    // arcs: its nearest point on the leg you are on, the corner ahead and the next leg): measured
+    // from the corners' square lines, the middle of a sharp turn's curve (135° off a rapid exit:
+    // 28 m inside the corner) read as a missed turn, and the new route led across the grass
+    let deviation = Math.sqrt(bestD2);
+    let closest = { x: route[bestSeg].x + bestT * (route[bestSeg + 1].x - route[bestSeg].x), z: route[bestSeg].z + bestT * (route[bestSeg + 1].z - route[bestSeg].z) };
+    if (sm) {
+      const fi = sm.first;
+      const near = this.nearestOn(sm, x, z, fi[bestSeg], (fi[bestSeg + 2] !== undefined ? fi[bestSeg + 2] : sm.pts.length) + 1);
+      deviation = Math.hypot(near.x - x, near.z - z);
+      closest = { x: near.x, z: near.z };
+    }
     return {
       carrot,
-      deviation: Math.sqrt(bestD2),
+      deviation,
       progress: total > 0 ? done / total : 1,
       remaining: Math.max(0, total - done),
       target: tgt,
       final: nextIdx === route.length - 1,
       distToTarget: Math.hypot(tgt.x - x, tgt.z - z),
-      closest: { x: route[bestSeg].x + bestT * (route[bestSeg + 1].x - route[bestSeg].x), z: route[bestSeg].z + bestT * (route[bestSeg + 1].z - route[bestSeg].z) },
+      closest,
       totalLength: total
     };
   },

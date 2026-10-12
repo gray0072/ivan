@@ -75,7 +75,7 @@ const SIM = {
   TURB_FULL_ACCEL: 8,
   TIME_ACCEL_MIN_COS: 0.2,     // the distance for that is divided by the cosine of the angle off the runway, at most x5
   TIME_ACCEL_RESUME_S: 0.5,    // after an emergency the time climbs back one step every this many real seconds
-  TIME_ACCEL_STEPDOWN_S: 0.5,  // an emergency or stricter limits bring the time down one step every this many real seconds
+  TIME_ACCEL_STEPDOWN_S: 0.25, // an emergency or stricter limits bring the time down one step every this many real seconds
   CABIN_ON_TIME_MIN: 3,        // the arrival announcement: within this many minutes of the plan is on schedule
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
@@ -89,7 +89,9 @@ const SIM = {
   GEAR_TRANSIT_S: 6,
   FLAP_TRANSIT_S: 2.5,         // seconds per flap notch
   BRAKE_RAMP_S: 0.35,          // seconds for the wheel brakes to reach full pressure
-  NOSEWHEEL_MAX_STEER_DEG: 38,
+  NOSEWHEEL_MAX_STEER_DEG: 60,  // the nosewheel's lock at walking pace, less and less with the speed (Flight.steerMax) ...
+  NOSEWHEEL_FADE_MS: 26,       // ... none left at this speed: the lock times (1 - v / this)², at least NOSEWHEEL_MIN_SHARE
+  NOSEWHEEL_MIN_SHARE: 0.04,
   NOSEWHEEL_STEER_RATE_DEG: 22, // degrees per second the hydraulic nosewheel steering turns at
   GROUND_YAW_ACCEL: 0.9,       // rad/s² at most: how fast the turn rate on the ground builds up (the aeroplane's inertia)
   ENGINE_IDLE_N1: 0.22,        // N1 at idle, thrust scales from here to 100 %
@@ -125,6 +127,7 @@ const SIM = {
   ILS_AID_NM: 23,              // ... and the ILS scales on the descent inside this one (on the approach, always)
   FLAPS_PROMPT_NM: 15,         // on the approach the prompt asks for the flaps from here (whenever the next step fits the speed) ...
   GEAR_PROMPT_NM: 8,           // ... and for the gear from here
+  GEAR_UP_WARN_FT: 1500,       // the gear still down in the climb or the cruise this high over the ground: a warning until it is up
   LOC_TIME_S: 22,              // the localiser closes a cross-track error with this time constant
   LOC_TURN_MARGIN: 1.25,       // the localiser intercept plans its turn on this many times the autopilot's turn radius
   AP_ROLL_IN_S: 3,             // ... after this long rolling into the bank (for a roll rate of AP_ROLL_IN_REF; slower types take longer)
@@ -182,6 +185,7 @@ const TAXI = {
   TURN_MIN_KT: 10,             // ... in 5 kt steps, at least this
   TURN_MIN_DEG: 30,            // a corner of the route turning more than this is a turn ...
   TURN_PAD_M: 10,              // ... from this far before its curve to this far after it
+  REVERSE_GAP_M: 30,           // a turn the other way round this close after another (their curves and pads): a reverse (sim/copilot.js)
   DECEL_MS2: 0.8,
   RED_OVER: 1.25,
   FINE_HOLD_S: 2,              // seconds in the red that make a taxi overspeed
@@ -209,6 +213,12 @@ const COPILOT = {
   SPEED_SHARE: 0.85,           // taxis at this share of the limit ...
   DECEL_MS2: 0.55,             // ... slowing down for a slower stretch earlier than TAXI.DECEL_MS2 asks
   MAX_THROTTLE: 0.6,
+  STEER_SHARE: 0.8,            // takes a turn no faster than this share of the nosewheel's lock holds its curve ...
+  REVERSE_STEER_SHARE: 0.5,    // ... this share in a turn the other way round just after another (TAXI.REVERSE_GAP_M) ...
+  MIN_TURN_MS: 2,              // ... but at least this fast (m/s)
+  LOOK_WB: 0.7,                // steers for the taxi line this many wheelbases ahead ...
+  LOOK_S: 1.5,                 // ... plus this many seconds of the speed ...
+  LOOK_MIN_M: 15,              // ... at least this far (and no further than the arrow's point)
   THROTTLE_P: 0.08,            // the throttle per m/s short of the speed wanted ...
   THROTTLE_I: 0.04,            // ... and its integral (per m/s·s): a heavy aeroplane needs more to get rolling
   BRAKE_FROM_MS: 0.3,          // the brakes from this much too fast (idle thrust alone rolls a light type on) ...
@@ -1296,13 +1306,16 @@ const CINEMATIC = {
   OUTRO_AZ_DEG: 40,            // ... this far round from straight behind (on the right, where the ground crew works)
   OUTRO_FIT: 0.62,             // ... and far enough for this share of the aeroplane's biggest size to fill half the narrower view,
   OUTRO_PAD_M: 24,             // ... and this much further (a small aeroplane's ground crew in the picture too)
+  FROM_CLEAR: 0.6,             // watched from outside, the outro goes by way of a point this share of the aeroplane's size out
   CAPTION_S: 4.2               // the route under the intro's picture: shown this long
 };
 
 // The ground crew at the arrival stand once the engines are off (render/turnaround3d.js): they
 // drive at SPEED_K times a baggage train's speed, from FROM_M along the service road, down beside
 // the aeroplane OUT_M out from the fuselage, one every STAGGER_S; done LINGER_S after the last is there
-const TURNAROUND = { SPEED_K: 2.2, FROM_M: 170, OUT_M: 22, STAGGER_S: 2.5, LINGER_S: 4 };
+const TURNAROUND = { SPEED_K: 2.2, FROM_M: 170, OUT_M: 22, STAGGER_S: 2.5, LINGER_S: 4,
+  LOOK_M: 7, GAP_M: 2.8,       // a vehicle waits for anything within GAP_M of its way over LOOK_M past its front ...
+  WAIT_MAX_S: 8 };             // ... at most this long
 
 // A look round an airport from the briefing (free): the camera flies in on the approach, low
 // down the runway, round over the terminal and down to the own aeroplane at its stand (or the

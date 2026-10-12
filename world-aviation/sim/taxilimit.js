@@ -41,14 +41,15 @@ const TaxiLimit = {
   },
 
   // the limits s metres along the route (a: its airport), slowing down for what is coming at
-  // `decel` (m/s², TAXI.DECEL_MS2 when not given); turnCap(R), when given, the most a turn of
-  // radius R may be taken at (kt: the first officer's own aeroplane, sim/copilot.js)
+  // `decel` (m/s², TAXI.DECEL_MS2 when not given); turnCap(R, reverse), when given, the most a
+  // turn of radius R (reverse: the other way round from a turn just before or after it) may be
+  // taken at (kt: the first officer's own aeroplane, sim/copilot.js)
   along(a, route, s, decel, turnCap) {
     decel = decel || TAXI.DECEL_MS2;
     if (!route.zones) route.zones = this.zones(a, route);
     let limit = TAXI.STRAIGHT_KT, kind = 'taxiway', now = Infinity, ahead = null;
     for (const z of route.zones) {
-      const kt = turnCap && z.kind === 'turn' ? Math.min(z.kt, turnCap(z.R)) : z.kt;
+      const kt = turnCap && z.kind === 'turn' ? Math.min(z.kt, turnCap(z.R, z.reverse)) : z.kt;
       if (s >= z.s0 && s <= z.s1) {
         if (kt < limit) { limit = kt; kind = z.kind; }
       } else if (z.s0 > s) {
@@ -84,7 +85,9 @@ const TaxiLimit = {
   // The slower stretches of a route, as [{ s0, s1, kt, kind }] in metres along it: the apron lane,
   // the stand's lead-in, and every corner turning more than TAXI.TURN_MIN_DEG, over its curve
   // (the fillet there, World.buildFillets: its radius gives the limit) and TAXI.TURN_PAD_M either
-  // side. A route that starts at a runway exit turns off the runway there.
+  // side. A route that starts at a runway exit turns off the runway there. A turn the other way
+  // round from the one before it, their curves (with the pads) less than TAXI.REVERSE_GAP_M
+  // apart, is marked `reverse` (both are): the nosewheel goes over from one lock to the other.
   zones(a, route) {
     const out = [], S = [0];
     for (let i = 0; i + 1 < route.length; i++) S.push(S[i] + Math.hypot(route[i + 1].x - route[i].x, route[i + 1].z - route[i].z));
@@ -106,13 +109,19 @@ const TaxiLimit = {
       const half = (f ? f.d : R * Math.tan(Math.min(ang, 150 * DEG) / 2)) + TAXI.TURN_PAD_M;
       // (into a stand or out of it, no faster than on its lead-in)
       const stand = edge(p, n) === 'stand' || edge(n, route[i + 1]) === 'stand';
-      out.push({ s0: S[i] - half, s1: S[i] + half, kt: Math.min(this.turnKt(f ? R : 0), stand ? TAXI.STAND_KT : Infinity), kind: 'turn', R });
+      out.push({ s0: S[i] - half, s1: S[i] + half, kt: Math.min(this.turnKt(f ? R : 0), stand ? TAXI.STAND_KT : Infinity), kind: 'turn', R,
+        side: Math.sign(u[0] * v[1] - u[1] * v[0]), reverse: false });
     };
     if (a && route[0].kind === 'exit') {
       const back = World.runwayBehind(route[0]);
       corner(0, back || World.at(a, route[0].t - 100, 0));
     }
     for (let i = 1; i + 1 < route.length; i++) corner(i, route[i - 1]);
+    const turns = out.filter((z) => z.kind === 'turn');
+    for (let i = 1; i < turns.length; i++) {
+      const p = turns[i - 1], q = turns[i];
+      if (p.side && q.side && p.side !== q.side && q.s0 - p.s1 < TAXI.REVERSE_GAP_M) p.reverse = q.reverse = true;
+    }
     return out;
   }
 };

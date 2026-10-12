@@ -710,6 +710,7 @@ const TEXT_RU = {
   'OVERSPEED — Vne {v} kt': 'ПРЕВЫШЕНИЕ СКОРОСТИ — Vne {v} kt',
   'Flap overspeed — retract the flaps or slow down': 'Превышение скорости для закрылков — уберите закрылки или погасите скорость',
   'Gear overspeed — slow down below {v} kt': 'Превышение скорости для шасси — погасите скорость ниже {v} kt',
+  'Gear still down — gear up <kbd>G</kbd>': 'Шасси не убраны — шасси убрать <kbd>G</kbd>',
   'Tail strike — too much rotation': 'Касание ВПП хвостом — слишком большой тангаж при отрыве',
   'Runway excursion — you left the paved surface at {v} kt.': 'Выкатывание за пределы ВПП — вы сошли с покрытия на скорости {v} kt.',
   'Off the paved surface — rough field': 'Вне покрытия — неровный грунт',

@@ -14,10 +14,15 @@
 //   - an airstair truck at the front door where there is no jet bridge,
 //   - at a cargo stand the main-deck loader (or a forklift) at the
 //     cargo door.
-// Each comes along the service road's lane on the stands' side from
-// some way off, turns down beside the aeroplane well out from the
-// fuselage and comes in square to it, one after another. done() says
-// when all are there and have stood a moment (the debrief may come).
+// Each comes along the service road from some way off, keeping right
+// as the baggage trains do, turns down beside the aeroplane well out
+// from the fuselage and comes in square to it, one after another — on
+// each side the one going furthest down first, so none passes one
+// already standing. A vehicle stops for a baggage train or another
+// vehicle just ahead (and the trains for it: baggage3d.js), and no
+// train comes to the aeroplane before they are all there (arrived).
+// done() says when all are there and have stood a moment (the debrief
+// may come).
 // A GA stand has none (its load waits there: ga3d.js).
 // Built into the arrival airport's frame (rec.frame: x = across,
 // z = -t). Used by Scene3D.update and Game (the outro's end).
@@ -43,12 +48,37 @@ const Turnaround3D = {
     for (const v of t.vehicles) {
       if (t.t < v.delay) continue;
       v.holder.visible = true;
+      v.on = true;
       if (v.s < v.track.len) {
+        // (something just ahead: wait for it, never for good)
+        if (this.inWay(rec, t, v)) v.stuck += dt; else v.stuck = 0;
+        if (v.stuck > 0 && v.stuck < TURNAROUND.WAIT_MAX_S) continue;
         v.s = Math.min(v.track.len, v.s + dt * trackSpeed(v.track, v.s) * TURNAROUND.SPEED_K);
         this.pose(v);
         if (v.s >= v.track.len) v.at = t.t;
       }
     }
+  },
+
+  // a baggage train or another of the crew's vehicles in front of v: a point of its body within
+  // TURNAROUND.GAP_M of its track over the TURNAROUND.LOOK_M past its front
+  inWay(rec, t, v) {
+    const others = [];
+    for (const o of t.vehicles) if (o !== v && o.on) others.push(...o.pieces);
+    for (const tr of rec.trains || []) if (tr.state !== 'hall') others.push(...tr.pieces);
+    if (!others.length) return false;
+    for (let d = v.half + 1; d <= v.half + TURNAROUND.LOOK_M; d += 1.5) {
+      const q = trackAt(v.track, v.s + d);
+      for (const p of others) if (Math.hypot(p.t - q.t, p.across - q.across) < TURNAROUND.GAP_M) return true;
+    }
+    return false;
+  },
+
+  // all the crew's vehicles of the turnaround at the arrival stand are in their places (none: not
+  // parked yet; a GA stand's turnaround has none)
+  arrived() {
+    const t = this.now;
+    return !!t && t.vehicles.every((v) => v.at !== undefined);
   },
 
   // all the vehicles there, and the last one has stood TURNAROUND.LINGER_S (or none came)
@@ -79,7 +109,8 @@ const Turnaround3D = {
       jobs.push([(k) => Vehicles.fuelTruck(k), -1, L.STAND + Lc * 0.02, Math.max(S * 0.2, jet ? 13.5 : 7)]);
       if (jet && Lc > 35 && !gate.cargo) jobs.push([(k) => Vehicles.catering(k), -1, L.STAND - Lc * 0.38, 3.8]);
     }
-    const lane = L.SERVICE_ROAD - BAG_LANE;
+    // on each side the one going furthest from the road first
+    jobs.sort((p, q) => p[1] - q[1] || p[2] - q[2]);
     const vehicles = jobs.map(([model, side, across, out], i) => {
       const k = kit();
       model(k);
@@ -87,11 +118,15 @@ const Turnaround3D = {
       holder.add(k.mesh(body));
       holder.visible = false;
       group.add(holder);
-      // along the lane from TURNAROUND.FROM_M off, down beside the aeroplane well out from the
-      // fuselage (TURNAROUND.OUT_M, further than its own place), and in square to it
+      // along the road from TURNAROUND.FROM_M off on its right-hand lane (as the baggage trains
+      // keep right), down beside the aeroplane well out from the fuselage (TURNAROUND.OUT_M,
+      // further than its own place), and in square to it
+      const lane = L.SERVICE_ROAD - side * BAG_LANE;
+      const box = new THREE.Box3().setFromObject(holder);
       const tEnd = gate.t + side * (R + out), tOut = gate.t + side * Math.max(R + TURNAROUND.OUT_M, R + out + 8);
       const track = makeTrack([[gate.t + side * TURNAROUND.FROM_M, lane], [tOut, lane], [tOut, across], [tEnd, across]]);
-      const v = { holder, track, s: 0, delay: i * TURNAROUND.STAGGER_S };
+      const v = { holder, track, s: 0, delay: i * TURNAROUND.STAGGER_S, on: false, stuck: 0, pieces: [],
+        half: Math.max(-box.min.z, box.max.z) };
       this.pose(v);
       return v;
     });
@@ -99,10 +134,15 @@ const Turnaround3D = {
     return { fl, gate, group, vehicles, t: 0, time };
   },
 
-  // a vehicle at s along its track, turned the way it goes (the airport's frame: x across, z -t)
+  // a vehicle at s along its track, turned the way it goes (the airport's frame: x across, z -t),
+  // and the points along its body others keep clear of (pieces)
   pose(v) {
     const q = trackAt(v.track, v.s), b = trackAt(v.track, Math.max(0, v.s - 1)), f = trackAt(v.track, Math.min(v.track.len, v.s + 1));
     v.holder.position.set(q.across, 0, -q.t);
-    if (Math.hypot(f.t - b.t, f.across - b.across) > 1e-3) v.holder.rotation.y = Math.atan2(f.across - b.across, -(f.t - b.t));
+    const dt = f.t - b.t, da = f.across - b.across, l = Math.hypot(dt, da);
+    if (l > 1e-3) { v.holder.rotation.y = Math.atan2(da, -dt); v.dir = { t: dt / l, across: da / l }; }
+    const u = v.dir || { t: 0, across: 0 };
+    v.pieces.length = 0;
+    for (const k of [-1, -0.5, 0, 0.5, 1]) v.pieces.push({ t: q.t + u.t * k * v.half, across: q.across + u.across * k * v.half });
   }
 };

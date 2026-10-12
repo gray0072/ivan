@@ -710,6 +710,7 @@ const TEXT_SV = {
   'OVERSPEED — Vne {v} kt': 'ÖVERFART — Vne {v} kt',
   'Flap overspeed — retract the flaps or slow down': 'För hög fart med klaffar — ta in klaffarna eller sakta ner',
   'Gear overspeed — slow down below {v} kt': 'För hög fart med landställ — sakta ner under {v} kt',
+  'Gear still down — gear up <kbd>G</kbd>': 'Landstället är fortfarande ute — landställ in <kbd>G</kbd>',
   'Tail strike — too much rotation': 'Stjärten tog i banan — för kraftig rotation',
   'Runway excursion — you left the paved surface at {v} kt.': 'Banavåkning — du lämnade den hårda ytan i {v} kt.',
   'Off the paved surface — rough field': 'Utanför den hårda ytan — ojämn mark',

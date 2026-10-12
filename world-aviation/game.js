@@ -1352,7 +1352,7 @@ const Game = {
   startCine(kind) {
     if (typeof Cinematic === 'undefined' || !Scene3D.camera) return false;
     const fl = this.flight, c = this.contract;
-    Cinematic.start(kind, fl, { atRunway: !!this.setup.skipPushback, fromOutside: kind === 'outro' && this.camMode !== 'cockpit' });
+    Cinematic.start(kind, fl, { atRunway: !!this.setup.skipPushback, from: kind === 'outro' && this.camMode !== 'cockpit' ? Scene3D.camera : null });
     this.camMode = 'cockpit';
     const box = el('cine');
     box.hidden = false;

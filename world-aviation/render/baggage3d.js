@@ -129,6 +129,8 @@ const Baggage = {
     const gate = rec.a.gates[i];
     if (s.inUse) {
       if (!own || Math.hypot(own.vt, own.va) > 0.3) return null;
+      // (just in: not before the ground crew's vehicles are in their places, turnaround3d.js)
+      if (own.landed && !own.crewIn) return null;
       if (Math.hypot(own.t - gate.t, own.across - LAYOUT.STAND) > 15 || !(own.len > 15)) return null;
       return { t: gate.t, hold: LAYOUT.STAND - own.len * 0.22, R: own.rad, mission: own.landed ? 'in' : 'out' };
     }
@@ -230,14 +232,17 @@ const Baggage = {
     if (tr.solids) [tr.tractor].concat(tr.carts).forEach((m, i) => Collide.placeVehicle(tr.solids[i], tr.a, m.position.x, m.position.z, m.rotation.y));
   },
 
-  // another train just ahead on this one's track
+  // another train just ahead on this one's track, or one of the ground crew's vehicles coming
+  // to the own aeroplane (turnaround3d.js)
   inWay(rec, tr) {
+    const crew = rec.turnaround ? rec.turnaround.vehicles.filter((v) => v.on) : [];
     for (let d = 2.5; d <= 8; d += 1.5) {
       const q = trackAt(tr.path, tr.s + d);
       for (const o of rec.trains) {
         if (o === tr || o.state === 'hall') continue;
         for (const pc of o.pieces) if (Math.hypot(pc.t - q.t, pc.across - q.across) < 2.6) return true;
       }
+      for (const v of crew) for (const pc of v.pieces) if (Math.hypot(pc.t - q.t, pc.across - q.across) < 2.6) return true;
     }
     return false;
   }

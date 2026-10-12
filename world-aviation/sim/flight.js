@@ -360,6 +360,14 @@ const Flight = {
   // ground (but up to COPILOT.TIME_ACCEL while the first officer taxis), low down, in a checklist
   // or with ice building and the anti-ice off, and closing on the arrival it comes down by itself
   // (approachAccelMax).
+  // The nosewheel's lock at this speed (m/s), radians: the full NOSEWHEEL_MAX_STEER_DEG at
+  // walking pace, so that a 747 (29 m from the nosewheel to the main gear) still turns on a 45 m
+  // curve at 8 kt; falling off with the square of the speed, so that at taxi speed and above it
+  // is what it was (at 20 kt 23°)
+  steerMax(speed) {
+    const k = clamp(1 - speed / SIM.NOSEWHEEL_FADE_MS, 0, 1);
+    return SIM.NOSEWHEEL_MAX_STEER_DEG * DEG * Math.max(k * k, SIM.NOSEWHEEL_MIN_SHARE);
+  },
   timeAccelMax() {
     this.approachCapped = false;
     if (this.timeHeld()) return 1;
@@ -443,8 +451,10 @@ const Flight = {
   },
   timeAccel(dtReal = 0) {
     const e = this.env;
+    // an interruption dealt with before the time was down at x1: it stops stepping down there
+    if (this.timeDrop && this.timeAccelResume && !this.timeHeld()) this.timeDrop = false;
     // after an emergency the time climbs back to where it was, a step every TIME_ACCEL_RESUME_S, once the checklist is
-    // closed (and the anti-ice is on, if ice was building)
+    // closed (and the anti-ice is on, if ice was building), from wherever it had come down to
     if (this.timeAccelResume > this.timeAccelIndex && !this.timeHeld() && !this.timeDrop) {
       this.resumeT += dtReal;
       if (this.resumeT >= SIM.TIME_ACCEL_RESUME_S) {
@@ -456,7 +466,9 @@ const Flight = {
         } else this.timeAccelResume = 0;     // no faster allowed now: the pilot takes it from here
       }
     } else this.resumeT = 0;
-    if (this.timeAccelIndex >= this.timeAccelResume) this.timeAccelResume = 0;
+    // (climbed back: done; not while it is still stepping down, when the index is still where the
+    // interruption found it)
+    if (!this.timeDrop && this.timeAccelIndex >= this.timeAccelResume) this.timeAccelResume = 0;
     if (this.timeAccelIndex === 0) this.timeDrop = false;
     if (this.timeAccelIndex === 0 && !this.cheatAccel) { e.timeAccel = 1; return 1; }
     const top = this.timeDrop ? 0 : this.timeAccelTop();
@@ -714,6 +726,10 @@ const Flight = {
       st.damage = Math.min(1, st.damage + dt * 0.004);
     }
     if (st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround) this.warn('GEARSPEED', tr('Gear overspeed — slow down below {v} kt', { v: ac.vlo }));
+    // the gear left down after the take-off: the overspeed above says nothing below VLO, and a whole
+    // leg was flown with it down on the autopilot's slower climb and cruise
+    const gearDown = this.gearLeftDown();
+    if (gearDown) this.warn('GEARDOWN', tr('Gear still down — gear up <kbd>G</kbd>'));
 
     // a warning about a state goes off the screen the moment the state is put right
     const gr = this.gearReject;
@@ -722,6 +738,7 @@ const Flight = {
       OVERSPEED: ias > ac.vne,
       FLAPSPEED: st.flaps > 0.5 && ias > this.flapVfeNow() + 10,
       GEARSPEED: st.gear > 0.05 && ias > ac.vlo + 25 && !st.onGround,
+      GEARDOWN: gearDown,
       SPOILERLAND: st.spoiler > 0.5 && !st.onGround,
       GEAR: gr === 'ground' ? st.onGround : gr === 'failed' ? !!st.gearFailed : false,
       TOOLOWGEAR: st.gearTarget < 1 && !st.onGround,
@@ -737,6 +754,14 @@ const Flight = {
     }
     if (!live.GEAR) this.gearReject = null;
     this.liveWarn = live;
+  },
+
+  // the gear down (or going down) in the climb or the cruise, SIM.GEAR_UP_WARN_FT over the ground and
+  // higher (not a gear that will not come up or down: its checklist says so)
+  gearLeftDown() {
+    const st = this.st;
+    return !st.onGround && st.gearTarget === 1 && !st.gearFailed && (this.phase === 'CLIMB' || this.phase === 'CRUISE') &&
+      this.altAgl() > SIM.GEAR_UP_WARN_FT * FT;
   },
 
   // the limit speed of the flaps that are out right now (flaps up: no limit)
@@ -773,7 +798,7 @@ const Flight = {
 
     // steering: the nosewheel at low speed, the rudder as the speed builds
     const wb = this.dims.len * 0.38;
-    const steerMax = SIM.NOSEWHEEL_MAX_STEER_DEG * DEG * clamp(1 - speed / 26, 0.06, 1);
+    const steerMax = this.steerMax(speed);
     // the hydraulic steering turns the nosewheel at its own pace, so a turn builds up gently
     st.steer = approach(st.steer || 0, st.rudder * steerMax, SIM.NOSEWHEEL_STEER_RATE_DEG * DEG * dt);
     const steer = st.steer;

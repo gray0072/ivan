@@ -11,7 +11,8 @@
 //   - the outro: parked at the arrival gate, the camera rises
 //     out of the cockpit, back over the fin and out to a wide
 //     shot of the aeroplane at its gate, holds it, and the
-//     debrief follows;
+//     debrief follows (watched from outside: from that view, by
+//     way of a point clear of the aeroplane, out to the same shot);
 //   - the tour: from the briefing, a look round the departure or
 //     the arrival airport, its runway and terminal, ending at the
 //     own aeroplane (Game.startTour);
@@ -36,8 +37,8 @@ const Cinematic = {
 
   // a shot for this flight: 'intro' (the camera comes in from the left, the captain's side) or
   // 'outro' (out to the right, so the two ends of a flight are not the same picture);
-  // opts.atRunway: the intro at the holding point; opts.fromOutside: the outro begins at the
-  // roof, not in the seat (the pilot taxied in watching from outside)
+  // opts.atRunway: the intro at the holding point; opts.from: the camera (THREE) of the view
+  // outside the pilot taxied in watching: the outro begins there, not in the seat
   start(kind, fl, opts) {
     const atRunway = !!(opts && opts.atRunway);
     const d = fl.dims, L = d.len, R = d.fus / 2, Z = Math.max(d.len, d.span);
@@ -74,8 +75,35 @@ const Cinematic = {
       // the stretch inside the cockpit (the eye to the roof key)
       inT0: (intro ? times[3] : 0) * dur, inT1: (intro ? 1 : times[1]) * dur
     };
-    if (!intro && opts && opts.fromOutside) this.shot.t = this.shot.inT1 + 1e-3;
-    this.vec = keys[0].slice();
+    if (!intro && opts && opts.from) {
+      // from the view outside: the camera where it is (in the aeroplane's axes), half way a point
+      // out of the way of the aeroplane (round it at CINEMATIC.FROM_CLEAR of its size, above
+      // its fin), and the wide shot
+      const wide = keys[keys.length - 1], cam = opts.from, p = fl.st.pos, ax = fl.st.axes || fl.updateAxes();
+      const loc = (q) => {
+        const dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z;
+        return [dx * ax.right.x + dy * ax.right.y + dz * ax.right.z, dx * ax.up.x + dy * ax.up.y + dz * ax.up.z,
+          dx * ax.nose.x + dy * ax.nose.y + dz * ax.nose.z];
+      };
+      const dir = new THREE.Vector3();
+      cam.getWorldDirection(dir);
+      const dist = Math.max(10, dir.x * (p.x - cam.position.x) + dir.y * (p.y - cam.position.y) + dir.z * (p.z - cam.position.z));
+      const e0 = loc(cam.position), l0 = loc(cam.position.clone().addScaledVector(dir, dist));
+      // (looking straight down, the top view: a little ahead, so the camera's up stays the sky's)
+      const dy = Math.abs(l0[1] - e0[1]);
+      if (Math.hypot(l0[0] - e0[0], l0[2] - e0[2]) < 0.15 * dy) l0[2] = e0[2] + 0.15 * dy;
+      const mid = wide.map((v, i) => (v + (i < 3 ? e0[i] : i < 6 ? l0[i - 3] : cam.fov)) / 2);
+      const r = Math.hypot(mid[0], mid[2]), need = Z * CINEMATIC.FROM_CLEAR + 10;
+      if (r < need) {
+        const ux = r > 1 ? mid[0] / r : wide[0] / Math.hypot(wide[0], wide[2]), uz = r > 1 ? mid[2] / r : wide[2] / Math.hypot(wide[0], wide[2]);
+        mid[0] = ux * need; mid[2] = uz * need;
+      }
+      mid[1] = Math.max(mid[1], R * 2.9 + L * 0.1 + 3);
+      this.shot.keys = [[...e0, ...l0, cam.fov], mid, wide];
+      this.shot.times = [0, 0.5 * dur, dur];
+      this.shot.inT0 = this.shot.inT1 = -1;
+    }
+    this.vec = this.shot.keys[0].slice();
     this.eval();
   },
 
