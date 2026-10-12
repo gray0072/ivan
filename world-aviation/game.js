@@ -109,6 +109,7 @@ const Game = {
       const fe = el('fps');
       if (fe) fe.textContent = Math.round(this.fps) + ' fps · ' + Scene3D.quality.name + (Scene3D.shed.size ? ' −' + Scene3D.shed.size : '');
     }
+    if (this.bootHold) dt = 0;              // the scene is drawn behind the boot screen, nothing moves yet
     if (this.mode === 'flying') this.frame(dt);
     else if (this.mode === 'tour') this.tourFrame(dt);
     else if (this.mode === 'showcase') Showcase.frame(dt);   // a look round an aircraft (ui/showcase.js)
@@ -118,6 +119,7 @@ const Game = {
       Scene3D.render();
       this.draw2d(0);
     }
+    if (this.bootHold && --this.bootHold <= 0) this.revealScene();
   },
 
   frame(dt) {
@@ -1090,8 +1092,24 @@ const Game = {
     el('screen').hidden = true;
     frame().then(frame).then(() => {
       this.startFlight(contract, opts);
-      boot.hidden = true;
+      this.holdBoot();
     });
+  },
+
+  // The screen that says the world is being built stays up until the new scene has been drawn a
+  // few times (BOOT_HOLD_FRAMES: the first draws compile the shaders and build the near terrain,
+  // and the canvas still holds the last flight's picture meanwhile), so nothing of the old scene
+  // shows; the camera's flight starts from there.
+  holdBoot() { this.bootHold = BOOT_HOLD_FRAMES; },
+  revealScene() {
+    this.bootHold = 0;
+    el('bootScreen').hidden = true;
+    this.last = performance.now();
+    const sh = this.cineShot();
+    if (sh && sh.kind === 'intro') {
+      const f = el('cineFade');
+      f.classList.remove('in'); void f.offsetWidth; f.classList.add('in');
+    }
   },
 
   startFlight(contract, opts) {
@@ -1207,7 +1225,7 @@ const Game = {
     this.mode = 'ops';
     frame().then(frame).then(() => {
       this.startTour(contract, end);
-      boot.hidden = true;
+      this.holdBoot();
     });
   },
 
@@ -1261,7 +1279,7 @@ const Game = {
       : tr('Your aircraft · {gate}', { gate: esc(gateName(gate)) });
     const flag = typeof flagImg === 'function' ? flagImg(a) : '';
     this.tourCaps = [
-      [0.6, Cinematic.shot.marks.runway, '<b>' + flag + esc(aptName(a)) + '</b><span>' + a.id + ' · ' + esc(aptCity(a)) + '</span>'],
+      [0.6, Cinematic.shot.marks.runway, '<b>' + flag + esc(aptName(a)) + '</b><span>' + a.id + ' · ' + esc(aptPlace(a)) + '</span>'],
       [Cinematic.shot.marks.runway + 0.8, Cinematic.shot.marks.apron, '<b>' + tr('Runway {rwy}', { rwy: a.rwyName }) + '</b><span>' + a.rwyLen + ' m · ' + Math.round(a.elev / FT) + ' ft</span>'],
       [Cinematic.shot.marks.own + 1.5, Infinity, '<b>' + what + '</b><span>' + esc(fl.ac.name) + '</span>']
     ];
@@ -1346,8 +1364,12 @@ const Game = {
     const cap = el('cineCaption');
     cap.classList.remove('on');
     cap.innerHTML = kind === 'intro'
-      ? '<b>' + routeHtml(flag(fl.world) + esc(aptCity(fl.world)), flag(fl.arrival) + esc(aptCity(fl.arrival))) + '</b><span>' + esc(c.client) + ' · ' + esc(fl.ac.name) + '</span>'
-      : '<b>' + flag(fl.arrival) + esc(aptCity(fl.arrival)) + '</b><span>' + fl.arrival.id + ' · ' + esc(gateName(this.arrivalGate)) + '</span>';
+      ? '<b>' + routeHtml(flag(fl.world) + esc(aptCity(fl.world)), flag(fl.arrival) + esc(aptCity(fl.arrival))) + '</b>' + (() => {
+        // the countries under the cities (one where both are in it)
+        const cs = [aptCountry(fl.world), aptCountry(fl.arrival)].filter((x, i, l) => x && l.indexOf(x) === i);
+        return cs.length ? '<span>' + esc(cs.join(' → ')) + '</span>' : '';
+      })() + '<span>' + esc(c.client) + ' · ' + esc(fl.ac.name) + '</span>'
+      : '<b>' + flag(fl.arrival) + esc(aptPlace(fl.arrival)) + '</b><span>' + fl.arrival.id + ' · ' + esc(gateName(this.arrivalGate)) + '</span>';
     el('cineSkip').innerHTML = Input.isCoarse ? esc(tr('Tap to skip')) : esc(tr('Skip')) + ' <kbd>Enter</kbd>';
     if (kind === 'intro') {
       const f = el('cineFade');

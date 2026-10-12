@@ -1232,6 +1232,10 @@ const AUTO_QUALITY = {
 // The landing (or taxi) lights' pool on the ground at night (Scene3D.updateLandingPool): full
 // brightness within FULL_M of the lamps, then falling with the square of the distance (at 500 m a
 // fifth), gone at REACH_M — a landing light does not light the ground up from 500 m high
+// a flight's (or a look round's) new scene is drawn this many times behind the boot screen
+// before it shows (Game.holdBoot): the first draws are slow and the canvas holds the old picture
+const BOOT_HOLD_FRAMES = 3;
+
 const LANDING_POOL = { FULL_M: 220, REACH_M: 900, TAXI_FULL_M: 45, TAXI_REACH_M: 120 };
 
 const VIEW = {

@@ -52,10 +52,24 @@ function tr(s, params) {
   return out;
 }
 
+// a short word that means something else elsewhere (the VSI's UP, the gear's UP): its table key
+// is the context, a space and the word ('VSI UP'); untranslated it is the word itself
+function trIn(ctx, s) {
+  const k = ctx + ' ' + s, t = tr(k);
+  return t === k ? s : t;
+}
+
 // an airport's name and its city in the game's language, or in `lang` (the voice's): the
 // Russian and Swedish ones from data/airport-names.js, else the English
 function aptName(a, lang) { return aptWord(a, lang, 0) || a.name; }
 function aptCity(a, lang) { return aptWord(a, lang, 1) || a.city; }
+// an airport's country in the game's language ('' where the city is the country: Singapore)
+function aptCountry(a) {
+  const c = a && a.country ? tr(a.country) : '';
+  return c && c !== aptCity(a) ? c : '';
+}
+// the city and its country: "Kiruna, Sweden" (the flags alone do not always say it)
+function aptPlace(a) { const c = aptCountry(a); return aptCity(a) + (c ? ', ' + c : ''); }
 function aptWord(a, lang, k) {
   const l = lang || I18N.lang, n = typeof AIRPORT_NAMES !== 'undefined' && a && AIRPORT_NAMES[a.id];
   if (!n || l === 'en') return '';

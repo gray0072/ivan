@@ -110,9 +110,11 @@ const RouteMap = {
       g.beginPath(); g.arc(x, y, 7, 0, TAU);
       g.fillStyle = '#ffd97a'; g.fill();
       g.lineWidth = 2.4; g.strokeStyle = '#ffffff'; g.stroke();
-      const fw = 30, fh = 20, city = aptCity(a);
+      const fw = 30, fh = 20, city = aptCity(a), country = aptCountry(a);
+      g.font = '500 13px "Segoe UI", Arial, sans-serif';
+      const countryW = country ? g.measureText(country).width : 0;
       g.font = '600 16px "Segoe UI", Arial, sans-serif';
-      const cityW = g.measureText(city).width;
+      const cityW = Math.max(g.measureText(city).width, countryW);
       g.font = '800 22px "Segoe UI", Arial, sans-serif';
       const codeW = g.measureText(a.id).width, need = Math.max(cityW, codeW + fw + 8) + 22;
       // (turned round where the picture's edge would cut the label off)
@@ -129,6 +131,10 @@ const RouteMap = {
       g.strokeText(a.id, cxText, y - 22); g.fillStyle = '#ffffff'; g.fillText(a.id, cxText, y - 22);
       g.font = '600 16px "Segoe UI", Arial, sans-serif';
       g.strokeText(city, lx, y + 2); g.fillStyle = '#d7e3ee'; g.fillText(city, lx, y + 2);
+      if (country) {
+        g.font = '500 13px "Segoe UI", Arial, sans-serif';
+        g.strokeText(country, lx, y + 19); g.fillStyle = '#9fb0c3'; g.fillText(country, lx, y + 19);
+      }
     };
     // (the labels point away from the other end; one straight above the other: both to the right)
     const dx = bx - ax;

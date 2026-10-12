@@ -161,7 +161,7 @@ const RtwScreen = {
     const next = '<section class="rtwNext">' +
       '<div class="rtwNextHead"><span class="rtwMode ' + a.mode + '">' + tr(a.mode === 'iron' ? 'Iron round the world' : 'Round the world') + '</span>' +
       '<b>' + esc(ac.name) + '</b><span class="tag">' + esc(tr(cls.name)) + '</span></div>' +
-      '<div class="cRoute"><b>' + routeHtml(from.id, to.id) + '</b><span>' + routeHtml(flagImg(from) + esc(aptCity(from)), flagImg(to) + esc(aptCity(to)), 'soft') + '</span></div>' +
+      '<div class="cRoute"><b>' + routeHtml(from.id, to.id) + '</b><span>' + routeHtml(placeHtml(from), placeHtml(to), 'soft') + '</span></div>' +
       (c ? '<p class="fineprint">' + tr('Leg {n} of {m} · {nm} nm · {pay} from the Meridian Club', { n: a.at + 1, m: a.plan.length - 1, nm: c.distanceNm, pay: fmtMoney(c.pay) }) + '</p>' : '') +
       (here && here.id !== from.id ? '<p class="fineprint">✈ ' + tr('You fly to {city} as a passenger first — free.', { city: esc(aptCity(from)) }) + '</p>' : '') +
       (this.edit ? '' : '<div class="btnRow">' + (c ? '<button class="btn default fwd" data-act="briefing" data-v="' + esc(c.id) + '">' + tr('Briefing') + '</button>' : '') +
@@ -215,7 +215,7 @@ const RtwScreen = {
     const last = World.byId[plan[plan.length - 1]];
     const dir = Rtw.check(plan, ac).dir || 1;
     next.sort((p, q) => dir * (wrapDeg(p.lon - last.lon) - wrapDeg(q.lon - last.lon)));
-    const opts = next.map((b) => '<option value="' + b.id + '">' + b.id + ' · ' + esc(aptCity(b)) + ' · ' +
+    const opts = next.map((b) => '<option value="' + b.id + '">' + b.id + ' · ' + esc(aptPlace(b)) + ' · ' +
       fmtNum(Math.round(geoDistanceNm(last.lat, last.lon, b.lat, b.lon))) + ' nm</option>').join('');
     return '<div class="rtwAdd">' +
       (opts ? '<label>' + tr('Next stop') + ' <select id="rtwAdd"><option value="">' + esc(tr('— pick —')) + '</option>' + opts + '</select></label>' : '') +
@@ -237,7 +237,7 @@ const RtwScreen = {
     const tilt = ((hashStr(l.to + i) % 13) - 6);
     return '<div class="rtwStamp" style="--tilt:' + tilt + 'deg;--c:' + (look.color || '#7fb0e0') + '">' +
       '<img class="rtwSym" src="' + landmarkUrl(look.symbol, look.color || '#7fb0e0') + '" alt="">' +
-      '<b>' + a.id + '</b><span>' + flagImg(a) + esc(aptCity(a)) + '</span>' +
+      '<b>' + a.id + '</b><span>' + placeHtml(a) + '</span>' +
       '<small>' + fmtClock(l.clock || 0) + (day ? ' · ' + day : '') + '</small>' +
       '<em class="g' + (l.grade === 'A+' || l.grade === 'A' ? ' top' : l.grade === 'E' || l.grade === 'F' ? ' bad' : '') + '">' + l.grade + '</em>' +
       (l.equator ? '<i class="rtwNeptune" title="' + esc(tr('Over the equator')) + '">🔱</i>' : '') + '</div>';
@@ -453,7 +453,7 @@ const RtwScreen = {
     return '<div class="contract rtwPin">' +
       '<div class="cHead">' + clientLogo(c) + '<b>' + tr('Round the world · leg {n} of {m}', { n: a.at + 1, m: a.plan.length - 1 }) + '</b>' +
       '<span class="rtwMode ' + a.mode + '">' + tr(a.mode === 'iron' ? 'Iron' : 'Round the world') + '</span></div>' +
-      '<div class="cRoute"><b>' + routeHtml(c.fromId, c.toId) + '</b><span>' + routeHtml(flagImg(from) + esc(aptCity(from)), flagImg(to) + esc(aptCity(to)), 'soft') + '</span></div>' +
+      '<div class="cRoute"><b>' + routeHtml(c.fromId, c.toId) + '</b><span>' + routeHtml(placeHtml(from), placeHtml(to), 'soft') + '</span></div>' +
       '<div class="cGrid">' + row2(tr('Aircraft'), esc(ac.name)) + row2(tr('Load'), loadText(c)) + row2(tr('Distance'), c.distanceNm + ' nm') + row2(tr('Payout'), fmtMoney(c.pay)) +
       row2(tr('Progress'), Math.round(p.deg) + '° / 360° · ' + fmtNum(Math.round(p.km)) + ' / ' + fmtNum(RTW.MIN_KM) + ' km') + '</div>' +
       (here && here.id !== from.id ? '<p class="fineprint">✈ ' + tr('You fly to {city} as a passenger first — free.', { city: esc(aptCity(from)) }) + '</p>' : '') +

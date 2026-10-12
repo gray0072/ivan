@@ -170,7 +170,7 @@ const Instruments = {
     const st = fl.st, ac = fl.ac, taxi = fl.taxi;
     const k = Units.metric ? 1.852 : 1;
     const v = (taxi ? taxi.gs : st.ias / KTS) * k;
-    this.bezel(ctx, x, y, r, taxi ? 'GND SPEED' : 'AIRSPEED', Units.metric ? 'km/h' : 'kt', { x: 0, y: 0.7 });
+    this.bezel(ctx, x, y, r, taxi ? tr('GND SPEED') : tr('AIRSPEED'), Units.metric ? 'km/h' : 'kt', { x: 0, y: 0.7 });
     ctx.save();
     ctx.beginPath(); ctx.arc(x, y, r * 0.93, 0, TAU); ctx.clip();
     ctx.translate(x, y);
@@ -242,7 +242,7 @@ const Instruments = {
     if (!taxi && r > 40 && st.tas / KTS > 30) {
       ctx.fillStyle = '#8fb8d8';
       ctx.font = '600 ' + Math.max(8, Math.round(r * 0.12)) + 'px system-ui, sans-serif';
-      ctx.fillText('TAS ' + Math.round(st.tas / KTS * k), 0, -r * 0.3);
+      ctx.fillText(tr('TAS') + ' ' + Math.round(st.tas / KTS * k), 0, -r * 0.3);
     }
     // the needle: pointed, the tip on the speed
     ctx.rotate(ang(v));
@@ -261,7 +261,7 @@ const Instruments = {
   // ---------- attitude ----------
   adi(ctx, x, y, r, fl) {
     const st = fl.st;
-    this.bezel(ctx, x, y, r, 'ATTITUDE', null);
+    this.bezel(ctx, x, y, r, tr('ATTITUDE'), null);
     ctx.save();
     ctx.beginPath(); ctx.arc(x, y, r * 0.93, 0, TAU); ctx.clip();
     ctx.translate(x, y);
@@ -355,7 +355,7 @@ const Instruments = {
     ctx.textAlign = 'left';
     ctx.fillStyle = '#8d99a6';
     ctx.font = '600 ' + Math.max(7, Math.round(r * 0.11)) + 'px system-ui, sans-serif';
-    ctx.fillText('RA', -r * 0.32, r * 0.49);
+    ctx.fillText(tr('RA'), -r * 0.32, r * 0.49);
     ctx.textAlign = 'right';
     ctx.fillStyle = minimums ? '#ffb340' : '#7de08a';
     ctx.font = '700 ' + Math.round(r * 0.19) + 'px ui-monospace, monospace';
@@ -367,7 +367,7 @@ const Instruments = {
   alt(ctx, x, y, r, fl) {
     const st = fl.st;
     const ft = Units.metric ? st.pos.y : st.pos.y / FT;          // the dial's unit: ft, or m
-    this.bezel(ctx, x, y, r, 'ALT', Units.metric ? 'm' : 'ft', { x: 0, y: -0.33 });
+    this.bezel(ctx, x, y, r, tr('ALT'), Units.metric ? 'm' : 'ft', { x: 0, y: -0.33 });
     ctx.save();
     ctx.translate(x, y);
     ctx.strokeStyle = '#c8d2dc';
@@ -424,7 +424,7 @@ const Instruments = {
   // ---------- turn coordinator ----------
   tc(ctx, x, y, r, fl) {
     const st = fl.st;
-    this.bezel(ctx, x, y, r, 'TURN', null);
+    this.bezel(ctx, x, y, r, tr('TURN'), null);
     ctx.save();
     ctx.translate(x, y);
     const turnRate = (st.turnRate || 0) * RAD;
@@ -440,8 +440,8 @@ const Instruments = {
     ctx.fillStyle = '#8d99a6';
     ctx.font = '600 ' + Math.round(r * 0.22) + 'px system-ui, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('L', -r * 0.62, r * 0.3);
-    ctx.fillText('R', r * 0.62, r * 0.3);
+    ctx.fillText(trIn('TURN', 'L'), -r * 0.62, r * 0.3);
+    ctx.fillText(trIn('TURN', 'R'), r * 0.62, r * 0.3);
     ctx.restore();
   },
 
@@ -454,7 +454,7 @@ const Instruments = {
     const vmax = metric ? 10 : 2000;
     const majors = metric ? [2, 4, 6, 8, 10] : [500, 1000, 1500, 2000];
     const minor = metric ? 1 : 250;
-    this.bezel(ctx, x, y, r, 'V/S', metric ? 'm/s' : 'fpm\n×1000', { x: -0.55, y: 0, mid: true });
+    this.bezel(ctx, x, y, r, tr('V/S'), metric ? 'm/s' : 'fpm\n×1000', { x: -0.55, y: 0, mid: true });
     ctx.save();
     ctx.translate(x, y);
     const ang = (s) => -clamp(s, -vmax, vmax) / vmax * 150 * DEG;
@@ -477,8 +477,8 @@ const Instruments = {
       }
     }
     ctx.font = '600 ' + Math.max(7, Math.round(r * 0.15)) + 'px system-ui, sans-serif';
-    ctx.fillText('UP', -r * 0.18, -r * 0.22);
-    ctx.fillText('DN', -r * 0.18, r * 0.22);
+    ctx.fillText(trIn('VSI', 'UP'), -r * 0.18, -r * 0.22);
+    ctx.fillText(trIn('VSI', 'DN'), -r * 0.18, r * 0.22);
     ctx.rotate(ang(v));
     pointer(ctx, r * 0.84, r * 0.05, r * 0.12, '#f5f7fa');
     ctx.fillStyle = '#0e1116';
@@ -570,10 +570,10 @@ const Instruments = {
       ctx.fillStyle = '#c8d2dc';
       ctx.font = '600 10px system-ui, sans-serif';
       ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-      ctx.fillText('ENG ' + (i + 1), x + 8, ry + 2);
+      ctx.fillText(tr('ENG {n}', { n: i + 1 }), x + 8, ry + 2);
       const col = e.fire ? '#ff4d3d' : e.failed ? '#6b7682' : '#5ec8f0';
       this.bar(ctx, x + 52, ry, w - 60, rowH - 4, e.n1, col,
-        e.fire ? 'FIRE' : e.failed ? 'FAIL' : e.startPhase === 'motoring' || e.startPhase === 'lightoff' ? 'START' : (e.n1 * 100).toFixed(0) + '% N1');
+        e.fire ? tr('FIRE') : e.failed ? tr('FAIL') : e.startPhase === 'motoring' || e.startPhase === 'lightoff' ? tr('START') : (e.n1 * 100).toFixed(0) + '% N1');
       this.bar(ctx, x + 52, ry + rowH, w - 60, rowH - 4, clamp(e.egt / 1000, 0, 1), '#f0a35e', Math.round(e.egt) + '°');
     }
     // fuel
@@ -581,8 +581,10 @@ const Instruments = {
     ctx.fillStyle = '#c8d2dc';
     ctx.font = '600 10px system-ui, sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    ctx.fillText('FUEL', x + 8, fy);
-    this.bar(ctx, x + 52, fy - 2, w - 60, 12, clamp(fl.st.fuel / ac.fuelCapKg, 0, 1), '#7de08a',
+    ctx.fillText(tr('FUEL'), x + 8, fy);
+    // (the bar after the word: in Russian it is longer than the engines' ДВ 1)
+    const fx = x + Math.max(52, 14 + ctx.measureText(tr('FUEL')).width);
+    this.bar(ctx, fx, fy - 2, w - 8 - (fx - x), 12, clamp(fl.st.fuel / ac.fuelCapKg, 0, 1), '#7de08a',
       Math.round(fl.st.fuel) + ' / ' + ac.fuelCapKg + ' kg');
     ctx.restore();
   },
@@ -608,12 +610,12 @@ const Instruments = {
   phoneConfig(fl) {
     const st = fl.st;
     return [
-      ['FLAPS', st.flaps === st.flapsTarget ? String(st.flaps) : Math.round(st.flaps) + '>' + st.flapsTarget,
+      [tr('FLAPS'), st.flaps === st.flapsTarget ? String(st.flaps) : Math.round(st.flaps) + '>' + st.flapsTarget,
         st.flaps > fl.ac.flaps.length - 3 ? '#e8b13a' : '#dfe7ee'],
-      ['GEAR', st.gear >= 1 ? 'DOWN' : st.gear <= 0 ? 'UP' : Math.round(st.gear * 100) + '%',
+      [tr('GEAR'), st.gear >= 1 ? tr('DOWN') : st.gear <= 0 ? tr('UP') : Math.round(st.gear * 100) + '%',
         st.gear >= 1 ? '#7de08a' : st.gear <= 0 ? '#c8d2dc' : '#e8b13a'],
-      ['AP', (fl.ap.on ? (fl.ap.gs ? 'G/S' : fl.ap.nav ? 'NAV' : 'HDG') : 'off') + ' x' + fl.env.timeAccel, fl.ap.on ? '#7de08a' : '#c8d2dc'],
-      ['ICE', fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
+      [tr('AP'), (fl.ap.on ? (fl.ap.gs ? 'G/S' : fl.ap.nav ? 'NAV' : 'HDG') : tr('off')) + ' x' + fl.env.timeAccel, fl.ap.on ? '#7de08a' : '#c8d2dc'],
+      [tr('ICE'), fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
         fl.env.iceAmount > 0.2 ? '#ff7a5c' : fl.env.iceAmount > 0.02 ? '#e8b13a' : '#c8d2dc']
     ];
   },
@@ -667,17 +669,17 @@ const Instruments = {
       ctx.restore();
       return;
     }
-    const brakeTxt = st.parkingBrake ? 'PARK' : st.brakes > 0.02 ? Math.round(st.brakes * 100) + '%' : '-';
-    line(0, 'THROTTLE', Math.round(st.throttle * 100) + '%');
-    line(1, 'FLAPS', st.flaps === st.flapsTarget ? String(st.flaps) : Math.round(st.flaps) + '>' + st.flapsTarget,
+    const brakeTxt = st.parkingBrake ? tr('PARK') : st.brakes > 0.02 ? Math.round(st.brakes * 100) + '%' : '-';
+    line(0, tr('THROTTLE'), Math.round(st.throttle * 100) + '%');
+    line(1, tr('FLAPS'), st.flaps === st.flapsTarget ? String(st.flaps) : Math.round(st.flaps) + '>' + st.flapsTarget,
       st.flaps > fl.ac.flaps.length - 3 ? '#e8b13a' : '#dfe7ee');
-    line(2, 'GEAR', st.gear >= 1 ? 'DOWN' : st.gear <= 0 ? 'UP' : Math.round(st.gear * 100) + '%',
+    line(2, tr('GEAR'), st.gear >= 1 ? tr('DOWN') : st.gear <= 0 ? tr('UP') : Math.round(st.gear * 100) + '%',
       st.gear >= 1 ? '#7de08a' : st.gear <= 0 ? '#c8d2dc' : '#e8b13a');
-    line(3, 'BRAKES', brakeTxt, st.parkingBrake ? '#ff7a5c' : '#dfe7ee');
-    line(4, 'SPOILER', st.spoiler ? 'OUT' : '—', st.spoiler ? '#ff7a5c' : '#dfe7ee');
-    line(5, 'AP / TIME', (fl.ap.on ? (fl.ap.gs ? 'G/S' : fl.ap.nav ? 'NAV' : 'HDG') : 'off') + '  x' + fl.env.timeAccel, fl.ap.on ? '#7de08a' : '#c8d2dc');
-    line(6, 'ANTI-ICE', sys && sys.antiIce ? 'ON' : 'off', sys && sys.antiIce ? '#7fc4ff' : '#c8d2dc');
-    line(7, 'ICE', fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
+    line(3, tr('BRAKES'), brakeTxt, st.parkingBrake ? '#ff7a5c' : '#dfe7ee');
+    line(4, tr('SPOILER'), st.spoiler ? tr('OUT') : '—', st.spoiler ? '#ff7a5c' : '#dfe7ee');
+    line(5, tr('AP / TIME'), (fl.ap.on ? (fl.ap.gs ? 'G/S' : fl.ap.nav ? 'NAV' : 'HDG') : tr('off')) + '  x' + fl.env.timeAccel, fl.ap.on ? '#7de08a' : '#c8d2dc');
+    line(6, tr('ANTI-ICE'), sys && sys.antiIce ? tr('ON') : tr('off'), sys && sys.antiIce ? '#7fc4ff' : '#c8d2dc');
+    line(7, tr('ICE'), fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
       fl.env.iceAmount > 0.2 ? '#ff7a5c' : fl.env.iceAmount > 0.02 ? '#e8b13a' : '#c8d2dc');
     if (sys) this.cautions(ctx, x + 8, lightsY, w - 16, sys);
     ctx.restore();
@@ -691,10 +693,10 @@ const Instruments = {
   cautions(ctx, x, y, w, sys) {
     const W = sys.warnings;
     const lights = [
-      ['FUEL', W.fuelLeak || W.fuelLow],
-      ['HYD', W.hydraulic],
-      ['CABIN', W.cabin],
-      ['DAMAGE', W.damage]
+      [tr('FUEL'), W.fuelLeak || W.fuelLow],
+      [tr('HYD'), W.hydraulic],
+      [tr('CABIN'), W.cabin],
+      [tr('DAMAGE'), W.damage]
     ];
     const cw = w / 2, ch = 15;
     ctx.font = '700 9px system-ui, sans-serif';

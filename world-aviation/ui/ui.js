@@ -400,6 +400,21 @@ const UI = {
     this.route('howto');
   },
 
+  // A screen that takes a moment to build (the Network's maps, the Hangar's cards, the briefing's
+  // map, the round-the-world globe, the Mriya's hall): the loader comes up first and the screen is
+  // built once it is on the glass (two frames later). The loader fades in only after a short
+  // delay (styles.css), so a quick screen never flashes it; a press while one is pending is let go.
+  loading(fn) {
+    const box = el('loader');
+    if (!box) { fn(); return; }
+    if (this.pending) return;
+    this.pending = true;
+    box.hidden = false;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      try { fn(); } finally { this.pending = false; box.hidden = true; }
+    }));
+  },
+
   // ---------- ops hub ----------
   showOps() {
     Game.mode = 'ops';
@@ -431,6 +446,8 @@ const UI = {
     const row = this.screen.querySelector('.tabs'), on = row && row.querySelector('.tab.on');
     if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
     if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
+    // the Network's region maps are drawn while nothing else is going on, so the tab opens at once
+    if (this.tab !== 'network' && typeof RegionMaps !== 'undefined') RegionMaps.warm();
     this.route(this.tab);
   },
 
@@ -470,7 +487,7 @@ const UI = {
     const list = shown.map((c) => this.contractCard(c, this.requirement(c))).join('');
     const away = d.lastTo && d.lastTo !== d.base;
     return '<div class="hint">' + tr('Aircraft: <b>{ac}</b> ({klass} · max {nm} nm).', { ac: esc(ac.name), klass: esc(tr(ac.klass)), nm: ac.maxRangeNm }) + ' ' +
-      (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(aptCity(World.byId[d.lastTo])), base: d.base })
+      (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(aptPlace(World.byId[d.lastTo])), base: d.base })
         : tr('From your base {base} · open regions: {n} — more in the Network tab.', { base: d.base, n: d.regions.length })) + '</div>' +
       RtwScreen.pinned() +
       Filters.boardBar() +
@@ -508,7 +525,7 @@ const UI = {
       '<div class="cHead">' + clientLogo(c) + '<b>' + esc(c.client) + '</b><span class="tag ' + c.faction + '">' +
       UseIcons.svg(c.faction) + esc(tr(FACTIONS[c.faction].short)) + '</span></div>' +
       '<div class="cRoute"><b>' + routeHtml(c.fromId, c.toId) + '</b>' +
-      '<span>' + routeHtml(flagImg(from) + esc(aptCity(from)), flagImg(to) + esc(aptCity(to)), 'soft') + '</span></div>' +
+      '<span>' + routeHtml(placeHtml(from), placeHtml(to), 'soft') + '</span></div>' +
       '<div class="cGrid">' +
       (flying && Game.flight ? row2(tr('Aircraft'), esc(Game.flight.ac.name)) : '') +
       row2(tr('Load'), loadText(c)) +
@@ -877,7 +894,7 @@ const UI = {
       '<div class="cvWho">' + name +
       '<div class="cvChips"><span class="cvChip gold">' + rank.licence + '</span>' +
       '<span class="cvChip">' + esc(tr(rank.title)) + '</span>' +
-      '<span class="cvChip">' + (base ? flagImg(base) : '') + esc(tr('Home base')) + ': <b>' + (base ? esc(aptName(base)) : d.base) + '</b></span>' +
+      '<span class="cvChip">' + (base ? flagImg(base) : '') + esc(tr('Home base')) + ': <b>' + (base ? esc(aptName(base)) : d.base) + '</b>' + (base && aptCountry(base) ? ', ' + esc(aptCountry(base)) : '') + '</span>' +
       '<span class="cvChip">' + esc(tr('Difficulty')) + ': <b>' + esc(tr(Career.difficulty.name)) + '</b></span></div></div>' +
       '<div class="cvBal"><span>' + esc(tr('Balance')) + '</span><b>' + fmtMoney(d.money) + '</b></div>' +
       '</div>' +
@@ -986,8 +1003,8 @@ const UI = {
       (typeof RouteMap !== 'undefined' ? '<img class="briefMap" src="' + RouteMap.url(from, to) + '" alt="' + esc(c.fromId + ' → ' + c.toId) + '">' : '') +
       RtwScreen.briefHtml(c) +
       '<div class="briefCols"><div>' +
-      '<h3>' + flagImg(from) + esc(aptName(from)) + ' · ' + from.id + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
-      '<h3>' + flagImg(to) + esc(aptName(to)) + ' · ' + to.id + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
+      '<h3>' + flagImg(from) + esc(aptName(from)) + ' · ' + from.id + ctryHtml(from) + '</h3><table class="wx">' + w(setup.weather.dep, from) + '</table>' +
+      '<h3>' + flagImg(to) + esc(aptName(to)) + ' · ' + to.id + ctryHtml(to) + '</h3><table class="wx">' + w(setup.weather.arr, to) + '</table>' +
       '<p class="fineprint">' + (setup.weather.arr.vis < 3000
         ? tr('Low visibility at {id} — fly the ILS, the autopilot can couple to it down to 200 ft.', { id: to.id })
         : tr('Visibility is good for the approach at {id}.', { id: to.id })) + '</p>' +
@@ -1155,7 +1172,7 @@ const UI = {
     const c = fl.contract, s = Game.setup;
     if (!s || !s.weather) return '';
     const from = World.byId[c.fromId], to = World.byId[c.toId];
-    const block = (a, x, gate) => '<div><h3>' + flagImg(a) + esc(aptName(a)) + ' · ' + a.id + '</h3><table class="wx">' + this.airportRows(x, a, gate) + '</table></div>';
+    const block = (a, x, gate) => '<div><h3>' + flagImg(a) + esc(aptName(a)) + ' · ' + a.id + ctryHtml(a) + '</h3><table class="wx">' + this.airportRows(x, a, gate) + '</table></div>';
     return '<div class="briefCols pauseApts">' + block(from, s.weather.dep, c.depGate) + block(to, s.weather.arr, c.arrGate) + '</div>';
   },
 
@@ -1361,17 +1378,17 @@ const UI = {
         else this.showTitle();
         break;
       case 'backtitle': Game.mode = 'menu'; this.showTitle(); break;
-      case 'tab': this.quiz = null; this.renaming = false; this.tab = v; this.showOps(); break;
-      case 'briefing': this.showBriefing(v); break;
+      case 'tab': this.quiz = null; this.renaming = false; this.tab = v; this.loading(() => this.showOps()); break;
+      case 'briefing': this.loading(() => this.showBriefing(v)); break;
       case 'selectAc': Career.select(v); this.showOps(); break;
-      case 'mriya': MriyaScreen.show(); break;
+      case 'mriya': this.loading(() => MriyaScreen.show()); break;
       case 'mriyaFinish': Career.setMriyaFinish(v); this.showOps(); break;
-      case 'mriyaTry': MriyaScreen.show(v); break;
-      case 'rtw': RtwScreen.act(v); break;
+      case 'mriyaTry': this.loading(() => MriyaScreen.show(v)); break;
+      case 'rtw': if (v === 'open') this.loading(() => RtwScreen.act(v)); else RtwScreen.act(v); break;
       case 'rtwQuit': RtwScreen.quit(v); break;
       case 'boardFilter': Filters.boardAction(v); this.showOps(); break;
       case 'hangarFilter': Filters.hangarAction(v); this.showOps(); break;
-      case 'acFor': Filters.hangarFor(v); this.tab = 'hangar'; this.showOps(); break;
+      case 'acFor': Filters.hangarFor(v); this.tab = 'hangar'; this.loading(() => this.showOps()); break;
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;
       case 'course': this.showQuiz(v); break;
       case 'branch': this.foldBranch(v); break;
@@ -1539,6 +1556,13 @@ function gateLabel(apt, i) {
   const n = i + 1;
   return apt.terminals > 1 ? tr('T{t} · gate {n}', { t: World.terminalOf(apt, i), n }) : tr('Gate {n}', { n });
 }
+// the flag, the city and, softer, its country: wherever an airport's city is named
+function placeHtml(apt) {
+  const c = aptCountry(apt);
+  return flagImg(apt) + esc(aptCity(apt)) + (c ? '<span class="ctry">, ' + esc(c) + '</span>' : '');
+}
+// ", Sweden" after an airport's name, softer
+function ctryHtml(apt) { const c = aptCountry(apt); return c ? '<span class="ctry">, ' + esc(c) + '</span>' : ''; }
 function flagImg(apt) {
   return '<img class="flag" src="' + Flags.url(apt.country) + '" alt="" title="' + esc(apt.country) + '">';
 }

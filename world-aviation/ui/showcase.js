@@ -29,7 +29,7 @@ const Showcase = {
     el('screen').hidden = true;
     frame().then(frame).then(() => {
       this.start(ac, here.id);
-      boot.hidden = true;
+      Game.holdBoot();                 // up until the scene has been drawn (Game.revealScene)
     });
   },
 

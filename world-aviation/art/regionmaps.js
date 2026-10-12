@@ -22,6 +22,16 @@ const RegionMaps = {
     return this.cache[regionId];
   },
 
+  // draw the maps not drawn yet, one at a time when the page is idle (UI.showOps)
+  warm() {
+    if (this.warming) return;
+    const next = (typeof REGIONS !== 'undefined' ? REGIONS : []).find((r) => !this.cache[r.id]);
+    if (!next) return;
+    this.warming = true;
+    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200));
+    idle(() => { this.warming = false; this.url(next.id); this.warm(); }, { timeout: 2000 });
+  },
+
   draw(g, regionId, w, h) {
     const mine = World.list.filter((a) => a.region === regionId);
     // the region's box, a little padding round it, a sensible least size for small regions
