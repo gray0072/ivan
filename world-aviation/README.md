@@ -130,7 +130,7 @@ On the approach the **ILS** scales and the **glide path rings** show the way to 
 
 ## Graphics
 
-On the title screen and in the pause (a change applies at once, in the middle of a flight too). **Auto** (the default) picks Medium on phones and High elsewhere; if the frame rate drops it first leaves out what is missed least — the trees in the dark, every other cloud, half the lights of the towns at night — then lowers the resolution a little, and only then the level; when the frame rate is back up it brings them back. **Low**, **Medium** and **High** set the terrain detail, draw distance, clouds and trees.
+On the title screen and in the pause (a change applies at once, in the middle of a flight too). **Auto** (the default) picks Medium on phones and High elsewhere; if the frame rate drops it first leaves out what is missed least — the trees in the dark, every other cloud, half the lights of the towns at night — then lowers the resolution a little, and only then the level; when the frame rate is back up it brings them back. **Minimal**, **Very low**, **Low**, **Medium** and **High** set the terrain detail, draw distance, clouds and trees. The two lightest are for a big screen on a modest graphics chip (a tablet): the picture is drawn at a lower resolution, nearer, with fewer clouds and night lights, smaller airport textures, and the aeroplanes parked at the gates only close up. On every level the arrival airport is built while the flight loads, so the descent into it does not stutter.
 
 ## Tech stack
 

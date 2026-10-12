@@ -1180,7 +1180,7 @@ const UI = {
   // (on the title and in the pause)
   qualityChips() {
     const q = Career.settings.quality;
-    return '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + ['auto', 'low', 'medium', 'high'].map((d) =>
+    return '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + ['auto'].concat(QUALITY_ORDER).map((d) =>
       '<button class="chip' + (q === d ? ' on' : '') + '" data-act="quality" data-v="' + d + '">' +
       esc(tr(d === 'auto' ? 'Auto' : QUALITY[d].name)) + '</button>').join('') + '</div>';
   },

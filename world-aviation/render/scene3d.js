@@ -404,6 +404,9 @@ const Scene3D = {
     let guard = 0;
     while (this.nearBuild && !this.nearBuild.done && guard++ < 12) this.updateNearTerrain(st.pos.x, st.pos.z, Math.max(0, fl.altAgl()), false);
     this.treeKey = null;
+    // the arrival is built now, behind the boot screen, not on the descent (where building a big
+    // airport stuttered the picture); it is kept for the whole flight
+    if (fl.arrival && this.camera) this.buildAirport(fl.arrival);
     this.builtAt = performance.now();
   },
 
@@ -414,7 +417,7 @@ const Scene3D = {
     if (have && have.label === roofLabel(a)) return have;
     if (have) this.dropAirport(a.id);
     const rec = Airport3D.build(a, {
-      aniso: this.maxAniso, maxTex: this.renderer.capabilities.maxTextureSize, hi: this.qualityName !== 'low', quality: this.quality
+      aniso: this.maxAniso, maxTex: this.renderer.capabilities.maxTextureSize, hi: QUALITY_ORDER.indexOf(this.qualityName) > QUALITY_ORDER.indexOf('low'), quality: this.quality
     });
     this.scene.add(rec.group);
     this.airports3D.set(a.id, rec);
@@ -435,6 +438,7 @@ const Scene3D = {
     const used = this.flightGates || [];
     rec.a.gates.forEach((gate, i) => {
       const inUse = used.indexOf(gate) >= 0;
+      rec.parked[i].userData.inUse = inUse;
       rec.parked[i].visible = !inUse;
       Apron3D.setGate(rec, i, inUse);            // no vehicles there, the bridge retracted
     });
@@ -843,9 +847,11 @@ const Scene3D = {
     for (const a of World.airports) {
       const d = Math.hypot(a.x - st.pos.x, a.z - st.pos.z);
       // (none built on the way at the fastest time steps: it would be gone again in a second)
-      if (d < 46000) {
+      // (the airports on the way only within the preset's otherAptM; the arrival is kept)
+      const ends = a === fl.arrival || a === fl.world;
+      if (d < (ends ? 46000 : this.quality.otherAptM || 46000)) {
         if (!this.airports3D.has(a.id) && (env.timeAccel < SIM.TIME_ACCEL_COAST_FROM || a === fl.arrival)) this.buildAirport(a);
-      } else if (d > 90000 && this.airports3D.has(a.id)) this.dropAirport(a.id);
+      } else if (d > (ends ? 90000 : Math.max(2 * (this.quality.otherAptM || 46000), 30000)) && a !== fl.arrival && this.airports3D.has(a.id)) this.dropAirport(a.id);
     }
     // flags and windsocks in the surface wind, the PAPI, the approach flasher
     // (the apron traffic gives way to the own aeroplane while it is on the ground)
@@ -853,8 +859,14 @@ const Scene3D = {
     const own = fl.st.onGround ? {
       pos: st.pos, vel: st.vel, r: Math.max(dims.len, dims.span) / 2, len: dims.len, rad: dims.radius, landed: !!fl.landed
     } : null;
+    const parkedM = this.quality.parkedM || 0;
     for (const rec of this.airports3D.values()) {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
+      // (the parked aeroplanes only near the eye on the lightest presets: QUALITY.parkedM)
+      if (parkedM || rec.parkedCut) {
+        rec.parkedCut = !!parkedM;
+        for (const p of rec.parked) p.visible = !p.userData.inUse && (!parkedM || Math.hypot(p.position.x + rec.group.position.x - eye.x, p.position.z + rec.group.position.z - eye.z) < parkedM);
+      }
       if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis, own);
       Responders3D.update(rec, fl, rec.a.id === fl.arrival.id ? this.arrivalGate : null, this.time, dark);
       // (coming home from round the world: the fire engines' water arch, salute3d.js)

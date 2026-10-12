@@ -67,14 +67,14 @@ const Airport3D = {
     const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 
     // ---- the ground and the runway
-    const gnd = makeGroundCanvas(a, id, opts.hi ? Math.min(4096, opts.maxTex) : 2048);
+    const gnd = makeGroundCanvas(a, id, Math.min(opts.quality && opts.quality.aptTex || (opts.hi ? 4096 : 2048), opts.maxTex));
     // (both planes are cut into cells: the logarithmic depth buffer needs small triangles
     // close to the eye, or the terrain shows through)
     const ggeo = new THREE.PlaneGeometry(gnd.B, gnd.A, Math.ceil(gnd.B / 100), Math.ceil(gnd.A / 100));
     ggeo.rotateX(-Math.PI / 2);
     at(new THREE.Mesh(ggeo, new THREE.MeshLambertMaterial({ map: tex(gnd.cv), transparent: true })), gnd.tC, gnd.aC, 0.05);
 
-    const rw = makeRunwayCanvas(a, Math.min(opts.hi ? 8192 : 4096, opts.maxTex));
+    const rw = makeRunwayCanvas(a, Math.min(opts.quality && opts.quality.aptTex ? opts.quality.aptTex * 2 : opts.hi ? 8192 : 4096, opts.maxTex));
     const rgeo = new THREE.PlaneGeometry(rw.W, rw.L, 1, Math.ceil(rw.L / 60));
     rgeo.rotateX(-Math.PI / 2);
     at(new THREE.Mesh(rgeo, new THREE.MeshLambertMaterial({ map: tex(rw.cv) })), 0, 0, 0.12);

@@ -1207,11 +1207,23 @@ const WEATHER = {
 // ---------- Camera / rendering presets ----------
 // (landTex: the size of the land cover's tiles, texels: render/landcover.js; treeDetail: how round the
 // crowns of the trees round an airport are, render/perimeter3d.js: 0 = 20 faces a crown, 1 = 80)
+//   aptTex     the airport's ground texture along (px; the runway's twice that), at most the GPU's
+//   otherAptM  the airports on the way (not the departure, not the arrival) are built this close
+//   parkedM    the aeroplanes parked at the stands are drawn only this close to the eye (0: always;
+//              they are still solid, sim/collide.js — at a big airport they are half the triangles)
+//              (the arrival is built behind the boot screen with the flight: Scene3D.warmup)
+// Very low and Minimal are for a big screen on a modest GPU (a tablet): the 3D picture is drawn
+// at under one pixel per CSS pixel (pixelRatio < 1, stretched to the screen), nearer, with fewer
+// clouds, lights and trees and smaller airport textures.
 const QUALITY = {
-  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000, landTex: 512, aptTrees: 0.4, treeDetail: 0 },
-  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000, landTex: 1024, aptTrees: 0.75, treeDetail: 0 },
-  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000, landTex: 1024, aptTrees: 1, treeDetail: 1 }
+  minimal: { name: 'Minimal', nearCells: 32, nearCell: 360, farCell: 8000, drawFar: 45000, maxPolys: 1500, clouds: 6, trees: 0, pixelRatio: 0.6, rain: false, maxCanvas: 1024, groundLights: 4000, landTex: 256, aptTrees: 0, treeDetail: 0, aptTex: 1024, otherAptM: 12000, parkedM: 2500 },
+  verylow: { name: 'Very low', nearCells: 40, nearCell: 300, farCell: 7000, drawFar: 60000, maxPolys: 2000, clouds: 12, trees: 0, pixelRatio: 0.75, rain: false, maxCanvas: 1152, groundLights: 8000, landTex: 512, aptTrees: 0.2, treeDetail: 0, aptTex: 1536, otherAptM: 20000, parkedM: 4000 },
+  low:    { name: 'Low',    nearCells: 48, nearCell: 240, farCell: 6000, drawFar: 80000, maxPolys: 2600, clouds: 22, trees: 0,   pixelRatio: 1,   rain: false, maxCanvas: 1280, groundLights: 14000, landTex: 512, aptTrees: 0.4, treeDetail: 0, aptTex: 2048, otherAptM: 30000, parkedM: 6000 },
+  medium: { name: 'Medium', nearCells: 64, nearCell: 150, farCell: 5000, drawFar: 130000, maxPolys: 4200, clouds: 44, trees: 260, pixelRatio: 1.25, rain: true, maxCanvas: 1600, groundLights: 32000, landTex: 1024, aptTrees: 0.75, treeDetail: 0, aptTex: 4096, otherAptM: 46000, parkedM: 0 },
+  high:   { name: 'High',   nearCells: 80, nearCell: 110, farCell: 4200, drawFar: 200000, maxPolys: 6500, clouds: 70, trees: 620, pixelRatio: 2,   rain: true, maxCanvas: 2560, groundLights: 60000, landTex: 1024, aptTrees: 1, treeDetail: 1, aptTex: 4096, otherAptM: 46000, parkedM: 0 }
 };
+// the presets from the lightest (the Auto quality steps down this way, the Graphics chips list them)
+const QUALITY_ORDER = ['minimal', 'verylow', 'low', 'medium', 'high'];
 
 // The Auto quality (Game.autoQuality): a flight running below LOW_FPS for LOW_S seconds sheds
 // the next of STEPS, the least missed first, each only hidden or thinned (nothing is built again,
@@ -1229,13 +1241,13 @@ const AUTO_QUALITY = {
   RES: [0.88, 0.8]
 };
 
-// The landing (or taxi) lights' pool on the ground at night (Scene3D.updateLandingPool): full
-// brightness within FULL_M of the lamps, then falling with the square of the distance (at 500 m a
-// fifth), gone at REACH_M — a landing light does not light the ground up from 500 m high
 // a flight's (or a look round's) new scene is drawn this many times behind the boot screen
 // before it shows (Game.holdBoot): the first draws are slow and the canvas holds the old picture
 const BOOT_HOLD_FRAMES = 3;
 
+// The landing (or taxi) lights' pool on the ground at night (Scene3D.updateLandingPool): full
+// brightness within FULL_M of the lamps, then falling with the square of the distance (at 500 m a
+// fifth), gone at REACH_M — a landing light does not light the ground up from 500 m high
 const LANDING_POOL = { FULL_M: 220, REACH_M: 900, TAXI_FULL_M: 45, TAXI_REACH_M: 120 };
 
 const VIEW = {

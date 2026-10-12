@@ -130,7 +130,7 @@ Under inflygningen visar **ILS**-skalorna och **glidbanans ringar** vägen till 
 
 ## Grafik
 
-På startskärmen och i pausen (ett val gäller direkt, även mitt i en flygning). **Auto** (standard) väljer Medium på mobiler och High i övrigt; faller bildfrekvensen tar den först bort det som saknas minst — träden i mörkret, vartannat moln, hälften av städernas ljus på natten — sänker sedan upplösningen lite och först därefter nivån; när bildfrekvensen är tillbaka kommer allt tillbaka. **Low**, **Medium** och **High** styr terrängens detaljer, siktavståndet, molnen och träden.
+På startskärmen och i pausen (ett val gäller direkt, även mitt i en flygning). **Auto** (standard) väljer Medium på mobiler och High i övrigt; faller bildfrekvensen tar den först bort det som saknas minst — träden i mörkret, vartannat moln, hälften av städernas ljus på natten — sänker sedan upplösningen lite och först därefter nivån; när bildfrekvensen är tillbaka kommer allt tillbaka. **Minimal**, **Mycket låg**, **Low**, **Medium** och **High** styr terrängens detaljer, siktavståndet, molnen och träden. De två lättaste är för en stor skärm med ett blygsamt grafikchip (en surfplatta): bilden ritas i lägre upplösning och närmare, med färre moln och nattljus, mindre flygplatstexturer och de parkerade flygplanen vid gaterna bara på nära håll. På alla nivåer byggs ankomstflygplatsen medan flygningen laddas, så nedstigningen dit hackar inte.
 
 ## Teknik
 

@@ -1516,8 +1516,8 @@ const Game = {
       // slow again soon after a step was taken back: that one stays shed
       if (now - (this.raisedAt || -Infinity) < A.RELAPSE_S * 1000) this.shedFloor = n + 1;
       if (n < A.STEPS.length) Scene3D.setShed(A.STEPS.slice(0, n + 1));
-      else if (this.quality !== 'low') {
-        this.quality = this.quality === 'high' ? 'medium' : 'low';
+      else if (QUALITY_ORDER.indexOf(this.quality) > 0) {
+        this.quality = QUALITY_ORDER[QUALITY_ORDER.indexOf(this.quality) - 1];
         Scene3D.setQuality(this.quality);
         if (this.flight) Scene3D.warmup(this.flight);
       }

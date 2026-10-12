@@ -28,6 +28,8 @@ const TEXT_SV = {
   'Auto': 'Auto',
   'auto': 'auto',
   'Low': 'Låg',
+  'Very low': 'Mycket låg',
+  'Minimal': 'Minimal',
   'High': 'Hög',
   'Sound': 'Ljud',
   'On': 'På',
