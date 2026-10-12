@@ -122,10 +122,11 @@ const Cloud = {
 
   // ---------- signing in ----------
   // Google, then back to this page; `forCareer`: the open career joins the account (else the account's
-  // careers only come to this device)
-  signIn(forCareer) {
+  // careers only come to this device); opts.name: the career takes the account's name (a new career
+  // started with Google whose suggested name was kept)
+  signIn(forCareer, opts) {
     if (!this.available) return;
-    Career.writeJson(CLOUD_PENDING_KEY, { career: forCareer && Career.data ? Career.data.id : null });
+    Career.writeJson(CLOUD_PENDING_KEY, { career: forCareer && Career.data ? Career.data.id : null, name: !!(opts && opts.name) });
     const c = supabase.createClient(CLOUD_URL, CLOUD_KEY, { auth: { flowType: 'pkce', storageKey: CLOUD_AUTH_NEW } });
     c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } })
       .then((r) => { if (r && r.error) { this.sync = 'error'; this.changed(); } }, () => { this.sync = 'error'; this.changed(); });
@@ -148,6 +149,8 @@ const Cloud = {
       try { localStorage.setItem(CLOUD_AUTH_KEY + uid, raw); } catch (err) { /* ignore */ }
       if (pending.career && Career.data && Career.data.id === pending.career) {
         Career.data.cloud = { user: uid, email: this.emails[uid] };
+        const meta = session.user.user_metadata || {};
+        if (pending.name && (meta.full_name || meta.name)) Career.rename(meta.full_name || meta.name);
         Career.save();
       }
       // signed in only to bring the account's careers here: the list shows them

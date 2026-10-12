@@ -230,6 +230,12 @@ const UI = {
       '</div>' +
       '<div class="settingsRow">' + this.difficultyChips(true) + '</div>' +
       '<p class="fineprint">' + tr('A new career starts with every setting at its default; your other careers stay in the list.') + '</p>' +
+      // (or the new career saved in the cloud from the start: with a Google account — one this
+      // device already knows at once, another through Google's sign-in; the pilot's name from the
+      // account unless one was typed)
+      (Cloud.available ? '<div class="newCloud"><p class="fineprint">' + tr('Or start it with your Google account: saved in the cloud from the first flight, on every device you sign in on.') + '</p>' +
+        '<div class="btnRow">' + Cloud.accounts().map((a) => '<button class="btn" data-act="startcareer" data-v="' + esc(a.user) + '">☁ ' + esc(tr('Start with {email}', { email: a.email })) + '</button>').join('') +
+        '<button class="btn cloudIn" data-act="startcareer" data-v="google">' + GOOGLE_G_SVG + tr('Start with Google') + '</button></div></div>' : '') +
       '<div class="btnRow split"><button class="btn back" data-act="back" data-esc>' + tr('Back') + '</button>' +
       '<button class="btn default fwd" data-act="startcareer">' + tr('Start flying') + '</button></div>', 'narrow');
     this.screen.dataset.view = 'newcareer';
@@ -1298,11 +1304,16 @@ const UI = {
       case 'careers': this.showCareers(); break;
       case 'openCareer': this.openCareer(v); break;
       case 'startcareer': {
-        const pilot = (el('pilotName') || {}).value || '';
+        const input = el('pilotName') || {}, pilot = input.value || '';
         reseed(hashStr(pilot) ^ Date.now());
         Cloud.flush();
         Career.new({ pilot, difficulty: this.newDifficulty });
-        Cloud.careerOpened();
+        // with a Google account: a known one linked at once, else Google's sign-in (the page comes
+        // back with the career linked; its name from the account where the suggested one was kept)
+        const known = v && v !== 'google' ? Cloud.accounts().find((a) => a.user === v) : null;
+        if (known) Cloud.linkTo(known);
+        else if (v === 'google') { Cloud.signIn(true, { name: input.value === input.defaultValue }); }
+        else Cloud.careerOpened();
         this.selContract = null; this.lastContract = null;
         enterFullscreen();
         this.tab = 'dispatch';
@@ -1344,7 +1355,8 @@ const UI = {
       case 'renameCancel': this.renaming = false; this.showOps(); break;
       case 'rerollName': {
         const inp = el('pilotName') || el('pilotRename');
-        if (inp) { inp.value = Career.randomPilotName(inp.value); inp.focus(); }
+        // (a name from the dice is still a suggestion: a career started with Google takes the account's)
+        if (inp) { inp.value = Career.randomPilotName(inp.value); if (inp.id === 'pilotName') inp.defaultValue = inp.value; inp.focus(); }
         break;
       }
       case 'units':

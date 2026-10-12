@@ -546,6 +546,10 @@ body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !i
 @keyframes loaderIn { to { opacity: 1; } }
 @keyframes loaderSpin { to { transform: rotate(360deg); } }
 
+/* the new career's start with a Google account (UI.showNewCareer) */
+.newCloud { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(140, 170, 200, 0.16); }
+.newCloud .btnRow { justify-content: flex-start; flex-wrap: wrap; }
+
 /* ---------- screens ---------- */
 #screen {
   position: fixed;
