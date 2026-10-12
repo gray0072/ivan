@@ -61,7 +61,8 @@ const RtwScreen = {
       '<div class="screenBar"><button class="btn back" data-act="tab" data-v="network" data-esc>' + tr('Network') + '</button></div>' +
       '<h2 class="rtwTitle">🌐 ' + tr('Round the world') + '</h2>' +
       '<p class="lead">' + tr('From Arlanda round the globe and back in one aeroplane, by the rules of the real records: every leg the same way round, all 360° of longitude, at least {km} km — the length of the Tropic of Cancer.', { km: fmtNum(RTW.MIN_KM) }) + '</p>' +
-      this.heroHtml(plan, chk, a) +
+      // (closed: the gauges at nothing and no verdict on a route that cannot be planned yet)
+      this.heroHtml(plan, open || a ? chk : null, a, !open && !a) +
       body +
       this.marksHtml() + this.recordsHtml() + this.historyHtml(), 'rtw');
     UI.route('rtw');
@@ -76,11 +77,12 @@ const RtwScreen = {
   },
 
   // the globe and its two gauges: the meridians (degrees of 360) and the kilometres
-  heroHtml(plan, chk, a) {
+  heroHtml(plan, chk, a, locked) {
     const p = a ? Rtw.progress() : null;
     const deg = a ? p.deg : chk ? chk.deg : 0, km = a ? p.km : chk ? chk.km : 0;
     const kmMax = Math.max(RTW.MIN_KM * 1.6, km * 1.08);
-    const verdict = a ? tr('Leg {n} of {m} · waiting at {id}', { n: a.at + 1, m: a.plan.length - 1, id: a.plan[a.at] }) : this.verdict(chk);
+    const verdict = a ? tr('Leg {n} of {m} · waiting at {id}', { n: a.at + 1, m: a.plan.length - 1, id: a.plan[a.at] })
+      : locked ? '🔒 ' + tr('Not open yet — what it takes is below.') : this.verdict(chk);
     return '<div class="rtwHero">' +
       '<div class="rtwGlobeBox"><canvas id="rtwGlobe" aria-label="' + esc(tr('The globe with the route')) + '"></canvas>' +
       '<span class="rtwTurn">' + tr(this.drawing() ? 'drag to turn it · tap an airport to add it' : 'drag to turn it') + '</span></div>' +
@@ -88,14 +90,15 @@ const RtwScreen = {
       '<div class="rtwRing" style="--p:' + (clamp(deg / 360, 0, 1) * 100).toFixed(1) + '%"><div><b>' + Math.round(deg) + '°</b><span>' + tr('of 360° of longitude') + '</span></div></div>' +
       '<div class="rtwKm"><div class="rtwKmBar"><i style="width:' + (clamp(km / kmMax, 0, 1) * 100).toFixed(1) + '%"></i>' +
       '<em style="left:' + (RTW.MIN_KM / kmMax * 100).toFixed(1) + '%" title="' + esc(fmtNum(RTW.MIN_KM) + ' km') + '"></em></div>' +
-      '<b>' + fmtNum(Math.round(km)) + ' km</b><span>' + tr('{km} km needed', { km: fmtNum(RTW.MIN_KM) }) + '</span></div>' +
+      '<b>' + fmtNum(Math.round(km)) + ' km' + (km >= RTW.MIN_KM ? ' ✓' : '') + '</b><span>' + tr('the route · at least {km} km needed', { km: fmtNum(RTW.MIN_KM) }) + '</span></div>' +
       '<p class="rtwVerdict' + (!a && chk && chk.ok ? ' ok' : '') + '">' + verdict + '</p>' +
       '</div></div>';
   },
   // what the plan being drawn still lacks, or that it counts
   verdict(chk) {
     if (!chk) return tr('No type to fly it in yet.');
-    if (chk.legs.some((l) => l.err)) return '⚠ ' + tr('A leg breaks the rules — see the legs below.');
+    const bad = chk.legs.find((l) => l.err);
+    if (bad) return '⚠ ' + esc(this.legWhy(bad)) + '. ' + this.whoFlies(this.plan());
     if (chk.ok) return '✓ ' + tr('It counts: {km} km, {n} legs.', { km: fmtNum(Math.round(chk.km)), n: chk.legs.length });
     if (!chk.closed) return tr('{deg}° to go round, then back to {id}.', { deg: Math.round(360 - chk.deg), id: Career.data.base });
     return '⚠ ' + tr('Round, but {km} km short: come further south.', { km: fmtNum(Math.round(RTW.MIN_KM - chk.km)) });
@@ -129,7 +132,7 @@ const RtwScreen = {
         '<b>' + esc(tr(r.name)) + '</b>' +
         '<span>' + tr('{n} legs · {km} km · longest {nm} nm', { n: p.length - 1, km: fmtNum(Math.round(c ? c.km : 0)), nm: fmtNum(Math.round(longest)) }) + '</span>' +
         '<small>' + esc(tr(r.blurb)) + '</small>' +
-        (c && !c.ok ? '<em>' + esc(tr('Not in the {ac}', { ac: ac.name })) + '</em>' : '') + '</button>';
+        (c && !c.ok ? '<em>' + esc(c.legs.some((l) => l.err) ? tr('Not in the {ac}: {why}', { ac: ac.name, why: this.legWhy(c.legs.find((l) => l.err)) }) : tr('Not in the {ac}', { ac: ac.name })) + '</em>' : '') + '</button>';
     }).join('') +
       '<button class="rtwRoute own' + (s.own ? ' on' : '') + '" data-act="rtw" data-v="own" aria-pressed="' + s.own + '">' +
       '<b>✎ ' + tr('Plan my own') + '</b><small>' + tr('Tap the airports on the globe, or pick each stop from the list: only the ones the next leg may go to are offered.') + '</small></button>';
@@ -196,6 +199,14 @@ const RtwScreen = {
     }).join('');
     return '<ol class="rtwLegs">' + rows + '</ol>';
   },
+  // a leg and what is wrong with it: "HND → ANC — 3 005 nm, more than the Boeing 737-800 flies (2 352 nm)"
+  legWhy(l) { return (l.from ? l.from.id : '?') + ' → ' + (l.to ? l.to.id : '?') + ' — ' + this.errText(l.err, l); },
+  // which of the pilot's types can fly a plan (all its legs; the route may still be unfinished)
+  whoFlies(plan) {
+    const ok = Rtw.types().filter((t) => !Rtw.check(plan, t).legs.some((l) => l.err)).map((t) => t.name);
+    return ok.length ? tr('In your hangar it can be flown in: {list}.', { list: esc(ok.join(', ')) })
+      : tr('None of the types you may fly can do it — pick another route.');
+  },
   errText(err, l) {
     const ac = this.ac();
     switch (err) {
@@ -203,7 +214,8 @@ const RtwScreen = {
       case 'way': return tr('the wrong way round');
       case 'over': return tr('past the meridian of {id} before the end', { id: Career.data.base });
       case 'closed': return tr('no flights between Russia and {country}', { country: tr(l.from.country === 'Russia' ? l.to.country : l.from.country) });
-      case 'range': return l.nm > CONTRACTS.MAX_NM ? tr('longer than one leg may be ({nm} nm)', { nm: fmtNum(CONTRACTS.MAX_NM) }) : tr('beyond the range of the {ac}', { ac: ac ? ac.name : '' });
+      case 'range': return l.nm > CONTRACTS.MAX_NM ? tr('longer than one leg may be ({nm} nm)', { nm: fmtNum(CONTRACTS.MAX_NM) })
+        : tr('{nm} nm, more than the {ac} flies ({max} nm)', { nm: fmtNum(Math.round(l.nm)), ac: ac ? ac.name : '', max: ac ? fmtNum(Math.floor(Rtw.legMax(ac))) : '' });
       case 'runway': return tr('runway too short for the {ac}', { ac: ac ? ac.name : '' });
       case 'grass': return tr('a grass strip');
       default: return '';

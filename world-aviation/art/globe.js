@@ -80,7 +80,11 @@ const Globe = {
     for (let lon = -180; lon < 180; lon += 30) { const pts = []; for (let lat = -84; lat <= 84; lat += 3) pts.push([lat, lon]); line(pts); }
     for (let lat = -60; lat <= 60; lat += 30) { const pts = []; for (let lon = -180; lon <= 180; lon += 3) pts.push([lat, lon]); line(pts); }
     // the land: a ring's points behind the globe pushed out to its rim, which closes the shapes
-    // that run over it; the lakes cut out of it
+    // that run over it; the lakes cut out of it. A shape round the point straight behind the
+    // globe (Eurasia seen from under South America, Baikal) winds its pushed points once round
+    // the whole rim: the rim is added to its path and it is filled even-odd, which leaves only
+    // what of it is in front (filled plainly it covered the whole globe)
+    const back = { lat: -v.lat0, lon: wrapDeg(v.lon0 + 180) };
     const ring = (poly) => {
       let front = false;
       const pts = poly.map((p) => {
@@ -93,16 +97,17 @@ const Globe = {
       g.beginPath();
       pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])));
       g.closePath();
+      if (polyHolds(poly, back.lat, back.lon)) { g.moveTo(cx + R, cy); g.arc(cx, cy, R, 0, TAU); }
       return true;
     };
     g.lineJoin = 'round';
     for (const poly of LAND_POLYGONS) {
       if (!ring(poly)) continue;
-      g.fillStyle = GLOBE_COL.land; g.fill();
+      g.fillStyle = GLOBE_COL.land; g.fill('evenodd');
       g.strokeStyle = GLOBE_COL.landEdge; g.lineWidth = Math.max(0.6, R / 260); g.stroke();
     }
     g.fillStyle = GLOBE_COL.lake;
-    for (const poly of WATER_POLYGONS) if (ring(poly)) g.fill();
+    for (const poly of WATER_POLYGONS) if (ring(poly)) g.fill('evenodd');
     // the night side's shade over the rim, the sheen of the sun
     const shade = g.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.2, cx, cy, R * 1.02);
     shade.addColorStop(0, 'rgba(255, 255, 255, 0.07)'); shade.addColorStop(0.7, 'rgba(0, 0, 0, 0)'); shade.addColorStop(1, 'rgba(0, 8, 20, 0.45)');
@@ -204,6 +209,19 @@ const Globe = {
 };
 
 // a place (degrees) as a unit vector: x towards 0°/0°, y towards 0°/90° E, z to the North Pole
+// a point (degrees) inside a coastline ring of data/geodata.js ([lon, lat] points, the longitudes
+// running on past 180 where a ring crosses it, as Eurasia's to Chukotka)
+function polyHolds(poly, lat, lon) {
+  for (const l of [lon, lon + 360, lon - 360]) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      if ((yi > lat) !== (yj > lat) && l < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    if (inside) return true;
+  }
+  return false;
+}
 function geoVec(lat, lon) {
   const p = lat * DEG, l = lon * DEG;
   return [Math.cos(p) * Math.cos(l), Math.cos(p) * Math.sin(l), Math.sin(p)];
