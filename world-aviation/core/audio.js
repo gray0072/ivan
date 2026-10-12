@@ -14,8 +14,10 @@
 //     (hiss, and a squeal when nearly stopped)
 //   - the hydraulics while the gear or the flaps travel
 //   - the stick shaker on a stall warning
-// One-shots: the gear and the flaps locking, levers, the parking
-// brake, the spoiler, the touchdown (tyre chirp and a thump as hard
+//   - the pushback tug's diesel, revving up to push
+// One-shots: the engine start (the start valve and its air, the light-off
+// whoosh), the brakes letting go and the tow bar at pushback, the gear
+// and the flaps locking, levers, the parking brake, the spoiler, the touchdown (tyre chirp and a thump as hard
 // as the landing), warnings, the checklist, the 10 000 ft chime, and the
 // passengers' reaction to the landing (core/crowd.js).
 // The cabin announcements (ui/cabin.js) go through announce(): the
@@ -90,6 +92,12 @@ const Audio2 = {
     // the stick shaker (in the cockpit)
     v.shakeG = gain(this.cockpit); v.shakeF = filter('lowpass', 160, 0.8);
     v.shake = osc('square', 22); v.shake.connect(v.shakeF); v.shakeF.connect(v.shakeG);
+    // the pushback tug's diesel: a chugging firing beat and its exhaust
+    v.tugG = gain(); v.tugF = filter('lowpass', 320, 1.1);
+    v.tug = osc('sawtooth', 24); v.tug2 = osc('square', 48);
+    v.tug.connect(v.tugF); v.tug2.connect(v.tugF); v.tugF.connect(v.tugG);
+    v.tugExG = gain(); v.tugExF = filter('bandpass', 160, 0.9);
+    chain(noise(), v.tugExF, v.tugExG);
     this.v = v;
     this.ready = true;
   },
@@ -121,7 +129,7 @@ const Audio2 = {
     const v = this.v;
     const set = (param, value, tc) => param.setTargetAtTime(value, now, tc || 0.08);
     if (!fl) {
-      for (const k of ['fanG', 'roarG', 'rumG', 'buzzG', 'windG', 'rollG', 'brakeG', 'squealG', 'hydG', 'shakeG']) set(v[k].gain, 0, 0.08);
+      for (const k of ['fanG', 'roarG', 'rumG', 'buzzG', 'windG', 'rollG', 'brakeG', 'squealG', 'hydG', 'shakeG', 'tugG', 'tugExG']) set(v[k].gain, 0, 0.08);
       // the flight is over: its callouts still in the queue go too
       if (this.t && window.speechSynthesis) window.speechSynthesis.cancel();
       this.t = null;
@@ -129,7 +137,7 @@ const Audio2 = {
     }
     const st = fl.st;
     if (!this.t || this.t.fl !== fl) {
-      this.t = { fl, gear: st.gear, flaps: st.flaps, spoiler: st.spoiler, rolled: 0, said: {}, agl: null, alt: st.pos.y, dist: null, onGround: st.onGround };
+      this.t = { fl, gear: st.gear, flaps: st.flaps, spoiler: st.spoiler, rolled: 0, said: {}, agl: null, alt: st.pos.y, dist: null, onGround: st.onGround, pushT: -1 };
     }
     const t = this.t;
 
@@ -228,6 +236,19 @@ const Audio2 = {
     if (Math.abs(t.flaps - st.flapsTarget) > 0.002 && Math.abs(st.flaps - st.flapsTarget) <= 0.002) this.cue('flapStop');
     if (t.spoiler !== st.spoiler) this.cue('spoiler');
     t.gear = st.gear; t.flaps = st.flaps; t.spoiler = st.spoiler;
+
+    // --- the pushback tug: its diesel revs up to push, settles as it stops; the tow bar
+    // knocks off when it is done
+    const pushing = fl.phase === 'PUSHBACK';
+    if (pushing) t.pushT = Math.max(0, t.pushT) + dt;
+    else if (t.pushT >= 0) { t.pushT = -1; this.cue('towbarOff'); }
+    const left = SIM.PUSHBACK_S - t.pushT;
+    const rev = pushing ? clamp((t.pushT - 0.8) / 1.5, 0, 1) * clamp(left / 2, 0, 1) : 0;
+    const tugAtt = inside ? 0.8 : att;
+    set(v.tug.frequency, 22 + rev * 12, 0.4); set(v.tug2.frequency, 44 + rev * 24, 0.4);
+    set(v.tugF.frequency, 260 + rev * 260, 0.4);
+    set(v.tugG.gain, pushing ? (0.07 + rev * 0.05) * tugAtt : 0, 0.25);
+    set(v.tugExG.gain, pushing ? (0.03 + rev * 0.05) * tugAtt : 0, 0.3);
 
     // --- the stick shaker
     set(v.shakeG.gain, st.stallWarn ? 0.3 : 0, 0.03);
@@ -351,6 +372,20 @@ const Audio2 = {
     s.start(now, Math.random()); s.stop(now + dur + 0.05);
     return f;
   },
+  // a breath of filtered noise that swells in and dies away, its filter sliding from f0 to f1
+  noiseSwell(dest, type, f0, f1, q, attack, dur, gain, delay) {
+    const c = this.ctx, now = c.currentTime + (delay || 0);
+    const s = c.createBufferSource(); s.buffer = this.noiseBuf;
+    const f = c.createBiquadFilter(); f.type = type; f.Q.value = q;
+    f.frequency.setValueAtTime(f0, now);
+    f.frequency.exponentialRampToValueAtTime(f1, now + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(gain, now + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    s.connect(f); f.connect(g); g.connect(dest);
+    s.start(now, Math.random()); s.stop(now + dur + 0.05);
+  },
   bump(k) {
     if (!this.ready || this.muted) return;
     this.thump(this.world, 55, 0.12, 0.12 * k);
@@ -398,9 +433,23 @@ const Audio2 = {
         if (arg) this.noiseHit(w, 3200, 0.8, 0.5, 0.08, 'highpass');          // the air as it sets
         break;
       case 'resolved': beep(700, 0.1, 'sine', 0.12); later(90, () => beep(1050, 0.14, 'sine', 0.12)); break;
-      case 'starter': beep(220, 0.5, 'sawtooth', 0.06, 160); this.noiseHit(w, 1800, 1, 0.4, 0.06); break;
-      case 'lightoff': this.thump(w, 90, 0.35, 0.3); this.noiseHit(w, 600, 0.7, 0.6, 0.12, 'lowpass'); break;
-      case 'idle': this.thump(w, 70, 0.4, 0.2); break;
+      // the start valve opens: a pneumatic click, then the bleed air rushing into the starter
+      case 'starter':
+        this.noiseHit(cp, 2200, 2, 0.04, 0.18);
+        this.noiseSwell(w, 'bandpass', 500, 1900, 0.8, 0.6, 2.6, 0.07, 0.05);
+        break;
+      // the fuel lights in the combustor: a soft, deep whoosh, no knock
+      case 'lightoff': this.noiseSwell(w, 'lowpass', 140, 520, 0.5, 0.25, 1.6, 0.16); break;
+      // the starter cuts out at idle: the start valve closes with a short sigh of air
+      case 'idle': this.noiseSwell(w, 'bandpass', 1600, 700, 0.9, 0.05, 0.7, 0.04); break;
+      // push back approved: the brakes let go with a hiss and the tow bar takes up the slack
+      case 'pushback':
+        this.noiseHit(cp, 2000, 2, 0.05, 0.2);
+        this.noiseHit(w, 3000, 0.8, 0.6, 0.06, 'highpass');
+        later(500, () => { this.noiseHit(w, 260, 1.2, 0.2, 0.3, 'lowpass'); this.noiseHit(w, 1300, 5, 0.12, 0.06); });
+        break;
+      // the tow bar is unhooked
+      case 'towbarOff': this.noiseHit(w, 1500, 5, 0.1, 0.07); later(120, () => this.noiseHit(w, 300, 1.2, 0.15, 0.18, 'lowpass')); break;
       case 'shutdown': this.thump(w, 60, 0.5, 0.18); break;
       case 'touchdown': {
         // the tyres spinning up (a chirp per main gear) and a thump as hard as the landing

@@ -928,7 +928,7 @@ const Game = {
       };
       fl.setPhase('PUSHBACK');
       fl.info(tr('Ground: push back approved — brakes released'));
-      Audio2.cue('click');
+      Audio2.cue('pushback');
     } else if (p === 'PUSHBACK' || (p === 'ENGINE_START' && sys.runningCount() < fl.ac.engines)) {
       if (!sys.started) sys.startEngines();
     } else if (p === 'ENGINE_START') {
