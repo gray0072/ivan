@@ -13,6 +13,8 @@
 const PHONE_THROTTLE_W = 78;
 // held upright the round gauges are this share of the size that would fill the panel's width
 const PHONE_UPRIGHT_GAUGES = 0.8;
+// a tablet held upright: its panel (the four gauges two by two, as on a phone) at most this share of the screen
+const TABLET_UPRIGHT_PANEL = 0.36;
 
 const Instruments = {
   ctx: null, w: 0, h: 0, dpr: 1,
@@ -22,10 +24,13 @@ const Instruments = {
   get hidden() { return this.light >= CONTROLS.INSTRUMENT_LIGHTS.length; },
   // I: dim → medium → bright → hidden → dim
   nextLight() { this.light = (this.light + 1) % (CONTROLS.INSTRUMENT_LIGHTS.length + 1); },
-  // a phone held upright: the radius of its four round gauges (two by two left of the thrust
-  // lever); the panel is made as tall as they need (Cockpit.panelTop)
+  // a phone or a tablet held upright: the radius of its four round gauges (two by two left of
+  // the thrust lever); the panel is made as tall as they need (Cockpit.panelTop) — on a tablet
+  // up to TABLET_UPRIGHT_PANEL of the screen
   uprightR(w, h) {
-    return Math.min((w - PHONE_THROTTLE_W - 6) / 4.3, (Math.min(h * 0.42, 360) - 36) / 4.3, 92) * PHONE_UPRIGHT_GAUGES;
+    const tablet = w >= 600;
+    const panel = tablet ? Math.min(h * TABLET_UPRIGHT_PANEL, 600) : Math.min(h * 0.42, 360);
+    return Math.min((w - PHONE_THROTTLE_W - 6) / 4.3, (panel - 36) / 4.3, tablet ? 140 : 92) * PHONE_UPRIGHT_GAUGES;
   },
 
   // a phone or a small window: no engine gauges and no heading strip, the configuration smaller
@@ -55,7 +60,20 @@ const Instruments = {
     // blocks: engines on the left, the configuration (with the caution lights under it) on the
     // right, the round gauges in a row in the space between
     const y = top + panelH * 0.52;
-    if (!compact) {
+    if (Cockpit.portrait(w, h)) {
+      // a phone or a tablet held upright: the configuration on one line, the four gauges two by
+      // two, and the right edge left to the thrust lever (the touch slider sits over it)
+      // (no heading strip: the taxi arrow, the map and the route marker do its job)
+      const lineH = 20;
+      this.configLine(ctx, 8, top + 6, w - 16, lineH, fl, sys);
+      const x0 = 6, x1 = w - PHONE_THROTTLE_W, y0 = top + 10 + lineH, y1 = h - 6;
+      const r = this.uprightR(w, h);
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, d = r * 1.08;
+      this.asi(ctx, cx - d, cy - d, r, fl);
+      this.adi(ctx, cx + d, cy - d, r, fl);
+      this.alt(ctx, cx - d, cy + d, r, fl);
+      this.vsi(ctx, cx + d, cy + d, r, fl);
+    } else if (!compact) {
       // (on a tablet the configuration moves left of the thrust lever)
       const engW = 160, cfgW = 160;
       const cfgX = w - 12 - cfgW - (Input.isCoarse ? PHONE_THROTTLE_W - 8 : 0);
@@ -70,19 +88,6 @@ const Instruments = {
       this.engines(ctx, 12, top + 10, engW, panelH - 20, fl, sys);
       this.config(ctx, cfgX, top + 10, cfgW, panelH - 20, fl, sys);
       this.hsi(ctx, cx, top - 22, Math.min(w * 0.5, 460), 24, fl, sys);
-    } else if (Cockpit.portrait(w, h)) {
-      // a phone held upright: the configuration on one line, the four gauges two by two, and
-      // the right edge left to the thrust lever (the touch slider sits over it)
-      // (no heading strip on a phone: the taxi arrow, the map and the route marker do its job)
-      const lineH = 20;
-      this.configLine(ctx, 8, top + 6, w - 16, lineH, fl, sys);
-      const x0 = 6, x1 = w - PHONE_THROTTLE_W, y0 = top + 10 + lineH, y1 = h - 6;
-      const r = this.uprightR(w, h);
-      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, d = r * 1.08;
-      this.asi(ctx, cx - d, cy - d, r, fl);
-      this.adi(ctx, cx + d, cy - d, r, fl);
-      this.alt(ctx, cx - d, cy + d, r, fl);
-      this.vsi(ctx, cx + d, cy + d, r, fl);
     } else if (Input.isCoarse) {
       // a phone on its side: the four gauges in a row between the configuration (what the
       // buttons do not show) and the thrust lever on the right edge

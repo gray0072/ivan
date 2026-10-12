@@ -334,8 +334,9 @@ kbd {
 
 /* ---------- touch ---------- */
 #touch { display: none; }
-/* not over the look round an airport (Game.startTour), nor over the shots after a collision (ui/incident.js) */
-body.touring #touch, body.incident #touch { display: none !important; }
+/* not over the look round an airport (Game.startTour), the camera's flights at a flight's start and
+   end (Game.startCine), nor over the shots after a collision (ui/incident.js) */
+body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !important; }
 @media (pointer: coarse) {
   #touch { display: block; position: fixed; inset: 0; pointer-events: none; z-index: 20; }
   #stickZone {
@@ -425,6 +426,24 @@ body.touring #touch, body.incident #touch { display: none !important; }
   #touchButtons[data-show="none"] [data-row="ground"] { display: none; }
   #touchButtons[data-show="none"] [data-row="air"] { visibility: hidden; }
   #touchButtons button.go { background: rgba(60, 120, 70, 0.75); border-color: #7de08a; }
+  /* the parking brake on the right of its row, Go on the left */
+  #touchButtons [data-act="parkBrake"] { grid-column: 4; }
+  /* the wheel brakes: held, over the thrust lever where the ILS is on the approach */
+  #brakeBtn {
+    position: absolute;
+    right: 8px;
+    bottom: calc(var(--panelH, 130px) + 10px);
+    width: 62px; height: 58px;
+    pointer-events: auto;
+    touch-action: none;
+    border: 1px solid rgba(255, 140, 110, 0.5);
+    border-radius: 14px;
+    background: rgba(14, 21, 30, 0.72);
+    color: #ffd9cf;
+    font: 700 12px system-ui, sans-serif;
+  }
+  #brakeBtn[hidden] { display: none; }
+  #brakeBtn.on { background: rgba(255, 110, 80, 0.45); color: #fff; border-color: #ff7a5c; }
   #touchButtons button.on { background: rgba(255, 217, 122, 0.28); color: #fff3d2; }
   /* the prompt sits on the left under the contract strip, off the forward view and the ILS
      scales; a tap folds it to one line */

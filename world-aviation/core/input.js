@@ -91,7 +91,7 @@ const Input = {
     this.touch.stick = null; this.touch.thr = null;
     this.touchThrottle = null; this.touchBrake = false;
     this.stopRepeat();
-    const tb = document.querySelector('#touchButtons [data-act="brake"]');
+    const tb = el('brakeBtn');
     if (tb) tb.classList.remove('on');
     const knob = el('throttleKnob');
     if (knob) knob.style.bottom = '';
@@ -115,7 +115,7 @@ const Input = {
     if (k.PageDown || k['_'] || k['-']) thr -= 1;
     if (k.PageUp || k['+'] || k['=']) thr += 1;
     let brake = k.b ? 1 : 0;
-    if (this.touchBrake) brake = 1;
+    if (this.touchBrake !== false) brake = 1;
     this.pitch = clamp(pitch, -1, 1);
     this.roll = clamp(roll, -1, 1);
     this.rudder = clamp(rud, -1, 1);
@@ -189,14 +189,16 @@ const Input = {
       thr.addEventListener('pointercancel', endThr);
     }
     // big on-screen buttons, and the help panel's close button
-    document.querySelectorAll('#touchButtons [data-act], #helpPanel [data-act]').forEach((btn) => {
+    document.querySelectorAll('#touchButtons [data-act], #brakeBtn, #helpPanel [data-act]').forEach((btn) => {
       btn.addEventListener('pointerdown', (e) => {
         e.preventDefault();
         e.stopPropagation();
         const act = btn.getAttribute('data-act');
         if (act === 'brake') {
-          this.touchBrake = !this.touchBrake;
-          btn.classList.toggle('on', this.touchBrake);
+          // the wheel brakes only while the button is held
+          if (btn.setPointerCapture) btn.setPointerCapture(e.pointerId);
+          this.touchBrake = e.pointerId;
+          btn.classList.add('on');
         } else {
           this.fire(act);
           btn.classList.add('on');
@@ -215,7 +217,10 @@ const Input = {
         }
         Audio2.resume();
       });
-      const end = (e) => { if (this.repeat && this.repeat.id === e.pointerId) this.stopRepeat(); };
+      const end = (e) => {
+        if (this.repeat && this.repeat.id === e.pointerId) this.stopRepeat();
+        if (btn.id === 'brakeBtn' && this.touchBrake === e.pointerId) { this.touchBrake = false; btn.classList.remove('on'); }
+      };
       for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) btn.addEventListener(t, end);
     });
     // touch on the game must not scroll or zoom the page (the screens and panels scroll)

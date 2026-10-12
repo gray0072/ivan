@@ -239,8 +239,8 @@ const Game = {
   // little runway that sits where the runway is, the glideslope scale (cyan) a triangle that
   // sits where the glide path is, and a line of plain words says what to do. Off the view
   // ahead, at the right edge of the windscreen: the glide path scale as far from the window
-  // pillar as the whole is from the panel. On a phone and on a computer in the bottom right
-  // corner of the view, on a tablet under the buttons, held upright above the heading strip. On
+  // pillar as the whole is from the panel. In the bottom right corner of the view, just above the
+  // panel — on a phone, a tablet and a computer, held upright or on its side alike. On
   // a phone at three quarters of the size and without the words (the scales say it, and the view
   // needs the room); on a computer full size with the words, with its gaps the phone's in scale,
   // and where the checklist or the map above it leaves too little room smaller, then without the
@@ -289,20 +289,10 @@ const Game = {
     }
     const R = R0 * k, V = V0 * k;
     const { right, below } = reach(k, text);
-    const gap = side || phone ? gapAt(k) : 20, edge = right0 - gap, floor = top - 10 - gap;
+    const gap = gapAt(k), edge = right0 - gap, floor = top - 10 - gap;
     const gx = edge - right;
-    let cy;
-    if (side || phone) {
-      // a computer or a phone: just above the panel (on a phone under the buttons on its side)
-      cy = floor - below - 16 * k - V;
-    } else if (upright) {
-      // a tablet held upright: above the heading strip and its window (about 60 px over the
-      // panel), where the panel has them
-      cy = (Instruments.compact(w, h) ? floor : top - 62) - below - 16 - V;
-    } else {
-      // a tablet on its side: under the buttons in the top right corner
-      cy = Math.max(top * 0.56, (HUD.buttonsH || 170) + V + 40);
-    }
+    // just above the panel (the heading strip is in the middle, clear of it)
+    const cy = floor - below - 16 * k - V;
     const cx = gx - 18 * k - R;
     const LOC = '#e65cf0', GS = '#4fd8ff';
     const loc = clamp(-d.locDeg / 2.5, -1, 1);       // + : the runway is to the right
@@ -1350,6 +1340,7 @@ const Game = {
     box.hidden = false;
     box.classList.toggle('bars', !Cinematic.inside());
     el('hud').hidden = true;
+    document.body.classList.add('cineOn');        // no flight controls over it (styles.css)
     if (HUD.mapOpen) HUD.closeMap();
     const flag = (a) => (typeof flagImg === 'function' ? flagImg(a) : '');
     const cap = el('cineCaption');
@@ -1391,6 +1382,7 @@ const Game = {
     if (typeof Cinematic === 'undefined') return;
     Cinematic.stop();
     Scene3D.cine = null;
+    document.body.classList.remove('cineOn');
     const box = el('cine');
     box.hidden = true;
     box.classList.remove('bars');

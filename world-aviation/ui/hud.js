@@ -227,11 +227,12 @@ const HUD = {
       this.btnRow = row;
       const tb = el('touchButtons');
       if (tb) tb.setAttribute('data-show', row);
-      // a brake left on in the take-off roll is not waiting for the touchdown
-      if (row !== 'ground' && Input.touchBrake) {
-        Input.touchBrake = false;
-        if (this.litBtns.brake) this.litBtns.brake.classList.remove('on');
-      }
+    }
+    // the wheel brakes over the thrust lever: on the ground only (on the approach the ILS is there)
+    const brake = el('brakeBtn');
+    if (brake && brake.hidden === !!st.onGround) {
+      brake.hidden = !st.onGround;
+      if (!st.onGround && Input.touchBrake !== false) { Input.touchBrake = false; brake.classList.remove('on'); }
     }
     const on = { ap: fl.ap.on, nav: fl.ap.on && fl.ap.nav, gear: st.gearTarget >= 1, spoiler: st.spoiler, parkBrake: st.parkingBrake, antiIce: sys && sys.antiIce };
     for (const k in on) {

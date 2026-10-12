@@ -17,7 +17,7 @@ const Cockpit = {
   // goes down to the bottom of the screen, unless `always` asks for the panel's own place
   panelTop(h, always) {
     if (!always && Instruments.hidden) return h;
-    // a phone held upright: a taller panel for the gauges two by two and the thrust lever, as
+    // a phone or a tablet held upright: a taller panel for the gauges two by two and the thrust lever, as
     // tall as the gauges need (Instruments.uprightR), so the view keeps more than half the screen
     if (this.portrait(window.innerWidth, h)) return h - (36 + 4.3 * Instruments.uprightR(window.innerWidth, h));
     return h - Math.min(h * (h < 560 ? 0.34 : 0.30), h < 560 ? 210 : 250);

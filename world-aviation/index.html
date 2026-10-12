@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=2">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <meta name="theme-color" content="#0e141c">
-<link rel="stylesheet" href="styles.css?v=53">
+<link rel="stylesheet" href="styles.css?v=54">
 </head>
 <body>
 
@@ -36,10 +36,12 @@
 <div id="touch">
   <div id="stickZone"><div id="stickBase"></div><div id="stickKnob"></div></div>
   <div id="throttleZone"><span>THR</span><div id="throttleKnob"></div></div>
+  <!-- the wheel brakes, held: over the thrust lever, on the ground (HUD.updateButtons) -->
+  <button type="button" id="brakeBtn" data-act="brake" data-i18n hidden>Brake</button>
   <div id="touchButtons" data-show="ground">
     <!-- four in a row, grouped by what they do: the menu and the views; the flaps, the gear and the
          spoiler; then one row that changes with the flight (HUD.updateButtons): on the ground and
-         for the landing Go and the brakes, in the air the autopilot and the time -->
+         for the landing Go and the parking brake on the right, in the air the autopilot and the time -->
     <button type="button" data-act="pause" data-i18n>Menu</button>
     <button type="button" data-act="camera" data-i18n>View</button>
     <button type="button" data-act="map" data-i18n>Map</button>
@@ -49,7 +51,6 @@
     <button type="button" data-act="gear" data-i18n>Gear</button>
     <button type="button" data-act="spoiler" data-i18n>Spoiler</button>
     <button type="button" class="go" data-act="starter" data-row="ground" data-i18n>Go</button>
-    <button type="button" data-act="brake" data-row="ground" data-i18n>Brake</button>
     <button type="button" data-act="parkBrake" data-row="ground" data-i18n>Park</button>
     <button type="button" data-act="ap" data-row="air" data-i18n>AP</button>
     <button type="button" data-act="nav" data-row="air" data-i18n>NAV</button>
@@ -174,13 +175,13 @@
 <script src="render/landcover.js?v=1"></script>
 <script src="render/cinematic.js?v=5"></script>
 <script src="render/scene3d.js?v=36"></script>
-<script src="ui/instruments.js?v=17"></script>
-<script src="ui/cockpit.js?v=10"></script>
-<script src="ui/hud.js?v=37"></script>
+<script src="ui/instruments.js?v=18"></script>
+<script src="ui/cockpit.js?v=11"></script>
+<script src="ui/hud.js?v=38"></script>
 <script src="ui/cabin.js?v=3"></script>
 <script src="career.js?v=41"></script>
 <script src="sim/rtw.js?v=1"></script>
-<script src="core/input.js?v=12"></script>
+<script src="core/input.js?v=13"></script>
 <script src="core/cursor.js?v=1"></script>
 <script src="ui/filters.js?v=4"></script>
 <script src="ui/title.js?v=3"></script>
@@ -192,6 +193,6 @@
 <script src="ui/showcase.js?v=1"></script>
 <script src="core/update.js?v=1"></script>
 <script src="core/cloud.js?v=2"></script>
-<script src="game.js?v=59"></script>
+<script src="game.js?v=60"></script>
 </body>
 </html>
