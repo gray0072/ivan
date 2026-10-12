@@ -454,6 +454,7 @@ const Scene3D = {
         map: this.cloudTex, transparent: true, depthWrite: false, opacity: 0.85, fog: true
       }));
       s.userData = { r: 900 + rand.range(0, 2600), base: rand.range(0, 1), h: rand.range(0.25, 1) };
+      s.renderOrder = 10;   // after the see-through sea (1), or lakes and the sea paint over the clouds
       this.cloudGroup.add(s);
     }
     this.scene.add(this.cloudGroup);
