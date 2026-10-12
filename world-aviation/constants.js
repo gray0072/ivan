@@ -74,7 +74,8 @@ const SIM = {
   // of gusts a frame only made the picture and the autopilot shake
   TURB_FULL_ACCEL: 8,
   TIME_ACCEL_MIN_COS: 0.2,     // the distance for that is divided by the cosine of the angle off the runway, at most x5
-  TIME_ACCEL_RESUME_S: 1,      // after an emergency the time climbs back one step every this many real seconds
+  TIME_ACCEL_RESUME_S: 0.5,    // after an emergency the time climbs back one step every this many real seconds
+  TIME_ACCEL_STEPDOWN_S: 0.5,  // an emergency or stricter limits bring the time down one step every this many real seconds
   CABIN_ON_TIME_MIN: 3,        // the arrival announcement: within this many minutes of the plan is on schedule
   // flying by hand: the fastest step allowed above each height AGL (feet)
   TIME_ACCEL_MANUAL: [{ aglFt: 1000, max: 2 }, { aglFt: 3000, max: 4 }, { aglFt: 6000, max: 8 },
@@ -199,7 +200,7 @@ const ILS_DESKTOP_SIZES = [[1, true], [0.9, true], [0.8, true], [1, false], [0.8
 // FLIGHTS flights in the type: Enter hands over, the time may run up to TIME_ACCEL, and the first
 // officer stops on the stand's lead-in once the turn into it is behind and gives the controls back.
 const COPILOT = {
-  FLIGHTS: 5,
+  FLIGHTS: 3,
   TIME_ACCEL: 4,
   AFTER_TURN_M: 8,             // stops this far past the end of the turn into the stand ...
   AFTER_TURN_LEN: 0.25,        // ... and this share of the aeroplane's length more ...
@@ -1228,6 +1229,11 @@ const AUTO_QUALITY = {
   RES: [0.88, 0.8]
 };
 
+// The landing (or taxi) lights' pool on the ground at night (Scene3D.updateLandingPool): full
+// brightness within FULL_M of the lamps, then falling with the square of the distance (at 500 m a
+// fifth), gone at REACH_M — a landing light does not light the ground up from 500 m high
+const LANDING_POOL = { FULL_M: 220, REACH_M: 900, TAXI_FULL_M: 45, TAXI_REACH_M: 120 };
+
 const VIEW = {
   FOV_DEG: 68,
   BUILDING_CLEAR_M: 3,          // the chase, front and wing views keep this far out of the buildings (Scene3D.clearOfBuildings)
@@ -1344,6 +1350,9 @@ const PRACTICE = {
 const CONTROLS = {
   THROTTLE_CURVE: 1.8,         // thrust = lever position ^ this: the low end of the lever is finer (taxi power)
   THROTTLE_KEY_RATE: 0.45,     // lever travel per second with Z / X
+  THR_LABEL_MAX_PCT: 80,       // the touch slider's THR label hides above this thrust (the knob reaches it)
+  REPEAT_DELAY_MS: 450,        // a held touch button for the flaps or the time steps on after this ...
+  REPEAT_EVERY_MS: 260,        // ... then once every this
   // the instrument lights, dimmest first (how much of the panel's light is left); I steps up
   // through them, from the brightest one more press hides the panel and the heading strip for
   // the whole view, and the next brings it back dim. A flight starts bright.

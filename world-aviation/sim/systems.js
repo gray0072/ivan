@@ -256,10 +256,11 @@ const Systems = {
         break;
       }
     }
-    // run the open checklist (the clock is real time: the trigger cut time acceleration)
+    // run the open checklist (its clock is real time: the trigger takes the time acceleration
+    // down to x1 a step at a time, and the steps on the way do not eat the pilot's time)
     const c = this.checklist;
     if (c) {
-      c.timeLeft -= dt;
+      c.timeLeft -= dt / Math.max(1, fl.env.timeAccel);
       const step = c.steps[c.stepIndex];
       // a step worked with a control ticks by itself (and stays ticked, even if the autothrottle
       // then moves the levers), and the next one lights up a moment later

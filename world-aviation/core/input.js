@@ -90,6 +90,7 @@ const Input = {
     this.pitch = 0; this.roll = 0; this.rudder = 0;
     this.touch.stick = null; this.touch.thr = null;
     this.touchThrottle = null; this.touchBrake = false;
+    this.stopRepeat();
     const tb = document.querySelector('#touchButtons [data-act="brake"]');
     if (tb) tb.classList.remove('on');
     const knob = el('throttleKnob');
@@ -200,14 +201,32 @@ const Input = {
           this.fire(act);
           btn.classList.add('on');
           setTimeout(() => btn.classList.remove('on'), 130);
+          // the flaps and the time step on while the button is held (CONTROLS.REPEAT_*)
+          if (REPEAT_ACTS[act]) {
+            this.stopRepeat();
+            btn.setPointerCapture && btn.setPointerCapture(e.pointerId);
+            this.repeat = { id: e.pointerId, t: setTimeout(function step() {
+              this.fire(act);
+              btn.classList.add('on');
+              setTimeout(() => btn.classList.remove('on'), 90);
+              this.repeat.t = setTimeout(step.bind(this), CONTROLS.REPEAT_EVERY_MS);
+            }.bind(this), CONTROLS.REPEAT_DELAY_MS) };
+          }
         }
         Audio2.resume();
       });
+      const end = (e) => { if (this.repeat && this.repeat.id === e.pointerId) this.stopRepeat(); };
+      for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) btn.addEventListener(t, end);
     });
     // touch on the game must not scroll or zoom the page (the screens and panels scroll)
     const block = (e) => { if (e.target.closest && e.target.closest('#screen, .panelBox')) return; e.preventDefault(); };
     document.addEventListener('touchstart', block, { passive: false });
     document.addEventListener('touchmove', block, { passive: false });
+  },
+
+  stopRepeat() {
+    if (this.repeat) clearTimeout(this.repeat.t);
+    this.repeat = null;
   },
 
   // The slider is the thrust lever: its position maps to thrust on a curve, so the low end
@@ -230,7 +249,12 @@ const Input = {
     const knob = el('throttleKnob');
     if (!knob) return;
     const pct = Math.round(throttle * 100);
-    if (pct !== this.knobPct) { this.knobPct = pct; knob.textContent = pct + '%'; }
+    if (pct !== this.knobPct) {
+      this.knobPct = pct; knob.textContent = pct + '%';
+      // the THR label at the top of the slider goes once the knob comes up to it
+      const zone = el('throttleZone');
+      if (zone) zone.classList.toggle('high', pct > CONTROLS.THR_LABEL_MAX_PCT);
+    }
     if (this.touch.thr) return;
     const v = leverFromThrottle(throttle);
     if (Math.abs(v - (this.knobLever === undefined ? -1 : this.knobLever)) > 0.003) { this.knobLever = v; this.placeThrottleKnob(v, knob); }
@@ -239,6 +263,9 @@ const Input = {
   touchThrottle: null,
   touchBrake: false
 };
+
+// the touch buttons that step on while held: the flaps and the time
+const REPEAT_ACTS = { flapsUp: 1, flapsDown: 1, timeSlower: 1, timeFaster: 1 };
 
 // the touch thrust lever's knob, px tall (#throttleKnob in styles.css)
 const THROTTLE_KNOB_H = 36;

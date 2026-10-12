@@ -384,6 +384,8 @@ body.touring #touch, body.incident #touch { display: none !important; }
     font: 700 10px system-ui, sans-serif;
     color: #9fb0c3;
   }
+  #throttleZone span { transition: opacity 0.2s; }
+  #throttleZone.high span { opacity: 0; }
   #throttleKnob {
     position: absolute;
     left: 50%;

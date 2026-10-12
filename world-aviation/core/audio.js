@@ -304,7 +304,7 @@ const Audio2 = {
     if ((urgent || this.paTalking) && s.speaking) s.cancel();
     this.paTalking = false;
     const voice = this.voiceFor();
-    const u = new SpeechSynthesisUtterance(text);
+    const u = new SpeechSynthesisUtterance(spoken(text, voice));
     if (voice) u.voice = voice;
     u.lang = voice ? voice.lang : { en: 'en-GB', ru: 'ru-RU', sv: 'sv-SE' }[I18N.lang] || 'en-GB';
     u.rate = urgent ? 1.35 : 1.1;
@@ -324,7 +324,7 @@ const Audio2 = {
       const s = window.speechSynthesis, voice = this.voiceFor();
       const parts = announcementParts(text);
       const queue = this.paQueue = parts.map((p, i) => {
-        const u = new SpeechSynthesisUtterance(p);
+        const u = new SpeechSynthesisUtterance(spoken(p, voice));
         if (voice) u.voice = voice;
         u.lang = voice ? voice.lang : { en: 'en-GB', ru: 'ru-RU', sv: 'sv-SE' }[I18N.lang] || 'en-GB';
         u.rate = 1.0;
@@ -440,6 +440,17 @@ const Audio2 = {
     }
   }
 };
+
+// Words a voice stresses wrongly, with the stress marked (a combining acute after the vowel):
+// Android's Russian voice reads «господа» as «гóспода» (the Lord's) in «Дамы и господа»
+const SPEECH_STRESS = {
+  ru: [[/(^|[^а-яё])(г)(оспода)(?![а-яё])/gi, (m, pre, g, rest) => pre + g + rest + '́']]
+};
+function spoken(text, voice) {
+  const lang = voice ? voice.lang.slice(0, 2).toLowerCase() : I18N.lang;
+  for (const [re, to] of SPEECH_STRESS[lang] || []) text = String(text).replace(re, to);
+  return text;
+}
 
 // an announcement in pieces the voices say whole: its sentences, a long one cut at its commas
 function announcementParts(text) {

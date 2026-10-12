@@ -89,6 +89,8 @@ const Flight = {
     this.timeAccelIndex = 0;
     this.timeAccelResume = 0;        // the step an emergency cut the time from, to climb back to
     this.resumeT = 0;
+    this.timeDrop = false;           // an interruption is taking the time down to x1, a step every TIME_ACCEL_STEPDOWN_S
+    this.downT = 0;
     this.cheatAccel = false;
     this.guidance = null;
     this.taxi = null;                // the taxi speed and its limit (sim/taxilimit.js)
@@ -418,28 +420,32 @@ const Flight = {
   // something to deal with now (an emergency's checklist, ice building with the anti-ice off):
   // the time stays at x1 until it is done
   timeHeld() { return !!(this.systems && (this.systems.checklist || this.systems.iceHold)); },
-  // an interruption: drop the clock back to real time; it climbs back to where it was, a step a
-  // second, once nothing holds it (timeHeld)
+  // an interruption: take the clock back to real time, a step every TIME_ACCEL_STEPDOWN_S; it
+  // climbs back to where it was, a step every TIME_ACCEL_RESUME_S, once nothing holds it (timeHeld)
   interruptTime() {
     const was = this.cheatAccel ? SIM.TIME_ACCEL_STEPS.length - 1 : this.timeAccelIndex;
     this.timeAccelResume = Math.max(this.timeAccelResume || 0, was); this.resumeT = 0;
-    this.timeAccelIndex = 0; this.cheatAccel = false;
-    this.env.timeAccel = 1;
+    this.dropTime();
   },
   // something the pilot has to see at once and fly by hand (an engine flamed out, the autopilot
-  // let go, the fuel low): real time, and it stays there until the pilot speeds it up again
+  // let go, the fuel low): back to real time, and it stays there until the pilot speeds it up again
   realTime() {
     this.timeAccelResume = 0;
     if (this.env.timeAccel <= 1 && !this.cheatAccel) return;
-    this.timeAccelIndex = 0; this.cheatAccel = false;
-    this.env.timeAccel = 1;
-    this.info(tr('TIME x{n}', { n: 1 }), 'TIME');
+    this.dropTime();
+  },
+  // start stepping the time down to x1 (the first step at once)
+  dropTime() {
+    if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = SIM.TIME_ACCEL_STEPS.length - 1; }
+    if (this.timeAccelIndex === 0) return;
+    if (!this.timeDrop) this.downT = SIM.TIME_ACCEL_STEPDOWN_S;
+    this.timeDrop = true;
   },
   timeAccel(dtReal = 0) {
     const e = this.env;
-    // after an emergency the time climbs back to where it was, a step a second, once the checklist is
+    // after an emergency the time climbs back to where it was, a step every TIME_ACCEL_RESUME_S, once the checklist is
     // closed (and the anti-ice is on, if ice was building)
-    if (this.timeAccelResume > this.timeAccelIndex && !this.timeHeld()) {
+    if (this.timeAccelResume > this.timeAccelIndex && !this.timeHeld() && !this.timeDrop) {
       this.resumeT += dtReal;
       if (this.resumeT >= SIM.TIME_ACCEL_RESUME_S) {
         this.resumeT = 0;
@@ -451,14 +457,25 @@ const Flight = {
       }
     } else this.resumeT = 0;
     if (this.timeAccelIndex >= this.timeAccelResume) this.timeAccelResume = 0;
+    if (this.timeAccelIndex === 0) this.timeDrop = false;
     if (this.timeAccelIndex === 0 && !this.cheatAccel) { e.timeAccel = 1; return 1; }
-    const top = this.timeAccelTop();
+    const top = this.timeDrop ? 0 : this.timeAccelTop();
     const was = e.timeAccel;
     // (the cheat holds while the autopilot may run at its fastest: extrapolated in a steady
     // cruise, elsewhere as fast as the physics steps of a frame go)
-    if (this.cheatAccel && (!this.ap.on || SIM.TIME_ACCEL_STEPS[top] < SIM.TIME_ACCEL_AP_MAX)) this.cheatAccel = false;
-    // the conditions got stricter (the autopilot is off, lower down, an emergency): step down to what is allowed
-    if (this.timeAccelIndex > top) this.timeAccelIndex = top;
+    if (this.cheatAccel && (!this.ap.on || SIM.TIME_ACCEL_STEPS[top] < SIM.TIME_ACCEL_AP_MAX)) {
+      this.cheatAccel = false; this.timeAccelIndex = SIM.TIME_ACCEL_STEPS.length - 1;
+    }
+    // the conditions got stricter (the autopilot is off, lower down, an emergency): step down to
+    // what is allowed, a step every TIME_ACCEL_STEPDOWN_S — at once on the ground and low down
+    if (this.timeAccelIndex > top) {
+      if (this.st.onGround || this.altAgl() < SIM.TIME_ACCEL_MIN_ALT_M) this.timeAccelIndex = top;
+      else {
+        this.downT += dtReal;
+        if (this.downT >= SIM.TIME_ACCEL_STEPDOWN_S) { this.downT = 0; this.timeAccelIndex--; }
+      }
+    } else this.downT = SIM.TIME_ACCEL_STEPDOWN_S;
+    if (this.timeAccelIndex === 0) this.timeDrop = false;
     e.timeAccel = this.cheatAccel ? SIM.TIME_ACCEL_CHEAT : SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
     if (e.timeAccel < was) {
       this.info(tr('TIME x{n}', { n: e.timeAccel }) + (this.approachCapped ? ' — ' + tr('approaching {id}', { id: this.arrival.id })
@@ -473,6 +490,7 @@ const Flight = {
     // T refused while a checklist or the ice holds the time: it still climbs back once that is done
     if (dir > 0 && this.timeHeld()) { this.warn('TIME', this.timeAccelLimitText()); return; }
     this.timeAccelResume = 0;                // the pilot sets the time: no climbing back after an emergency
+    this.timeDrop = false;
     if (this.cheatAccel) { this.cheatAccel = false; this.timeAccelIndex = dir < 0 ? top : this.timeAccelIndex; }
     else if (dir > 0 && this.timeAccelIndex >= top) { this.warn('TIME', this.timeAccelLimitText()); return; }
     else if (dir < 0 && this.timeAccelIndex === 0) { this.info(tr('TIME x{n}', { n: 1 }), 'TIME'); return; }
@@ -483,7 +501,7 @@ const Flight = {
   // The first officer takes the taxi (on: the time goes to COPILOT.TIME_ACCEL) or gives it back
   // (the time back to x1)
   copilotTime(on) {
-    this.timeAccelResume = 0; this.cheatAccel = false;
+    this.timeAccelResume = 0; this.cheatAccel = false; this.timeDrop = false;
     this.timeAccelIndex = on ? Math.max(0, SIM.TIME_ACCEL_STEPS.indexOf(COPILOT.TIME_ACCEL)) : 0;
     this.env.timeAccel = SIM.TIME_ACCEL_STEPS[this.timeAccelIndex];
     this.info(tr('TIME x{n}', { n: this.env.timeAccel }), 'TIME');

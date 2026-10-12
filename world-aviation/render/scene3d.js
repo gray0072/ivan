@@ -927,14 +927,17 @@ const Scene3D = {
     const gy = fl.groundHeight();
     if (dir.y > -0.01) { pool.visible = false; return; }
     const t = (p0.y - gy) / -dir.y;
-    const reach = L.landing ? 1400 : 120;
+    // the light falls off with the square of the distance: full within LANDING_POOL.FULL_M of the
+    // lamps (taxi lights TAXI_FULL_M), a faint glow from a few hundred metres, nothing from REACH_M
+    const LP = LANDING_POOL, reach = L.landing ? LP.REACH_M : LP.TAXI_REACH_M;
     if (t > reach) { pool.visible = false; return; }
+    const full = L.landing ? LP.FULL_M : LP.TAXI_FULL_M, fall = Math.min(1, (full / t) * (full / t));
     pool.visible = true;
     const w = clamp(t * 0.32, 10, 260);
     pool.position.set(p0.x + dir.x * t, gy + 0.35, p0.z + dir.z * t);
     pool.rotation.y = Math.atan2(ax.nose.x, ax.nose.z);
     pool.scale.set(w, 1, clamp(w / Math.max(0.12, -dir.y), w, w * 6));
-    pool.material.opacity = dark * (L.landing ? 0.65 : 0.5) * (1 - smoothstep(reach * 0.6, reach, t));
+    pool.material.opacity = dark * (L.landing ? 0.65 : 0.5) * fall * (1 - smoothstep(reach * 0.6, reach, t));
   },
 
   // the pushback tug: at the nose gear from the gate to the end of the push back; then it lets go,
