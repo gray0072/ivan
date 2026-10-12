@@ -133,10 +133,25 @@ const Airport3D = {
     const Y = markBatch(0.16), W = markBatch(0.15);   // above the ground plane (0.05) and the runway (0.12)
 
     const CL = 0.45;                      // centreline width (wider than the real 0.15 m, to read from the cockpit)
-    for (const s of a.twySegs) {
-      const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
-      Y.strip(p.t, p.across, q.t, q.across, CL);
-      Y.dot(p.t, p.across, CL / 2); Y.dot(q.t, q.across, CL / 2);
+    // each taxi line from node to node; where a line's only ways on at a node are curves (a
+    // corner, the stem of a T, an exit off the runway, a stand's lead-in) it stops where the
+    // curves leave it, so no right angle is drawn where the curve is the way (taxiTrim)
+    const seen = {};
+    for (const n of a.nodeList) {
+      for (const e of n.edges) {
+        if (e.kind === 'runway') continue;
+        const key = n.id < e.to.id ? n.id + '|' + e.to.id : e.to.id + '|' + n.id;
+        if (seen[key]) continue;
+        seen[key] = 1;
+        const len = Math.hypot(e.to.t - n.t, e.to.across - n.across);
+        if (len < 1) continue;
+        const u = [(e.to.t - n.t) / len, (e.to.across - n.across) / len];
+        const d0 = taxiTrim(a, n, e.to), d1 = taxiTrim(a, e.to, n);
+        if (d0 + d1 >= len - 0.5) continue;
+        const p = [n.t + u[0] * d0, n.across + u[1] * d0], q = [e.to.t - u[0] * d1, e.to.across - u[1] * d1];
+        Y.strip(p[0], p[1], q[0], q[1], CL);
+        Y.dot(p[0], p[1], CL / 2); Y.dot(q[0], q[1], CL / 2);
+      }
     }
     // the curves where the lines meet: round turns instead of right angles
     for (const f of a.fillets || []) Y.poly(f.pts, CL);
@@ -145,7 +160,10 @@ const Airport3D = {
     // parked aeroplane (the stand number is a plate: standPlates)
     const Rd = markBatch(0.155);
     for (const gate of a.gates) {
-      Y.strip(gate.t, L.APRON_LANE, gate.t, L.STAND + 12, 0.4);
+      // (from where the turns into it leave the lead-in, when they are its only way on: taxiTrim)
+      const lane = gate.node && gate.node.edges.find((e) => e.kind === 'stand');
+      const from = lane ? Math.min(taxiTrim(a, lane.to, gate.node), L.STAND + 12 - L.APRON_LANE - 1) : 0;
+      Y.strip(gate.t, L.APRON_LANE + from, gate.t, L.STAND + 12, 0.4);
       Y.strip(gate.t - 8, L.STAND + 4, gate.t + 8, L.STAND + 4, 1.0);
       Y.dot(gate.t, L.STAND + 12, 0.2);
       const box = [[gate.t - 34, L.STAND - 36], [gate.t - 34, L.STAND + 16], [gate.t + 34, L.STAND + 16], [gate.t + 34, L.STAND - 36]];
@@ -866,6 +884,67 @@ const Airport3D = {
       if (n === a.nodes.rwyEnd) return;
       this.sign(rec, at, tex, 'A' + (i + 1), '#111111', '#f6c700', n.rapid ? n.t - 25 : n.t + 22, RWY_HALF_WIDTH + 30);
     });
+    this.gateSigns(a, rec, at, tex);
+  },
+
+  // The direction signs to the stands at the forks of the parallel taxiway: before each lane
+  // into the apron, for the traffic coming from either way, a yellow board with the stands that
+  // lane leads to (the ones nearer to it than to any other lane) and an arrow the way to turn —
+  // "→ 4–6", "← C1–C2". Beside the taxiway, on whichever side is clear of the pavement (a rapid
+  // exit's, the lanes', the apron).
+  gateSigns(a, rec, at, tex) {
+    const lanes = a.nodeList.filter((n) => Math.abs(n.across - LAYOUT.TWY_OFFSET) < 1 &&
+      n.edges.some((e) => e.kind === 'taxi' && e.to.across > LAYOUT.TWY_OFFSET + 20 && Math.abs(e.to.t - n.t) < 1));
+    if (!lanes.length) return;
+    const near = lanes.map(() => []);
+    for (const g of a.gates) {
+      let k = 0;
+      lanes.forEach((n, i) => { if (Math.abs(n.t - g.t) < Math.abs(lanes[k].t - g.t)) k = i; });
+      near[k].push(g);
+    }
+    const half = (LAYOUT.TWY_WIDTHS[a.terminal] || LAYOUT.TWY_WIDTH) / 2;
+    const clear = (t, across) => {
+      if (across > LAYOUT.APRON_LANE - 70 || across < RWY_HALF_WIDTH + 40) return false;
+      const r = a.apronRect;
+      if (r && t > r.t0 - 10 && t < r.t1 + 10 && across > LAYOUT.TWY_OFFSET + half) return false;
+      const p = World.at(a, t, across);
+      return a.twySegs.every((s) => {
+        const dx = s.x2 - s.x1, dz = s.z2 - s.z1, l2 = dx * dx + dz * dz || 1;
+        const u = clamp(((p.x - s.x1) * dx + (p.z - s.z1) * dz) / l2, 0, 1);
+        return Math.hypot(s.x1 + dx * u - p.x, s.z1 + dz * u - p.z) > s.w / 2 + 7;
+      });
+    };
+    lanes.forEach((n, i) => {
+      const gs = near[i];
+      if (!gs.length) return;
+      const span = gs[0].plate === gs[gs.length - 1].plate ? gs[0].plate : gs[0].plate + '–' + gs[gs.length - 1].plate;
+      const label = (a.terminals > 1 && !gs[0].cargo && !gs[0].ga ? 'T' + gs[0].terminal + ' ' : '') + span;
+      for (const dir of [1, -1]) {
+        // (coming along +t the apron is on the right: the turn into the lane is a right turn)
+        let spot = null;
+        for (const off of [45, 60, 75, 32]) {
+          for (const across of [LAYOUT.TWY_OFFSET - half - 14, LAYOUT.TWY_OFFSET + half + 14]) {
+            if (!spot && clear(n.t - dir * off, across)) spot = [n.t - dir * off, across];
+          }
+        }
+        if (spot) this.dirSign(at, tex, (dir > 0 ? '→ ' : '← ') + label, spot[0], spot[1], dir);
+      }
+    });
+  },
+  // a yellow direction sign facing the traffic coming along +t (dir 1) or -t (-1); its back dark
+  dirSign(at, tex, text, t, across, dir) {
+    const cv = document.createElement('canvas');
+    const g = cv.getContext('2d');
+    g.font = 'bold 42px Arial, sans-serif';
+    const w = Math.min(1024, Math.max(160, Math.ceil(g.measureText(text).width) + 48));
+    cv.width = Math.pow(2, Math.ceil(Math.log2(w))); cv.height = 64;
+    g.fillStyle = '#f6c700'; g.fillRect(0, 0, cv.width, 64);
+    g.fillStyle = '#111111'; g.font = 'bold 42px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(text, cv.width / 2, 34);
+    const face = new THREE.MeshLambertMaterial({ map: tex(cv, 4) }), back = new THREE.MeshLambertMaterial({ color: 0x2a2d31 });
+    const W = 1.1 * cv.width / 64;
+    const mats = dir > 0 ? [back, back, back, back, face, back] : [back, back, back, back, back, face];
+    at(new THREE.Mesh(new THREE.BoxGeometry(W, 1.1, 0.4), mats), t, across, 0.9);
   },
 
   sign(rec, at, tex, text, bg, fg, t, across) {
@@ -1536,4 +1615,31 @@ function makeBannerCanvas(a, id) {
   fit((l ? aptCity(a, l) : a.city).toUpperCase(), '900 108px Arial, sans-serif', 134, '#ffffff');
   fit(l ? 'Welcome to ' + a.city + ' · ' + a.country : (c ? c.hello + ' · ' : '') + a.country, 'italic 600 40px Georgia, serif', 222, 'rgba(255,255,255,0.92)');
   return cv;
+}
+
+// How far from node n the taxi line towards node m stops (0: it runs to the node). It stops
+// where the curves (World.buildFillets) leave it when they are its only ways on at n: no line
+// leads on straight from it there (within 25°) and every turn the network takes from it at n
+// has a curve; then it stops where the nearest of them leaves it.
+function taxiTrim(a, n, m) {
+  const TAXI = ['taxi', 'connector', 'apron', 'stand'];
+  const offRunway = n.kind === 'exit' || n.kind === 'lineup';
+  const lm = Math.hypot(m.t - n.t, m.across - n.across) || 1;
+  const u = [(m.t - n.t) / lm, (m.across - n.across) / lm];
+  let d = Infinity, any = false;
+  for (const e of n.edges) {
+    if (e.to === m || !(TAXI.indexOf(e.kind) >= 0 || (offRunway && e.kind === 'runway'))) continue;
+    const l = Math.hypot(e.to.t - n.t, e.to.across - n.across) || 1;
+    const ang = Math.acos(clamp((u[0] * (e.to.t - n.t) + u[1] * (e.to.across - n.across)) / l, -1, 1));
+    if (ang > 155 * DEG) return 0;                             // a line goes on straight from it
+    if (ang < 25 * DEG) continue;                              // (a hairpin: not a way on)
+    const f = World.filletAt(a, n, m, e.to);
+    if (!f) {
+      if (e.kind === 'runway' && ang < 80 * DEG) continue;     // (back against the landing: never a curve)
+      return 0;                                                // a square turn: the line runs to the node
+    }
+    any = true;
+    d = Math.min(d, f.d);
+  }
+  return any ? Math.max(0, d - 0.5) : 0;
 }

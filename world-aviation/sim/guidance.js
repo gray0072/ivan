@@ -8,11 +8,12 @@
 //   - a missed turn (well off the route, the route behind you) gives
 //     a new route on from the nearest junction ahead, so the arrow
 //     never points back at a turn already passed;
-//   - on the landing roll the exit is the first one still reachable
-//     at the present speed (room to slow down to its turn-off speed
-//     before its curve); roll past it and the arrow moves on to the
-//     next one — until you turn onto it, then it stays; while it is still
-//     far, the arrow leans towards it (its turn-off at the edge);
+//   - on the landing roll the exit is the nearest one still ahead (its
+//     curve not begun yet); roll past it and the arrow moves on to the
+//     next one — until you turn onto it, then it stays (the first
+//     officer taxiing takes the first one still reachable at its speed:
+//     room to slow down to its turn-off speed before its curve); while
+//     it is still far, the arrow leans towards it (its turn-off at the edge);
 //   - lining up, it leads onto the centreline ahead, never back to
 //     the line-up point.
 // In the air without the autopilot it gives the bearing to the
@@ -61,14 +62,18 @@ const Guidance = {
       const rolling = Math.abs(loc.across) < RWY_HALF_WIDTH + 5 && Math.abs(wrapDeg(fl.headingDeg() - a.hdgDeg)) < SIM.EXIT_COMMIT_DEG;
       let lead = 0;
       if (rolling) {
-        // still on the runway and not turning off yet: the first exit still reachable (the first
-        // officer taxiing slows down for the one picked when it took over, so that one stays; so
-        // does the one whose curve you are already turning onto — a rapid exit's is long)
-        const cur = game.arrivalRoute[0];
-        const fo = fl.copilot && fl.copilot.on && cur.t > loc.t;
+        // still on the runway and not turning off yet: the nearest exit ahead (the first officer
+        // taxiing: the first one still reachable at its speed, and it slows down for the one it
+        // picked, so that one stays; so does the one whose curve you are already turning onto —
+        // a rapid exit's is long)
+        const cur = game.arrivalRoute[0], speed = Math.hypot(st.vel.x, st.vel.z);
         const onCurve = cur.kind === 'exit' && loc.t > cur.t - cur.turnBack && loc.t < cur.t + 30 &&
           (loc.across > 3 || wrapDeg(fl.headingDeg() - a.hdgDeg) > 3);
-        const exit = fo || onCurve ? cur : this.exitFor(a, loc.t, Math.hypot(st.vel.x, st.vel.z));
+        let exit = cur;
+        if (!onCurve && fl.copilot && fl.copilot.on) {
+          const reach = this.exitFor(a, loc.t, speed, true);
+          if (!(cur.kind === 'exit' && cur.t > loc.t && cur.t >= reach.t)) exit = reach;
+        } else if (!onCurve) exit = this.exitFor(a, loc.t, speed, false);
         if (exit !== game.arrivalRoute[0]) game.arrivalRoute = World.findRoute(a, exit, game.arrivalGate.node);
         lead = exit.t - loc.t;
       }
@@ -100,13 +105,14 @@ const Guidance = {
     g.dist = g.remaining || Math.hypot(target.x - st.pos.x, target.z - st.pos.z);
   },
 
-  // the runway exit to take from t at this speed (m/s): the first one whose curve (SIM.EXIT_CUT
-  // of it cut) still begins far enough ahead to slow to its turn-off speed (its radius's limit,
-  // sim/taxilimit.js) at SIM.EXIT_DECEL_MS2; the runway's end if none is left
-  exitFor(a, t, speed) {
+  // the runway exit to take from t: the first one whose curve (SIM.EXIT_CUT of it cut) still
+  // begins at least SIM.EXIT_MIN_LEAD_M ahead — reachable: far enough ahead to slow from this
+  // speed (m/s) to its turn-off speed (its radius's limit, sim/taxilimit.js) at
+  // SIM.EXIT_DECEL_MS2; the runway's end if none is left
+  exitFor(a, t, speed, reachable) {
     for (const n of a.exits) {
       const v0 = TaxiLimit.turnKt(n.exitR) * KTS;
-      const room = Math.max(SIM.EXIT_MIN_LEAD_M, Math.max(0, speed * speed - v0 * v0) / (2 * SIM.EXIT_DECEL_MS2));
+      const room = Math.max(SIM.EXIT_MIN_LEAD_M, reachable ? Math.max(0, speed * speed - v0 * v0) / (2 * SIM.EXIT_DECEL_MS2) : 0);
       if (n.t - n.turnBack * (1 - SIM.EXIT_CUT) - t > room) return n;
     }
     return a.exits[a.exits.length - 1];

@@ -78,7 +78,10 @@ const FollowMe3D = {
       // until the aeroplane turns off the runway
       const F = FOLLOW_ME, st = fl.st, sdt = dt * fl.env.timeAccel;
       const vAc = Math.min(Math.hypot(st.vel.x, st.vel.z), F.RUN_KT * KTS);
-      const nose = g.along + fl.dims.len / 2, gap = this.s - CAR_HALF_M - nose, lead = F.GAP_M + F.LEAD_S * vAc;
+      // (the nose on the car's own way, which takes the corners on their curves: off the runway the
+      // guidance's distance, which is less than 0 there)
+      const ac = g.along < 0 ? g.along : this.project(st.pos.x, st.pos.z);
+      const nose = ac + fl.dims.len / 2, gap = this.s - CAR_HALF_M - nose, lead = F.GAP_M + F.LEAD_S * vAc;
       const target = nose + CAR_HALF_M + lead + Math.max(0, vAc * vAc - this.v * this.v) / (2 * F.ACCEL_MS2);
       const cap = (gap < lead ? F.RUN_KT : F.MAX_KT) * KTS;           // caught up: faster than a car leads
       const want = this.moved || g.along >= 0 ? Math.max(0, vAc + (target - this.s) * 0.5) : 0;
@@ -122,14 +125,21 @@ const FollowMe3D = {
     if (this.v > 0.5) this.moved = true;
   },
 
-  // The car's way along a (new) taxi route: the route without the stand, on along the apron lane;
-  // the same distances along it as the guidance's. Not moved yet, it waits past the route's exit
-  // (a new route on the landing roll is a later exit); moved, it carries on from where it is.
+  // The car's way along a (new) taxi route: the route without the stand, its corners on the
+  // fillets' curves (World.smoothRoute, as the aeroplane follows them), on along the apron lane.
+  // Not moved yet, it waits past the route's exit (a new route on the landing roll is a later
+  // exit); moved, it carries on from where it is.
   follow(fl, route) {
     const n = route.length;
-    const pts = route.slice(0, n - 1).map((r) => ({ x: r.x, z: r.z }));
+    const sm = World.smoothRoute(fl.arrival, route.slice(0, n - 1));
+    // (from the exit's node: the exit's curve off the runway is the aeroplane's, not the car's)
+    const i0 = sm.first[1] - sm.first[0] > 1 ? sm.first[1] - 1 : sm.first[0];
+    const pts = sm.pts.slice(i0).map((p) => ({ x: p.x, z: p.z }));
     const S = [0];
     for (let i = 0; i + 1 < pts.length; i++) S.push(S[i] + Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].z - pts[i].z));
+    // (it waits past the first junction off the runway: past the end of its curve, if it has one)
+    const waitI = (sm.first[2] !== undefined ? sm.first[2] - 1 : sm.first[1]) - i0;
+    this.acS = null;
     // on along the apron lane past the wingtip of the aeroplane turning in (as far as the apron
     // goes), then off the lane to the runway side, out of the way
     const F = FOLLOW_ME, a = fl.arrival, lane = route[n - 2], prev = route[n - 3];
@@ -146,7 +156,7 @@ const FollowMe3D = {
     else if (ext > 1) add(ext, 0);
     const was = this.path ? this.at(this.s) : null;
     this.route = route; this.path = pts; this.S = S; this.end = S[S.length - 1];
-    if (!this.moved || !was) { this.s = Math.min(this.end, S[1] + FOLLOW_ME.WAIT_M); this.v = 0; return; }
+    if (!this.moved || !was) { this.s = Math.min(this.end, S[clamp(waitI, 1, S.length - 1)] + FOLLOW_ME.WAIT_M); this.v = 0; return; }
     // the nearest point of the new way to where the car is
     let best = Infinity;
     for (let i = 0; i + 1 < pts.length; i++) {
@@ -155,6 +165,22 @@ const FollowMe3D = {
       const d = Math.hypot(p.x + dx * u - was.x, p.z + dz * u - was.z);
       if (d < best) { best = d; this.s = S[i] + u * (S[i + 1] - S[i]); }
     }
+  },
+
+  // how far along the car's way the aeroplane is (its nearest point, searched near the last one,
+  // so a later stretch passing close by never takes over)
+  project(x, z) {
+    const P = this.path, S = this.S, near = this.acS !== null && this.acS !== undefined;
+    let best = Infinity, out = this.acS || 0;
+    for (let i = 0; i + 1 < P.length; i++) {
+      if (near && (S[i + 1] < this.acS - 60 || S[i] > this.acS + 150)) continue;
+      const p = P[i], q = P[i + 1], dx = q.x - p.x, dz = q.z - p.z, l2 = dx * dx + dz * dz || 1;
+      const u = clamp(((x - p.x) * dx + (z - p.z) * dz) / l2, 0, 1);
+      const d = Math.hypot(p.x + dx * u - x, p.z + dz * u - z);
+      if (d < best) { best = d; out = S[i] + u * (S[i + 1] - S[i]); }
+    }
+    this.acS = out;
+    return out;
   },
 
   // the point s metres along the car's way

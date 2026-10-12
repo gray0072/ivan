@@ -645,6 +645,44 @@ const World = {
     return path;
   },
 
+  // A taxi route as it is driven: its nodes, each corner that has a fillet (buildFillets) taken
+  // on the fillet's arc instead (a route starting at a runway exit: the exit's curve off the
+  // runway first). { pts: [{x, z}], S: the distance along at each point, first: for each node
+  // of the route the index of its first point }. Kept on the route (a route is never changed).
+  smoothRoute(a, route) {
+    if (route.smooth) return route.smooth;
+    const pts = [], first = [];
+    const arc = (n, p, q) => {
+      const f = p && q ? this.filletAt(a, n, p, q) : null;
+      if (!f) return false;
+      const w = f.ends[0] === p ? f.world : f.world.slice().reverse();
+      for (const v of w) pts.push({ x: v.x, z: v.z });
+      return true;
+    };
+    route.forEach((n, i) => {
+      first.push(pts.length);
+      const p = i ? route[i - 1] : n.kind === 'exit' ? this.runwayBehind(n) : null;
+      if (!arc(n, p, route[i + 1])) pts.push({ x: n.x, z: n.z });
+    });
+    const S = [0];
+    for (let i = 1; i < pts.length; i++) S.push(S[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
+    route.smooth = { pts, S, first };
+    return route.smooth;
+  },
+  // the point of a smoothed route (smoothRoute) nearest to (x, z) among its points from index i0
+  // to i1: { x, z, s } (s: the distance along it)
+  nearestOn(sm, x, z, i0, i1) {
+    const P = sm.pts;
+    let best = null, bd = Infinity;
+    for (let i = Math.max(0, i0); i < Math.min(P.length - 1, i1); i++) {
+      const p = P[i], q = P[i + 1], dx = q.x - p.x, dz = q.z - p.z, l2 = dx * dx + dz * dz || 1;
+      const u = clamp(((x - p.x) * dx + (z - p.z) * dz) / l2, 0, 1);
+      const cx = p.x + dx * u, cz = p.z + dz * u, d = (cx - x) * (cx - x) + (cz - z) * (cz - z);
+      if (d < bd) { bd = d; best = { x: cx, z: cz, s: sm.S[i] + u * (sm.S[i + 1] - sm.S[i]) }; }
+    }
+    return best || { x: P[0].x, z: P[0].z, s: 0 };
+  },
+
   // Where am I on this route, and where do I steer next? `look` (metres) adds a carrot: the
   // point that far ahead along the route line, so following it keeps you on the line.
   // The leg you are on is remembered on the route (route.seg) and moves on in order: onto the
@@ -696,6 +734,13 @@ const World = {
       while (i < lens.length - 1 && s > lens[i]) { s -= lens[i]; i++; }
       const f = clamp(s / (lens[i] || 1), 0, 1);
       carrot = { x: lerp(route[i].x, route[i + 1].x, f), z: lerp(route[i].z, route[i + 1].z, f) };
+      // on the curve where the corner has one (the fillet's arc), so the arrow and the first
+      // officer steering for it go round it, not to the corner and across
+      if (a && a.filletsAt) {
+        const sm = this.smoothRoute(a, route), fi = sm.first;
+        const c = this.nearestOn(sm, carrot.x, carrot.z, fi[i], (fi[i + 2] !== undefined ? fi[i + 2] : sm.pts.length) + 1);
+        carrot = { x: c.x, z: c.z };
+      }
     }
     return {
       carrot,
