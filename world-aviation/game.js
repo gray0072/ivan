@@ -1382,6 +1382,15 @@ const Game = {
   updateCine(dt) {
     if (Cinematic.update(dt)) { this.endCine(); return; }
     const sh = Cinematic.shot;
+    // the outro holds the whole aeroplane while the ground crew comes: the debrief once they are
+    // done (or a tap, or CINEMATIC.OUTRO_HOLD_S); the hint says the tap brings the results
+    if (sh.kind === 'outro' && sh.t >= sh.dur) {
+      if (typeof Turnaround3D !== 'undefined' && Turnaround3D.done()) { this.endCine(); return; }
+      if (!sh.held) {
+        sh.held = true;
+        el('cineSkip').innerHTML = Input.isCoarse ? esc(tr('Tap for the results')) : esc(tr('The results')) + ' <kbd>Enter</kbd>';
+      }
+    }
     el('cine').classList.toggle('bars', !Cinematic.inside());
     const cap = sh.kind === 'intro' ? sh.t > 0.6 && sh.t < CINEMATIC.CAPTION_S : sh.t > sh.inT1 + 0.8;
     el('cineCaption').classList.toggle('on', cap);

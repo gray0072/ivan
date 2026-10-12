@@ -1570,6 +1570,8 @@ const TEXT_SV = {
   'ALT': 'HÖJD',
   'TURN': 'SVÄNG',
   'V/S': 'V/S',
+  'Tap for the results': 'Tryck för resultatet',
+  'The results': 'Resultatet',
   'TURN L': 'V',
   'TURN R': 'H',
   'VSI UP': 'UPP',

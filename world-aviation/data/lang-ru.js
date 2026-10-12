@@ -1570,6 +1570,8 @@ const TEXT_RU = {
   'ALT': 'ВЫСОТА',
   'TURN': 'ПОВОРОТ',
   'V/S': 'ВАР',
+  'Tap for the results': 'Нажмите, чтобы увидеть итоги',
+  'The results': 'Итоги',
   'TURN L': 'Л',
   'TURN R': 'П',
   'VSI UP': 'ВВЕРХ',

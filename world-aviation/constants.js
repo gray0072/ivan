@@ -1290,10 +1290,19 @@ const VIEW = {
 // at its gate, then the debrief. Enter, Space, Esc or a tap skips it.
 const CINEMATIC = {
   INTRO_S: 6.5,                // the fly-in, seconds (the last tenth inside the cockpit)
-  OUTRO_S: 5.5,                // the fly-out ...
-  OUTRO_HOLD_S: 1.2,           // ... and how long its last shot holds before the debrief
+  OUTRO_S: 5.5,                // the fly-out, out to a shot of the whole aeroplane from behind and above, three quarters on ...
+  OUTRO_HOLD_S: 30,            // ... held while the ground crew comes (Turnaround3D) until they are done, a tap or this long
+  OUTRO_ELEV_DEG: 30,          // that shot: the camera this high above the aeroplane's middle ...
+  OUTRO_AZ_DEG: 40,            // ... this far round from straight behind (on the right, where the ground crew works)
+  OUTRO_FIT: 0.62,             // ... and far enough for this share of the aeroplane's biggest size to fill half the narrower view,
+  OUTRO_PAD_M: 24,             // ... and this much further (a small aeroplane's ground crew in the picture too)
   CAPTION_S: 4.2               // the route under the intro's picture: shown this long
 };
+
+// The ground crew at the arrival stand once the engines are off (render/turnaround3d.js): they
+// drive at SPEED_K times a baggage train's speed, from FROM_M along the service road, down beside
+// the aeroplane OUT_M out from the fuselage, one every STAGGER_S; done LINGER_S after the last is there
+const TURNAROUND = { SPEED_K: 2.2, FROM_M: 170, OUT_M: 22, STAGGER_S: 2.5, LINGER_S: 4 };
 
 // A look round an airport from the briefing (free): the camera flies in on the approach, low
 // down the runway, round over the terminal and down to the own aeroplane at its stand (or the

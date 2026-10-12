@@ -869,6 +869,8 @@ const Scene3D = {
       }
       if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis, own);
       Responders3D.update(rec, fl, rec.a.id === fl.arrival.id ? this.arrivalGate : null, this.time, dark);
+      // (the ground crew coming to the own aeroplane once it is parked: turnaround3d.js)
+      Turnaround3D.update(rec, fl, rec.a.id === fl.arrival.id ? this.arrivalGate : null, this.time);
       // (coming home from round the world: the fire engines' water arch, salute3d.js)
       Salute3D.update(rec, fl, this.salute, this.time, dark);
       // (the van, the pickup or the ambulance for the load at a GA stand: ga3d.js)

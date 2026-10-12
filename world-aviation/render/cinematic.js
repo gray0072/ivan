@@ -51,9 +51,15 @@ const Cinematic = {
     // (or across to the runway, which runs off to the right of the holding point)
     const behind = (deg, r, y) => [s * Math.sin(deg * DEG) * r, y, -Math.cos(deg * DEG) * r];
     const wideLook = atRunway ? [Z * 0.3, 0, L * 0.5 + 45] : [0, 2, L * 0.5 + 15];
+    // (the outro ends on the whole aeroplane in the middle of the picture, from behind and above,
+    // three quarters on, far enough for it to fit the narrower side of the view)
+    const aspect = typeof window !== 'undefined' && window.innerHeight ? window.innerWidth / window.innerHeight : 1.6;
+    const half = Math.min(25 * DEG, Math.atan(Math.tan(25 * DEG) * aspect));
+    const far = Z * CINEMATIC.OUTRO_FIT / Math.tan(half) + CINEMATIC.OUTRO_PAD_M, el = CINEMATIC.OUTRO_ELEV_DEG * DEG;
     const keys = [
       // eye, look, field of view
-      [...behind(40, Z * 1.9 + 50, Z * 0.8 + 25), ...wideLook, 50],
+      intro ? [...behind(40, Z * 1.9 + 50, Z * 0.8 + 25), ...wideLook, 50]
+        : [...behind(CINEMATIC.OUTRO_AZ_DEG, far * Math.cos(el), far * Math.sin(el) + R), 0, R * 0.6, 0, 50],
       [...behind(16, Z * 0.95 + 18, Z * 0.42 + 10), 0, R, L * 0.45, 54],
       [s * Z * 0.08, R * 2.9 + L * 0.1 + 3, -L * 0.62, E[0], E[1], E[2] + L * 1.2, 62],   // over the tail fin
       [E[0], R + L * 0.05 + 1, E[2] - L * 0.16, ...F, 66],                                  // just above the roof
