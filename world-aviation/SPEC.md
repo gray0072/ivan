@@ -577,7 +577,7 @@ world-aviation/
 │   ├── gfx-bench.js        what the 3D picture costs by layer, by day and by night at both ends (a tools/cdp.js steps file)
 │   └── gfx-probe.js        the in-page probe it injects (draw calls, triangles, fill per layer); pastes into a phone's console too
 ├── README.md / README_RU.md / README_SV.md
-├── docs/                   instrument screenshots for the READMEs (English UI): the panel and each gauge
+├── docs/                   pictures for the READMEs (English UI): the panel and each gauge, and an airport from the air
 ├── icon.svg / icon-maskable.svg
 ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 ├── manifest.webmanifest
