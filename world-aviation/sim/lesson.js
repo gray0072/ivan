@@ -74,7 +74,7 @@ const Lesson = {
   start(def, fl) {
     const attempt = (this.tries[def.id] || 0) + 1;
     this.tries[def.id] = attempt;
-    this.cur = { def, attempt, i: 0, okT: 0, lookT: 0, t: 0, passed: false, state: def.steps.map(() => '') };
+    this.cur = { def, attempt, i: 0, okT: 0, lookT: 0, t: 0, passed: false, state: def.steps.map(() => ''), views: {} };
     fl.lesson = def.id;
     fl.assist = this.assist();
     return this.cur;
@@ -107,6 +107,7 @@ const Lesson = {
     if (!L || L.passed) return '';
     const steps = L.def.steps;
     L.t += dtReal;
+    L.views[game.camMode] = true;           // (the views seen: the graduation's steps)
     const ctx = { game, fl: game.flight, sys: game.systems, L };
     // later steps done already: ticked; a milestone passes everything before it
     for (let j = L.i + 1; j < steps.length; j++) {
@@ -185,7 +186,25 @@ const Lesson = {
     slowed: ({ fl }) => !!fl.landed && fl.st.onGround && fl.groundSpeedKt() < SIM.ROLLOUT_EXIT_KT,
     spoilerOut: ({ fl }) => !!fl.landed && fl.st.spoiler > 0,
     copilotOn: ({ fl }) => !!(fl.copilot && fl.copilot.on),
-    parked: ({ fl }) => fl.phase === 'SHUTDOWN' || fl.phase === 'PARKED'
+    parked: ({ fl }) => fl.phase === 'SHUTDOWN' || fl.phase === 'PARKED',
+    viewChase: ({ L }) => !!L.views.chase,
+    viewTop: ({ L }) => !!L.views.top,
+    viewTower: ({ L }) => !!L.views.tower,
+    viewBack: ({ game, L }) => !!L.views.tower && game.camMode === 'cockpit',
+    underArch: (ctx) => Lesson.underArch(ctx),
+    topAtStand: ({ game, fl }) => game.camMode === 'top' && Lesson.phaseAt(fl, 'EXIT')
+  },
+  // through the water arch (the graduation's salute, Guidance.longestRun on the route to the stand
+  // as it was planned off the runway): more than half the aeroplane's length past its middle; with
+  // no arch on the way, as soon as the taxi in begins
+  underArch({ game, fl, L }) {
+    if (Lesson.phaseAt(fl, 'SHUTDOWN')) return true;
+    if (fl.phase !== 'EXIT' || !game.arrivalRoute) return false;
+    if (L.arch === undefined) L.arch = Guidance.longestRun(game.arrivalRoute);
+    const sp = L.arch;
+    if (!sp) return true;
+    const loc = World.local(fl.arrival, fl.st.pos.x, fl.st.pos.z);
+    return (loc.t - sp.t) * sp.dt + (loc.across - sp.across) * sp.da > fl.dims.len * 0.5;
   },
   // the phase is p or one after it
   phaseAt(fl, p) { return LESSON_PHASES.indexOf(fl.phase) >= LESSON_PHASES.indexOf(p); },

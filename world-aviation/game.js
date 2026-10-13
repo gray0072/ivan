@@ -828,6 +828,11 @@ const Game = {
       Scene3D.salute = { route: this.arrivalRoute };
       HUD.showBanner('🌐 ' + tr('Welcome home — round the world! The fire engines greet you with a water arch.'), 'rtw', RTW.BANNER_MS);
     }
+    // the flight school's graduation flight: the same arch for the new pilot
+    if (this.lesson && this.lesson.def.salute) {
+      Scene3D.salute = { route: this.arrivalRoute };
+      HUD.showBanner('🎓 ' + tr('Graduation! The fire engines greet you with a water arch.'), 'rtw', RTW.BANNER_MS);
+    }
     fl.info(tr(fl.followMe ? 'Ground: welcome to {id} — a FOLLOW ME car waits past the exit and leads you to {gate}'
       : 'Leave the runway at the next exit and taxi to {gate}', { id: a.id, gate: gateName(this.arrivalGate) }));
   },

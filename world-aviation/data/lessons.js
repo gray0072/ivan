@@ -5,8 +5,9 @@
 // them, ui/coach.js shows their steps in the flight, ui/school.js
 // lists them). Three stages, an aircraft each: a light turboprop,
 // a medium jet, a heavy jet. Each lesson is one small job with a
-// quick success — a taxi, a take-off, a landing — and the last one
-// is a whole flight. Plain declarations: the steps' `done` names a
+// quick success — a taxi, a take-off, a landing — then a whole
+// flight, and the last one, the graduation, a landing with the
+// camera views. Plain declarations: the steps' `done` names a
 // test in Lesson.DONE, `hi` the controls and the instruments the
 // coach lights up while the step is the current one:
 //   instruments (ui/instruments.js): asi adi ra alt vsi tc hsi engines
@@ -16,7 +17,11 @@
 // A step with `look` only shows something: it moves on after
 // SCHOOL.LOOK_S, or as soon as the next step is already done.
 // Texts are English, shown through tr(); `textUp` is the text when
-// the nose goes up with ↑ (settings.noseUp).
+// the nose goes up with ↑ (settings.noseUp), `textTouch` / `whyTouch`
+// the ones on a touch screen (where only C has a button: View).
+// A lesson's `copilot` lets the first officer taxi in, `salute`
+// greets it with the fire engines' water arch past the runway exit,
+// `finale` (the last one) ends it with the fireworks and the diploma.
 // ============================================================
 
 const SCHOOL_STAGES = [
@@ -25,7 +30,7 @@ const SCHOOL_STAGES = [
   { id: 'medium', name: 'Medium aircraft', aircraft: 'A320',
     blurb: 'An airliner: the engines, the push back, the autopilot and the ILS.' },
   { id: 'heavy', name: 'Heavy aircraft', aircraft: 'B77W',
-    blurb: 'A Boeing 777 from the runway to the stand, with a first officer beside you.' }
+    blurb: 'A Boeing 777 from the runway to the stand with a first officer beside you, then the graduation flight: every camera, a water salute and the diploma.' }
 ];
 
 const LESSONS = [
@@ -263,6 +268,57 @@ const LESSONS = [
         done: 'copilotOn', hi: ['btn:starter'] },
       { id: 'park', text: 'Your controls: straight on, stop on the stop bar, parking brake <kbd>Space</kbd>',
         why: 'Stop in the parking box at your stand: the prompt counts the metres down.',
+        done: 'parked', hi: ['btn:parkBrake', 'btn:brake', 'cfg:brakes'] }
+    ]
+  },
+  {
+    // the school's last lesson: the landing on a short final, the views on the way down (C goes
+    // once round them all: chase … top down … tower, then the cockpit again), the first officer
+    // taxiing through the fire engines' water arch, the stand from above, then the diploma
+    id: 'graduation', stage: 'heavy', title: 'Graduation flight', minutes: 5,
+    goal: 'Land the Boeing 777 at Arlanda, look at it from every camera on the way down, and park at the stand from above.',
+    from: 'GOT', to: 'ARN', start: 'final', startNm: 5, config: 'landing', noGoAround: true,
+    assist: { lateral: true, ground: true }, copilot: true, salute: true, finale: true,
+    learn: ['The views', 'Chase view', 'Top-down view', 'Tower view', 'A heavy landing', 'The first officer', 'Parking from above'],
+    steps: [
+      { id: 'chase', text: 'The autopilot flies the ILS: look at your aeroplane from outside — <kbd>C</kbd>',
+        why: '<kbd>C</kbd> shows the next view, its name at the bottom of the screen; <kbd>X</kbd> goes back, <kbd>Z</kbd> straight to the cockpit.',
+        whyTouch: 'Each tap on <kbd>C</kbd> shows the next view, its name at the bottom of the screen.',
+        done: 'viewChase', hi: ['btn:camera'] },
+      { id: 'top', text: 'On through the views to the one from above — <kbd>C</kbd> until “top down”',
+        why: 'On the way: from the front, from the wing, from the tail fin, at the landing gear — the wheels are down. From above, the runway lies straight ahead.',
+        done: 'viewTop', hi: ['btn:camera'] },
+      { id: 'tower', text: 'Two more — <kbd>C</kbd> to the tower view',
+        why: 'Past the camera under the belly: the controllers\' view. It stands on the control tower and follows you down the final.',
+        done: 'viewTower', hi: ['btn:camera'] },
+      { id: 'watch', text: 'Watch your approach the way the tower sees it',
+        why: 'A big jet on the final, gear and flaps down, the runway waiting: every arrival looks like this from the tower.',
+        look: true, hi: [] },
+      { id: 'cockpit', text: 'Back to the cockpit for the landing — <kbd>C</kbd> once more, or <kbd>Z</kbd>',
+        textTouch: 'Back to the cockpit for the landing — <kbd>C</kbd> once more',
+        why: 'After the tower the views begin again with the cockpit. Land from your seat: the runway and the instruments are there.',
+        done: 'viewBack', hi: ['btn:camera'] },
+      { id: 'minimums', text: 'At {floor} ft the autopilot lets go — then the nose is yours',
+        why: 'A heavy reacts slowly: small, early corrections.',
+        done: 'apOff', hi: ['ra', 'adi'] },
+      { id: 'flare', text: 'At 40 ft: idle <kbd>0</kbd>, raise the nose a little — <kbd>↓</kbd>', textUp: 'At 40 ft: idle <kbd>0</kbd>, raise the nose a little — <kbd>↑</kbd>',
+        why: 'A heavy sinks fast: start the flare a little higher than in the small one.',
+        done: 'touchdown', hi: ['ra', 'btn:throttle', 'btn:stick'] },
+      { id: 'rollout', text: 'Spoiler <kbd>/</kbd> and brakes <kbd>B</kbd> — slow below 35 kt',
+        why: 'Then leave the runway.',
+        done: 'slowed', hi: ['btn:spoiler', 'btn:brake', 'cfg:spoiler'] },
+      { id: 'copilot', text: 'Let the first officer taxi — <kbd>Enter</kbd>',
+        why: 'Now there is time for the views again: the first officer drives to the stand with the time at x4.',
+        done: 'copilotOn', hi: ['btn:starter'] },
+      { id: 'salute', text: 'A water salute for your graduation! Watch it from outside — <kbd>C</kbd>',
+        why: 'Two fire engines throw an arch of water over your way, as airports greet a special arrival. The chase view or the tower shows it best.',
+        done: 'underArch', hi: ['btn:camera'] },
+      { id: 'topIn', text: 'To the stand from above — <kbd>C</kbd> or <kbd>X</kbd> to “top down”',
+        textTouch: 'To the stand from above — <kbd>C</kbd> until “top down”',
+        why: 'From above the taxi lines, the turn into the stand and the stop bar lie below you like a map.',
+        done: 'topAtStand', hi: ['btn:camera'] },
+      { id: 'park', text: 'Your controls: from above, straight on to the stop bar, parking brake <kbd>Space</kbd>',
+        why: 'The first officer hands over just before the stand. From above the stop bar is easy to see; the prompt counts the metres down.',
         done: 'parked', hi: ['btn:parkBrake', 'btn:brake', 'cfg:brakes'] }
     ]
   }

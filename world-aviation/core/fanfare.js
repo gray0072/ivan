@@ -10,7 +10,8 @@
 //   Fanfare.snap()   a part locking into its place: a heavy clunk
 //                    and a ring of metal
 //   Fanfare.buy()    a part bought: a soft till chime
-// Used by ui/mriya.js.
+// Used by ui/mriya.js; the fanfare also by ui/rtw.js (round the world
+// done) and ui/school.js (the flight school's graduation).
 // ============================================================
 
 const Fanfare = {

@@ -6,7 +6,9 @@
 // that fall and fade, with a flash at every burst. A canvas laid over
 // everything that lets every touch and click through; it removes
 // itself when the last spark is gone. Used by the Mriya's assembly
-// hall when its fiftieth part is fitted (ui/mriya.js).
+// hall when its fiftieth part is fitted (ui/mriya.js), the finish of
+// a flight round the world (ui/rtw.js) and the flight school's
+// graduation (ui/school.js).
 // ============================================================
 
 const Fireworks = {

@@ -2070,3 +2070,17 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
   border: 1px solid rgba(255, 217, 122, 0.25); border-radius: 10px; background: #1a1c16; color: #e7dfc2; font-size: 13px; }
 .schoolLine.big { padding: 10px 12px; }
 .schoolLine small { color: #a9b8c6; }
+/* the graduation's diploma: a cream sheet in a gold frame, the seal on top */
+.diploma { position: relative; margin: 22px auto 12px; max-width: 460px; padding: 26px 22px 14px; text-align: center;
+  border: 2px solid #c9a24a; border-radius: 6px; outline: 1px solid #c9a24a; outline-offset: -8px;
+  background: radial-gradient(ellipse at 50% 0%, #fffaf0, #f3e6c8); color: #3a2f1c; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45); }
+.dipSeal { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); display: grid; place-content: center;
+  width: 40px; height: 40px; border-radius: 50%; background: #2b2a1c; box-shadow: 0 0 0 2px #e0bb5a; font-size: 21px; }
+.diploma small { display: block; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: #8a6d2c; }
+.diploma h2 { margin: 2px 0 6px; font-family: Georgia, 'Times New Roman', serif; font-size: 30px; letter-spacing: 3px; color: #6b4e16; }
+.diploma p { margin: 4px 0; font-size: 13px; line-height: 1.45; color: #5a4a2c; }
+.dipName { display: block; margin: 4px 0; font-family: Georgia, 'Times New Roman', serif; font-size: 24px; font-style: italic; color: #2a2010; }
+.dipLessons { display: flex; flex-wrap: wrap; justify-content: center; gap: 3px 6px; margin: 10px 0 12px; padding: 0; list-style: none; }
+.dipLessons li { padding: 1px 8px; border-radius: 9px; background: rgba(201, 162, 74, 0.18); color: #4f6b2c; font-size: 11.5px; }
+.dipFoot { display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid rgba(140, 110, 50, 0.35);
+  font-size: 11.5px; color: #7a6538; }

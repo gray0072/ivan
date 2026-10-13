@@ -10,7 +10,9 @@
 //     minutes and Start / Again;
 //   a lesson's result — passed: what it taught, the touchdown if it
 //     landed, Next lesson; failed: why, a tip, and the help the next
-//     try brings, Try again.
+//     try brings, Try again; the graduation flight passed: the
+//     fanfare, the fireworks and the diploma (core/fanfare.js,
+//     ui/fireworks.js).
 // Used by ui/ui.js (the tabs, UI.action) and game.js (Game.endLesson).
 // ============================================================
 
@@ -23,7 +25,7 @@ const School = {
     const allDone = n >= all;
     const hero = '<div class="schoolHero">' +
       '<div class="schoolTop"><span class="schoolBadge">🎓</span><div><h3>' + tr('Flight school') + '</h3>' +
-      '<p>' + tr('Six short lessons in the simulator, from the first taxi to a whole flight in a Boeing 777. Each is one small job of a few minutes; the instructor shows you the buttons and the instruments one at a time, and helps more if a try goes wrong. Free — nothing in your career changes.') + '</p></div></div>' +
+      '<p>' + tr('Seven short lessons in the simulator, from the first taxi to a whole flight in a Boeing 777 and a graduation flight with every camera. Each is one small job of a few minutes; the instructor shows you the buttons and the instruments one at a time, and helps more if a try goes wrong. Free — nothing in your career changes.') + '</p></div></div>' +
       '<div class="schoolProg"><span class="schoolBar" style="--p:' + Math.round(n / all * 100) + '%"><i></i></span>' +
       '<span>' + tr('{n} of {m} lessons passed', { n, m: all }) + '</span></div>' +
       '<div class="btnRow">' +
@@ -64,7 +66,7 @@ const School = {
   // the Training tab's card for it: always there, the lessons can be flown again
   trainingCard() {
     const n = Career.schoolCount(), all = LESSONS.length;
-    return '<div class="schoolLine big"><span><b>🎓 ' + tr('Flight school') + '</b> · ' + tr('free lessons in the simulator: taxi, take-off, landing, the autopilot, a whole flight') +
+    return '<div class="schoolLine big"><span><b>🎓 ' + tr('Flight school') + '</b> · ' + tr('free lessons in the simulator: taxi, take-off, landing, the autopilot, a whole flight, the camera views') +
       '<br><small>' + tr('{n} of {m} lessons passed', { n, m: all }) + '</small></span>' +
       '<button class="btn small" data-act="schoolOpen">' + tr('Open') + '</button></div>';
   },
@@ -84,6 +86,7 @@ const School = {
         graded +
         '<h3>' + tr('What you have learned') + '</h3><ul class="unlocks">' + def.learn.map((x) => unlockLine(true, tr(x))).join('') + '</ul>' +
         (r.cheated ? '<p class="need">' + tr('Cheats used — the lesson is not counted') + '</p>' : '') +
+        (def.finale ? this.diploma(r) : '') +
         (allDone && r.first ? '<p class="repGain">🎓 <b>' + tr('Flight school passed!') + '</b> ' + tr('You know every button and every instrument. Time for real flights: the contract board is waiting.') + '</p>' : '') +
         '<div class="btnRow">' +
         (next ? '<button class="btn default fwd" data-act="lesson" data-v="' + next.id + '">' + tr('Lesson {n}: {title}', { n: num + 1, title: esc(tr(next.title)) }) + '</button>'
@@ -102,6 +105,25 @@ const School = {
         '<button class="btn back" data-act="schoolOpen" data-esc>' + tr('The flight school') + '</button></div>';
     }
     UI.panel(body, 'debrief');
+    // the graduation flight passed: the fanfare and the fireworks
+    if (r.ok && def.finale) { Fanfare.play(); Fireworks.start(9); }
+  },
+  // the graduation's diploma: the pilot's name, every lesson ticked, the date — once the whole
+  // school is passed (not with cheats); before that, how many lessons are still to pass for it
+  diploma(r) {
+    const n = Career.schoolCount(), all = LESSONS.length;
+    if (r.cheated) return '';
+    if (n < all) return '<p class="repGain">🎓 ' + tr('Pass every lesson for the diploma: {n} of {m} so far.', { n, m: all }) + '</p>';
+    const lang = I18N.lang === 'sv' ? 'sv-SE' : I18N.lang === 'ru' ? 'ru-RU' : 'en-GB';
+    const date = new Date().toLocaleDateString(lang, { day: 'numeric', month: 'long', year: 'numeric' });
+    return '<div class="diploma"><span class="dipSeal">🎓</span>' +
+      '<small>' + tr('World Aviation · Flight school') + '</small>' +
+      '<h2>' + tr('Diploma') + '</h2>' +
+      '<p>' + tr('This is to certify that') + '</p>' +
+      '<b class="dipName">' + esc(Career.data.pilot.name) + '</b>' +
+      '<p>' + tr('has learned to fly — from the first taxi to the landing of a heavy jet — and may take the controls of a real airliner.') + '</p>' +
+      '<ul class="dipLessons">' + LESSONS.map((l) => '<li>✓ ' + esc(tr(l.title)) + '</li>').join('') + '</ul>' +
+      '<div class="dipFoot"><span>' + esc(date) + '</span><span>✈ ' + tr('The instructor') + '</span></div></div>';
   },
   // what to do better, by what went wrong (the flight's failure kind)
   tip(kind) {
@@ -118,7 +140,7 @@ const School = {
   // ---------- the buttons (UI.action) ----------
   action(name, v) {
     switch (name) {
-      case 'lesson': enterFullscreen(); Game.startLesson(v); break;
+      case 'lesson': Fireworks.stop(); enterFullscreen(); Game.startLesson(v); break;
       case 'schoolSkip': Career.skipSchool(); UI.school = false; UI.showOps(); break;
       case 'schoolOpen': UI.school = true; UI.tab = 'dispatch'; UI.loading(() => UI.showOps()); break;
       // (a new career's board is the school itself until it is skipped or passed)

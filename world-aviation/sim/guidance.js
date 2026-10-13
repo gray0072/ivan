@@ -141,5 +141,21 @@ const Guidance = {
     if (!best) return null;
     const r = World.findRoute(a, best, dest, [fx, fz]);
     return r.length > 1 || best === dest ? r : null;
+  },
+
+  // the middle of a taxi route's longest straight run off the runway, the apron and the stand, in
+  // the airport's frame (t along the runway, across towards the terminal), and its direction (dt,
+  // da) — where the fire engines stand for a water salute (render/salute3d.js; the flight school's
+  // graduation flight, sim/lesson.js, counts the aeroplane through it); null: no such run
+  longestRun(route) {
+    let best = null;
+    for (let i = 0; route && i + 1 < route.length; i++) {
+      const n1 = route[i], n2 = route[i + 1];
+      const e = n1.edges.find((x) => x.to === n2);
+      if (!e || e.kind === 'runway' || e.kind === 'apron' || e.kind === 'stand') continue;
+      const len = Math.hypot(n2.t - n1.t, n2.across - n1.across);
+      if (len > 60 && (!best || len > best.len)) best = { len, t: (n1.t + n2.t) / 2, across: (n1.across + n2.across) / 2, dt: (n2.t - n1.t) / len, da: (n2.across - n1.across) / len };
+    }
+    return best;
   }
 };

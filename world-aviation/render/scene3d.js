@@ -638,7 +638,7 @@ const Scene3D = {
         look = pos;
         up = new THREE.Vector3(0, 1, 0);
         const dist = Math.max(1, eye.distanceTo(pos));
-        fov = clamp(2 * Math.atan(S * 1.3 / dist) / DEG, 5, 60);
+        fov = clamp(2 * Math.atan(S * 1.3 / dist) / DEG, VIEW.TOWER_MIN_FOV_DEG, 60);
         break;
       }
       default: {          // the cockpit

@@ -49,9 +49,10 @@ const Coach = {
   },
 
   // the text of a step, in the game's language, with its numbers and keys (on a touch screen
-  // the buttons' names instead of the keys)
+  // the buttons' names instead of the keys, or its own text for one: textTouch, whyTouch)
   text(s, p, why) {
-    const t = why ? s.why : (Input.invertPitch && s.textUp) || s.text;
+    const touch = Input.isCoarse;
+    const t = why ? (touch && s.whyTouch) || s.why : (touch && s.textTouch) || (Input.invertPitch && s.textUp) || s.text;
     if (!t) return '';
     const html = Units.text(tr(t, p));
     return Input.isCoarse ? touchPrompt(html) : html;

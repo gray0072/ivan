@@ -1341,6 +1341,9 @@ const VIEW = {
   // random length in the range), from the nearest tower within TOWER_M, en route the fly-by shots
   // in this ORDER; a pass only while the aeroplane flies at most PASS_MAX_M in half a shot
   FLYBY: { SHOT_S: [3, 5], TOWER_M: 14000, PASS_MAX_M: 3000, ORDER: ['pass', 'lead', 'side', 'trail'] },
+  // the tower view zooms in on the aeroplane (its span about 3/4 of the picture's height) down to
+  // this field of view, degrees: a telephoto, so a jet on a 5 nm final still fills a good part of it
+  TOWER_MIN_FOV_DEG: 1.8,
   // the taxi arrow lies on the ground as the camera sees it (HUD.groundArrow): tilted back by
   // the camera's look at the ground, at most this far (degrees: 90 would be edge-on), in a
   // perspective this deep (px; less is a stronger 3D look)

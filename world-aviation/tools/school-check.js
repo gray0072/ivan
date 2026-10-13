@@ -164,6 +164,10 @@ const fly = vm.runInContext(`(function (id, pilot, attempt, verbose) {
         }
       }
     }
+    // the views (the graduation): C until the step is done; to the stand from above, X
+    if (s && /^view/.test(s.done) && !Lesson.met(s, { game: Game, fl, sys, L: Lesson.cur })) press('camera', 1);
+    else if (k === 'underArch' && Game.camMode === 'cockpit') press('camera', 1);
+    else if (k === 'topAtStand' && Game.camMode !== 'top') press('camera', -1);
     Game.frame(dt);
     if (globalThis.TRACE && f % 10 === 0 && (fl.phase === 'TAKEOFF' || !st.onGround || st.wasAirborne) && agl < globalThis.TRACE) {
       log(fl.phase + ' agl ' + agl.toFixed(0) + ' ft, ias ' + ias.toFixed(0) + ' kt, vs ' + Math.round(st.vel.y / FPM) + ' fpm, pitch ' +

@@ -2,7 +2,8 @@
 
 // ============================================================
 // World Aviation — the water salute at the end of a flight round the
-// world (three.js): as the aeroplane comes home off the runway, two
+// world and of the flight school's graduation flight (three.js): as
+// the aeroplane comes home off the runway, two
 // airport fire engines stand either side of its way to the stand and
 // throw an arch of water over it, as airports greet a special
 // arrival.
@@ -10,15 +11,17 @@
 //   - where: on the longest straight run of the arrival's taxi route
 //     that is neither the runway, the apron lane nor the stand (most
 //     often the rapid exit between the runway and the taxiway, with
-//     grass on both sides), at its middle; the engines face the line,
-//     each half the span and SALUTE_CLEAR further out
+//     grass on both sides), at its middle (Guidance.longestRun); the
+//     engines face the line, each half the span and SALUTE_CLEAR
+//     further out
 //   - the water: two jets of spray points from the roof monitors, each
 //     a parabola over the line to the far side, rising higher than the
 //     fin, streaming and widening as it falls
 //
 // Built into the arrival airport's frame (Airport3D's rec.frame,
 // x = across, z = -t) while Scene3D.salute is set (game.js: the last
-// leg of an expedition, from the runway exit on). Used by
+// leg of an expedition and the graduation flight, from the runway
+// exit on). Used by
 // Scene3D.update.
 // ============================================================
 
@@ -40,22 +43,9 @@ const Salute3D = {
     this.spray(rec.salute, time, dark);
   },
 
-  // the spot: the middle of the route's longest run off the runway, the apron and the stand, in
-  // the airport's frame (t along the runway, across towards the terminal), and its direction
-  spot(route) {
-    let best = null;
-    for (let i = 0; i + 1 < route.length; i++) {
-      const n1 = route[i], n2 = route[i + 1];
-      const e = n1.edges.find((x) => x.to === n2);
-      if (!e || e.kind === 'runway' || e.kind === 'apron' || e.kind === 'stand') continue;
-      const len = Math.hypot(n2.t - n1.t, n2.across - n1.across);
-      if (len > 60 && (!best || len > best.len)) best = { len, t: (n1.t + n2.t) / 2, across: (n1.across + n2.across) / 2, dt: (n2.t - n1.t) / len, da: (n2.across - n1.across) / len };
-    }
-    return best;
-  },
-
   build(rec, fl, src) {
-    const sp = this.spot(src.route);
+    // the spot: the middle of the route's longest run off the runway, the apron and the stand
+    const sp = Guidance.longestRun(src.route);
     if (!sp) return null;
     const half = fl.dims.span / 2 + SALUTE_CLEAR;
     const apex = Math.max(18, 12 + fl.dims.len * 0.22);
