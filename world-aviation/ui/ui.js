@@ -1112,7 +1112,7 @@ const UI = {
         : arrowsHtml(tr('Flight complete · {from} → {to}', { from: result.contract.fromId, to: result.contract.toId }))) + '</div>' +
       '</div>' +
       (failed ? '' :
-        '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(landed) +
+        '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(landed) + LandingJoke.html(result, failed) +
         '</div><div><h3>' + tr('In the log') + '</h3><ul class="unlocks">' +
         '<li>' + tr('Block time {b} · real time {r}', { b: fmtTime(result.blockSec), r: fmtTime(result.realSec) }) + '</li>' +
         '<li>' + tr('Fuel used {kg} kg (plan {p} kg)', { kg: Math.round(result.fuelUsed), p: result.contract.fuelKg }) + '</li>' +

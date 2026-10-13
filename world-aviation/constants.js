@@ -168,6 +168,22 @@ const SIM = {
 // surface hard; a bounce within BOUNCE_S seconds of the graded touchdown gets a "whoa"
 const CABIN_REACTION = { OVATION_FPM: 100, APPLAUSE_FPM: 200, POLITE_FPM: 320, FIRM_FPM: 450, BANK_DEG: 5, BOUNCE_S: 6 };
 
+// A comic line in the debrief after a hard but successful landing (ui/landingjoke.js, the lines in
+// data/landingjokes.js): each trait of the graded touchdown is measured against its threshold —
+// the sink rate against HARD_FPM, the bank against BANK_DEG, the distance off the centreline
+// against OFFSET_M (the runway's half width is 23 m), the distance from the threshold against
+// LONG_SHARE of the runway's length but at least LONG_MIN_M; a bounce (Flight.landed.bounced)
+// counts as BOUNCE_K times its threshold. The trait furthest past its threshold picks the line;
+// none past it — no line. Never after a lost flight or a practice landing.
+const LANDING_JOKE = {
+  HARD_FPM: CABIN_REACTION.FIRM_FPM,   // fpm: past "firm", where the bins rattle
+  BOUNCE_K: 1.5,
+  BANK_DEG: CABIN_REACTION.BANK_DEG,   // degrees of bank, where the cabin takes it one worse
+  OFFSET_M: 9,                         // metres off the centreline
+  LONG_SHARE: 0.35,                    // of the runway's length ...
+  LONG_MIN_M: 600                      // ... but at least this many metres from the threshold
+};
+
 // ---------- Taxiing ----------
 // The taxi speed limits (sim/taxilimit.js), by the ground speed: on a straight taxiway, on the
 // apron lane, on a stand's lead-in, and in a turn of the taxi route by the radius of its curve
