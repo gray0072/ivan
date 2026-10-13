@@ -15,9 +15,10 @@
 //     place when let go close enough (MRIYA.SNAP_M)
 //   - the stand: the parts bought and not yet fitted
 //   - the catalogue: all fifty, cheapest first, by group, the client
-//     group whose reputation it costs and state,
-//     each with a real figure and what it is for, and its price in
-//     money and in one client group's reputation (Career.mriyaPrice)
+//     group that vouches for it and state,
+//     each with a real figure and what it is for, its price in money
+//     and the reputation it asks for with one client group, not spent
+//     (Career.mriyaPrice)
 //
 // Carrying a part: drag it from the stand onto the blueprint (mouse or
 // finger); or press it (a click, a tap, Enter) to pick it up, then move
@@ -75,7 +76,7 @@ const MriyaScreen = {
       '<h3>' + tr('On the stand') + '</h3><div class="mTray" id="mTray"></div>' +
       '</div>' +
       '<div class="mShop"><h3>' + tr('Parts') + '</h3>' +
-      '<p class="fineprint">' + tr('Each part costs money and the reputation of one client group: they vouch for you at the Antonov works. Cheapest first — start small and build up.') + '</p>' +
+      '<p class="fineprint">' + tr('Each part costs money, and one client group has to vouch for you at the Antonov works: it asks for your reputation with them, which is not spent. The cheap parts ask for little — start small and build up.') + '</p>' +
       '<div class="filterBar" id="mBar"></div><div class="mList" id="mList"></div></div>' +
       '</div>' +
       '<div class="mToast" id="mToast" hidden></div>', 'mriya');
@@ -245,7 +246,7 @@ const MriyaScreen = {
       '<div class="mPInfo"><div class="mPHead"><b>' + esc(tr(p.name)) + '</b><span class="tag">' + esc(this.groupName(p.group)) + '</span></div>' +
       '<div class="mSpec">' + esc(tr(p.spec)) + '</div><p>' + esc(tr(p.blurb)) + '</p></div>' +
       '<div class="mPBuy"><b class="mPrice">' + fmtMoney(pr.kr) + '</b>' +
-      '<span class="mRep" title="' + esc(tr('Reputation with {who}', { who: tr(f.name) })) + '"><i style="background:' + f.color + '"></i>' + fmtRep(pr.rep) + ' ' + esc(tr(f.short)) + '</span>' +
+      '<span class="mRep" title="' + esc(tr('Reputation with {who}', { who: tr(f.name) })) + '"><i style="background:' + f.color + '"></i>≥ ' + fmtRep(pr.rep) + ' ' + esc(tr(f.short)) + '</span>' +
       act + '</div></div>';
   },
 

@@ -395,9 +395,17 @@ const Career = {
   // ---------- the network: traffic rights, a region at a time ----------
   hasRegion(id) { return this.data.regions.indexOf(id) >= 0; },
   bestRep() { return Math.max(this.data.rep.pax, this.data.rep.cargo, this.data.rep.bush); },
+  totalRep() { return this.data.rep.pax + this.data.rep.cargo + this.data.rep.bush; },
+  // the best reputation among these client groups (none: any group)
+  groupRep(groups) { return groups && groups.length ? Math.max(...groups.map((g) => this.data.rep[g] || 0)) : this.bestRep(); },
+  // a region asks for `rep` with one of its `groups`, or `total` with the three together (data/airports.js)
+  regionRepOk(rg) {
+    if (rg.rep === undefined && rg.total === undefined) return true;
+    return (rg.rep !== undefined && this.groupRep(rg.groups) >= rg.rep) || (rg.total !== undefined && this.totalRep() >= rg.total);
+  },
   regionState(rg) {
     const owned = this.hasRegion(rg.id);
-    const repOk = this.bestRep() >= rg.rep, flightsOk = this.data.stats.flights >= rg.flights;
+    const repOk = this.regionRepOk(rg), flightsOk = this.data.stats.flights >= rg.flights;
     return { owned, repOk, flightsOk, available: !owned && repOk && flightsOk, afford: this.data.money >= rg.cost };
   },
   buyRegion(id) {
@@ -474,22 +482,29 @@ const Career = {
   },
 
   // ---------- the Mriya's assembly hall (data/mriya.js, ui/mriya.js) ----------
-  // The An-225 is built from fifty parts, bought at any time. A part costs money and the
-  // reputation of one client group, its share of MRIYA.PRICE_KR and MRIYA.PRICE_REP; bought, it
-  // waits on the stand until the pilot fits it on the blueprint. The fiftieth fitted, the
-  // aeroplane is theirs — to fly once every course is passed (mriyaOpen).
+  // The An-225 is built from fifty parts, bought at any time. A part costs money, its share of
+  // MRIYA.PRICE_KR, and asks for a level of the reputation of one client group (never spent: the
+  // cheaper the part, the lower the level, MRIYA.REP_MIN to REP_MAX); bought, it waits on the stand
+  // until the pilot fits it on the blueprint. The fiftieth fitted, the aeroplane is theirs — to
+  // fly once every course is passed (mriyaOpen).
   mriyaOpen() { return COURSES.every((c) => this.has(c.id)); },
   mriyaDone() { return !!(this.data && this.data.mriya && this.data.mriya.done); },
   mriyaPrice(part) {
     if (!this._mriyaSums) {
-      const sums = { kr: 0 };
-      for (const p of MRIYA_PARTS) { sums.kr += p.kr; sums[p.kind] = (sums[p.kind] || 0) + p.rep; }
+      // each part's rank by price within its group, 0 for the cheapest to 1 for the dearest
+      const sums = { kr: 0, rank: {} };
+      for (const p of MRIYA_PARTS) sums.kr += p.kr;
+      for (const kind of Object.keys(FACTIONS)) {
+        const list = MRIYA_PARTS.filter((p) => p.kind === kind).sort((a, b) => a.kr - b.kr);
+        list.forEach((p, i) => { sums.rank[p.id] = list.length > 1 ? i / (list.length - 1) : 0; });
+      }
       this._mriyaSums = sums;
     }
     const sum = this._mriyaSums;
+    const rep = MRIYA.REP_MIN + (MRIYA.REP_MAX - MRIYA.REP_MIN) * (sum.rank[part.id] || 0);
     return {
       kr: Math.max(MRIYA.ROUND_KR, Math.round(MRIYA.PRICE_KR * part.kr / sum.kr / MRIYA.ROUND_KR) * MRIYA.ROUND_KR),
-      rep: Math.max(MRIYA.ROUND_REP, Math.round(MRIYA.PRICE_REP * part.rep / sum[part.kind] / MRIYA.ROUND_REP) * MRIYA.ROUND_REP),
+      rep: Math.round(rep / MRIYA.ROUND_REP) * MRIYA.ROUND_REP,
       kind: part.kind
     };
   },
@@ -510,7 +525,6 @@ const Career = {
     if (!part || this.mriyaState(id) !== 'shop' || this.mriyaWhyNot(part)) return false;
     const pr = this.mriyaPrice(part);
     this.data.money -= pr.kr;
-    this.data.rep[pr.kind] = Math.max(0, Math.round(((this.data.rep[pr.kind] || 0) - pr.rep) * 10) / 10);
     this.data.mriya.bought.push(id);
     this.save();
     return true;
@@ -726,6 +740,8 @@ const Career = {
     if ((type === 'reefer' || type === 'fish') && !this.has('cargo3')) type = 'cargo';
     if ((type === 'pax') && ac.seats < 6) type = 'mail';
     if (forceType) type = ac.loads ? ac.loads[0] : forceType;
+    // a consignment bigger than the load's own may be (PAYLOAD.maxKg): general freight instead
+    if (PAYLOAD[type].maxKg && ac.payloadKg * 0.45 > PAYLOAD[type].maxKg) type = 'cargo';
 
     client = client || pickAirline(faction, from, to, rng, ac) || (anyClient ? rng.pick(this.mayFly(from, to, faction, ac) ||
       clientAirlines(ac).filter((al) => al.kinds.indexOf(faction) >= 0)) : null);
@@ -754,17 +770,30 @@ const Career = {
     if (payloadKg > usable) payloadKg = Math.round(usable);
 
     const pt = PAYLOAD[type];
-    let pay = distNm * CONTRACTS.BASE_PAY_PER_NM * CONTRACTS.FACTION_MULT[faction] +
-      payloadKg * pt.ratePerKg * distNm / CONTRACTS.PAYLOAD_FEE_NM;
+    const stars = this.contractStars(type, from, to, ac);
+    const fresh = this.visitsTo(to.id) === 0;
+    // the miles past CONTRACTS.TAPER_NM pay only a share: the work is the departure and the arrival
+    const payNm = Math.min(distNm, CONTRACTS.TAPER_NM) + Math.max(0, distNm - CONTRACTS.TAPER_NM) * CONTRACTS.TAPER_SHARE;
+    let pay = payNm * CONTRACTS.BASE_PAY_PER_NM * CONTRACTS.FACTION_MULT[faction] +
+      payloadKg * pt.ratePerKg * payNm / CONTRACTS.PAYLOAD_FEE_NM + ac.rent * CONTRACTS.SECTOR_FEE_H;
     if (urgent) pay *= CONTRACTS.URGENT_MULT;
     if (type === 'pax' && this.has('gen2')) pay *= 1.08;        // weather planning paid
     if (fx.mountain && (to.mountainous || from.mountainous)) pay *= 1.15;
     if (fx.turboprop && ac.engineType === 'prop' && distNm < CONTRACTS.TURBOPROP_SHORT_NM) pay *= CONTRACTS.TURBOPROP_SHORT_MULT;
     if (fx.etops && ac.engineType === 'jet' && ac.engines === 2 && distNm > CONTRACTS.ETOPS_NM) pay *= CONTRACTS.ETOPS_MULT;
+    pay *= CONTRACTS.CLASS_MULT[this.typeClass(ac)];              // the heaviest get the premium work
+    if (faction === 'bush') pay += CONTRACTS.BUSH_FEE[this.bushCourses()] * stars;   // the mission fee
+    pay *= 1 + CONTRACTS.STAR_MULT * (stars - 1);
+    if (fresh) pay *= CONTRACTS.NEW_DEST_MULT;
     pay = Math.round(pay / 10) * 10;
     // as much as the tanks and the maximum take-off weight allow
     const blockFuel = Math.min(ac.fuelCapKg, ac.mtow - ac.emptyKg - payloadKg, Math.round(fuelKg * CONTRACTS.FUEL_RESERVE_FACTOR + taxiKg));
-    const repGain = urgent ? 3.2 : (distNm > 400 ? 2.2 : 1.2) + (payloadKg / 6000);
+    // the reputation: the work (the type's class, a long leg, a new airport), not the kilograms;
+    // the catch-up makes a group the pilot has worked for little grow fast
+    const have = (this.data && this.data.rep && this.data.rep[faction]) || 0;
+    const repGain = (REP.BASE + REP.PER_CLASS * this.typeClass(ac) + (distNm > REP.LONG_NM ? REP.LONG : 0) + (fresh ? REP.NEW_DEST : 0)) *
+      (1 + CONTRACTS.STAR_MULT * (stars - 1)) * (urgent ? REP.URGENT : 1) *
+      Math.max(REP.CATCH_UP[2], REP.CATCH_UP[0] - have / REP.CATCH_UP[1]);
 
     return {
       id: from.id + '-' + to.id + '-' + type + '-' + Math.round(pay),
@@ -776,10 +805,31 @@ const Career = {
       distanceNm: Math.round(distNm),
       blockMin: Math.round(airSec / 60),
       pay, fuelKg, blockFuel, repGain: Math.round(repGain * 10) / 10,
-      difficulty: contractDifficulty(distNm, type, to),
+      difficulty: stars,
       aircraftId: ac.id
     };
   },
+
+  // the class of a type for its reputation (REP): 0 the turboprops, then the jets by their
+  // maximum take-off weight — 1 regional, 2 narrowbody, 3 widebody, 4 the heaviest
+  typeClass(ac) {
+    if (ac.engineType === 'prop') return 0;
+    const i = REP.CLASS_T.findIndex((t) => ac.mtow < t);
+    return 1 + (i < 0 ? REP.CLASS_T.length : i);
+  },
+  // the stars of a contract's difficulty, 1-5 (CONTRACTS.STAR_*): mountains at either end, an
+  // Arctic field, a runway short for the type, a remote strip, dangerous goods or a patient
+  contractStars(type, from, to, ac) {
+    let s = 1;
+    if (to.mountainous || from.mountainous) s++;
+    if (to.arctic) s++;
+    if (to.rwyLen < ac.takeoffDist * CONTRACTS.STAR_RWY_MARGIN) s++;
+    if (to.remote) s++;
+    if (type === 'hazmat' || type === 'medevac') s++;
+    return Math.min(5, s);
+  },
+  // how many of the Bush & SAR courses the pilot has passed (the mission fee of a bush flight)
+  bushCourses() { return COURSES.filter((c) => c.branch === 'bush' && this.has(c.id)).length; },
 
   // a contract on the board, or the next leg of the expedition round the world
   contractById(id) { return (this.data.contracts || []).find((c) => c.id === id) || Rtw.legById(id); },
@@ -887,47 +937,15 @@ const Career = {
       this.save();
       return { lines: [{ label: 'Cheated run — not paid', value: 0 }], total: 0, rep: 0, grade: result.grade, records: false, rtw };
     }
-    const gm = CONTRACTS.GRADE_MULT[result.grade] || 1;
-    const lines = [];
-    const base = c.pay;
-    const gradeBonus = Math.round(c.pay * (gm - 1));
-    lines.push({ label: 'Contract', value: base });
-    if (gradeBonus) lines.push({ label: 'Landing grade {g}', args: { g: result.grade }, value: gradeBonus });
-    const fullGround = !result.pushbackSkipped && !result.noClearance;
-    if (fullGround) lines.push({ label: 'Full ground procedure', value: Math.round(base * CONTRACTS.FULL_GROUND_BONUS) });
-    const tod = TIME_OF_DAY[result.timeOfDay];
-    if (tod && tod.bonus) lines.push({ label: tod.name + ' flight', value: Math.round(base * tod.bonus) });
-    // the lease runs per block hour (at least one), and the fuel burnt is paid for
-    const hours = Math.max(1, result.blockSec / 3600);
-    // (the Mriya is the pilot's own: its upkeep instead of a lease)
-    lines.push({ label: ac.legend ? 'Upkeep of your own aircraft ({ac}, {h} h)' : 'Aircraft lease ({ac}, {h} h)', args: { ac: ac.name, h: hours.toFixed(1) }, value: -Math.round(ac.rent * hours) });
-    lines.push({ label: 'Fuel burnt ({kg} kg)', args: { kg: Math.round(result.fuelUsed) }, value: -Math.round(result.fuelUsed * CONTRACTS.FUEL_RATE) });
-    if (result.damage > 0.02) {
-      const dmg = -Math.round(c.pay * result.damage * 0.7);
-      lines.push({ label: 'Repairs and downtime', value: dmg });
-    }
-    for (const comp of result.compensations || []) lines.push({ label: 'Compensation for {what}', args: { what: comp.what }, value: -comp.cost });
-    if (result.mishandled > 0) lines.push({ label: 'Checklists mishandled', value: -Math.round(c.pay * 0.1 * result.mishandled) });
-    if (result.handled > 0) lines.push({ label: 'Emergencies handled', value: Math.round(c.pay * 0.06 * result.handled) });
-    if (result.moneyFactor && result.moneyFactor < 1) {
-      lines.push({ label: 'Medical diversion costs', value: -Math.round(c.pay * (1 - result.moneyFactor)) });
-    }
-    if (result.noClearance) lines.push({ label: 'Took off without a clearance (fine)', value: -Math.round(base * SIM.NO_CLEARANCE_FINE) });
-    if (result.taxiOverspeed) lines.push({ label: 'Taxi overspeed, {v} kt (fine)', args: { v: result.taxiOverspeed }, value: -Math.round(base * SIM.TAXI_OVERSPEED_FINE) });
+    const lines = this.invoice(c, ac, result);
     // a round-the-world leg: stamped in the passport; the last one pays the expedition's reward
     const rtw = Rtw.legLanded(c, result);
     if (rtw && rtw.finish) lines.push({ label: rtw.finish.iron ? 'Iron round the world: the reward' : 'Round the world: the reward', value: rtw.finish.kr });
     const total = lines.reduce((s, l) => s + l.value, 0);
     d.money += total;
-    let rep = c.repGain * (0.6 + 0.4 * gm);
-    if (result.mishandled > 0) rep -= result.mishandled * 0.8;
-    if (fullGround) rep += CONTRACTS.FULL_GROUND_REP;
-    if (this.has('gen4')) rep += 0.5;
-    rep -= (result.repPenalty || 0) / 10;
-    rep = Math.max(0, Math.round(rep * 10) / 10);
+    const rep = this.flightRep(c, result);
     const rp = d.rep[c.faction] || 0;
     d.rep[c.faction] = clamp(Math.round((rp + rep) * 10) / 10, 0, 100);
-
     d.stats.flights++;
     d.typeFlights[ac.id] = (d.typeFlights[ac.id] || 0) + 1;
     d.visits[c.toId] = (d.visits[c.toId] || 0) + 1;
@@ -949,6 +967,55 @@ const Career = {
     this.generateContracts();
     this.save();
     return { lines, total, rep, grade: result.grade, records: true, bankrupt, promoted, rtw };
+  },
+
+  // The invoice of a flight landed (the debrief's lines): the contract and its bonuses, the lease
+  // and the fuel, the repairs and the fines. Pure: the payout books it (tools/balance-check.js
+  // reads it too).
+  invoice(c, ac, result) {
+    const gm = CONTRACTS.GRADE_MULT[result.grade] || 1;
+    const lines = [];
+    const base = c.pay;
+    const gradeBonus = Math.round(c.pay * (gm - 1));
+    lines.push({ label: 'Contract', value: base });
+    if (gradeBonus) lines.push({ label: 'Landing grade {g}', args: { g: result.grade }, value: gradeBonus });
+    const fullGround = !result.pushbackSkipped && !result.noClearance;
+    if (fullGround) lines.push({ label: 'Full ground procedure', value: Math.round(base * CONTRACTS.FULL_GROUND_BONUS) });
+    const tod = TIME_OF_DAY[result.timeOfDay];
+    if (tod && tod.bonus) lines.push({ label: tod.name + ' flight', value: Math.round(base * tod.bonus) });
+    // the level: Hard pays more, Easy less (DIFFICULTY.reward)
+    const lvl = this.difficulty;
+    if (lvl.reward !== 1) lines.push({ label: lvl.name + ' level', value: Math.round(base * (lvl.reward - 1)) });   // 'Easy level', 'Hard level'
+    // the lease runs per block hour (at least one), and the fuel burnt is paid for
+    const hours = Math.max(1, result.blockSec / 3600);
+    // (the Mriya is the pilot's own: its upkeep instead of a lease)
+    lines.push({ label: ac.legend ? 'Upkeep of your own aircraft ({ac}, {h} h)' : 'Aircraft lease ({ac}, {h} h)', args: { ac: ac.name, h: hours.toFixed(1) }, value: -Math.round(ac.rent * hours) });
+    lines.push({ label: 'Fuel burnt ({kg} kg)', args: { kg: Math.round(result.fuelUsed) }, value: -Math.round(result.fuelUsed * CONTRACTS.FUEL_RATE) });
+    if (result.damage > 0.02) {
+      const dmg = -Math.round(c.pay * result.damage * 0.7);
+      lines.push({ label: 'Repairs and downtime', value: dmg });
+    }
+    for (const comp of result.compensations || []) lines.push({ label: 'Compensation for {what}', args: { what: comp.what }, value: -comp.cost });
+    if (result.mishandled > 0) lines.push({ label: 'Checklists mishandled', value: -Math.round(c.pay * 0.1 * result.mishandled) });
+    if (result.handled > 0) lines.push({ label: 'Emergencies handled', value: Math.round(c.pay * 0.06 * result.handled) });
+    if (result.moneyFactor && result.moneyFactor < 1) {
+      lines.push({ label: 'Medical diversion costs', value: -Math.round(c.pay * (1 - result.moneyFactor)) });
+    }
+    if (result.noClearance) lines.push({ label: 'Took off without a clearance (fine)', value: -Math.round(base * SIM.NO_CLEARANCE_FINE) });
+    if (result.taxiOverspeed) lines.push({ label: 'Taxi overspeed, {v} kt (fine)', args: { v: result.taxiOverspeed }, value: -Math.round(base * SIM.TAXI_OVERSPEED_FINE) });
+    return lines;
+  },
+
+  // The reputation a flight landed earns with its client group: the contract's (its catch-up
+  // already in) by the landing grade and the level, less the checklists mishandled
+  flightRep(c, result) {
+    const gm = CONTRACTS.GRADE_MULT[result.grade] || 1;
+    let rep = c.repGain * (0.6 + 0.4 * gm) * this.difficulty.reward;
+    if (result.mishandled > 0) rep -= result.mishandled * 0.8;
+    if (!result.pushbackSkipped && !result.noClearance) rep += CONTRACTS.FULL_GROUND_REP;
+    if (this.has('gen4')) rep += 0.5;
+    rep -= (result.repPenalty || 0) / 10;
+    return Math.max(0, Math.round(rep * 10) / 10);
   },
 
   // result.kind: the failure's reason ('police': stopped by the police after a collision, a small
@@ -1005,15 +1072,6 @@ function mriyaFinish(id) {
   return MRIYA_FINISHES.find((f) => f.id === (id && id.id ? id.id : id)) || MRIYA_FINISHES[0];
 }
 function finishPrice(f) { return Math.round((f.price || 0) * MRIYA.FINISH_KR); }
-
-function contractDifficulty(distNm, type, to) {
-  let d = 1;
-  d += distNm / 400;
-  if (to.mountainous) d += 0.4;
-  if (to.arctic) d += 0.5;
-  if (type === 'hazmat' || type === 'medevac') d += 0.4;
-  return Math.round(d * 10) / 10;
-}
 
 function dayLabel(c, result, day) {
   return logLine('{from} → {to} · {type} · grade {g}',

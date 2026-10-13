@@ -167,23 +167,25 @@ const AIRPORTS = [
 
 // ---------- Regions ----------
 // The career opens the world a region at a time: traffic rights are bought in the Network tab
-// once the operator has the reputation (the best of the three client groups) and the flights.
+// once the pilot has the flights and the reputation (Career.regionState): `rep` with one of its
+// `groups` — the clients who invite the pilot there (none: any group) — or, whatever the groups,
+// `total` with the three groups together; a region with only `total` asks for that alone.
 const REGIONS = [
   { id: 'sweden', name: 'Sweden', cost: 0, rep: 0, flights: 0,
     blurb: 'Domestic flying out of Arlanda: from Malmö and the islands to Kiruna above the Arctic Circle.' },
-  { id: 'nordic', name: 'Scandinavia & the North Atlantic', cost: 20000, rep: 5, flights: 3,
+  { id: 'nordic', name: 'Scandinavia & the North Atlantic', cost: 30000, rep: 5, flights: 3,
     blurb: 'Norway’s fjords and mountain strips, Finland, Denmark, Iceland, the Faroes, Greenland and Svalbard.' },
-  { id: 'europe', name: 'Europe', cost: 90000, rep: 15, flights: 10,
+  { id: 'europe', name: 'Europe', cost: 150000, rep: 15, groups: ['pax'], total: 40, flights: 10,
     blurb: 'The busy hubs — London, Paris, Frankfurt, Amsterdam — the Alps, the Mediterranean and the Baltic.' },
-  { id: 'russia', name: 'Russia', cost: 160000, rep: 22, flights: 14,
+  { id: 'russia', name: 'Russia', cost: 250000, rep: 20, groups: ['cargo'], total: 55, flights: 14,
     blurb: 'Moscow and St Petersburg, the Urals and Siberia, Arctic fields from Murmansk to Norilsk and Khatanga, and on to Vladivostok, the volcanoes of Kamchatka and Anadyr by the Bering Strait.' },
-  { id: 'caucasus', name: 'The Caucasus & Central Asia', cost: 120000, rep: 24, flights: 16,
+  { id: 'caucasus', name: 'The Caucasus & Central Asia', cost: 200000, total: 60, flights: 16,
     blurb: 'Baku on the Caspian, Tbilisi and Yerevan under the Caucasus and Ararat, and the Silk Road cities from Tashkent and Dushanbe to Almaty, Bishkek and Astana — where the Russian airlines still fly abroad.' },
-  { id: 'mideast', name: 'Middle East & Africa', cost: 250000, rep: 28, flights: 18,
+  { id: 'mideast', name: 'Middle East & Africa', cost: 450000, rep: 25, groups: ['cargo', 'bush'], total: 75, flights: 18,
     blurb: 'Desert hubs in the Gulf, Cairo and Casablanca, and high, hot airfields from Addis Ababa to Johannesburg.' },
-  { id: 'americas', name: 'The Americas', cost: 400000, rep: 38, flights: 25,
+  { id: 'americas', name: 'The Americas', cost: 900000, rep: 35, groups: ['pax'], total: 100, flights: 25,
     blurb: 'Across the North Atlantic to New York, Chicago and the west coast, Mexico City at 7 300 ft and the Andes.' },
-  { id: 'asia', name: 'Asia & the Pacific', cost: 600000, rep: 50, flights: 32,
+  { id: 'asia', name: 'Asia & the Pacific', cost: 1500000, total: 130, flights: 32,
     blurb: 'Delhi, Bangkok, Singapore, Hong Kong, Tokyo — and on to Sydney and Auckland at the far side of the world.' }
 ];
 

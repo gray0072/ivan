@@ -477,15 +477,17 @@ const INCIDENT = {
 const DIFFICULTY = {
   easy: {
     id: 'easy', name: 'Easy',
+    reward: 0.8,              // the pay and the reputation of every flight, times this
     windFactor: 0.5, turbulence: 0.45, icingChance: 0.5,
     qrhTimeFactor: 1.5, emergencyOverlap: 0,
     qrhHint: true,
     touchdownTolerance: 0.35, gradeBonus: 0.15,
     fuelPenaltyFactor: 0.5, damageFactor: 0.6,
-    description: 'Calm weather, one problem at a time with a long grace period, checklists come with hints and generous landing grading.'
+    description: 'Calm weather, one problem at a time with a long grace period, checklists come with hints and generous landing grading; pays 20 % less.'
   },
   medium: {
     id: 'medium', name: 'Medium',
+    reward: 1,              // the pay and the reputation of every flight, times this
     windFactor: 1.0, turbulence: 1.0, icingChance: 1.0,
     qrhTimeFactor: 1.0, emergencyOverlap: 1,
     qrhHint: false,
@@ -495,12 +497,13 @@ const DIFFICULTY = {
   },
   hard: {
     id: 'hard', name: 'Hard',
+    reward: 1.25,              // the pay and the reputation of every flight, times this
     windFactor: 1.5, turbulence: 1.8, icingChance: 1.7,
     qrhTimeFactor: 0.75, emergencyOverlap: 2,
     qrhHint: false,
     touchdownTolerance: 0.2, gradeBonus: -0.1,
     fuelPenaltyFactor: 1.6, damageFactor: 1.5,
-    description: 'Storm season: strong wind and severe turbulence, failures with no warning, two problems at once and strict grading.'
+    description: 'Storm season: strong wind and severe turbulence, failures with no warning, two problems at once and strict grading; pays 25 % more.'
   }
 };
 
@@ -509,6 +512,7 @@ const DIFFICULTY = {
 // dims: real length, wingspan and fuselage diameter (m; the width of a tall or double-deck body);
 // look: how models.js draws it.
 // FLAPS: cl/cd deltas and the maximum speed each setting may be extended at.
+// rent: the lease per block hour (kr); loads: the loads it carries, whatever the client.
 // Listed by maximum take-off weight, lightest first (the hangar shows them in this order).
 const AIRCRAFT = [
   {
@@ -769,7 +773,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.024, rollRate: 0.7, pitchRate: 0.52, yawRate: 0.62,
     takeoffDist: 2400, crosswindLimit: 25, maxRangeNm: 1500, surfaces: ['asphalt'],
-    rent: 19500, price: 0, bonus: 1.35, unlock: 'cargo5', loads: ['parts', 'parts', 'outsize'],
+    rent: 15000, price: 0, bonus: 1.35, unlock: 'cargo5', loads: ['parts', 'parts', 'outsize'],
     dims: { len: 56.15, span: 44.84, fus: 5.64 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#ffffff', color: '#00205b', sweep: 28, bubble: 1.37, tailFins: true, mainRows: 2, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -821,7 +825,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.024, rollRate: 0.66, pitchRate: 0.5, yawRate: 0.6,
     takeoffDist: 2400, crosswindLimit: 25, maxRangeNm: 2200, surfaces: ['asphalt'],
-    rent: 24500, price: 0, bonus: 1.38, unlock: 'cargo5', loads: ['parts'],
+    rent: 19000, price: 0, bonus: 1.38, unlock: 'cargo5', loads: ['parts'],
     dims: { len: 63.1, span: 60.3, fus: 5.64 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#ffffff', color: '#00205b', sweep: 30, fan: 0.52, winglets: true, bubble: 1.56, tailFins: true, mainRows: 2, face: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -936,7 +940,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.034, rollRate: 0.55, pitchRate: 0.42, yawRate: 0.55,
     takeoffDist: 2800, crosswindLimit: 30, maxRangeNm: 3800, surfaces: ['asphalt', 'grass', 'ice'],
-    rent: 36000, price: 0, bonus: 1.5, unlock: 'cargo5',
+    rent: 36000, price: 0, bonus: 1.5, unlock: 'cargo5', loads: ['outsize', 'outsize', 'cargo', 'hazmat'],
     dims: { len: 68.96, span: 73.3, fus: 7.3 },
     look: { wing: 'high', engines: 'wing4', tail: 'low', base: '#e9ecef', color: '#1f4fa0', sweep: 32, dihedral: -3, tall: 1.1, mainRows: 5, sponsons: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -959,7 +963,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.026, rollRate: 0.6, pitchRate: 0.45, yawRate: 0.6,
     takeoffDist: 3100, crosswindLimit: 30, maxRangeNm: 4400, surfaces: ['asphalt'],
-    rent: 33800, price: 0, bonus: 1.4, unlock: 'cargo4',
+    rent: 40000, price: 0, bonus: 1.4, unlock: 'cargo4',
     dims: { len: 76.3, span: 68.4, fus: 6.5 },
     look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 37, hump: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -982,7 +986,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.030, rollRate: 0.55, pitchRate: 0.42, yawRate: 0.55,
     takeoffDist: 2900, crosswindLimit: 35, maxRangeNm: 8000, surfaces: ['asphalt'],
-    rent: 39000, price: 0, bonus: 1.45, unlock: 'pax4',
+    rent: 30000, price: 0, bonus: 1.45, unlock: 'pax4',
     dims: { len: 72.72, span: 79.75, fus: 7.14 },
     look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#f3f5f7', color: '#6a2c82', sweep: 33.5, fan: 0.47, tall: 1.18, decks: 2, bodyRows: 3 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -1014,7 +1018,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.038, rollRate: 0.45, pitchRate: 0.38, yawRate: 0.5,
     takeoffDist: 3500, crosswindLimit: 30, maxRangeNm: 8300, surfaces: ['asphalt'],
-    rent: 42000, price: 0, bonus: 1.6, unlock: 'mriya',
+    rent: 42000, price: 0, bonus: 1.6, unlock: 'mriya', loads: ['outsize', 'outsize', 'cargo'],
     dims: { len: 84, span: 88.4, fus: 7.3 },
     look: { wing: 'high', engines: 'wing6', tail: 'twin', base: '#eae7df', color: '#b0915f', finish: true, sweep: 32, dihedral: -3, tall: 1.1, fan: 0.38, mainRows: 7, sponsons: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -1028,18 +1032,20 @@ const HANGAR_FILTER = {
 };
 
 // ---------- Payload types ----------
+// maxKg: the biggest consignment of a load paid at its own rate (dangerous goods, mail, the cold
+// chain): a freighter bigger than that takes general freight or outsize loads instead
 const PAYLOAD = {
   pax: { name: 'Passengers', ratePerKg: 3.4, label: 'passengers' },
   bag: { name: 'Hold baggage', ratePerKg: 0.5, label: 'kg of baggage' },
-  cargo: { name: 'General freight', ratePerKg: 1.1, label: 'kg of freight' },
-  reefer: { name: 'Reefer freight', ratePerKg: 1.9, label: 'kg of reefer freight', coldChain: true },
-  hazmat: { name: 'Dangerous goods', ratePerKg: 3.1, label: 'kg of dangerous goods', hazard: true },
-  mail: { name: 'Mail and light freight', ratePerKg: 2.2, label: 'kg of mail' },
+  cargo: { name: 'General freight', ratePerKg: 1.8, label: 'kg of freight' },
+  reefer: { name: 'Reefer freight', ratePerKg: 2.6, label: 'kg of reefer freight', coldChain: true, maxKg: 40000 },
+  hazmat: { name: 'Dangerous goods', ratePerKg: 3.6, label: 'kg of dangerous goods', hazard: true, maxKg: 15000 },
+  mail: { name: 'Mail and light freight', ratePerKg: 2.6, label: 'kg of mail', maxKg: 12000 },
   medevac: { name: 'Medevac', ratePerKg: 6.5, label: 'kg of medevac load', urgent: true },
-  fish: { name: 'Fresh fish', ratePerKg: 1.5, label: 'kg of fish', coldChain: true },
+  fish: { name: 'Fresh fish', ratePerKg: 2.3, label: 'kg of fish', coldChain: true, maxKg: 30000 },
   // the loads of a type with loads of its own (the Beluga's): bulky rather than heavy, paid for the hold they fill
-  parts: { name: 'Aircraft sections', ratePerKg: 2.0, label: 'kg of aircraft sections' },
-  outsize: { name: 'Outsize freight', ratePerKg: 2.3, label: 'kg of outsize freight' }
+  parts: { name: 'Aircraft sections', ratePerKg: 3, label: 'kg of aircraft sections' },
+  outsize: { name: 'Outsize freight', ratePerKg: 3.4, label: 'kg of outsize freight' }
 };
 
 // ---------- Client factions ----------
@@ -1071,64 +1077,64 @@ const COURSES = [
   { id: 'gen1', branch: 'general', tier: 0, name: 'Ground School', cost: 0, requires: [], flights: 0,
     blurb: 'Basic theory, aircraft handling, the standard operating procedures of a small operator. Everyone starts here.',
     effect: 'The foundation of your career.', course: 'pax' },
-  { id: 'gen2', branch: 'general', tier: 1, name: 'Aviation Weather', cost: 1800, requires: ['gen1'], flights: 3,
+  { id: 'gen2', branch: 'general', tier: 1, name: 'Aviation Weather', cost: 15000, requires: ['gen1'], flights: 3,
     blurb: 'METAR, TAF, windshear and icing analysis. Better forecasts mean better fuel plans.',
     effect: 'Shows the full forecast at both ends, +10% fuel margin planning, 20% less icing.', course: 'pax' },
-  { id: 'gen3', branch: 'general', tier: 2, name: 'Advanced Systems', cost: 5200, requires: ['gen2'], flights: 9,
+  { id: 'gen3', branch: 'general', tier: 2, name: 'Advanced Systems', cost: 50000, requires: ['gen2'], flights: 9,
     blurb: 'Hydraulics, generators, pressurisation and the QRH — and how to work it under pressure.',
     effect: 'Checklist hints explain every step, +40% response time on every emergency.', course: 'pax' },
-  { id: 'gen4', branch: 'general', tier: 3, name: 'CRM & Cabin Safety', cost: 11000, requires: ['gen3'], flights: 21,
+  { id: 'gen4', branch: 'general', tier: 3, name: 'CRM & Cabin Safety', cost: 180000, requires: ['gen3'], flights: 21,
     blurb: 'Crew resource management, cabin crew briefing, medical response and awkward passengers.',
     effect: '+60% emergency response time, medical emergencies pay, +5 reputation per flight.', course: 'pax' },
   // Passenger
-  { id: 'pax1', branch: 'pax', tier: 1, name: 'Regional Jet Ops', cost: 2600, requires: ['gen1'], flights: 5, rep: 3,
+  { id: 'pax1', branch: 'pax', tier: 1, name: 'Regional Jet Ops', cost: 25000, requires: ['gen1'], flights: 5, rep: 3,
     blurb: 'Jet handling for the CRJ200: high rotation thrust, higher stall speeds, pressurised climb profiles.',
     effect: 'Unlocks the Bombardier CRJ200 and regional jet contracts.', course: 'pax' },
-  { id: 'paxtp', branch: 'pax', tier: 1, name: 'Regional Turboprops', cost: 2400, requires: ['gen1'], flights: 1, rep: 0,
+  { id: 'paxtp', branch: 'pax', tier: 1, name: 'Regional Turboprops', cost: 10000, requires: ['gen1'], flights: 1, rep: 0,
     blurb: 'The ATR 72 on short hops: propeller handling, feathering, de-icing boots and six sectors a day.',
     effect: 'Unlocks the ATR 72-600; +10% pay on legs under 300 nm in a turboprop.', course: 'pax' },
-  { id: 'pax2', branch: 'pax', tier: 2, name: 'Instrument Rating (IFR)', cost: 7500, requires: ['pax1'], flights: 13, rep: 15,
+  { id: 'pax2', branch: 'pax', tier: 2, name: 'Instrument Rating (IFR)', cost: 70000, requires: ['pax1'], flights: 13, rep: 15,
     blurb: 'Flying the approach when you cannot see the runway: ILS, NDB, circling and a missed approach flown well.',
     effect: 'Unlocks the Boeing 737-800, low-visibility and IMC contracts.', course: 'pax' },
-  { id: 'paxfbw', branch: 'pax', tier: 2, name: 'Fly-by-Wire Jets', cost: 9000, requires: ['pax1'], flights: 15, rep: 20,
+  { id: 'paxfbw', branch: 'pax', tier: 2, name: 'Fly-by-Wire Jets', cost: 100000, requires: ['pax1'], flights: 15, rep: 20,
     blurb: 'Side-sticks, flight computers and envelope protection: how a modern jet flies, and what is left when its computers degrade.',
     effect: 'Unlocks the Embraer E195-E2 and the Airbus A220-300.', course: 'pax' },
-  { id: 'pax3', branch: 'pax', tier: 3, name: 'Mountain & Adverse Weather', cost: 16000, requires: ['pax2'], flights: 27, rep: 38,
+  { id: 'pax3', branch: 'pax', tier: 3, name: 'Mountain & Adverse Weather', cost: 150000, requires: ['pax2'], flights: 27, rep: 35,
     blurb: 'Bergen in the rain, Tromsø in January: terrain, windshear, downdrafts and steep approaches.',
     effect: 'Unlocks the Airbus A320-200 and A320neo, mountain and arctic passenger routes, +15% payout on adverse-weather contracts.', course: 'pax' },
-  { id: 'pax4', branch: 'pax', tier: 4, name: 'Widebody Procedures', cost: 34000, requires: ['pax3'], flights: 43, rep: 65,
+  { id: 'pax4', branch: 'pax', tier: 4, name: 'Widebody Procedures', cost: 500000, requires: ['pax3'], flights: 43, rep: 60,
     blurb: 'Two hundred tonnes of aeroplane: longer checklists, heavier landings, higher Vref and hot-and-high limits.',
     effect: 'Unlocks the Airbus A350-900, the Boeing 777-300ER, the Airbus A380 and the long-haul contracts.', course: 'pax' },
-  { id: 'paxetops', branch: 'pax', tier: 4, name: 'ETOPS & Ocean Crossings', cost: 30000, requires: ['pax3'], flights: 39, rep: 60,
+  { id: 'paxetops', branch: 'pax', tier: 4, name: 'ETOPS & Ocean Crossings', cost: 350000, requires: ['pax3'], flights: 39, rep: 55,
     blurb: 'Two engines over the ocean: diversion times, alternates, the drift-down and the fuel for the worst case.',
     effect: 'Unlocks the Airbus A330-300 and the Boeing 787-9; +10% pay on legs over 1 500 nm in a twin-engine jet.', course: 'pax' },
   // Cargo
-  { id: 'cargo1', branch: 'cargo', tier: 1, name: 'Dangerous Goods', cost: 2200, requires: ['gen1'], flights: 2, rep: 0,
+  { id: 'cargo1', branch: 'cargo', tier: 1, name: 'Dangerous Goods', cost: 10000, requires: ['gen1'], flights: 2, rep: 0,
     blurb: 'Class 3 flammable liquids, lithium batteries and the paperwork that comes with them.',
     effect: 'Unlocks hazardous-goods contracts (+80% rate).', course: 'cargo' },
-  { id: 'cargo2', branch: 'cargo', tier: 2, name: 'Weight & Balance', cost: 6800, requires: ['cargo1'], flights: 7, rep: 12,
+  { id: 'cargo2', branch: 'cargo', tier: 2, name: 'Weight & Balance', cost: 40000, requires: ['cargo1'], flights: 7, rep: 10,
     blurb: 'Loading, trim, aft CG limits and what a badly loaded freighter does on rotation.',
     effect: 'Unlocks the Fokker F27-600F, +15% payload tolerance, load-shift emergencies handled better.', course: 'cargo' },
-  { id: 'cargo3', branch: 'cargo', tier: 3, name: 'Arctic Ground Handling', cost: 15000, requires: ['cargo2'], flights: 18, rep: 33,
+  { id: 'cargo3', branch: 'cargo', tier: 3, name: 'Arctic Ground Handling', cost: 120000, requires: ['cargo2'], flights: 18, rep: 30,
     blurb: 'De-icing procedures, cargo holds in the cold, snow banks and gravel aprons.',
     effect: 'Unlocks ice-field and reefer contracts, icing builds 35% slower.', course: 'cargo' },
-  { id: 'cargo4', branch: 'cargo', tier: 4, name: 'Heavy Freighter Ops', cost: 32000, requires: ['cargo3'], flights: 31, rep: 58,
+  { id: 'cargo4', branch: 'cargo', tier: 4, name: 'Heavy Freighter Ops', cost: 250000, requires: ['cargo3'], flights: 31, rep: 50,
     blurb: 'Main-deck loading, fifty tonnes of freight and the most demanding schedules in the north.',
     effect: 'Unlocks the Boeing 767-300F, the Boeing 747-8F and ultra-long contracts.', course: 'cargo' },
-  { id: 'cargo5', branch: 'cargo', tier: 5, name: 'Outsize Cargo', cost: 48000, requires: ['cargo4'], flights: 48, rep: 80,
+  { id: 'cargo5', branch: 'cargo', tier: 5, name: 'Outsize Cargo', cost: 700000, requires: ['cargo4'], flights: 48, rep: 70,
     blurb: 'Turbines, helicopters, locomotives and aircraft wings: the An-124\'s lifting nose, kneeling gear and roof cranes, the Beluga\'s door over the cockpit, and tie-downs for loads that fit nothing else.',
     effect: 'Unlocks the Antonov An-124 Ruslan (120 tonnes onto long gravel and ice runways), the Airbus Beluga and the BelugaXL (aircraft sections for Airbus).', course: 'cargo' },
   // Bush & SAR
-  { id: 'bush1', branch: 'bush', tier: 1, name: 'Short Field Ops', cost: 2000, requires: ['gen1'], flights: 4, rep: 0,
+  { id: 'bush1', branch: 'bush', tier: 1, name: 'Short Field Ops', cost: 15000, requires: ['gen1'], flights: 4, rep: 0,
     blurb: 'Take-off and landing in half the distance, on grass, gravel and sand.',
     effect: 'Unlocks the DHC-6 Twin Otter, grass strips and STOL contracts.', course: 'bush' },
-  { id: 'bush2', branch: 'bush', tier: 2, name: 'De-icing & Winter Survival', cost: 7200, requires: ['bush1'], flights: 11, rep: 15,
+  { id: 'bush2', branch: 'bush', tier: 2, name: 'De-icing & Winter Survival', cost: 70000, requires: ['bush1'], flights: 11, rep: 15,
     blurb: 'Carburettor and airframe icing, engine anti-ice, and survival in a winter cabin.',
     effect: 'Icing builds 45% slower, icing emergencies give 30% more time, winter contracts pay +20%.', course: 'bush' },
-  { id: 'bush3', branch: 'bush', tier: 3, name: 'Medevac & SAR Contracts', cost: 17000, requires: ['bush2'], flights: 24, rep: 35,
+  { id: 'bush3', branch: 'bush', tier: 3, name: 'Medevac & SAR Contracts', cost: 250000, requires: ['bush2'], flights: 24, rep: 35,
     blurb: 'Search and rescue, medevac flights and getting there before the weather closes the strip.',
     effect: 'Unlocks urgent SAR and medevac contracts (up to 3x the rate).', course: 'bush' },
-  { id: 'bush4', branch: 'bush', tier: 4, name: 'Seaplane & Remote Bases', cost: 33000, requires: ['bush3'], flights: 35, rep: 60,
+  { id: 'bush4', branch: 'bush', tier: 4, name: 'Seaplane & Remote Bases', cost: 400000, requires: ['bush3'], flights: 35, rep: 50,
     blurb: 'Floats, skis and strips with no fuel, no lights and no second attempt.',
     effect: 'Unlocks ice fields and remote strips for every aircraft type.', course: 'bush' }
 ];
@@ -1136,15 +1142,17 @@ const COURSES = [
 // The exam questions (in English, Russian and Swedish) are in data/quizzes.js.
 
 // ---------- The Mriya's assembly hall (ui/mriya.js) ----------
-// The An-225 is built from 50 parts (data/mriya.js), bought one by one once every course is passed.
-// Each part costs money and the reputation of one client group: its share of these totals
-// (`kr` / the sum of every part's `kr`, `rep` / the sum of `rep` over the parts of its group), so
-// changing a total re-prices every part.
+// The An-225 is built from 50 parts (data/mriya.js), bought at any time. Each part costs money —
+// its share of PRICE_KR (`kr` / the sum of every part's `kr`), so changing the total re-prices
+// every part — and asks for a level of the reputation of one client group, never spent: within
+// each group the cheapest part asks for REP_MIN, the dearest REP_MAX, the rest evenly between by
+// their price (Career.mriyaPrice).
 const MRIYA = {
-  PRICE_KR: 10000000,          // all 50 parts together, kronor ...
-  PRICE_REP: 100,              // ... and this much reputation of each client group
+  PRICE_KR: 6000000,           // all 50 parts together, kronor
+  REP_MIN: 5,                  // the reputation the cheapest part of a group asks for ...
+  REP_MAX: 70,                 // ... and the dearest
   ROUND_KR: 1000,              // a part's price is rounded to this many kronor ...
-  ROUND_REP: 0.5,              // ... and its reputation to this
+  ROUND_REP: 1,                // ... and its reputation to this
   SNAP_M: 7,                   // a part let go this close to its place (metres on the blueprint) snaps into it
   KEY_STEP_M: 1.6,             // the arrow keys move a part this far (Shift: a quarter of it)
   SPIN_S: 48,                  // the hologram turns once round in this many seconds
@@ -1188,8 +1196,27 @@ const CONTRACTS = {
   BUSH_REP: 3,
   BASE_PAY_PER_NM: 58,           // SEK per real nautical mile, before the payload fee
   PAYLOAD_FEE_NM: 650,           // load fee = kg x PAYLOAD rate x nm / this
+  // The pilot's work is the departure and the arrival, not the cruise: a leg pays its whole
+  // distance up to TAPER_NM and TAPER_SHARE of every mile beyond it, and every leg also pays
+  // SECTOR_FEE_H hours of the type's lease (the landing and the turnaround), so a short leg in a
+  // big type pays its way and a long one pays more, but not many times more
+  TAPER_NM: 800,
+  TAPER_SHARE: 0.5,
+  SECTOR_FEE_H: 1,
   FACTION_MULT: { pax: 1.0, cargo: 1.05, bush: 1.2 },
   URGENT_MULT: 2.1,
+  CLASS_MULT: [1, 1, 1, 1, 1.2],  // the pay by the type's class (Career.typeClass): the heaviest get the premium work
+  NEW_DEST_MULT: 1.1,            // the first flight to an airport pays this much more (and REP.NEW_DEST)
+  // the stars of a contract's difficulty (Career.contractStars, 1-5): one, and one more each for
+  // mountains at either end, an Arctic field, a runway under STAR_RWY_MARGIN x the type's
+  // take-off distance, a remote strip, dangerous goods or a medevac; every star above the first
+  // pays STAR_MULT more and earns STAR_MULT more reputation
+  STAR_RWY_MARGIN: 1.3,
+  STAR_MULT: 0.08,
+  // a bush or rescue flight pays a mission fee per star, more with every Bush & SAR course passed
+  // (none, Short Field Ops ... Seaplane & Remote Bases), so the hard flights in a small type stay
+  // worth flying when the airliners pay far more for the miles
+  BUSH_FEE: [2000, 4000, 8000, 13000, 20000],
   TURBOPROP_SHORT_NM: 300,       // Regional Turboprops: legs shorter than this (real nm) in a turboprop
   TURBOPROP_SHORT_MULT: 1.1,     // ... pay this much more
   ETOPS_NM: 1500,                // ETOPS & Ocean Crossings: legs longer than this in a twin-engine jet
@@ -1204,12 +1231,29 @@ const CONTRACTS = {
   FUEL_RESERVE_FACTOR: 1.45,     // block fuel = trip fuel x this + taxi fuel
   FUEL_MIN_FACTOR: 1.15,         // the load is cut so that the trip fuel x this still fits under the maximum take-off weight
   FUEL_TAXI_KG_PER_ENGINE: 25,
-  REP_PER_FLIGHT: 1.2,
-  REP_PERFECT_LANDING: 1.0,
-  FUEL_RATE: 4.3,                // SEK per kg of fuel burnt
+  FUEL_RATE: 4.3,               // SEK per kg of fuel burnt
   START_MONEY: 48000,
   START_DEBT_LIMIT: -50000,
   GRADE_MULT: { 'A+': 1.35, A: 1.22, B: 1.08, C: 0.95, D: 0.75, E: 0.55, F: 0.4 }
+};
+
+// ---------- Reputation (Career.makeContract, Career.payout) ----------
+// What a flight earns with its client group: the work, not the kilograms — BASE, PER_CLASS for
+// each class of the type (Career.typeClass: 0 turboprops, 1 regional jets, 2 narrowbodies,
+// 3 widebodies, 4 the heaviest), LONG on a leg over LONG_NM, NEW_DEST at an airport never flown
+// to; times the stars (CONTRACTS.STAR_MULT), URGENT on a medevac, the landing grade and the
+// catch-up: CATCH_UP[0] − rep / CATCH_UP[1], at least CATCH_UP[2], so a group the pilot has
+// worked for little grows fast and the last points to 100 come slowly. Reputation is a level the
+// pilot earns, never spent: it opens courses, regions and the Mriya's parts.
+const REP = {
+  BASE: 1.2,
+  PER_CLASS: 0.3,
+  CLASS_T: [60000, 100000, 380000],  // a jet's class by its maximum take-off weight (kg): under these 1, 2, 3, else 4
+  LONG_NM: 1500,
+  LONG: 0.4,
+  NEW_DEST: 0.4,
+  URGENT: 1.5,
+  CATCH_UP: [1.25, 130, 0.5]
 };
 
 // ---------- Weather ----------

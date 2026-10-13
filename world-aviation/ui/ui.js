@@ -548,7 +548,8 @@ const UI = {
       row2(tr('Flown there'), Career.visitsTo(c.toId) ? Career.visitsTo(c.toId) + '×' : '<span class="newDest">' + tr('never — new') + '</span>') +
       (c.depGate !== undefined ? row2(tr('Stands'), routeHtml(gateLabel(from, c.depGate), gateLabel(to, c.arrGate), 'soft')) : '') +
       '</div>' +
-      '<div class="cFoot"><span class="diff' + (c.difficulty > 2.4 ? ' hard' : c.difficulty > 1.6 ? ' med' : '') + '">' + tr('difficulty {d}', { d: c.difficulty.toFixed(1) }) + '</span>' +
+      '<div class="cFoot"><span class="diff' + (c.difficulty >= 4 ? ' hard' : c.difficulty >= 3 ? ' med' : '') + '">' +
+        tr('difficulty {d}', { d: '★'.repeat(Math.round(c.difficulty)) }) + '</span>' +
       (flying ? '' : (need ? '<span class="need">' + esc(need) + '</span>' : '') +
         '<button class="btn' + (need ? ' disabled' : ' default fwd') + '" data-act="briefing" data-v="' + esc(c.id) + '"' +
         (need ? ' disabled' : '') + '>' + tr('Fly this') + '</button>') + '</div>' +
@@ -564,9 +565,17 @@ const UI = {
       const apts = World.list.filter((a) => a.region === rg.id);
       const countries = [];
       for (const a of apts) if (countries.indexOf(a.country) < 0) countries.push(a.country);
+      // the reputation it asks for: with its own client groups (their badges), or all three together
+      const groups = rg.groups && rg.groups.length ? rg.groups : null;
+      const repNeed = (rg.rep !== undefined ? '<span class="' + (st.repOk ? 'ok' : 'need') + '"' +
+          (groups ? ' title="' + esc(groups.map((g) => tr(FACTIONS[g].short)).join(' / ')) + '"' : '') + '>' +
+          (groups ? groups.map((g) => UseIcons.svg(g)).join('') : '') +
+          tr('reputation {a} / {b}', { a: Math.floor(Career.groupRep(rg.groups)), b: rg.rep }) + '</span>' : '') +
+        (rg.total !== undefined ? '<span class="' + (st.repOk ? 'ok' : 'need') + '">' +
+          tr(rg.rep !== undefined ? 'or of all groups together {a} / {b}' : 'reputation of all groups together {a} / {b}',
+            { a: Math.floor(Career.totalRep()), b: rg.total }) + '</span>' : '');
       const status = st.owned ? ''                       // the badge on the map says it
-        : '<span class="' + (st.repOk ? 'ok' : 'need') + '">' + tr('reputation {a} / {b}', { a: Math.floor(Career.bestRep()), b: rg.rep }) + '</span>' +
-          '<span class="' + (st.flightsOk ? 'ok' : 'need') + '">' + tr('flights {a} / {b}', { a: d.stats.flights, b: rg.flights }) + '</span>';
+        : repNeed + '<span class="' + (st.flightsOk ? 'ok' : 'need') + '">' + tr('flights {a} / {b}', { a: d.stats.flights, b: rg.flights }) + '</span>';
       const can = st.available && st.afford;
       const btn = st.owned ? '' : '<button class="btn' + (can ? ' default' : ' disabled') + '" data-act="buyRegion" data-v="' + rg.id + '"' +
         (can ? '' : ' disabled') + '>' + (st.available ? (st.afford ? tr('Buy the rights · {cost}', { cost: fmtMoney(rg.cost) }) : tr('Needs {cost}', { cost: fmtMoney(rg.cost) })) : tr('Locked')) + '</button>';

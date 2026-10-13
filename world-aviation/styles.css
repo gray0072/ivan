@@ -984,6 +984,7 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
    and as round badges by a type's name in the hangar (what it is built for) */
 .useSvg { width: 14px; height: 14px; fill: currentColor; fill-opacity: 0.22; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
 .tag .useSvg { width: 11px; height: 11px; vertical-align: -2px; margin-right: 4px; }
+.region .cFoot .useSvg { width: 12px; height: 12px; vertical-align: -2px; margin-right: 3px; }   /* the client groups a region asks reputation of */
 .chipUse, .btn .chipUse { display: inline-block; margin-right: 6px; line-height: 0; vertical-align: -2px; }
 .chipUse .useSvg { width: 13px; height: 13px; }
 .chipUse.pax, .use.pax { color: #7fbcff; }
