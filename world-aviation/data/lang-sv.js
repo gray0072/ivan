@@ -1425,7 +1425,7 @@ const TEXT_SV = {
   'From Arlanda round the globe and back in one aeroplane, by the rules of the real records: every leg the same way round, all 360° of longitude, at least {km} km — the length of the Tropic of Cancer.': 'Från Arlanda runt jordklotet och tillbaka i ett och samma flygplan, enligt reglerna för de riktiga rekorden: varje etapp åt samma håll, alla 360 longitudgrader, minst {km} km — Kräftans vändkrets längd.',
   'Leg {n} of {m} · waiting at {id}': 'Etapp {n} av {m} · väntar i {id}',
   'The globe with the route': 'Jordgloben med rutten',
-  'drag to turn it · tap an airport to add it': 'dra för att vrida · tryck på en flygplats för att lägga till den',
+  'drag to turn it · tap an airport to add it, the last one again to take it off': 'dra för att vrida · tryck på en flygplats för att lägga till den, på den sista igen för att ta bort den',
   'of 360° of longitude': 'av 360 longitudgrader',
   'the route · at least {km} km needed': 'rutten · minst {km} km krävs',
   'No type to fly it in yet.': 'Ingen flygplanstyp att flyga den med ännu.',

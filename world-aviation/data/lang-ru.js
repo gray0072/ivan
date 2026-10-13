@@ -1425,7 +1425,7 @@ const TEXT_RU = {
   'From Arlanda round the globe and back in one aeroplane, by the rules of the real records: every leg the same way round, all 360° of longitude, at least {km} km — the length of the Tropic of Cancer.': 'Из Арланды вокруг земного шара и обратно на одном самолёте, по правилам настоящих рекордов: все этапы в одну сторону, все 360° долготы, не меньше {km} км — длины тропика Рака.',
   'Leg {n} of {m} · waiting at {id}': 'Этап {n} из {m} · ждёт в {id}',
   'The globe with the route': 'Глобус с маршрутом',
-  'drag to turn it · tap an airport to add it': 'потяните, чтобы повернуть · нажмите на аэропорт, чтобы добавить',
+  'drag to turn it · tap an airport to add it, the last one again to take it off': 'потяните, чтобы повернуть · нажмите на аэропорт, чтобы добавить, на последний ещё раз — чтобы убрать',
   'of 360° of longitude': 'из 360° долготы',
   'the route · at least {km} km needed': 'маршрут · нужно не меньше {km} км',
   'No type to fly it in yet.': 'Пока не на чем лететь.',

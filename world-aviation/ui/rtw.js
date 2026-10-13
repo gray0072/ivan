@@ -21,7 +21,7 @@
 // ============================================================
 
 const RtwScreen = {
-  sel: null, view: null, cv: null, raf: 0, places: [], drag: null, edit: null, confirm: null,
+  sel: null, view: null, keepView: false, cv: null, raf: 0, places: [], drag: null, edit: null, confirm: null,
 
   // the choices before the start (kept while the game runs)
   choice() {
@@ -45,6 +45,8 @@ const RtwScreen = {
   },
   // drawing a plan by hand: the pilot's own before the start, or the rest of the route under way
   drawing() { return Rtw.active() ? !!this.edit : this.choice().own; },
+  // the stops of the plan being drawn that Undo cannot take off: the base, or those flown already
+  keep() { const a = Rtw.active(); return a ? a.at + 1 : 1; },
 
   // ---------- the screen ----------
   show() {
@@ -85,7 +87,9 @@ const RtwScreen = {
       : locked ? '🔒 ' + tr('Not open yet — what it takes is below.') : this.verdict(chk);
     return '<div class="rtwHero">' +
       '<div class="rtwGlobeBox"><canvas id="rtwGlobe" aria-label="' + esc(tr('The globe with the route')) + '"></canvas>' +
-      '<span class="rtwTurn">' + tr(this.drawing() ? 'drag to turn it · tap an airport to add it' : 'drag to turn it') + '</span></div>' +
+      // (drawing: Undo on the globe itself, where the thumb is — the list's is far below on a phone)
+      (this.drawing() ? '<button class="btn small rtwUndo" data-act="rtw" data-v="undo"' + (plan.length > this.keep() ? '' : ' disabled') + '>↶ ' + tr('Undo') + '</button>' : '') +
+      '<span class="rtwTurn">' + tr(this.drawing() ? 'drag to turn it · tap an airport to add it, the last one again to take it off' : 'drag to turn it') + '</span></div>' +
       '<div class="rtwGauges">' +
       '<div class="rtwRing" style="--p:' + (clamp(deg / 360, 0, 1) * 100).toFixed(1) + '%"><div><b>' + Math.round(deg) + '°</b><span>' + tr('of 360° of longitude') + '</span></div></div>' +
       '<div class="rtwKm"><div class="rtwKmBar"><i style="width:' + (clamp(km / kmMax, 0, 1) * 100).toFixed(1) + '%"></i>' +
@@ -231,7 +235,7 @@ const RtwScreen = {
       fmtNum(Math.round(geoDistanceNm(last.lat, last.lon, b.lat, b.lon))) + ' nm</option>').join('');
     return '<div class="rtwAdd">' +
       (opts ? '<label>' + tr('Next stop') + ' <select id="rtwAdd"><option value="">' + esc(tr('— pick —')) + '</option>' + opts + '</select></label>' : '') +
-      '<button class="btn small" data-act="rtw" data-v="undo"' + (plan.length > keep ? '' : ' disabled') + '>' + tr('Undo') + '</button>' +
+      '<button class="btn small" data-act="rtw" data-v="undo"' + (plan.length > keep ? '' : ' disabled') + '>↶ ' + tr('Undo') + '</button>' +
       '<button class="btn small" data-act="rtw" data-v="clear"' + (plan.length > keep ? '' : ' disabled') + '>' + tr('Clear') + '</button></div>';
   },
 
@@ -295,7 +299,11 @@ const RtwScreen = {
     const cv = el('rtwGlobe');
     this.cv = cv;
     const plan = this.plan(), a = Rtw.active();
-    if (!this.view || this.viewKey !== plan.join('-')) { this.view = Globe.viewFor(plan, a ? a.at : 0); this.viewKey = plan.join('-'); }
+    // (a stop added or taken off keeps the view the pilot turned: keepView, from act)
+    const key = plan.join('-');
+    if (this.keepView === 'leg') this.view = Globe.viewFor(plan, plan.length - 2);
+    else if (!this.view || (this.viewKey !== key && !this.keepView)) this.view = Globe.viewFor(plan, a ? a.at : 0);
+    this.viewKey = key; this.keepView = false;
     if (cv) {
       cv.addEventListener('pointerdown', (e) => this.down(e));
       cv.addEventListener('pointermove', (e) => this.move(e));
@@ -361,7 +369,9 @@ const RtwScreen = {
     for (const p of this.places) { const dd = Math.hypot(p.x - x, p.y - y); if (dd < bd) { bd = dd; best = p.a; } }
     if (!best) return;
     const plan = this.plan(), ac = this.ac();
-    if (Rtw.nextStops(plan, ac).indexOf(best) >= 0) { Audio2.cue('page'); this.act('add:' + best.id); }
+    // the last stop tapped again: taken off, as Undo
+    if (best.id === plan[plan.length - 1] && plan.length > this.keep()) { Audio2.cue('page'); this.act('undo'); }
+    else if (Rtw.nextStops(plan, ac).indexOf(best) >= 0) { Audio2.cue('page'); this.act('add:' + best.id); }
     else { Audio2.cue('bad'); this.toast(this.whyNot(plan, ac, best)); }
   },
   // why a tapped airport cannot come next
@@ -397,15 +407,22 @@ const RtwScreen = {
       case 'own': s.own = true; this.view = null; break;
       case 'add': {
         const plan = this.drawing() ? (a ? this.edit : s.plan) : null;
-        if (plan && Rtw.nextStops(plan, this.ac()).some((b) => b.id === arg)) plan.push(arg);
+        if (plan && Rtw.nextStops(plan, this.ac()).some((b) => b.id === arg)) {
+          plan.push(arg);
+          // the globe stays as it was turned (it used to jump back over the base at every stop);
+          // only a stop picked from the list on its far side turns it to the new leg
+          const b = World.byId[arg];
+          this.keepView = !this.view || Globe.turn(b.lat, b.lon, this.view).z > 0.25 ? true : 'leg';
+        }
         break;
       }
       case 'undo': {
-        const plan = a ? this.edit : s.plan, keep = a ? a.at + 1 : 1;
-        if (plan && plan.length > keep) plan.pop();
+        const plan = a ? this.edit : s.plan;
+        if (plan && plan.length > this.keep()) { plan.pop(); this.keepView = true; }
         break;
       }
       case 'clear': {
+        this.keepView = true;
         if (a && this.edit) this.edit = this.edit.slice(0, a.at + 1);
         else s.plan = [Career.data.base];
         break;
