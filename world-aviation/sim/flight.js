@@ -355,8 +355,8 @@ const Flight = {
     if (tr.length > 2400) this.track = tr.filter((p, i) => i % 2 === 0 || i === tr.length - 1);
   },
 
-  // The fastest step allowed now: on the autopilot the fastest of all (x512) at any height and in
-  // any phase; flying by hand it depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the
+  // The fastest step allowed now: on the autopilot the fastest of all (x512) from the decision
+  // height up and in any phase; flying by hand it depends on the height (SIM.TIME_ACCEL_MANUAL). Never on the
   // ground (but up to COPILOT.TIME_ACCEL while the first officer taxis), low down, in a checklist
   // or with ice building and the anti-ice off, and closing on the arrival it comes down by itself
   // (approachAccelMax).
@@ -368,12 +368,17 @@ const Flight = {
     const k = clamp(1 - speed / SIM.NOSEWHEEL_FADE_MS, 0, 1);
     return SIM.NOSEWHEEL_MAX_STEER_DEG * DEG * Math.max(k * k, SIM.NOSEWHEEL_MIN_SHARE);
   },
+  // the lowest height the time runs faster at: with the autopilot engaged where it can be engaged
+  // (the decision height, so right after the take-off), by hand SIM.TIME_ACCEL_MIN_ALT_M
+  timeAccelFloorM() {
+    return this.ap.on ? SIM.DECISION_HEIGHT_FT * FT : SIM.TIME_ACCEL_MIN_ALT_M;
+  },
   timeAccelMax() {
     this.approachCapped = false;
     if (this.timeHeld()) return 1;
     if (this.st.onGround) return this.copilot && this.copilot.on ? COPILOT.TIME_ACCEL : 1;
     const agl = this.altAgl();
-    if (agl < SIM.TIME_ACCEL_MIN_ALT_M) return 1;
+    if (agl < this.timeAccelFloorM()) return 1;
     let max = 1;
     if (this.ap.on) max = SIM.TIME_ACCEL_AP_MAX;
     else for (const t of SIM.TIME_ACCEL_MANUAL) if (agl / FT >= t.aglFt) max = t.max;
@@ -521,8 +526,8 @@ const Flight = {
   // why T cannot go any faster
   timeAccelLimitText() {
     if (this.st.onGround && this.copilot && this.copilot.on && !this.timeHeld()) return tr('Time x{n} is the fastest on the ground', { n: COPILOT.TIME_ACCEL });
-    if (this.st.onGround || this.altAgl() < SIM.TIME_ACCEL_MIN_ALT_M) {
-      return tr('Time acceleration only in the air, above {alt} ft', { alt: fmtAlt(SIM.TIME_ACCEL_MIN_ALT_M) });
+    if (this.st.onGround || this.altAgl() < this.timeAccelFloorM()) {
+      return tr('Time acceleration only in the air, above {alt} ft', { alt: fmtAlt(this.timeAccelFloorM()) });
     }
     if (this.systems && this.systems.checklist) return tr('Work the checklist first — time runs at x1');
     if (this.systems && this.systems.iceHold) return tr('Anti-ice first <kbd>K</kbd> — time runs at x1');
