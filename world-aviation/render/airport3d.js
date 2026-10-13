@@ -321,7 +321,7 @@ const Airport3D = {
     // the taxiway lights in a set of their own: on from dusk and in poor visibility only (update)
     const twyPos = [], twyCol = [];
     const addTwy = (t, across, y, c) => { twyPos.push(across, y, -t); twyCol.push(c[0], c[1], c[2]); };
-    const W = [1, 0.97, 0.86], Y = [1, 0.8, 0.25], R = [1, 0.12, 0.08], G = [0.2, 1, 0.35], B = [0.25, 0.45, 1];
+    const W = [1, 0.97, 0.86], Y = [1, 0.8, 0.25], R = [1, 0.12, 0.08], G = [0.2, 1, 0.35], B = [0.2, 0.36, 0.85];
     const h = a.half, e = RWY_HALF_WIDTH + 1.2;
     // runway edge lights every 60 m, yellow over the last 600 m; centreline every 30 m
     for (let t = -h; t <= h + 0.1; t += 60) for (const s of [-1, 1]) add(t, s * e, 0.5, t > h - 600 ? Y : W);
@@ -343,7 +343,7 @@ const Airport3D = {
       }
     }
     // green taxiway centreline lights, every 30 m, round the curves too
-    const Gc = [0.25, 1, 0.45];
+    const Gc = [0.2, 0.85, 0.4];
     const greenLine = (pts) => {
       let carry = 0;
       for (let i = 0; i + 1 < pts.length; i++) {
@@ -371,8 +371,11 @@ const Airport3D = {
       const tgeo = new THREE.BufferGeometry();
       tgeo.setAttribute('position', new THREE.Float32BufferAttribute(twyPos, 3));
       tgeo.setAttribute('color', new THREE.Float32BufferAttribute(twyCol, 3));
+      // round dots, not squares: the taxiway lights are small flush lamps, dimmer than the runway's
+      if (!this.twyDot) this.twyDot = new THREE.CanvasTexture(lampDotCanvas());
       rec.twyLights = at(new THREE.Points(tgeo, new THREE.PointsMaterial({
-        size: 2.6, sizeAttenuation: false, vertexColors: true, fog: false, transparent: true, opacity: 0, depthWrite: false
+        size: 2.4, sizeAttenuation: false, vertexColors: true, fog: false, transparent: true, opacity: 0, depthWrite: false,
+        map: this.twyDot
       })), 0, 0);
       rec.twyLights.visible = false;
     }
@@ -976,8 +979,10 @@ const Airport3D = {
     // in the sunshine looked out of place)
     if (rec.twyLights) {
       const m = rec.twyLights.material;
-      m.opacity = Math.max(smoothstep(0.08, 0.4, dark || 0), 1 - smoothstep(1500, 5000, vis || 20000));
-      m.size = 2.6 + 1.4 * (dark || 0);
+      // (dimmer and smaller than the runway's: big blue and green squares looked out of place
+      // from the air at night)
+      m.opacity = TWY_LIGHTS_OPACITY * Math.max(smoothstep(0.08, 0.4, dark || 0), 1 - smoothstep(1500, 5000, vis || 20000));
+      m.size = 2.4 + 0.8 * (dark || 0);
       rec.twyLights.visible = seen && m.opacity > 0.02;
     }
     // the wind in the airport's frame: x across, z = -t
@@ -1642,4 +1647,19 @@ function taxiTrim(a, n, m) {
     d = Math.min(d, f.d);
   }
   return any ? Math.max(0, d - 0.5) : 0;
+}
+
+// the taxiway lights' share of full brightness (visual only)
+const TWY_LIGHTS_OPACITY = 0.75;
+// a round lamp for a point sprite: solid in the middle, a soft rim
+function lampDotCanvas() {
+  const cv = document.createElement('canvas');
+  cv.width = 32; cv.height = 32;
+  const g = cv.getContext('2d');
+  const gr = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  gr.addColorStop(0, 'rgba(255,255,255,1)');
+  gr.addColorStop(0.55, 'rgba(255,255,255,1)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 32, 32);
+  return cv;
 }
