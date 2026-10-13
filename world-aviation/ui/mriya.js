@@ -14,7 +14,8 @@
 //     ones gold; a bought part is carried onto it and snaps into its
 //     place when let go close enough (MRIYA.SNAP_M)
 //   - the stand: the parts bought and not yet fitted
-//   - the catalogue: all fifty, cheapest first, by group and state,
+//   - the catalogue: all fifty, cheapest first, by group, the client
+//     group whose reputation it costs and state,
 //     each with a real figure and what it is for, and its price in
 //     money and in one client group's reputation (Career.mriyaPrice)
 //
@@ -34,6 +35,7 @@ const MriyaScreen = {
     const s = Career.settings;
     const m = s.mriya || (s.mriya = {});
     if (m.group !== 'all' && !MRIYA_GROUPS.some((g) => g.id === m.group)) m.group = 'all';
+    if (m.kind !== 'all' && !FACTIONS[m.kind]) m.kind = 'all';
     if (['all', 'shop', 'bought', 'placed'].indexOf(m.status) < 0) m.status = 'all';
     if (m.sort !== 'price' && m.sort !== 'rep') m.sort = 'price';
     if (m.dir !== 1 && m.dir !== -1) m.dir = 1;
@@ -139,12 +141,14 @@ const MriyaScreen = {
       : '<p class="fineprint">' + (Career.mriyaDone() ? tr('Every part is on the aeroplane.') : tr('Empty. A part you buy waits here until you fit it on the blueprint.')) + '</p>';
     // the catalogue
     const st = this.settings();
-    const chip = (v, on, label, dot) => '<button class="chip' + (on ? ' on' : '') + '" data-m="filter" data-v="' + v + '" aria-pressed="' + on + '">' +
-      (dot ? '<i class="chipDot" style="background:' + dot + '"></i>' : '') + label + '</button>';
+    const chip = (v, on, label, icon) => '<button class="chip' + (on ? ' on' : '') + '" data-m="filter" data-v="' + v + '" aria-pressed="' + on + '">' +
+      (icon || '') + label + '</button>';
     const count = (s) => MRIYA_PARTS.filter((p) => Career.mriyaState(p.id) === s).length;
     el('mBar').innerHTML =
       '<div class="setGroup"><span>' + tr('Show') + '</span>' + chip('group:all', st.group === 'all', tr('All')) +
       MRIYA_GROUPS.map((g) => chip('group:' + g.id, st.group === g.id, tr(g.name))).join('') + '</div>' +
+      '<div class="setGroup"><span>' + tr('Clients') + '</span>' + chip('kind:all', st.kind === 'all', tr('All')) +
+      Object.keys(FACTIONS).map((k) => chip('kind:' + k, st.kind === k, tr(FACTIONS[k].short), Filters.useIcon(k))).join('') + '</div>' +
       '<div class="setGroup"><span>' + tr('State') + '</span>' + chip('status:all', st.status === 'all', tr('All')) +
       chip('status:shop', st.status === 'shop', tr('To buy') + ' · ' + count('shop')) +
       chip('status:bought', st.status === 'bought', tr('On the stand') + ' · ' + count('bought')) +
@@ -153,7 +157,8 @@ const MriyaScreen = {
       chip('sort:price', st.sort === 'price', tr('Price') + (st.sort === 'price' ? (st.dir > 0 ? ' ↑' : ' ↓') : '')) +
       chip('sort:rep', st.sort === 'rep', tr('Reputation') + (st.sort === 'rep' ? (st.dir > 0 ? ' ↑' : ' ↓') : '')) + '</div>';
     const list = MRIYA_PARTS.map((p, i) => [p, i])
-      .filter(([p]) => (st.group === 'all' || p.group === st.group) && (st.status === 'all' || Career.mriyaState(p.id) === st.status))
+      .filter(([p]) => (st.group === 'all' || p.group === st.group) && (st.kind === 'all' || p.kind === st.kind) &&
+        (st.status === 'all' || Career.mriyaState(p.id) === st.status))
       .sort((a, b) => {
         const pa = Career.mriyaPrice(a[0]), pb = Career.mriyaPrice(b[0]);
         return ((st.sort === 'rep' ? pa.rep - pb.rep : pa.kr - pb.kr) || pa.kr - pb.kr) * st.dir || a[1] - b[1];
@@ -358,7 +363,7 @@ const MriyaScreen = {
   filter(v) {
     const st = this.settings();
     const [k, id] = String(v).split(':');
-    if (k === 'reset') { st.group = 'all'; st.status = 'all'; }
+    if (k === 'reset') { st.group = 'all'; st.kind = 'all'; st.status = 'all'; }
     else if (k === 'sort') { if (st.sort === id) st.dir = -st.dir; else { st.sort = id; st.dir = 1; } }
     else st[k] = id;
     Career.saveSettings();

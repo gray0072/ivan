@@ -1016,6 +1016,7 @@ const TEXT_SV = {
   'aircraft types': 'flygplanstyper',
   'regions of the world': 'regioner i världen',
   'real airlines': 'riktiga flygbolag',
+  'Clients': 'Kunder',
   'Show': 'Visa',
   'All': 'Alla',
   'Sort': 'Sortera',

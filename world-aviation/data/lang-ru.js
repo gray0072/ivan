@@ -1016,6 +1016,7 @@ const TEXT_RU = {
   'aircraft types': 'типов самолётов',
   'regions of the world': 'регионов мира',
   'real airlines': 'настоящих авиакомпаний',
+  'Clients': 'Клиенты',
   'Show': 'Показать',
   'All': 'Все',
   'Sort': 'Сортировка',
