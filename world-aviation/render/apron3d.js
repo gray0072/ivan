@@ -270,11 +270,18 @@ const Apron3D = {
       // come and stop beside it (baggage3d.js)
       const holdA = L.STAND - Lc * 0.22;
       if (Lc > 15 && !gate.ga) { k.push(holdA, 0, -(gate.t - R - 4.6), Math.PI); Vehicles.beltLoader(k); k.pop(); solid('beltLoader', holdA, -(gate.t - R - 4.6), Math.PI); }
-      bagStands.push({ t: gate.t, hold: holdA, R, parked: Lc > 15 && !gate.ga, inUse: false });
-      // fuel under the right wing of a jet (clear of the baggage trains' way up beside the
-      // hold, 10 m out from the fuselage), catering at the rear right door of a big one
+      const pose = Servicing.standPose(gate), bag = { t: gate.t, hold: holdA, R, parked: Lc > 15 && !gate.ga, inUse: false,
+        ac, pose, room: Servicing.room(a, gate), bodies: [] };
+      bagStands.push(bag);
+      // fuel at the right wing of a jet (render/servicing.js: come down between the engines, under
+      // the wing where it fits, else just short of its leading edge; the baggage trains keep clear
+      // of it), catering at the rear right door of a big one
       if (jet && S > 25) {
-        k.push(L.STAND + Lc * 0.02, 0, -(gate.t - R - Math.max(S * 0.2, 13.5)), Math.PI / 2); Vehicles.fuelTruck(k); k.pop(); solid('fuelTruck', L.STAND + Lc * 0.02, -(gate.t - R - Math.max(S * 0.2, 13.5)), Math.PI / 2);
+        const fs = Servicing.size('fuelTruck', Vehicles.fuelTruck);
+        const f = Servicing.fuel(ac, pose, -1, R + Math.max(S * 0.2, 13.5), fs, L.SERVICE_ROAD + BAG_LANE) || { o: R + Math.max(S * 0.2, 13.5), z: Lc * 0.02 };
+        const [ft, fa] = Servicing.at(pose, -f.o, f.z);
+        k.push(fa, 0, -ft, -Math.PI / 2); Vehicles.fuelTruck(k); k.pop(); solid('fuelTruck', fa, -ft, -Math.PI / 2);
+        bag.bodies.push(Servicing.body(ft, fa, 0, -1, fs));
       }
       if (jet && Lc > 35 && i % 2 === 0 && !gate.cargo) {
         k.push(L.STAND - Lc * 0.38, 0, -(gate.t - R - 3.8), Math.PI); Vehicles.catering(k); k.pop(); solid('catering', L.STAND - Lc * 0.38, -(gate.t - R - 3.8), Math.PI);
@@ -283,9 +290,12 @@ const Apron3D = {
       // is loaded through its cargo door just behind it, by a main-deck loader (a small one's by a
       // forklift with a pallet)
       if (gate.cargo) {
-        const cargoDoor = doorAcross - Math.min(8, Lc * 0.2);
-        if (sill > 2.4) { k.push(cargoDoor, 0, -(gate.t + R + 5.2), 0); Vehicles.highLoader(k, sill, rng); k.pop(); solid('highLoader', cargoDoor, -(gate.t + R + 5.2), 0); }
-        else { k.push(cargoDoor, 0, -(gate.t + R + 3.2), 0); Vehicles.forklift(k, true, rng); k.pop(); solid('forklift', cargoDoor, -(gate.t + R + 3.2), 0); }
+        // (moved along the fuselage where it would stand in an engine or under the wing: render/servicing.js)
+        const high = sill > 2.4, out = high ? 5.2 : 3.2, model = high ? (kk) => Vehicles.highLoader(kk, sill, rng) : (kk) => Vehicles.forklift(kk, true, rng);
+        const cargoDoor = L.STAND + Servicing.place(ac, pose, 1, R + out, doorAcross - Math.min(8, Lc * 0.2) - L.STAND,
+          Servicing.size(high ? 'highLoader' + sill.toFixed(1) : 'forklift',
+            (kk) => (high ? Vehicles.highLoader(kk, sill, makeRng(1)) : Vehicles.forklift(kk, true, makeRng(1)))));
+        k.push(cargoDoor, 0, -(gate.t + R + out), 0); model(k); k.pop(); solid(high ? 'highLoader' : 'forklift', cargoDoor, -(gate.t + R + out), 0);
       } else if (gate.medevac) {
         // the air ambulance's stand: an ambulance beside the door, facing out to the apron
         k.push(doorAcross - 2.5, 0, -(gate.t + R + 2.4), -Math.PI / 2); Vehicles.ambulance(k); k.pop(); solid('ambulance', doorAcross - 2.5, -(gate.t + R + 2.4), -Math.PI / 2);
@@ -409,8 +419,8 @@ const Apron3D = {
   },
 
   // per frame: the traffic moves, and at night (dark 0..1) the lights come on. own: the
-  // player's aeroplane in the airport's frame ({ t, across, r, vt, va, len, rad, landed, crewIn }:
-  // r about half its size, its velocity along and across, its length and fuselage radius, landed
+  // player's aeroplane in the airport's frame ({ t, across, r, vt, va, len, rad, ac, landed, crewIn }:
+  // r about half its size, its velocity along and across, its length and fuselage radius, its type, landed
   // here, the ground crew's vehicles in their places by it: turnaround3d.js) — the baggage trains give way to it while it moves: a train whose track ahead runs
   // into the ground the aeroplane covers now or in the next few seconds stops well short of it
   // and waits; one already on that ground drives on and clears it, so none is left standing

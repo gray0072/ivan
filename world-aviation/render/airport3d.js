@@ -1032,7 +1032,7 @@ const Airport3D = {
       const v = own.vel || { x: 0, z: 0 };
       mine = {
         t: -l.z, across: l.x, r: own.r, vt: v.x * a.dirX + v.z * a.dirZ, va: v.x * a.perX + v.z * a.perZ,
-        len: own.len, rad: own.rad, landed: own.landed, crewIn: own.crewIn
+        len: own.len, rad: own.rad, ac: own.ac, landed: own.landed, crewIn: own.crewIn
       };
     }
     Apron3D.update(rec, time, dark || 0, mine);

@@ -1317,6 +1317,21 @@ const TURNAROUND = { SPEED_K: 2.2, FROM_M: 170, OUT_M: 22, STAGGER_S: 2.5, LINGE
   LOOK_M: 7, GAP_M: 2.8,       // a vehicle waits for anything within GAP_M of its way over LOOK_M past its front ...
   WAIT_MAX_S: 8 };             // ... at most this long
 
+// The ground crew's ways round a parked aeroplane (render/servicing.js: the turnaround's vehicles,
+// the baggage trains, the parked aeroplanes' fuel trucks)
+const SERVICE = {
+  PAD_M: 1.2,                  // a vehicle's side keeps this far off the aeroplane seen from above ...
+  HEAD_M: 0.4,                 // ... unless it passes under the part with this much headroom
+  BODY_PAD_M: 0.5,             // ... and this far off a vehicle standing there (the fuel truck, for the trains)
+  WING_PANELS: 6,              // each wing taken in this many panels from root to tip, each as low as its lower end
+  STEP_M: 1,                   // the lanes down the side are tried this far apart
+  FUEL_SHIFT_M: 6,             // the fuel truck's lane moves at most this far in or out to pass between the engines
+  PLACE_SHIFT_M: 10,           // a place by the fuselage moves at most this far along it to stand clear of the engines and the wing
+  TRAIN_STOP_OUT_M: 10,        // a baggage train stops beside the belt loader this far out from the fuselage's side ...
+  TRAIN_DOWN_M: 22,            // ... comes down the side at least this far out ...
+  TRAIN_TURN_M: [12, 6]        // ... and on the way back turns out behind the wing this far (at most, at least) ahead of its stop
+};
+
 // A look round an airport from the briefing (free): the camera flies in on the approach, low
 // down the runway, round over the terminal and down to the own aeroplane at its stand (or the
 // holding point), circles it and holds, then the briefing is back. Enter, Space, Esc or a tap

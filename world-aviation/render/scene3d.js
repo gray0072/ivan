@@ -858,7 +858,7 @@ const Scene3D = {
     // (the apron traffic gives way to the own aeroplane while it is on the ground)
     const dims = fl.dims;
     const own = fl.st.onGround ? {
-      pos: st.pos, vel: st.vel, r: Math.max(dims.len, dims.span) / 2, len: dims.len, rad: dims.radius, landed: !!fl.landed,
+      pos: st.pos, vel: st.vel, r: Math.max(dims.len, dims.span) / 2, len: dims.len, rad: dims.radius, ac: fl.ac, landed: !!fl.landed,
       crewIn: Turnaround3D.arrived()
     } : null;
     const parkedM = this.quality.parkedM || 0;

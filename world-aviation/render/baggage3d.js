@@ -25,6 +25,12 @@
 //     turns, pulls away and stops smoothly
 //   - a train gives way to the player's aeroplane while it moves
 //     (Apron3D.blocked) and waits for another train in its way
+//   - its way keeps off the aeroplane it goes to (render/servicing.js):
+//     down the side outside the wingtip (or, with no room for that,
+//     under the outer wing with headroom to spare), round behind the
+//     tail and up beside the belt loader; back out behind the wing and
+//     up a lane further out, clear of the fuel truck — never under the
+//     inner wing or through it
 //
 // The trains never go near the taxiway or the apron lane.
 // Used by Apron3D.build / update.
@@ -122,7 +128,8 @@ const Baggage = {
   },
 
   // which stands a train may go to now: an aeroplane parked there (one of the airport's, or
-  // the player's own at a stand it uses this flight, at rest), no other train on its way there
+  // the player's own at a stand it uses this flight, at rest), no other train on its way there;
+  // with its way there past the aeroplane (way: Servicing.trainWay, null: the plain old way)
   standFree(rec, i, own) {
     const s = rec.bagStands[i];
     if (rec.trains.some((tr) => tr.stand === i)) return null;
@@ -132,27 +139,51 @@ const Baggage = {
       // (just in: not before the ground crew's vehicles are in their places, turnaround3d.js)
       if (own.landed && !own.crewIn) return null;
       if (Math.hypot(own.t - gate.t, own.across - LAYOUT.STAND) > 15 || !(own.len > 15)) return null;
-      return { t: gate.t, hold: LAYOUT.STAND - own.len * 0.22, R: own.rad, mission: own.landed ? 'in' : 'out' };
+      // (the aeroplane where it really stands, and the fuel truck by it, as the ground crew has them)
+      const ta = rec.turnaround && rec.turnaround.gate === gate ? rec.turnaround : null;
+      const pose = ta ? ta.pose : Servicing.standPose(gate), fuel = Turnaround3D.fuelBody(ta);
+      return { t: gate.t, hold: LAYOUT.STAND - own.len * 0.22, R: own.rad, mission: own.landed ? 'in' : 'out',
+        way: own.ac ? this.wayAt(rec, own.ac, pose, ta ? ta.holdZ : -own.len * 0.22, s.room, fuel ? [fuel] : []) : null };
     }
     if (!s.parked) return null;
-    return { t: s.t, hold: s.hold, R: s.R, mission: null };
+    if (s.way === undefined) s.way = s.ac ? this.wayAt(rec, s.ac, s.pose, s.hold - LAYOUT.STAND, s.room, s.bodies) : null;
+    return { t: s.t, hold: s.hold, R: s.R, mission: null, way: s.way };
+  },
+  wayAt(rec, ac, pose, zHold, room, bodies) {
+    const w = Servicing.trainWay(ac, pose, zHold, room, Servicing.size('tractor', Vehicles.tractor), rec.bagRoad, bodies);
+    return w && Object.assign(w, { pose });
   },
 
   // the track out of the hall to stand st and back: corners [t, across], rounded
   pathOut(rec, tr, st) {
-    const front = rec.bagFront, road = rec.bagRoad, hall = tr.hall;
-    const tStop = st.t - st.R - 10, tDown = tStop - 12;
-    const aStop = st.hold - 6, aBot = aStop - 17;
+    const front = rec.bagFront, road = rec.bagRoad, hall = tr.hall, w = st.way;
+    const tStop = st.t - st.R - 10, tDown = w ? Servicing.at(w.pose, -w.oDown, 0)[0] : tStop - 12;
     const dir = Math.sign(tDown - hall.t) || 1;
     const lane = road + dir * BAG_LANE, door = hall.t + dir * 2;    // (out through one half of the door)
-    return makeTrack([[door, front + 10], [door, lane], [tDown, lane], [tDown, aBot], [tStop, aBot], [tStop, aStop]]);
+    const start = [[door, front + 10], [door, lane]];
+    if (w) {
+      // down the lane past the aeroplane, behind the tail, in and up beside the belt loader
+      const at = (x, z) => Servicing.at(w.pose, -x, z);
+      return makeTrack(start.concat([at(w.oDown, Servicing.zAt(w.pose, -w.oDown, lane)), at(w.oDown, w.zBot),
+        at(w.xStop, w.zBot), at(w.xStop, w.zStop)]));
+    }
+    const aStop = st.hold - 6, aBot = aStop - 17;
+    return makeTrack(start.concat([[tDown, lane], [tDown, aBot], [tStop, aBot], [tStop, aStop]]));
   },
   pathBack(rec, tr, st) {
-    const front = rec.bagFront, road = rec.bagRoad, hall = tr.hall;
+    const front = rec.bagFront, road = rec.bagRoad, hall = tr.hall, w = st.way;
     const tStop = st.t - st.R - 10, aStop = st.hold - 6;
-    const dir = Math.sign(hall.t - tStop) || -1;
+    const tUp = w ? Servicing.at(w.pose, -w.oUp, 0)[0] : tStop;
+    const dir = Math.sign(hall.t - tUp) || -1;
     const lane = road + dir * BAG_LANE, door = hall.t + dir * 2;    // (in through the other)
-    return makeTrack([[tStop, aStop], [tStop, lane], [door, lane], [door, front + 10]]);
+    const end = [[door, lane], [door, front + 10]];
+    if (w) {
+      // on a little, out behind the wing and up the outer lane
+      const at = (x, z) => Servicing.at(w.pose, -x, z);
+      return makeTrack([at(w.xStop, w.zStop), at(w.xStop, w.zTurn), at(w.oUp, w.zTurn),
+        at(w.oUp, Servicing.zAt(w.pose, -w.oUp, lane))].concat(end));
+    }
+    return makeTrack([[tStop, aStop], [tStop, lane]].concat(end));
   },
 
   update(rec, dt, dark, own) {
