@@ -242,7 +242,8 @@ const Game = {
   // sits where the glide path is, and a line of plain words says what to do. Off the view
   // ahead, at the right edge of the windscreen: the glide path scale as far from the window
   // pillar as the whole is from the panel. In the bottom right corner of the view, just above the
-  // panel — on a phone, a tablet and a computer, held upright or on its side alike. On
+  // panel — on a phone, a tablet and a computer, held upright or on its side alike (on a touch
+  // screen left of the Brake button once it is up). On
   // a phone at three quarters of the size and without the words (the scales say it, and the view
   // needs the room); on a computer full size with the words, with its gaps the phone's in scale,
   // and where the checklist or the map above it leaves too little room smaller, then without the
@@ -273,7 +274,10 @@ const Game = {
     // 10 px over the panel's top out there): 14 px on a phone, at three quarters of the size, and
     // as much in scale on a computer
     const gapAt = (k) => Math.round(14 * k / 0.75);
-    const right0 = inside ? w - Cockpit.pillarW(w, h) : w;
+    let right0 = inside ? w - Cockpit.pillarW(w, h) : w;
+    // a touch screen: left of the Brake button, which comes up at the decision height
+    const bb = Input.isCoarse && el('brakeBtn'), br = bb && !bb.hidden && bb.getBoundingClientRect();
+    if (br && br.width > 0) right0 = Math.min(right0, br.left);
     if (side) {
       // a computer: what the checklist and the map (or the cockpit inset) above leave of the
       // right side, and the biggest of the ILS that fits in there

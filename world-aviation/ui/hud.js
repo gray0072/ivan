@@ -228,11 +228,13 @@ const HUD = {
       const tb = el('touchButtons');
       if (tb) tb.setAttribute('data-show', row);
     }
-    // the wheel brakes over the thrust lever: on the ground only (on the approach the ILS is there)
-    const brake = el('brakeBtn');
-    if (brake && brake.hidden === !!st.onGround) {
-      brake.hidden = !st.onGround;
-      if (!st.onGround && Input.touchBrake !== false) { Input.touchBrake = false; brake.classList.remove('on'); }
+    // the wheel brakes over the thrust lever: with the ground row — on the ground, and on the
+    // approach from the decision height, where the autopilot hands over, so the thumb is on them
+    // before the wheels touch
+    const brake = el('brakeBtn'), braking = row === 'ground';
+    if (brake && brake.hidden === braking) {
+      brake.hidden = !braking;
+      if (!braking && Input.touchBrake !== false) { Input.touchBrake = false; brake.classList.remove('on'); }
     }
     const on = { ap: fl.ap.on, nav: fl.ap.on && fl.ap.nav, gear: st.gearTarget >= 1, spoiler: st.spoiler, parkBrake: st.parkingBrake, antiIce: sys && sys.antiIce };
     for (const k in on) {

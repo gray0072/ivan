@@ -15,6 +15,8 @@ const CAREER_SLOT = 'worldaviation.career.';         // + a career's id: that ca
 const SETTINGS_KEY = 'worldaviation.settings.v1';    // the device's language, and the settings with no career open
 // a new career's settings (the language is the device's, above the careers)
 const SETTINGS_DEFAULT = { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', landingAid: true, noseUp: 'down' };
+// the settings that stay with the device when a career comes in from the cloud
+const DEVICE_SETTINGS = ['quality', 'noseUp'];
 
 const Career = {
   data: null,
@@ -288,12 +290,12 @@ const Career = {
 
   // ---------- the cloud copy (core/cloud.js) ----------
   // a career of the account not yet on this device joins the list (not opened), linked to the account;
-  // the graphics level is this device's
+  // the graphics level and the way the nose goes up are this device's
   importCareer(data, cloud) {
     this.withCareer(data, () => {
       this.migrate();
       this.data.cloud = cloud;
-      this.data.settings.quality = this.settings.quality;
+      for (const k of DEVICE_SETTINGS) this.data.settings[k] = this.settings[k];
       this.save();
     });
   },
@@ -336,9 +338,10 @@ const Career = {
     for (const k of ['flights', 'blockTime', 'landings', 'perfect', 'crashes', 'cheats', 'bestPay']) d.stats[k] = Math.max(d.stats[k] || 0, o.stats[k] || 0);
     if (order.indexOf(o.stats.bestGrade) > order.indexOf(d.stats.bestGrade)) d.stats.bestGrade = o.stats.bestGrade;
     d.rank = Math.max(d.rank || 0, o.rank || 0);
-    // the link to the Google account and the graphics level belong to this device
+    // the link to the Google account, the graphics level and the way the nose goes up belong to
+    // this device (a phone may well want the stick the other way round from the computer)
     d.cloud = local.cloud;
-    d.settings.quality = local.settings.quality;
+    for (const k of DEVICE_SETTINGS) if (local.settings[k] !== undefined) d.settings[k] = local.settings[k];
     this.data = d;
     this.save();
     return d;

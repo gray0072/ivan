@@ -630,9 +630,14 @@ const Instruments = {
     ctx.strokeStyle = '#3c444e'; ctx.stroke();
     ctx.textBaseline = 'middle';
     items.forEach(([label, value, color], i) => {
-      const cx = x + cell * i + cell / 2;
+      // the label ends at the middle of its cell and the value starts there; a long label (the
+      // Russian ЗАКРЫЛКИ) gets a smaller type and pushes the middle right, never out of its cell
+      const left = x + cell * i + 3;
       ctx.fillStyle = '#8d99a6';
-      ctx.font = '600 9px system-ui, sans-serif';
+      let px = 9;
+      ctx.font = '600 ' + px + 'px system-ui, sans-serif';
+      while (px > 7 && ctx.measureText(label).width > cell * 0.55) { px -= 0.5; ctx.font = '600 ' + px + 'px system-ui, sans-serif'; }
+      const cx = Math.max(left + cell / 2 - 3, left + ctx.measureText(label).width + 2);
       ctx.textAlign = 'right';
       ctx.fillText(label, cx - 2, y + h / 2);
       ctx.fillStyle = color;
