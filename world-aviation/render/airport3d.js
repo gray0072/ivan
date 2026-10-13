@@ -132,40 +132,16 @@ const Airport3D = {
     const L = LAYOUT;
     const Y = markBatch(0.16), W = markBatch(0.15);   // above the ground plane (0.05) and the runway (0.12)
 
-    const CL = 0.45;                      // centreline width (wider than the real 0.15 m, to read from the cockpit)
-    // each taxi line from node to node; where a line's only ways on at a node are curves (a
-    // corner, the stem of a T, an exit off the runway, a stand's lead-in) it stops where the
-    // curves leave it, so no right angle is drawn where the curve is the way (taxiTrim)
-    const seen = {};
-    for (const n of a.nodeList) {
-      for (const e of n.edges) {
-        if (e.kind === 'runway') continue;
-        const key = n.id < e.to.id ? n.id + '|' + e.to.id : e.to.id + '|' + n.id;
-        if (seen[key]) continue;
-        seen[key] = 1;
-        const len = Math.hypot(e.to.t - n.t, e.to.across - n.across);
-        if (len < 1) continue;
-        const u = [(e.to.t - n.t) / len, (e.to.across - n.across) / len];
-        const d0 = taxiTrim(a, n, e.to), d1 = taxiTrim(a, e.to, n);
-        if (d0 + d1 >= len - 0.5) continue;
-        const p = [n.t + u[0] * d0, n.across + u[1] * d0], q = [e.to.t - u[0] * d1, e.to.across - u[1] * d1];
-        Y.strip(p[0], p[1], q[0], q[1], CL);
-        Y.dot(p[0], p[1], CL / 2); Y.dot(q[0], q[1], CL / 2);
-      }
-    }
-    // the curves where the lines meet: round turns instead of right angles
-    for (const f of a.fillets || []) Y.poly(f.pts, CL);
-    this.buildTaxiEdges(a, Y);
-    // the stands: the lead-in line on to the stop bar, and the red safety box round the
-    // parked aeroplane (the stand number is a plate: standPlates)
+    // the taxi lines and the edge lines, worked out by render/taxiways.js: continuous ribbons,
+    // the curves finely sampled, meeting the straight lines at their tangent points
+    const plan = Taxiways.plan(a);
+    for (const ln of plan.lines) Y.poly(ln.pts, TWY_CL_W);
+    for (const ed of plan.edges) Y.poly(ed.pts, TWY_EDGE_W);
+    // the stands: the stop bar, and the red safety box round the parked aeroplane (the lead-in
+    // line is one of the plan's lines; the stand number is a plate: standPlates)
     const Rd = markBatch(0.155);
     for (const gate of a.gates) {
-      // (from where the turns into it leave the lead-in, when they are its only way on: taxiTrim)
-      const lane = gate.node && gate.node.edges.find((e) => e.kind === 'stand');
-      const from = lane ? Math.min(taxiTrim(a, lane.to, gate.node), L.STAND + 12 - L.APRON_LANE - 1) : 0;
-      Y.strip(gate.t, L.APRON_LANE + from, gate.t, L.STAND + 12, 0.4);
       Y.strip(gate.t - 8, L.STAND + 4, gate.t + 8, L.STAND + 4, 1.0);
-      Y.dot(gate.t, L.STAND + 12, 0.2);
       const box = [[gate.t - 34, L.STAND - 36], [gate.t - 34, L.STAND + 16], [gate.t + 34, L.STAND + 16], [gate.t + 34, L.STAND - 36]];
       Rd.poly(box, 0.3);
       // the equipment restraint line: dashed red along the service road side
@@ -239,81 +215,6 @@ const Airport3D = {
     }
   },
 
-  // The yellow taxiway edge line runs just inside the pavement edge round the outside of the
-  // whole network: both sides of every taxiway and the round ends of every segment, with
-  // whatever falls on other pavement (another taxiway, the runway, the apron, a hangar pad)
-  // cut away, so the lines stop exactly where the taxiways meet.
-  buildTaxiEdges(a, Y) {
-    const L = LAYOUT;
-    const EW = 0.45, IN = 0.55;           // line width, and how far inside the pavement edge its middle is
-    const segs = a.twySegs.filter((s) => s.kind === 'taxi' || s.kind === 'connector').map((s) => {
-      const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
-      return { t1: p.t, a1: p.across, t2: q.t, a2: q.across, r: s.w / 2 };
-    });
-    // the fillets are pavement too: their outer edge is the curved edge line of the inner corner
-    for (const f of a.fillets || []) {
-      if (f.apron) continue;
-      for (let i = 0; i + 1 < f.pts.length; i++) {
-        segs.push({ t1: f.pts[i][0], a1: f.pts[i][1], t2: f.pts[i + 1][0], a2: f.pts[i + 1][1], r: f.w / 2 });
-      }
-    }
-    const r = a.apronRect;
-    const rects = [
-      [-a.half - RWY_BLAST, a.half + RWY_BLAST, -RWY_HALF_WIDTH - RWY_SHOULDER, RWY_HALF_WIDTH + RWY_SHOULDER],
-      [r.t0, r.t1, r.a0, r.a1]
-    ];
-    for (const b of a.buildings) {
-      if (b.kind !== 'hangar' && b.kind !== 'fuel') continue;
-      rects.push([b.t - b.along / 2 - 6, b.t + b.along / 2 + 6, L.TWY_OFFSET + 40, b.across - b.acrossSize / 2]);
-      rects.push([b.t - 12, b.t + 12, L.TWY_OFFSET, L.TWY_OFFSET + 40]);
-    }
-    const covered = (t, ac) => {
-      for (const q of rects) if (t > q[0] && t < q[1] && ac > q[2] && ac < q[3]) return true;
-      for (const s of segs) {
-        const dt = s.t2 - s.t1, da = s.a2 - s.a1, l2 = dt * dt + da * da;
-        const k = l2 ? clamp(((t - s.t1) * dt + (ac - s.a1) * da) / l2, 0, 1) : 0;
-        if (Math.hypot(t - s.t1 - dt * k, ac - s.a1 - da * k) < s.r - IN - 0.04) return true;
-      }
-      return false;
-    };
-    const mix = (p, q, k) => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k];
-    // the point between a kept point p and a cut one q where the other pavement starts
-    const edgeAt = (p, q) => {
-      let lo = 0, hi = 1;
-      for (let i = 0; i < 10; i++) { const m = (lo + hi) / 2; const x = mix(p, q, m); if (covered(x[0], x[1])) hi = m; else lo = m; }
-      return mix(p, q, lo);
-    };
-    for (const s of segs) {
-      const dt = s.t2 - s.t1, da = s.a2 - s.a1, len = Math.hypot(dt, da);
-      if (len < 0.5) continue;
-      const off = s.r - IN, n = Math.ceil(len / 2);
-      for (const side of [-1, 1]) {
-        const nt = -da / len * off * side, na = dt / len * off * side;
-        const pts = [];
-        for (let i = 0; i <= n; i++) pts.push([s.t1 + dt * i / n + nt, s.a1 + da * i / n + na]);
-        const keep = pts.map((p) => !covered(p[0], p[1]));
-        for (let i = 0; i <= n; i++) {
-          if (!keep[i]) continue;
-          let j = i;
-          while (j < n && keep[j + 1]) j++;
-          const u = i > 0 ? edgeAt(pts[i], pts[i - 1]) : pts[i];
-          const v = j < n ? edgeAt(pts[j], pts[j + 1]) : pts[j];
-          Y.strip(u[0], u[1], v[0], v[1], EW);
-          i = j;
-        }
-      }
-      // the round ends: the outside of the corners where the taxiway turns
-      const N = 48;
-      for (const [ct, ca] of [[s.t1, s.a1], [s.t2, s.a2]]) {
-        for (let i = 0; i < N; i++) {
-          const a0 = i / N * TAU, a1 = (i + 1) / N * TAU, am = (a0 + a1) / 2;
-          if (covered(ct + Math.cos(am) * off, ca + Math.sin(am) * off)) continue;
-          Y.strip(ct + Math.cos(a0) * off, ca + Math.sin(a0) * off, ct + Math.cos(a1) * off, ca + Math.sin(a1) * off, EW);
-        }
-      }
-    }
-  },
-
   // ---------- lights ----------
   buildLights(a, rec, at) {
     const pos = [], col = [];
@@ -331,37 +232,10 @@ const Airport3D = {
     // the approach lights: a bar every 30 m out to 900 m, a crossbar at 300 m
     for (let d = 60; d <= 900; d += 30) for (const x of [-3, 0, 3]) add(-h - d, x, 0.8 + d * 0.004, W);
     for (let x = -22; x <= 22; x += 2.75) add(-h - 300, x, 2, W);
-    // blue taxiway edge lights
-    for (const s of a.twySegs) {
-      if (s.kind !== 'taxi') continue;
-      const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
-      const len = Math.hypot(q.t - p.t, q.across - p.across);
-      const nt = (q.t - p.t) / len, na = (q.across - p.across) / len;
-      for (let d = 15; d < len - 15; d += 40) for (const sd of [-1, 1]) {
-        const across = p.across + na * d + nt * sd * (s.w / 2 + 1);
-        if (Math.abs(across) > RWY_HALF_WIDTH + 6) addTwy(p.t + nt * d - na * sd * (s.w / 2 + 1), across, 0.35, B);
-      }
-    }
-    // green taxiway centreline lights, every 30 m, round the curves too
-    const Gc = [0.2, 0.85, 0.4];
-    const greenLine = (pts) => {
-      let carry = 0;
-      for (let i = 0; i + 1 < pts.length; i++) {
-        const p = pts[i], q = pts[i + 1], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
-        let d = carry;
-        for (; d < len; d += 30) {
-          const t = p[0] + (q[0] - p[0]) * d / len, ac = p[1] + (q[1] - p[1]) * d / len;
-          if (Math.abs(ac) > RWY_HALF_WIDTH + 4) addTwy(t, ac, 0.25, Gc);
-        }
-        carry = d - len;
-      }
-    };
-    for (const s of a.twySegs) {
-      if (s.kind !== 'taxi' && s.kind !== 'connector') continue;
-      const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
-      greenLine([[p.t, p.across], [q.t, q.across]]);
-    }
-    for (const f of a.fillets || []) if (!f.apron) greenLine(f.pts);
+    // the taxiway lights: green centreline lights (green and yellow by turns off the runway),
+    // blue edge lights, placed by render/taxiways.js for the airport's size
+    const TC = { green: [0.2, 0.85, 0.4], yellow: Y, blue: B };
+    for (const l of Taxiways.plan(a).lights) addTwy(l.t, l.across, l.c === 'blue' ? 0.35 : 0.25, TC[l.c]);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
@@ -378,6 +252,9 @@ const Airport3D = {
         map: this.twyDot
       })), 0, 0);
       rec.twyLights.visible = false;
+      // (after the ground and the near land: they are see-through too, and sorted by distance
+      // one painted over the lights, which write no depth — most of them were lost)
+      rec.twyLights.renderOrder = 5;
     }
 
     // the sequenced flasher ("the rabbit") running towards the threshold
@@ -1210,11 +1087,28 @@ function markBatch(y) {
       pos.push(ac, y, -t, ac + Math.sin(a1) * r, y, -(t + Math.cos(a1) * r), ac + Math.sin(a0) * r, y, -(t + Math.cos(a0) * r));
     }
   };
-  // a line along [t, across] points, solid, or dashed with dash / gap metres
+  // a line along [t, across] points, solid, or dashed with dash / gap metres. A solid one is
+  // one ribbon, mitred at the corners (a sharp one gets a dot instead: its mitre would spike)
   const poly = (pts, w, dash, gap) => {
     if (!dash) {
-      for (let i = 0; i + 1 < pts.length; i++) strip(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], w);
-      for (let i = 1; i + 1 < pts.length; i++) dot(pts[i][0], pts[i][1], w / 2);
+      const nrm = (p, q) => { const dt = q[0] - p[0], da = q[1] - p[1], l = Math.hypot(dt, da) || 1; return [-da / l, dt / l]; };
+      const side = [];
+      for (let i = 0; i < pts.length; i++) {
+        const n0 = i > 0 ? nrm(pts[i - 1], pts[i]) : nrm(pts[i], pts[i + 1]);
+        const n1 = i + 1 < pts.length ? nrm(pts[i], pts[i + 1]) : n0;
+        let mt = n0[0] + n1[0], ma = n0[1] + n1[1];
+        const ml = Math.hypot(mt, ma), cos = ml / 2;
+        if (cos < 0.5) { side.push(null); continue; }
+        const k = w / 2 / cos;
+        mt = mt / ml * k; ma = ma / ml * k;
+        side.push([[pts[i][0] + mt, pts[i][1] + ma], [pts[i][0] - mt, pts[i][1] - ma]]);
+      }
+      for (let i = 0; i + 1 < pts.length; i++) {
+        if (!side[i] || !side[i + 1]) { strip(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], w); continue; }
+        const p = [side[i][0], side[i + 1][0], side[i + 1][1], side[i][1]];
+        for (const k of [0, 1, 2, 0, 2, 3]) pos.push(p[k][1], y, -p[k][0]);
+      }
+      for (let i = 0; i < pts.length; i++) if (!side[i]) dot(pts[i][0], pts[i][1], w / 2);
       return;
     }
     let base = 0;                         // distance along the line at the start of segment i
@@ -1389,16 +1283,17 @@ function makeGroundCanvas(a, id, ch) {
     rect(b.t - 12, b.t + 12, L.TWY_OFFSET, L.TWY_OFFSET + 40);
   }
 
-  // taxiways: shoulders and the pavement (the edge lines and the centrelines are geometry)
-  const segPaths = a.twySegs.filter((s) => s.kind === 'taxi' || s.kind === 'connector').map((s) => {
-    const p = World.local(a, s.x1, s.z1), q = World.local(a, s.x2, s.z2);
-    return { path: line([[p.t, p.across], [q.t, q.across]]), w: s.w };
-  });
-  // and the fillets in the corners (World.buildFillets)
-  for (const f of a.fillets || []) if (!f.apron) segPaths.push({ path: line(f.pts), w: f.w });
+  // taxiways: shoulders and the pavement, the shapes of render/taxiways.js — straight pieces
+  // and the rings of the curves (the edge lines and the centrelines are geometry)
   // (a remote strip's are gravel)
-  for (const s of segPaths) asphalt(s.path, s.w + 15, '#8a8574');
-  for (const s of segPaths) asphalt(s.path, s.w, a.remote ? '#857c6c' : '#65696d');
+  const plan = Taxiways.plan(a);
+  const fill = (polys, color) => {
+    const p = new Path2D();
+    for (const pts of polys) { pts.forEach(([t, ac], i) => { const q = P(t, ac); if (i) p.lineTo(q[0], q[1]); else p.moveTo(q[0], q[1]); }); p.closePath(); }
+    g.fillStyle = color; g.fill(p);
+  };
+  fill(Taxiways.pavement(plan, TWY_SHOULDER), '#8a8574');
+  fill(Taxiways.pavement(plan, 0), a.remote ? '#857c6c' : '#65696d');
   for (let i = 0; i < 1600; i++) {          // a little texture on the pavement
     g.fillStyle = rng.chance(0.5) ? 'rgba(40,42,45,0.12)' : 'rgba(150,150,150,0.08)';
     const q = P(rng.range(-a.half, a.half), rng.range(L.TWY_OFFSET - 12, L.TWY_OFFSET + 12));
@@ -1620,33 +1515,6 @@ function makeBannerCanvas(a, id) {
   fit((l ? aptCity(a, l) : a.city).toUpperCase(), '900 108px Arial, sans-serif', 134, '#ffffff');
   fit(l ? 'Welcome to ' + a.city + ' · ' + a.country : (c ? c.hello + ' · ' : '') + a.country, 'italic 600 40px Georgia, serif', 222, 'rgba(255,255,255,0.92)');
   return cv;
-}
-
-// How far from node n the taxi line towards node m stops (0: it runs to the node). It stops
-// where the curves (World.buildFillets) leave it when they are its only ways on at n: no line
-// leads on straight from it there (within 25°) and every turn the network takes from it at n
-// has a curve; then it stops where the nearest of them leaves it.
-function taxiTrim(a, n, m) {
-  const TAXI = ['taxi', 'connector', 'apron', 'stand'];
-  const offRunway = n.kind === 'exit' || n.kind === 'lineup';
-  const lm = Math.hypot(m.t - n.t, m.across - n.across) || 1;
-  const u = [(m.t - n.t) / lm, (m.across - n.across) / lm];
-  let d = Infinity, any = false;
-  for (const e of n.edges) {
-    if (e.to === m || !(TAXI.indexOf(e.kind) >= 0 || (offRunway && e.kind === 'runway'))) continue;
-    const l = Math.hypot(e.to.t - n.t, e.to.across - n.across) || 1;
-    const ang = Math.acos(clamp((u[0] * (e.to.t - n.t) + u[1] * (e.to.across - n.across)) / l, -1, 1));
-    if (ang > 155 * DEG) return 0;                             // a line goes on straight from it
-    if (ang < 25 * DEG) continue;                              // (a hairpin: not a way on)
-    const f = World.filletAt(a, n, m, e.to);
-    if (!f) {
-      if (e.kind === 'runway' && ang < 80 * DEG) continue;     // (back against the landing: never a curve)
-      return 0;                                                // a square turn: the line runs to the node
-    }
-    any = true;
-    d = Math.min(d, f.d);
-  }
-  return any ? Math.max(0, d - 0.5) : 0;
 }
 
 // the taxiway lights' share of full brightness (visual only)

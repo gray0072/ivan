@@ -410,8 +410,9 @@ const World = {
   // one on each side, its yellow line leading off the runway centreline). Each fillet: its arc
   // as [t, across] points and as world points, the pavement width, and whether it is on the
   // apron (already paved), and for the taxi limits (sim/taxilimit.js) its node, the two nodes its
-  // lines lead to (ends), its radius R and how far from the node it meets each line (d); by node
-  // in a.filletsAt. Off a rapid exit only the turn the landing roll takes gets one (not back
+  // lines lead to (ends), its radius R and how far from the node it meets each line (d), and for
+  // the drawing (render/taxiways.js) its centre c ([t, across]) and its angles (from a1, through
+  // da); by node in a.filletsAt. Off a rapid exit only the turn the landing roll takes gets one (not back
   // against the landing).
   // The arc's radius is the one for that kind of turn (FILLET_R, FILLET_STAND_R, FILLET_EXIT_R;
   // FILLET_RAPID_R for a rapid exit's turns of up to a right angle), less where a line is too
@@ -421,7 +422,11 @@ const World = {
   // meet; on the apron the run goes on to the end of the lane and the arc may take 0.9 of it
   // (the lead-in curves of neighbouring stands may cross there, as on a real apron) — the stands
   // and the lanes are only 20-40 m apart along the apron lane, and the turn into a stand would
-  // otherwise be cramped into less than 20 m.
+  // otherwise be cramped into less than 20 m. But a curve leaves its line only where the line is
+  // still painted: where the curves at the far end of the run are the line's only ways on
+  // (trimCurve: a corner, the stem of a T) and the two would overlap on it, they share the run in
+  // proportion to their radii, so one leaves the line just where the other takes it over (the
+  // first stand's turn and the corner into the lane at the apron's end, 80 m apart: 40 m each).
   buildFillets(a) {
     const out = [];
     const TAXI = ['taxi', 'connector', 'apron', 'stand'];
@@ -436,7 +441,27 @@ const World = {
         if (!on) break;
         from = to; to = on.to;
       }
-      return len;
+      return { len, end: to, prev: from };
+    };
+    // the arc of fillet f with radius R, tangent to its two lines (unit vectors u, v from the node)
+    const shape = (f, R) => {
+      const n = f.node, u = f.u, v = f.v, half = Math.tan(f.ang / 2);
+      const d = R / half;                                        // from the node to where the arc meets each line
+      const bis = [u[0] + v[0], u[1] + v[1]], bl = Math.hypot(bis[0], bis[1]);
+      const cDist = R / Math.sin(f.ang / 2);
+      const c = [n.t + bis[0] / bl * cDist, n.across + bis[1] / bl * cDist];
+      const p1 = [n.t + u[0] * d, n.across + u[1] * d], p2 = [n.t + v[0] * d, n.across + v[1] * d];
+      const a1 = Math.atan2(p1[1] - c[1], p1[0] - c[0]);
+      let da = Math.atan2(p2[1] - c[1], p2[0] - c[0]) - a1;
+      while (da > Math.PI) da -= TAU;
+      while (da < -Math.PI) da += TAU;
+      const steps = Math.max(4, Math.ceil(Math.abs(da) / (8 * DEG)), Math.ceil(Math.abs(da) * R / 12));
+      const pts = [];
+      for (let k = 0; k <= steps; k++) {
+        const q = a1 + da * k / steps;
+        pts.push([c[0] + Math.cos(q) * R, c[1] + Math.sin(q) * R]);
+      }
+      Object.assign(f, { pts, world: pts.map(([t, ac]) => this.at(a, t, ac)), R, d, c, a1, da });
     };
     for (const n of a.nodeList) {
       const offRunway = n.kind === 'exit' || n.kind === 'lineup';
@@ -459,31 +484,56 @@ const World = {
         const back = (e1.rapid || e2.rapid) && !exit && ang <= 89 * DEG;
         const half = Math.tan(ang / 2);
         // (along the runway itself the run is its whole length: an exit's arc starts on it)
-        const r1 = e1.kind === 'runway' ? Infinity : run(n, e1, apron), r2 = e2.kind === 'runway' ? Infinity : run(n, e2, apron);
+        const r1 = e1.kind === 'runway' ? Infinity : run(n, e1, apron).len, r2 = e2.kind === 'runway' ? Infinity : run(n, e2, apron).len;
         const want = rapid ? LAYOUT.FILLET_RAPID_R : back ? LAYOUT.FILLET_BACK_R : exit ? LAYOUT.FILLET_EXIT_R : apron ? LAYOUT.FILLET_STAND_R : LAYOUT.FILLET_R;
         const share = (e, r) => (back ? (e.rapid ? 0.5 : 0.75) : apron ? 0.9 : 0.45) * r;
         const R = Math.min(want, Math.min(share(e1, r1), share(e2, r2)) * half);
-        const d = R / half;                                        // from the node to where the arc meets each line
-        const bis = [u[0] + v[0], u[1] + v[1]], bl = Math.hypot(bis[0], bis[1]);
-        const cDist = R / Math.sin(ang / 2);
-        const c = [n.t + bis[0] / bl * cDist, n.across + bis[1] / bl * cDist];
-        const p1 = [n.t + u[0] * d, n.across + u[1] * d], p2 = [n.t + v[0] * d, n.across + v[1] * d];
-        const a1 = Math.atan2(p1[1] - c[1], p1[0] - c[0]);
-        let da = Math.atan2(p2[1] - c[1], p2[0] - c[0]) - a1;
-        while (da > Math.PI) da -= TAU;
-        while (da < -Math.PI) da += TAU;
-        const steps = Math.max(4, Math.ceil(Math.abs(da) / (8 * DEG)), Math.ceil(Math.abs(da) * R / 12));
-        const pts = [];
-        for (let k = 0; k <= steps; k++) {
-          const q = a1 + da * k / steps;
-          pts.push([c[0] + Math.cos(q) * R, c[1] + Math.sin(q) * R]);
-        }
-        out.push({ pts, world: pts.map(([t, ac]) => this.at(a, t, ac)), w: Math.min(e1.width, e2.width), apron, node: n, ends: [e1.to, e2.to], R, d });
+        const f = { w: Math.min(e1.width, e2.width), apron, node: n, ends: [e1.to, e2.to], u, v, ang };
+        shape(f, R);
+        out.push(f);
       }
     }
     a.filletsAt = {};
     for (const f of out) (a.filletsAt[f.node.id] = a.filletsAt[f.node.id] || []).push(f);
+    // (two curves overlapping on a run whose far end the curves there take over: shared)
+    for (const f of out) {
+      for (const k of [0, 1]) {
+        const e = f.node.edges.find((x) => x.to === f.ends[k]);
+        if (!e || e.kind === 'runway') continue;
+        const r = run(f.node, e, f.apron), g = this.trimCurve(a, r.end, r.prev);
+        if (!g || g === f || f.d + g.d <= r.len + 0.01) continue;
+        const s = r.len / (f.d + g.d);
+        shape(f, f.R * s); shape(g, g.R * s);
+      }
+    }
     return out;
+  },
+
+  // The curve at node n where the taxi line towards node m stops, or null where it runs on to
+  // the node. It stops where the curves (buildFillets) leave it when they are its only ways on
+  // at n: no line leads on straight from it there (within 25°) and every turn the network takes
+  // from it at n has a curve; then where the nearest of them leaves it. Used for the painted
+  // lines (render/taxiways.js) and to keep the curves on the painted line (buildFillets).
+  trimCurve(a, n, m) {
+    const TAXI = ['taxi', 'connector', 'apron', 'stand'];
+    const offRunway = n.kind === 'exit' || n.kind === 'lineup';
+    const lm = Math.hypot(m.t - n.t, m.across - n.across) || 1;
+    const u = [(m.t - n.t) / lm, (m.across - n.across) / lm];
+    let best = null;
+    for (const e of n.edges) {
+      if (e.to === m || !(TAXI.indexOf(e.kind) >= 0 || (offRunway && e.kind === 'runway'))) continue;
+      const l = Math.hypot(e.to.t - n.t, e.to.across - n.across) || 1;
+      const ang = Math.acos(clamp((u[0] * (e.to.t - n.t) + u[1] * (e.to.across - n.across)) / l, -1, 1));
+      if (ang > 155 * DEG) return null;                          // a line goes on straight from it
+      if (ang < 25 * DEG) continue;                              // (a hairpin: not a way on)
+      const f = this.filletAt(a, n, m, e.to);
+      if (!f) {
+        if (e.kind === 'runway' && ang < 80 * DEG) continue;     // (back against the landing: never a curve)
+        return null;                                             // a square turn: the line runs to the node
+      }
+      if (!best || f.d < best.d) best = f;
+    }
+    return best;
   },
 
   // the stands a flight takes at an airport: its own, and for an aeroplane wider than the

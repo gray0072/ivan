@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taxiways — debug plan</title>
+<link rel="stylesheet" href="taxiways.css?v=1">
+</head>
+<body>
+<header id="bar">
+  <select id="apt" title="Airport"></select>
+  <select id="view" title="Look at"></select>
+  <label><input type="checkbox" id="showGround"> ground texture</label>
+  <label><input type="checkbox" id="showPave" checked> pavement</label>
+  <label><input type="checkbox" id="showMarks" checked> markings</label>
+  <label><input type="checkbox" id="showLights" checked> lights</label>
+  <label><input type="checkbox" id="showGraph"> graph</label>
+  <label><input type="checkbox" id="night"> night</label>
+  <span id="info"></span>
+</header>
+<canvas id="cv"></canvas>
+<script src="../lib/three.min.js?v=1"></script>
+<script src="../constants.js?v=82"></script>
+<script src="../data/airports.js?v=7"></script>
+<script src="../data/airport-names.js?v=2"></script>
+<script src="../data/countries.js?v=5"></script>
+<script src="../data/airlines.js?v=5"></script>
+<script src="../core/i18n.js?v=4"></script>
+<script src="../core/utils.js?v=13"></script>
+<script src="../sim/world.js?v=22"></script>
+<script src="../render/taxiways.js?v=1"></script>
+<script src="../render/airport3d.js?v=33"></script>
+<script src="taxiways.js?v=1"></script>
+</body>
+</html>
