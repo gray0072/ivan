@@ -1078,6 +1078,8 @@ const TEXT_RU = {
   'hold ↑ — lift the nose': 'держите ↑ — поднимите нос',
   'drag the stick up — nose up': 'тяните джойстик вверх — нос вверх',
   'stick up': 'джойстик вверх',
+  'Joystick': 'Джойстик',
+  'the joystick rests faint in the bottom left corner; off, it shows only under the thumb': 'джойстик бледно виден в левом нижнем углу; выключено — он появляется только под пальцем',
   'Cabin announcements': 'Объявления в салоне',
   'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'экипаж обращается к пассажирам: перед взлётом, на эшелоне, на снижении, перед посадкой и по прибытии',
   'Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported': 'Превышение скорости на рулении — {v} kt при ограничении {max} kt: будет доложено',

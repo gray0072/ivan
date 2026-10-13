@@ -205,7 +205,7 @@ const UI = {
       '<div class="titleSettings">' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="settingsRow">' +
-      this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() +
+      this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.stickChip() + this.aidChip() + this.cabinChip() +
       '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
@@ -1155,7 +1155,7 @@ const UI = {
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
       '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.aidChip() + this.cabinChip() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.stickChip() + this.aidChip() + this.cabinChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
@@ -1212,6 +1212,16 @@ const UI = {
     return '<div class="setGroup"><span>' + tr('Nose up') + '</span>' +
       '<button class="chip' + (up ? '' : ' on') + '" data-act="noseUp" data-v="down" title="' + esc(tr('↓ and the stick pulled down lift the nose, like pulling back a yoke')) + '">↓ ' + tr('Down') + '</button>' +
       '<button class="chip' + (up ? ' on' : '') + '" data-act="noseUp" data-v="up" title="' + esc(tr('↑ and the stick pushed up lift the nose')) + '">↑ ' + tr('Up') + '</button></div>';
+  },
+
+  // on a touch screen: the stick resting faint in the bottom left corner (the default), or only
+  // under the thumb
+  stickChip() {
+    if (!Input.isCoarse) return '';
+    const on = Career.settings.touchStick !== false;
+    return '<div class="setGroup"><span>' + tr('Joystick') + '</span>' +
+      '<button class="chip' + (on ? ' on' : '') + '" data-act="touchStick" title="' + esc(tr('the joystick rests faint in the bottom left corner; off, it shows only under the thumb')) + '">' +
+      tr(on ? 'On' : 'Off') + '</button></div>';
   },
 
   // the landing aid: the ILS scales with plain words and the dotted glide path on the approach
@@ -1367,6 +1377,11 @@ const UI = {
       case 'noseUp':
         Career.settings.noseUp = v; Career.saveSettings();
         Input.invertPitch = v === 'up';
+        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        break;
+      case 'touchStick':
+        Career.settings.touchStick = Career.settings.touchStick === false; Career.saveSettings();
+        document.body.classList.toggle('stickRest', Career.settings.touchStick);
         if (Game.mode === 'paused') this.showPause(); else this.showTitle();
         break;
       case 'landingAid':

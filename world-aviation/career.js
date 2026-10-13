@@ -14,9 +14,9 @@ const CAREERS_KEY = 'worldaviation.careers.v1';      // the careers on this devi
 const CAREER_SLOT = 'worldaviation.career.';         // + a career's id: that career
 const SETTINGS_KEY = 'worldaviation.settings.v1';    // the device's language, and the settings with no career open
 // a new career's settings (the language is the device's, above the careers)
-const SETTINGS_DEFAULT = { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', landingAid: true, noseUp: 'down' };
+const SETTINGS_DEFAULT = { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', landingAid: true, noseUp: 'down', touchStick: true };
 // the settings that stay with the device when a career comes in from the cloud
-const DEVICE_SETTINGS = ['quality', 'noseUp'];
+const DEVICE_SETTINGS = ['quality', 'noseUp', 'touchStick'];
 
 const Career = {
   data: null,
@@ -338,8 +338,8 @@ const Career = {
     for (const k of ['flights', 'blockTime', 'landings', 'perfect', 'crashes', 'cheats', 'bestPay']) d.stats[k] = Math.max(d.stats[k] || 0, o.stats[k] || 0);
     if (order.indexOf(o.stats.bestGrade) > order.indexOf(d.stats.bestGrade)) d.stats.bestGrade = o.stats.bestGrade;
     d.rank = Math.max(d.rank || 0, o.rank || 0);
-    // the link to the Google account, the graphics level and the way the nose goes up belong to
-    // this device (a phone may well want the stick the other way round from the computer)
+    // the link to the Google account, the graphics level, the way the nose goes up and the touch
+    // stick at rest belong to this device (a phone may well want the stick the other way round from the computer)
     d.cloud = local.cloud;
     for (const k of DEVICE_SETTINGS) if (local.settings[k] !== undefined) d.settings[k] = local.settings[k];
     this.data = d;

@@ -1078,6 +1078,8 @@ const TEXT_SV = {
   'hold ↑ — lift the nose': 'håll ↑ — lyft nosen',
   'drag the stick up — nose up': 'dra spaken uppåt — nosen upp',
   'stick up': 'spaken uppåt',
+  'Joystick': 'Joystick',
+  'the joystick rests faint in the bottom left corner; off, it shows only under the thumb': 'joysticken syns svagt i nedre vänstra hörnet; av visas den bara under tummen',
   'Cabin announcements': 'Kabinutrop',
   'the crew speaks to the passengers: before the take-off, at the cruise level, on the descent, before the landing and at the arrival': 'besättningen talar till passagerarna: före start, på marschhöjd, under nedstigningen, före landning och vid ankomst',
   'Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported': 'För hög taxifart — {v} kt, gränsen är {max} kt: det rapporteras',

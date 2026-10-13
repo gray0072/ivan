@@ -78,6 +78,8 @@ const Game = {
       Audio2.setMuted(!Career.settings.sound);
       this.quality = pickQuality(Career.settings.quality);
       Scene3D.setQuality(this.quality);
+      // the touch stick resting faint in the bottom left corner (styles.css); headless there is no body
+      if (document.body) document.body.classList.toggle('stickRest', Career.settings.touchStick !== false);
     };
     Career.load();
     Rtw.atBoot();           // (an Iron leg left in the air by a closed page is lost: sim/rtw.js)

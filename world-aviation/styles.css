@@ -347,9 +347,11 @@ body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !i
     pointer-events: auto;
     touch-action: none;
   }
+  /* at rest the stick stands in the bottom left corner of the view, mirroring the Brake button
+     (8 px from the edge, 10 px over the panel); a touch anywhere in the left half moves it under the thumb */
   #stickBase {
     position: absolute;
-    left: 50%; bottom: 22%;
+    left: calc(66px + env(safe-area-inset-left)); bottom: calc(var(--panelH, 130px) + 10px);
     width: 116px; height: 116px;
     margin: -58px 0 0 -58px;
     border: 2px solid rgba(200, 220, 240, 0.25);
@@ -358,7 +360,7 @@ body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !i
   }
   #stickKnob {
     position: absolute;
-    left: 50%; bottom: 22%;
+    left: calc(66px + env(safe-area-inset-left)); bottom: calc(var(--panelH, 130px) + 42px);
     width: 52px; height: 52px;
     margin: -26px 0 0 -26px;
     border-radius: 50%;
@@ -418,8 +420,10 @@ body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !i
     color: #dfe7ee;
     font: 600 11px system-ui, sans-serif;
   }
-  /* the stick shows only under the thumb */
+  /* the stick rests faint in its corner (settings.touchStick, body.stickRest), or shows only under the thumb */
   #stickZone:not(.active) #stickBase, #stickZone:not(.active) #stickKnob { opacity: 0; }
+  body.stickRest #stickZone:not(.active) #stickBase { opacity: 0.3; }
+  body.stickRest #stickZone:not(.active) #stickKnob { opacity: 0.45; }
   /* the last row changes with the flight (HUD.updateButtons): Go and the brakes on the ground and
      for the landing, the autopilot and the time in the air, nothing (but its place) just after
      the lift-off */
