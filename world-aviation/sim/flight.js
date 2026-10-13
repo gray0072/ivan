@@ -106,6 +106,8 @@ const Flight = {
     this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0; this.taxiRedS = 0;
     this.warnedBank = false;
     this.locCaptured = false; this.overRunway = false;
+    this.lesson = null;              // a flight school's lesson: its id, and the instructor's help (sim/lesson.js)
+    this.assist = null;
     this.ap = {
       on: false, nav: true, gs: false,
       alt: Math.round((this.world.elev + 3000) / FT / 100) * 100,     // feet
@@ -1217,7 +1219,8 @@ const Flight = {
       if (!ap.gs) { ap.gs = true; this.info(tr('Glideslope captured')); }
       const gsV = -st.tas * Math.sin(SIM.GLIDESLOPE_DEG * DEG);
       vsT = gsV + (ils.targetAlt - (st.pos.y - st.gearH)) * 0.12;
-      if (this.altAgl() < SIM.DECISION_HEIGHT_FT * FT) {
+      // (a flight school's later try: the instructor lets it fly the glide path lower, sim/lesson.js)
+      if (this.altAgl() < ((this.assist && this.assist.apFloorFt) || SIM.DECISION_HEIGHT_FT) * FT) {
         ap.on = false; ap.gs = false;
         this.warn('AP', tr('Autopilot disconnect — decision height, land it by hand'));
         return;

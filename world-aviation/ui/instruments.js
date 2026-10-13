@@ -6,6 +6,8 @@
 // indicator with the radio altitude, altimeter with the selected altitude bug, heading
 // indicator with the route, VSI, engine gauges and the warning
 // lights. Everything is vector-drawn so it stays sharp at any size.
+// Where each one was drawn is kept (Instruments.rects) for the flight
+// school's coach, which rings the ones a lesson's step is about.
 // ============================================================
 
 // on a touch screen the thrust lever (#throttleZone in styles.css: 62 px wide, 8 px from the
@@ -15,6 +17,8 @@ const PHONE_THROTTLE_W = 78;
 const PHONE_UPRIGHT_GAUGES = 0.8;
 // a tablet held upright: its panel (the four gauges two by two, as on a phone) at most this share of the screen
 const TABLET_UPRIGHT_PANEL = 0.36;
+// the lines of a phone's configuration (phoneConfig), by the names the flight school's coach knows them by
+const PHONE_CONFIG_IDS = ['flaps', 'gear', 'ap', 'ice'];
 
 const Instruments = {
   ctx: null, w: 0, h: 0, dpr: 1,
@@ -36,7 +40,13 @@ const Instruments = {
   // a phone or a small window: no engine gauges and no heading strip, the configuration smaller
   compact(w, h) { return w < 760 || h < 560; },
 
+  // where each instrument was drawn this frame (CSS px: { x, y, w, h }), by its name: the flight
+  // school's coach rings the ones its step is about (ui/coach.js)
+  rects: {},
+  mark(name, x, y, w, h) { this.rects[name] = { x, y, w, h }; },
+
   draw(ctx, w, h, dpr, fl, sys) {
+    this.rects = {};
     if (this.hidden) return;
     this.ctx = ctx; this.w = w; this.h = h; this.dpr = dpr;
     const st = fl.st, ac = fl.ac;
@@ -167,6 +177,7 @@ const Instruments = {
   // speed (the wind moves the airspeed, not the aeroplane), the taxi speed limit as a gold bug
   // (sim/taxilimit.js) and the digits in amber over the limit, red well over it.
   asi(ctx, x, y, r, fl) {
+    this.mark('asi', x - r, y - r, 2 * r, 2 * r);
     const st = fl.st, ac = fl.ac, taxi = fl.taxi;
     const k = Units.metric ? 1.852 : 1;
     const v = (taxi ? taxi.gs : st.ias / KTS) * k;
@@ -260,6 +271,7 @@ const Instruments = {
 
   // ---------- attitude ----------
   adi(ctx, x, y, r, fl) {
+    this.mark('adi', x - r, y - r, 2 * r, 2 * r);
     const st = fl.st;
     this.bezel(ctx, x, y, r, tr('ATTITUDE'), null);
     ctx.save();
@@ -344,6 +356,7 @@ const Instruments = {
     }
     const landing = (fl.phase === 'APPROACH' || fl.phase === 'DESCENT') && st.vel.y < 0;
     const minimums = landing && agl / FT < SIM.DECISION_HEIGHT_FT;
+    this.mark('ra', x - r * 0.36, y + r * 0.36, r * 0.72, r * 0.26);
     ctx.save();
     ctx.translate(x, y);
     ctx.fillStyle = 'rgba(5,7,10,0.88)';
@@ -365,6 +378,7 @@ const Instruments = {
 
   // ---------- altimeter ----------
   alt(ctx, x, y, r, fl) {
+    this.mark('alt', x - r, y - r, 2 * r, 2 * r);
     const st = fl.st;
     const ft = Units.metric ? st.pos.y : st.pos.y / FT;          // the dial's unit: ft, or m
     this.bezel(ctx, x, y, r, tr('ALT'), Units.metric ? 'm' : 'ft', { x: 0, y: -0.33 });
@@ -423,6 +437,7 @@ const Instruments = {
 
   // ---------- turn coordinator ----------
   tc(ctx, x, y, r, fl) {
+    this.mark('tc', x - r, y - r, 2 * r, 2 * r);
     const st = fl.st;
     this.bezel(ctx, x, y, r, tr('TURN'), null);
     ctx.save();
@@ -449,6 +464,7 @@ const Instruments = {
   // Zero at 3 o'clock, climb up and descent down, the full scale at ±150°; the ticks and the
   // numbers sit on the arc the needle swings on, so it reads true everywhere.
   vsi(ctx, x, y, r, fl) {
+    this.mark('vsi', x - r, y - r, 2 * r, 2 * r);
     const metric = Units.metric;
     const v = metric ? fl.st.vs : fl.st.vs / FPM;                 // m/s or fpm
     const vmax = metric ? 10 : 2000;
@@ -488,6 +504,7 @@ const Instruments = {
 
   // ---------- heading strip ----------
   hsi(ctx, cx, y, w, hh, fl, sys) {
+    this.mark('hsi', cx - w / 2, y - hh / 2 - 18, w, hh + 20);
     const st = fl.st;
     const hdg = fl.headingDeg();
     const pxPerDeg = w / 60;
@@ -552,6 +569,7 @@ const Instruments = {
 
   // ---------- engines ----------
   engines(ctx, x, y, w, h, fl, sys) {
+    this.mark('engines', x, y, w, h);
     const ac = fl.ac;
     ctx.save();
     ctx.fillStyle = 'rgba(14,18,24,0.72)';
@@ -633,6 +651,7 @@ const Instruments = {
       // the label ends at the middle of its cell and the value starts there; a long label (the
       // Russian ЗАКРЫЛКИ) gets a smaller type and pushes the middle right, never out of its cell
       const left = x + cell * i + 3;
+      this.mark('cfg:' + PHONE_CONFIG_IDS[i], x + cell * i, y, cell, h);
       ctx.fillStyle = '#8d99a6';
       let px = 9;
       ctx.font = '600 ' + px + 'px system-ui, sans-serif';
@@ -657,9 +676,10 @@ const Instruments = {
     // (on a computer the caution lights follow the lines; in a low panel the lines close up)
     const step = phone ? 22 : Math.min(17, (h - 8 - this.CAUTION_H - 22) / 7);
     const lightsY = y + 10 + 7 * step + 12;
-    const line = (i, label, value, color) => {
+    const line = (i, label, value, color, id) => {
       const yy = y + (phone ? 14 : 10) + i * step;
       if (yy > y + h - 8) return;
+      if (id) this.mark('cfg:' + id, x + 3, yy - step / 2, w - 6, step);
       ctx.fillStyle = '#8d99a6';
       ctx.font = '600 ' + (phone ? 11 : 10) + 'px system-ui, sans-serif';
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
@@ -670,23 +690,23 @@ const Instruments = {
       ctx.fillText(value, x + w - 8, yy);
     };
     if (phone) {
-      this.phoneConfig(fl).forEach(([label, value, color], i) => line(i, label, value, color));
+      this.phoneConfig(fl).forEach(([label, value, color], i) => line(i, label, value, color, PHONE_CONFIG_IDS[i]));
       ctx.restore();
       return;
     }
     const brakeTxt = st.parkingBrake ? tr('PARK') : st.brakes > 0.02 ? Math.round(st.brakes * 100) + '%' : '-';
-    line(0, tr('THROTTLE'), Math.round(st.throttle * 100) + '%');
+    line(0, tr('THROTTLE'), Math.round(st.throttle * 100) + '%', null, 'throttle');
     line(1, tr('FLAPS'), st.flaps === st.flapsTarget ? String(st.flaps) : Math.round(st.flaps) + '>' + st.flapsTarget,
-      st.flaps > fl.ac.flaps.length - 3 ? '#e8b13a' : '#dfe7ee');
+      st.flaps > fl.ac.flaps.length - 3 ? '#e8b13a' : '#dfe7ee', 'flaps');
     line(2, tr('GEAR'), st.gear >= 1 ? tr('DOWN') : st.gear <= 0 ? tr('UP') : Math.round(st.gear * 100) + '%',
-      st.gear >= 1 ? '#7de08a' : st.gear <= 0 ? '#c8d2dc' : '#e8b13a');
-    line(3, tr('BRAKES'), brakeTxt, st.parkingBrake ? '#ff7a5c' : '#dfe7ee');
-    line(4, tr('SPOILER'), st.spoiler ? tr('OUT') : '—', st.spoiler ? '#ff7a5c' : '#dfe7ee');
-    line(5, tr('AP / TIME'), (fl.ap.on ? (fl.ap.gs ? 'G/S' : fl.ap.nav ? 'NAV' : 'HDG') : tr('off')) + '  x' + fl.env.timeAccel, fl.ap.on ? '#7de08a' : '#c8d2dc');
-    line(6, tr('ANTI-ICE'), sys && sys.antiIce ? tr('ON') : tr('off'), sys && sys.antiIce ? '#7fc4ff' : '#c8d2dc');
+      st.gear >= 1 ? '#7de08a' : st.gear <= 0 ? '#c8d2dc' : '#e8b13a', 'gear');
+    line(3, tr('BRAKES'), brakeTxt, st.parkingBrake ? '#ff7a5c' : '#dfe7ee', 'brakes');
+    line(4, tr('SPOILER'), st.spoiler ? tr('OUT') : '—', st.spoiler ? '#ff7a5c' : '#dfe7ee', 'spoiler');
+    line(5, tr('AP / TIME'), (fl.ap.on ? (fl.ap.gs ? 'G/S' : fl.ap.nav ? 'NAV' : 'HDG') : tr('off')) + '  x' + fl.env.timeAccel, fl.ap.on ? '#7de08a' : '#c8d2dc', 'ap');
+    line(6, tr('ANTI-ICE'), sys && sys.antiIce ? tr('ON') : tr('off'), sys && sys.antiIce ? '#7fc4ff' : '#c8d2dc', 'antiice');
     line(7, tr('ICE'), fl.env.iceAmount > 0.02 ? Math.round(fl.env.iceAmount * 100) + '%' : '—',
-      fl.env.iceAmount > 0.2 ? '#ff7a5c' : fl.env.iceAmount > 0.02 ? '#e8b13a' : '#c8d2dc');
-    if (sys) this.cautions(ctx, x + 8, lightsY, w - 16, sys);
+      fl.env.iceAmount > 0.2 ? '#ff7a5c' : fl.env.iceAmount > 0.02 ? '#e8b13a' : '#c8d2dc', 'ice');
+    if (sys) { this.cautions(ctx, x + 8, lightsY, w - 16, sys); this.mark('cautions', x + 4, lightsY - 3, w - 8, this.CAUTION_H + 4); }
     ctx.restore();
   },
 

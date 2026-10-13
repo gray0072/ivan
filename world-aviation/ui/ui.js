@@ -153,6 +153,7 @@ const UI = {
     else if (r === 'new') { this.newDifficulty = 'medium'; this.showNewCareer(); }
     else if (r === 'howto') { this.backTo = 'title'; this.showHowTo(); }
     else if (Career.data && this.tabs.indexOf(r) >= 0) { this.tab = r; this.showOps(); }
+    else if (Career.data && r === 'school') { this.tab = 'dispatch'; this.school = true; this.showOps(); }
     else if (Career.data && r === 'rtw') RtwScreen.show();
     else if (Career.data && r === 'briefing') {
       this.tab = 'dispatch';
@@ -451,10 +452,11 @@ const UI = {
     // on a phone the tabs scroll sideways: bring the open one into view, in the middle of the row
     const row = this.screen.querySelector('.tabs'), on = row && row.querySelector('.tab.on');
     if (on && row.scrollWidth > row.clientWidth) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
-    if (this.tab === 'hangar' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
+    // (the hangar's cards and the flight school's stages have pictures of the types)
+    if (typeof AircraftPreview !== 'undefined' && this.screen.querySelector('img[data-ac]')) AircraftPreview.fill(this.screen);
     // the Network's region maps are drawn while nothing else is going on, so the tab opens at once
     if (this.tab !== 'network' && typeof RegionMaps !== 'undefined') RegionMaps.warm();
-    this.route(this.tab);
+    this.route(this.tab === 'dispatch' && this.school ? 'school' : this.tab);
   },
 
   // what a tab shows next to its name: a gold dot when there is something new or something you
@@ -486,6 +488,9 @@ const UI = {
   },
 
   dispatchBody() {
+    // the flight school (ui/school.js): in place of a new career's board, or opened from the board
+    if (Career.schoolFirst()) return School.body(true);
+    if (this.school) return School.body(false);
     const d = Career.data;
     const ac = Career.aircraft();
     const all = d.contracts || [];
@@ -496,6 +501,7 @@ const UI = {
       (away ? tr('You are at {id} ({city}) — the board shows the flight home to {base} if it is in reach, and onward legs.', { id: d.lastTo, city: esc(aptPlace(World.byId[d.lastTo])), base: d.base })
         : tr('From your base {base} · open regions: {n} — more in the Network tab.', { base: d.base, n: d.regions.length })) + '</div>' +
       RtwScreen.pinned() +
+      School.line() +
       Filters.boardBar() +
       (!shown.length && FACTIONS[Filters.board().type] ? this.boardGap(Filters.board().type, all.length)
         : '<div class="contracts">' + (list || '<p class="lead">' + tr('No contracts for this aircraft right now — try another type in the hangar.') + '</p>') + '</div>');
@@ -800,7 +806,7 @@ const UI = {
     // two columns on a tablet hold two branches each, of about the same length: the general and
     // the cargo courses, the passenger and the bush ones; one or four columns undo the pairs and
     // take the branches in their own order (styles.css)
-    return head + '<div class="hint">' + esc(T.intro) + '</div><div class="trTree"><div class="branches">' +
+    return head + School.trainingCard() + '<div class="hint">' + esc(T.intro) + '</div><div class="trTree"><div class="branches">' +
       '<div class="brPair">' + branch('general', 1) + branch('cargo', 3) + '</div>' +
       '<div class="brPair">' + branch('pax', 2) + branch('bush', 4) + '</div></div></div>';
   },
@@ -1148,13 +1154,14 @@ const UI = {
     const fl = Game.flight;
     this.panel(
       '<h2>' + tr('Paused') + '</h2>' +
-      '<p class="lead">' + (fl ? esc(fl.contract.client) + ' · ' + routeHtml(fl.contract.fromId, fl.contract.toId) : '') + '</p>' +
+      '<p class="lead">' + (fl && fl.lesson ? '🎓 ' + tr('Flight school') + ' · ' + esc(tr(Lesson.byId(fl.lesson).title))
+        : fl ? esc(fl.contract.client) + ' · ' + routeHtml(fl.contract.fromId, fl.contract.toId) : '') + '</p>' +
       '<div class="btnRow"><button class="btn default" data-act="resume">' + tr('Resume') + '</button>' +
-      (fl ? '<button class="btn" data-act="pauseFlight">' + tr('The flight') + '</button>' +
+      (fl && !fl.lesson ? '<button class="btn" data-act="pauseFlight">' + tr('The flight') + '</button>' +
         '<button class="btn" data-act="pauseAircraft">' + tr('The aircraft') + '</button>' : '') +
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
-      '<button class="btn" data-act="ops">' + tr('Abandon, back to ops') + '</button></div>' +
+      '<button class="btn" data-act="ops">' + tr(fl && fl.lesson ? 'Leave the lesson' : 'Abandon, back to ops') + '</button></div>' +
       '<div class="settingsRow">' + this.difficultyChips() + this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.stickChip() + this.aidChip() + this.cabinChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
@@ -1405,7 +1412,8 @@ const UI = {
         else this.showTitle();
         break;
       case 'backtitle': Game.mode = 'menu'; this.showTitle(); break;
-      case 'tab': this.quiz = null; this.renaming = false; this.tab = v; this.loading(() => this.showOps()); break;
+      case 'tab': this.quiz = null; this.renaming = false; this.school = false; this.tab = v; this.loading(() => this.showOps()); break;
+      case 'lesson': case 'schoolSkip': case 'schoolOpen': case 'schoolBack': case 'schoolDone': School.action(name, v); break;
       case 'briefing': this.loading(() => this.showBriefing(v)); break;
       case 'selectAc': Career.select(v); this.showOps(); break;
       case 'mriya': this.loading(() => MriyaScreen.show()); break;
@@ -1487,6 +1495,8 @@ const UI = {
       case 'restart':
         // a practice restarts as a practice (a new session, paid again)
         if (Game.contract && Game.practice) { this.selContract = Game.contract.id; this.action('practice'); }
+        // (a lesson again from its start, the same try)
+        else if (Game.lesson) { const id = Game.lesson.def.id; Lesson.tries[id] = Math.max(0, (Lesson.tries[id] || 1) - 1); Game.startLesson(id); }
         else if (Game.contract && Rtw.ironAtStake(Game.contract)) RtwScreen.confirmQuit('restart');
         else if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
         break;
@@ -1499,6 +1509,7 @@ const UI = {
   refresh() {
     if (Game.mode === 'paused') this.showPause();
     else if (Game.mode === 'practice' && Game.result) this.showPracticeResult(Game.result);
+    else if (Game.mode === 'lesson' && Game.result) School.showResult(Game.result);
     else if ((Game.mode === 'debrief' || Game.mode === 'failed') && Game.result) this.showDebrief(Game.result, Game.mode === 'failed');
     else if (this.screen.dataset.view === 'newcareer' && el('pilotName')) {
       const pn = el('pilotName').value;

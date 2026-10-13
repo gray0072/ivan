@@ -99,7 +99,8 @@ const HUD = {
   updateStrip(fl, sys) {
     if (!this.strip) return;
     const c = fl.contract;
-    if (!c) { this.strip.hidden = true; return; }
+    // (a flight school's lesson has its coach there instead: ui/coach.js)
+    if (!c || fl.lesson) { this.strip.hidden = true; return; }
     // a phone folds the strip to the route, so the prompt under it stays off the panel (a tap
     // opens it); held upright it has no room for the route at all (it is in the pause menu). The
     // fuel shows on a phone only when it is short (fuelShort): a line of its own, held upright

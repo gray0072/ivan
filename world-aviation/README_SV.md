@@ -12,6 +12,16 @@ En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du ä
 
 Öppna [index.html](index.html) i en webbläsare — inget byggsteg, ingen server behövs. 3D-vyn kräver WebGL (three.js ligger i projektmappen).
 
+## Flygskola
+
+Ny bakom spakarna? En ny karriär öppnar med **flygskolan** i stället för uppdragstavlan: sex korta lektioner i simulatorn, var och en en liten uppgift med en snabb framgång, och instruktören visar knapparna och instrumenten den behöver ett i taget. Ett kort uppe till vänster listar stegen — det du ska göra nu, med varför — och tänder dess knapp (på en telefon) och instrumentet det gäller med en guldring.
+
+1. **Lätt flygplan** (Beechcraft 1900D): **Taxning** till väntepunkten, **Start** till 1500 ft, **Landning** från en kort final.
+2. **Medelstort flygplan** (Airbus A320): **Från gaten till autopiloten** — pushback, motorstart, taxning, start, autopilot, tid; **ILS-inflygning och landning** — klaffar och ställ under autopilotens inflygning, de sista 200 ft för hand, spoiler, bromsar.
+3. **Tungt flygplan** (Boeing 777): **En hel flygning** från banan på Arlanda till platsen på Landvetter, med en checklista för isbildning på vägen, och styrmannen som taxar in åt dig.
+
+Lektionerna flygs en lugn och klar dag, utan andra nödlägen än det den hela flygningen lär ut, och instruktörens händer ligger på kontrollerna: nosen och krängningen hålls inom säkra gränser, ingen stall, ingen stigning bort i flaren och en för hård sättning fångas upp, nosen hålls på banans centrumlinje när du släpper spaken, och ingen full kraft innan du står på linjen. Efter ett misslyckat försök hjälper nästa mer — vingarna hålls plana och autopiloten flyger glidbanan ner till 60 ft, sedan flarar instruktören också åt dig. En lektion är gratis och ändrar inget i karriären. **Jag kan flyga — visa uppdragen** hoppar över skolan; den finns kvar som en rad över tavlan och ett kort under fliken Utbildning, att ta eller flyga igen när du vill.
+
 ## En flygning
 
 1. **Vid gaten** trycker du **Enter** — bogserbilen trycker ut dig på plattan, kopplar loss och kör tillbaka till uppställningsplatsen. Starta motorerna (**Enter**) och se N1 och EGT stiga.

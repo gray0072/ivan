@@ -21,8 +21,10 @@
 //      "The police stopped the flight" — then the debrief, a small fine;
 //   5. a lost flight (a building or an aeroplane at CRASH_KT or more, or
 //      in the air): the shot holds INCIDENT.CRASH_HOLD_S, then the debrief.
-// A practice landing ends after the first shot. With no scene (the
-// headless runs) a touch is paid for and pulled clear at once, and a lost
+// A practice landing ends after the first shot; in a flight school's
+// lesson a touch asks nothing: the tug pulls the aeroplane clear for
+// free. With no scene (the headless runs) a touch is paid for (in a
+// lesson not) and pulled clear at once, and a lost
 // flight goes straight to its debrief. What it draws goes to
 // Scene3D.incident (render/incident3d.js).
 // ============================================================
@@ -41,7 +43,7 @@ const Incident = {
     this.s = { contact, failure, stage: 'crash', t: 0, cost, fine: Career.policeFine(game.contract), camMode: game.camMode };
     if (fl.copilot && fl.copilot.on) { fl.copilot.on = false; fl.copilotTime(false); }
     if (!this.shows()) {
-      if (touch && !game.practice) { this.pay(fl); this.pullClear(fl, Collide.towPath(fl)); fl.incident = null; return; }
+      if (touch && !game.practice) { if (!game.lesson) this.pay(fl); this.pullClear(fl, Collide.towPath(fl)); fl.incident = null; return; }
       this.finish(game);
       return;
     }
@@ -89,7 +91,9 @@ const Incident = {
     switch (S.stage) {
       case 'crash':
         if (S.t < I.CRASH_S) break;
-        if (S.contact.tier === 'touch' && !game.practice) this.ask(game);
+        // (a lesson asks for nothing: the tug pulls the aeroplane clear for free)
+        if (S.contact.tier === 'touch' && game.lesson) { S.stage = 'fadeTow'; S.t = 0; this.fade(true); }
+        else if (S.contact.tier === 'touch' && !game.practice) this.ask(game);
         else if (S.contact.tier === 'police') this.police(game);
         else { S.stage = 'lost'; S.t = 0; }
         break;
@@ -122,7 +126,7 @@ const Incident = {
     Scene3D.render();
     game.draw2d(dt);
     // the engines run on while the aeroplane only stands (a lost flight is silent)
-    if (S.contact.tier === 'touch' && !game.practice) Audio2.update(dt, fl, sys);
+    if (S.contact.tier === 'touch' && (!game.practice || game.lesson)) Audio2.update(dt, fl, sys);
   },
 
   // Enter, Space, Esc or a tap: on to the end of the shot now
@@ -201,7 +205,8 @@ const Incident = {
     if (a && Collide.nearBuilding(a, eyeOn(side), 6) && !Collide.nearBuilding(a, eyeOn(-side), 6)) side = -side;
     Cinematic.tow(fl, side, INCIDENT.TUG_WAIT_S * 2 + S.path.len / COLLIDE.TOW_MS);
     el('cine').classList.add('bars');
-    this.caption('<b>' + esc(tr('A tug pulls you clear')) + '</b><span>' + esc(tr('Compensation {sum} — on the invoice', { sum: fmtMoney(S.cost) })) + '</span>');
+    this.caption('<b>' + esc(tr('A tug pulls you clear')) + '</b><span>' + esc(game.lesson ? tr('In the simulator it costs nothing')
+      : tr('Compensation {sum} — on the invoice', { sum: fmtMoney(S.cost) })) + '</span>');
     this.fade(false);
   },
 
@@ -235,7 +240,8 @@ const Incident = {
     box.classList.remove('bars');
     this.fade(false);
     setTimeout(() => { if (!game.cineShot() && game.mode !== 'incident') box.hidden = true; }, 1100);
-    fl.info(tr('Tug disconnected, parking brake set — the compensation of {sum} is on the invoice. Taxi on.', { sum: fmtMoney(S.cost) }));
+    fl.info(game.lesson ? tr('Tug disconnected, parking brake set — release it and taxi on.')
+      : tr('Tug disconnected, parking brake set — the compensation of {sum} is on the invoice. Taxi on.', { sum: fmtMoney(S.cost) }));
     this.s = null;
   },
 

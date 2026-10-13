@@ -9,7 +9,7 @@
 const AIRBORNE_PHASES = ['TAKEOFF', 'CLIMB', 'CRUISE', 'DESCENT', 'APPROACH'];
 
 const Game = {
-  mode: 'boot',            // boot | menu | ops | briefing | tour | showcase | flying | incident | debrief | failed | paused
+  mode: 'boot',            // boot | menu | ops | briefing | tour | showcase | flying | incident | debrief | failed | paused | practice | lesson (a flight school lesson's result)
   last: 0,
   flight: null,
   systems: null,
@@ -139,13 +139,15 @@ const Game = {
         Input.touchThrottle = null;
         Copilot.update(fl, dt * fl.env.timeAccel);
         Input.syncThrottle(st.throttle);
-      } else this.pilotControls(dt, ax);
+        // (a flight school's lesson: the instructor's hands on the stick, sim/lesson.js)
+      } else this.pilotControls(dt, this.lesson ? Lesson.shape(ax, fl, dt) : ax);
 
       if (fl.phase === 'PUSHBACK') this.updatePushback(dt);
       const simDt = fl.update(dt);
       sys.update(simDt);
       if (this.practice) this.updatePractice(simDt);
       this.updatePhase(dt);
+      if (this.lesson && this.mode === 'flying') this.updateLesson(dt);
       Guidance.update(this);
       TaxiLimit.update(fl);
     }
@@ -172,6 +174,7 @@ const Game = {
     HUD.updateButtons(fl, sys);
     HUD.updateChecklist(sys, this.hintOn());
     HUD.updateGuidance(fl, dt);
+    if (typeof Coach !== 'undefined') Coach.update(this);      // a flight school's lesson: its steps (ui/coach.js)
     if (HUD.mapOpen) HUD.drawMap(fl, sys);
     HUD.updateMini(fl, sys, this.helpOpen);
 
@@ -236,6 +239,8 @@ const Game = {
     this.drawFpm(ctx, w, h, fl);
     this.drawApproachPath(ctx, w, h, fl);
     this.drawIls(ctx, w, h, fl);
+    // a lesson's coach rings the instruments of its step
+    if (this.lesson && typeof Coach !== 'undefined') Coach.draw(ctx, this);
     ctx.restore();
   },
 
@@ -251,6 +256,7 @@ const Game = {
   // and where the checklist or the map above it leaves too little room smaller, then without the
   // words, then not at all — never moved anywhere else. The landing aid setting turns it off.
   drawIls(ctx, w, h, fl) {
+    this.ilsRect = null;                              // (where it is drawn: the flight school's coach lights it up)
     if (fl.phase !== 'APPROACH' && fl.phase !== 'DESCENT') return;
     if (Career.settings.landingAid === false) return;
     // (on the descent by the distance over the cosine of the angle off the way to the runway, so
@@ -306,6 +312,7 @@ const Game = {
     const loc = clamp(-d.locDeg / 2.5, -1, 1);       // + : the runway is to the right
     const gs = clamp(-d.gsDeg / 0.7, -1, 1);         // + : the glide path is above you
     const ly = cy + V + 16 * k;
+    this.ilsRect = { x: cx - R - 10 * k, y: cy - V - 8 * k, w: gx + 16 * k - (cx - R - 10 * k), h: ly + 14 * k - (cy - V - 8 * k) };
     ctx.save();
     // dark outlines instead of a panel: the colours read against a bright sky, the view stays open
     ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
@@ -538,7 +545,8 @@ const Game = {
     }
     fl.taxiRedS = red ? (fl.taxiRedS || 0) + dt : 0;
     if (fl.taxiRedS > TAXI.FINE_HOLD_S) {
-      if (!fl.taxiOverspeed) fl.warn('TAXISPEED', tr('Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported', { v: Math.round(speed), max: Math.round(taxi.shown) }));
+      // (in a lesson the speed tag says it: nothing is reported in the simulator)
+      if (!fl.taxiOverspeed && !this.lesson) fl.warn('TAXISPEED', tr('Taxi overspeed — {v} kt, the limit is {max} kt: this will be reported', { v: Math.round(speed), max: Math.round(taxi.shown) }));
       fl.taxiOverspeed = Math.max(fl.taxiOverspeed || 0, Math.round(speed));
     }
 
@@ -646,8 +654,10 @@ const Game = {
       const loc = World.local(arr, st.pos.x, st.pos.z);
       const overRunway = Math.abs(loc.across) < 400 && loc.t > -arr.half && loc.t < arr.half;
       if (overRunway && !st.onGround) fl.overRunway = true;
-      if (this.practice && ((fl.overRunway && !st.onGround && loc.t > arr.half - 150) || nm > this.practice.startNm + 2 || fl.altAgl() > PRACTICE.MAX_AGL_FT * FT)) {
-        this.endPractice(false, tr('No landing — you flew away from the runway'));
+      // a session on the final (a practice landing, a flight school's landing) has no go-around
+      const simNm = this.practice ? this.practice.startNm : this.lesson && this.lesson.def.noGoAround ? this.lesson.def.startNm : null;
+      if (simNm !== null && ((fl.overRunway && !st.onGround && loc.t > arr.half - 150) || nm > simNm + 2 || fl.altAgl() > PRACTICE.MAX_AGL_FT * FT)) {
+        this.endSession(false, tr('No landing — you flew away from the runway'));
         return;
       }
       if (fl.overRunway && !st.onGround && loc.t > arr.half - 150) {
@@ -662,7 +672,7 @@ const Game = {
           : 'idle <kbd>0</kbd>, spoiler <kbd>/</kbd> (it puts the weight on the wheels), brakes <kbd>B</kbd> — slow below {v} kt', { v: SIM.ROLLOUT_EXIT_KT }));
       if (!st.onGround && fl.altAgl() > 15) {
         // touch-and-go: the next landing is the one that counts (a practice is over)
-        if (this.practice) { this.endPractice(false, tr('You took off again — the landing did not hold')); return; }
+        if (this.practice || (this.lesson && this.lesson.def.noGoAround)) { this.endSession(false, tr('You took off again — the landing did not hold')); return; }
         fl.landed = null;
         fl.setPhase('APPROACH');
       } else if (st.onGround && speed < SIM.ROLLOUT_EXIT_KT) {
@@ -692,7 +702,7 @@ const Game = {
         const flights = Career.flightsIn(fl.ac.id);
         const help = d < 80 ? '<br>' + tr('stop on the stop bar — {d} m', { d: Math.round(d) }) + (align > SIM.PARK_ALIGN_DEG ? ', ' + tr('straighten up') : '')
           : Copilot.left(fl) < COPILOT.MIN_RUN_M ? ''
-          : flights >= COPILOT.FLIGHTS ? '<br>' + tr('<kbd>Enter</kbd> — the first officer taxis, time x{n}', { n: COPILOT.TIME_ACCEL })
+          : this.copilotReady() ? '<br>' + tr('<kbd>Enter</kbd> — the first officer taxis, time x{n}', { n: COPILOT.TIME_ACCEL })
           : '<br>' + tr('after {n} flights in this type the first officer taxis for you ({k} of {n})', { n: COPILOT.FLIGHTS, k: flights });
         HUD.setPrompt('<b>' + tr('Taxi to {gate}', { gate: gateName(gate) }) + '</b> · ' +
           tr(fl.followMe && Copilot.toTurnIn(fl) > 0 ? 'follow the FOLLOW ME car' : 'follow the arrow') + this.taxiSpeedHint() + help);
@@ -956,7 +966,7 @@ const Game = {
     const fl = this.flight, c = fl.copilot;
     if (c && c.on) { this.copilotOff(tr('You have control — the first officer let go')); return; }
     const flights = Career.flightsIn(fl.ac.id);
-    if (flights < COPILOT.FLIGHTS) {
+    if (!this.copilotReady()) {
       fl.warn('COPILOT', tr('The first officer taxis in once you have flown {n} flights in the {ac} — {k} so far', { n: COPILOT.FLIGHTS, ac: fl.ac.name, k: flights }));
       return;
     }
@@ -965,6 +975,12 @@ const Game = {
     fl.copilotTime(true);
     fl.info(tr('First officer: my controls — taxiing to {gate}', { gate: gateName(this.arrivalGate) }));
     Audio2.cue('click');
+  },
+  // the first officer taxis in for a pilot with COPILOT.FLIGHTS flights in the type, and in a
+  // flight school's lesson that has one (the whole flight)
+  copilotReady() {
+    const fl = this.flight;
+    return !!(this.lesson && this.lesson.def.copilot) || Career.flightsIn(fl.ac.id) >= COPILOT.FLIGHTS;
   },
   // the first officer lets go: the time back to x1, the brakes off, the throttle where it is
   copilotOff(text) {
@@ -1089,6 +1105,76 @@ const Game = {
     Audio2.cue(ok && (grade === 'A+' || grade === 'A') ? 'good' : ok ? 'click' : 'bad');
   },
 
+  // the end of a simulator session: a practice landing's, or a flight school's lesson's
+  endSession(ok, reason, kind) {
+    if (this.lesson) this.endLesson(ok, reason, kind);
+    else this.endPractice(ok, reason);
+  },
+
+  // ---------- the flight school (data/lessons.js, sim/lesson.js, ui/coach.js, ui/school.js) ----------
+  // A lesson's flight is a normal flight with a contract of its own (Lesson.contract), in calm
+  // weather by day, started where its lesson begins; its steps are ticked each frame, and the
+  // instructor's hands shape the stick (Game.frame). It ends passed once its last step is done
+  // (one that ends at the stand after the camera's flight out), or failed as a flight is lost —
+  // free, and nothing in the career changes but the lesson ticked.
+  startLesson(id) {
+    const def = Lesson.byId(id);
+    if (!def) return;
+    this.mode = 'ops';
+    this.launch(Lesson.contract(def), { lesson: def, skipPushback: def.start === 'hold' });
+  },
+  // the lesson's own start: pushed back onto the apron lane with the engines running and the
+  // parking brake set (the taxi), or on the final (the landings)
+  placeLessonStart(def) {
+    const fl = this.flight, st = fl.st, sys = this.systems;
+    if (def.start === 'lane') {
+      const lane = fl.startGate.laneNode;
+      st.pos.x = lane.x; st.pos.z = lane.z;
+      st.hdg = wrapRad(fl.world.hdg + Math.PI);
+      st.parkingBrake = true;
+      sys.runEngines();
+      fl.setPhase('ENGINE_START');
+    } else if (def.start === 'final') {
+      this.placeOnFinal(def.startNm, false);
+      // configured as the lesson says, on the glide path at its speed, the autopilot on the ILS
+      const landing = def.config === 'landing';
+      st.gear = st.gearTarget = landing ? 1 : 0;
+      st.flaps = st.flapsTarget = landing ? fl.ac.flaps.length : 1;
+      const spd = (landing ? fl.vRef() + 8 : Math.min(fl.vRef() + 45, fl.ac.flaps[0].vfe - 15)) * KTS;
+      st.vel.x = hdgX(st.hdg) * spd; st.vel.z = hdgZ(st.hdg) * spd;
+      st.vel.y = -spd * Math.sin(SIM.GLIDESLOPE_DEG * DEG);
+      st.throttle = landing ? 0.35 : 0.3;
+      fl.ap.gs = true;
+    }
+  },
+  updateLesson(dt) {
+    if (Lesson.update(this, dt) !== 'passed') return;
+    this.lesson.passedAt = this.flight.elapsed;
+    // (a lesson that ends at the stand waits for the camera's flight out: finishFlight)
+    if (this.flight.phase === 'SHUTDOWN' || this.flight.phase === 'PARKED') return;
+    this.endLesson(true);
+  },
+  endLesson(ok, reason, kind) {
+    if (this.mode !== 'flying' && this.mode !== 'incident') return;
+    const fl = this.flight, L = this.lesson;
+    this.stopCine();
+    this.mode = 'lesson';
+    Input.active = false;
+    el('hud').hidden = true;
+    if (HUD.mapOpen) HUD.closeMap();
+    ok = ok && L.passed;
+    const landed = fl.landed && fl.landed.t !== undefined ? fl.landed : null;
+    const grade = landed ? this.gradeLanding(landed, fl, DIFFICULTY.easy) : '';
+    const first = ok && !this.cheated && Career.passLesson(L.def.id);
+    if (ok) Lesson.passed(L.def);
+    this.result = { lesson: L.def, ok, reason: reason || '', kind: kind || '', grade, landed, cheated: this.cheated, first, attempt: L.attempt };
+    Lesson.stop();
+    this.lesson = null;
+    Audio2.update(0, null, null);
+    School.showResult(this.result);
+    Audio2.cue(ok ? 'good' : 'bad');
+  },
+
   // ---------- starting and ending flights ----------
   // building a flight's world takes a moment: say so, then start
   launch(contract, opts) {
@@ -1125,6 +1211,7 @@ const Game = {
     this.spoilerTold = false;
     this.setup = Career.flightSetup(contract, { seed: opts.seed || 0, skipPushback: opts.skipPushback });
     const s = this.setup;
+    const lesson = opts.lesson || null;       // a flight school's lesson (data/lessons.js)
     // the flight's own world: projection, terrain, airports laid out
     if (World.key !== contract.fromId + '>' + contract.toId) {
       World.prepare(contract.fromId, contract.toId);
@@ -1134,6 +1221,7 @@ const Game = {
     s.to = World.here[contract.toId];
     this.drawGates(contract, s.from, s.to);
     s.gate = s.from.gates[contract.depGate];
+    if (lesson) Lesson.calm(s);
     reseed(s.seed);
     this.cheated = false;
     this.cheatsUsed = 0;
@@ -1149,8 +1237,10 @@ const Game = {
     this.arrivalRoute = null;
     this.practice = opts.practice ? { t: 0, handed: false, fee: opts.fee || 0 } : null;
     this.flight.practice = !!this.practice;
-    // the first landing at an airport: a FOLLOW ME car leads the way to the stand
-    this.flight.followMe = !this.practice && Career.visitsTo(contract.toId) === 0;
+    this.lesson = lesson ? Lesson.start(lesson, this.flight) : null;
+    if (!lesson) Lesson.stop();
+    // the first landing at an airport: a FOLLOW ME car leads the way to the stand (not in a lesson)
+    this.flight.followMe = !this.practice && !lesson && Career.visitsTo(contract.toId) === 0;
 
     // weather into the flight environment
     const env = this.flight.env;
@@ -1166,20 +1256,27 @@ const Game = {
     env.cloudTop = s.from.elev + dep.cloudTop;
     env.precip = dep.precip;
     env.snowy = dep.snow;
-    // the time of day: the departure's local hour, the clock runs on with the flight (Scene3D)
-    this.setup.timeOfDay = Career.timeOfDay;
+    // the time of day: the departure's local hour, the clock runs on with the flight (Scene3D); a lesson by day
+    this.setup.timeOfDay = lesson ? 'day' : Career.timeOfDay;
     env.hour0 = TIME_OF_DAY[this.setup.timeOfDay].hour;
     // the night sky of this contract: the moon's phase (0 new, 0.5 full) and the season's stars
     env.moonPhase = (hashStr(contract.id + '/moon') >>> 0) % 10000 / 10000;
     env.month = Career.data.season || 0;
 
     const fx = s.fx;
-    this.systems = Systems.init(this.flight, {
+    // (a lesson: no emergencies of its own — the whole flight's icing comes with its step — Easy's
+    // checklists with their hints, and twice the time)
+    this.systems = Systems.init(this.flight, lesson ? {
+      rng: makeRng(s.seed ^ 0x5bd1e995), difficulty: DIFFICULTY.easy, noEmergencies: true,
+      responseFactor: SCHOOL.QRH_TIME_FACTOR, iceFactor: 1, hint: true
+    } : {
       rng: makeRng(s.seed ^ 0x5bd1e995), difficulty: Career.difficulty,
       responseFactor: fx.responseFactor * fx.responseFactor2, iceFactor: fx.iceFactor, hint: fx.hint
     });
     this.fuel0 = s.blockFuel;
-    if (this.practice) {
+    if (lesson && lesson.start !== 'hold') {
+      this.placeLessonStart(lesson);
+    } else if (this.practice) {
       this.systems.noEmergencies = true;
       this.systems.queue = [];
       this.placeOnFinal(0, true);
@@ -1206,8 +1303,8 @@ const Game = {
     el('hud').hidden = false;
     Audio2.resume();
     this.last = performance.now();
-    // the camera flies in from a wide shot to the captain's seat (not into a practice on the final)
-    if (!this.practice) this.startCine('intro');
+    // the camera flies in from a wide shot to the captain's seat (not into a session on the final)
+    if (!this.practice && !(lesson && lesson.start === 'final')) this.startCine('intro');
   },
 
   // the stands at both ends, drawn with the contract (a contract from an older save draws them now)
@@ -1430,6 +1527,8 @@ const Game = {
 
   finishFlight(failed) {
     if (this.mode !== 'flying') return;
+    // a lesson that ends at the stand: its result once the camera has flown out
+    if (this.lesson) { this.endLesson(!failed); return; }
     const fl = this.flight, sys = this.systems;
     this.stopCine();
     this.mode = failed ? 'failed' : 'debrief';
@@ -1482,8 +1581,8 @@ const Game = {
   failFlight(f) {
     // a collision: the camera shows it first (ui/incident.js), then this again
     if (f.contact && !f.shown) { f.shown = true; Incident.begin(this, f.contact, f); return; }
-    // a practice that goes wrong costs nothing more than its fee
-    if (this.practice) { this.endPractice(false, f.text); return; }
+    // a practice that goes wrong costs nothing more than its fee, a lesson nothing at all
+    if (this.practice || this.lesson) { this.endSession(false, f.text, f.reason); return; }
     this.failure = f;
     HUD.setPrompt('');
     this.finishFlight(true);
@@ -1508,6 +1607,10 @@ const Game = {
     this.stopCine();
     this.mode = 'ops';
     Input.active = false;
+    // (a lesson left goes back to the flight school)
+    if (this.lesson) { UI.tab = 'dispatch'; UI.school = true; }
+    this.lesson = null;
+    Lesson.stop();
     this.flight = null;
     this.systems = null;
     el('hud').hidden = true;

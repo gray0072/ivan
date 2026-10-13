@@ -169,6 +169,9 @@ const Career = {
     }
     // the licence and rank the pilot has earned (an older save: taken as it is, without a promotion)
     if (d.rank === undefined) d.rank = this.rankIndex();
+    // the flight school: the lessons passed, and whether the pilot skipped it (a career that has
+    // flown already knows how: the school does not stand in front of its board)
+    if (!d.school) d.school = { done: [], skipped: d.stats.flights > 0 };
     // (a board from before it grew to six offers is dealt again)
     if (d.contracts.length < 5 || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
@@ -203,6 +206,7 @@ const Career = {
       rtw: Rtw.blank(),
       visits: {},
       rank: 0,
+      school: { done: [], skipped: false },
       difficulty: level,
       stats: { flights: 0, blockTime: 0, landings: 0, perfect: 0, crashes: 0, cheats: 0, bestGrade: '', bestPay: 0 },
       log: []
@@ -338,6 +342,8 @@ const Career = {
     for (const k of ['flights', 'blockTime', 'landings', 'perfect', 'crashes', 'cheats', 'bestPay']) d.stats[k] = Math.max(d.stats[k] || 0, o.stats[k] || 0);
     if (order.indexOf(o.stats.bestGrade) > order.indexOf(d.stats.bestGrade)) d.stats.bestGrade = o.stats.bestGrade;
     d.rank = Math.max(d.rank || 0, o.rank || 0);
+    d.school.done = union(d.school.done, o.school.done);
+    d.school.skipped = !!(d.school.skipped || o.school.skipped);
     // the link to the Google account, the graphics level, the way the nose goes up and the touch
     // stick at rest belong to this device (a phone may well want the stick the other way round from the computer)
     d.cloud = local.cloud;
@@ -803,6 +809,33 @@ const Career = {
     }
     this.save();
     return gain;
+  },
+
+  // ---------- the flight school (data/lessons.js) ----------
+  // free lessons in the simulator: only which ones are passed is kept, and whether it was skipped
+  lessonDone(id) { return this.data.school.done.indexOf(id) >= 0; },
+  schoolCount() { return LESSONS.filter((l) => this.lessonDone(l.id)).length; },
+  schoolDone() { return this.schoolCount() >= LESSONS.length; },
+  // The school stands in front of a new career's board (instead of it) until it is skipped,
+  // finished, or a flight is flown
+  schoolFirst() {
+    const d = this.data;
+    return !!d && !d.school.skipped && !this.schoolDone() && d.stats.flights === 0;
+  },
+  // the next lesson to take: the first one not passed (all passed: the first)
+  nextLesson() { return LESSONS.find((l) => !this.lessonDone(l.id)) || LESSONS[0]; },
+  // a lesson passed: true the first time (the log has a line when the whole school is)
+  passLesson(id) {
+    const s = this.data.school;
+    if (s.done.indexOf(id) >= 0) return false;
+    s.done.push(id);
+    if (this.schoolDone()) this.data.log.unshift(logLine('Flight school passed — {n} lessons', { n: LESSONS.length }, this.data.log.length));
+    this.save();
+    return true;
+  },
+  skipSchool(v) {
+    this.data.school.skipped = v !== false;
+    this.save();
   },
 
   // ---------- flying it ----------

@@ -51,7 +51,7 @@ const LandingJoke = {
   // the debrief's quote line under the touchdown numbers, or ''
   html(result, failed) {
     const fl = Game.flight;
-    if (failed || !fl || Game.practice || fl.practice) return '';
+    if (failed || !fl || Game.practice || fl.practice || fl.lesson) return '';
     const j = this.pick(result.contract, fl.landed, fl.arrival && fl.arrival.rwyLen);
     return j ? '<p class="landingJoke"><span class="ljIcon" aria-hidden="true">' + j.icon + '</span><span class="ljText">' + esc(tr(j.text)) + '</span></p>' : '';
   }

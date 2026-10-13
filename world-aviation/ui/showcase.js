@@ -44,6 +44,7 @@ const Showcase = {
     const a = World.here[id];
     Game.contract = null;
     Game.practice = null;
+    Game.lesson = null;
     const fl = Game.flight = Flight.init({ aircraft: ac, from: a, to: a, gate: a.gates[0], skipPushback: true });
     const sys = Game.systems = Systems.init(fl, { rng: makeRng(1), difficulty: Career.difficulty, noEmergencies: true });
     sys.runEngines();

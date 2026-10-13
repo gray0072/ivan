@@ -1416,6 +1416,30 @@ const PRACTICE = {
   REP: { 'A+': 0.5, A: 0.4, B: 0.2, C: 0.1 }   // reputation by grade; per contract only the best grade counts
 };
 
+// The flight school (data/lessons.js, sim/lesson.js, ui/coach.js, ui/school.js): free lessons in
+// the simulator, a step at a time, the instructor's hands on the controls where a beginner needs them
+const SCHOOL = {
+  LOOK_S: 6,                   // a step that only shows something moves on after this long (real seconds) ...
+  STEP_HOLD_S: 0.9,            // ... and one that is done stays ticked this long before the next lights up
+  PITCH_UP_MAX_DEG: 15,        // the instructor's hand on the yoke: never more nose up than this ...
+  PITCH_DOWN_MAX_DEG: 7,       // ... nor more nose down (in the air) ...
+  BANK_MAX_DEG: 25,            // ... nor more bank, and never down to the stall warning
+  HOLD_INPUT: 0.15,            // a stick under this (either way) leaves the wings or the centreline to the instructor
+  FLARE_ZONE_FT: 60,           // below this on the final the instructor watches the flare: ...
+  FLARE_PITCH_MAX_DEG: 7,      // ... no more nose up than this, no climbing away (a balloon) ...
+  CATCH_FPM: 800,              // ... and a sink faster than this in the last 30 ft is caught (the hard limit is 1000)
+  LAT_GAIN: 0.03,              // the instructor's lateral hold: degrees of track per metre off the centreline ...
+  LAT_MAX_DEG: 12,             // ... at most this far off the runway's heading, closing it ...
+  LAT_BANK_PER_DEG: 1.4,       // ... with this much bank per degree of track error (up to BANK_MAX_DEG / 2)
+  GROUND_GAIN: 0.04,           // on the runway: degrees of heading per metre off the centreline (the take-off roll, the rollout)
+  LINEUP_THRUST: 0.45,         // until lined up for the take-off the instructor holds the thrust at most here
+  AP_FLOOR_FT: 60,             // the second try at a landing: the autopilot flies the glide path down to this height
+  FLARE_FT: 40,                // the third try: the instructor flares from this height ...
+  FLARE_SINK_FPM: 160,         // ... down to this sink rate at the touchdown, the throttle to idle
+  QRH_TIME_FACTOR: 2,          // a lesson's checklist has this many times the time, and its hints
+  ICING_AFTER_S: 20            // the whole flight's icing starts this long after its step lights up (simulated seconds)
+};
+
 const CONTROLS = {
   THROTTLE_CURVE: 1.8,         // thrust = lever position ^ this: the low end of the lever is finer (taxi power)
   THROTTLE_KEY_RATE: 0.45,     // lever travel per second with Z / X

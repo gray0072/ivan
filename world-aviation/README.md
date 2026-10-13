@@ -12,6 +12,16 @@ A cockpit-view flight simulator and airline career in the browser. You are a you
 
 Open [index.html](index.html) in a browser — no build step, no server required. The 3D view needs WebGL (three.js is included in the folder).
 
+## Flight school
+
+New to flying? A new career opens with the **flight school** in place of the contract board: six short lessons in the simulator, each one small job with a quick success, the instructor showing the buttons and the instruments it needs one at a time. A card at the top left lists the steps — the one to do now with why it is done — and lights up its button (on a phone) and the gauge it is about with a gold ring.
+
+1. **Light aircraft** (Beechcraft 1900D): **Taxi** to the holding point, **Take-off** to 1500 ft, **Landing** from a short final.
+2. **Medium aircraft** (Airbus A320): **From the gate to the autopilot** — push back, engine start, taxi, take-off, autopilot, time; **ILS approach and landing** — flaps and gear on the autopilot's approach, the last 200 ft by hand, spoiler, brakes.
+3. **Heavy aircraft** (Boeing 777): **A whole flight** from the runway at Arlanda to the stand at Landvetter, with an icing checklist on the way, and the first officer taxiing in for you.
+
+The lessons are calm days, without emergencies but the one the whole flight teaches, and the instructor's hands are on the controls: the nose and the bank kept within safe limits, no stall, no climbing away in the flare and a too-fast touchdown caught, the nose kept on the centreline of the runway when you leave the stick alone, and no full power before you are lined up. After a failed try the next one helps more — the wings held level and the autopilot flying the glide path down to 60 ft, then the instructor flaring for you too. A lesson is free and changes nothing in the career. **I can fly — show the contracts** skips the school; it stays a line over the board and a card on the Training tab, to take or fly again any time.
+
 ## A flight
 
 1. **At the gate** press **Enter** — the tug pushes you back onto the apron, lets go and drives off back to the stand. Start the engines (**Enter**) and watch N1 and EGT come up.

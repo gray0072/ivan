@@ -40,7 +40,7 @@ const Cabin = {
     // the times the schedule is told by: off the ground and on it again
     if (!st.onGround && this.offAt === null) this.offAt = fl.elapsed;
     if (p === 'ROLLOUT' && this.downAt === null) this.downAt = fl.elapsed;
-    if (!this.on() || game.practice || fl.failure || (sys && sys.checklist)) return;
+    if (!this.on() || game.practice || game.lesson || fl.failure || (sys && sys.checklist)) return;
     const c = fl.contract;
     if (!c || c.type !== 'pax') return;
     // (a line on the HUD too, so an announcement a browser cannot voice still shows it was made)
