@@ -184,6 +184,11 @@ const UI = {
     const has = !!Career.data;
     const n = Career.list().length;
     const nRegions = REGIONS.length;
+    // everything about the account under the career buttons: the careers, the sign-in, deleting this one
+    const account =
+      (has && (n > 1 || Cloud.available) ? '<button class="btn" data-act="careers">' + tr('Careers') + ' · ' + n + '</button>' : '') +
+      (has ? '<button class="btn" data-act="wipe">' + tr('Delete career') + '</button>' : '') +
+      this.cloudButtons();
     this.panel(
       '<div class="titleWrap">' +
       '<div class="titleTop"><span class="titleKicker">✈ ' + tr('Based at Stockholm Arlanda · ARN') + '</span>' + this.langChips() + '</div>' +
@@ -203,6 +208,7 @@ const UI = {
           '<button class="bigBtn" data-act="newcareer">' + tr('New career') + '<small>' + tr('different pilot, fresh start') + '</small></button>'
         : '<button class="bigBtn default" data-act="newcareer">' + tr('Start your career') + '<small>' + tr('based at Stockholm Arlanda') + '</small></button>') +
       '</div>' +
+      (account ? '<div class="titleAccount">' + account + '</div>' : '') +
       '<div class="titleSettings">' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="settingsRow">' +
@@ -210,9 +216,6 @@ const UI = {
       '</div></div>' +
       '<div class="titleFoot">' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
-      (has && (n > 1 || Cloud.available) ? '<button class="btn" data-act="careers">' + tr('Careers') + ' · ' + n + '</button>' : '') +
-      (has ? '<button class="btn" data-act="wipe">' + tr('Delete career') + '</button>' : '') +
-      this.cloudButtons() +
       '</div>' +
       '<p class="fineprint">' + esc(tr(CAREER.INTRO)) + '</p>' +
       '</div>', 'title');
@@ -289,7 +292,7 @@ const UI = {
   },
 
   // ---------- the cloud copy (core/cloud.js) ----------
-  // the title's foot: the open career's sign-in or how its sync goes; with no career open, a sign-in
+  // the title's account row: the open career's sign-in or how its sync goes; with no career open, a sign-in
   // that brings an account's careers here
   cloudButtons() {
     if (!Cloud.available) return '';

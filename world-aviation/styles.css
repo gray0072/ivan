@@ -777,13 +777,14 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .form input { -webkit-user-select: text; user-select: text; }
 .btnRow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .btnRow.split { justify-content: space-between; }
-.titleFoot { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.titleFoot, .titleAccount { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.titleAccount { margin: -4px 0 16px; }
 
 /* ---------- the cloud copy of the career (core/cloud.js): the sign-in, the sync's status ---------- */
 .btn.cloudIn { display: inline-flex; align-items: center; gap: 8px; }
 .gLogo { width: 16px; height: 16px; flex: none; }
 .cloudState { display: inline-flex; align-items: center; gap: 7px; color: #c3d1de; font-size: 13px; }
-.titleFoot .cloudState { margin-left: auto; }
+.titleAccount .cloudState { margin-left: auto; }
 .cloudState::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #6f8193; }
 .cloudState.synced::before { background: #7de08a; }
 .cloudState.syncing::before { background: #6fb1e8; }
