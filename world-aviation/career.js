@@ -176,9 +176,10 @@ const Career = {
     if (d.contracts.length < 5 || d.contracts.some((c) => !c.blockFuel || !c.airline)) this.generateContracts();
   },
 
-  // a Swedish name for a new pilot (data/pilots.js), never the one just offered
+  // a funny name for a new pilot in the game's language (data/pilots.js), never the one just offered
   randomPilotName(not) {
-    const pool = PILOT_NAMES.filter((n) => n !== not);
+    const lang = typeof I18N !== 'undefined' && PILOT_NAMES[I18N.lang] ? I18N.lang : 'en';
+    const pool = PILOT_NAMES[lang].filter((n) => n !== not);
     return pool[Math.floor(Math.random() * pool.length)];
   },
 
