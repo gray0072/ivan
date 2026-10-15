@@ -89,6 +89,15 @@ const LandCover = {
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', (this.bomb ? '#define LAND_BOMB\n' : '') + LAND_FRAG_PARS + '#include <common>')
         .replace('#include <color_fragment>', '#include <color_fragment>\n' + LAND_FRAG);
+      // Multisampled, a pixel is shaded at its centre even when the triangle covers only one
+      // of its samples off the centre: the far mesh's triangles, thin slivers at the horizon,
+      // then read their varyings extrapolated far outside them — negative colours, black
+      // specks a pixel high just over the horizon, flickering as you climb. Centroid sampling
+      // reads them inside the triangle (WebGL 2 only)
+      if (this.bomb) {
+        sh.vertexShader = landCentroid(sh.vertexShader);
+        sh.fragmentShader = landCentroid(sh.fragmentShader);
+      }
     };
     m.customProgramCacheKey = () => 'landcover1' + this.bomb;
     return (this.mat = m);
@@ -201,6 +210,12 @@ const LAND_FRAG = `
   }
 }
 `;
+
+// a shader with its chunks spelled out and every varying sampled at the centroid
+function landCentroid(src) {
+  const inc = (s) => s.replace(/^[ \t]*#include +<([\w./]+)>/gm, (m, name) => inc(THREE.ShaderChunk[name]));
+  return inc(src).replace(/^([ \t]*)varying /gm, '$1centroid varying ');
+}
 
 // the dice of a copy of the tile: the shader's hash, in 32-bit unsigned sums
 function landHash(cu, cv) {
