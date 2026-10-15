@@ -1,12 +1,25 @@
-# <img src="icon.svg" alt="" width="48" height="48" align="center"> World Aviation
+<div align="center">
+
+<img src="icon.svg" alt="" width="96" height="96">
+
+# World Aviation
+
+[![Spela online](https://img.shields.io/badge/▶_Spela_online-gray0072.github.io%2Fivan%2Fworld--aviation-1b4f8a?style=for-the-badge)](https://gray0072.github.io/ivan/world-aviation/)
 
 *[Read in English](README.md)* · *[Читать на русском](README_RU.md)*
 
+<a href="https://gray0072.github.io/ivan/world-aviation/"><img src="docs/showcase.gif" alt="World Aviation i rörelse: flygplanen, flygplatserna i skymningen, inflygningen" width="800"></a>
+
+</div>
+
 En flygsimulator med vy från cockpit och en pilotkarriär i webbläsaren. Du är en ung svensk pilot med ett färskt trafikflygarcertifikat (EASA CPL) och bas på **Stockholm Arlanda**, och tar instrumentbehörigheten, ATPL och kaptenens fyra galoner på vägen. Du börjar med inrikesflyg i Sverige — Göteborg, Malmö, Visby, Kiruna norr om polcirkeln — vinner sedan Skandinavien och Nordatlanten och, region för region, hela världen: London och Paris, Dubai och Johannesburg, New York och Mexico City, Tokyo och Sydney. Varje flygning går från gate till gate: pushback, motorstart, taxning, start, väder och fel, landning och parkering vid gaten.
 
-![Skärmbild](screenshot.png)
-
-**▶ Spela: [gray0072.github.io/ivan/world-aviation/](https://gray0072.github.io/ivan/world-aviation/)**
+- ✈️ **20 riktiga flygplan** — från Twin Otter till A380, och den legendariska An-225 Mriya
+- 🌍 **141 flygplatser och ett hundratal riktiga flygbolag** — först Sverige, sedan Skandinavien och hela världen, region för region
+- 🛫 **Från gate till gate** — pushback, motorstart, taxning, start, autopilot, ILS-inflygning, landning, inrullning
+- 🔥 **Nödlägen** — motorbrand, nedisning, vindskjuvning, fågelkollisioner… med riktiga QRH-checklistor
+- 🎓 **Flygskola** — sju korta lektioner för den som aldrig har flugit
+- 📱 **Överallt** — tangentbord eller pekskärm, telefon eller dator, engelska · ryska · svenska, karriären synkas via Google
 
 ## Så kör du
 

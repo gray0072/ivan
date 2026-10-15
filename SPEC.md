@@ -52,7 +52,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
 ├── tools/cdp.js              # drives a page in headless Chrome (phone or desktop) from a steps file: screenshots, page errors
 ├── .gitattributes            # every text file stored with LF line endings
-├── assets/                  # gallery.css, gallery-lang.js (the gallery's texts in English, Russian and Swedish), gallery.js (the language switcher, remembered as ivanGallery.lang; picks up a new deploy via update.js), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image)
+├── assets/                  # gallery.css, gallery-lang.js (the gallery's texts in English, Russian and Swedish), gallery.js (the language switcher, remembered as ivanGallery.lang; picks up a new deploy via update.js), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image), showcase.gif (the animated preview at the top of the root READMEs: 800 × 450 slides of the games, English UI, about 4.5 MB)
 ├── flight-simulator/
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html           # markup only, links versioned CSS/JS
@@ -120,7 +120,7 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── render/               # three.js: aircraft models, hangar pictures, the Mriya's hologram, airport3d, apron3d, baggage3d, servicing (the ground crew's ways clear of the wings), cargo3d, ga3d, responders3d, turnaround3d (the ground crew at the arrival stand), salute3d (the water arch home from round the world), followme3d, incident3d (after a collision), landcover, scene3d
 │   ├── ui/                   # instruments, cockpit, hud, ui (screens), coach (a lesson's steps in the flight), school (the flight school's screens), filters (board and hangar), title (the title's sky), mriya (the assembly hall), fireworks, rtw (round the world: its screen, the finish, the certificate), incident (after a collision)
 │   ├── README.md, README_RU.md, README_SV.md
-│   ├── docs/                 # instrument screenshots (English UI) used by the READMEs
+│   ├── docs/                 # instrument screenshots and showcase.gif (English UI) used by the READMEs
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest
 │   └── screenshot.png

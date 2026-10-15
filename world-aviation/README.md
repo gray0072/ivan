@@ -1,12 +1,25 @@
-# <img src="icon.svg" alt="" width="48" height="48" align="center"> World Aviation
+<div align="center">
+
+<img src="icon.svg" alt="" width="96" height="96">
+
+# World Aviation
+
+[![Play online](https://img.shields.io/badge/▶_Play_online-gray0072.github.io%2Fivan%2Fworld--aviation-1b4f8a?style=for-the-badge)](https://gray0072.github.io/ivan/world-aviation/)
 
 *[Читать на русском](README_RU.md)* · *[Läs på svenska](README_SV.md)*
 
+<a href="https://gray0072.github.io/ivan/world-aviation/"><img src="docs/showcase.gif" alt="World Aviation in motion: the aircraft, the airports at dusk, the approach" width="800"></a>
+
+</div>
+
 A cockpit-view flight simulator and airline career in the browser. You are a young Swedish pilot with a fresh commercial licence (EASA CPL), based at **Stockholm Arlanda**, and earn the instrument rating, the ATPL and a captain's four stripes on the way. You start with Swedish domestic flights — Gothenburg, Malmö, Visby, Kiruna above the Arctic Circle — then win Scandinavia and the North Atlantic, and region by region the whole world: London and Paris, Dubai and Johannesburg, New York and Mexico City, Tokyo and Sydney. Every flight goes from gate to gate: push back, start the engines, taxi, take off, cope with the weather and with whatever breaks, land, and park at the gate.
 
-![Screenshot](screenshot.png)
-
-**▶ Play: [gray0072.github.io/ivan/world-aviation/](https://gray0072.github.io/ivan/world-aviation/)**
+- ✈️ **20 real aircraft** — from the Twin Otter bush plane to the A380, and the legendary An-225 Mriya
+- 🌍 **141 airports, about 100 real airlines** — Sweden first, then Scandinavia and the world, region by region
+- 🛫 **Gate to gate** — pushback, engine start, taxi, take-off, autopilot, ILS approach, landing, taxi in
+- 🔥 **Emergencies** — engine fires, icing, windshear, bird strikes… handled with real QRH checklists
+- 🎓 **Flight school** — seven short lessons for a pilot who has never flown
+- 📱 **Anywhere** — keyboard or touch, phone or computer, English · Russian · Swedish, careers synced through Google
 
 ## How to run
 

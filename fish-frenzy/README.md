@@ -1,10 +1,18 @@
-# <img src="icon.svg" alt="" width="48" height="48" align="center"> Fish Frenzy
+<div align="center">
+
+<img src="icon.svg" alt="" width="96" height="96">
+
+# Fish Frenzy
+
+[![Play online](https://img.shields.io/badge/▶_Play_online-gray0072.github.io%2Fivan%2Ffish--frenzy-1b4f8a?style=for-the-badge)](https://gray0072.github.io/ivan/fish-frenzy/)
 
 *[Читать на русском](README_RU.md)*
 
-A small arcade game in the browser: you're a tiny fish in the open sea. Eat plankton and fish smaller than you, grow, and climb the food chain — from a fry all the way to the Sea King. Watch out for anything bigger than you.
+<a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="screenshot.png" alt="Fish Frenzy screenshot" width="800"></a>
 
-![Screenshot](screenshot.png)
+</div>
+
+A small arcade game in the browser: you're a tiny fish in the open sea. Eat plankton and fish smaller than you, grow, and climb the food chain — from a fry all the way to the Sea King. Watch out for anything bigger than you.
 
 ## How to run
 
@@ -21,6 +29,9 @@ Open [index.html](index.html) in a browser — no build step, no server required
 
 ## Difficulty
 
+<details>
+<summary>Easy, Medium, Hard — what each level changes</summary>
+
 Pick a difficulty on the start screen (Space/Enter picks Medium; the arrow keys move between the buttons):
 
 - **Easy** — twice as much food, other fish swim 10% slower, 50% more boost stamina that also refills 50% faster. Fish flee and chase sloppily — up to 20° off the ideal direction — and react in about 0.3 s. Eaten fish give you 60% of their size. Their short dash has 1/8 of your stamina and comes back only 20 s after it is used.
@@ -29,7 +40,12 @@ Pick a difficulty on the start screen (Space/Enter picks Medium; the arrow keys 
 
 On every level the other fish notice you with a human-like delay, and they turn smoothly rather than twitching toward their target.
 
+</details>
+
 ## Graphics
+
+<details>
+<summary>Auto, High, Medium, Low, Minimal</summary>
 
 The start screen also has a **Graphics** switch (remembered between visits):
 
@@ -39,15 +55,25 @@ The start screen also has a **Graphics** switch (remembered between visits):
 - **Low** — for TVs and weak devices: also plain single-colour fish, jellyfish and rocks (no shading), no drifting motes or sand ripples, rendered at up to 1280×720, and a quarter fewer extra fish on big screens.
 - **Minimal** — the lightest: like Low, but rendered at up to 960×540, without seaweed, and with half the extra fish on big screens (a phone-sized screen is never emptier than on a phone).
 
+</details>
+
 ## Sound
 
 The **Sound** switch (On / Off) is on the start screen and in the pause; the choice is remembered between visits.
 
 ## Demo
 
+<details>
+<summary>The fish plays by itself</summary>
+
 The **Demo** button under the graphics switch starts an Easy run where the fish plays by itself: unlike the other fish it reacts instantly and aims precisely, sees further and plays smarter: it escapes all predators that come close at once (the ones facing it count the most) but ignores distant ones, chases the tastiest fish in view that isn't right next to a predator and aims where the prey is heading, ignores plankton (it only eats what it bumps into), stays away from the surface and its gulls while it's a Fry, steers clear of jellyfish, and after a couple of leaps out of the water dives back down for a while. It dashes to escape or to catch prey, spends full stamina on hunting, and always keeps a reserve for a getaway. When it dies the demo starts over; press any key or tap the screen to go back to the menu. Demo runs never set records.
 
+</details>
+
 ## Gameplay
+
+<details>
+<summary>Leaps, depth, the danger radar, jellyfish and the food chain</summary>
 
 - The sea is endless to the left and right. Below you is the **sea floor**, above you is the **surface** with a tropical island, clouds and gulls on the horizon. The water is deep enough that a full-dash climb from the floor to the surface takes about 18 seconds for a fry and about 13 seconds for the biggest fish.
 - **Leaps.** Dash upward into the surface and your fish leaps out of the water: it flies along a real ballistic arc (you can't steer in the air) and lands back with a splash — spray, droplets, foam and bubbles. The steeper and faster you hit the surface, the higher the jump; big fish need a dash to break out, otherwise they just skim along the surface with their back out of the water. Other fish near the surface leap too — sometimes for fun, sometimes while chasing prey or escaping; their splashes sound quieter the farther away they are, and louder the bigger the fish. Seagulls glide over the water at different heights… who knows what a good leap could do. Careful as a fry, though: to a gull, you're the snack — it'll grab you and fly off.
@@ -66,6 +92,8 @@ The **Demo** button under the graphics switch starts an Easy run where the fish 
 - The bigger you get, the fewer (and more spread out) the other fish are, so the sea doesn't turn into a traffic jam of giants. Most fish you meet are close to your own size — mostly smaller near the floor, mostly bigger in the shallows — with an occasional small fry mixed in. Real giants are rare, though: the bigger a fish would be, the less likely it is to show up, so as the Sea King you'll mostly meet sharks and smaller kings to eat, and only now and then a rival your size.
 - Other fish live by the same rules: bigger fish eat smaller ones they catch with their mouth, and any fish that bumps into food eats it and grows (they don't go looking for food, though).
 - Get eaten by something bigger and it's game over — try to grow bigger next time.
+
+</details>
 
 ## Tech stack
 

@@ -1,10 +1,18 @@
-# <img src="icon.svg" alt="" width="48" height="48" align="center"> Аэропилот
+<div align="center">
+
+<img src="icon.svg" alt="" width="96" height="96">
+
+# Аэропилот
+
+[![Играть онлайн](https://img.shields.io/badge/▶_Играть_онлайн-gray0072.github.io%2Fivan%2Fflight--simulator-1b4f8a?style=for-the-badge)](https://gray0072.github.io/ivan/flight-simulator/)
 
 *[Read in English](README.md)*
 
-Небольшая аркадная игра-симулятор самолёта в браузере: вид от первого лица из кабины пилота, полёт между аэропортами, посадка и стрельба по воздушным шарикам.
+<a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="screenshot.png" alt="Скриншот игры «Аэропилот»" width="800"></a>
 
-![Скриншот](screenshot.png)
+</div>
+
+Небольшая аркадная игра-симулятор самолёта в браузере: вид от первого лица из кабины пилота, полёт между аэропортами, посадка и стрельба по воздушным шарикам.
 
 ## Как запустить
 

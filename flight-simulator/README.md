@@ -1,10 +1,18 @@
-# <img src="icon.svg" alt="" width="48" height="48" align="center"> Aeropilot
+<div align="center">
+
+<img src="icon.svg" alt="" width="96" height="96">
+
+# Aeropilot
+
+[![Play online](https://img.shields.io/badge/▶_Play_online-gray0072.github.io%2Fivan%2Fflight--simulator-1b4f8a?style=for-the-badge)](https://gray0072.github.io/ivan/flight-simulator/)
 
 *[Читать на русском](README_RU.md)*
 
-A small arcade flight-sim game in the browser: first-person cockpit view, flying between airports, landing, and shooting down balloons.
+<a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="screenshot.png" alt="Aeropilot screenshot" width="800"></a>
 
-![Screenshot](screenshot.png)
+</div>
+
+A small arcade flight-sim game in the browser: first-person cockpit view, flying between airports, landing, and shooting down balloons.
 
 ## How to run
 
