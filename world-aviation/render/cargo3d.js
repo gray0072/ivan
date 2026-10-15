@@ -59,7 +59,7 @@ Object.assign(Vehicles, {
   },
   // a forklift, its forks to the front (a pallet on them when `load`)
   forklift(k, load, rng) {
-    k.box(1.15, 0.9, 2.3, 0, 0.75, -0.1, '#f0a01a').box(1.15, 0.8, 0.6, 0, 1.35, -1.0, '#3a3d40')
+    k.box(1.15, 0.9, 2.3, 0, 0.75, -0.1, '#f0a01a').box(1.11, 0.8, 0.6, 0, 1.35, -1.0, '#3a3d40')
       .box(0.5, 0.5, 0.5, 0, 1.45, 0.1, '#222528');
     for (const [x, z] of [[-0.5, -0.6], [0.5, -0.6], [-0.5, 0.75], [0.5, 0.75]]) k.box(0.07, 1.25, 0.07, x, 1.85, z, '#2b2f33');
     k.box(1.15, 0.08, 1.45, 0, 2.48, 0.08, '#2b2f33');
@@ -136,7 +136,7 @@ Object.assign(Vehicles, {
     const zp = -L * 0.18;
     k.cyl(1.4, 1.4, 0.6, 14, 0, 2.4, zp, '#3a3d40')
       .box(2.8, 1.4, 1.8, 0, 3.2, zp - 2.4, '#3a3d40').box(2.6, 1.2, 3.6, 0, 3.0, zp - 0.6, Y)
-      .box(0.9, 1.5, 1.8, 1.45, 3.2, zp + 1.2, Y).box(0.92, 0.8, 1.2, 1.45, 3.4, zp + 1.5, '#202a33');
+      .box(0.9, 1.5, 1.8, 1.45, 3.2, zp + 1.2, Y).box(0.92, 0.8, 1.22, 1.45, 3.4, zp + 1.5, '#202a33');
     // the telescopic boom in three sections, thinner each, and the hook on its rope
     const secs = [[1.3, 1.4], [1.0, 1.1], [0.7, 0.8]];
     secs.forEach(([w, h], i) => {

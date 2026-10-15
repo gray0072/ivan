@@ -317,14 +317,27 @@ const Airport3D = {
     rec.night.push({ mat: glass, color: new THREE.Color(0xffd9a0), k: 0.55 });
     // (under a big roof the glass runs nearly the whole height)
     const gh = style ? 0.8 : 0.62;
-    at(new THREE.Mesh(cellBox(0.6, h * gh, b.along * 0.98), glass), b.t, front - 0.3, h * (0.05 + gh / 2));
+    const gy = h * (0.05 + gh / 2), gl = b.along * 0.98;
+    at(new THREE.Mesh(cellBox(0.6, h * gh, gl), glass), b.t, front - 0.3, gy);
+    // its mullions every 12 m, painted on a panel over the glass: far off the texture's mipmaps
+    // blend them into the glass, where boxes thinner than a pixel would flicker as you move
+    const pane = new THREE.PlaneGeometry(gl, h * gh, Math.ceil(gl / 12), Math.ceil(h * gh / 12));
+    const uv = pane.attributes.uv;
+    // (u in mullion spacings from the end of the building, a mullion at every whole one)
+    for (let i = 0; i < uv.count; i++) uv.setX(i, (gl * (0.5 - uv.getX(i)) + b.along / 2) / 12 + 0.5);
+    pane.rotateY(-Math.PI / 2);
+    const mullions = (glassCol, barCol) => {
+      const t = tex(mullionCanvas(glassCol, barCol));
+      t.wrapS = THREE.RepeatWrapping;
+      return t;
+    };
+    const paneMat = new THREE.MeshLambertMaterial({ map: mullions(0x2e4558, 0xd9dde0), emissiveMap: mullions(0xffffff, 0x000000), emissive: 0x000000 });
+    rec.night.push({ mat: paneMat, color: new THREE.Color(0xffd9a0), k: 0.55 });
+    at(new THREE.Mesh(pane, paneMat), b.t, front - 0.65, gy);
     // and a row of windows on the road side
     const back2 = lambert(0x34495c);
     rec.night.push({ mat: back2, color: new THREE.Color(0xffe2b0), k: 0.45 });
     at(new THREE.Mesh(cellBox(0.4, h * 0.3, b.along * 0.9), back2), b.t, back + 0.2, h * 0.55);
-    for (let t = b.t - b.along / 2 + 12; t < b.t + b.along / 2; t += 12) {
-      at(new THREE.Mesh(new THREE.BoxGeometry(0.8, h * gh, 0.6), lambert(0xd9dde0)), t, front - 0.6, h * (0.05 + gh / 2));
-    }
     if (style) this.terminalRoof(a, b, rec, at, lambert, id, style);
     // the name of the airport in big letters on the roof, facing the apron and the road (at a
     // big airport on the middle terminal, the others carry their number)
@@ -1065,6 +1078,18 @@ function buildingPaint(a) {
 function cellBox(w, h, d) {
   const n = (v) => Math.max(1, Math.ceil(v / 12));
   return new THREE.BoxGeometry(w, h, d, n(w), n(h), n(d));
+}
+
+// one 12 m span of a glass front: the glass, a 0.8 m mullion in the middle (colours as the
+// materials' hex, linear: painted in sRGB, as the texture is read back)
+function mullionCanvas(glassHex, barHex) {
+  const cv = document.createElement('canvas');
+  cv.width = 128; cv.height = 4;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#' + new THREE.Color(glassHex).convertLinearToSRGB().getHexString(); g.fillRect(0, 0, 128, 4);
+  const w = 128 * 0.8 / 12;
+  g.fillStyle = '#' + new THREE.Color(barHex).convertLinearToSRGB().getHexString(); g.fillRect(64 - w / 2, 0, w, 4);
+  return cv;
 }
 
 // ---------- marking strips ----------

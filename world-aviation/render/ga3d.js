@@ -65,9 +65,9 @@ Object.assign(Vehicles, {
   // a panel van in the post's colours (a stripe along the side), or white with a reefer unit over
   // the cab for the fish
   panelVan(k, body, stripe, reefer) {
-    k.box(2.0, 0.5, 5.6, 0, 0.6, 0, '#2b2e31').box(2.0, 1.1, 1.3, 0, 1.15, 2.1, body).box(2.0, 2.2, 3.9, 0, 1.75, -0.45, body)
+    k.box(1.96, 0.5, 5.6, 0, 0.6, 0, '#2b2e31').box(2.0, 1.1, 1.3, 0, 1.15, 2.1, body).box(2.0, 2.2, 3.9, 0, 1.75, -0.45, body)
       .box(1.9, 0.6, 0.06, 0, 1.65, 2.76, '#202a33').box(2.02, 0.55, 1.0, 0, 1.65, 2.0, '#202a33')
-      .box(2.04, 0.35, 3.9, 0, 1.35, -0.45, stripe);
+      .box(2.04, 0.35, 3.92, 0, 1.35, -0.45, stripe);
     if (reefer) k.box(1.6, 0.5, 0.9, 0, 3.05, 1.0, '#c9cdd0').box(1.4, 0.3, 0.06, 0, 3.05, 1.46, '#55595d');
     for (const x of [-0.9, 0.9]) for (const z of [-1.7, 1.9]) k.wheel(x, z, 0.38);
     return k;
