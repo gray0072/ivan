@@ -95,7 +95,10 @@ const SIM = {
   NOSEWHEEL_STEER_RATE_DEG: 22, // degrees per second the hydraulic nosewheel steering turns at
   GROUND_YAW_ACCEL: 0.9,       // rad/s² at most: how fast the turn rate on the ground builds up (the aeroplane's inertia)
   ENGINE_IDLE_N1: 0.22,        // N1 at idle, thrust scales from here to 100 %
-  PUSHBACK_S: 14,              // how long the tug takes
+  PUSHBACK_S: 20,              // how long the tug takes: straight back out of the stand, then round onto the apron lane
+  PUSHBACK_R_SHARE: 0.6,       // the radius of the push back's turn onto the lane, times the aeroplane's length ...
+  PUSHBACK_R_MIN_M: 10,        // ... at least this
+  PUSHBACK_R_MAX_M: 40,        // ... and at most this (metres)
   CRASH_BANK_DEG: 25,          // a wing on the ground at more bank than this is a crash
   SPOILER_BRAKE_GAIN: 0.35,    // the spoiler out on the ground: the wheel brakes this much stronger
   FLARE_TRIM_HOLD_M: 150,      // by hand on the approach below this height (AGL) the pitch trim stays put

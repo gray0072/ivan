@@ -491,12 +491,11 @@ const Game = {
   updatePushback(dt) {
     const fl = this.flight, st = fl.st, p = this.pushback;
     p.t += dt;
-    const k = smoothstep(0, 1, clamp(p.t / SIM.PUSHBACK_S, 0, 1));
-    const turn = smoothstep(0.25, 1, clamp(p.t / SIM.PUSHBACK_S, 0, 1));
-    const x = lerp(p.x0, p.x1, k), z = lerp(p.z0, p.z1, k);
+    // straight back out of the stand, then round onto the lane (World.pushbackPath)
+    const q = p.path.pose(smoothstep(0, 1, clamp(p.t / SIM.PUSHBACK_S, 0, 1)));
     st.vel.x = 0; st.vel.z = 0;
-    st.pos.x = x; st.pos.z = z;
-    st.hdg = lerpAngle(p.h0, p.h1, turn);
+    st.pos.x = q.x; st.pos.z = q.z;
+    st.hdg = q.hdg;
     st.parkingBrake = false;
     if (p.t >= SIM.PUSHBACK_S) {
       st.parkingBrake = true;
@@ -941,12 +940,7 @@ const Game = {
     const fl = this.flight, sys = this.systems, st = fl.st;
     const p = fl.phase;
     if (p === 'GATE') {
-      const g = fl.startGate;
-      const lane = g.laneNode;
-      this.pushback = {
-        t: 0, x0: st.pos.x, z0: st.pos.z, x1: lane.x, z1: lane.z,
-        h0: st.hdg, h1: wrapRad(fl.world.hdg + Math.PI)
-      };
+      this.pushback = { t: 0, path: World.pushbackPath(fl.world, fl.startGate, fl.dims.len) };
       fl.setPhase('PUSHBACK');
       fl.info(tr('Ground: push back approved — brakes released'));
       Audio2.cue('pushback');
@@ -1133,9 +1127,9 @@ const Game = {
   placeLessonStart(def) {
     const fl = this.flight, st = fl.st, sys = this.systems;
     if (def.start === 'lane') {
-      const lane = fl.startGate.laneNode;
-      st.pos.x = lane.x; st.pos.z = lane.z;
-      st.hdg = wrapRad(fl.world.hdg + Math.PI);
+      const end = World.pushbackPath(fl.world, fl.startGate, fl.dims.len).end;
+      st.pos.x = end.x; st.pos.z = end.z;
+      st.hdg = end.hdg;
       st.parkingBrake = true;
       sys.runEngines();
       fl.setPhase('ENGINE_START');

@@ -14,7 +14,7 @@
 // For each airport (all, or the ones named) and each type (all, or the ones named) it lays the
 // airport out as a flight does (World.makeAirport) and drives the aeroplane, as a kinematic
 // nosewheel-steered pure pursuit of the guidance's carrot, along every taxi route the game
-// gives: from every stand's push-back point on the apron lane to the line-up, and from every
+// gives: every stand's push back (World.pushbackPath), from there to the line-up, and from every
 // runway exit to every stand, then parked on the stand. Each pose is tested against the
 // airport's buildings, helicopters and parked aeroplanes the way sim/collide.js tests it (the stand the
 // flight uses, World.standsFor, has no parked aeroplane). Reports every touch: the airport, the type, the route,
@@ -132,10 +132,17 @@ const run = vm.runInContext(`(function (ids, typeList, step) {
       for (const gate of a.gates) {
         // (a GA stand takes only the types up to LAYOUT.GA_MAX_SPAN: World.zoneFor)
         if (gate.ga && ac.dims.span > LAYOUT.GA_MAX_SPAN) continue;
-        // out: from the push-back point on the apron lane (the tug's last pose) to the line-up
+        // the push back (World.pushbackPath), then out: from where the tug lets go on the apron
+        // lane to the line-up
         const lane = gate.laneNode, used = World.standsFor(a, gate, ac);
+        const push = World.pushbackPath(a, gate, d.len);
+        let pushed = true;
+        for (let s = 0; s <= push.length; s += step) {
+          const q = push.pose(s / push.length), ob = test(q.x, q.z, q.hdg, used);
+          if (ob) { report('pushed back from ' + gate.name, ob, s); pushed = false; break; }
+        }
         const out = World.findRoute(a, lane, a.nodes.rwyStart, [-a.dirX, -a.dirZ]);
-        drive(out, lane.x, lane.z, wrapRad(a.hdg + Math.PI), used, 'out of ' + gate.name);
+        if (pushed) drive(out, push.end.x, push.end.z, push.end.hdg, used, 'out of ' + gate.name);
         // in: from every exit, rolling down the runway from before its curve, to the stand, then
         // parked on it
         for (const ex of a.exits) {

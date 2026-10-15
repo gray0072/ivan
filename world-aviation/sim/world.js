@@ -536,6 +536,31 @@ const World = {
     return best;
   },
 
+  // the push back from a stand, as a tug does it: straight back, tail first, out of the stand
+  // towards the apron lane, then round a quarter circle of radius r (by the aeroplane's length)
+  // onto the lane, the tail swinging away from the holding point, so the aeroplane stops on the
+  // lane r past the stand's lane node, its nose towards the threshold. pose(k): the position and
+  // heading k (0..1) of the way along it
+  pushbackPath(a, gate, len) {
+    const L = LAYOUT, lead = L.STAND - L.APRON_LANE;
+    const r = clamp(len * SIM.PUSHBACK_R_SHARE, SIM.PUSHBACK_R_MIN_M, Math.min(SIM.PUSHBACK_R_MAX_M, lead));
+    const straight = lead - r, total = straight + r * Math.PI / 2;
+    // a nose direction in runway-local terms (along, across) as a heading
+    const hdgOf = (nt, na) => Math.atan2(a.dirX * nt + a.perX * na, -(a.dirZ * nt + a.perZ * na));
+    const pose = (k) => {
+      const s = clamp(k, 0, 1) * total;
+      let t = gate.t, across = L.STAND - s, nt = 0, na = 1;
+      if (s > straight) {
+        const th = (s - straight) / r;
+        t = gate.t + r - r * Math.cos(th); across = L.APRON_LANE + r - r * Math.sin(th);
+        nt = -Math.sin(th); na = Math.cos(th);
+      }
+      const p = this.at(a, t, across);
+      return { x: p.x, z: p.z, hdg: hdgOf(nt, na), t, across };
+    };
+    return { r, length: total, pose, end: pose(1) };
+  },
+
   // the stands a flight takes at an airport: its own, and for an aeroplane wider than the
   // airport's stands are made for (LAYOUT.MAX_SPAN) the ones either side of it at the same
   // terminal (or among the cargo stands) too, kept free (no parked aeroplane there:
