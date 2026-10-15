@@ -14,6 +14,7 @@
 //     officer taxiing takes the first one still reachable at its speed:
 //     room to slow down to its turn-off speed before its curve); while
 //     it is still far, the arrow leans towards it (its turn-off at the edge);
+//     turn off at another exit and the route starts from that one;
 //   - lining up, it leads onto the centreline ahead, never back to
 //     the line-up point.
 // In the air without the autopilot it gives the bearing to the
@@ -78,9 +79,13 @@ const Guidance = {
         lead = exit.t - loc.t;
       }
       let prog = World.routeProgress(a, game.arrivalRoute, st.pos.x, st.pos.z, look);
-      if (prog && !rolling && this.missed(prog, st)) {
-        const r = this.routeAhead(a, st, game.arrivalGate.node);
-        if (r) { game.arrivalRoute = r; prog = World.routeProgress(a, r, st.pos.x, st.pos.z, look); }
+      if (prog && !rolling && prog.deviation >= SIM.REROUTE_DEVIATION_M) {
+        // turned off at another exit than the arrow's (past it or before it): the route from the
+        // exit you are on; a missed turn: from the nearest junction ahead
+        const on = this.exitOn(a, st);
+        const r = on && on !== game.arrivalRoute[0] ? World.findRoute(a, on, game.arrivalGate.node)
+          : this.missed(prog, st) ? this.routeAhead(a, st, game.arrivalGate.node) : null;
+        if (r && r.length > 1) { game.arrivalRoute = r; prog = World.routeProgress(a, r, st.pos.x, st.pos.z, look); }
       }
       if (prog) {
         const stand = game.arrivalRoute[game.arrivalRoute.length - 1];
@@ -116,6 +121,23 @@ const Guidance = {
       if (n.t - n.turnBack * (1 - SIM.EXIT_CUT) - t > room) return n;
     }
     return a.exits[a.exits.length - 1];
+  },
+
+  // the runway exit the aeroplane is turning off along: within SIM.EXIT_ON_M of its line off the
+  // runway (from the start of its curve to the taxiway), heading within SIM.EXIT_ON_DEG of it; null
+  exitOn(a, st) {
+    let best = null, bestD = SIM.EXIT_ON_M;
+    for (const n of a.exits) {
+      const off = n.edges.find((e) => e.kind !== 'runway').to;
+      const dx = off.x - n.x, dz = off.z - n.z, len = Math.hypot(dx, dz);
+      if (len < 1) continue;
+      const s = ((st.pos.x - n.x) * dx + (st.pos.z - n.z) * dz) / len;
+      if (s < -n.turnBack || s > len) continue;
+      const d = Math.abs((st.pos.x - n.x) * dz - (st.pos.z - n.z) * dx) / len;
+      if (d >= bestD || Math.abs(wrapDeg(st.hdg / DEG - bearingDeg(n.x, n.z, off.x, off.z))) > SIM.EXIT_ON_DEG) continue;
+      best = n; bestD = d;
+    }
+    return best;
   },
 
   // a missed turn: well off the route, and the nearest point of it is behind the aeroplane

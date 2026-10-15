@@ -161,7 +161,9 @@ const SIM = {
   EXIT_DECEL_MS2: 1.5,         // braking assumed to slow down to an exit's turn-off speed before its curve ...
   EXIT_CUT: 0.5,               // ... of which this share may be cut (begun that much later)
   EXIT_MIN_LEAD_M: 30,         // an exit whose curve (so cut) begins nearer than this ahead is never the one to take
-  EXIT_COMMIT_DEG: 20          // turned this far off the runway heading: you are taking this exit, it stays
+  EXIT_COMMIT_DEG: 20,         // turned this far off the runway heading: you are taking this exit, it stays
+  EXIT_ON_M: 20,               // off the runway this near another exit's line, ...
+  EXIT_ON_DEG: 45              // ... headed within this of it: you took that one, the route starts from it
 };
 
 // The cabin's reaction to the landing (Flight.cabinMood, core/crowd.js), with passengers on board:
