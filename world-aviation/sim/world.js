@@ -143,6 +143,16 @@ const World = {
   at(a, t, across) {
     return { x: a.x + a.dirX * t + a.perX * across, z: a.z + a.dirZ * t + a.perZ * across };
   },
+  // how far across the player's aeroplane, len metres long, parks on a stand (its middle):
+  // LAYOUT.STAND, or further out for a long one, so that its nose stays short of the service road
+  // (STAND_NOSE). (The parked aeroplanes stand at LAYOUT.STAND whatever their length: a 777-300ER
+  // or a 747-8F moved out would have its tail in the way of an An-225 turning onto the apron lane.)
+  standAcross(len) { return Math.min(LAYOUT.STAND, LAYOUT.STAND_NOSE - (len || 0) / 2); },
+  // ... and that point in the world, on gate's centre line: { x, z, across }
+  standSpot(a, gate, len) {
+    const across = this.standAcross(len), p = this.at(a, gate.t, across);
+    return { x: p.x, z: p.z, across };
+  },
   // runway-local coordinates of a world point
   local(a, x, z) {
     const dx = x - a.x, dz = z - a.z;
@@ -539,17 +549,17 @@ const World = {
   // the push back from a stand, as a tug does it: straight back, tail first, out of the stand
   // towards the apron lane, then round a quarter circle of radius r (by the aeroplane's length)
   // onto the lane, the tail swinging away from the holding point, so the aeroplane stops on the
-  // lane r past the stand's lane node, its nose towards the threshold. pose(k): the position and
-  // heading k (0..1) of the way along it
+  // lane r past the stand's lane node, its nose towards the threshold (from where it parks:
+  // standAcross). pose(k): the position and heading k (0..1) of the way along it
   pushbackPath(a, gate, len) {
-    const L = LAYOUT, lead = L.STAND - L.APRON_LANE;
+    const L = LAYOUT, start = this.standAcross(len), lead = start - L.APRON_LANE;
     const r = clamp(len * SIM.PUSHBACK_R_SHARE, SIM.PUSHBACK_R_MIN_M, Math.min(SIM.PUSHBACK_R_MAX_M, lead));
     const straight = lead - r, total = straight + r * Math.PI / 2;
     // a nose direction in runway-local terms (along, across) as a heading
     const hdgOf = (nt, na) => Math.atan2(a.dirX * nt + a.perX * na, -(a.dirZ * nt + a.perZ * na));
     const pose = (k) => {
       const s = clamp(k, 0, 1) * total;
-      let t = gate.t, across = L.STAND - s, nt = 0, na = 1;
+      let t = gate.t, across = start - s, nt = 0, na = 1;
       if (s > straight) {
         const th = (s - straight) / r;
         t = gate.t + r - r * Math.cos(th); across = L.APRON_LANE + r - r * Math.sin(th);

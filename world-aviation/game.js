@@ -681,7 +681,7 @@ const Game = {
     } else if (p === 'EXIT') {
       if (st.spoiler && !this.spoilerTold) { this.spoilerTold = true; fl.info(tr('Leaving the runway — spoiler in <kbd>/</kbd>')); }
       const gate = this.arrivalGate, g = fl.guidance, fo = fl.copilot;
-      const d = Math.hypot(st.pos.x - gate.standX, st.pos.z - gate.standZ);
+      const spot = World.standSpot(fl.arrival, gate, fl.dims.len), d = Math.hypot(st.pos.x - spot.x, st.pos.z - spot.z);
       const align = Math.abs(wrapDeg(fl.headingDeg() - gate.parkHdg));
       const inBox = d < SIM.PARK_RADIUS_M && align < SIM.PARK_ALIGN_DEG;
       if (fo && fo.on && fo.done) this.copilotOff(tr('First officer: your controls — straight on to {gate}, stop on the stop bar', { gate: gateName(gate) }));

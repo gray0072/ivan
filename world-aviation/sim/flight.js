@@ -127,7 +127,8 @@ const Flight = {
 
   placeAtGate(gate) {
     const a = this.world;
-    this.st.pos.x = gate.standX; this.st.pos.z = gate.standZ;
+    const spot = World.standSpot(a, gate, this.ac.dims.len);
+    this.st.pos.x = spot.x; this.st.pos.z = spot.z;
     this.st.pos.y = a.elev + this.st.gearH;
     this.st.hdg = gate.parkHdg * DEG;
     // (pushed back onto the apron lane facing the threshold's way: Game.next)

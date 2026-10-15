@@ -41,8 +41,9 @@ const Servicing = {
   cache: new Map(),           // aircraft id -> its parts
   sizes: new Map(),           // vehicle model name -> its size
 
-  // a stand's own pose: the aeroplane on its centre line at LAYOUT.STAND, nose to the terminal
-  standPose(gate) { return { t: gate.t, a: LAYOUT.STAND, ft: 0, fa: 1 }; },
+  // a stand's own pose: on its centre line where an aeroplane len metres long parks
+  // (World.standAcross; a parked one, no len: at LAYOUT.STAND), nose to the terminal
+  standPose(gate, len) { return { t: gate.t, a: World.standAcross(len), ft: 0, fa: 1 }; },
   // a point of the aeroplane's axes in the frame ([t, across]), and a frame point in its axes
   at(p, x, z) { return [p.t + x * p.fa + z * p.ft, p.a - x * p.ft + z * p.fa]; },
   local(p, t, a) {

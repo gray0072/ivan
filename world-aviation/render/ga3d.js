@@ -381,7 +381,7 @@ const Ga3D = {
     const p = Responders3D.place(lay, lay.R + 3.5, w, len);
     const group = new THREE.Group();
     const mesh = k.mesh();
-    mesh.position.set(LAYOUT.STAND + p.z, 0, -(gate.t + p.y));
+    mesh.position.set(World.standAcross(fl.dims.len) + p.z, 0, -(gate.t + p.y));
     mesh.rotation.y = -Math.PI / 2;
     group.add(mesh);
     rec.frame.add(group);

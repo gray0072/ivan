@@ -189,7 +189,7 @@ const Turnaround3D = {
     const l1 = rec.frame.worldToLocal(new THREE.Vector3(st.pos.x + Math.sin(st.hdg) * 10, st.pos.y, st.pos.z - Math.cos(st.hdg) * 10));
     const ft = -(l1.z - l0.z), fa = l1.x - l0.x, n = Math.hypot(ft, fa);
     const p = { t: -l0.z, a: l0.x, ft: ft / n, fa: fa / n };
-    if (!(n > 1e-6) || Math.abs(p.t - gate.t) > 20 || Math.abs(p.a - LAYOUT.STAND) > 20 || p.fa < 0.8) return Servicing.standPose(gate);
+    if (!(n > 1e-6) || Math.abs(p.t - gate.t) > 20 || Math.abs(p.a - World.standAcross(fl.dims.len)) > 20 || p.fa < 0.8) return Servicing.standPose(gate, fl.dims.len);
     return p;
   },
 

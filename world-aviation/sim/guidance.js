@@ -88,13 +88,14 @@ const Guidance = {
         if (r && r.length > 1) { game.arrivalRoute = r; prog = World.routeProgress(a, r, st.pos.x, st.pos.z, look); }
       }
       if (prog) {
-        const stand = game.arrivalRoute[game.arrivalRoute.length - 1];
+        // (a long aeroplane parks short of the stand's node: World.standAcross)
+        const stand = World.standSpot(a, game.arrivalGate, fl.dims.len), short = LAYOUT.STAND - stand.across;
         // while the exit is still more than a carrot ahead: at the point where its turn-off
         // meets the runway's edge (the arrow leans towards the exit, more as it comes up, and
         // never off the paving); into the stand, the stop bar itself for the last few metres
         target = lead > look ? World.at(a, game.arrivalRoute[0].aimT, RWY_HALF_WIDTH)
           : prog.remaining < look * 0.6 ? stand : prog.carrot;
-        g.remaining = prog.remaining + Math.max(0, lead); g.deviation = prog.deviation;
+        g.remaining = Math.max(0, prog.remaining - short) + Math.max(0, lead); g.deviation = prog.deviation;
         g.route = game.arrivalRoute; g.along = prog.totalLength - prog.remaining - Math.max(0, lead);
       }
     } else if (!st.onGround && !fl.ap.on && !fl.navFailed && (p === 'DESCENT' || p === 'APPROACH' || p === 'CRUISE')) {

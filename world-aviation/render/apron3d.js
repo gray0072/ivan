@@ -151,9 +151,18 @@ const Vehicles = {
     for (const x of [-0.6, 0.6]) for (const z of [-0.8, 0.8]) k.wheel(x, z, 0.25);
     return k;
   },
+  // a saloon: the body, the cabin on it in the body's colour with its windows set in (the glass
+  // only just proud of the cabin's faces), the wheels flush with the sides under it, the bumpers,
+  // the head and tail lamps (4.4 m long, 1.8 wide, the roof at 1.52)
   car(k, color) {
-    k.box(1.8, 0.7, 4.4, 0, 0.62, 0, color).box(1.6, 0.6, 2.2, 0, 1.25, -0.2, '#202a33');
-    for (const x of [-0.85, 0.85]) for (const z of [-1.4, 1.4]) k.wheel(x, z, 0.32);
+    const GLASS = '#202a33';
+    k.box(1.8, 0.62, 4.4, 0, 0.6, 0, color)
+      .box(1.56, 0.61, 2.1, 0, 1.215, -0.25, color)
+      .box(1.6, 0.36, 1.8, 0, 1.2, -0.25, GLASS).box(1.4, 0.36, 2.14, 0, 1.2, -0.25, GLASS)
+      .box(1.84, 0.2, 0.16, 0, 0.4, 2.16, '#2b2e31').box(1.84, 0.2, 0.16, 0, 0.4, -2.16, '#2b2e31')
+      .box(0.36, 0.12, 0.04, -0.6, 0.76, 2.2, '#eceadf').box(0.36, 0.12, 0.04, 0.6, 0.76, 2.2, '#eceadf')
+      .box(0.36, 0.12, 0.04, -0.6, 0.76, -2.2, '#9a1a14').box(0.36, 0.12, 0.04, 0.6, 0.76, -2.2, '#9a1a14');
+    for (const x of [-0.8, 0.8]) for (const z of [-1.4, 1.4]) k.wheel(x, z, 0.33);
     return k;
   },
   followMe(k) {
@@ -181,7 +190,7 @@ const Vehicles = {
   ambulance(k) {
     const W = '#f4f4ef', RED = '#c8282a', DK = '#202a33';
     k.box(2.06, 0.5, 5.96, 0, 0.6, 0, '#3a3d40')
-      .box(2.1, 0.9, 1.0, 0, 1.0, 2.5, W).box(2.1, 1.15, 1.3, 0, 1.75, 1.55, W)
+      .box(2.1, 0.9, 1.0, 0, 1.0, 2.5, W).box(2.1, 1.8, 1.3, 0, 1.43, 1.55, W)
       .box(1.96, 0.62, 0.06, 0, 1.9, 2.21, DK).box(2.12, 0.55, 0.9, 0, 1.9, 1.6, DK)
       .box(2.36, 2.35, 3.9, 0, 1.62, -1.1, W)
       .box(2.38, 0.12, 3.92, 0, 1.52, -1.1, RED);
@@ -211,7 +220,7 @@ const Vehicles = {
   policeCar(k) {
     Vehicles.car(k, '#f4f4f4');
     for (let i = 0; i < 7; i++) k.box(1.82, 0.32, 0.6, 0, 0.62, -1.8 + i * 0.6, i % 2 ? '#f2d21a' : '#1d4fb8');
-    k.box(1.3, 0.1, 0.32, 0, 1.6, -0.2, '#222428');
+    k.box(1.3, 0.1, 0.32, 0, 1.57, -0.2, '#222428');
     return k;
   }
 };

@@ -36,12 +36,13 @@ const Copilot = {
   // sim/world.js buildFillets; none when the lead-in goes straight on; a route that starts on the
   // apron lane, planned anew there, turns off it square) by COPILOT.AFTER_TURN_M and a share of
   // the length, so that a long aeroplane has straightened up too — but at least
-  // COPILOT.PARK_LEFT_M short of the stand
+  // COPILOT.PARK_LEFT_M short of where it parks (a long one short of the stand: World.standAcross)
   handoverAt(route, len) {
     if (route.length < 2) return 0;
     const li = this.leadIn(route);
     const past = COPILOT.AFTER_TURN_M + COPILOT.AFTER_TURN_LEN * (len || 0);
-    return li.at + Math.max(0, Math.min(this.turnIn(route) + past, li.len - COPILOT.PARK_LEFT_M));
+    const short = LAYOUT.STAND - World.standAcross(len);
+    return li.at + Math.max(0, Math.min(this.turnIn(route) + past, li.len - short - COPILOT.PARK_LEFT_M));
   },
   // how far down the lead-in the turn into it ends (metres from the corner)
   turnIn(route) {

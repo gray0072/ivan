@@ -225,7 +225,7 @@ const ILS_DESKTOP_SIZES = [[1, true], [0.9, true], [0.8, true], [1, false], [0.8
 // FLIGHTS flights in the type: Enter hands over, the time may run up to TIME_ACCEL, and the first
 // officer stops on the stand's lead-in once the turn into it is behind and gives the controls back.
 const COPILOT = {
-  FLIGHTS: 3,
+  FLIGHTS: 2,
   TIME_ACCEL: 4,
   AFTER_TURN_M: 8,             // stops this far past the end of the turn into the stand ...
   AFTER_TURN_LEN: 0.25,        // ... and this share of the aeroplane's length more ...
@@ -285,9 +285,10 @@ const LAYOUT = {
   EXIT_MIN_GAP_M: 200,
   EXIT_END_CLEAR_M: 120,
   APRON_LANE: 285,             // taxi lane on the apron (95 m lead-in to the stands: room for a 747 to straighten up)
-  STAND: 380,                  // the parking position (nose-in towards the terminal; up to the A330 and the 787 the noses
-                               // stop short of the service road, the An-225's 18 m short of the terminal's front,
-                               // TERMINAL - 30)
+  STAND: 380,                  // the parking position: an aeroplane's middle (nose-in towards the terminal) ...
+  STAND_NOSE: 411,             // ... its nose at most here, 2 m short of the service road (SERVICE_ROAD - 7): one longer
+                               // than 2 x (STAND_NOSE - STAND) = 62 m (the 777-300ER, the 747-8, the A380, the An-225)
+                               // stops further out, towards the apron lane (World.standAcross)
   SERVICE_ROAD: 420,           // the middle of the apron service road, 14 m wide, between the stands and the
                                // terminal's glass (the baggage trains' road)
   TERMINAL: 470,               // terminal building centre

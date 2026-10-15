@@ -84,7 +84,7 @@ const School = {
       body = '<div class="debriefTop"><div class="grade top">✓</div><div class="debriefTitle">' +
         tr('Lesson {n} passed · {title}', { n: num, title: esc(tr(def.title)) }) + '</div></div>' +
         graded +
-        '<h3>' + tr('What you have learned') + '</h3><ul class="unlocks">' + def.learn.map((x) => unlockLine(true, tr(x))).join('') + '</ul>' +
+        '<h3>' + tr('What you have learned') + '</h3><ul class="unlocks learned">' + def.learn.map((x) => unlockLine(true, tr(x))).join('') + '</ul>' +
         (r.cheated ? '<p class="need">' + tr('Cheats used — the lesson is not counted') + '</p>' : '') +
         (def.finale ? this.diploma(r) : '') +
         (allDone && r.first ? '<p class="repGain">🎓 <b>' + tr('Flight school passed!') + '</b> ' + tr('You know every button and every instrument. Time for real flights: the contract board is waiting.') + '</p>' : '') +

@@ -1400,12 +1400,13 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .unlocks, .log { margin: 0; padding-left: 18px; font-size: 12px; color: #a3b3c3; line-height: 1.6; }
 .log { max-height: 220px; overflow: auto; }
 /* what the courses have unlocked: a green tick in a circle, or a dimmed lock */
-.cvCard .unlocks { padding: 0; list-style: none; line-height: 1.4; }
-.cvCard .unlocks li { display: flex; align-items: flex-start; gap: 9px; padding: 5px 0; border-bottom: 1px dashed rgba(140, 170, 200, 0.09); }
-.cvCard .unlocks li:last-child { border-bottom: 0; }
-.cvCard .unlocks i { flex: none; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; font-style: normal; }
-.cvCard .unlocks li.ok { color: #dfeee3; }
-.cvCard .unlocks li.ok i { background: #2f6b45; color: #d6ffe2; font-weight: 700; }
+/* (and what a lesson has taught, on its debrief) */
+.cvCard .unlocks, .unlocks.learned { padding: 0; list-style: none; line-height: 1.4; }
+.cvCard .unlocks li, .unlocks.learned li { display: flex; align-items: flex-start; gap: 9px; padding: 5px 0; border-bottom: 1px dashed rgba(140, 170, 200, 0.09); }
+.cvCard .unlocks li:last-child, .unlocks.learned li:last-child { border-bottom: 0; }
+.cvCard .unlocks i, .unlocks.learned i { flex: none; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; font-style: normal; }
+.cvCard .unlocks li.ok, .unlocks.learned li.ok { color: #dfeee3; }
+.cvCard .unlocks li.ok i, .unlocks.learned li.ok i { background: #2f6b45; color: #d6ffe2; font-weight: 700; }
 .cvCard .unlocks li.off { color: #6f8193; }
 .cvCard .unlocks li.off i { background: #1c2631; filter: grayscale(1); opacity: 0.6; }
 

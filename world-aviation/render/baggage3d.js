@@ -138,15 +138,16 @@ const Baggage = {
       if (!own || Math.hypot(own.vt, own.va) > 0.3) return null;
       // (just in: not before the ground crew's vehicles are in their places, turnaround3d.js)
       if (own.landed && !own.crewIn) return null;
-      if (Math.hypot(own.t - gate.t, own.across - LAYOUT.STAND) > 15 || !(own.len > 15)) return null;
+      const sa = World.standAcross(own.len);
+      if (Math.hypot(own.t - gate.t, own.across - sa) > 15 || !(own.len > 15)) return null;
       // (the aeroplane where it really stands, and the fuel truck by it, as the ground crew has them)
       const ta = rec.turnaround && rec.turnaround.gate === gate ? rec.turnaround : null;
-      const pose = ta ? ta.pose : Servicing.standPose(gate), fuel = Turnaround3D.fuelBody(ta);
-      return { t: gate.t, hold: LAYOUT.STAND - own.len * 0.22, R: own.rad, mission: own.landed ? 'in' : 'out',
+      const pose = ta ? ta.pose : Servicing.standPose(gate, own.len), fuel = Turnaround3D.fuelBody(ta);
+      return { t: gate.t, hold: sa - own.len * 0.22, R: own.rad, mission: own.landed ? 'in' : 'out',
         way: own.ac ? this.wayAt(rec, own.ac, pose, ta ? ta.holdZ : -own.len * 0.22, s.room, fuel ? [fuel] : []) : null };
     }
     if (!s.parked) return null;
-    if (s.way === undefined) s.way = s.ac ? this.wayAt(rec, s.ac, s.pose, s.hold - LAYOUT.STAND, s.room, s.bodies) : null;
+    if (s.way === undefined) s.way = s.ac ? this.wayAt(rec, s.ac, s.pose, s.hold - s.pose.a, s.room, s.bodies) : null;
     return { t: s.t, hold: s.hold, R: s.R, mission: null, way: s.way };
   },
   wayAt(rec, ac, pose, zHold, room, bodies) {

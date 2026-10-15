@@ -150,7 +150,7 @@ const run = vm.runInContext(`(function (ids, typeList, step) {
           const t0 = ex.t - ex.turnBack - 40, p0 = World.at(a, t0, 0);
           const endPose = drive([{ x: p0.x, z: p0.z, t: t0, across: 0 }].concat(r), p0.x, p0.z, a.hdg, used, 'in from ' + ex.id + ' to ' + gate.name);
           if (endPose && ex === a.exits[0]) {
-            const ob = test(gate.standX, gate.standZ, gate.parkHdg * DEG, used);
+            const spot = World.standSpot(a, gate, d.len), ob = test(spot.x, spot.z, gate.parkHdg * DEG, used);
             if (ob) report('parked on ' + gate.name, ob, 0);
           }
         }

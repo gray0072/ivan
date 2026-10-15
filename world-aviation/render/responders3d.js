@@ -97,6 +97,7 @@ const Responders3D = {
     const group = new THREE.Group();
     const lay = modelLayout(fl.ac);
     const kinds = fl.meet.filter((k) => RESP_KINDS[k]);
+    const sa = World.standAcross(fl.dims.len);          // (where the aeroplane parks)
     const body = new THREE.MeshLambertMaterial({ vertexColors: true });
     const vehicles = [];
     kinds.forEach((kind, n) => {
@@ -109,12 +110,12 @@ const Responders3D = {
       const mesh = k.mesh(body);
       // (facing out to the apron: forward = -across)
       const holder = new THREE.Group();
-      holder.position.set(LAYOUT.STAND + p.z, 0, -(gate.t + spec.side * p.y));
+      holder.position.set(sa + p.z, 0, -(gate.t + spec.side * p.y));
       holder.rotation.y = -Math.PI / 2;
       holder.add(mesh);
       // the way there from its depot: out onto the service road's lane on the stands' side, along
       // it and round into its place, facing out to the apron
-      const from = Ga3D.depot(rec.a, kind), tEnd = gate.t + spec.side * p.y, aEnd = LAYOUT.STAND + p.z;
+      const from = Ga3D.depot(rec.a, kind), tEnd = gate.t + spec.side * p.y, aEnd = sa + p.z;
       const lane = LAYOUT.SERVICE_ROAD - BAG_LANE;
       const track = from ? makeTrack([from, [from[0], lane], [tEnd, lane], [tEnd, aEnd]]) : null;
       const was = rec.respDrive && rec.respDrive.fl === fl && rec.respDrive.gate === gate ? rec.respDrive.s[kind] : undefined;

@@ -158,7 +158,7 @@ const fly = vm.runInContext(`(function (id, pilot, attempt, verbose) {
       if (fl.phase === 'EXIT') {
         if (def.copilot && !(fl.copilot && fl.copilot.on) && !bot.foTold) { bot.foTold = true; Game.action('starter'); }
         if (!(fl.copilot && fl.copilot.on)) {
-          const gate = Game.arrivalGate, d = Math.hypot(st.pos.x - gate.standX, st.pos.z - gate.standZ);
+          const spot = World.standSpot(fl.arrival, Game.arrivalGate, fl.dims.len), d = Math.hypot(st.pos.x - spot.x, st.pos.z - spot.z);
           if (d < SIM.PARK_RADIUS_M * 0.6) { fl.setThrottle(0); ax.brake = 1; if (fl.groundSpeedKt() < 1 && !st.parkingBrake) press('parkBrake'); }
           else drive(d < 60 ? 4 : 14);
         }
