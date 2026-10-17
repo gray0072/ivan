@@ -26,7 +26,7 @@ const PILOT_RANKS = [
   { id: 'cpl', licence: 'EASA CPL', title: 'Commercial pilot', stripes: 1 },
   { id: 'cplir', licence: 'EASA CPL/IR', title: 'Instrument-rated pilot', stripes: 2, courses: ['pax2'] },
   { id: 'atpl', licence: 'EASA ATPL', title: 'Airline transport pilot', stripes: 3, courses: ['gen4'], flights: 30 },
-  { id: 'captain', licence: 'EASA ATPL', title: 'Captain', stripes: 4, flights: 50, passed: 17 },
+  { id: 'captain', licence: 'EASA ATPL', title: 'Captain', stripes: 4, flights: 40, passed: 17 },
   { id: 'senior', licence: 'EASA ATPL', title: 'Senior captain', stripes: 4, star: true, all: true }
 ];
 
