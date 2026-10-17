@@ -230,7 +230,7 @@ const Airport3D = {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-    const mat = new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: false, vertexColors: true, fog: false });
+    const mat = steadyLamps(new THREE.PointsMaterial({ size: 2.6, sizeAttenuation: false, vertexColors: true, fog: false }));
     rec.lights = at(new THREE.Points(geo, mat), 0, 0);
     if (twyPos.length) {
       const tgeo = new THREE.BufferGeometry();
@@ -238,10 +238,10 @@ const Airport3D = {
       tgeo.setAttribute('color', new THREE.Float32BufferAttribute(twyCol, 3));
       // round dots, not squares: the taxiway lights are small flush lamps, dimmer than the runway's
       if (!this.twyDot) this.twyDot = new THREE.CanvasTexture(lampDotCanvas());
-      rec.twyLights = at(new THREE.Points(tgeo, new THREE.PointsMaterial({
+      rec.twyLights = at(new THREE.Points(tgeo, steadyLamps(new THREE.PointsMaterial({
         size: 2.4, sizeAttenuation: false, vertexColors: true, fog: false, transparent: true, opacity: 0, depthWrite: false,
         map: this.twyDot
-      })), 0, 0);
+      }))), 0, 0);
       rec.twyLights.visible = false;
       // (after the ground and the near land: they are see-through too, and sorted by distance
       // one painted over the lights, which write no depth — most of them were lost)
@@ -251,7 +251,7 @@ const Airport3D = {
     // the sequenced flasher ("the rabbit") running towards the threshold
     const fgeo = new THREE.BufferGeometry();
     fgeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 1, 0], 3));
-    rec.flasher = at(new THREE.Points(fgeo, new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, color: 0xffffff, fog: false })), -h - 900, 0);
+    rec.flasher = at(new THREE.Points(fgeo, steadyLamps(new THREE.PointsMaterial({ size: 6, sizeAttenuation: false, color: 0xffffff, fog: false }))), -h - 900, 0);
 
     // PAPI: four lights left of the runway 300 m in; their colour depends on the eye (update)
     const pgeo = new THREE.BufferGeometry();
@@ -264,7 +264,7 @@ const Airport3D = {
     }
     pgeo.setAttribute('position', new THREE.Float32BufferAttribute(ppos, 3));
     pgeo.setAttribute('color', new THREE.Float32BufferAttribute(pcol, 3));
-    rec.papiPoints = at(new THREE.Points(pgeo, new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: true, fog: false })), 0, 0);
+    rec.papiPoints = at(new THREE.Points(pgeo, steadyLamps(new THREE.PointsMaterial({ size: 5, sizeAttenuation: false, vertexColors: true, fog: false }))), 0, 0);
     const housing = new THREE.MeshLambertMaterial({ color: 0x2a2d30 });
     for (const p of rec.papi) at(new THREE.Mesh(new THREE.BoxGeometry(2, 0.9, 1.2), housing), p.t, p.across, 0.45);
   },
@@ -1657,6 +1657,29 @@ function makeBannerCanvas(a, id) {
 
 // the taxiway lights' share of full brightness (visual only)
 const TWY_LIGHTS_OPACITY = 0.75;
+// A lamp's sprite drawn a little nearer the eye than the lamp is, along the line of sight (so it
+// stays where it is on the screen): LAMP_PULL_M plus LAMP_PULL_K of the distance. A lamp a few
+// tenths of a metre above the ground, or just under its housing, seen far off is a hair's breadth
+// from them in depth; moving, it went out and came on again as the ground or the housing won
+// the depth test by turns. Pulled in, it always shines. (A lamp behind a building stays hidden:
+// the pull is a few metres near, a few tens far off.)
+const LAMP_PULL_M = 1.5;
+const LAMP_PULL_K = 0.012;
+function steadyLamps(mat) {
+  mat.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', [
+      '#include <project_vertex>',
+      '{',
+      '  float lampD = length( mvPosition.xyz );',
+      '  mvPosition.xyz *= max( 0.05, 1.0 - ( ' + LAMP_PULL_M.toFixed(2) + ' + ' + LAMP_PULL_K.toFixed(4) + ' * lampD ) / max( lampD, 1e-3 ) );',
+      '  gl_Position = projectionMatrix * mvPosition;',
+      '}'
+    ].join('\n'));
+  };
+  mat.customProgramCacheKey = () => 'steadyLamps';
+  return mat;
+}
+
 // a round lamp for a point sprite: solid in the middle, a soft rim
 function lampDotCanvas() {
   const cv = document.createElement('canvas');

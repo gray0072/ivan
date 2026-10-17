@@ -915,7 +915,9 @@ const Scene3D = {
 
   // the own aircraft's lights, as a crew would have them: the navigation lights and the beacon
   // once the engines run, the strobes on the runway and in the air, the landing lights with the
-  // gear down (low down, and on the runway), a taxi light when taxiing
+  // gear down on the runway and below the decision height (200 ft, where the autopilot lets go:
+  // on after the flare's height on the way down, off past it on the climb out), a taxi light when
+  // taxiing
   lightsFor(fl, sys) {
     const st = fl.st, p = fl.phase;
     const running = sys && sys.runningCount() > 0;
@@ -924,7 +926,7 @@ const Scene3D = {
       nav: running || this.dark > 0.3,
       beacon: running,
       strobe: !st.onGround || onRunway,
-      landing: st.gear > 0.9 && (onRunway || (!st.onGround && fl.altAgl() < 3000)),
+      landing: st.gear > 0.9 && (onRunway || (!st.onGround && fl.altAgl() < SIM.DECISION_HEIGHT_FT * FT)),
       taxi: st.onGround && running && (p === 'TAXI_OUT' || p === 'HOLD_SHORT' || p === 'EXIT')
     };
   },

@@ -19,7 +19,8 @@
 //     have their own steps), at the air ambulance's an ambulance by the
 //     door; at the stands the player uses this flight the bridge is
 //     retracted and the stand is empty
-//   - floodlight masts on both sides of the apron: their lamps and
+//   - floodlight masts on the terminal side of the apron, and low
+//     lamps along its airside edge (below every wing): their lamps and
 //     the pools of light they throw on the apron at night
 //   - traffic: the baggage trains between the baggage halls and the
 //     stands (baggage3d.js), cars (with their lights at night) on the
@@ -33,7 +34,8 @@
 
 const APRON_FLOOD = 0xffe3b8;      // the colour of the floodlights
 const MAST_CLEAR = 52;             // a floodlight mast from a taxilane centreline, metres (ICAO code F: 50.5)
-const MAST_NAME_GAP = 40;          // no airside mast this far either side of the airport's name on the roof, metres
+const EDGE_LAMP_H = 1.2;           // the airside lamps along the apron's edge: this tall (below the lowest wing tip) ...
+const EDGE_LAMP_GAP = 45;          // ... about this far apart
 // the apron traffic gives way to the player's aeroplane (Apron3D.update): the ground it covers is
 // its circle (half its length or span) plus GIVE_WAY_PAD, now and where it will be over the next
 // GIVE_WAY_AHEAD_S seconds; a vehicle stops GIVE_WAY_GAP metres short of that ground
@@ -332,28 +334,22 @@ const Apron3D = {
       } else rec.bridges.push(null);
     });
 
-    // ---- floodlight masts: along the airside edge of the apron, and on the terminal side
-    // halfway between the stands (clear of the bridges and the wings), just outside the roof's
-    // overhang with the lamp head turned along the building, so they never go through the roof
-    // (the airside ones on the grass just off the apron, clear of the service road and of the
-    // wings: ICAO's 50.5 m from a code F taxilane centreline to an object, from the apron lane
-    // and from every lane off the taxiway into the apron, MAST_CLEAR — so only between two lanes
-    // at least twice that apart, spread evenly, about 110 m from each other; none in front of the
-    // airport's name on the roof, MAST_NAME_GAP either side of it, where they would cross the
-    // letters seen from the apron and the taxiway)
+    // ---- the apron's lights: floodlight masts on the terminal side halfway between the stands
+    // (clear of the bridges and the wings), just outside the roof's overhang with the lamp head
+    // turned along the building, so they never go through the roof; along the airside edge low
+    // lamps, EDGE_LAMP_H tall — below every wing tip, so taxiing by on the apron lane they never
+    // look as if a wing could catch them (26 m masts there did) — on the grass just off the
+    // apron, MAST_CLEAR (ICAO's 50.5 m from a code F taxilane centreline to an object) from the
+    // apron lane and from every lane off the taxiway into the apron, so only between two lanes at
+    // least twice that apart, spread evenly, about EDGE_LAMP_GAP from each other
     const masts = [];
     const airside = Math.min(r.a0 - 6, L.APRON_LANE - MAST_CLEAR);
     const lanes = a.apronLanes || [r.t0 + 40, r.t1 - 40];
-    const sign = roofName(a);
-    const n0 = sign.b ? sign.b.t - sign.lw / 2 - MAST_NAME_GAP : Infinity, n1 = sign.b ? sign.b.t + sign.lw / 2 + MAST_NAME_GAP : -Infinity;
     for (let k = 0; k + 1 < lanes.length; k++) {
-      const s0 = lanes[k] + MAST_CLEAR, s1 = lanes[k + 1] - MAST_CLEAR;
-      const pieces = s1 <= n0 || s0 >= n1 ? [[s0, s1]] : [[s0, Math.min(s1, n0)], [Math.max(s0, n1), s1]];
-      for (const [t0, t1] of pieces) {
-        if (t1 < t0) continue;
-        const n = Math.floor((t1 - t0) / 110) + 1;
-        for (let i = 0; i < n; i++) masts.push([n === 1 ? (t0 + t1) / 2 : t0 + (t1 - t0) * i / (n - 1), airside, false]);
-      }
+      const t0 = lanes[k] + MAST_CLEAR, t1 = lanes[k + 1] - MAST_CLEAR;
+      if (t1 < t0) continue;
+      const n = Math.floor((t1 - t0) / EDGE_LAMP_GAP) + 1;
+      for (let i = 0; i < n; i++) masts.push([n === 1 ? (t0 + t1) / 2 : t0 + (t1 - t0) * i / (n - 1), airside, false]);
     }
     const termA = front - 7.5;
     for (let i = 0; i <= a.gates.length; i++) {
@@ -362,23 +358,30 @@ const Apron3D = {
       const t = i === 0 ? a.gates[0].t - 30 : i < a.gates.length ? a.gates[i].t - sp(a.gates[i]) : a.gates[i - 1].t + sp(a.gates[i - 1]);
       masts.push([t, termA, true]);
     }
-    // (the airside ones 26 m tall; the terminal's below its roof edge, so seen from the apron
-    // they never stand in front of the airport's name on the roof)
-    // (by the cargo building, lower than the terminals, below its roof edge too)
+    // (the terminal's below its roof edge, so seen from the apron they never stand in front of
+    // the airport's name on the roof; by the cargo building, lower than the terminals, below its
+    // roof edge too)
     const termMast = (t) => { const bb = behind(t); return Math.min(26, (bb ? bb.h : 11) - 2.5); };
     const mk = kit();
     const lamps = [];
     for (const [t, ac, along] of masts) {
-      const [x, z] = P(t, ac), mh = along ? termMast(t) : 26;
+      const [x, z] = P(t, ac);
+      if (!along) {
+        // a low lamp: a short post and its head, the lamp under the head's front, facing the apron
+        mk.cyl(0.08, 0.1, EDGE_LAMP_H, 6, x, EDGE_LAMP_H / 2, z, '#9aa0a4');
+        mk.box(0.36, 0.22, 0.36, x, EDGE_LAMP_H + 0.06, z, '#3a3f44');
+        lamps.push(x + 0.2, EDGE_LAMP_H - 0.08, z);
+        continue;
+      }
+      const mh = termMast(t);
       mk.cyl(0.25, 0.4, mh, 8, x, mh / 2, z, '#9aa0a4');
-      if (along) mk.box(1.2, 1.2, 4.2, x, mh + 0.2, z, '#3a3f44');
-      else mk.box(4.2, 1.2, 1.6, x, mh + 0.2, z, '#3a3f44');
-      for (let i = -1; i <= 1; i++) lamps.push(x + (along ? 0 : i * 1.3), mh - 0.5, z + (along ? i * 1.3 : 0));
+      mk.box(1.2, 1.2, 4.2, x, mh + 0.2, z, '#3a3f44');
+      for (let i = -1; i <= 1; i++) lamps.push(x, mh - 0.5, z + i * 1.3);
     }
     at(mk.mesh(), 0, 0, 0);
     const lgeo = new THREE.BufferGeometry();
     lgeo.setAttribute('position', new THREE.Float32BufferAttribute(lamps, 3));
-    rec.lamps = at(new THREE.Points(lgeo, new THREE.PointsMaterial({ size: 4, sizeAttenuation: false, color: APRON_FLOOD, fog: true })), 0, 0);
+    rec.lamps = at(new THREE.Points(lgeo, steadyLamps(new THREE.PointsMaterial({ size: 4, sizeAttenuation: false, color: APRON_FLOOD, fog: true }))), 0, 0);
     // the pools of light: soft discs added on top of the apron at night
     const pool = new THREE.MeshBasicMaterial({
       map: tex(glowCanvas(), 2), color: APRON_FLOOD, transparent: true, opacity: 0, depthWrite: false,
@@ -387,11 +390,12 @@ const Apron3D = {
     rec.poolMat = pool;
     // (one mesh for them all, drawn only after dusk: by day they cost the whole apron's fill for nothing)
     rec.pools = at(new THREE.Group(), 0, 0, 0);
-    for (const [t, ac] of masts) {
-      const g = new THREE.PlaneGeometry(150, 150, 6, 6);
+    // (a mast's 150 m across, out onto the apron; a low lamp's a small one at its foot, towards the apron)
+    for (const [t, ac, along] of masts) {
+      const sz = along ? 150 : 34, g = new THREE.PlaneGeometry(sz, sz, along ? 6 : 2, along ? 6 : 2);
       g.rotateX(-Math.PI / 2);
       const m = new THREE.Mesh(g, pool);
-      m.position.set(ac + (ac < L.STAND ? 35 : -45), 0.3, -t);
+      m.position.set(ac + (along ? -45 : 10), 0.3, -t);
       rec.pools.add(m);
     }
     Merge3D.bake(rec.pools);
