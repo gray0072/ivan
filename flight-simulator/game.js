@@ -920,7 +920,7 @@
     requestAnimationFrame(loop);
   }
   // ---- mouse cursor: hidden in fullscreen once it has been still for CURSOR_HIDE_MS ----
-  const CURSOR_HIDE_MS = 3000;
+  const CURSOR_HIDE_MS = 2000;
   let cursorTimer = 0, cursorX = -1, cursorY = -1;
   function isFullscreen() {
     if (document.fullscreenElement || document.webkitFullscreenElement) return true;
