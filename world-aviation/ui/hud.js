@@ -138,7 +138,21 @@ const HUD = {
       this.stripLive = this.strip.querySelector('.stripLive');
       this.stripLiveHtml = '';
     }
+    const html = this.liveRows(fl);
+    if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
+  },
+
+  // the strip's live figures: the flight time so far and the time to go, the fuel, the weight,
+  // the clocks at both airports and the air outside (also on the pause's flight card, where a
+  // phone held upright finds them, its strip folded away)
+  liveRows(fl) {
+    const c = fl.contract;
     const fuelPct = clamp(fl.st.fuel / fl.ac.fuelCapKg, 0, 1);
+    // still to fly: the distance to the runway at the speed over the ground (no less than 120 kt;
+    // before the take-off at the contract's planning speed, 85 % of the cruise), and a few minutes
+    // for the approach — until the wheels are down there
+    const kt = fl.st.wasAirborne ? Math.max(120, fl.groundSpeedKt()) : fl.ac.cruiseTas * 0.85;
+    const toGo = fl.arrival && !fl.landed ? fl.distToRunwayNm() / kt * 60 + 4 : 0;
     // the time now at both ends of the route: the departure's clock, running on with the flight,
     // and the same moment on the arrival's clock — whole hours apart, the difference of the two
     // airports' UTC offsets; the air outside at this height
@@ -146,8 +160,8 @@ const HUD = {
     const dep = World.byId[c.fromId], arr = World.byId[c.toId];
     const arrClock = ((clock + (utcOffset(arr) - utcOffset(dep)) * 3600) % 86400 + 86400) % 86400;
     const oat = Math.round(fl.env.temp - WEATHER.LAPSE_RATE * (fl.st.pos.y - (fl.env.tempElev || 0)));
-    const html =
-      '<div class="stripRow"><span>' + tr('FLIGHT TIME, ACTUAL') + '</span><span>' + (fl.elapsed < 60 ? tr('{m} min', { m: 0 }) : fmtDuration(Math.floor(fl.elapsed / 60))) + '</span></div>' +
+    return '<div class="stripRow"><span>' + tr('FLIGHT TIME, ACTUAL') + '</span><span>' + (fl.elapsed < 60 ? tr('{m} min', { m: 0 }) : fmtDuration(Math.floor(fl.elapsed / 60))) + '</span></div>' +
+      (toGo ? '<div class="stripRow"><span>' + tr('TIME TO GO') + '</span><span>' + tr('about {t}', { t: fmtDuration(toGo) }) + '</span></div>' : '') +
       '<div class="stripRow key"><span>' + tr('FUEL') + ' ' + Math.round(fl.st.fuel) + '/' + fl.ac.fuelCapKg + ' kg</span>' +
       '<span class="' + (fuelPct < 0.15 ? 'bad' : '') + '">' + Math.round(fuelPct * 100) + '%</span></div>' +
       '<div class="stripRow"><span>' + tr('WEIGHT') + '</span><span class="' + (fl.weight() > fl.ac.mtow ? 'bad' : '') + '">' +
@@ -157,7 +171,6 @@ const HUD = {
       '<div class="stripRow"><span>' + tr('OUTSIDE AIR') + '</span><span>' + (oat > 0 ? '+' : oat < 0 ? '−' : '') + Math.abs(oat) + ' °C</span></div>' +
       (c.rtw && !fl.practice && typeof RtwFlight !== 'undefined' && RtwFlight.fl === fl
         ? '<div class="stripRow rtw"><span>' + tr('ROUND THE WORLD') + '</span><span>' + Math.round(RtwFlight.deg) + '° / 360°</span></div>' : '');
-    if (this.stripLive && html !== this.stripLiveHtml) { this.stripLiveHtml = html; this.stripLive.innerHTML = html; }
   },
 
   // Is the fuel worth a look? Leaking, the low-fuel light on, or less on board than the rest of

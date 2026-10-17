@@ -460,6 +460,7 @@ const UI = {
     // the Network's region maps are drawn while nothing else is going on, so the tab opens at once
     if (this.tab !== 'network' && typeof RegionMaps !== 'undefined') RegionMaps.warm();
     this.route(this.tab === 'dispatch' && this.school ? 'school' : this.tab);
+    if (this.tab === 'training') this.spotNewCourse();
   },
 
   // what a tab shows next to its name: a gold dot when there is something new or something you
@@ -545,6 +546,7 @@ const UI = {
       (flying && Game.flight ? row2(tr('Aircraft'), esc(Game.flight.ac.name)) : '') +
       row2(tr('Load'), loadText(c)) +
       row2(tr('Distance'), c.distanceNm + ' nm') +
+      row2(tr('Flight time'), tr('about {t}', { t: fmtDuration(c.blockMin) })) +
       row2(tr('Payout'), fmtMoney(c.pay)) +
       row2(tr('Reputation'), '+' + c.repGain + ' ' + esc(tr(FACTIONS[c.faction].short))) +
       row2(tr('Fuel plan'), c.fuelKg + ' kg') +
@@ -771,7 +773,8 @@ const UI = {
     const head = '<div class="trHead">' +
       '<div class="trRing" style="--p:' + Math.round(passed / COURSES.length * 100) + '"><b>' + passed + '</b><span>/ ' + COURSES.length + '</span></div>' +
       '<div class="trHeadText"><h3>' + tr('Courses passed') + '</h3>' +
-      (open.length ? '<p class="trOpen">' + tr('Open now') + ': ' + open.map((c) => '<b>' + esc(this.courseText(c, lang).name) + '</b>').join(', ') + '</p>' : '') +
+      (open.length ? '<p class="trOpen">' + tr('Open now') + ': ' + open.map((c) =>
+        '<button class="trGo" data-act="goCourse" data-v="' + c.id + '" title="' + esc(tr('Show this course')) + '">' + esc(this.courseText(c, lang).name) + '</button>').join(' ') + '</p>' : '') +
       (next ? '<p class="trNext">' + icon(next) + '<span>' + tr('Next to open') + ': <b>' + esc(this.courseText(next, lang).name) + '</b><br>' +
         this.courseNeeds(next, true) + '</span></p>'
         : passed === COURSES.length ? '<p class="trOpen ok">' + tr('Every course passed.') + '</p>' : '') +
@@ -796,7 +799,7 @@ const UI = {
             : '<span class="coState">🔒 ' + esc(T.locked) + '</span>';
         const types = AIRCRAFT.filter((a) => a.unlock === c.id);
         const can = st.available && afford;
-        return '<div class="course ' + state + '" style="--bc:' + COURSE_COLOR[b] + '">' +
+        return '<div class="course ' + state + '" data-co="' + c.id + '" style="--bc:' + COURSE_COLOR[b] + '">' +
           '<div class="coHead">' + icon(c) + '<div class="coTitle"><small>' + tr('Level {n}', { n: c.tier + (b === 'general' ? 1 : 0) }) + '</small>' +
           '<b>' + esc(tx.name) + '</b></div>' + badge + '</div>' +
           '<p>' + esc(tx.blurb) + '</p>' +
@@ -821,6 +824,29 @@ const UI = {
     return head + School.trainingCard() + '<div class="hint">' + esc(T.intro) + '</div><div class="trTree"><div class="branches">' +
       '<div class="brPair">' + branch('general', 1) + branch('cargo', 3) + '</div>' +
       '<div class="brPair">' + branch('pax', 2) + branch('bush', 4) + '</div></div></div>';
+  },
+  // a course opened since the tab was last looked at: brought into view (its branch unfolded) and
+  // lit up once, so it need not be looked for down the tree; every open course is then seen
+  spotNewCourse() {
+    const d = Career.data;
+    const open = COURSES.filter((c) => Career.courseState(c).available).map((c) => c.id);
+    const seen = d.seenCourses || [];
+    const fresh = open.filter((id) => seen.indexOf(id) < 0);
+    if (fresh.length) setTimeout(() => this.goCourse(fresh[0]), 60);
+    if (fresh.length || !d.seenCourses) { d.seenCourses = seen.concat(fresh); Career.save(); }
+  },
+  // a course brought into the middle of the screen, its branch unfolded, and lit up for a moment
+  goCourse(id) {
+    const el = this.screen.querySelector('.course[data-co="' + id + '"]');
+    if (!el) return;
+    const br = el.closest('.branch');
+    if (br && br.classList.contains('folded')) this.foldBranch(br.dataset.b);
+    setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.remove('spot');
+      void el.offsetWidth;
+      el.classList.add('spot');
+    }, br && br.classList.contains('sliding') ? UI_FOLD_MS : 0);
   },
   // a branch folded or unfolded where it is, without drawing the tab anew (so it slides), and
   // remembered: a branch never touched folds by itself once every course in it is passed
@@ -1187,7 +1213,8 @@ const UI = {
       '<div class="screenBar"><button class="btn back" data-act="pauseBack" data-esc>' + tr('Back') + '</button></div>' +
       '<h2>' + tr('Paused') + '</h2>' +
       (what === 'aircraft' ? '<div class="cards planes">' + this.aircraftCard(fl.ac, true) + '</div>'
-        : '<div class="contracts">' + this.contractCard(fl.contract, null, true) + '</div>' + this.pauseAirports(fl)) +
+        : '<div class="contracts">' + this.contractCard(fl.contract, null, true) + '</div>' +
+          '<h3 class="pauseNowHead">' + tr('Right now') + '</h3><div class="pauseNow">' + HUD.liveRows(fl) + '</div>' + this.pauseAirports(fl)) +
       '<div class="btnRow"><button class="btn default" data-act="resume">' + tr('Resume') + '</button></div>', 'narrow');
     if (what === 'aircraft' && typeof AircraftPreview !== 'undefined') AircraftPreview.fill(this.screen);
   },
@@ -1439,6 +1466,7 @@ const UI = {
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;
       case 'course': this.showQuiz(v); break;
       case 'branch': this.foldBranch(v); break;
+      case 'goCourse': this.goCourse(v); break;
       case 'answer': {
         const q = this.quiz;
         if (!q || q.answer !== null) break;

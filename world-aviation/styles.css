@@ -619,6 +619,13 @@ body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !i
   }
 }
 .pauseApts { margin-top: 14px; }
+/* the pause's flight card: the contract strip's live figures, two columns where there is room */
+.pauseNowHead { margin: 14px 0 6px; }
+.pauseNow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 4px 18px; padding: 9px 12px;
+  border: 1px solid rgba(140, 170, 200, 0.16); border-radius: 10px; background: rgba(9, 14, 20, 0.45); font-size: 12px; }
+.pauseNow .stripRow { display: flex; justify-content: space-between; gap: 12px; color: #9fb0c3; }
+.pauseNow .stripRow > span:last-child { color: #e3edf6; font-variant-numeric: tabular-nums; }
+.pauseNow .bad { color: #ff7a5c !important; }
 .panel.title { width: min(760px, 100%); }
 
 h1.logo {
@@ -1132,6 +1139,13 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .trHeadText h3 { margin: 0 0 4px; }
 .trOpen { margin: 0 0 6px; font-size: 13px; color: #c3d1de; line-height: 1.45; }
 .trOpen b { color: #ffd97a; }
+/* an open course's name in the card: a tap brings the course into view */
+.trGo {
+  margin: 2px 2px 0 0; padding: 2px 9px; border: 1px solid rgba(255, 217, 122, 0.45); border-radius: 20px;
+  background: rgba(255, 217, 122, 0.1); color: #ffd97a; font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1.5; cursor: pointer;
+}
+.trGo::after { content: ' ↓'; opacity: 0.7; }
+.trGo:hover { background: rgba(255, 217, 122, 0.2); }
 .trNext { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 12px; color: #9fb0c3; line-height: 1.45; }
 .trNext b { color: #e3edf6; }
 .trNext .coIcon { width: 34px; height: 34px; opacity: 0.85; }
@@ -1206,6 +1220,9 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .course.done .coIcon { border-color: #7de08a; color: #9be8ac; }
 .course.open { border-color: rgba(255, 217, 122, 0.55); box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.25), 0 8px 24px rgba(255, 217, 122, 0.08); }
 .course.open .coIcon { animation: coGlow 2.6s ease-in-out infinite; }
+/* a course just brought into view lights up for a moment */
+.course.spot { animation: coSpot 1.8s ease-out; }
+@keyframes coSpot { 0%, 35% { box-shadow: 0 0 0 3px rgba(255, 217, 122, 0.85), 0 0 28px rgba(255, 217, 122, 0.45); } 100% { box-shadow: 0 0 0 1px rgba(255, 217, 122, 0.25), 0 8px 24px rgba(255, 217, 122, 0.08); } }
 @keyframes coGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 217, 122, 0); } 50% { box-shadow: 0 0 14px 2px rgba(255, 217, 122, 0.35); } }
 .course.locked .coIcon { filter: grayscale(0.7); opacity: 0.55; }
 .course.locked .coTitle b, .course.locked p { opacity: 0.75; }
