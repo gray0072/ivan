@@ -56,8 +56,8 @@ const TARGET = {
   BUSH_SHARE: 0.35,             // the bush work in a bush type at least this share of the widebodies' median net
   // 2. aircraft by course
   TYPES_PER_COURSE_MAX: 2,      // types one course (or one step of a line) may unlock at once
-  TYPE_GAP_MAX: 4,              // flights between two new types, at most (was 8: since the passenger line has a course a type, every four flights, no wait is longer)
-  PAX_STEP: 4,                  // the passenger line: one type a course, each course asking for this many flights more than the one before (the player flies each type about four times)
+  TYPE_GAP_MAX: 5,              // flights between two new types, at most (was 8: since the passenger line has a course a type, every three to five flights, no wait is longer)
+  PAX_STEP_MIN: 3, PAX_STEP_MAX: 5, // the passenger line: one type a course, each course asking for 3–5 flights more than the one before (the player flies each type three to five times, not always the same)
   PAX_LATE_MAX: 1,              // ... and the bot passes each of them at most this many flights after it opens by the flights
   // 4. the career
   MAX_FLIGHTS: 260,             // the bot gives up here
@@ -249,12 +249,12 @@ function unlocks() {
   let gap = 0, where = '';
   for (let i = 1; i < events.length; i++) if (events[i].at - events[i - 1].at > gap) { gap = events[i].at - events[i - 1].at; where = events[i - 1].at + '→' + events[i].at; }
   check(gap <= TARGET.TYPE_GAP_MAX, 'the longest wait for a new type: ' + gap + ' flights (' + where + ', at most ' + TARGET.TYPE_GAP_MAX + ')');
-  // the passenger line: each course one type, a course every PAX_STEP flights
+  // the passenger line: each course one type, a course every PAX_STEP_MIN–PAX_STEP_MAX flights
   const pax = paxLine();
   const notOne = pax.filter((c) => AIRCRAFT.filter((a) => a.unlock === c.id).length !== 1);
   const steps = pax.slice(1).map((c, i) => (c.flights || 0) - (pax[i].flights || 0));
-  const badStep = steps.filter((s) => s !== TARGET.PAX_STEP).length;
-  check(!notOne.length && !badStep, 'the passenger line: one type a course, a course every ' + TARGET.PAX_STEP + ' flights (' +
+  const badStep = steps.filter((s) => s < TARGET.PAX_STEP_MIN || s > TARGET.PAX_STEP_MAX).length;
+  check(!notOne.length && !badStep, 'the passenger line: one type a course, a course every ' + TARGET.PAX_STEP_MIN + '–' + TARGET.PAX_STEP_MAX + ' flights (' +
     pax.map((c) => (c.flights || 0)).join(', ') + ')' + (notOne.length ? '; not one type: ' + notOne.map((c) => c.name).join(', ') : ''));
 }
 // the passenger courses that unlock types, in the order they open
