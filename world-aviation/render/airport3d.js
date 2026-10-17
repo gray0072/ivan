@@ -1145,13 +1145,16 @@ function markBatch(y) {
   const pos = [], off = [], mea = [];
   // a vertex: the line's point (t, ac), the offset (ot, oa) from it, the half width (mt, ma)
   const vtx = (t, ac, ot, oa, mt, ma) => { pos.push(ac, y, -t); off.push(oa, -ot); mea.push(ma, -mt); };
-  // a strip from (t1, a1) to (t2, a2), w metres wide
+  // a strip from (t1, a1) to (t2, a2), w metres wide (in pieces of at most MARK_SEG_M)
   const strip = (t1, a1, t2, a2, w) => {
     const dt = t2 - t1, da = a2 - a1, len = Math.hypot(dt, da);
     if (len < 0.01) return;
-    const nt = -da / len * w / 2, na = dt / len * w / 2;
-    const p = [[t1, a1, 1], [t2, a2, 1], [t2, a2, -1], [t1, a1, -1]];
-    for (const k of [0, 1, 2, 0, 2, 3]) vtx(p[k][0], p[k][1], nt * p[k][2], na * p[k][2], nt, na);
+    const nt = -da / len * w / 2, na = dt / len * w / 2, n = Math.ceil(len / MARK_SEG_M);
+    for (let i = 0; i < n; i++) {
+      const u0 = i / n, u1 = (i + 1) / n;
+      const p = [[t1 + dt * u0, a1 + da * u0, 1], [t1 + dt * u1, a1 + da * u1, 1], [t1 + dt * u1, a1 + da * u1, -1], [t1 + dt * u0, a1 + da * u0, -1]];
+      for (const k of [0, 1, 2, 0, 2, 3]) vtx(p[k][0], p[k][1], nt * p[k][2], na * p[k][2], nt, na);
+    }
   };
   // a small octagon where two strips meet, so the turns have no gaps
   const dot = (t, ac, r) => {
@@ -1167,6 +1170,14 @@ function markBatch(y) {
   // one ribbon, mitred at the corners (a sharp one gets a dot instead: its mitre would spike)
   const poly = (pts, w, dash, gap) => {
     if (!dash) {
+      // (a long straight run in pieces of at most MARK_SEG_M, as a strip)
+      const dense = [pts[0]];
+      for (let i = 1; i < pts.length; i++) {
+        const p = pts[i - 1], q = pts[i], n = Math.ceil(Math.hypot(q[0] - p[0], q[1] - p[1]) / MARK_SEG_M);
+        for (let j = 1; j < n; j++) dense.push([p[0] + (q[0] - p[0]) * j / n, p[1] + (q[1] - p[1]) * j / n]);
+        dense.push(q);
+      }
+      pts = dense;
       const nrm = (p, q) => { const dt = q[0] - p[0], da = q[1] - p[1], l = Math.hypot(dt, da) || 1; return [-da / l, dt / l]; };
       const side = [];
       for (let i = 0; i < pts.length; i++) {
@@ -1229,7 +1240,12 @@ function markMesh(b, color) {
 // than MARK_MIN_PX to that, at most MARK_MAX_K times, fading it by as
 // much (alpha 1 / k, but no fainter than MARK_MIN_A, so the far lines still read): about the
 // same paint on the screen, as a texture's mipmaps would give it, but steady. Near, a line is
-// drawn as it is. The canvas's size in pixels: MARK_RES (Scene3D.resize).
+// drawn as it is. The canvas's size in pixels: MARK_RES (Scene3D.resize). The widening is worked
+// out at each vertex, so a line is made of pieces of at most MARK_SEG_M (markBatch): one strip
+// down a whole runway, with its far end widened 30 times and its near end not, was a wedge
+// painted wide across the runway near the eye, changing shape as the aeroplane moved — the
+// runway's edge lines flickered on the landing.
+const MARK_SEG_M = 25;
 const MARK_MIN_PX = 1.4;
 const MARK_MAX_K = 30;
 const MARK_MIN_A = 0.3;
