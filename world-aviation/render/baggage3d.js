@@ -285,7 +285,8 @@ const Baggage = {
 // Every vehicle that drives about an airport's apron — the baggage trains, the ground crew's
 // vehicles (turnaround3d.js), the emergency services (responders3d.js), the FOLLOW ME car
 // (followme3d.js) and the pushback tug on its way back to the stand (Scene3D.updateTug) — waits
-// for any other one just ahead of it on its way, standing or driving
+// for any other one just ahead of it on its way, standing or driving, and for the other
+// aeroplanes on the ground (sim/traffic.js, Traffic3D.around)
 // (each with its own look ahead and clearance, and a longest wait so none is locked for good).
 // Two never wait for each other: one that the other is already waiting for drives on, so at a
 // crossing one goes first and the other after it.
@@ -301,6 +302,7 @@ const Traffic = {
     if (FollowMe3D.on(rec)) add(FollowMe3D, FollowMe3D.pieces);
     const tug = Scene3D.tugMover;
     if (tug && tug.rec === rec && Scene3D.tug && Scene3D.tug.visible) add(tug, tug.pieces);
+    if (typeof Traffic3D !== 'undefined') for (const o of Traffic3D.around(rec)) add(o.who, o.pieces);
     return out;
   },
   // The one in the way of `me`: a point of its body within `gap` of me's way from `from` to `to`

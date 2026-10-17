@@ -29,7 +29,7 @@ const ROOT = path.join(__dirname, '..');
 const FILES = ['constants.js', 'data/airports.js', 'data/airport-names.js', 'data/countries.js', 'data/airlines.js', 'data/mriya.js', 'data/rtw.js',
   'data/emergencies.js', 'data/lessons.js', 'data/lang-ru.js', 'data/lang-sv.js', 'data/pilots.js', 'core/i18n.js', 'core/utils.js', 'data/geodata.js',
   'data/cities.js', 'sim/terrain.js', 'sim/world.js', 'core/audio.js', 'sim/flight.js', 'sim/airframe.js', 'sim/collide.js', 'sim/systems.js',
-  'sim/guidance.js', 'sim/taxilimit.js', 'sim/copilot.js', 'sim/lesson.js', 'career.js', 'sim/rtw.js', 'core/input.js', 'ui/incident.js', 'game.js'];
+  'sim/guidance.js', 'sim/taxilimit.js', 'sim/copilot.js', 'sim/lesson.js', 'sim/traffic.js', 'career.js', 'sim/rtw.js', 'core/input.js', 'ui/incident.js', 'game.js'];
 
 const args = process.argv.slice(2);
 const opt = (k, d) => (args.indexOf(k) >= 0 ? args[args.indexOf(k) + 1] : d);
@@ -57,7 +57,7 @@ const ctx = vm.createContext({
     documentElement: { style: { setProperty: noop } }, addEventListener: noop, body: { classList: { add: noop, remove: noop, toggle: noop } } },
   performance: { now: () => 0 },
   HUD: stub(), Scene3D: stub(), Cockpit: stub(), Instruments: stub(), Cabin: stub(), UI: stub(), Cloud: stub(), AppUpdate: stub(),
-  RtwScreen: stub(), Showcase: stub(), LandingJoke: stub(),
+  RtwScreen: stub(), Showcase: stub(), LandingJoke: stub(), Traffic3D: stub(),
   School: { showResult: (r) => results.push(r) }
 });
 for (const f of FILES) vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });

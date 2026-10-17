@@ -15,6 +15,8 @@
 //   - the hydraulics while the gear or the flaps travel
 //   - the stick shaker on a stall warning
 //   - the pushback tug's diesel, revving up to push
+//   - the other aeroplanes (sim/traffic.js): the loudest one's roar,
+//     by its power and its distance from the listener
 // One-shots: the engine start (the start valve and its air, the light-off
 // whoosh), the brakes letting go and the tow bar at pushback, the gear
 // and the flaps locking, levers, the parking brake, the spoiler, the touchdown (tyre chirp and a thump as hard
@@ -98,6 +100,10 @@ const Audio2 = {
     v.tug.connect(v.tugF); v.tug2.connect(v.tugF); v.tugF.connect(v.tugG);
     v.tugExG = gain(); v.tugExF = filter('bandpass', 160, 0.9);
     chain(noise(), v.tugExF, v.tugExG);
+    // the other aeroplanes (sim/traffic.js): the loudest one's roar and its rumble
+    v.trfG = gain(); v.trfF = filter('lowpass', 300, 0.6);
+    chain(noise(), v.trfF, v.trfG);
+    v.trfRG = gain(); v.trfR = osc('sine', 38); v.trfR.connect(v.trfRG);
     this.v = v;
     this.ready = true;
   },
@@ -129,7 +135,7 @@ const Audio2 = {
     const v = this.v;
     const set = (param, value, tc) => param.setTargetAtTime(value, now, tc || 0.08);
     if (!fl) {
-      for (const k of ['fanG', 'roarG', 'rumG', 'buzzG', 'windG', 'rollG', 'brakeG', 'squealG', 'hydG', 'shakeG', 'tugG', 'tugExG']) set(v[k].gain, 0, 0.08);
+      for (const k of ['fanG', 'roarG', 'rumG', 'buzzG', 'windG', 'rollG', 'brakeG', 'squealG', 'hydG', 'shakeG', 'tugG', 'tugExG', 'trfG', 'trfRG']) set(v[k].gain, 0, 0.08);
       // the flight is over: its callouts still in the queue go too
       if (this.t && window.speechSynthesis) window.speechSynthesis.cancel();
       this.t = null;
@@ -249,6 +255,15 @@ const Audio2 = {
     set(v.tugF.frequency, 260 + rev * 260, 0.4);
     set(v.tugG.gain, pushing ? (0.07 + rev * 0.05) * tugAtt : 0, 0.25);
     set(v.tugExG.gain, pushing ? (0.03 + rev * 0.05) * tugAtt : 0, 0.3);
+
+    // --- the other aeroplanes (sim/traffic.js): the loudest one heard from where the listener is
+    // (muffled in the cockpit with the rest of the world), its roar opening up with its power and
+    // as it comes near — a take-off rumbling past the holding point, a landing's reverse
+    const trf = cam && typeof AirTraffic !== 'undefined' && AirTraffic.fl === fl ? AirTraffic.loudest(cam) : null;
+    const tk = trf ? trf.power * clamp(260 / (trf.dist + 120), 0, 1.6) : 0;
+    set(v.trfG.gain, tk * (trf && trf.jet ? 0.16 : 0.1), 0.3);
+    set(v.trfF.frequency, trf ? 180 + 1500 * trf.power * clamp(500 / (trf.dist + 150), 0.15, 1) : 300, 0.3);
+    set(v.trfRG.gain, tk * 0.06, 0.3);
 
     // --- the stick shaker
     set(v.shakeG.gain, st.stallWarn ? 0.3 : 0, 0.03);

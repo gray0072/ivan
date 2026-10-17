@@ -9,8 +9,9 @@
 // little ahead (pure pursuit along the route the arrow follows,
 // sim/guidance.js; its own point, nearer than the arrow's) and keeps
 // COPILOT.SPEED_SHARE of the taxi speed limit (sim/taxilimit.js; the
-// turns no faster than its nosewheel takes them with room to spare),
-// while the time may run up to
+// turns no faster than its nosewheel takes them with room to spare;
+// stopping well short of another aeroplane ahead on the way:
+// AirTraffic.copilotCap, sim/traffic.js), while the time may run up to
 // COPILOT.TIME_ACCEL (Flight.timeAccelMax). On the stand's lead-in it
 // keeps to the lead-in's line, and COPILOT.AFTER_TURN_M plus
 // COPILOT.AFTER_TURN_LEN of the aeroplane's length past the end of the
@@ -94,12 +95,16 @@ const Copilot = {
     const lim = TaxiLimit.along(fl.arrival, g.route, g.along, COPILOT.DECEL_MS2, (R, rev) => this.turnKt(fl, R, rev));
     let want = Math.min(lim.now * KTS * COPILOT.SPEED_SHARE, Math.sqrt(2 * COPILOT.DECEL_MS2 * Math.max(0, left)));
     if (left < 1.5) want = 0;
+    // (another aeroplane ahead on the way: stopping well short of it, sim/traffic.js)
+    const traffic = typeof AirTraffic !== 'undefined' ? AirTraffic.copilotCap(fl) : Infinity;
+    const held = traffic < want;
+    if (held) want = traffic < 0.5 ? 0 : traffic;
     const err = want - speed;
     c.thrI = clamp(c.thrI + COPILOT.THROTTLE_I * err * dt, 0, COPILOT.MAX_THROTTLE);
     if (want === 0) {
       fl.setThrottle(0);
       st.brakeInput = 1;
-      if (speed < 0.3) c.done = true;
+      if (speed < 0.3 && !held) c.done = true;
     } else {
       fl.setThrottle(clamp(c.thrI + COPILOT.THROTTLE_P * err, 0, COPILOT.MAX_THROTTLE));
       st.brakeInput = err < -COPILOT.BRAKE_FROM_MS ? clamp((-err - COPILOT.BRAKE_FROM_MS) * COPILOT.BRAKE_P, 0, 1) : 0;

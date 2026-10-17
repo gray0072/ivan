@@ -232,6 +232,57 @@ const TAXI = {
   ROUTE_MAX_TURN_DEG: 160      // ... and a sharper one than this is never taken
 };
 
+// The other aeroplanes at the two ends of a flight (sim/traffic.js, render/traffic3d.js): one
+// departing ahead of the player, one landing ahead of the player and one landing after. They
+// never need the player and never stand in the player's way: the runway is the player's while
+// the player is on it or cleared onto it, and on the ground they give way.
+const TRAFFIC = {
+  // the chance of each by the airport's size: [the departure ahead, the arrival ahead, the arrival behind]
+  CHANCE: { big: [0.85, 0.7, 0.7], medium: [0.8, 0.6, 0.6], small: [0.6, 0.45, 0.45], tiny: [0, 0, 0] },
+  // ---- the departure ahead
+  PUSH_AT_S: 4,                // the neighbour ahead on the player's way starts its push back this long into the flight ...
+  PUSH_S: 24,                  // ... is pushed back for this long ...
+  START_S: 16,                 // ... and taxis this long after the tug has let go (the tug drives off meanwhile)
+  TUG_AWAY_S: 5,               // the tug's drive from the nose back to the stand
+  PUSH_TAIL_PAD_M: 10,         // its tail at the end of the push back at least this far short of the player's stand (and a fifth of both spans)
+  TWY_LEAD_M: 320,             // no stand ahead: it taxis along the taxiway from this far past where the player's way joins it
+  LINEUP_M: 25,                // lined up this far down the runway past the line-up's curve ...
+  LINEUP_WAIT_MAX_S: 75,       // ... it waits there for the player to come near, at most this long ...
+  ROLL_PLAYER_M: 700,          // ... and rolls once the player is this close to the holding point (or holding, or cleared)
+  QUEUE_SHORT_M: 12,           // where it waits for the runway: its nose this far short of the holding point
+  ROLL_AT_S: 2,                // the short start (lined up ahead of the player at the holding point): it rolls this long after the intro
+  // ---- the arrivals
+  AHEAD_SPAWN_NM: 16,          // the one landing ahead joins the final when the player is this close to the runway ...
+  AHEAD_NM: [3.5, 7],          // ... this far out on it, as far as fits ...
+  AHEAD_MARGIN_S: 60,          // ... so that it is parked this long before the player could touch down (at the player's ground speed)
+  BEHIND_NM: 6,                // the one landing after joins the final this far out once the player rolls on the runway ...
+  BEHIND_SPAWN_KT: 60,         // ... slower than this (no touch-and-go) ...
+  BEHIND_DECIDE_NM: 1,         // ... and goes around from this far out if the player is still on the runway
+  STRIP_M: 30,                 // the player holds the runway within this far of its edges (up to 60 m over it)
+  HURRY_NM: 2.5,               // the one landing ahead still on its way to the stand with the player this close: its time runs faster ...
+  HURRY_K: 3,                  // ... this many times
+  // ---- how they move
+  TAXI_KT: 22, APRON_KT: 14, STAND_KT: 6,
+  TURN_LAT_MS2: 1.0,           // in a turn no faster than this sideways ...
+  TURN_MIN_KT: 6,              // ... and at least this
+  ACCEL_MS2: 0.6, DECEL_MS2: 0.9,
+  STOP_DECEL_MS2: 1.6,         // giving way
+  ROLLOUT_DECEL_MS2: 2.2,      // on the landing roll
+  TO_ACCEL_MS2: 2.0, TO_ACCEL_PROP_MS2: 1.6,   // the take-off roll
+  CLIMB_DEG: 7, CLIMB_KT: 190, CLIMB_ACCEL_MS2: 1.0,
+  GA_DEG: 5,                   // a go-around's climb
+  GONE_M: 16000,               // flying away, gone this far from the airport
+  FLARE_M: 12,                 // the flare from this height over the runway
+  ENGINES_OFF_S: 12,           // parked, the engines stop this long after it has stopped
+  // giving way to the player (and to one another): the ground the other covers now and over the
+  // next GIVE_WAY_AHEAD_S, round it half its length or span plus its own plus GIVE_WAY_PAD_M
+  GIVE_WAY_PAD_M: 10, GIVE_WAY_AHEAD_S: 8, GIVE_WAY_GAP_M: 30,
+  ROUTE_CLEAR_M: 10,           // the one landing after keeps this far (and both half spans) off the player's way to the stand ahead
+  VEHICLE_WAIT_S: 10,          // waits for a vehicle in its way at most this long
+  AHEAD_HINT_M: 250,           // the taxi prompt says "traffic ahead" with one this close ahead on the player's way
+  STEP_S: 0.1                  // the simulation's step (a frame is cut into these)
+};
+
 // The ILS on a computer (Game.drawIls): the sizes it may take in the bottom right corner of the
 // view, the first that fits under the checklist and the map — [the symbols' scale, with the
 // labels and the words]; where none fits, it is not shown

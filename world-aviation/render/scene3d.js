@@ -23,6 +23,7 @@
 //     the arrival stand (responders3d.js)
 //   - after a collision the tug pulling the aeroplane back, the police
 //     car driving up, the smoke of a lost flight (incident3d.js)
+//   - the other aeroplanes taxiing, taking off and landing (traffic3d.js)
 // The cockpit itself is drawn in 2D on a canvas over the top.
 // ============================================================
 
@@ -915,6 +916,8 @@ const Scene3D = {
     this.updateTug(fl, ax);
     FollowMe3D.update(fl, dt, this.time, dark);
     Incident3D.update(fl, this.incident, this.time, dark);
+    // the other aeroplanes of the flight (traffic3d.js)
+    Traffic3D.update(fl, this.time, dark, eye);
   },
 
   // the own aircraft's lights, as a crew would have them: the navigation lights and the beacon

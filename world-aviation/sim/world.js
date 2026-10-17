@@ -616,9 +616,10 @@ const World = {
   // towards the apron lane, then round a quarter circle of radius r (by the aeroplane's length)
   // onto the lane, the tail swinging away from the holding point, so the aeroplane stops on the
   // lane r past the stand's lane node, its nose towards the threshold (from where it parks:
-  // standAcross). pose(k): the position and heading k (0..1) of the way along it
-  pushbackPath(a, gate, len) {
-    const L = LAYOUT, start = this.standAcross(len), lead = start - L.APRON_LANE;
+  // standAcross; from: from there instead — a parked aeroplane's LAYOUT.STAND, sim/traffic.js).
+  // pose(k): the position and heading k (0..1) of the way along it
+  pushbackPath(a, gate, len, from) {
+    const L = LAYOUT, start = from === undefined ? this.standAcross(len) : from, lead = start - L.APRON_LANE;
     const r = clamp(len * SIM.PUSHBACK_R_SHARE, SIM.PUSHBACK_R_MIN_M, Math.min(SIM.PUSHBACK_R_MAX_M, lead));
     const straight = lead - r, total = straight + r * Math.PI / 2;
     // a nose direction in runway-local terms (along, across) as a heading

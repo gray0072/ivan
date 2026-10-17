@@ -16,7 +16,8 @@
 // at the stands, the baggage trains, the FOLLOW ME car, the emergency
 // services and the van for the load; the scene places them and keeps the
 // moving ones where it draws them — with no scene, as in the headless
-// runs, there are none).
+// runs, there are none), and the other aeroplanes on the ground (the
+// movers of sim/traffic.js, as the prisms of their type where they are).
 //   - in the air, or on the ground at COLLIDE.CRASH_KT or more (a vehicle:
 //     COLLIDE.POLICE_KT): the flight is lost (Flight.fail 'collision');
 //   - a vehicle from CRASH_KT up to POLICE_KT: the police stop the flight
@@ -53,7 +54,8 @@ const OBSTACLE_NAMES = {
   carpark: 'the car park building',
   hotel: 'the hotel',
   office: 'an office building',
-  parked: 'a parked {type}'
+  parked: 'a parked {type}',
+  traffic: 'a taxiing {type}'
 };
 
 // the vehicles, by their COLLIDE.VEHICLES kind (translated by hand in data/lang-*.js)
@@ -175,7 +177,10 @@ const Collide = {
     const nearObs = !(st.pos.y - reach > a.elev + a.obstacleTop || Math.hypot(st.pos.x - a.x, st.pos.z - a.z) > a.obstacleReach + reach);
     // (the vehicles are all low, on the ground)
     const vs = a.vehicles && a.vehicles.length && st.pos.y - reach < a.elev + 6 ? a.vehicles : null;
-    if (!nearObs && !vs) {
+    // the other aeroplanes on the ground near it (sim/traffic.js)
+    const ts = typeof AirTraffic !== 'undefined' && st.pos.y - reach < a.elev + 30
+      ? AirTraffic.onGroundAt(a).filter((m) => Math.hypot(m.x - st.pos.x, m.z - st.pos.z) < m.r + reach) : [];
+    if (!nearObs && !vs && !ts.length) {
       this.keepClear(c, st);
       return;
     }
@@ -208,7 +213,30 @@ const Collide = {
         if (k >= 0) { this.hit(fl, c, ob, pts[k]); return; }
       }
     }
+    for (const m of ts) {
+      const ob = this.trafficOb(m);
+      if (st.pos.y - reach > ob.top) continue;
+      const k = this.touchAt(ob, pts, samples.length);
+      if (k >= 0) { this.hit(fl, c, ob, pts[k]); return; }
+    }
     this.keepClear(c, st);
+  },
+  // another aeroplane on the ground (sim/traffic.js) as an obstacle where it is now: the prisms of
+  // its type, like a parked one's (its x the left wing, its z the nose), from its wheels up
+  trafficOb(m) {
+    let ob = m.ob;
+    if (!ob) {
+      const solids = Airframe.solids(m.ac);
+      let h = 0, rad = 0;
+      for (const s of solids) { h = Math.max(h, s.y1); rad = Math.max(rad, s.rad); }
+      ob = m.ob = { kind: 'traffic', ox: 0, oz: 0, ax: { x: 0, z: 0 }, az: { x: 0, z: 0 }, base: 0, solids, rad, top: 0, h, type: m.ac, mover: m };
+    }
+    ob.ox = m.x; ob.oz = m.z;
+    ob.az.x = hdgX(m.hdg); ob.az.z = hdgZ(m.hdg);
+    ob.ax.x = -Math.cos(m.hdg); ob.ax.z = -Math.sin(m.hdg);
+    ob.base = m.y;
+    ob.top = ob.base + ob.h;
+    return ob;
   },
 
   // is a point within `margin` metres of a building of the airport (the parked aeroplanes and
@@ -281,7 +309,7 @@ const Collide = {
     const vehicle = ob.kind === 'vehicle';
     // what the camera shows (ui/incident.js): the spot, the obstacle's middle, what it was
     const contact = {
-      kind: vehicle ? 'vehicle' : ob.kind === 'parked' || ob.kind === 'heli' ? ob.kind : 'building',
+      kind: vehicle ? 'vehicle' : ob.kind === 'traffic' ? 'parked' : ob.kind === 'parked' || ob.kind === 'heli' ? ob.kind : 'building',
       what, speed, air: !st.onGround, x: p.x, y: p.y, z: p.z, ox: ob.ox, oz: ob.oz, top: ob.top
     };
     if (!st.onGround) { contact.tier = 'crash'; fl.fail('collision', tr('Collision — you flew into {what}.', { what }), contact); return; }

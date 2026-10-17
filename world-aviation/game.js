@@ -150,8 +150,10 @@ const Game = {
       if (this.lesson && this.mode === 'flying') this.updateLesson(dt);
       Guidance.update(this);
       TaxiLimit.update(fl);
+      AirTraffic.update(fl, simDt, false);
     }
-    if (shot && !paused) this.updateCine(dt);
+    // (the other aeroplanes go on during the camera's flights, in real time)
+    if (shot && !paused) { AirTraffic.update(fl, dt, shot.kind === 'intro'); this.updateCine(dt); }
     const cine = this.cineShot();
 
     Scene3D.cine = cine ? Cinematic : null;
@@ -577,7 +579,7 @@ const Game = {
       HUD.setPrompt(tr('<b>Taxi</b> to the holding point of runway {rwy}', { rwy: apt.rwyName }) +
         (st.parkingBrake ? ' · <b>' + tr('release the parking brake <kbd>Space</kbd>') + '</b>'
           : ' · ' + tr(Input.isCoarse ? 'a little throttle on the slider, steer with the stick, brake <kbd>B</kbd>' : 'throttle <kbd>1</kbd>–<kbd>3</kbd>, steer <kbd>←</kbd><kbd>→</kbd>, brake <kbd>B</kbd>')) +
-        (g && g.visible ? '<br>' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') + this.taxiSpeedHint());
+        (g && g.visible ? '<br>' + tr('{d} to go', { d: fmtDist(g.remaining) }) : '') + this.taxiSpeedHint() + this.trafficHint());
     } else if (p === 'HOLD_SHORT') {
       HUD.setPrompt('<b>' + tr('Holding point runway {rwy}', { rwy: apt.rwyName }) + '</b>' + (speed > 2 ? ' · <b>' + tr('stop here') + '</b>' : '') +
         '<br>' + (st.flapsTarget >= this.takeoffFlaps() ? tr('press <kbd>Enter</kbd> for the take-off clearance')
@@ -706,7 +708,7 @@ const Game = {
           : this.copilotReady() ? '<br>' + tr('<kbd>Enter</kbd> — the first officer taxis, time x{n}', { n: COPILOT.TIME_ACCEL })
           : '<br>' + tr('after {n} flights in this type the first officer taxis for you ({k} of {n})', { n: COPILOT.FLIGHTS, k: flights });
         HUD.setPrompt('<b>' + tr('Taxi to {gate}', { gate: gateName(gate) }) + '</b> · ' +
-          tr(fl.followMe && Copilot.toTurnIn(fl) > 0 ? 'follow the FOLLOW ME car' : 'follow the arrow') + this.taxiSpeedHint() + help);
+          tr(fl.followMe && Copilot.toTurnIn(fl) > 0 ? 'follow the FOLLOW ME car' : 'follow the arrow') + this.taxiSpeedHint() + this.trafficHint() + help);
       }
     } else if (p === 'SHUTDOWN') {
       HUD.setPrompt(tr('<b>Shutting down</b> · {ac} at {gate}', { ac: fl.ac.name, gate: gateName(this.arrivalGate) }));
@@ -732,6 +734,10 @@ const Game = {
     if (!t || !t.level) return '';
     const v = Math.round(t.shown);
     return ' · <b' + (t.level > 1 ? ' class="bad">' + tr('too fast — slow down to {v} kt', { v }) : '>' + tr('slow down to {v} kt', { v })) + '</b>';
+  },
+  // ... and on another aeroplane ahead on the way (sim/traffic.js)
+  trafficHint() {
+    return AirTraffic.ahead(this.flight) ? ' · <b>' + tr('traffic ahead — keep your distance') + '</b>' : '';
   },
 
   // When the spoiler (the speed brake) helps, and when it has to go in: high on the descent it
@@ -992,10 +998,12 @@ const Game = {
     fl.info(text);
   },
 
+  // (with another aeroplane still lined up or rolling ahead: behind it, sim/traffic.js)
   takeoffClearance() {
-    const fl = this.flight, w = fl.env.surfaceWind;
-    fl.info(tr('Tower: wind {d}° {v} kt, runway {rwy} cleared for take-off',
-      { d: String(Math.round(w.dir)).padStart(3, '0'), v: Math.round(w.speed), rwy: fl.world.rwyName }));
+    const fl = this.flight, w = fl.env.surfaceWind, who = AirTraffic.departingAhead(fl);
+    const v = { d: String(Math.round(w.dir)).padStart(3, '0'), v: Math.round(w.speed), rwy: fl.world.rwyName, who };
+    fl.info(who ? tr('Tower: wind {d}° {v} kt, runway {rwy} cleared for take-off behind the departing {who}', v)
+      : tr('Tower: wind {d}° {v} kt, runway {rwy} cleared for take-off', v));
   },
 
   // Enter, the Go button or a tap on step i of the open checklist: the current step's switch
@@ -1015,7 +1023,7 @@ const Game = {
     if (typeof MriyaScreen !== 'undefined' && MriyaScreen.isOpen()) { MriyaScreen.cheat(digit); return; }
     if (digit === 0) {
       HUD.showBanner('Cheats: Alt+1 full fuel · Alt+2 no emergencies · Alt+3 jump to final · Alt+4 +10 000 kr · ' +
-        'Alt+5 repair · Alt+6 time x' + SIM.TIME_ACCEL_CHEAT, 'cheat', 7000);
+        'Alt+5 repair · Alt+6 time x' + SIM.TIME_ACCEL_CHEAT + ' · Alt+7 traffic now', 'cheat', 7000);
       return;
     }
     const fl = this.flight;
@@ -1036,6 +1044,17 @@ const Game = {
       case 6:
         if (st.onGround) { text = 'time x' + SIM.TIME_ACCEL_CHEAT + ' works in the air only'; break; }
         fl.cheatAccel = true; fl.ap.on = true; text = 'time acceleration x' + SIM.TIME_ACCEL_CHEAT; break;
+      case 7: {
+        // another aeroplane now (sim/traffic.js), its stand emptied
+        const r = AirTraffic.cheat(fl, this.arrivalGate);
+        text = 'traffic — ' + r.text;
+        if (r.stand) {
+          fl.gatesInUse.push(r.stand);
+          Scene3D.flightGates = fl.gatesInUse;
+          for (const rec of Scene3D.airports3D.values()) Scene3D.applyGates(rec);
+        }
+        break;
+      }
       default: return;
     }
     HUD.showBanner('Cheat: ' + text + ' — this flight will not be paid', 'cheat', 2600);
@@ -1264,6 +1283,8 @@ const Game = {
     // the night sky of this contract: the moon's phase (0 new, 0.5 full) and the season's stars
     env.moonPhase = (hashStr(contract.id + '/moon') >>> 0) % 10000 / 10000;
     env.month = Career.data.season || 0;
+    // the other aeroplanes this flight may see (none in a lesson or a practice landing), sim/traffic.js
+    AirTraffic.start(this.flight, { off: !!lesson || !!this.practice, seed: s.seed, skipPushback: s.skipPushback, arrGate: this.arrivalGate });
 
     const fx = s.fx;
     // (a lesson: no emergencies of its own — the whole flight's icing comes with its step — Easy's
@@ -1289,8 +1310,11 @@ const Game = {
       this.takeoffClearance();
     }
 
-    this.flight.gatesInUse = World.standsFor(s.to, this.arrivalGate, s.aircraft).concat(s.skipPushback ? [] : World.standsFor(s.from, s.gate, s.aircraft));
+    // (and the stands the other aeroplanes take: their own models stand there)
+    this.flight.gatesInUse = World.standsFor(s.to, this.arrivalGate, s.aircraft).concat(s.skipPushback ? [] : World.standsFor(s.from, s.gate, s.aircraft))
+      .concat(AirTraffic.reserved());
     Scene3D.setFlightGates(this.flight.gatesInUse, this.arrivalGate);
+    Traffic3D.prepare(Scene3D.scene, AirTraffic);
     Scene3D.warmup(this.flight);
     HUD.reset();
     HUD.setPrompt('');
@@ -1336,6 +1360,9 @@ const Game = {
 
   startTour(contract, end) {
     this.stopCine();
+    // (no other aeroplanes about: only the camera moves)
+    AirTraffic.stop();
+    Traffic3D.clear();
     const s = Career.flightSetup(contract, { seed: 0, skipPushback: Career.skipPushback });
     if (World.key !== contract.fromId + '>' + contract.toId) {
       World.prepare(contract.fromId, contract.toId);
