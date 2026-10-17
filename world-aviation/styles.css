@@ -1151,8 +1151,8 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .trNext .coIcon { width: 34px; height: 34px; opacity: 0.85; }
 .trNext .coIcon svg { width: 18px; height: 18px; }
 
-/* the branches by the width they get: one column on a phone, two on a tablet (each a pair of
-   branches: general + cargo, passenger + bush), all four side by side on a computer */
+/* the branches by the width they get: one column on a phone, two on a tablet (general + cargo +
+   bush, then the passenger branch alone, the longest), all four side by side on a computer */
 .trTree { container-type: inline-size; }
 .branches { display: flex; flex-direction: column; gap: 14px; }
 .brPair { display: contents; }

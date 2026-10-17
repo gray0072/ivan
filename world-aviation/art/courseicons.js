@@ -3,7 +3,8 @@
 // ============================================================
 // World Aviation — a picture for every training course (COURSES):
 // a mortarboard for Ground School, a cloud and the sun for Weather,
-// a propeller, an ILS, a hazard diamond, a snowflake, a float plane…
+// a propeller, an ILS, a hazard diamond, a snowflake, a float plane,
+// a fan, a carbon weave, a six-wheel bogie, a double deck…
 // Line drawings in currentColor on a 24×24 grid, coloured by the CSS
 // of whatever holds them (the course cards and the exam screens in
 // ui/ui.js).
@@ -33,6 +34,19 @@ const CourseIcons = {
     paxetops: '<path d="M2 17.5c1.7 0 1.7-1.4 3.3-1.4s1.7 1.4 3.4 1.4 1.6-1.4 3.3-1.4 1.6 1.4 3.3 1.4 1.7-1.4 3.4-1.4 1.6 1.4 3.3 1.4"/>' +
       '<path d="M2 21.5c1.7 0 1.7-1.4 3.3-1.4s1.7 1.4 3.4 1.4 1.6-1.4 3.3-1.4 1.6 1.4 3.3 1.4 1.7-1.4 3.4-1.4 1.6 1.4 3.3 1.4"/>' +
       '<path d="M3 12.5C5.5 6 15 3.8 20 7.5" stroke-dasharray="2 2.2"/><path d="M17 5.2l3.5 2.4-3.9 1.4"/>',
+    // a blank sheet with a new aeroplane drawn on it (the A220)
+    paxclean: '<path d="M5 2.5h10l4 4v15H5z"/><path d="M15 2.5v4h4"/><path d="M12 8.5v9M7.8 14.2 12 12.4l4.2 1.8M10 17.5h4"/>',
+    // a turbofan seen from the front: the new engine of the A320neo
+    paxneo: '<circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="2.2"/>' +
+      '<path d="M12 9.8c.5-2.3 1.9-4.2 4-5.2M14.2 12.3c2.3.4 4.2 1.8 5 3.9M11 14c-1 2.1-2.8 3.6-5 4M9.8 11.4C7.5 10.9 5.6 9.5 4.8 7.4"/>',
+    // a carbon-fibre weave (the 787)
+    paxcomp: '<rect x="3" y="3" width="18" height="18" rx="3"/>' +
+      '<path d="M3 9l6-6M3 15 15 3M5 21 21 5M11 21l10-10M17 21l4-4M21 9l-6-6M21 15 9 3M19 21 3 5M13 21 3 11M7 21l-4-4"/>',
+    // a six-wheel main bogie (the 777)
+    paxheavy: '<path d="M12 2.5v9M4 11.5h16M2 21.5h20"/><circle cx="5.5" cy="16" r="3"/><circle cx="12" cy="16" r="3"/><circle cx="18.5" cy="16" r="3"/>',
+    // a tall fuselage from the front with two decks of windows (the A380)
+    paxdd: '<rect x="6" y="2.5" width="12" height="19" rx="6"/><path d="M8.8 9h6.4M8.8 14.5h6.4" stroke-dasharray="1.6 1.6"/>' +
+      '<path d="M1.5 17 6 15.5M22.5 17 18 15.5"/>',
     // Cargo
     cargo1: '<path d="M12 1.8 22.2 12 12 22.2 1.8 12z"/><path d="M12 6.8c2 2.2 3.3 3.9 3.3 6a3.3 3.3 0 0 1-6.6 0c0-1.3.6-2.4 1.5-3.2.2 1.1.6 1.8 1.3 2.2.1-1.8-.1-3.3.5-5z"/>',
     cargo2: '<path d="M12 3v17.5M7.5 20.5h9M4.5 6.5h15M12 3l-1.5 3.5M12 3l1.5 3.5"/>' +

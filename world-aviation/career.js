@@ -127,6 +127,17 @@ const Career = {
     if (!d.settings) d.settings = careerSettings(this.settings);
     d.rep = d.rep || { pax: 0, cargo: 0, bush: 0 };
     d.courses = d.courses || ['gen1'];
+    // a course that once unlocked several passenger types was split into one course a type: a
+    // career from before (no `coursesSplit`) that passed it has the courses split off it passed
+    // too, so it keeps every type it had; once only, so a newer career earns each of them
+    if (!d.coursesSplit) {
+      const split = { paxfbw: ['paxclean'], pax3: ['paxneo'], paxetops: ['paxcomp'], pax4: ['paxheavy', 'paxdd'] };
+      for (const id of Object.keys(split)) {
+        if (d.courses.indexOf(id) < 0) continue;
+        for (const s of split[id]) if (d.courses.indexOf(s) < 0) d.courses.push(s);
+      }
+      d.coursesSplit = true;
+    }
     // the fictional types of older versions became the real ones closest to them
     const renamed = { VIKNA19: 'B1900D', RJ84: 'CRJ200', SKARV27: 'F27F', FROST12: 'DHC6', NJ320: 'A320', BL600F: 'B763F' };
     d.aircraft = (d.aircraft || ['B1900D']).map((id) => renamed[id] || id);
@@ -194,6 +205,7 @@ const Career = {
       money: CONTRACTS.START_MONEY,
       rep: { pax: 0, cargo: 0, bush: 0 },
       courses: ['gen1'],
+      coursesSplit: true,          // (one passenger course a type: nothing for Career.migrate to split)
       aircraft: ['B1900D'],
       selected: 'B1900D',
       contracts: [],
@@ -477,7 +489,12 @@ const Career = {
       remote: d.courses.indexOf('bush4') >= 0,
       turboprop: d.courses.indexOf('paxtp') >= 0,
       fbw: d.courses.indexOf('paxfbw') >= 0,
+      cleanSheet: d.courses.indexOf('paxclean') >= 0,
+      neo: d.courses.indexOf('paxneo') >= 0,
       etops: d.courses.indexOf('paxetops') >= 0,
+      composite: d.courses.indexOf('paxcomp') >= 0,
+      heavyTwin: d.courses.indexOf('paxheavy') >= 0,
+      doubleDeck: d.courses.indexOf('paxdd') >= 0,
       outsize: d.courses.indexOf('cargo5') >= 0
     };
   },

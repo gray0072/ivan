@@ -19,7 +19,8 @@
 //      no type earns many times the reputation of another, the bush work stays worth flying, the
 //      Mriya earns the most.
 //   2. Aircraft by course — the order the courses open in (by their flights) and the types each
-//      one unlocks. Checks: never too many types at once, never too long without a new one.
+//      one unlocks. Checks: never too many types at once, never too long without a new one, the
+//      passenger line one type a course and a course every four flights.
 //   3. Airports — every airport can be reached by some type and has a client.
 //   4. The career — a bot plays a whole career with the real Career (Career.new, the board,
 //      Career.payout, buyCourse, buyRegion, buyMriyaPart) a few times with different seeds: it
@@ -27,7 +28,8 @@
 //      and otherwise for the best pay, buys what it can, picks the best type it has for the job.
 //      Prints the flight at which each milestone comes (the median of the runs) and checks the
 //      length of the game, the longest stretch without anything new, that every client group gets
-//      its share of the flights and that many types get flown.
+//      its share of the flights, that many types get flown and that the passenger courses are
+//      passed as soon as they open by the flights.
 //
 // The targets of the checks are in TARGET below: change them there, with a reason.
 // --quick: one run of the career and fewer contracts per type; --type: the economy of one type,
@@ -54,7 +56,9 @@ const TARGET = {
   BUSH_SHARE: 0.35,             // the bush work in a bush type at least this share of the widebodies' median net
   // 2. aircraft by course
   TYPES_PER_COURSE_MAX: 2,      // types one course (or one step of a line) may unlock at once
-  TYPE_GAP_MAX: 8,              // flights between two new types, at most
+  TYPE_GAP_MAX: 4,              // flights between two new types, at most (was 8: since the passenger line has a course a type, every four flights, no wait is longer)
+  PAX_STEP: 4,                  // the passenger line: one type a course, each course asking for this many flights more than the one before (the player flies each type about four times)
+  PAX_LATE_MAX: 1,              // ... and the bot passes each of them at most this many flights after it opens by the flights
   // 4. the career
   MAX_FLIGHTS: 260,             // the bot gives up here
   ALL_COURSES: [45, 80],        // every course passed by this flight (range)
@@ -245,6 +249,17 @@ function unlocks() {
   let gap = 0, where = '';
   for (let i = 1; i < events.length; i++) if (events[i].at - events[i - 1].at > gap) { gap = events[i].at - events[i - 1].at; where = events[i - 1].at + '→' + events[i].at; }
   check(gap <= TARGET.TYPE_GAP_MAX, 'the longest wait for a new type: ' + gap + ' flights (' + where + ', at most ' + TARGET.TYPE_GAP_MAX + ')');
+  // the passenger line: each course one type, a course every PAX_STEP flights
+  const pax = paxLine();
+  const notOne = pax.filter((c) => AIRCRAFT.filter((a) => a.unlock === c.id).length !== 1);
+  const steps = pax.slice(1).map((c, i) => (c.flights || 0) - (pax[i].flights || 0));
+  const badStep = steps.filter((s) => s !== TARGET.PAX_STEP).length;
+  check(!notOne.length && !badStep, 'the passenger line: one type a course, a course every ' + TARGET.PAX_STEP + ' flights (' +
+    pax.map((c) => (c.flights || 0)).join(', ') + ')' + (notOne.length ? '; not one type: ' + notOne.map((c) => c.name).join(', ') : ''));
+}
+// the passenger courses that unlock types, in the order they open
+function paxLine() {
+  return COURSES.filter((c) => c.branch === 'pax' && AIRCRAFT.some((a) => a.unlock === c.id)).sort((a, b) => (a.flights || 0) - (b.flights || 0));
 }
 
 // ============================================================
@@ -440,6 +455,9 @@ function careerPart() {
   check(end <= TARGET.ENDGAME_MAX, 'from the last course to the Mriya built: ' + end + ' flights at most (at most ' + TARGET.ENDGAME_MAX + ')');
   const minShare = Math.min(...['pax', 'cargo', 'bush'].map((g) => median(runs.map((r) => r.share[g] || 0))));
   check(minShare >= TARGET.GROUP_SHARE_MIN, 'every client group gets at least ' + Math.round(TARGET.GROUP_SHARE_MIN * 100) + ' % of the flights (' + shareTxt + ')');
+  const late = paxLine().map((c) => ({ c, late: at('course ' + c.id) - (c.flights || 0) })).filter((x) => !(x.late <= TARGET.PAX_LATE_MAX));
+  check(!late.length, 'the passenger courses passed at most ' + TARGET.PAX_LATE_MAX + ' flight(s) after they open by the flights' +
+    (late.length ? ': late ' + late.map((x) => x.c.name + ' +' + x.late).join(', ') : ''));
   const types = median(runs.map((r) => r.types));
   check(types >= TARGET.TYPES_FLOWN_MIN, types + ' types flown (at least ' + TARGET.TYPES_FLOWN_MIN + ')');
   check(!runs.some((r) => r.bankrupt), 'never bankrupt');

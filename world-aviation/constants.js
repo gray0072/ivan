@@ -26,7 +26,7 @@ const PILOT_RANKS = [
   { id: 'cpl', licence: 'EASA CPL', title: 'Commercial pilot', stripes: 1 },
   { id: 'cplir', licence: 'EASA CPL/IR', title: 'Instrument-rated pilot', stripes: 2, courses: ['pax2'] },
   { id: 'atpl', licence: 'EASA ATPL', title: 'Airline transport pilot', stripes: 3, courses: ['gen4'], flights: 30 },
-  { id: 'captain', licence: 'EASA ATPL', title: 'Captain', stripes: 4, flights: 50, passed: 12 },
+  { id: 'captain', licence: 'EASA ATPL', title: 'Captain', stripes: 4, flights: 50, passed: 15 },
   { id: 'senior', licence: 'EASA ATPL', title: 'Senior captain', stripes: 4, star: true, all: true }
 ];
 
@@ -694,7 +694,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.021, rollRate: 0.9, pitchRate: 0.7, yawRate: 0.9,
     takeoffDist: 1890, crosswindLimit: 30, maxRangeNm: 3400, surfaces: ['asphalt'],
-    rent: 8200, price: 0, bonus: 1.22, unlock: 'paxfbw',
+    rent: 8200, price: 0, bonus: 1.22, unlock: 'paxclean',
     dims: { len: 38.7, span: 35.1, fus: 3.7 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#0f8fa8', sweep: 25, fan: 0.56 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -763,7 +763,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.022, rollRate: 0.85, pitchRate: 0.65, yawRate: 0.85,
     takeoffDist: 1950, crosswindLimit: 33, maxRangeNm: 2550, surfaces: ['asphalt'],
-    rent: 10400, price: 0, bonus: 1.25, unlock: 'pax3',
+    rent: 10400, price: 0, bonus: 1.25, unlock: 'paxneo',
     dims: { len: 37.6, span: 35.8, fus: 3.95 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#14325c', sweep: 25, winglets: true, bigFans: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -894,7 +894,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.024, rollRate: 0.72, pitchRate: 0.52, yawRate: 0.68,
     takeoffDist: 2800, crosswindLimit: 38, maxRangeNm: 7565, surfaces: ['asphalt'],
-    rent: 21800, price: 0, bonus: 1.35, unlock: 'paxetops',
+    rent: 21800, price: 0, bonus: 1.35, unlock: 'paxcomp',
     dims: { len: 62.81, span: 60.12, fus: 5.77 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#1e5aa8', sweep: 32, fan: 0.58, dihedral: 7 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -940,7 +940,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.026, rollRate: 0.65, pitchRate: 0.48, yawRate: 0.62,
     takeoffDist: 2950, crosswindLimit: 38, maxRangeNm: 7370, surfaces: ['asphalt'],
-    rent: 27600, price: 0, bonus: 1.38, unlock: 'pax4',
+    rent: 27600, price: 0, bonus: 1.38, unlock: 'paxheavy',
     dims: { len: 73.86, span: 64.8, fus: 6.19 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#f3f5f7', color: '#24477a', sweep: 31.6, fan: 0.6, mainRows: 3 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -1009,7 +1009,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.030, rollRate: 0.55, pitchRate: 0.42, yawRate: 0.55,
     takeoffDist: 2900, crosswindLimit: 35, maxRangeNm: 8000, surfaces: ['asphalt'],
-    rent: 30000, price: 0, bonus: 1.45, unlock: 'pax4',
+    rent: 30000, price: 0, bonus: 1.45, unlock: 'paxdd',
     dims: { len: 72.72, span: 79.75, fus: 7.14 },
     look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#f3f5f7', color: '#6a2c82', sweep: 33.5, fan: 0.47, tall: 1.18, decks: 2, bodyRows: 3 },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -1091,7 +1091,8 @@ const QRH = {
 };
 
 // ---------- Training courses ----------
-// The technology tree: one general branch plus three career branches, four tiers each.
+// The technology tree: one general branch plus three career branches, four or five tiers each;
+// the passenger branch has a course of its own for every type after the turboprop.
 // A course opens once the courses it `requires` are passed, the pilot has flown `flights` flights in
 // all and has `rep` reputation with its branch's clients (general courses: with any). Every course
 // asks for a different number of flights, so they open one by one, not in bunches.
@@ -1103,10 +1104,10 @@ const COURSES = [
   { id: 'gen2', branch: 'general', tier: 1, name: 'Aviation Weather', cost: 15000, requires: ['gen1'], flights: 3,
     blurb: 'METAR, TAF, windshear and icing analysis. Better forecasts mean better fuel plans.',
     effect: 'Shows the full forecast at both ends, +10% fuel margin planning, 20% less icing.', course: 'pax' },
-  { id: 'gen3', branch: 'general', tier: 2, name: 'Advanced Systems', cost: 50000, requires: ['gen2'], flights: 9,
+  { id: 'gen3', branch: 'general', tier: 2, name: 'Advanced Systems', cost: 50000, requires: ['gen2'], flights: 10,
     blurb: 'Hydraulics, generators, pressurisation and the QRH — and how to work it under pressure.',
     effect: 'Checklist hints explain every step, +40% response time on every emergency.', course: 'pax' },
-  { id: 'gen4', branch: 'general', tier: 3, name: 'CRM & Cabin Safety', cost: 180000, requires: ['gen3'], flights: 21,
+  { id: 'gen4', branch: 'general', tier: 3, name: 'CRM & Cabin Safety', cost: 180000, requires: ['gen3'], flights: 22,
     blurb: 'Crew resource management, cabin crew briefing, medical response and awkward passengers.',
     effect: '+60% emergency response time, medical emergencies pay, +5 reputation per flight.', course: 'pax' },
   // Passenger
@@ -1116,21 +1117,38 @@ const COURSES = [
   { id: 'paxtp', branch: 'pax', tier: 1, name: 'Regional Turboprops', cost: 10000, requires: ['gen1'], flights: 1, rep: 0,
     blurb: 'The ATR 72 on short hops: propeller handling, feathering, de-icing boots and six sectors a day.',
     effect: 'Unlocks the ATR 72-600; +10% pay on legs under 300 nm in a turboprop.', course: 'pax' },
-  { id: 'pax2', branch: 'pax', tier: 2, name: 'Instrument Rating (IFR)', cost: 70000, requires: ['pax1'], flights: 13, rep: 15,
+  // after the CRJ one jet type a course, one after the other, a course every four flights (the
+  // flights 9, 13 … 45), so the pilot flies each new type about four times before the next opens
+  { id: 'paxfbw', branch: 'pax', tier: 2, name: 'Fly-by-Wire Jets', cost: 45000, requires: ['pax1'], flights: 9, rep: 6,
+    blurb: 'Flight computers between the controls and the control surfaces, and envelope protection: how a modern jet flies, and what is left when its computers degrade.',
+    effect: 'Unlocks the Embraer E195-E2.', course: 'pax' },
+  { id: 'paxclean', branch: 'pax', tier: 2, name: 'Clean-Sheet Narrowbody', cost: 60000, requires: ['paxfbw'], flights: 13, rep: 10,
+    blurb: 'The A220, drawn on a blank page as the Bombardier CSeries: a composite wing, a glass cockpit of five big screens, side-sticks and five seats abreast.',
+    effect: 'Unlocks the Airbus A220-300.', course: 'pax' },
+  { id: 'pax2', branch: 'pax', tier: 2, name: 'Instrument Rating (IFR)', cost: 75000, requires: ['paxclean'], flights: 17, rep: 14,
     blurb: 'Flying the approach when you cannot see the runway: ILS, NDB, circling and a missed approach flown well.',
     effect: 'Unlocks the Boeing 737-800, low-visibility and IMC contracts.', course: 'pax' },
-  { id: 'paxfbw', branch: 'pax', tier: 2, name: 'Fly-by-Wire Jets', cost: 100000, requires: ['pax1'], flights: 15, rep: 20,
-    blurb: 'Side-sticks, flight computers and envelope protection: how a modern jet flies, and what is left when its computers degrade.',
-    effect: 'Unlocks the Embraer E195-E2 and the Airbus A220-300.', course: 'pax' },
-  { id: 'pax3', branch: 'pax', tier: 3, name: 'Mountain & Adverse Weather', cost: 150000, requires: ['pax2'], flights: 27, rep: 35,
+  { id: 'pax3', branch: 'pax', tier: 3, name: 'Mountain & Adverse Weather', cost: 95000, requires: ['pax2'], flights: 21, rep: 19,
     blurb: 'Bergen in the rain, Tromsø in January: terrain, windshear, downdrafts and steep approaches.',
-    effect: 'Unlocks the Airbus A320-200 and A320neo, mountain and arctic passenger routes, +15% payout on adverse-weather contracts.', course: 'pax' },
-  { id: 'pax4', branch: 'pax', tier: 4, name: 'Widebody Procedures', cost: 500000, requires: ['pax3'], flights: 43, rep: 60,
-    blurb: 'Two hundred tonnes of aeroplane: longer checklists, heavier landings, higher Vref and hot-and-high limits.',
-    effect: 'Unlocks the Airbus A350-900, the Boeing 777-300ER, the Airbus A380 and the long-haul contracts.', course: 'pax' },
-  { id: 'paxetops', branch: 'pax', tier: 4, name: 'ETOPS & Ocean Crossings', cost: 350000, requires: ['pax3'], flights: 39, rep: 55,
+    effect: 'Unlocks the Airbus A320-200, mountain and arctic passenger routes, +15% payout on adverse-weather contracts.', course: 'pax' },
+  { id: 'paxneo', branch: 'pax', tier: 3, name: 'New Engine Option', cost: 100000, requires: ['pax3'], flights: 25, rep: 22,
+    blurb: 'The A320 again, with new engines on bigger fans and sharklets on the wingtips: a short differences course on the same type rating, and 15–20 % less fuel.',
+    effect: 'Unlocks the Airbus A320neo.', course: 'pax' },
+  { id: 'paxetops', branch: 'pax', tier: 4, name: 'ETOPS & Ocean Crossings', cost: 160000, requires: ['paxneo'], flights: 29, rep: 29,
     blurb: 'Two engines over the ocean: diversion times, alternates, the drift-down and the fuel for the worst case.',
-    effect: 'Unlocks the Airbus A330-300 and the Boeing 787-9; +10% pay on legs over 1 500 nm in a twin-engine jet.', course: 'pax' },
+    effect: 'Unlocks the Airbus A330-300; +10% pay on legs over 1 500 nm in a twin-engine jet.', course: 'pax' },
+  { id: 'paxcomp', branch: 'pax', tier: 4, name: 'Composite Long-Haul', cost: 190000, requires: ['paxetops'], flights: 33, rep: 34,
+    blurb: 'The 787: a fuselage of carbon fibre, a lower cabin altitude, electric systems instead of bleed air, and twelve hours across the world with a relief pilot on board.',
+    effect: 'Unlocks the Boeing 787-9 Dreamliner.', course: 'pax' },
+  { id: 'pax4', branch: 'pax', tier: 4, name: 'Widebody Procedures', cost: 220000, requires: ['paxcomp'], flights: 37, rep: 39,
+    blurb: 'Two hundred tonnes of aeroplane: longer checklists, heavier landings, higher Vref and hot-and-high limits.',
+    effect: 'Unlocks the Airbus A350-900 and the long-haul contracts.', course: 'pax' },
+  { id: 'paxheavy', branch: 'pax', tier: 5, name: 'Heavy Twin & Ultra Long Haul', cost: 250000, requires: ['pax4'], flights: 41, rep: 44,
+    blurb: 'The 777-300ER: the most powerful engines in airline service, six-wheel bogies, step climbs and polar routes half way round the world.',
+    effect: 'Unlocks the Boeing 777-300ER.', course: 'pax' },
+  { id: 'paxdd', branch: 'pax', tier: 5, name: 'Double-Deck Operations', cost: 290000, requires: ['paxheavy'], flights: 45, rep: 49,
+    blurb: 'The A380: two full decks to board, four engines, an 80-metre wing over the taxiway edges, the heaviest wake in the sky and fuel trimmed into the tail.',
+    effect: 'Unlocks the Airbus A380-800.', course: 'pax' },
   // Cargo
   { id: 'cargo1', branch: 'cargo', tier: 1, name: 'Dangerous Goods', cost: 10000, requires: ['gen1'], flights: 2, rep: 0,
     blurb: 'Class 3 flammable liquids, lithium batteries and the paperwork that comes with them.',
@@ -1141,7 +1159,7 @@ const COURSES = [
   { id: 'cargo3', branch: 'cargo', tier: 3, name: 'Arctic Ground Handling', cost: 120000, requires: ['cargo2'], flights: 18, rep: 30,
     blurb: 'De-icing procedures, cargo holds in the cold, snow banks and gravel aprons.',
     effect: 'Unlocks ice-field and reefer contracts, icing builds 35% slower.', course: 'cargo' },
-  { id: 'cargo4', branch: 'cargo', tier: 4, name: 'Heavy Freighter Ops', cost: 250000, requires: ['cargo3'], flights: 31, rep: 50,
+  { id: 'cargo4', branch: 'cargo', tier: 4, name: 'Heavy Freighter Ops', cost: 250000, requires: ['cargo3'], flights: 31, rep: 42,
     blurb: 'Main-deck loading, fifty tonnes of freight and the most demanding schedules in the north.',
     effect: 'Unlocks the Boeing 767-300F, the Boeing 747-8F and ultra-long contracts.', course: 'cargo' },
   { id: 'cargo5', branch: 'cargo', tier: 5, name: 'Outsize Cargo', cost: 700000, requires: ['cargo4'], flights: 48, rep: 70,
@@ -1154,10 +1172,10 @@ const COURSES = [
   { id: 'bush2', branch: 'bush', tier: 2, name: 'De-icing & Winter Survival', cost: 70000, requires: ['bush1'], flights: 11, rep: 15,
     blurb: 'Carburettor and airframe icing, engine anti-ice, and survival in a winter cabin.',
     effect: 'Icing builds 45% slower, icing emergencies give 30% more time, winter contracts pay +20%.', course: 'bush' },
-  { id: 'bush3', branch: 'bush', tier: 3, name: 'Medevac & SAR Contracts', cost: 250000, requires: ['bush2'], flights: 24, rep: 35,
+  { id: 'bush3', branch: 'bush', tier: 3, name: 'Medevac & SAR Contracts', cost: 250000, requires: ['bush2'], flights: 24, rep: 30,
     blurb: 'Search and rescue, medevac flights and getting there before the weather closes the strip.',
     effect: 'Unlocks urgent SAR and medevac contracts (up to 3x the rate).', course: 'bush' },
-  { id: 'bush4', branch: 'bush', tier: 4, name: 'Seaplane & Remote Bases', cost: 400000, requires: ['bush3'], flights: 35, rep: 50,
+  { id: 'bush4', branch: 'bush', tier: 4, name: 'Seaplane & Remote Bases', cost: 400000, requires: ['bush3'], flights: 35, rep: 44,
     blurb: 'Floats, skis and strips with no fuel, no lights and no second attempt.',
     effect: 'Unlocks ice fields and remote strips for every aircraft type.', course: 'bush' }
 ];

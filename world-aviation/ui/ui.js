@@ -818,12 +818,12 @@ const UI = {
         '<span class="brMini">' + mini + '</span></button>' +
         '<div class="brBody"><div class="brInner">' + items + '</div></div></section>';
     };
-    // two columns on a tablet hold two branches each, of about the same length: the general and
-    // the cargo courses, the passenger and the bush ones; one or four columns undo the pairs and
-    // take the branches in their own order (styles.css)
+    // two columns on a tablet, of about the same length: the general, the cargo and the bush
+    // courses in one, the passenger courses (one a type, the longest branch) in the other; one or
+    // four columns undo the pairs and take the branches in their own order (styles.css)
     return head + School.trainingCard() + '<div class="hint">' + esc(T.intro) + '</div><div class="trTree"><div class="branches">' +
-      '<div class="brPair">' + branch('general', 1) + branch('cargo', 3) + '</div>' +
-      '<div class="brPair">' + branch('pax', 2) + branch('bush', 4) + '</div></div></div>';
+      '<div class="brPair">' + branch('general', 1) + branch('cargo', 3) + branch('bush', 4) + '</div>' +
+      '<div class="brPair">' + branch('pax', 2) + '</div></div></div>';
   },
   // a course opened since the tab was last looked at: brought into view (its branch unfolded) and
   // lit up once, so it need not be looked for down the tree; every open course is then seen
@@ -921,9 +921,14 @@ const UI = {
       [fx.forecast, tr('Full weather reports at both ends, and better fuel planning')],
       [fx.mountain, tr('Mountain and adverse weather routes')],
       [fx.turboprop, tr('Regional turboprops — the ATR 72-600, and +10 % on short legs in a turboprop')],
-      [fx.fbw, tr('Fly-by-wire jets — the Embraer E195-E2 and the Airbus A220-300')],
-      [fx.widebody, tr('Widebody procedures — the Airbus A350-900, the Boeing 777-300ER and the Airbus A380')],
-      [fx.etops, tr('ETOPS — the Airbus A330-300 and the Boeing 787-9, and +10 % on long legs in a twin')],
+      [fx.fbw, tr('Fly-by-wire jets — the Embraer E195-E2')],
+      [fx.cleanSheet, tr('Clean-sheet narrowbody — the Airbus A220-300')],
+      [fx.neo, tr('New engine option — the Airbus A320neo')],
+      [fx.etops, tr('ETOPS — the Airbus A330-300, and +10 % on long legs in a twin')],
+      [fx.composite, tr('Composite long-haul — the Boeing 787-9 Dreamliner')],
+      [fx.widebody, tr('Widebody procedures — the Airbus A350-900')],
+      [fx.heavyTwin, tr('Heavy twin and ultra long haul — the Boeing 777-300ER')],
+      [fx.doubleDeck, tr('Double-deck operations — the Airbus A380-800')],
       [fx.outsize, tr('Outsize cargo — the Antonov An-124 onto gravel and ice, the Airbus Beluga and the BelugaXL')],
       [fx.remote, tr('Remote strips and ice fields for every type')],
       [Career.mriyaDone(), tr('The An-225 Mriya — built again with your own hands')]
