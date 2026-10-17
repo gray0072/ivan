@@ -72,7 +72,6 @@ const VEHICLE_NAMES = {
   pickup: 'a pickup',
   van: 'a van',
   car: 'a car',
-  followMe: 'the FOLLOW ME car',
   police: 'the police car',
   fire: 'a fire engine'
 };

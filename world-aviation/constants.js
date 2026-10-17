@@ -262,12 +262,13 @@ const COPILOT = {
 // taxiway past the runway exit and drives ahead of the aeroplane along the taxi route, its back
 // GAP_M plus LEAD_S seconds of the aeroplane's speed ahead of its nose, setting off early enough
 // to get up to that speed at ACCEL_MS2; caught up (closer than that) it may go up to RUN_KT, and
-// closer than GAP_M it speeds up at RUN_ACCEL_MS2. By the stand it drives on along the apron lane
-// past the wingtip (half the span plus PARK_CLEAR_M, at least PARK_MIN_M), pulls PULL_M off the
-// lane to the runway side over the last PULL_RUN_M and waits there.
+// closer than GAP_M it speeds up at RUN_ACCEL_MS2. By the stand it turns off the apron lane and
+// drives up beside the stand to where the police car waits (beyond the responders called), its
+// corners on curves of up to TURN_M, and waits there; as the engines wind down it drives on up to
+// the service road and LEAVE_M along it, out of sight.
 const FOLLOW_ME = {
   GAP_M: 30, LEAD_S: 2, MAX_KT: 45, RUN_KT: 70, ACCEL_MS2: 2.5, RUN_ACCEL_MS2: 4, BRAKE_MS2: 3,
-  PARK_CLEAR_M: 20, PARK_MIN_M: 35, PULL_M: 12, PULL_RUN_M: 20, WAIT_M: 25, FLASH_S: 0.8
+  TURN_M: 10, LEAVE_M: 160, WAIT_M: 25, FLASH_S: 0.8
 };
 
 // ---------- Airport layout (metres) ----------

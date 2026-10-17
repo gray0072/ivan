@@ -12,10 +12,16 @@
 //     time to get up to that speed: it waits when the aeroplane stops
 //     and never backs up; caught up, it speeds up (harder still inside
 //     GAP_M) and goes up to RUN_KT instead of MAX_KT
-//   - by the stand it drives on along the apron lane past the wingtip
-//     of the aeroplane turning in (less where the apron ends), pulls
-//     off the lane to the runway side and waits there, out of the way
-//     (it gets there even when the aeroplane is parked first)
+//   - by the stand it turns off the apron lane ahead of the aeroplane
+//     turning in and drives up beside the stand to where the police car
+//     waits (Responders3D.place: beside the front of the fuselage, ahead
+//     of the wing and the engines), on the side the lane comes from past
+//     the stand, out beyond the responders called to that side, facing
+//     the terminal, and waits there (it gets there even when the
+//     aeroplane is parked first)
+//   - as the engines wind down (SHUTDOWN), before the ground crew comes,
+//     it drives on up to the service road, turns away from the stand on
+//     the lane that keeps right and goes off along it, out of sight
 //   - a yellow car with black and yellow checks along its sides, the
 //     lit FOLLOW ME board on the roof facing back at the pilot, and an
 //     amber beacon flashing
@@ -68,9 +74,9 @@ const FollowMe3D = {
   update(fl, dt, time, dark) {
     const car = this.group;
     if (!car) return;
-    if (this.fl !== fl) { this.fl = fl; this.path = null; this.route = null; this.s = 0; this.v = 0; this.moved = false; }
+    if (this.fl !== fl) { this.fl = fl; this.path = null; this.route = null; this.s = 0; this.v = 0; this.moved = false; this.spot = null; this.leaving = false; }
     const p = fl.phase, g = fl.guidance;
-    if (!fl.followMe || !(p === 'EXIT' || p === 'SHUTDOWN' || p === 'PARKED')) { car.visible = false; this.unsolid(); return; }
+    if (!fl.followMe || !(p === 'EXIT' || p === 'SHUTDOWN' || p === 'PARKED')) { car.visible = false; return; }
     if (p === 'EXIT' && g && g.route && g.route.length > 2) {
       if (g.route !== this.route) this.follow(fl, g.route);
       // ahead of the nose by the gap and the lead, setting off in time to get up to the aeroplane's
@@ -86,17 +92,19 @@ const FollowMe3D = {
       const cap = (gap < lead ? F.RUN_KT : F.MAX_KT) * KTS;           // caught up: faster than a car leads
       const want = this.moved || g.along >= 0 ? Math.max(0, vAc + (target - this.s) * 0.5) : 0;
       this.drive(Math.min(want, cap), gap < F.GAP_M ? F.RUN_ACCEL_MS2 : F.ACCEL_MS2, sdt);
-    } else if (this.path && this.s < this.end) {
-      // the aeroplane on its stand: on to the car's own waiting place beside it
-      this.drive(FOLLOW_ME.MAX_KT * KTS, FOLLOW_ME.ACCEL_MS2, dt * fl.env.timeAccel);
+    } else if (this.path) {
+      // the engines winding down: off along the service road
+      if (p !== 'EXIT' && !this.leaving) this.leave(fl);
+      // the aeroplane on its stand: on to the car's own waiting place beside it, or away
+      if (this.s < this.end) this.drive(FOLLOW_ME.MAX_KT * KTS, FOLLOW_ME.ACCEL_MS2, dt * fl.env.timeAccel);
     }
-    if (!this.path) { car.visible = false; this.unsolid(); return; }
+    if (!this.path || (this.leaving && this.s >= this.end - 0.1)) { car.visible = false; return; }
     const q = this.at(this.s), a = this.at(this.s - 3), b = this.at(this.s + 3);
     car.visible = true;
     car.position.set(q.x, Terrain.surfaceAt(q.x, q.z), q.z);
     car.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
-    // (solid once it waits at its place by the stand: leading, it keeps its own distance ahead)
-    if (this.s >= this.end - 0.1) this.solidAt(fl, q.x, q.z, car.rotation.y); else this.unsolid();
+    // (never solid: leading, it keeps its own distance ahead, and by the stand it waits where an
+    // aeroplane stopping a little past the stop bar could reach it)
     // the beacon: a flash a cycle, brighter at night
     const on = ((time % FOLLOW_ME.FLASH_S) / FOLLOW_ME.FLASH_S) < 0.35;
     this.beaconMat.color.setHex(on ? 0xffb030 : 0x5a3208);
@@ -104,17 +112,6 @@ const FollowMe3D = {
     this.glow.material.size = 2.4 + 2.6 * dark;
     this.glow.material.opacity = 0.55 + 0.45 * dark;
   },
-
-  // solid for the own aeroplane (sim/collide.js): in the arrival airport's vehicles while it is seen
-  solidAt(fl, x, z, ry) {
-    const a = fl.arrival;
-    if (!this.solid || this.solidApt !== a || !a.vehicles || a.vehicles.indexOf(this.solid) < 0) {
-      this.solid = Collide.vehicle(a, 'followMe');
-      this.solidApt = a;
-    }
-    Collide.placeVehicleWorld(this.solid, x, z, ry);
-  },
-  unsolid() { if (this.solid) this.solid.on = false; },
 
   // towards the speed `want` (m/s) at `accel`, braking to stop at the end of its way; never backs up
   drive(want, accel, sdt) {
@@ -140,20 +137,15 @@ const FollowMe3D = {
     // (it waits past the first junction off the runway: past the end of its curve, if it has one)
     const waitI = (sm.first[2] !== undefined ? sm.first[2] - 1 : sm.first[1]) - i0;
     this.acS = null;
-    // on along the apron lane past the wingtip of the aeroplane turning in (as far as the apron
-    // goes), then off the lane to the runway side, out of the way
-    const F = FOLLOW_ME, a = fl.arrival, lane = route[n - 2], prev = route[n - 3];
-    const dt = lane.t - prev.t, dl = Math.hypot(lane.x - prev.x, lane.z - prev.z) || 1;
-    const room = dt > 0 ? a.apronT1 - 20 - lane.t : lane.t - (a.apronT0 + 20);
-    const ext = Math.abs(dt) > dl * 0.7 ? clamp(Math.max(F.PARK_MIN_M, fl.dims.span / 2 + F.PARK_CLEAR_M), 0, room) : 0;   // (the last leg along the lane)
-    const ux = (lane.x - prev.x) / dl, uz = (lane.z - prev.z) / dl;
-    const add = (d, off) => {
-      const q = pts[pts.length - 1], x = lane.x + ux * d - a.perX * off, z = lane.z + uz * d - a.perZ * off;
-      pts.push({ x, z });
-      S.push(S[S.length - 1] + Math.hypot(x - q.x, z - q.z));
-    };
-    if (ext > F.PULL_RUN_M + 5) { add(ext - F.PULL_RUN_M, 0); add(ext, F.PULL_M); }
-    else if (ext > 1) add(ext, 0);
+    // on along the apron lane to the stand's side the lane goes on to (the side it comes from,
+    // where the lane does not run along the apron), round off it and up beside the stand to the
+    // car's waiting place
+    const a = fl.arrival, lane = route[n - 2], prev = route[n - 3], gate = Scene3D.arrivalGate;
+    const dl = Math.hypot(lane.t - prev.t, lane.across - prev.across) || 1;
+    const side = Math.abs(lane.t - prev.t) > dl * 0.7 ? Math.sign(lane.t - prev.t) : 1;
+    const lay = modelLayout(fl.ac), pl = Responders3D.place(lay, lay.R + Responders3D.sideOut(fl.meet, side), 1.9, CAR_HALF_M * 2);
+    this.spot = { t: gate.t + side * pl.y, across: World.standAcross(fl.dims.len) + pl.z, side };
+    this.add(a, pts, S, [[lane.t, lane.across], [this.spot.t, lane.across], [this.spot.t, this.spot.across]]);
     const was = this.path ? this.at(this.s) : null;
     this.route = route; this.path = pts; this.S = S; this.end = S[S.length - 1];
     if (!this.moved || !was) { this.s = Math.min(this.end, S[clamp(waitI, 1, S.length - 1)] + FOLLOW_ME.WAIT_M); this.v = 0; return; }
@@ -165,6 +157,42 @@ const FollowMe3D = {
       const d = Math.hypot(p.x + dx * u - was.x, p.z + dz * u - was.z);
       if (d < best) { best = d; this.s = S[i] + u * (S[i + 1] - S[i]); }
     }
+  },
+
+  // the corners (runway-local [t, across] of airport a, the first where the way is now) added to
+  // the way pts / S, each turned on a curve of up to FOLLOW_ME.TURN_M
+  add(a, pts, S, corners) {
+    const push = (t, ac) => {
+      const w = World.at(a, t, ac), q = pts[pts.length - 1];
+      pts.push({ x: w.x, z: w.z });
+      S.push(S[S.length - 1] + Math.hypot(w.x - q.x, w.z - q.z));
+    };
+    for (let i = 1; i < corners.length; i++) {
+      const c = corners[i], p = corners[i - 1], nx = corners[i + 1];
+      const l1 = Math.hypot(c[0] - p[0], c[1] - p[1]);
+      if (l1 < 0.05) continue;
+      if (!nx) { push(c[0], c[1]); break; }
+      const l2 = Math.hypot(nx[0] - c[0], nx[1] - c[1]), d = Math.min(FOLLOW_ME.TURN_M, l1 * 0.6, l2 * 0.5);
+      if (d < 0.5) { push(c[0], c[1]); continue; }
+      const a1 = [c[0] + (p[0] - c[0]) * d / l1, c[1] + (p[1] - c[1]) * d / l1], a2 = [c[0] + (nx[0] - c[0]) * d / l2, c[1] + (nx[1] - c[1]) * d / l2];
+      for (let k = 0; k <= 8; k++) {
+        const u = k / 8, w0 = (1 - u) * (1 - u), w1 = 2 * u * (1 - u), w2 = u * u;
+        push(w0 * a1[0] + w1 * c[0] + w2 * a2[0], w0 * a1[1] + w1 * c[1] + w2 * a2[1]);
+      }
+    }
+  },
+
+  // off: from its waiting place (or wherever it has got to on the way there) on up to the service
+  // road, round onto the lane that keeps right going away from the stand on its side, and along it
+  // FOLLOW_ME.LEAVE_M (where it goes out of sight)
+  leave(fl) {
+    this.leaving = true;
+    const sp = this.spot;
+    if (!sp) { this.end = this.s; return; }
+    const road = LAYOUT.SERVICE_ROAD + sp.side * BAG_LANE;
+    this.path = this.path.slice(); this.S = this.S.slice();
+    this.add(fl.arrival, this.path, this.S, [[sp.t, sp.across], [sp.t, road], [sp.t + sp.side * FOLLOW_ME.LEAVE_M, road]]);
+    this.end = this.S[this.S.length - 1];
   },
 
   // how far along the car's way the aeroplane is (its nearest point, searched near the last one,

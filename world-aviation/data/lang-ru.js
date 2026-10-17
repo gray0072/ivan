@@ -759,7 +759,6 @@ const TEXT_RU = {
   'a pickup': 'пикап',
   'a van': 'фургон',
   'a car': 'автомобиль',
-  'the FOLLOW ME car': 'машину FOLLOW ME',
   'the police car': 'полицейскую машину',
   'a fire engine': 'пожарную машину',
   'the terminal': 'терминал',

@@ -24,10 +24,12 @@
 // really stands (a little off the stand's line, or turned). One goes
 // after another, on each side the one going furthest down first, and
 // one whose place lies on another's way waits until that one has gone
-// by, so none passes one already standing. A vehicle stops for a
-// baggage train or another vehicle just ahead (and the trains for it:
-// baggage3d.js), and no train comes to the aeroplane before they are
-// all there (arrived).
+// by, so none passes one already standing. An ambulance, a fire engine
+// or a police car waiting at the stand (responders3d.js) on the way of
+// one drives off first, and that one sets off once it is off its way.
+// A vehicle stops for a baggage train, a responder or another vehicle
+// just ahead (and the trains for it: baggage3d.js), and no train comes
+// to the aeroplane before they are all there (arrived).
 // done() says when all are there and have stood a moment (the debrief
 // may come).
 // A GA stand has none (its load waits there: ga3d.js).
@@ -53,7 +55,7 @@ const Turnaround3D = {
     t.time = time;
     t.t += dt;
     for (const v of t.vehicles) {
-      if (t.t < v.delay || v.after.some(([o, s]) => o.s < s)) continue;
+      if (t.t < v.delay || v.after.some(([o, s]) => o.s < s) || v.resp.some((r) => !Responders3D.clear(r))) continue;
       v.holder.visible = true;
       v.on = true;
       if (v.s < v.track.len) {
@@ -73,6 +75,7 @@ const Turnaround3D = {
     const others = [];
     for (const o of t.vehicles) if (o !== v && o.on) others.push(...o.pieces);
     for (const tr of rec.trains || []) if (tr.state !== 'hall') others.push(...tr.pieces);
+    for (const r of Responders3D.waiting(rec, t.fl)) others.push(...Responders3D.pieces(r));
     if (!others.length) return false;
     for (let d = v.half + 1; d <= v.half + TURNAROUND.LOOK_M; d += 1.5) {
       const q = trackAt(v.track, v.s + d);
@@ -145,7 +148,7 @@ const Turnaround3D = {
         const way = (o) => [from, down(o), at(o, zz), at(x, zz)];
         corners = way(Servicing.lane(ac, pose, oMin, Math.max(oMin, room - size.w - 1), size, way));
       }
-      const v = { holder, track: makeTrack(corners), s: 0, delay: 0, after: [], on: false, stuck: 0, pieces: [], fuel: !!fuel, size,
+      const v = { holder, track: makeTrack(corners), s: 0, delay: 0, after: [], resp: [], on: false, stuck: 0, pieces: [], fuel: !!fuel, size,
         half: Math.max(size.front, size.rear) };
       this.pose(v);
       return v;
@@ -176,6 +179,16 @@ const Turnaround3D = {
       order.push(left.splice(i, 1)[0]);
     }
     order.forEach((v, i) => { v.delay = i * TURNAROUND.STAGGER_S; });
+    // a responder standing on the way of one, or where it stops: off first, that one after it
+    for (const r of Responders3D.waiting(rec, fl)) {
+      const p = r.spot;
+      for (const v of vehicles) {
+        const pad = v.size.w + SERVICE.BODY_PAD_M;
+        if (!T(v.track).some(([pt, pa]) => Math.abs(pt - p.t) < p.ht + pad && Math.abs(pa - p.across) < p.ha + pad)) continue;
+        Responders3D.leave(r, time);
+        v.resp.push(r);
+      }
+    }
     rec.frame.add(group);
     return { fl, gate, group, vehicles, pose, holdZ, t: 0, time };
   },

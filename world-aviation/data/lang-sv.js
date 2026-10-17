@@ -759,7 +759,6 @@ const TEXT_SV = {
   'a pickup': 'en pickup',
   'a van': 'en skåpbil',
   'a car': 'en bil',
-  'the FOLLOW ME car': 'FOLLOW ME-bilen',
   'the police car': 'polisbilen',
   'a fire engine': 'en brandbil',
   'the terminal': 'terminalen',

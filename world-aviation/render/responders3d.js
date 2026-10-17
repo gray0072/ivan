@@ -22,6 +22,12 @@
 //     on board has its ambulance called from the start (Flight.meet)
 //   - their blue lights flash in double flashes, each vehicle on its
 //     own beat, with a glow round every lamp that grows at night
+//   - once the aeroplane is parked, one standing on the way of a ground
+//     crew's vehicle (render/turnaround3d.js: the fuel truck down the
+//     right side of a turboprop, the stairs at the front door) backs up
+//     onto the service road and drives off along it, away from the
+//     stand on its own side and keeping right; the crew's vehicle waits
+//     until it is off its way (leave, clear)
 //
 // Built into the arrival airport's frame (Airport3D's rec.frame,
 // x = across, z = -t), so they go when the airport goes.
@@ -33,6 +39,9 @@ const RESP_FRONT = 19;          // a vehicle's front at most this far past the s
 const RESP_FLASH_S = 0.9;       // one cycle of the lights: a double flash on one side, then on the other
 const RESP_BLUE = '#3f7dff';
 const RESP_SPEED_K = 2.2;       // they drive this many times as fast as a baggage train (makeTrack's speeds)
+const RESP_BACK_K = 0.45;       // ... backing up, this share of that
+const RESP_LEAVE_S = 1.5;       // one in the crew's way sets off this long after the aeroplane is parked ...
+const RESP_CLEAR_M = 20;        // ... and is off the crew's way this far along the road
 
 // the vehicles: the side of the aeroplane (+1 left, -1 right), how far out from the fuselage they
 // stand (police: beyond the ambulance when both are there), their width and length, and the blue
@@ -75,9 +84,11 @@ const Responders3D = {
     const dt = clamp(time - (rec.responders.time === undefined ? time : rec.responders.time), 0, 0.2);
     rec.responders.time = time;
     for (const v of rec.responders.vehicles) {
-      if (!v.track || v.s >= v.track.len) continue;
-      v.s = Math.min(v.track.len, v.s + dt * trackSpeed(v.track, v.s) * RESP_SPEED_K);
-      this.pose(v);
+      if (v.gone) continue;
+      if (v.track && v.s < v.track.len) {
+        v.s = Math.min(v.track.len, v.s + dt * trackSpeed(v.track, v.s) * RESP_SPEED_K);
+        this.pose(v);
+      } else if (v.leave && time >= v.leave.at) this.leaveStep(v, dt);
     }
     // the lights: a double flash of set A, then of set B
     const size = 2.2 + 2.8 * dark, op = 0.5 + 0.5 * dark;
@@ -135,7 +146,8 @@ const Responders3D = {
       });
       group.add(holder);
       // (solid for the own aeroplane: sim/collide.js)
-      const v = { kind, sets, phase: n * 0.37, holder, track, s: track ? (was !== undefined ? was : 0) : 0, a: rec.a, solid: Collide.vehicle(rec.a, kind) };
+      const v = { kind, sets, phase: n * 0.37, holder, track, s: track ? (was !== undefined ? was : 0) : 0, a: rec.a, solid: Collide.vehicle(rec.a, kind),
+        side: spec.side, spot: { t: tEnd, across: aEnd, ht: spec.w / 2, ha: spec.len / 2 }, leave: null, gone: false };
       if (track) this.pose(v);
       else Collide.placeVehicle(v.solid, rec.a, holder.position.x, holder.position.z, holder.rotation.y);
       vehicles.push(v);
@@ -144,12 +156,63 @@ const Responders3D = {
     return { fl, gate, key, group, vehicles };
   },
 
-  // a vehicle at s along its track, turned the way it goes (in the airport's frame: x across, z -t)
-  pose(v) {
-    const q = trackAt(v.track, v.s), b = trackAt(v.track, Math.max(0, v.s - 1)), f = trackAt(v.track, Math.min(v.track.len, v.s + 1));
+  // a vehicle at s along a track (its own way there, or tr), turned the way it goes — back to front
+  // when it backs up (in the airport's frame: x across, z -t)
+  pose(v, tr, s, back) {
+    tr = tr || v.track; s = s === undefined ? v.s : s;
+    const q = trackAt(tr, s), b = trackAt(tr, Math.max(0, s - 1)), f = trackAt(tr, Math.min(tr.len, s + 1));
     v.holder.position.set(q.across, 0, -q.t);
-    if (Math.hypot(f.t - b.t, f.across - b.across) > 1e-3) v.holder.rotation.y = Math.atan2(f.across - b.across, -(f.t - b.t));
+    if (Math.hypot(f.t - b.t, f.across - b.across) > 1e-3) v.holder.rotation.y = Math.atan2(f.across - b.across, -(f.t - b.t)) + (back ? Math.PI : 0);
     if (v.solid) Collide.placeVehicle(v.solid, v.a, v.holder.position.x, v.holder.position.z, v.holder.rotation.y);
+  },
+
+  // the responders waiting at the arrival stand of the flight (none gone)
+  waiting(rec, fl) {
+    const r = rec && rec.responders;
+    return r && r.fl === fl ? r.vehicles.filter((v) => !v.gone) : [];
+  },
+  // v off the stand: backing up from its place onto the service road's lane that keeps right going
+  // away from the stand on its own side (the left one towards +t), its back swinging the other
+  // way so it ends up facing along the road, then on along it TURNAROUND.FROM_M and gone
+  leave(v, time) {
+    if (v.leave) return;
+    const u = v.side, road = LAYOUT.SERVICE_ROAD + u * BAG_LANE, p = v.spot;
+    v.leave = {
+      at: time + RESP_LEAVE_S, stage: 0, s: 0,
+      back: makeTrack([[p.t, p.across], [p.t, road - 5], [p.t - u * 9, road]]),
+      away: makeTrack([[p.t - u * 9, road], [p.t + u * TURNAROUND.FROM_M, road]])
+    };
+  },
+  leaveStep(v, dt) {
+    const L = v.leave, tr = L.stage ? L.away : L.back;
+    L.s = Math.min(tr.len, L.s + dt * trackSpeed(tr, L.s) * RESP_SPEED_K * (L.stage ? 1 : RESP_BACK_K));
+    this.pose(v, tr, L.s, !L.stage);
+    if (L.s < tr.len) return;
+    if (!L.stage) { L.stage = 1; L.s = 0; return; }
+    v.gone = true;
+    v.holder.visible = false;
+    Collide.dropVehicle(v.a, v.solid);
+    v.solid = null;
+  },
+  // off the way of the crew: gone, or that far along the road
+  clear(v) { return v.gone || (!!v.leave && v.leave.stage === 1 && v.leave.s > RESP_CLEAR_M); },
+  // the points along its body the crew's vehicles keep clear of: where it stands, or drives
+  pieces(v) {
+    const h = v.holder, ry = h.rotation.y, fa = Math.sin(ry), ft = -Math.cos(ry), half = RESP_KINDS[v.kind].len / 2;
+    return [-1, -0.5, 0, 0.5, 1].map((k) => ({ t: -h.position.z + ft * k * half, across: h.position.x + fa * k * half }));
+  },
+  // how far out from the fuselage's side a vehicle stands beyond the responders called to that
+  // side (+1 left, -1 right) of the aeroplane, a gap between (the FOLLOW ME car, followme3d.js)
+  sideOut(meet, side) {
+    let out = RESP_KINDS.ambulance.out;
+    for (const k of meet || []) {
+      const spec = RESP_KINDS[k];
+      if (!spec || spec.side !== side) continue;
+      let o = spec.out;
+      for (const other in spec.outAfter || {}) if (meet.indexOf(other) >= 0) o = spec.outAfter[other];
+      out = Math.max(out, o + spec.w + 2);
+    }
+    return out;
   },
 
   // Where a vehicle w wide and len long stands, its inner side y0 out from the aeroplane's axis:
