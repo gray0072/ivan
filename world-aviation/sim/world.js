@@ -209,7 +209,8 @@ const World = {
     return a;
   },
 
-  buildNetwork(a, gateCount) {
+  // (skip: the rapid exits, by their EXITS fraction, to leave out — markExitTurns)
+  buildNetwork(a, gateCount, skip) {
     const L = LAYOUT;
     const nodes = {};
     a.nodes = nodes;
@@ -243,11 +244,13 @@ const World = {
     // it; one that would meet it past the apron's end moves back to its last lane, up to
     // EXIT_SHIFT_BACK_M): to a stand behind, the way goes on through the lane and back along the
     // apron lane, turning no more than a right angle at a time. One that would meet the taxiway
-    // too near its end (a short strip), or too near the exit before it, is left out.
+    // too near its end (a short strip), or too near the exit before it, is left out, and so is one
+    // no way to a stand would take (markExitTurns).
     const slant = L.TWY_OFFSET / Math.tan(L.EXIT_ANGLE_DEG * DEG);
     const spots = this.laneSpots(a, a.standT).filter((s) => this.laneClear(a, a.standT, s.t));
     const taken = new Set();
     L.EXITS.forEach((f) => {
+      if (skip && skip.has(f)) return;
       let tj = -a.half + a.rwyLen * f + slant;
       const prev = a.exits.length ? a.exits[a.exits.length - 1].t + slant : -Infinity;
       const beyond = tj > a.apronT1 - 15;
@@ -264,6 +267,7 @@ const World = {
       twyChain.push(add('exT' + i, tj, L.TWY_OFFSET, 'taxi'));
       link('exR' + i, 'exT' + i, 'connector', 0, true);
       ex.rapid = true;
+      ex.frac = f;
       rwyChain.push('exR' + i);
       a.exits.push(ex);
     });
@@ -331,6 +335,10 @@ const World = {
         a.twySegs.push({ x1: n.x, z1: n.z, x2: e.to.x, z2: e.to.z, w: e.width, kind: e.kind });
       }
     }
+    // (a rapid exit no way to a stand takes would only lead back onto the runway: built again
+    // without it)
+    const idle = this.markExitTurns(a);
+    if (idle.length) return this.buildNetwork(a, gateCount, new Set([...(skip || []), ...idle.map((n) => n.frac)]));
     a.fillets = this.buildFillets(a);
     // each exit's turn off the runway (its curve on the landing side): the radius (exitR), how far
     // before the node it leaves the centreline (turnBack) and where it crosses the runway's edge
@@ -344,6 +352,34 @@ const World = {
       n.turnBack = d;
       n.aimT = R * (1 - Math.cos(turn)) >= e ? n.t - d + Math.sqrt(R * R - (R - e) * (R - e)) : n.t + e / Math.tan(turn);
     }
+  },
+
+  // A rapid exit's turns where it meets the taxiway (onto the taxiway ahead, back onto it behind,
+  // on into the lane to the apron) are the ways off the runway; taken the other way round they
+  // lead back up onto it. Only those a way from the exit to a stand takes (findRoute) get a
+  // curve: the turn onto the taxiway ahead at an early exit, say, with the cargo and GA stands
+  // further on, but not at a later one, where you would only turn off the taxiway onto the
+  // runway taxiing back from its end. Each such junction's exitTurns: { from: the exit's node on
+  // the runway, to: the nodes its kept turns lead to }. Returns the rapid exits that keep none
+  // (every way from them goes on down the runway to its end: past the apron, say).
+  markExitTurns(a) {
+    const idle = [];
+    for (const ex of a.exits) {
+      if (!ex.rapid) continue;
+      const j = ex.edges.find((e) => e.kind !== 'runway').to, to = new Set();
+      for (const r of this.findRoutes(a, ex, a.gates.map((g) => g.node))) {
+        const k = r.indexOf(j);
+        if (k > 0 && r[k - 1] === ex && k + 1 < r.length) to.add(r[k + 1]);
+      }
+      j.exitTurns = { from: ex, to };
+      if (!to.size) idle.push(ex);
+    }
+    return idle;
+  },
+  // is the turn at node n between the lines to p and to q one left without a curve (markExitTurns)?
+  turnDropped(n, p, q) {
+    const x = n.exitTurns;
+    return !!x && (p === x.from ? !x.to.has(q) : q === x.from && !x.to.has(p));
   },
 
   // the node behind n along the runway (the way a landing rolls in from)
@@ -423,7 +459,8 @@ const World = {
   // lines lead to (ends), its radius R and how far from the node it meets each line (d), and for
   // the drawing (render/taxiways.js) its centre c ([t, across]) and its angles (from a1, through
   // da); by node in a.filletsAt. Off a rapid exit only the turn the landing roll takes gets one (not back
-  // against the landing).
+  // against the landing), and where it meets the taxiway only the turns a way to a stand takes
+  // (markExitTurns: the others would lead from the taxiway back up onto the runway).
   // The arc's radius is the one for that kind of turn (FILLET_R, FILLET_STAND_R, FILLET_EXIT_R;
   // FILLET_RAPID_R for a rapid exit's turns of up to a right angle), less where a line is too
   // short for it: where it meets each line it must stay on that line's
@@ -479,7 +516,8 @@ const World = {
       for (let i = 0; i < es.length; i++) for (let j = i + 1; j < es.length; j++) {
         const e1 = es[i], e2 = es[j];
         if (e1.kind === 'runway' && e2.kind === 'runway') continue;
-        const exit = e1.kind === 'runway' || e2.kind === 'runway';
+        if (this.turnDropped(n, e1.to, e2.to)) continue;           // back up onto a rapid exit
+        const exit =e1.kind === 'runway' || e2.kind === 'runway';
         const l1 = Math.hypot(e1.to.t - n.t, e1.to.across - n.across), l2 = Math.hypot(e2.to.t - n.t, e2.to.across - n.across);
         if (l1 < 1 || l2 < 1) continue;
         const u = [(e1.to.t - n.t) / l1, (e1.to.across - n.across) / l1];
@@ -532,6 +570,7 @@ const World = {
     let best = null;
     for (const e of n.edges) {
       if (e.to === m || !(TAXI.indexOf(e.kind) >= 0 || (offRunway && e.kind === 'runway'))) continue;
+      if (this.turnDropped(n, m, e.to)) continue;                // (no way on: markExitTurns)
       const l = Math.hypot(e.to.t - n.t, e.to.across - n.across) || 1;
       const ang = Math.acos(clamp((u[0] * (e.to.t - n.t) + u[1] * (e.to.across - n.across)) / l, -1, 1));
       if (ang > 155 * DEG) return null;                          // a line goes on straight from it
@@ -687,6 +726,10 @@ const World = {
   // heading when not given); with no route that way, any.
   findRoute(a, startNode, endNode, dir) {
     if (!startNode || !endNode) return [];
+    return this.findRoutes(a, startNode, [endNode], dir)[0];
+  },
+  // the quickest routes from startNode to each of endNodes (as findRoute), in one search
+  findRoutes(a, startNode, endNodes, dir) {
     if (!dir && startNode.kind === 'exit') dir = [a.dirX, a.dirZ];
     const T = TAXI, maxCos = Math.cos(T.ROUTE_MAX_TURN_DEG * DEG);
     const speed = (k) => KTS * (k === 'apron' ? T.APRON_KT : k === 'stand' ? T.STAND_KT : k === 'runway' ? T.STRAIGHT_KT / 4 : T.STRAIGHT_KT);
@@ -694,15 +737,17 @@ const World = {
     const start = { n: startNode, from: null, cost: 0, prev: null, done: false };
     states.set(startNode.id + '<', start);
     const open = [start];
-    let found = startNode === endNode ? start : null;
-    while (open.length && !found) {
+    // (each end node: the state it was first reached in, the quickest)
+    const found = new Map(endNodes.map((n) => [n, n === startNode ? start : null]));
+    let left = endNodes.filter((n) => n !== startNode).length;
+    while (open.length && left) {
       let bi = 0;
       for (let i = 1; i < open.length; i++) if (open[i].cost < open[bi].cost) bi = i;
       const s = open[bi];
       open[bi] = open[open.length - 1]; open.pop();
       if (s.done) continue;
       s.done = true;
-      if (s.n === endNode) { found = s; break; }
+      if (found.has(s.n) && !found.get(s.n)) { found.set(s.n, s); if (!--left) break; }
       let ix = 0, iz = 0;
       if (s.from) { const l = Math.hypot(s.n.x - s.from.x, s.n.z - s.from.z) || 1; ix = (s.n.x - s.from.x) / l; iz = (s.n.z - s.from.z) / l; }
       else if (dir) { const l = Math.hypot(dir[0], dir[1]) || 1; ix = dir[0] / l; iz = dir[1] / l; }
@@ -724,10 +769,15 @@ const World = {
         if (!st.done && c < st.cost) { st.cost = c; st.prev = s; open.push(st); }
       }
     }
-    if (!found) return dir && (dir[0] || dir[1]) ? this.findRoute(a, startNode, endNode, [0, 0]) : [startNode];
-    const path = [];
-    for (let s = found, guard = 0; s && guard++ < 400; s = s.prev) path.unshift(s.n);
-    return path;
+    const missing = endNodes.filter((n) => !found.get(n));
+    const retry = missing.length && dir && (dir[0] || dir[1]) ? this.findRoutes(a, startNode, missing, [0, 0]) : null;
+    return endNodes.map((n) => {
+      const s = found.get(n);
+      if (!s) return retry ? retry[missing.indexOf(n)] : [startNode];
+      const path = [];
+      for (let p = s, guard = 0; p && guard++ < 400; p = p.prev) path.unshift(p.n);
+      return path;
+    });
   },
 
   // A taxi route as it is driven: its nodes, each corner that has a fillet (buildFillets) taken
