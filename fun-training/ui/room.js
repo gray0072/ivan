@@ -305,7 +305,7 @@ const Room = (() => {
   function needText(x) {
     if (x.gems) return `Need 💎 ${Shop.missing(p, x)} more — beat bosses (🐲 up to 3, 👑 up to 6)`;
     const n = Shop.missing(p, x), l = Shop.lessonsFor(p, n);
-    return `Need 🪙 ${n} more — about ${l} ${l === 1 ? 'lesson' : 'lessons'}`;
+    return `Need ${COIN} ${n} more — about ${l} ${l === 1 ? 'lesson' : 'lessons'}`;
   }
 
   function renderInfo() {
@@ -328,8 +328,8 @@ const Room = (() => {
       if (TASTE_NOTE[t]) notes.push(TASTE_NOTE[t](charName()));
       if (Shop.isFull(p)) notes.push(`${charName()} is full — come back later`);
       else if (!Shop.canPay(p, x)) notes.push(needText(x));
-      $('infoNote').textContent = notes.join(' · ');
-      act.textContent = `Feed ${Shop.costText(x)}`;
+      $('infoNote').innerHTML = notes.join(' · ');
+      act.innerHTML = `Feed ${Shop.costText(x)}`;
       act.classList.toggle('off', Shop.isFull(p) || !Shop.canPay(p, x) || !!meal);
       return;
     }
@@ -347,8 +347,8 @@ const Room = (() => {
       $('infoNote').textContent = wear ? 'Yours · trying it on' : 'Yours · see how it looks';
       act.textContent = wear ? 'Wear it' : 'Put it in the room';
     } else {
-      $('infoNote').textContent = (wear ? 'Trying it on · ' : 'Showing it in your room · ') + (Shop.canPay(p, x) ? 'You can buy it!' : needText(x));
-      act.textContent = `Buy ${Shop.costText(x)}`;
+      $('infoNote').innerHTML = (wear ? 'Trying it on · ' : 'Showing it in your room · ') + (Shop.canPay(p, x) ? 'You can buy it!' : needText(x));
+      act.innerHTML = `Buy ${Shop.costText(x)}`;
       act.classList.toggle('off', !Shop.canPay(p, x));
     }
   }

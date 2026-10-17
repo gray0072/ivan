@@ -264,6 +264,7 @@ fun-training/
 │   └── shop.js      # Shop: owning, buying, wearing / placing, feeding, hunger, tastes, thumbnails
 ├── ui/              # screens and their parts
 │   ├── stars.js     # level stars as SVG in their materials, the ladder of levels
+│   ├── coin.js      # the coin icon (drawn in styles.css; the 🪙 emoji is an empty box on older phones)
 │   ├── lesson.js    # lesson loop: tasks, safety level, answers, win/lose, the paid pause
 │   ├── muncher.js   # the Coin Muncher in the pause dialog (drawing, chomping coins)
 │   └── room.js      # the room screen: room scene, shop panel, feeding / trying on / buying, reactions

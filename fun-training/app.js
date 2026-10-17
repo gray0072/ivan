@@ -149,12 +149,12 @@
 
   // Types that can't run here (Reading without a voice) are listed as off; Math stands in when nothing else is left.
   function summary(st) {
-    const parts = Tasks.usable(st).map(type => `${typeSummary(st, type)} · <b>🪙 ${Tasks.price(st, type).coins}</b> per task` +
+    const parts = Tasks.usable(st).map(type => `${typeSummary(st, type)} · <b>${COIN} ${Tasks.price(st, type).coins}</b> per task` +
       (st.types.includes(type) ? '' : ' (instead)'));
     st.types.filter(type => Tasks.blocked(st, type)).forEach(type => parts.push(`${typeSummary(st, type)} · 🔇 off on this device`));
     const am = ANSWER_MODES.find(a => a.id === st.answerMode);
     return parts.join(' &nbsp;|&nbsp; ') + ` · ${am.icon} ${am.name} · ${st.lessonLength} tasks` +
-      ` = <b>🪙 ${Tasks.lessonCoins(st, st.lessonLength)}</b> per lesson`;
+      ` = <b>${COIN} ${Tasks.lessonCoins(st, st.lessonLength)}</b> per lesson`;
   }
 
   function typeSummary(st, type) {
@@ -180,7 +180,7 @@
   function priceHTML(st, type) {
     const p = Tasks.price(st, type);
     const steps = p.steps.map(s => `<span class="pStep">${s.label} <b>${s.add ? '+' + s.add : '×' + s.mul}</b></span>`).join('');
-    return { big: `🪙 ${p.coins} <small>per task</small>`, steps };
+    return { big: `${COIN} ${p.coins} <small>per task</small>`, steps };
   }
 
   function goFullscreen() {
@@ -203,7 +203,7 @@
       const slot = el('div', 'playerSlot');
       const card = el('button', 'playerCard' + (p.id === lastId ? ' default' : ''),
         `<span class="pAvatar">${Look.ofPlayer(p, 'mini')}${hungryBadge(p)}</span><span class="pName">${esc(p.name)}</span>` +
-        `<span class="pMeta">🪙 ${p.coins} · 💎 ${p.gems} · ${starHTML(Math.max(0, Progress.bestLevel(p)), 'small' + (Progress.bestLevel(p) < 0 ? ' dim' : ''))} ${Progress.totalStars(p)}</span>`);
+        `<span class="pMeta">${COIN} ${p.coins} · 💎 ${p.gems} · ${starHTML(Math.max(0, Progress.bestLevel(p)), 'small' + (Progress.bestLevel(p) < 0 ? ' dim' : ''))} ${Progress.totalStars(p)}</span>`);
       card.addEventListener('click', () => selectPlayer(p.id));
       const del = el('button', 'pDelete', '🗑 Delete');
       let armed = 0;
@@ -487,10 +487,10 @@
     $('mixBtn').querySelector('.switchLabel').textContent = mixOn ? 'On' : 'Off';
     $('mixNote').textContent = !multi ? 'Pick two or more operations' : m.operands === 2 ? 'Works with 3–4 numbers' : m.mix ? 'One task can mix them' : 'One operation per task';
     const n = st.lessonLength;
-    $('lengthNote').textContent = `Up to 🪙 ${Tasks.lessonCoins(st, n)} per lesson, ` +
-      `🪙 ${Tasks.lessonCoins(st, n - 1 + BOSS_HITS)} with a boss (${BOSS_HITS} hits for the last task)`;
+    $('lengthNote').innerHTML = `Up to ${COIN} ${Tasks.lessonCoins(st, n)} per lesson, ` +
+      `${COIN} ${Tasks.lessonCoins(st, n - 1 + BOSS_HITS)} with a boss (${BOSS_HITS} hits for the last task)`;
     $('typeTabs').querySelectorAll('.tab').forEach(t => {
-      t.querySelector('.tabPrice').textContent = '🪙' + Tasks.price(st, t.dataset.type).coins;
+      t.querySelector('.tabPrice').innerHTML = COIN + Tasks.price(st, t.dataset.type).coins;
       t.classList.toggle('on', t.dataset.type === setTab);
       t.classList.toggle('used', st.types.includes(t.dataset.type));
       t.classList.toggle('na', !!Tasks.blocked(st, t.dataset.type));
@@ -589,7 +589,7 @@
       $(btn).dataset.speed = on ? SPEEDS[j].id : '';
       if (on) {
         $(btn).querySelector('.spChange').innerHTML = `${tt.icon} ${tt.name}: ${SPEEDS[i].icon} → ${SPEEDS[j].icon} ${SPEEDS[j].name}` +
-          `<small>🪙 ${now} → <b>${priceAt(SPEEDS[j].id)}</b> per task</small>`;
+          `<small>${COIN} ${now} → <b>${priceAt(SPEEDS[j].id)}</b> per task</small>`;
       }
     };
     option('slowerBtn', i - 1);
@@ -606,7 +606,7 @@
     Muncher.refill(Lesson.taskCoins());
     const sp = SPEEDS.find(x => x.id === id), tt = TASK_TYPES.find(x => x.id === type);
     $('speedNote').hidden = false;
-    $('speedNote').textContent = `✓ ${tt.icon} ${tt.name} is now ${sp.icon} ${sp.name}: 🪙 ${Tasks.price(current.settings, type).coins} per task`;
+    $('speedNote').innerHTML = `✓ ${tt.icon} ${tt.name} is now ${sp.icon} ${sp.name}: ${COIN} ${Tasks.price(current.settings, type).coins} per task`;
     renderPauseSpeed();
     if (btn.hidden) Nav.focusDefault();
   }
@@ -691,13 +691,13 @@
       : `You solved ${r.done} of ${r.total}. Try again — you can do it!`;
     $('resCoins').hidden = !r.won;
     $('resCoins').innerHTML = r.won
-      ? `<span class="coinBig">+${r.cheated ? 0 : coins} 🪙${gemRule ? ` <span class="gemBig">+${r.cheated ? 0 : gems} 💎</span>` : ''}</span>` +
+      ? `<span class="coinBig">+${r.cheated ? 0 : coins} ${COIN}${gemRule ? ` <span class="gemBig">+${r.cheated ? 0 : gems} 💎</span>` : ''}</span>` +
         `<span class="coinRule">${rule} · total ${p.coins}</span>` +
         (gemRule ? `<span class="coinRule">${gemRule} · total ${p.gems} 💎</span>` : '')
       : '';
     const buyable = r.won && !r.cheated ? Shop.newlyAffordable(p, coinsBefore, gemsBefore) : null;
     $('resShop').hidden = !buyable;
-    $('resShop').textContent = buyable ? `🛍️ Now you can buy: ${buyable.name} (${Shop.costText(buyable)})` : '';
+    $('resShop').innerHTML = buyable ? `🛍️ Now you can buy: ${esc(buyable.name)} (${Shop.costText(buyable)})` : '';
     $('resStar').hidden = !levelUp;
     if (levelUp) {
       $('resStar').innerHTML = `<div class="levelUp">${starHTML(lv, 'huge')}<span>You earned the <b>${tierOf(lv).name}</b> star!<br>` +
@@ -710,7 +710,7 @@
     // Lost, or lost coins to mistakes: the same step a speed slower is one press away (the default after a defeat).
     $('resSlow').hidden = $('resSlowBtn').hidden = !slow;
     if (slow) {
-      $('resSlow').textContent = (r.won ? 'Lots of mistakes? Replay it slower: ' : 'Too fast? Try it slower: ') + slow.text;
+      $('resSlow').innerHTML = (r.won ? 'Lots of mistakes? Replay it slower: ' : 'Too fast? Try it slower: ') + slow.text;
       $('resSlowBtn').textContent = r.won ? '🐢 Replay slower' : '🐢 Try slower';
     }
     $('resSlowBtn').classList.toggle('default', !!slow && !r.won);
@@ -731,7 +731,7 @@
     types.forEach(t => { after[t].speed = SPEEDS[SPEEDS.findIndex(sp => sp.id === st[t].speed) - 1].id; });
     const name = t => { const tt = TASK_TYPES.find(x => x.id === t); return tt.icon + ' ' + tt.name; };
     const text = types.map(t => `${name(t)} ${speedText(st[t].speed)} → ${speedText(after[t].speed)}`).join(', ') +
-      ` (🪙 ${Tasks.lessonCoins(st, st.lessonLength)} → ${Tasks.lessonCoins(after, st.lessonLength)} per lesson)`;
+      ` (${COIN} ${Tasks.lessonCoins(st, st.lessonLength)} → ${Tasks.lessonCoins(after, st.lessonLength)} per lesson)`;
     return { types, after, text };
   }
 

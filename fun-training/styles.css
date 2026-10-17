@@ -204,6 +204,14 @@ h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #e4dcff; }
 .coins b { color: var(--accent); }
 .coins .gems { margin-left: 0.6rem; }
 .coins .gems b { color: #9fe3ff; }
+/* The coin icon (ui/coin.js) — drawn, since older phones show the 🪙 emoji as an empty box. */
+.coin {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.17em;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12.6' r='10.6' fill='%23b8780a'/%3E%3Ccircle cx='12' cy='11.4' r='10.6' fill='%23f7b928' stroke='%23a86d06' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='11.4' r='7.3' fill='%23ffd451' stroke='%23d18f0c' stroke-width='1.1'/%3E%3Cpath d='M12 6.6 L13.4 9.6 L16.6 10 L14.2 12.2 L14.9 15.4 L12 13.8 L9.1 15.4 L9.8 12.2 L7.4 10 L10.6 9.6 Z' fill='%23eaa31a'/%3E%3Cpath d='M5.6 8.2 A7.6 7.6 0 0 1 10.4 4' fill='none' stroke='%23fff6c4' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .topBtns { display: flex; gap: 0.7rem; }
 .topBtns .btn { font-size: 0.95rem; padding: 0.5rem 1.1rem; }
 .summary { color: #d8d0ff; font-size: 0.9rem; margin: 0.8rem 0 1rem; text-align: center; }

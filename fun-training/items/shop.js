@@ -22,7 +22,7 @@ const Shop = (() => {
 
   const owns = (p, it) => free(it) || p.owned.includes(it.id);
   const canPay = (p, x) => (x.gems ? p.gems >= x.gems : p.coins >= (x.price || 0));
-  const costText = x => (x.gems ? `💎 ${x.gems}` : `🪙 ${x.price}`);
+  const costText = x => (x.gems ? `💎 ${x.gems}` : `${COIN} ${x.price}`);
   const missing = (p, x) => (x.gems ? x.gems - p.gems : x.price - p.coins);
 
   function pay(p, x) {

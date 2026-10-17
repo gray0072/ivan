@@ -130,7 +130,7 @@ const Lesson = (() => {
 
   // The task card's price: what the current task pays (less what the Coin Muncher ate of it).
   function renderPrice() {
-    $('taskPrice').textContent = '🪙 ' + taskCoins() + (L.taskEaten ? ' 😋' : '');
+    $('taskPrice').innerHTML = COIN + ' ' + taskCoins() + (L.taskEaten ? ' 😋' : '');
   }
 
   function renderAnswer() {
