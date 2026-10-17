@@ -26,7 +26,7 @@ const Input = {
     this.isCoarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
     window.addEventListener('keydown', (e) => this.keyDown(e), { passive: false });
     window.addEventListener('keyup', (e) => this.keyUp(e));
-    window.addEventListener('blur', () => { this.keys = {}; this.reset(); });
+    window.addEventListener('blur', () => { this.keys = {}; this.stopKeyRepeat(); this.reset(); });
     this.initTouch();
   },
 
@@ -45,14 +45,13 @@ const Input = {
     if (HANDLED[k] || (code && HANDLED[code])) e.preventDefault();
     this.keys[k] = true;
     if (e.repeat) return;
+    // the flaps and the time step on while the key is held, as their touch buttons do
+    // (CONTROLS.REPEAT_*: at our own pace, not the keyboard's auto-repeat)
+    if (REPEAT_KEYS[k]) { this.fire(REPEAT_KEYS[k]); this.keyRepeat(k); return; }
     switch (k) {
       case 'g': this.fire('gear'); break;
-      case 'f': this.fire('flapsDown'); break;
-      case 'v': this.fire('flapsUp'); break;
       case 'y': this.fire('ap'); break;
       case 'n': this.fire('nav'); break;
-      case 't': this.fire('timeFaster'); break;
-      case 'r': this.fire('timeSlower'); break;
       case 'c': this.fire('camera', e.shiftKey ? -1 : 1); break;
       case 'x': this.fire('camera', -1); break;
       case 'z': this.fire('camera', 'cockpit'); break;
@@ -78,12 +77,29 @@ const Input = {
   keyUp(e) {
     const k = keyName(e);
     this.keys[k] = false;
+    if (this.keyRep && (this.keyRep.k === k || this.keyRep.k === k.toLowerCase())) this.stopKeyRepeat();
     // Shift changes e.key between keydown and keyup ('=' / '+'), so clear both
     if (k === '+' || k === '=') { this.keys['+'] = false; this.keys['='] = false; }
     if (k === '-' || k === '_') { this.keys['-'] = false; this.keys['_'] = false; }
   },
 
   fire(name, arg) { if (this.onAction) this.onAction(name, arg); },
+
+  // a held repeating key (REPEAT_KEYS): its action again after CONTROLS.REPEAT_DELAY_MS, then
+  // every CONTROLS.REPEAT_EVERY_MS until it is let go (or the controls are off: a menu, a pause)
+  keyRepeat(k) {
+    this.stopKeyRepeat();
+    const step = () => {
+      if (!this.active || !this.keys[k]) { this.stopKeyRepeat(); return; }
+      this.fire(REPEAT_KEYS[k]);
+      this.keyRep.t = setTimeout(step, CONTROLS.REPEAT_EVERY_MS);
+    };
+    this.keyRep = { k, t: setTimeout(step, CONTROLS.REPEAT_DELAY_MS) };
+  },
+  stopKeyRepeat() {
+    if (this.keyRep) clearTimeout(this.keyRep.t);
+    this.keyRep = null;
+  },
 
   reset() {
     this.keys = {};
@@ -269,8 +285,9 @@ const Input = {
   touchBrake: false
 };
 
-// the touch buttons that step on while held: the flaps and the time
+// the touch buttons that step on while held: the flaps and the time, and their keys
 const REPEAT_ACTS = { flapsUp: 1, flapsDown: 1, timeSlower: 1, timeFaster: 1 };
+const REPEAT_KEYS = { f: 'flapsDown', v: 'flapsUp', t: 'timeFaster', r: 'timeSlower' };
 
 // the touch thrust lever's knob, px tall (#throttleKnob in styles.css)
 const THROTTLE_KNOB_H = 36;

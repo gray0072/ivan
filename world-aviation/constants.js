@@ -1509,7 +1509,7 @@ const CONTROLS = {
   THROTTLE_CURVE: 1.8,         // thrust = lever position ^ this: the low end of the lever is finer (taxi power)
   THROTTLE_KEY_RATE: 0.45,     // lever travel per second with Z / X
   THR_LABEL_MAX_PCT: 80,       // the touch slider's THR label hides above this thrust (the knob reaches it)
-  REPEAT_DELAY_MS: 450,        // a held touch button for the flaps or the time steps on after this ...
+  REPEAT_DELAY_MS: 450,        // a held touch button or key for the flaps or the time steps on after this ...
   REPEAT_EVERY_MS: 260,        // ... then once every this
   // the instrument lights, dimmest first (how much of the panel's light is left); I steps up
   // through them, from the brightest one more press hides the panel and the heading strip for
