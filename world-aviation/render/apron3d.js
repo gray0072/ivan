@@ -395,6 +395,7 @@ const Apron3D = {
       const sz = along ? 150 : 34, g = new THREE.PlaneGeometry(sz, sz, along ? 6 : 2, along ? 6 : 2);
       g.rotateX(-Math.PI / 2);
       const m = new THREE.Mesh(g, pool);
+      m.renderOrder = 4;            // (after the see-through ground and markings, as the landing lights' pool)
       m.position.set(ac + (along ? -45 : 10), 0.3, -t);
       rec.pools.add(m);
     }

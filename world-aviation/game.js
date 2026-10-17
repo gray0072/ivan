@@ -1196,6 +1196,7 @@ const Game = {
   holdBoot() { this.bootHold = BOOT_HOLD_FRAMES; },
   revealScene() {
     this.bootHold = 0;
+    Scene3D.preload();
     el('bootScreen').hidden = true;
     this.last = performance.now();
     const sh = this.cineShot();

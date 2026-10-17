@@ -80,6 +80,10 @@ const Scene3D = {
         blending: THREE.AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -6
       }));
     this.landingPool.visible = false;
+    // (after the airport's ground, the near land and the markings: they are see-through too and,
+    // sorted by distance, the ground would at some angles be drawn later and paint the pool over —
+    // the light went out for a moment as the intro's camera passed over the tail)
+    this.landingPool.renderOrder = 4;
     this.scene.add(this.landingPool);
     // the pushback tug, at the nose while the tug pushes
     this.tug = Apron3D.makeTug();
@@ -1030,6 +1034,16 @@ const Scene3D = {
     this.airports3D.delete(id);
   },
 
+  // The scene drawn once with nothing left out for being out of view, behind the boot screen
+  // (Game.revealScene): every shader compiled, every geometry and texture put on the GPU now, so
+  // the first look at the rest of the airport (turning onto the runway) does not stall the
+  // picture for a moment
+  preload() {
+    const culled = [];
+    this.scene.traverse((o) => { if (o.frustumCulled) { o.frustumCulled = false; culled.push(o); } });
+    this.renderer.render(this.scene, this.camera);
+    for (const o of culled) o.frustumCulled = true;
+  },
   render() {
     this.renderer.render(this.scene, this.camera);
     if (this.pipPose && this.pipRect) this.renderPip();
