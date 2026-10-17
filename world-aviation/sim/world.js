@@ -474,6 +474,9 @@ const World = {
   // (trimCurve: a corner, the stem of a T) and the two would overlap on it, they share the run in
   // proportion to their radii, so one leaves the line just where the other takes it over (the
   // first stand's turn and the corner into the lane at the apron's end, 80 m apart: 40 m each).
+  // And two curves a route may take one after the other, too close together for both (a lane's
+  // corner onto the apron lane and the turn into a stand 22-40 m on), share the run between them,
+  // so the route as it is driven (smoothRoute) never steps back.
   buildFillets(a) {
     const out = [];
     const TAXI = ['taxi', 'connector', 'apron', 'stand'];
@@ -552,6 +555,30 @@ const World = {
         if (!g || g === f || f.d + g.d <= r.len + 0.01) continue;
         const s = r.len / (f.d + g.d);
         shape(f, f.R * s); shape(g, g.R * s);
+      }
+    }
+    // (two curves a route may take one after the other, p - n ... q - s, closer together than
+    // they need on the straight run between them, n to q: they share it, each taking at most
+    // half unless the other needs less, so the line as it is driven (smoothRoute) never steps
+    // back. A route never leaves a stand (a departure starts on the apron lane, pushed back), so
+    // two stands' lead-in curves with the lane between them are left as they are.)
+    for (const f of out) {
+      for (const k of [0, 1]) {
+        const p = f.ends[1 - k], e = f.node.edges.find((x) => x.to === f.ends[k]);
+        if (!e || e.kind === 'runway' || p.kind === 'gate') continue;
+        const u = unit(f.node, e.to);
+        let from = f.node, to = e.to, len = 0;
+        for (let guard = 0; guard < 80; guard++) {
+          len += Math.hypot(to.t - from.t, to.across - from.across);
+          for (const g of a.filletsAt[to.id] || []) {
+            if (g === f || g.ends.indexOf(from) < 0 || f.d + g.d <= len) continue;
+            const h = len / 2, df = g.d < h ? len - g.d : Math.min(f.d, h), dg = f.d < h ? len - f.d : Math.min(g.d, h);
+            shape(f, f.R * df / f.d); shape(g, g.R * dg / g.d);
+          }
+          const on = to.edges.find((x) => x.to !== from && x.kind !== 'runway' && (() => { const v = unit(to, x.to); return u[0] * v[0] + u[1] * v[1] > 0.999; })());
+          if (!on) break;
+          from = to; to = on.to;
+        }
       }
     }
     return out;
@@ -803,6 +830,13 @@ const World = {
       // first point is the arc's end)
       const l = pts[pts.length - 1];
       if (l && p && i && (n.x - l.x) * (n.x - p.x) + (n.z - l.z) * (n.z - p.z) <= 0) { first[i] = pts.length - 1; return; }
+      // (and so is one the curve after it already begins before — the route's first node on the
+      // apron lane, with the corner off it close ahead: the way begins where that curve does)
+      const q = route[i + 1], g = q && route[i + 2] ? this.filletAt(a, q, n, route[i + 2]) : null;
+      if (g) {
+        const s = g.ends[0] === n ? g.world[0] : g.world[g.world.length - 1];
+        if ((s.x - n.x) * (q.x - n.x) + (s.z - n.z) * (q.z - n.z) < 0) return;
+      }
       pts.push({ x: n.x, z: n.z });
     });
     const S = [0];

@@ -191,14 +191,13 @@ const FollowMe3D = {
     const i0 = sm.first[1] - sm.first[0] > 1 ? sm.first[1] - 1 : sm.first[0];
     // (it waits past the first junction off the runway: past the end of its curve, if it has one)
     const waitI = sm.first[2] !== undefined ? sm.first[2] - 1 : sm.first[1];
-    // runway-local, never stepping back (two curves overlapping on a short run of the apron lane:
-    // on from the first one's end to where the next one is ahead)
+    // runway-local (two curves close together share the run between them, World.buildFillets, so
+    // the way never steps back)
     const loc = [];
     let waitK = 0;
     for (let i = i0; i < sm.pts.length; i++) {
       const q = World.local(a, sm.pts[i].x, sm.pts[i].z), m = loc.length, l = loc[m - 1];
       if (m && Math.hypot(q.t - l.t, q.across - l.across) < 0.05) continue;
-      if (m > 1 && (q.t - l.t) * (l.t - loc[m - 2].t) + (q.across - l.across) * (l.across - loc[m - 2].across) <= 0) continue;
       loc.push(q);
       if (i <= waitI) waitK = loc.length - 1;
     }
