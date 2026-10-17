@@ -26,7 +26,7 @@ const PILOT_RANKS = [
   { id: 'cpl', licence: 'EASA CPL', title: 'Commercial pilot', stripes: 1 },
   { id: 'cplir', licence: 'EASA CPL/IR', title: 'Instrument-rated pilot', stripes: 2, courses: ['pax2'] },
   { id: 'atpl', licence: 'EASA ATPL', title: 'Airline transport pilot', stripes: 3, courses: ['gen4'], flights: 30 },
-  { id: 'captain', licence: 'EASA ATPL', title: 'Captain', stripes: 4, flights: 50, passed: 15 },
+  { id: 'captain', licence: 'EASA ATPL', title: 'Captain', stripes: 4, flights: 50, passed: 17 },
   { id: 'senior', licence: 'EASA ATPL', title: 'Senior captain', stripes: 4, star: true, all: true }
 ];
 
@@ -806,7 +806,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.024, rollRate: 0.7, pitchRate: 0.52, yawRate: 0.62,
     takeoffDist: 2400, crosswindLimit: 25, maxRangeNm: 1500, surfaces: ['asphalt'],
-    rent: 15000, price: 0, bonus: 1.35, unlock: 'cargo5', loads: ['parts', 'parts', 'outsize'],
+    rent: 15000, price: 0, bonus: 1.35, unlock: 'cargobeluga', loads: ['parts', 'parts', 'outsize'],
     dims: { len: 56.15, span: 44.84, fus: 5.64 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#ffffff', color: '#00205b', sweep: 28, bubble: 1.37, tailFins: true, mainRows: 2, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -858,7 +858,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.024, rollRate: 0.66, pitchRate: 0.5, yawRate: 0.6,
     takeoffDist: 2400, crosswindLimit: 25, maxRangeNm: 2200, surfaces: ['asphalt'],
-    rent: 19000, price: 0, bonus: 1.38, unlock: 'cargo5', loads: ['parts'],
+    rent: 19000, price: 0, bonus: 1.38, unlock: 'cargoxl', loads: ['parts'],
     dims: { len: 63.1, span: 60.3, fus: 5.64 },
     look: { wing: 'low', engines: 'wing2', tail: 'low', base: '#ffffff', color: '#00205b', sweep: 30, fan: 0.52, winglets: true, bubble: 1.56, tailFins: true, mainRows: 2, face: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -996,7 +996,7 @@ const AIRCRAFT = [
     ],
     gearCd: 0.026, rollRate: 0.6, pitchRate: 0.45, yawRate: 0.6,
     takeoffDist: 3100, crosswindLimit: 30, maxRangeNm: 4400, surfaces: ['asphalt'],
-    rent: 40000, price: 0, bonus: 1.4, unlock: 'cargo4',
+    rent: 40000, price: 0, bonus: 1.4, unlock: 'cargojumbo',
     dims: { len: 76.3, span: 68.4, fus: 6.5 },
     look: { wing: 'low', engines: 'wing4', tail: 'low', base: '#eceff2', color: '#e0a030', sweep: 37, hump: true, freighter: true },
     propRpmIdle: 0.0, propRpmCruise: 0.0
@@ -1102,7 +1102,7 @@ const QRH = {
 
 // ---------- Training courses ----------
 // The technology tree: one general branch plus three career branches, four or five tiers each;
-// the passenger branch has a course of its own for every type after the turboprop.
+// the passenger and the cargo branches have a course of their own for every type.
 // A course opens once the courses it `requires` are passed, the pilot has flown `flights` flights in
 // all and has `rep` reputation with its branch's clients (general courses: with any). Every course
 // asks for a different number of flights, so they open one by one, not in bunches.
@@ -1127,8 +1127,8 @@ const COURSES = [
   { id: 'paxtp', branch: 'pax', tier: 1, name: 'Regional Turboprops', cost: 10000, requires: ['gen1'], flights: 1, rep: 0,
     blurb: 'The ATR 72 on short hops: propeller handling, feathering, de-icing boots and six sectors a day.',
     effect: 'Unlocks the ATR 72-600; +10% pay on legs under 300 nm in a turboprop.', course: 'pax' },
-  // after the CRJ one jet type a course, one after the other, a course every four flights (the
-  // flights 9, 13 … 45), so the pilot flies each new type about four times before the next opens
+  // after the CRJ one jet type a course, one after the other, a course every three to five flights
+  // (the flights 8, 13 … 44), so the pilot flies each new type a few times before the next opens
   { id: 'paxfbw', branch: 'pax', tier: 2, name: 'Fly-by-Wire Jets', cost: 45000, requires: ['pax1'], flights: 8, rep: 5,
     blurb: 'Flight computers between the controls and the control surfaces, and envelope protection: how a modern jet flies, and what is left when its computers degrade.',
     effect: 'Unlocks the Embraer E195-E2.', course: 'pax' },
@@ -1169,12 +1169,24 @@ const COURSES = [
   { id: 'cargo3', branch: 'cargo', tier: 3, name: 'Arctic Ground Handling', cost: 120000, requires: ['cargo2'], flights: 18, rep: 30,
     blurb: 'De-icing procedures, cargo holds in the cold, snow banks and gravel aprons.',
     effect: 'Unlocks ice-field and reefer contracts, icing builds 35% slower.', course: 'cargo' },
-  { id: 'cargo4', branch: 'cargo', tier: 4, name: 'Heavy Freighter Ops', cost: 250000, requires: ['cargo3'], flights: 31, rep: 42,
-    blurb: 'Main-deck loading, fifty tonnes of freight and the most demanding schedules in the north.',
-    effect: 'Unlocks the Boeing 767-300F, the Boeing 747-8F and ultra-long contracts.', course: 'cargo' },
-  { id: 'cargo5', branch: 'cargo', tier: 5, name: 'Outsize Cargo', cost: 700000, requires: ['cargo4'], flights: 48, rep: 70,
-    blurb: 'Turbines, helicopters, locomotives and aircraft wings: the An-124\'s lifting nose, kneeling gear and roof cranes, the Beluga\'s door over the cockpit, and tie-downs for loads that fit nothing else.',
-    effect: 'Unlocks the Antonov An-124 Ruslan (120 tonnes onto long gravel and ice runways), the Airbus Beluga and the BelugaXL (aircraft sections for Airbus).', course: 'cargo' },
+  // from the 767 on one freighter a course, one after the other, three to five flights apart (the
+  // flights 30, 34, 39, 42, 46, between the passenger jets'), so the pilot flies each new freighter
+  // a few times before the next opens; the last of them is the last course of all
+  { id: 'cargo4', branch: 'cargo', tier: 4, name: 'Heavy Freighter Ops', cost: 250000, requires: ['cargo3'], flights: 30, rep: 41,
+    blurb: 'Main-deck loading, fifty tonnes of freight on pallets and the most demanding schedules in the north: the 767 freighter, a widebody with a big door and no windows.',
+    effect: 'Unlocks the Boeing 767-300F and ultra-long contracts.', course: 'cargo' },
+  { id: 'cargojumbo', branch: 'cargo', tier: 5, name: 'Jumbo Freighter', cost: 300000, requires: ['cargo4'], flights: 34, rep: 45,
+    blurb: 'The 747-8F: a nose that swings up for loads as long as a house, the cockpit up in the hump, four engines and well over a hundred tonnes across the Pacific by way of Anchorage.',
+    effect: 'Unlocks the Boeing 747-8F.', course: 'cargo' },
+  { id: 'cargo5', branch: 'cargo', tier: 6, name: 'Outsize Cargo', cost: 350000, requires: ['cargojumbo'], flights: 39, rep: 50,
+    blurb: 'Turbines, helicopters, locomotives and satellites: the An-124\'s lifting nose and rear ramp, kneeling gear and roof cranes, and tie-downs for loads that fit nothing else.',
+    effect: 'Unlocks the Antonov An-124 Ruslan (120 tonnes onto long gravel and ice runways).', course: 'cargo' },
+  { id: 'cargobeluga', branch: 'cargo', tier: 7, name: 'Beluga Super Transporter', cost: 400000, requires: ['cargo5'], flights: 42, rep: 53,
+    blurb: 'The A300-600ST, Airbus\'s own whale: wings and fuselage sections shuttled between its factories in a hold seven metres wide, a door that swings up over the cockpit, and a big body in a crosswind.',
+    effect: 'Unlocks the Airbus Beluga (aircraft sections for Airbus).', course: 'cargo' },
+  { id: 'cargoxl', branch: 'cargo', tier: 8, name: 'BelugaXL Differences', cost: 450000, requires: ['cargobeluga'], flights: 46, rep: 57,
+    blurb: 'The BelugaXL, built on the A330: a hold a metre wider and six metres longer that takes both wings of an A350 at once, a smile painted on its nose, and a short differences course from the A330.',
+    effect: 'Unlocks the Airbus BelugaXL.', course: 'cargo' },
   // Bush & SAR
   { id: 'bush1', branch: 'bush', tier: 1, name: 'Short Field Ops', cost: 15000, requires: ['gen1'], flights: 4, rep: 0,
     blurb: 'Take-off and landing in half the distance, on grass, gravel and sand.',

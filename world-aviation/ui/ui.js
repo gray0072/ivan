@@ -946,7 +946,11 @@ const UI = {
       [fx.widebody, tr('Widebody procedures — the Airbus A350-900')],
       [fx.heavyTwin, tr('Heavy twin and ultra long haul — the Boeing 777-300ER')],
       [fx.doubleDeck, tr('Double-deck operations — the Airbus A380-800')],
-      [fx.outsize, tr('Outsize cargo — the Antonov An-124 onto gravel and ice, the Airbus Beluga and the BelugaXL')],
+      [fx.heavy, tr('Heavy freighters — the Boeing 767-300F')],
+      [fx.jumbo, tr('Jumbo freighter — the Boeing 747-8F')],
+      [fx.outsize, tr('Outsize cargo — the Antonov An-124 onto gravel and ice')],
+      [fx.beluga, tr('Super Transporter — the Airbus Beluga, with aircraft sections for Airbus')],
+      [fx.belugaXL, tr('BelugaXL differences — the Airbus BelugaXL')],
       [fx.remote, tr('Remote strips and ice fields for every type')],
       [Career.mriyaDone(), tr('The An-225 Mriya — built again with your own hands')]
     ];

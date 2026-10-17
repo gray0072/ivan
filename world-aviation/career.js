@@ -138,6 +138,17 @@ const Career = {
       }
       d.coursesSplit = true;
     }
+    // the same for the freighters, split later (`cargoSplit`, so a career from between the two
+    // splits, which has `coursesSplit`, still gets it): Heavy Freighter Ops also unlocked the
+    // 747-8F, Outsize Cargo the Belugas
+    if (!d.cargoSplit) {
+      const split = { cargo4: ['cargojumbo'], cargo5: ['cargobeluga', 'cargoxl'] };
+      for (const id of Object.keys(split)) {
+        if (d.courses.indexOf(id) < 0) continue;
+        for (const s of split[id]) if (d.courses.indexOf(s) < 0) d.courses.push(s);
+      }
+      d.cargoSplit = true;
+    }
     // the fictional types of older versions became the real ones closest to them
     const renamed = { VIKNA19: 'B1900D', RJ84: 'CRJ200', SKARV27: 'F27F', FROST12: 'DHC6', NJ320: 'A320', BL600F: 'B763F' };
     d.aircraft = (d.aircraft || ['B1900D']).map((id) => renamed[id] || id);
@@ -206,6 +217,7 @@ const Career = {
       rep: { pax: 0, cargo: 0, bush: 0 },
       courses: ['gen1'],
       coursesSplit: true,          // (one passenger course a type: nothing for Career.migrate to split)
+      cargoSplit: true,            // (one freighter course a type, the same)
       aircraft: ['B1900D'],
       selected: 'B1900D',
       contracts: [],
@@ -495,7 +507,10 @@ const Career = {
       composite: d.courses.indexOf('paxcomp') >= 0,
       heavyTwin: d.courses.indexOf('paxheavy') >= 0,
       doubleDeck: d.courses.indexOf('paxdd') >= 0,
-      outsize: d.courses.indexOf('cargo5') >= 0
+      jumbo: d.courses.indexOf('cargojumbo') >= 0,
+      outsize: d.courses.indexOf('cargo5') >= 0,
+      beluga: d.courses.indexOf('cargobeluga') >= 0,
+      belugaXL: d.courses.indexOf('cargoxl') >= 0
     };
   },
 

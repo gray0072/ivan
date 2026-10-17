@@ -4,7 +4,8 @@
 // World Aviation — a picture for every training course (COURSES):
 // a mortarboard for Ground School, a cloud and the sun for Weather,
 // a propeller, an ILS, a hazard diamond, a snowflake, a float plane,
-// a fan, a carbon weave, a six-wheel bogie, a double deck…
+// a fan, a carbon weave, a six-wheel bogie, a double deck, a jumbo's
+// raised nose, a wing in the Beluga's hold, the XL's smile…
 // Line drawings in currentColor on a 24×24 grid, coloured by the CSS
 // of whatever holds them (the course cards and the exam screens in
 // ui/ui.js).
@@ -55,8 +56,18 @@ const CourseIcons = {
       '<path d="M9.6 3.6 12 6l2.4-2.4M9.6 20.4 12 18l2.4 2.4M3.6 10.6 6.8 9.3l-.6-3.4M20.4 13.4l-3.2 1.3.6 3.4M3.6 13.4l3.2 1.3-.6 3.4M20.4 10.6l-3.2-1.3.6-3.4"/>',
     cargo4: '<rect x="2" y="12.5" width="9.5" height="8" rx="1"/><rect x="12.5" y="12.5" width="9.5" height="8" rx="1"/><rect x="7.2" y="3.5" width="9.5" height="8" rx="1"/>' +
       '<path d="M5 14.8v3.4M8.5 14.8v3.4M15.5 14.8v3.4M19 14.8v3.4M10.2 5.8v3.4M13.7 5.8v3.4"/>',
+    // the 747-8F from the side, its nose swung up under the hump and a pallet rolling in
+    cargojumbo: '<path d="M8.5 19h11l3-3.5V11h-6l-2-4h-3.5c-2 0-3.5 1.5-3.5 4z"/><path d="M8.5 11C6 10.5 3.6 8.3 2.8 4.8c2.2.2 4.3 1.3 5.7 3.2"/>' +
+      '<rect x="2.5" y="14.5" width="6" height="4.5" rx="1"/><path d="M10.5 9.3h2.5"/>',
     cargo5: '<path d="M2.5 21.5h19M5 21.5V3h13.5M5 7.5 9.5 3M16.5 3v4"/>' +
       '<path d="M16.5 7a2 2 0 1 1-2 2"/><rect x="11.5" y="13.5" width="9" height="5.5" rx="1"/><path d="M14.5 11.2l-2 2.3M14.5 11.2l4 2.3"/>',
+    // the Beluga from the front: the A300 under a round hold with an aircraft wing inside it
+    cargobeluga: '<circle cx="12" cy="9.5" r="7.5"/><path d="M8.6 16.2A3.5 3.5 0 1 0 15.4 16.2"/>' +
+      '<path d="M8.6 17.5 1.5 18.8M15.4 17.5l7.1 1.3M10.5 18.6h3"/><circle cx="5" cy="19.9" r="1.5"/><circle cx="19" cy="19.9" r="1.5"/>' +
+      '<path d="M7 9.5c1.5-2 7.5-2.4 10.5-.3-3.2 1.3-7.8 1.6-10.5.3z"/>',
+    // the BelugaXL's head from the side: the whale's eye and smile painted on its nose
+    cargoxl: '<path d="M22.5 19H5.5c-2 0-3.3-1.4-3.3-3.2C2.2 9 7 4.5 13.5 4.5c4.5 0 7.5 2 9 4.5"/>' +
+      '<circle cx="8.5" cy="11" r="1.1" fill-opacity="1"/><path d="M3.5 15.5c2 2 5.5 2.3 8 .8"/>',
     // Bush & SAR
     bush1: '<path d="M18.5 2.5 22 8h-1.6l2 3.2h-7.8l2-3.2H15z"/><path d="M18.5 11.2v3"/>' +
       '<path d="M1.5 21h21M4 18.6h2.4M9 18.6h2.4M14 18.6h2.4"/><path d="M2 14.5l7-2.6 2.6-3.4h1.4l-1.1 2.7 3-1 1-1.3h1l-.9 2.4-12 4.2z"/>',
