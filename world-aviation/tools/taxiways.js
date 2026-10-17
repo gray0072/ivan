@@ -21,6 +21,16 @@ World.init();
 const cam = { t: 0, across: 0, k: 1 };    // the middle of the view (runway-local metres), pixels per metre
 let A = null;                             // the airport and what was built of it: { a, marks, lights, ground, plan }
 
+// a marking mesh's triangles as drawn near: each vertex its line's point moved by its offset
+// (render/airport3d.js markBatch: the vertex shader widens only the lines too thin to see)
+function markCorners(geo) {
+  const p = geo.attributes.position.array, o = geo.attributes.markOff ? geo.attributes.markOff.array : null;
+  if (!o) return p;
+  const out = new Float32Array(p.length);
+  for (let i = 0, j = 0; i < p.length; i += 3, j += 2) { out[i] = p[i] + o[j]; out[i + 1] = p[i + 1]; out[i + 2] = p[i + 2] + o[j + 1]; }
+  return out;
+}
+
 // the places to look at: [name, t, across, pixels per metre]
 function views(a) {
   const n = a.nodes, L = LAYOUT, out = [['whole airport', (a.apronT0 + a.apronT1) / 2, 200, 0]];
@@ -42,7 +52,7 @@ function build(id) {
   const tex = (c) => new THREE.CanvasTexture(c);
   Airport3D.buildMarkings(a, at, tex);
   const marks = meshes.filter((m) => m.isMesh && m.material && m.material.color && !m.material.map).map((m) => ({
-    pos: m.geometry.attributes.position.array, color: '#' + m.material.color.clone().convertLinearToSRGB().getHexString()
+    pos: markCorners(m.geometry), color: '#' + m.material.color.clone().convertLinearToSRGB().getHexString()
   }));
   const rec = {};
   meshes.length = 0;

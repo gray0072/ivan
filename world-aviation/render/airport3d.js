@@ -183,16 +183,7 @@ const Airport3D = {
     W.strip(r.t0, L.SERVICE_ROAD + 6.8, r.t1, L.SERVICE_ROAD + 6.8, 0.4);
     for (let t = r.t0; t + 4.5 <= r.t1; t += 9) W.strip(t, L.SERVICE_ROAD, t + 4.5, L.SERVICE_ROAD, 0.4);
 
-    for (const [b, color] of [[Y, '#f2c832'], [W, '#e9e8e2'], [Rd, '#c8282a']]) {
-      if (!b.pos.length) continue;
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
-      const nor = new Float32Array(b.pos.length);
-      for (let i = 1; i < nor.length; i += 3) nor[i] = 1;
-      geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-      const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(color).convertSRGBToLinear(), side: THREE.DoubleSide });
-      at(new THREE.Mesh(geo, mat), 0, 0, 0);
-    }
+    for (const [b, color] of [[Y, '#f2c832'], [W, '#e9e8e2'], [Rd, '#c8282a']]) if (b.pos.length) at(markMesh(b, color), 0, 0, 0);
   },
 
   // "T1", "T2", "T3" painted on the road's lane by the terminal, either side of its crossing,
@@ -1092,24 +1083,84 @@ function mullionCanvas(glassHex, barHex) {
   return cv;
 }
 
+// The wear of the taxiways, over the whole pavement (the straights, the curves, the exits and
+// the connectors alike), clipped to it: patches of newer and older asphalt, dark and pale specks,
+// and the rubber and the oil the wheels leave along the centrelines, heaviest round the curves
+// where the aeroplanes turn (a remote strip's gravel only gets the patches and the specks)
+function paveWear(g, pave, plan, P, px, rng, remote) {
+  const clip = new Path2D();
+  let t0 = Infinity, t1 = -Infinity, a0 = Infinity, a1 = -Infinity, area = 0;
+  for (const pts of pave) {
+    pts.forEach(([t, ac], i) => {
+      const q = P(t, ac);
+      if (i) clip.lineTo(q[0], q[1]); else clip.moveTo(q[0], q[1]);
+      t0 = Math.min(t0, t); t1 = Math.max(t1, t); a0 = Math.min(a0, ac); a1 = Math.max(a1, ac);
+    });
+    clip.closePath();
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) area += (pts[j][0] + pts[i][0]) * (pts[j][1] - pts[i][1]) / 2;
+  }
+  area = Math.abs(area);
+  if (!isFinite(t0)) return;
+  g.save();
+  g.clip(clip);
+  // the patches: a slab relaid lighter, a darker stretch sealed over, 6-28 m across
+  const patches = Math.min(900, Math.round(area / 260));
+  for (let i = 0; i < patches; i++) {
+    const t = rng.range(t0, t1), ac = rng.range(a0, a1), q = P(t, ac);
+    g.fillStyle = rng.chance(0.55) ? 'rgba(28,30,33,' + rng.range(0.06, 0.16).toFixed(3) + ')' : 'rgba(175,172,165,' + rng.range(0.05, 0.12).toFixed(3) + ')';
+    g.beginPath();
+    g.ellipse(q[0], q[1], px(rng.range(3, 14)), px(rng.range(2, 7)), rng.range(0, Math.PI), 0, TAU);
+    g.fill();
+  }
+  // the specks
+  const specks = Math.min(9000, Math.round(area / 25));
+  for (let i = 0; i < specks; i++) {
+    const q = P(rng.range(t0, t1), rng.range(a0, a1));
+    g.fillStyle = rng.chance(0.5) ? 'rgba(40,42,45,0.14)' : 'rgba(160,158,150,0.1)';
+    g.fillRect(q[0], q[1], px(rng.range(1, 3)), px(rng.range(1, 4)));
+  }
+  if (!remote) {
+    // the wheels' track: a broad faint band and a darker one along every centreline (the
+    // curves, sampled finely, get it twice as dark: the tyres scrub there)
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const ln of plan.lines) {
+      if (ln.pts.length < 2) continue;
+      const path = new Path2D();
+      ln.pts.forEach(([t, ac], i) => { const q = P(t, ac); if (i) path.lineTo(q[0], q[1]); else path.moveTo(q[0], q[1]); });
+      const curve = ln.curve;
+      g.strokeStyle = 'rgba(30,31,34,' + (curve ? 0.12 : 0.07) + ')'; g.lineWidth = px(9); g.stroke(path);
+      g.strokeStyle = 'rgba(24,25,27,' + (curve ? 0.2 : 0.1) + ')'; g.lineWidth = px(3.5); g.stroke(path);
+    }
+  }
+  g.restore();
+}
+
 // ---------- marking strips ----------
 // A batch of flat strips at height y in the airport frame, filled in [t, across] metres
 // (local x = across, z = -t): Airport3D.buildMarkings turns each batch into one mesh
+// (markMesh). Every vertex keeps the point of the line it belongs to (position), its offset
+// from there to the line's edge (markOff) and the half width it measures the line by
+// (markMeasure), so the vertex shader can widen a line too thin for the screen (markMaterial).
 function markBatch(y) {
-  const pos = [];
+  const pos = [], off = [], mea = [];
+  // a vertex: the line's point (t, ac), the offset (ot, oa) from it, the half width (mt, ma)
+  const vtx = (t, ac, ot, oa, mt, ma) => { pos.push(ac, y, -t); off.push(oa, -ot); mea.push(ma, -mt); };
   // a strip from (t1, a1) to (t2, a2), w metres wide
   const strip = (t1, a1, t2, a2, w) => {
     const dt = t2 - t1, da = a2 - a1, len = Math.hypot(dt, da);
     if (len < 0.01) return;
     const nt = -da / len * w / 2, na = dt / len * w / 2;
-    const p = [[t1 + nt, a1 + na], [t2 + nt, a2 + na], [t2 - nt, a2 - na], [t1 - nt, a1 - na]];
-    for (const k of [0, 1, 2, 0, 2, 3]) pos.push(p[k][1], y, -p[k][0]);
+    const p = [[t1, a1, 1], [t2, a2, 1], [t2, a2, -1], [t1, a1, -1]];
+    for (const k of [0, 1, 2, 0, 2, 3]) vtx(p[k][0], p[k][1], nt * p[k][2], na * p[k][2], nt, na);
   };
   // a small octagon where two strips meet, so the turns have no gaps
   const dot = (t, ac, r) => {
     for (let i = 0; i < 8; i++) {
-      const a0 = i / 8 * TAU, a1 = (i + 1) / 8 * TAU;
-      pos.push(ac, y, -t, ac + Math.sin(a1) * r, y, -(t + Math.cos(a1) * r), ac + Math.sin(a0) * r, y, -(t + Math.cos(a0) * r));
+      const c0 = Math.cos(i / 8 * TAU) * r, s0 = Math.sin(i / 8 * TAU) * r;
+      const c1 = Math.cos((i + 1) / 8 * TAU) * r, s1 = Math.sin((i + 1) / 8 * TAU) * r;
+      vtx(t, ac, 0, 0, r, 0);
+      vtx(t, ac, c1, s1, c1, s1);
+      vtx(t, ac, c0, s0, c0, s0);
     }
   };
   // a line along [t, across] points, solid, or dashed with dash / gap metres. A solid one is
@@ -1121,17 +1172,19 @@ function markBatch(y) {
       for (let i = 0; i < pts.length; i++) {
         const n0 = i > 0 ? nrm(pts[i - 1], pts[i]) : nrm(pts[i], pts[i + 1]);
         const n1 = i + 1 < pts.length ? nrm(pts[i], pts[i + 1]) : n0;
-        let mt = n0[0] + n1[0], ma = n0[1] + n1[1];
+        const mt = n0[0] + n1[0], ma = n0[1] + n1[1];
         const ml = Math.hypot(mt, ma), cos = ml / 2;
         if (cos < 0.5) { side.push(null); continue; }
         const k = w / 2 / cos;
-        mt = mt / ml * k; ma = ma / ml * k;
-        side.push([[pts[i][0] + mt, pts[i][1] + ma], [pts[i][0] - mt, pts[i][1] - ma]]);
+        side.push([mt / ml * k, ma / ml * k]);
       }
       for (let i = 0; i + 1 < pts.length; i++) {
         if (!side[i] || !side[i + 1]) { strip(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], w); continue; }
-        const p = [side[i][0], side[i + 1][0], side[i + 1][1], side[i][1]];
-        for (const k of [0, 1, 2, 0, 2, 3]) pos.push(p[k][1], y, -p[k][0]);
+        const p = [[i, 1], [i + 1, 1], [i + 1, -1], [i, -1]];
+        for (const k of [0, 1, 2, 0, 2, 3]) {
+          const j = p[k][0], sg = p[k][1], m = side[j];
+          vtx(pts[j][0], pts[j][1], m[0] * sg, m[1] * sg, m[0], m[1]);
+        }
       }
       for (let i = 0; i < pts.length; i++) if (!side[i]) dot(pts[i][0], pts[i][1], w / 2);
       return;
@@ -1150,7 +1203,70 @@ function markBatch(y) {
       base += len;
     }
   };
-  return { pos, strip, dot, poly };
+  return { pos, off, mea, strip, dot, poly };
+}
+
+// a batch's mesh, in its colour (sRGB hex)
+function markMesh(b, color) {
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
+  geo.setAttribute('markOff', new THREE.Float32BufferAttribute(b.off, 2));
+  geo.setAttribute('markMeasure', new THREE.Float32BufferAttribute(b.mea, 2));
+  const nor = new Float32Array(b.pos.length);
+  for (let i = 1; i < nor.length; i += 3) nor[i] = 1;
+  geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  const mesh = new THREE.Mesh(geo, markMaterial(color));
+  // see-through, so after the airport's ground (see-through too, at its fading edges): drawn
+  // before it, they would be painted over
+  mesh.renderOrder = 3;
+  return mesh;
+}
+
+// The markings' material. A line seen far off, or nearly edge-on, is narrower on the screen
+// than a pixel; without antialiasing (a phone's canvas has none) it then breaks up into a
+// crawling, flickering dotted line. The vertex shader measures each line's thickness in
+// pixels (its width projected across its own direction on the screen) and widens one thinner
+// than MARK_MIN_PX to that, at most MARK_MAX_K times, fading it by as
+// much (alpha 1 / k, but no fainter than MARK_MIN_A, so the far lines still read): about the
+// same paint on the screen, as a texture's mipmaps would give it, but steady. Near, a line is
+// drawn as it is. The canvas's size in pixels: MARK_RES (Scene3D.resize).
+const MARK_MIN_PX = 1.4;
+const MARK_MAX_K = 30;
+const MARK_MIN_A = 0.3;
+const MARK_RES = { value: new THREE.Vector2(1280, 720) };
+const markMats = {};
+function markMaterial(color) {
+  if (markMats[color]) return markMats[color];
+  const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(color).convertSRGBToLinear(), side: THREE.DoubleSide, transparent: true, depthWrite: false });
+  mat.onBeforeCompile = (sh) => {
+    sh.uniforms.markRes = MARK_RES;
+    sh.vertexShader = 'attribute vec2 markOff;\nattribute vec2 markMeasure;\nuniform vec2 markRes;\nvarying float vMarkA;\n' +
+      sh.vertexShader.replace('#include <begin_vertex>', [
+        'vec3 transformed = vec3( position );',
+        '{',
+        '  vec3 mm = vec3( markMeasure.x, 0.0, markMeasure.y );',
+        '  vec4 cA = projectionMatrix * modelViewMatrix * vec4( position + mm, 1.0 );',
+        '  vec4 cB = projectionMatrix * modelViewMatrix * vec4( position - mm, 1.0 );',
+        '  float k = 1.0;',
+        '  if ( cA.w > 0.0 && cB.w > 0.0 ) {',
+        // the line's thickness on the screen: the projected width across the projected line
+        '    vec4 cL = projectionMatrix * modelViewMatrix * vec4( position + vec3( -mm.z, 0.0, mm.x ), 1.0 );',
+        '    vec4 cC = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+        '    vec2 w = ( cA.xy / cA.w - cB.xy / cB.w ) * 0.5 * markRes;',
+        '    vec2 l = ( cL.w > 0.0 && cC.w > 0.0 ) ? ( cL.xy / cL.w - cC.xy / cC.w ) * 0.5 * markRes : vec2( 0.0 );',
+        '    float ll = length( l );',
+        '    float px = ll > 1e-5 ? abs( w.x * l.y - w.y * l.x ) / ll : length( w );',
+        '    k = clamp( ' + MARK_MIN_PX.toFixed(2) + ' / max( px, 1e-4 ), 1.0, ' + MARK_MAX_K.toFixed(1) + ' );',
+        '  }',
+        '  vMarkA = max( 1.0 / k, ' + MARK_MIN_A.toFixed(2) + ' );',
+        '  transformed += vec3( markOff.x, 0.0, markOff.y ) * k;',
+        '}'
+      ].join('\n'));
+    sh.fragmentShader = 'varying float vMarkA;\n' +
+      sh.fragmentShader.replace('vec4 diffuseColor = vec4( diffuse, opacity );', 'vec4 diffuseColor = vec4( diffuse, opacity * vMarkA );');
+  };
+  mat.customProgramCacheKey = () => 'markLines';
+  return (markMats[color] = mat);
 }
 
 // a polyline of [t, across] points moved d metres to its side (the strip normal), mitred
@@ -1318,12 +1434,9 @@ function makeGroundCanvas(a, id, ch) {
     g.fillStyle = color; g.fill(p);
   };
   fill(Taxiways.pavement(plan, TWY_SHOULDER), '#8a8574');
-  fill(Taxiways.pavement(plan, 0), a.remote ? '#857c6c' : '#65696d');
-  for (let i = 0; i < 1600; i++) {          // a little texture on the pavement
-    g.fillStyle = rng.chance(0.5) ? 'rgba(40,42,45,0.12)' : 'rgba(150,150,150,0.08)';
-    const q = P(rng.range(-a.half, a.half), rng.range(L.TWY_OFFSET - 12, L.TWY_OFFSET + 12));
-    g.fillRect(q[0], q[1], px(2), px(5));
-  }
+  const pave = Taxiways.pavement(plan, 0);
+  fill(pave, a.remote ? '#857c6c' : '#65696d');
+  paveWear(g, pave, plan, P, px, rng, a.remote);
 
   // the apron: concrete slabs with joints, a service road along the terminal, the stands
   g.fillStyle = a.remote ? '#928a7a' : '#9b9e9e'; rect(r.t0, r.t1, r.a0, r.a1);

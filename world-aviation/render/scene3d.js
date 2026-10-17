@@ -573,6 +573,8 @@ const Scene3D = {
     this.camera.aspect = cw / ch;
     this.camera.updateProjectionMatrix();
     this.w = w; this.h = h;
+    // the markings measure their lines in the canvas's pixels (render/airport3d.js)
+    if (typeof MARK_RES !== 'undefined') this.renderer.getDrawingBufferSize(MARK_RES.value);
   },
 
   // the eye moved along the line to `to` (over the aeroplane) until it is VIEW.BUILDING_CLEAR_M

@@ -15,7 +15,9 @@
 //         R + w/2 round the curve's centre, over the curve's angle — so both its edges are
 //         arcs, concentric with the centreline's;
 //   web   at a junction (where the straight pieces run on to the node) the corner between the
-//         two lines' inner edges and the curve's inner edge, paved too.
+//         two lines' inner edges and the curve's inner edge, paved too;
+//   flare where a curve off the runway (the line-up, an exit) meets the runway's shoulder on the
+//         inside of the turn: a round fillet between the curve's inner edge and the shoulder.
 // At a plain corner (two lines meet off the runway, nothing else) the straight pieces stop
 // where the curve takes over, so the outside of the turn is the band's outer arc; elsewhere
 // they run to the node, so the mouth of a junction is paved straight across.
@@ -39,6 +41,7 @@ const TWY_EDGE_W = 0.45;                // the edge line's width
 const TWY_CL_W = 0.45;                  // the centreline's (wider than the real 0.15 m, to read from the cockpit)
 const TWY_LEADIN_PAST_M = 12;           // a stand's lead-in line goes on this far past the stand point
 const TWY_SHOULDER = 7.5;               // the gravel shoulder beyond the pavement's edge
+const TWY_FLARE_R = 30;                 // the fillet where a curve off the runway meets its shoulder inside the turn
 const TWY_ARC_STEP_M = 1.5;             // the curves are sampled every this many metres ...
 const TWY_ARC_STEP_DEG = 3;             // ... or degrees, whichever is finer
 // The taxiway lights by the airport's size (a remote strip: as tiny): metres between the
@@ -80,6 +83,56 @@ const Taxiways = {
     return f ? f.d : 0;
   },
 
+  // The flare where a curve off the runway (the line-up, an exit) meets the runway's shoulder on
+  // the inside of the turn: a round fillet of TWY_FLARE_R, tangent to the curve's inner edge and
+  // to the shoulder's edge, so the pavement widens into the runway instead of meeting it in a
+  // sharp corner that pinches the inner edge in towards the centreline. Its pavement lies outside
+  // the fillet's circle F, inside the curve's inner circle, on the taxiway's side of the shoulder.
+  // Null where the curve's inner edge does not reach the shoulder that way.
+  flare(f, r) {
+    const E = RWY_HALF_WIDTH + 7.5, rf = TWY_FLARE_R;
+    const sg = f.c[1] >= 0 ? 1 : -1, ca = f.c[1] * sg;
+    // (is the point at angle ang on the curve?)
+    const onArc = (ang) => { let x = (ang - f.a1) * Math.sign(f.da); x = ((x % TAU) + TAU) % TAU; return x <= Math.abs(f.da); };
+    const wrap = (x) => ((x + Math.PI) % TAU + TAU) % TAU - Math.PI;
+    // the fillet of radius rf tangent to the circle of radius Ri round the curve's centre and to
+    // the shoulder's edge (worked out with the taxiway's side of the runway at positive across,
+    // a = across * sg), or null
+    const geom = (Ri) => {
+      const dy = E + rf - ca, dx = Ri - rf;
+      if (dx <= 0 || Math.abs(dy) >= dx || ca - Ri >= E || ca <= E) return null;
+      // where that circle crosses the shoulder's edge: of its two crossings, the one on the curve
+      const h = Math.sqrt(Ri * Ri - (E - ca) * (E - ca));
+      const side = [1, -1].find((sd) => onArc(Math.atan2(E * sg - f.c[1], sd * h)));
+      if (!side) return null;
+      const xt = f.c[0] + side * h, ft = f.c[0] + side * Math.sqrt(dx * dx - dy * dy);
+      const F = [ft, (E + rf) * sg];
+      // the tangent points: on the circle (T1, on the line from its centre through F) and on the
+      // shoulder's edge (T2, straight towards the runway from F)
+      const k = Ri / dx, T1 = [f.c[0] + (F[0] - f.c[0]) * k, f.c[1] + (F[1] - f.c[1]) * k];
+      // (T1 has to lie on the curve: a rapid exit's long, gentle arc may end before it)
+      const aC1 = Math.atan2(T1[1] - f.c[1], T1[0] - f.c[0]);
+      if (!onArc(aC1)) return null;
+      const aT2 = Math.atan2(-sg, 0);
+      return { Ri, xt, ft, F, aT2, daF: wrap(Math.atan2(T1[1] - F[1], T1[0] - F[0]) - aT2), aC1, daC: wrap(Math.atan2(E * sg - f.c[1], xt - f.c[0]) - aC1) };
+    };
+    const g0 = geom(f.R - r);
+    if (!g0) return null;
+    // the outline: along the curve's inner circle from T1 to the shoulder's edge, 2 m into the
+    // shoulder so it joins it, and back round the fillet; e: grown by e (the shoulders: the
+    // fillet tangent to the inner circle less e); out: that circle's radius more by it, for the
+    // edge lines' test, reaching over the curve's own inner edge line, which the flare cuts
+    const outline = (e, out) => {
+      const g = (e && geom(f.R - r - e)) || g0, R = g.Ri + (out || 0);
+      const pts = arcPts(f.c, R, g.aC1, g.daC);
+      const last = pts[pts.length - 1];
+      pts.push([last[0], (E - 2) * sg], [g.ft, (E - 2) * sg]);
+      for (const q of arcPts(g.F, rf, g.aT2, g.daF)) pts.push(q);
+      return pts;
+    };
+    return { type: 'flare', c: f.c, F: g0.F, rf, aT2: g0.aT2, daF: g0.daF, poly: (e) => outline(e), test: outline(0, 2) };
+  },
+
   build(a) {
     const L = LAYOUT, IN = TWY_EDGE_IN, M = IN + 0.04;
     const pieces = [];
@@ -113,6 +166,8 @@ const Taxiways = {
       // straight pieces and the web, only touching the far edge of the line it leaves: no edge)
       const corner = this.cornerTrim(a, n, f.ends[0]) > 0;
       pieces.push({ type: 'band', c: f.c, R: f.R, r, a1: f.a1, da: f.da, corner });
+      const flare = (n.kind === 'lineup' || n.kind === 'exit') && this.flare(f, r);
+      if (flare) pieces.push(flare);
       if (corner) continue;
       // the web: the corner between the inner edges, out to the curve's inner arc
       const o = [n.t, n.across];
@@ -217,6 +272,10 @@ const Taxiways = {
           }
           cut(pts, nrm, pc, Infinity);
         }
+      } else if (pc.type === 'flare') {
+        // the fillet's edge, round the circle F (the pavement outside it)
+        const rad = pc.rf + IN, pts = arcPts(pc.F, rad, pc.aT2, pc.daF);
+        cut(pts, pts.map((q) => unit(q, pc.F)), pc, rad);
       } else if (pc.type === 'band') {
         for (const [rad, out] of [[pc.R - pc.r + IN, -1], [pc.R + pc.r - IN, 1]]) {
           if (rad < 1 || (out > 0 && !pc.corner)) continue;
@@ -398,6 +457,8 @@ function inside(pc, q, m) {
     const grow = m < 0 ? -m / Math.max(d, 1) : 0;
     return x <= Math.abs(pc.da) + grow || x >= TAU - grow;
   }
+  // the flare: inside its test outline, clear of its fillet's circle
+  if (pc.type === 'flare') return Math.hypot(q[0] - pc.F[0], q[1] - pc.F[1]) > pc.rf + m && inPoly(pc.test, q);
   // the web: inside its test outline, clear of the inner arc
   return d > pc.rin + m && inPoly(pc.test, q);
 }
