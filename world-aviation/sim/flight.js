@@ -244,8 +244,10 @@ const Flight = {
   windAt(alt, calm) {
     const e = this.env;
     const agl = Math.max(0, alt - this.groundHeight());
-    const k = clamp(agl / 900, 0, 1);
-    const sp = lerp(e.surfaceWind.speed, e.altWind.speed, k);
+    // the low layer keeps the surface wind's direction, above it the cruise wind takes over
+    const kLow = clamp(agl / SIM.WIND_LOW_TOP_M, 0, 1);
+    const k = clamp((agl - SIM.WIND_LOW_TOP_M) / (SIM.WIND_ALOFT_M - SIM.WIND_LOW_TOP_M), 0, 1);
+    const sp = lerp(e.surfaceWind.speed * lerp(1, SIM.WIND_LOW_GAIN, kLow), e.altWind.speed, k);
     let dir = e.surfaceWind.dir + wrapDeg(e.altWind.dir - e.surfaceWind.dir) * k;
     dir += Math.sin(this.st.pos.x / 40000 + this.st.pos.z / 33000) * 14 * k;
     const toward = windTowardHeading(dir) * DEG;

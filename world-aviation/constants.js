@@ -73,6 +73,11 @@ const SIM = {
   // the turbulence fades out above this time acceleration (as 1 / the acceleration): many seconds
   // of gusts a frame only made the picture and the autopilot shake
   TURB_FULL_ACCEL: 8,
+  // the wind by height (Flight.windAt): up to WIND_LOW_TOP_M above the ground it blows from where
+  // the surface wind does (the briefing's wind, so the drift on the approach comes from the side it
+  // says), only stronger, up to WIND_LOW_GAIN times at its top; from there to WIND_ALOFT_M it turns
+  // into the cruise wind
+  WIND_LOW_TOP_M: 900, WIND_LOW_GAIN: 1.3, WIND_ALOFT_M: 3000,
   TIME_ACCEL_MIN_COS: 0.2,     // the distance for that is divided by the cosine of the angle off the runway, at most x5
   TIME_ACCEL_RESUME_S: 0.5,    // after an emergency the time climbs back one step every this many real seconds
   TIME_ACCEL_STEPDOWN_S: 0.25, // an emergency or stricter limits bring the time down one step every this many real seconds
