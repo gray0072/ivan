@@ -13,13 +13,17 @@
 //     the fire engine on the right; each ahead of the wing and the
 //     engines of the type flown (modelLayout), and clear of the
 //     service road in front of the terminal — a big aeroplane's wing
-//     sends them further out to the side
+//     sends them further out to the side; on a side side by side from
+//     the fuselage out, each a gap beyond the one inside it as that one
+//     really stands, the FOLLOW ME car (followme3d.js) outermost (layout)
 //   - they drive there from where they are kept, when they are called:
 //     the fire engine and the police car out of the airport's fire
 //     station, the ambulance out of the air ambulance's hangar (both in
 //     the general aviation and rescue area, ga3d.js), along the apron's
-//     service road and round into their places; a flight with a patient
-//     on board has its ambulance called from the start (Flight.meet)
+//     service road keeping right and round into their places; a flight
+//     with a patient on board has its ambulance called from the start
+//     (Flight.meet). On the way they wait for any vehicle just ahead of
+//     them (Traffic in baggage3d.js), and the others for them
 //   - their blue lights flash in double flashes, each vehicle on its
 //     own beat, with a glow round every lamp that grows at night
 //   - once the aeroplane is parked, one standing on the way of a ground
@@ -44,15 +48,16 @@ const RESP_LEAVE_S = 1.5;       // one in the crew's way sets off this long afte
 const RESP_CLEAR_M = 20;        // ... and is off the crew's way this far along the road
 
 // the vehicles: the side of the aeroplane (+1 left, -1 right), how far out from the fuselage they
-// stand (police: beyond the ambulance when both are there), their width and length, and the blue
-// lamps in their own frame (forward +z), in two sets that flash in turn
+// stand at the nearest (the police car beyond the ambulance when both are there: layout), their
+// width and length, and the blue lamps in their own frame (forward +z), in two sets that flash in
+// turn (the order of the kinds is their order from the fuselage out on a side)
 const RESP_KINDS = {
   ambulance: {
     side: 1, out: 3.5, w: 2.4, len: 6.2, model: (k) => Vehicles.ambulance(k),
     lamps: [[[-0.6, 2.4, 1.6], [-1.0, 2.86, 0.75], [1.0, 2.86, -2.95]], [[0.6, 2.4, 1.6], [1.0, 2.86, 0.75], [-1.0, 2.86, -2.95]]]
   },
   police: {
-    side: 1, out: 3.5, outAfter: { ambulance: 9 }, w: 1.8, len: 4.6, model: (k) => Vehicles.policeCar(k),
+    side: 1, out: 3.5, w: 1.8, len: 4.6, model: (k) => Vehicles.policeCar(k),
     lamps: [[[-0.42, 1.72, -0.2]], [[0.42, 1.72, -0.2]]]
   },
   fire: {
@@ -86,9 +91,12 @@ const Responders3D = {
     for (const v of rec.responders.vehicles) {
       if (v.gone) continue;
       if (v.track && v.s < v.track.len) {
+        // (a baggage train, the FOLLOW ME car or another one just ahead: wait for it)
+        if (this.held(rec, v, v.track, v.s, dt)) continue;
         v.s = Math.min(v.track.len, v.s + dt * trackSpeed(v.track, v.s) * RESP_SPEED_K);
         this.pose(v);
-      } else if (v.leave && time >= v.leave.at) this.leaveStep(v, dt);
+      } else if (v.leave && time >= v.leave.at) this.leaveStep(rec, v, dt);
+      else v.waitFor = null;
     }
     // the lights: a double flash of set A, then of set B
     const size = 2.2 + 2.8 * dark, op = 0.5 + 0.5 * dark;
@@ -108,14 +116,13 @@ const Responders3D = {
     const group = new THREE.Group();
     const lay = modelLayout(fl.ac);
     const kinds = fl.meet.filter((k) => RESP_KINDS[k]);
+    const places = this.layout(lay, kinds);
     const sa = World.standAcross(fl.dims.len);          // (where the aeroplane parks)
     const body = new THREE.MeshLambertMaterial({ vertexColors: true });
     const vehicles = [];
     kinds.forEach((kind, n) => {
       const spec = RESP_KINDS[kind];
-      let out = spec.out;
-      for (const other in spec.outAfter || {}) if (kinds.indexOf(other) >= 0) out = spec.outAfter[other];
-      const p = this.place(lay, lay.R + out, spec.w, spec.len);
+      const p = places[kind];
       const k = kit();
       spec.model(k);
       const mesh = k.mesh(body);
@@ -124,10 +131,11 @@ const Responders3D = {
       holder.position.set(sa + p.z, 0, -(gate.t + spec.side * p.y));
       holder.rotation.y = -Math.PI / 2;
       holder.add(mesh);
-      // the way there from its depot: out onto the service road's lane on the stands' side, along
-      // it and round into its place, facing out to the apron
+      // the way there from its depot: out onto the service road's lane that keeps right going
+      // its way (from the GA area at the far end of the apron: the stands' side), along it and
+      // round into its place, facing out to the apron
       const from = Ga3D.depot(rec.a, kind), tEnd = gate.t + spec.side * p.y, aEnd = sa + p.z;
-      const lane = LAYOUT.SERVICE_ROAD - BAG_LANE;
+      const lane = from ? LAYOUT.SERVICE_ROAD + (Math.sign(tEnd - from[0]) || -1) * BAG_LANE : 0;
       const track = from ? makeTrack([from, [from[0], lane], [tEnd, lane], [tEnd, aEnd]]) : null;
       const was = rec.respDrive && rec.respDrive.fl === fl && rec.respDrive.gate === gate ? rec.respDrive.s[kind] : undefined;
       const sets = spec.lamps.map((lamps) => {
@@ -147,7 +155,7 @@ const Responders3D = {
       group.add(holder);
       // (solid for the own aeroplane: sim/collide.js)
       const v = { kind, sets, phase: n * 0.37, holder, track, s: track ? (was !== undefined ? was : 0) : 0, a: rec.a, solid: Collide.vehicle(rec.a, kind),
-        side: spec.side, spot: { t: tEnd, across: aEnd, ht: spec.w / 2, ha: spec.len / 2 }, leave: null, gone: false };
+        side: spec.side, spot: { t: tEnd, across: aEnd, ht: spec.w / 2, ha: spec.len / 2 }, leave: null, gone: false, stuck: 0, waitFor: null };
       if (track) this.pose(v);
       else Collide.placeVehicle(v.solid, rec.a, holder.position.x, holder.position.z, holder.rotation.y);
       vehicles.push(v);
@@ -183,8 +191,9 @@ const Responders3D = {
       away: makeTrack([[p.t - u * 9, road], [p.t + u * TURNAROUND.FROM_M, road]])
     };
   },
-  leaveStep(v, dt) {
+  leaveStep(rec, v, dt) {
     const L = v.leave, tr = L.stage ? L.away : L.back;
+    if (this.held(rec, v, tr, L.s, dt)) return;
     L.s = Math.min(tr.len, L.s + dt * trackSpeed(tr, L.s) * RESP_SPEED_K * (L.stage ? 1 : RESP_BACK_K));
     this.pose(v, tr, L.s, !L.stage);
     if (L.s < tr.len) return;
@@ -201,16 +210,32 @@ const Responders3D = {
     const h = v.holder, ry = h.rotation.y, fa = Math.sin(ry), ft = -Math.cos(ry), half = RESP_KINDS[v.kind].len / 2;
     return [-1, -0.5, 0, 0.5, 1].map((k) => ({ t: -h.position.z + ft * k * half, across: h.position.x + fa * k * half }));
   },
-  // how far out from the fuselage's side a vehicle stands beyond the responders called to that
-  // side (+1 left, -1 right) of the aeroplane, a gap between (the FOLLOW ME car, followme3d.js)
-  sideOut(meet, side) {
-    let out = RESP_KINDS.ambulance.out;
-    for (const k of meet || []) {
-      const spec = RESP_KINDS[k];
-      if (!spec || spec.side !== side) continue;
-      let o = spec.out;
-      for (const other in spec.outAfter || {}) if (meet.indexOf(other) >= 0) o = spec.outAfter[other];
-      out = Math.max(out, o + spec.w + 2);
+  // something just ahead of v on its way (track tr, v at s along it: Traffic.ahead), a baggage
+  // train, a ground crew's vehicle, the FOLLOW ME car or another one of them: true while it waits
+  // for it, at most TURNAROUND.WAIT_MAX_S
+  held(rec, v, tr, s, dt) {
+    const half = RESP_KINDS[v.kind].len / 2;
+    const who = Traffic.ahead(v, Traffic.around(rec, v), (d) => trackAt(tr, s + d), half + 1,
+      Math.min(half + TURNAROUND.LOOK_M, tr.len - s + half), TURNAROUND.GAP_M);
+    v.stuck = who ? v.stuck + dt : 0;
+    return v.stuck > 0 && v.stuck < TURNAROUND.WAIT_MAX_S;
+  },
+
+  // Where the vehicles waiting beside the stand stand: { kind: { z, y, side } } (as place) for the
+  // kinds of meet that are responders and, with fmSide (+1 left, -1 right), the FOLLOW ME car
+  // ('followMe', followme3d.js) on that side. On each side they stand side by side from the
+  // fuselage out — the ambulance nearest, the police car beyond it, the FOLLOW ME car outermost —
+  // each STAND_SIDE_GAP_M beyond the one inside it as that one really stands (place moves a long
+  // one out past a swept wing), so none stands in another nor on another's way up to its place
+  // from the apron lane or away from it to the service road.
+  layout(lay, meet, fmSide) {
+    const list = Object.keys(RESP_KINDS).filter((k) => (meet || []).indexOf(k) >= 0).map((k) => Object.assign({ kind: k }, RESP_KINDS[k]));
+    if (fmSide) list.push({ kind: 'followMe', side: fmSide, out: RESP_KINDS.ambulance.out, w: FOLLOW_ME.CAR_W, len: FOLLOW_ME.CAR_LEN });
+    const out = {}, edge = { 1: -Infinity, '-1': -Infinity };      // (the outer side of the last one placed on each side)
+    for (const v of list) {
+      const p = this.place(lay, Math.max(lay.R + v.out, edge[v.side] + STAND_SIDE_GAP_M), v.w, v.len);
+      out[v.kind] = { z: p.z, y: p.y, side: v.side };
+      edge[v.side] = p.y + v.w / 2;
     }
     return out;
   },

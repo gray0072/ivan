@@ -966,10 +966,15 @@ const Scene3D = {
 
   // the pushback tug: at the nose gear from the gate to the end of the push back; then it lets go,
   // backs away from the nose in an arc, turns and drives back to where it waited at the stand,
-  // and stays parked there until the aeroplane takes off
+  // and stays parked there until the aeroplane takes off. On its way back it waits for a baggage
+  // train just ahead of it, and the trains for it (Traffic in baggage3d.js: tugMover)
   updateTug(fl, ax) {
     const tug = this.tug, st = fl.st, p = fl.phase;
     if (this.tugFlight !== fl) { this.tugFlight = fl; this.tugHome = null; this.tugAway = null; }
+    if (!this.tugMover) this.tugMover = { waitFor: null, pieces: [], rec: null };
+    const m = this.tugMover;
+    m.rec = fl.world ? this.airports3D.get(fl.world.id) || null : null;
+    m.waitFor = null;
     if (p === 'GATE' || p === 'PUSHBACK') {
       const d = fl.dims;
       const nx = ax.nose.x, nz = ax.nose.z, l = Math.hypot(nx, nz) || 1;
@@ -980,29 +985,51 @@ const Scene3D = {
       tug.position.set(x, y, z);
       tug.rotation.y = h;
       if (p === 'GATE') this.tugHome = { x, z, h };
-      else this.tugAway = { t0: null, x, z, y, h, fx, fz };
+      else this.tugAway = { k: 0, last: null, stuck: 0, x, z, y, h, fx, fz };
+      this.tugPieces(fl);
       return;
     }
     const a = this.tugAway, home = this.tugHome;
-    if (!a || !home || !st.onGround || p === 'TAKEOFF') { tug.visible = false; return; }
-    if (a.t0 === null) a.t0 = this.time;
+    if (!a || !home || !st.onGround || p === 'TAKEOFF') { tug.visible = false; m.rec = null; return; }
     tug.visible = true;
     if (!a.path) a.path = this.tugPath(a, home);
-    const P = a.path, t = this.time - a.t0;
-    let x, z, hdg;
-    if (t < P.wait) { x = a.x; z = a.z; hdg = a.h; }
-    else if (t < P.wait + P.backS) {
-      // backing away: the tug moves tail first along the first curve
-      const u = smoothstep(0, 1, (t - P.wait) / P.backS), q = bez(P.back, u), dq = bezD(P.back, u);
-      x = q[0]; z = q[1]; hdg = Math.atan2(-dq[0], -dq[1]);
-    } else {
-      // then forward to its place by the stand, where it turns to how it waited
-      const u = smoothstep(0, 1, Math.min(1, (t - P.wait - P.backS) / P.fwdS)), q = bez(P.fwd, u), dq = bezD(P.fwd, u);
-      x = q[0]; z = q[1];
-      hdg = u < 0.999 && Math.hypot(dq[0], dq[1]) > 1e-6 ? Math.atan2(dq[0], dq[1]) : Math.atan2(P.fwd[3][0] - P.fwd[2][0], P.fwd[3][1] - P.fwd[2][1]);
+    // its own clock, standing still while a baggage train is just ahead of it (at most 8 s)
+    const P = a.path, dt = a.last === null ? 0 : clamp(this.time - a.last, 0, 0.2);
+    a.last = this.time;
+    let held = false;
+    if (m.rec && a.k > P.wait && a.k < P.wait + P.backS + P.fwdS) {
+      const A = m.rec.a, pos = (d) => { const q = this.tugPose(a, a.k + d / 4); return World.local(A, q.x, q.z); };
+      a.stuck = Traffic.ahead(m, Traffic.around(m.rec, m), pos, 1, 9, 2.6) ? a.stuck + dt : 0;
+      held = a.stuck > 0 && a.stuck < 8;
     }
-    tug.position.set(x, a.y, z);
-    tug.rotation.y = hdg;
+    if (!held) a.k += dt;
+    const q = this.tugPose(a, a.k);
+    tug.position.set(q.x, a.y, q.z);
+    tug.rotation.y = q.hdg;
+    this.tugPieces(fl);
+  },
+  // the tug k seconds after the push back's end, on its way back (tugPath): { x, z, hdg }
+  tugPose(a, k) {
+    const P = a.path;
+    if (k < P.wait) return { x: a.x, z: a.z, hdg: a.h };
+    if (k < P.wait + P.backS) {
+      // backing away: the tug moves tail first along the first curve
+      const u = smoothstep(0, 1, (k - P.wait) / P.backS), q = bez(P.back, u), dq = bezD(P.back, u);
+      return { x: q[0], z: q[1], hdg: Math.atan2(-dq[0], -dq[1]) };
+    }
+    // then forward to its place by the stand, where it turns to how it waited
+    const u = smoothstep(0, 1, Math.min(1, (k - P.wait - P.backS) / P.fwdS)), q = bez(P.fwd, u), dq = bezD(P.fwd, u);
+    return { x: q[0], z: q[1],
+      hdg: u < 0.999 && Math.hypot(dq[0], dq[1]) > 1e-6 ? Math.atan2(dq[0], dq[1]) : Math.atan2(P.fwd[3][0] - P.fwd[2][0], P.fwd[3][1] - P.fwd[2][1]) };
+  },
+  // the points along the tug's body in the departure airport's frame, for the baggage trains (Traffic)
+  tugPieces(fl) {
+    const m = this.tugMover, tug = this.tug;
+    m.pieces.length = 0;
+    if (!m.rec) return;
+    const A = m.rec.a, c = World.local(A, tug.position.x, tug.position.z);
+    const f = World.local(A, tug.position.x + Math.sin(tug.rotation.y), tug.position.z + Math.cos(tug.rotation.y));
+    for (const k of [-1.6, 0, 1.6]) m.pieces.push({ t: c.t + (f.t - c.t) * k, across: c.across + (f.across - c.across) * k });
   },
   // the tug's way back: a curve tail first away from the nose to the far side of the apron lane,
   // then forward round to its place at the stand (both cubic, in the ground plane [x, z])

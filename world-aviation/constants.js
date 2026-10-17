@@ -267,14 +267,24 @@ const COPILOT = {
 // taxiway past the runway exit and drives ahead of the aeroplane along the taxi route, its back
 // GAP_M plus LEAD_S seconds of the aeroplane's speed ahead of its nose, setting off early enough
 // to get up to that speed at ACCEL_MS2; caught up (closer than that) it may go up to RUN_KT, and
-// closer than GAP_M it speeds up at RUN_ACCEL_MS2. By the stand it turns off the apron lane and
-// drives up beside the stand to where the police car waits (beyond the responders called), its
-// corners on curves of up to TURN_M, and waits there; as the engines wind down it drives on up to
-// the service road and LEAVE_M along it, out of sight.
+// closer than GAP_M it speeds up at RUN_ACCEL_MS2. By the stand it drives on along the apron lane
+// and turns off it up beside the stand, beyond the responders called (Responders3D.layout), and
+// waits there; as the engines wind down it drives on up to the service road and along it home, to
+// its place by the first baggage hall's door (HOME_M along the glass past the door, HOME_OUT_M
+// out from it), and parks there. Its own corners off the taxi route are arcs of TURN_R (less where
+// the legs are short); off the taxi route it drives at most APRON_KT and waits for any vehicle
+// just ahead (LOOK_M past its front and its braking distance, within CLEAR_M of its way), at most
+// WAIT_MAX_S. The car is CAR_W wide and CAR_LEN long.
 const FOLLOW_ME = {
   GAP_M: 30, LEAD_S: 2, MAX_KT: 45, RUN_KT: 70, ACCEL_MS2: 2.5, RUN_ACCEL_MS2: 4, BRAKE_MS2: 3,
-  TURN_M: 10, LEAVE_M: 160, WAIT_M: 25, FLASH_S: 0.8
+  TURN_R: 12, APRON_KT: 20, WAIT_M: 25, FLASH_S: 0.8,
+  LOOK_M: 6, CLEAR_M: 2.8, WAIT_MAX_S: 10,
+  HOME_M: 22, HOME_OUT_M: 4.2, CAR_W: 1.9, CAR_LEN: 4.4
 };
+
+// The vehicles waiting side by side beside the arrival stand (render/responders3d.js: the
+// emergency services, the FOLLOW ME car beyond them): this much room between two, metres
+const STAND_SIDE_GAP_M = 3;
 
 // ---------- Airport layout (metres) ----------
 // Every airport is drawn from the same template around its runway:

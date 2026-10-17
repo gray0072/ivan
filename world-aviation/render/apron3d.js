@@ -407,9 +407,17 @@ const Apron3D = {
     Baggage.build(a, rec, at, bagStands, front, L.SERVICE_ROAD, rng);
     rec.traffic = [];
     const box = groundBox(a), FADE = 150;
-    const roads = landsideRoads(a).map((rd) => polylineLength(truncateInBox(rd, box.tMin + FADE, box.tMax - FADE, box.aMin + FADE, box.aMax - FADE)));
+    // (the two roads as one, through the junction where the branch along the runway leaves the
+    // road in front of the terminal, cut at both ends where the ground fades: the cars drive on
+    // through it and come and go only out there)
+    const cut = (rd) => truncateInBox(rd, box.tMin + FADE, box.tMax - FADE, box.aMin + FADE, box.aMax - FADE);
+    const [byTerminal, branch] = landsideRoads(a);
+    const road = polylineLength(cut(cut(branch.slice().reverse().concat(byTerminal.slice(1))).reverse()).reverse());
     const carCols = ['#c8ccd0', '#2b2f33', '#8a1d1d', '#1d3f78', '#e6e6e6', '#6b6f73', '#2e5a3a', '#b5a27a'];
     const nCars = a.terminal === 'big' ? 10 : a.terminal === 'medium' ? 7 : 4;
+    // each way of the road at one speed, its cars spread evenly along it, so none ever drives
+    // through another
+    const per = Math.ceil(nCars / 2);
     for (let i = 0; i < nCars; i++) {
       const k = kit(); Vehicles.car(k, carCols[i % carCols.length]);
       const mesh = k.mesh();
@@ -421,7 +429,7 @@ const Apron3D = {
       lights.visible = false;
       mesh.add(lights);
       at(mesh, 0, 0, 0);
-      rec.traffic.push({ mesh, lights, kind: 'road', road: roads[i % roads.length], dir: i % 2 ? 1 : -1, speed: 11 + (i % 3) * 2, phase: i / nCars });
+      rec.traffic.push({ mesh, lights, kind: 'road', road, dir: i % 2 ? 1 : -1, speed: i % 2 ? 13 : 11, phase: ((i >> 1) + (i % 2) * 0.5) / per });
     }
   },
 

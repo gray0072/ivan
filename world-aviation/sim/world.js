@@ -797,7 +797,13 @@ const World = {
     route.forEach((n, i) => {
       first.push(pts.length);
       const p = i ? route[i - 1] : n.kind === 'exit' ? this.runwayBehind(n) : null;
-      if (!arc(n, p, route[i + 1])) pts.push({ x: n.x, z: n.z });
+      if (arc(n, p, route[i + 1])) return;
+      // (a node the arc before it has already passed on the line — a long curve onto the apron
+      // lane ending past the next node — is left out, so the way never steps back to it: its
+      // first point is the arc's end)
+      const l = pts[pts.length - 1];
+      if (l && p && i && (n.x - l.x) * (n.x - p.x) + (n.z - l.z) * (n.z - p.z) <= 0) { first[i] = pts.length - 1; return; }
+      pts.push({ x: n.x, z: n.z });
     });
     const S = [0];
     for (let i = 1; i < pts.length; i++) S.push(S[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));

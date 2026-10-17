@@ -27,9 +27,10 @@
 // by, so none passes one already standing. An ambulance, a fire engine
 // or a police car waiting at the stand (responders3d.js) on the way of
 // one drives off first, and that one sets off once it is off its way.
-// A vehicle stops for a baggage train, a responder or another vehicle
-// just ahead (and the trains for it: baggage3d.js), and no train comes
-// to the aeroplane before they are all there (arrived).
+// A vehicle stops for a baggage train, a responder, the FOLLOW ME car or
+// another vehicle just ahead (and they for it: Traffic in baggage3d.js),
+// and no train comes to the aeroplane before they are all there
+// (arrived).
 // done() says when all are there and have stood a moment (the debrief
 // may come).
 // A GA stand has none (its load waits there: ga3d.js).
@@ -55,6 +56,7 @@ const Turnaround3D = {
     t.time = time;
     t.t += dt;
     for (const v of t.vehicles) {
+      v.waitFor = null;
       if (t.t < v.delay || v.after.some(([o, s]) => o.s < s) || v.resp.some((r) => !Responders3D.clear(r))) continue;
       v.holder.visible = true;
       v.on = true;
@@ -69,19 +71,12 @@ const Turnaround3D = {
     }
   },
 
-  // a baggage train or another of the crew's vehicles in front of v: a point of its body within
-  // TURNAROUND.GAP_M of its track over the TURNAROUND.LOOK_M past its front
+  // a baggage train, another of the crew's vehicles, a responder or the FOLLOW ME car in front of
+  // v: a point of its body within TURNAROUND.GAP_M of its track over the TURNAROUND.LOOK_M past
+  // its front (Traffic.ahead)
   inWay(rec, t, v) {
-    const others = [];
-    for (const o of t.vehicles) if (o !== v && o.on) others.push(...o.pieces);
-    for (const tr of rec.trains || []) if (tr.state !== 'hall') others.push(...tr.pieces);
-    for (const r of Responders3D.waiting(rec, t.fl)) others.push(...Responders3D.pieces(r));
-    if (!others.length) return false;
-    for (let d = v.half + 1; d <= v.half + TURNAROUND.LOOK_M; d += 1.5) {
-      const q = trackAt(v.track, v.s + d);
-      for (const p of others) if (Math.hypot(p.t - q.t, p.across - q.across) < TURNAROUND.GAP_M) return true;
-    }
-    return false;
+    return !!Traffic.ahead(v, Traffic.around(rec, v), (d) => trackAt(v.track, v.s + d), v.half + 1,
+      Math.min(v.half + TURNAROUND.LOOK_M, v.track.len - v.s + v.half), TURNAROUND.GAP_M);
   },
 
   // all the crew's vehicles of the turnaround at the arrival stand are in their places (none: not

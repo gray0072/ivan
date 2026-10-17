@@ -24,7 +24,10 @@
 //     track, so a train bends through a turn; it slows down for the
 //     turns, pulls away and stops smoothly
 //   - a train gives way to the player's aeroplane while it moves
-//     (Apron3D.blocked) and waits for another train in its way
+//     (Apron3D.blocked) and waits for any vehicle just ahead in its way:
+//     another train, the ground crew's, the emergency services, the
+//     FOLLOW ME car (Traffic, below: the apron's vehicles all give way
+//     to the one just ahead, and two never wait for each other)
 //   - its way keeps off the aeroplane it goes to (render/servicing.js):
 //     down the side outside the wingtip (or, with no room for that,
 //     under the outer wing with headroom to spare), round behind the
@@ -73,11 +76,16 @@ const Baggage = {
         rec.trains.push(tr);
       }
     }
-    // the follow-me car waits beside the first hall's door
+    // the follow-me car waits beside the first hall's door, facing along the glass away from it
+    // (a mesh of its own: hidden while it is out leading an aeroplane in, followme3d.js, which
+    // drives back here and parks)
     const h0 = rec.trains.length ? rec.trains[0].hall : null;
+    rec.followMeHome = null;
     if (h0) {
-      doors.push(front - 4.2, 0, -(h0.t - 14), Math.PI); Vehicles.followMe(doors); doors.pop();
-      Collide.placeVehicle(Collide.vehicle(a, 'followMe'), a, front - 4.2, -(h0.t - 14), Math.PI);
+      const ht = h0.t - FOLLOW_ME.HOME_M, ha = front - FOLLOW_ME.HOME_OUT_M, fk = kit();
+      fk.push(ha, 0, -ht, 0); Vehicles.followMe(fk); fk.pop();
+      rec.followMeHome = { t: ht, across: ha, mesh: at(fk.mesh(mat), 0, 0, 0) };
+      Collide.placeVehicle(Collide.vehicle(a, 'followMe'), a, ha, -ht, 0);
     }
     at(doors.mesh(mat), 0, 0, 0);
     rec.bagFront = front; rec.bagRoad = road;
@@ -191,6 +199,7 @@ const Baggage = {
     if (!rec.trains) return;
     const moving = own && Math.hypot(own.vt, own.va) > 0.3;
     for (const tr of rec.trains) {
+      tr.waitFor = null;
       if (tr.state === 'hall') {
         tr.wait -= dt;
         if (tr.wait > 0) continue;
@@ -264,19 +273,50 @@ const Baggage = {
     if (tr.solids) [tr.tractor].concat(tr.carts).forEach((m, i) => Collide.placeVehicle(tr.solids[i], tr.a, m.position.x, m.position.z, m.rotation.y));
   },
 
-  // another train just ahead on this one's track, or one of the ground crew's vehicles coming
-  // to the own aeroplane (turnaround3d.js)
+  // another train just ahead on this one's track, one of the ground crew's vehicles coming to the
+  // own aeroplane (turnaround3d.js), an ambulance, a fire engine or a police car (responders3d.js)
+  // or the FOLLOW ME car (followme3d.js)
   inWay(rec, tr) {
-    const crew = rec.turnaround ? rec.turnaround.vehicles.filter((v) => v.on) : [];
-    for (let d = 2.5; d <= 8; d += 1.5) {
-      const q = trackAt(tr.path, tr.s + d);
-      for (const o of rec.trains) {
-        if (o === tr || o.state === 'hall') continue;
-        for (const pc of o.pieces) if (Math.hypot(pc.t - q.t, pc.across - q.across) < 2.6) return true;
+    return !!Traffic.ahead(tr, Traffic.around(rec, tr), (d) => trackAt(tr.path, tr.s + d), 2.5, 8, 2.6);
+  }
+};
+
+// ---------- the apron's traffic: everyone gives way to the one just ahead ----------
+// Every vehicle that drives about an airport's apron — the baggage trains, the ground crew's
+// vehicles (turnaround3d.js), the emergency services (responders3d.js), the FOLLOW ME car
+// (followme3d.js) and the pushback tug on its way back to the stand (Scene3D.updateTug) — waits
+// for any other one just ahead of it on its way, standing or driving
+// (each with its own look ahead and clearance, and a longest wait so none is locked for good).
+// Two never wait for each other: one that the other is already waiting for drives on, so at a
+// crossing one goes first and the other after it.
+const Traffic = {
+  // the vehicles about the airport rec but `me`, standing or driving, as [{ who, pieces }]: the
+  // points along each one's body ({ t, across } in the airport's frame)
+  around(rec, me) {
+    const out = [];
+    const add = (who, pieces) => { if (who !== me && pieces && pieces.length) out.push({ who, pieces }); };
+    for (const tr of rec.trains || []) if (tr.state !== 'hall') add(tr, tr.pieces);
+    if (rec.turnaround) for (const v of rec.turnaround.vehicles) if (v.on) add(v, v.pieces);
+    if (rec.responders) for (const v of rec.responders.vehicles) if (!v.gone) add(v, Responders3D.pieces(v));
+    if (FollowMe3D.on(rec)) add(FollowMe3D, FollowMe3D.pieces);
+    const tug = Scene3D.tugMover;
+    if (tug && tug.rec === rec && Scene3D.tug && Scene3D.tug.visible) add(tug, tug.pieces);
+    return out;
+  },
+  // The one in the way of `me`: a point of its body within `gap` of me's way from `from` to `to`
+  // metres ahead (pos(d): the point d metres ahead of me's middle along its way); null: none.
+  // Kept as me.waitFor, so that one does not wait for me in turn.
+  ahead(me, others, pos, from, to, gap) {
+    me.waitFor = null;
+    if (!others.length) return null;
+    for (let d = from; d <= to; d += 1.5) {
+      const q = pos(d);
+      for (const o of others) {
+        if (o.who.waitFor === me) continue;
+        for (const p of o.pieces) if (Math.hypot(p.t - q.t, p.across - q.across) < gap) return (me.waitFor = o.who);
       }
-      for (const v of crew) for (const pc of v.pieces) if (Math.hypot(pc.t - q.t, pc.across - q.across) < 2.6) return true;
     }
-    return false;
+    return null;
   }
 };
 
