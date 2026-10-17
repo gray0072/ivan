@@ -8,15 +8,15 @@ const READ_DATA = {
     // Letters that sound alike (B C D E G P T V Z all end in "ee") or look alike in lower case (b d p q).
     similar: ['BCDEGPTVZ', 'AHJK', 'FLMNSX', 'IY', 'QUW', 'OQ', 'BDPQ', 'MNW', 'IJL', 'UV'],
     words: `
-      am an as at be by do go ha he hi if in is it ma me my no of oh on or ow ox so to up us we
+      am an as at by do go ha he hi if in is it ma me my no of oh on or ow ox so to up us we
       ace add age air all and ant any ape arm art ask axe bad bag bat bay bed bee bib big bin bit boo bow box boy bud
       bug bun bus cab can cap car cat cod coo cot cow cry cub cup cut dad day den did dig dip dog dot dry dug ear eat
       eel egg elf elk emu end eye fan far few fig fin fit fix fly fog fox fry fun fur gap gem get got gum gym had ham
       hat hay hen her him hip his hit hog hop hot how hug hum hut ice ink ivy jam jar jaw jet jog joy jug key kid kit
       lap leg let lid lip log lot low mad man map mat may men mix mom moo mop mow mud mug nap net new nod not now nut
       oak odd off oil old one out owl pad pal pan pat paw pay peg pen pet pie pig pin pod pop pot pug pup put ram ran
-      rat ray red rib rod row rub rug run sad saw say sea she shy sip sit six sky soy spy sun tag tap tea ten the tie
-      tin tip toe top toy try tub tug two van vet wag was wax way web wet who why wig win wow yak yam yes yet you yum
+      rat ray red rib rod row rub rug run sad saw say she shy sip sit six sky soy spy sun tag tap tea ten the tie
+      tin tip toe top toy try tub tug van vet wag was wax way web wet who why wig win wow yak yam yes yet you yum
       zap zip zoo
       baby back bake ball band bark barn bath bead beak bean bear beef bell belt best bike bird bite blow blue boat
       bone book boot bowl bump bush buzz cake call calm camp card cart cave chef chip clap claw club coat coin cold
@@ -88,11 +88,11 @@ const READ_DATA = {
       trampoline underwater volleyball watermelon waterslide wheelchair wonderland woodpecker wristwatch`,
     phrases: [
       'I am', 'my cat', 'my dog', 'big dog', 'red hat', 'hot sun', 'hot tea', 'big box', 'my mom', 'my dad',
-      'go home', 'run fast', 'sit down', 'come here', 'jump high', 'look up', 'wake up', 'fly away', 'thank you',
+      'go home', 'run fast', 'sit down', 'come here', 'jump in', 'look up', 'wake up', 'fly away', 'thank you',
       'see you', 'we play', 'dogs bark', 'birds sing', 'fish swim', 'cats sleep', 'frogs jump', 'blue sky',
       'good night', 'good morning', 'green frog', 'little bird', 'funny clown', 'sweet apple', 'cold water',
       'warm milk', 'white snow', 'open door', 'new friend', 'eat lunch', 'pink flower', 'fresh bread', 'red balloon',
-      'shiny star', 'dark night', 'magic wand', 'read books', 'brush teeth', 'wash hands', 'play football',
+      'shiny star', 'dark night', 'magic wand', 'love books', 'brush teeth', 'wash hands', 'play football',
       'yellow banana', 'brave pirate', 'tall giraffe', 'sleepy kitten', 'big elephant', 'happy birthday',
       'chocolate cake', 'strawberry jam', 'purple dinosaur', 'scary monster', 'hungry crocodile',
       'beautiful butterfly', 'noisy helicopter', 'fast motorcycle', 'sunny afternoon', 'juicy watermelon',
@@ -108,10 +108,10 @@ const READ_DATA = {
       'hot chocolate', 'eat breakfast', 'strawberry milk', 'watermelon slice', 'basketball game', 'helicopter ride',
       'new sunglasses', 'eat watermelon', 'I see you', 'a big cat', 'the red bus', 'my dog ran', 'I love you',
       'go to bed', 'we go home', 'a red apple', 'my blue bike', 'it is cold', 'look at me', 'come with me',
-      'read a book', 'the cat sleeps', 'the dog barks', 'birds can fly', 'fish can swim', 'cats like fish',
+      'open a book', 'the cat sleeps', 'the dog barks', 'birds can fly', 'fish can swim', 'cats like fish',
       'kids love candy', 'the moon shines', 'snow is white', 'open the door', 'a little bird', 'the green frog',
       'in the garden', 'on the table', 'under the bed', 'I like apples', 'it is raining', 'my best friend',
-      'time for school', 'draw a picture', 'wash your hands', 'brush your teeth', 'we play football',
+      'go to school', 'draw a picture', 'wash your hands', 'brush your teeth', 'we play football',
       'the tall giraffe', 'a yellow banana', 'a chocolate cake', 'monkeys eat bananas', 'elephants drink water',
       'a beautiful butterfly', 'the purple dinosaur', 'a noisy helicopter', 'strawberry ice cream',
       'a busy playground', 'the friendly dolphin', 'a sleepy hedgehog', 'my birthday party', 'a sunny afternoon',
@@ -138,7 +138,7 @@ const READ_DATA = {
     // Sound alike (be, ce, de, ge, pe, te, ve · eff, ell, emm, enn, ess, ärr · hå, kå, å) or look alike (b d p q).
     similar: ['BCDEGPTV', 'FLMNRS', 'HKÅO', 'UYÖ', 'AÅÄ', 'OÖ', 'EÄ', 'IJY', 'QK', 'BDPQ', 'MNW', 'IJL', 'UV', 'SXZ'],
     words: `
-      av bi by du ek en fe ge ha in is ja ko le ni nu om på sy ur ut vi ål åt är
+      av bi by du ek en fe ge ha in is ko le ni nu om på sy ur ut vi ål åt är
       apa arg arm ben bil blå bok bro båt bär dag dal dra far fat fem fin fot frö får get god grå gul gås haj hav hon
       hus hår här hög hök jag jul kam knä kul kyl lag lam lek lim lov låg lår lök löv mat mor mun mus mål mås nej ner
       nos nöt och orm ost pöl ris ros rot rum räv röd sax sex sju sjö sko snö sol son stå sur säl söt tak tam tio tom
@@ -183,7 +183,7 @@ const READ_DATA = {
       termometer tunnelbana vardagsrum`,
     phrases: [
       'en bil', 'ett hus', 'en katt', 'min bok', 'min hund', 'stor hund', 'röd boll', 'gå hem', 'kom hit', 'sitt ner',
-      'hoppa högt', 'ja tack', 'nej tack', 'hej då', 'god natt', 'god morgon', 'blå himmel', 'vit snö', 'stort hus',
+      'hoppa högt', 'nej tack', 'hej då', 'god natt', 'god morgon', 'blå himmel', 'vit snö', 'stort hus',
       'rött äpple', 'ny cykel', 'min mamma', 'min pappa', 'vår skola', 'mitt rum', 'lila blommor', 'söt kanin',
       'liten fågel', 'grön groda', 'gul banan', 'varm choklad', 'kall mjölk', 'glad pojke', 'rolig clown',
       'modig pirat', 'lång giraff', 'trött kattunge', 'stor elefant', 'stark björn', 'snabb raket', 'röd ballong',
