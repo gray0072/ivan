@@ -1507,7 +1507,7 @@ table.money td:last-child { text-align: right; font-family: ui-monospace, monosp
 table.money td.neg { color: #ff9c7a; }
 table.money tr.total td { font-weight: 800; font-size: 16px; border-bottom: 0; padding-top: 8px; color: #ffd97a; }
 .repGain { font-size: 14px; color: #9be8ac; }
-/* the comic line after a hard but successful landing (ui/landingjoke.js) */
+/* the comic lines after a successful flight: the touchdown, a moment of the flight (ui/landingjoke.js) */
 .landingJoke {
   display: flex;
   gap: 8px;

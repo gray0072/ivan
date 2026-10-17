@@ -431,6 +431,7 @@ const Systems = {
       case 'overweight': st.overweight = false; break;
       case 'windshear': {
         // out of the shear and climbing: a go-around (as Game's over the runway), the approach flown again
+        fl.goArounds++;
         fl.overRunway = false; fl.locCaptured = false; fl.ap.gs = false;
         fl.ap.alt = Math.round((fl.arrival.elev + 2500 * FT) / FT / 100) * 100; fl.ap.altSet = false;
         fl.setPhase('DESCENT');

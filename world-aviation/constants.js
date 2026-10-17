@@ -173,14 +173,25 @@ const SIM = {
 // surface hard; a bounce within BOUNCE_S seconds of the graded touchdown gets a "whoa"
 const CABIN_REACTION = { OVATION_FPM: 100, APPLAUSE_FPM: 200, POLITE_FPM: 320, FIRM_FPM: 450, BANK_DEG: 5, BOUNCE_S: 6 };
 
-// A comic line in the debrief after a hard but successful landing (ui/landingjoke.js, the lines in
-// data/landingjokes.js): each trait of the graded touchdown is measured against its threshold —
-// the sink rate against HARD_FPM, the bank against BANK_DEG, the distance off the centreline
-// against OFFSET_M (the runway's half width is 23 m), the distance from the threshold against
-// LONG_SHARE of the runway's length but at least LONG_MIN_M; a bounce (Flight.landed.bounced)
-// counts as BOUNCE_K times its threshold. The trait furthest past its threshold picks the line;
-// none past it — no line. Never after a lost flight or a practice landing.
+// The comic lines in the debrief after a successful flight (ui/landingjoke.js, the lines in
+// data/landingjokes.js). The touchdown's line: each trait of the graded touchdown is measured
+// against its threshold — the sink rate against HARD_FPM, the bank against BANK_DEG, the distance
+// off the centreline against OFFSET_M (the runway's half width is 23 m), the distance from the
+// threshold against LONG_SHARE of the runway's length but at least LONG_MIN_M; a bounce
+// (Flight.landed.bounced) counts as BOUNCE_K times its threshold. The trait furthest past its
+// threshold picks the line; none past it — a butter landing at BUTTER_FPM or softer, else a good
+// one. The flight's line: the first of its moments that happened — a go-around, GRASS_M or more
+// rolled on the grass, a taxi overspeed, an emergency handled, less than LOW_FUEL_SHARE of the
+// tanks left, a crosswind of XWIND_KT or more at the arrival, snow, the night, EARLY_MIN ahead of
+// or LATE_MIN behind the planned flight time (off the ground to on it); none — no second line.
+// Never after a lost flight or a practice landing.
 const LANDING_JOKE = {
+  BUTTER_FPM: CABIN_REACTION.OVATION_FPM,  // fpm: a touchdown the cabin gives an ovation
+  GRASS_M: 25,                         // metres on the grass
+  LOW_FUEL_SHARE: 0.08,                // of the tanks' capacity left at the stand
+  XWIND_KT: 15,                        // kt of crosswind at the arrival's runway
+  EARLY_MIN: 10,                       // minutes ahead of the planned flight time
+  LATE_MIN: 15,                        // minutes behind it
   HARD_FPM: CABIN_REACTION.FIRM_FPM,   // fpm: past "firm", where the bins rattle
   BOUNCE_K: 1.5,
   BANK_DEG: CABIN_REACTION.BANK_DEG,   // degrees of bank, where the cabin takes it one worse

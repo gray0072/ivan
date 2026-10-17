@@ -105,6 +105,8 @@ const Flight = {
     if (opts.contract && opts.contract.type === 'medevac') this.meet.push('ambulance');
     this.moneyFactor = 1; this.pendingRepPenalty = 0; this.noClearance = false; this.taxiOverspeed = 0; this.taxiRedS = 0;
     this.warnedBank = false;
+    this.goArounds = 0;              // approaches flown again: over the runway without landing, or a touch-and-go
+    this.offPaveM = 0;               // metres rolled off the pavement (on the grass) on the ground (the debrief's comic line)
     this.locCaptured = false; this.overRunway = false;
     this.lesson = null;              // a flight school's lesson: its id, and the instructor's help (sim/lesson.js)
     this.assist = null;
@@ -835,6 +837,7 @@ const Flight = {
 
     // off-pavement consequences
     const gs = Math.hypot(st.vel.x, st.vel.z) / KTS;
+    if (!surf.onPavement && gs > 1) this.offPaveM += gs * KTS * dt;
     if (!surf.onPavement && gs > 25 && !surf.allowed) this.fail('excursion', tr('Runway excursion — you left the paved surface at {v} kt.', { v: Math.round(gs) }));
     else if (!surf.onPavement && gs > 40) {
       st.damage = Math.min(1, st.damage + dt * 0.03);

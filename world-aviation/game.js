@@ -661,6 +661,7 @@ const Game = {
       }
       if (fl.overRunway && !st.onGround && loc.t > arr.half - 150) {
         fl.warn('GOAROUND', tr('Go around — climb, and fly the approach again'));
+        fl.goArounds++;
         fl.overRunway = false; fl.locCaptured = false; fl.ap.gs = false;
         fl.ap.alt = Math.round((arr.elev + 2500 * FT) / FT / 100) * 100; fl.ap.altSet = false;
         fl.setPhase('DESCENT');
@@ -673,6 +674,7 @@ const Game = {
         // touch-and-go: the next landing is the one that counts (a practice is over)
         if (this.practice || (this.lesson && this.lesson.def.noGoAround)) { this.endSession(false, tr('You took off again — the landing did not hold')); return; }
         fl.landed = null;
+        fl.goArounds++;
         fl.setPhase('APPROACH');
       } else if (st.onGround && speed < SIM.ROLLOUT_EXIT_KT) {
         if (this.practice) this.endPractice(true);
