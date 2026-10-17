@@ -48,6 +48,9 @@ const POST_VANS = {
   'United Kingdom': ['#da202a', '#f2c418'], Germany: ['#ffcc00', '#1c1c1c'], France: ['#ffcc00', '#003da5'], Canada: ['#da202a', '#ffffff']
 };
 const GA_FIRE_BAYS = 4;          // the fire station's bays (the hose tower past the last)
+// how far the coloured bands round the buildings (and the rescue station's roof signs off their
+// board) stand proud, metres: at 5 cm they flickered against the walls in the log depth buffer
+const BAND_PROUD = 0.3;
 
 // ---------- the vehicles (forward = +z, on y = 0; see Vehicles in apron3d.js) ----------
 Object.assign(Vehicles, {
@@ -191,9 +194,9 @@ const Ga3D = {
       const al = this.operator(a, 0);
       if (al && gs.length > 1) Airport3D.logoBoard(rec, at, tex, al, (gs[0].t + gs[1].t) / 2, front - 0.6, h * 0.86, gs[1].t - gs[0].t - 14, h * 0.22);
     } else if (b.kind === 'medevac') {
-      // white, a red band under the roof; the door past the stand's board, AIR AMBULANCE and the
-      // Star of Life beside it
-      k.box(w, h, len, b.across, h / 2, -b.t, '#f2f2ee').box(w + 0.1, 1.2, len + 0.1, b.across, h - 1.4, -b.t, '#c8282a')
+      // white, a red band under the roof (BAND_PROUD off the walls); the door past the stand's
+      // board, AIR AMBULANCE and the Star of Life beside it
+      k.box(w, h, len, b.across, h / 2, -b.t, '#f2f2ee').box(w + 2 * BAND_PROUD, 1.2, len + 2 * BAND_PROUD, b.across, h - 1.4, -b.t, '#c8282a')
         .box(w + 1.2, 0.7, len + 1.2, b.across, h + 0.35, -b.t, '#d9dcd8');
       door(b.t + 5, t1 - 3, h * 0.66, '#c8282a', '#e9e9e4');
       const al = this.ambulanceOperator(a), sz = Math.min(4, h * 0.45);
@@ -202,17 +205,18 @@ const Ga3D = {
     } else if (b.kind === 'rescue') {
       // a hangar with a door for each helicopter, a red and white band, RESCUE on the roof
       k.box(w, h, len, b.across, h / 2, -b.t, hex(P.hangar)).box(w + 1.2, 0.8, len + 1.2, b.across, h + 0.4, -b.t, hex(P.roof));
-      for (let i = 0; i < 10; i++) k.box(w + 0.1, 1.0, len / 10, b.across, h - 1.2, -(t0 + len * (i + 0.5) / 10), i % 2 ? '#f4f4f0' : '#d22630');
+      const bl = len + 2 * BAND_PROUD;
+      for (let i = 0; i < 10; i++) k.box(w + 2 * BAND_PROUD, 1.0, bl / 10, b.across, h - 1.2, -(t0 - BAND_PROUD + bl * (i + 0.5) / 10), i % 2 ? '#f4f4f0' : '#d22630');
       for (const p of a.helipads) door(p.t - 13, p.t + 13, h * 0.7, '#d22630', hex(P.door));
       const local = GA_LOCAL_WORDS.rescue[a.country];
       const cv = signCanvas(local ? ['RESCUE', local] : ['RESCUE'], '#d22630', '#ffffff', '#f4f4f0');
       const sh = Math.min(3.4, h * 0.3, len * 0.6 * cv.height / cv.width);
-      for (const s of [-1, 1]) sign(cv, b.t, b.across + s * 0.3, h + 1.2 + sh / 2, sh, s);
+      for (const s of [-1, 1]) sign(cv, b.t, b.across + s * (0.25 + BAND_PROUD), h + 1.2 + sh / 2, sh, s);
       k.box(0.5, sh + 0.4, sh * cv.width / cv.height + 0.4, b.across, h + 1.2 + sh / 2, -b.t, '#1b232c');
     } else if (b.kind === 'fire') {
       // red bays with roller doors, the hose tower at the far end, FIRE STATION over the doors
       k.box(w, h, len, b.across, h / 2, -b.t, '#e6e2d8').box(w + 1.2, 0.8, len + 1.2, b.across, h + 0.4, -b.t, '#8a1d1d')
-        .box(w + 0.1, 0.9, len + 0.1, b.across, h - 0.9, -b.t, '#c41e24');
+        .box(w + 2 * BAND_PROUD, 0.9, len + 2 * BAND_PROUD, b.across, h - 0.9, -b.t, '#c41e24');
       for (const tb of this.fireBays(b)) door(tb - 4, tb + 4, h - 4.6, '#c41e24', '#d8d4cc');
       const tt = t1 - 4;
       k.box(5, h + 8, 5, back - 6, (h + 8) / 2, -tt, '#e6e2d8').box(5.4, 1.0, 5.4, back - 6, h + 8.5, -tt, '#8a1d1d')
