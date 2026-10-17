@@ -261,6 +261,7 @@ const TEXT_RU = {
   'Every course passed.': 'Все курсы сданы.',
   'Level {n}': 'Уровень {n}',
   'Show or hide the courses': 'Показать или свернуть курсы',
+  'Show or hide the course': 'Показать или скрыть курс',
   'Course: {name}': 'Курс: {name}',
   'Reputation (any group)': 'Репутация (любая группа)',
   'Reputation · {group}': 'Репутация · {group}',

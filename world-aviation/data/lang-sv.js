@@ -261,6 +261,7 @@ const TEXT_SV = {
   'Every course passed.': 'Alla kurser godkända.',
   'Level {n}': 'Nivå {n}',
   'Show or hide the courses': 'Visa eller fäll ihop kurserna',
+  'Show or hide the course': 'Visa eller dölj kursen',
   'Course: {name}': 'Kurs: {name}',
   'Reputation (any group)': 'Rykte (valfri grupp)',
   'Reputation · {group}': 'Rykte · {group}',

@@ -1227,6 +1227,17 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .course.locked .coIcon { filter: grayscale(0.7); opacity: 0.55; }
 .course.locked .coTitle b, .course.locked p { opacity: 0.75; }
 .coHead { display: flex; align-items: center; gap: 10px; }
+/* a course passed: its head is a button that folds the card to that one line, or opens it */
+.coFold {
+  width: 100%; margin: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.coFold:focus-visible { outline: 2px solid var(--bc); outline-offset: 4px; border-radius: 8px; }
+.coFold .brChev { flex: none; color: #9be8ac; }
+.course.shut { padding-top: 7px; padding-bottom: 7px; }
+.course.shut .coBody, .course.shut .coTitle small { display: none; }
+.course.shut .coIcon { width: 30px; height: 30px; }
+.shut .brChev { transform: rotate(-45deg); margin: 0 5px 0 1px; }
 .coTitle { flex: 1; min-width: 0; }
 .coTitle small { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #7f93a6; }
 .coTitle b { display: block; font-size: 14px; line-height: 1.25; }

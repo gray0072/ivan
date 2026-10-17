@@ -11,6 +11,7 @@
 const UI = {
   screen: null, tab: 'dispatch', selContract: null, quiz: null, lastContract: null, keyLockUntil: 0,
   tabs: ['dispatch', 'network', 'hangar', 'training', 'career'],
+  openCourses: new Set(),   // the courses passed the pilot has opened on the training tab (folded otherwise)
 
   init() {
     this.screen = el('screen');
@@ -760,7 +761,9 @@ const UI = {
   // The course tree, in the game's language (the exams run in it too): a card with the courses
   // passed, the ones open now and the one to open next, then a column per branch — every course
   // a card with its picture (art/courseicons.js), what it asks for (the course before it, the
-  // flights flown, the reputation) ticked off as it is met, the types it unlocks and its exam
+  // flights flown, the reputation) ticked off as it is met, the types it unlocks and its exam.
+  // A course passed is folded to one line (its picture, its name, the tick), so the long branches
+  // stay short; a click or a tap on the line opens it (UI.openCourses, for the visit)
   trainingBody() {
     const lang = this.quizLang(), T = QUIZ_TEXT[lang];
     const flown = Career.data.stats.flights;
@@ -799,16 +802,21 @@ const UI = {
             : '<span class="coState">🔒 ' + esc(T.locked) + '</span>';
         const types = AIRCRAFT.filter((a) => a.unlock === c.id);
         const can = st.available && afford;
-        return '<div class="course ' + state + '" data-co="' + c.id + '" style="--bc:' + COURSE_COLOR[b] + '">' +
-          '<div class="coHead">' + icon(c) + '<div class="coTitle"><small>' + tr('Level {n}', { n: c.tier + (b === 'general' ? 1 : 0) }) + '</small>' +
-          '<b>' + esc(tx.name) + '</b></div>' + badge + '</div>' +
+        const shut = st.bought && !this.openCourses.has(c.id);
+        const title = icon(c) + '<div class="coTitle"><small>' + tr('Level {n}', { n: c.tier + (b === 'general' ? 1 : 0) }) + '</small>' +
+          '<b>' + esc(tx.name) + '</b></div>' + badge;
+        return '<div class="course ' + state + (shut ? ' shut' : '') + '" data-co="' + c.id + '" style="--bc:' + COURSE_COLOR[b] + '">' +
+          (st.bought ? '<button class="coHead coFold" data-act="coFold" data-v="' + c.id + '" aria-expanded="' + !shut + '" title="' +
+            esc(tr('Show or hide the course')) + '">' + title + '<i class="brChev"></i></button>'
+            : '<div class="coHead">' + title + '</div>') +
+          '<div class="coBody">' +
           '<p>' + esc(tx.blurb) + '</p>' +
           '<p class="effect">' + esc(tx.effect) + '</p>' +
           (types.length ? '<div class="coTypes">' + types.map((a) => '<span>✈ ' + esc(a.name) + '</span>').join('') + '</div>' : '') +
           (st.bought ? '' : this.courseNeeds(c) +
             (st.available ? '<button class="btn small' + (can ? ' default' : ' disabled') + '" data-act="course" data-v="' + c.id + '"' +
               (can ? '' : ' disabled') + '>' + esc(afford ? T.take : T.noMoney) + '</button>' : '')) +
-          '</div>';
+          '</div></div>';
       }).join('');
       return '<section class="branch' + (folded ? ' folded' : '') + '" data-b="' + b + '" style="--bc:' + COURSE_COLOR[b] + ';order:' + order + '">' +
         '<button class="brHead" data-act="branch" data-v="' + b + '" aria-expanded="' + !folded + '" title="' + esc(tr('Show or hide the courses')) + '">' +
@@ -847,6 +855,15 @@ const UI = {
       void el.offsetWidth;
       el.classList.add('spot');
     }, br && br.classList.contains('sliding') ? UI_FOLD_MS : 0);
+  },
+  // a course passed opened or folded to its line where it is, without drawing the tab anew
+  foldCourse(id) {
+    const el = this.screen.querySelector('.course[data-co="' + id + '"]');
+    if (!el) return;
+    const shut = !el.classList.contains('shut');
+    if (shut) this.openCourses.delete(id); else this.openCourses.add(id);
+    el.classList.toggle('shut', shut);
+    el.querySelector('.coFold').setAttribute('aria-expanded', String(!shut));
   },
   // a branch folded or unfolded where it is, without drawing the tab anew (so it slides), and
   // remembered: a branch never touched folds by itself once every course in it is passed
@@ -1471,6 +1488,7 @@ const UI = {
       case 'buyRegion': if (Career.buyRegion(v)) Audio2.cue('good'); this.showOps(); break;
       case 'course': this.showQuiz(v); break;
       case 'branch': this.foldBranch(v); break;
+      case 'coFold': this.foldCourse(v); break;
       case 'goCourse': this.goCourse(v); break;
       case 'answer': {
         const q = this.quiz;
