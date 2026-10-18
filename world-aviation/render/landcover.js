@@ -104,7 +104,8 @@ const LandCover = {
       // of its samples off the centre: the far mesh's triangles, thin slivers at the horizon,
       // then read their varyings extrapolated far outside them — negative colours, black
       // specks a pixel high just over the horizon, flickering as you climb. Centroid sampling
-      // reads them inside the triangle (WebGL 2 only)
+      // reads them inside the triangle (WebGL 2 only) — all but the logarithmic depth, see
+      // landCentroid
       if (this.bomb) {
         sh.vertexShader = landCentroid(sh.vertexShader);
         sh.fragmentShader = landCentroid(sh.fragmentShader);
@@ -225,10 +226,14 @@ const LAND_FRAG = `
 }
 `;
 
-// a shader with its chunks spelled out and every varying sampled at the centroid
+// a shader with its chunks spelled out and every varying sampled at the centroid, but the
+// logarithmic depth's: the depth is written once for the whole pixel, and from a centroid off
+// the centre, on the edge between two triangles, it was nearer than the centre's by up to half
+// a pixel along the ground — at a slant more than the 5 cm the airport's ground lies over the
+// terrain, which showed through it in thin lines, the edges of its triangles, on every apron
 function landCentroid(src) {
   const inc = (s) => s.replace(/^[ \t]*#include +<([\w./]+)>/gm, (m, name) => inc(THREE.ShaderChunk[name]));
-  return inc(src).replace(/^([ \t]*)varying /gm, '$1centroid varying ');
+  return inc(src).replace(/^([ \t]*)varying (?!float vFragDepth;|float vIsPerspective;)/gm, '$1centroid varying ');
 }
 
 // the dice of a copy of the tile: the shader's hash, in 32-bit unsigned sums
