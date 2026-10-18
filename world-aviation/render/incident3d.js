@@ -73,17 +73,17 @@ const Incident3D = {
     this.updateSmoke(fl, view && view.smoke, time);
   },
 
-  // at the nose gear, facing the aeroplane, 6 m ahead of it
+  // on its tow bar at the nose gear, facing the aeroplane; turning with it as the aeroplane goes
+  // back along its trail (World.tow, as the pushback tug)
   updateTug(fl, on) {
     const tug = this.tug;
     tug.visible = !!on;
-    if (!on) return;
-    const st = fl.st, d = fl.dims;
-    const fx = Math.sin(st.hdg), fz = -Math.cos(st.hdg);
-    const gx = st.pos.x + fx * d.len * 0.38, gz = st.pos.z + fz * d.len * 0.38;
-    const x = gx + fx * 6, z = gz + fz * 6;
-    tug.position.set(x, Terrain.surfaceAt(x, z), z);
-    tug.rotation.y = Math.atan2(-fx, -fz);
+    if (!on) { this.tow = null; return; }
+    const st = fl.st;
+    const w = this.tow = World.tow(this.tow || null, { x: st.pos.x, z: st.pos.z, hdg: st.hdg }, fl.dims.len);
+    tug.position.set(w.x, Terrain.surfaceAt(w.x, w.z), w.z);
+    tug.rotation.y = w.ry;
+    tug.userData.bar.rotation.y = w.bar;
   },
 
   updatePolice(p, time, dark) {

@@ -486,13 +486,22 @@ const Apron3D = {
     return false;
   },
 
-  // the pushback tug for the player's own departure, in world coordinates (Scene3D moves it)
+  // the pushback tug for the player's own departure, in world coordinates (Scene3D moves it); its
+  // tow bar to the nose gear turns on its pin at the tug's front (userData.bar: rotation.y is its
+  // angle off the tug's axis, World.tow)
   makeTug() {
-    const k = kit();
+    const group = new THREE.Group(), k = kit(), b = kit();
     Vehicles.tug(k);
-    // the tow bar to the nose gear
-    k.box(0.25, 0.25, 3.2, 0, 0.6, 4.4, '#d0d0cc');
-    return k.mesh();
+    group.add(k.mesh());
+    const bar = new THREE.Group();
+    bar.position.set(0, 0, SIM.TUG_HITCH_M);
+    b.box(0.25, 0.25, SIM.TOW_BAR_M, 0, 0.6, SIM.TOW_BAR_M / 2, '#d0d0cc')
+      .box(0.5, 0.3, 0.5, 0, 0.6, 0, '#33363a')
+      .box(0.7, 0.2, 0.3, 0, 0.55, SIM.TOW_BAR_M - 0.1, '#33363a');
+    bar.add(b.mesh());
+    group.add(bar);
+    group.userData.bar = bar;
+    return group;
   }
 };
 

@@ -613,29 +613,90 @@ const World = {
   },
 
   // the push back from a stand, as a tug does it: straight back, tail first, out of the stand
-  // towards the apron lane, then round a quarter circle of radius r (by the aeroplane's length)
-  // onto the lane, the tail swinging away from the holding point, so the aeroplane stops on the
-  // lane r past the stand's lane node, its nose towards the threshold (from where it parks:
+  // towards the apron lane, round a quarter turn onto the lane, the tail swinging away from the
+  // holding point, and a little further straight along it (PUSHBACK_STRAIGHTEN of r, the nose
+  // wheel and the tug lining up), so the aeroplane stops on the lane r (by the aeroplane's
+  // length) past the stand's lane node, its nose towards the threshold (from where it parks:
   // standAcross; from: from there instead — a parked aeroplane's LAYOUT.STAND, sim/traffic.js).
+  // The turn is no circle: it tightens and opens again smoothly (pushTurn), as the tug turns the
+  // nose wheel in and out, so the tow bar never jumps round (World.tow).
   // pose(k): the position and heading k (0..1) of the way along it
   pushbackPath(a, gate, len, from) {
     const L = LAYOUT, start = from === undefined ? this.standAcross(len) : from, lead = start - L.APRON_LANE;
     const r = clamp(len * SIM.PUSHBACK_R_SHARE, SIM.PUSHBACK_R_MIN_M, Math.min(SIM.PUSHBACK_R_MAX_M, lead));
-    const straight = lead - r, total = straight + r * Math.PI / 2;
+    const rt = r - Math.min(r / 2, Math.max(SIM.PUSHBACK_STRAIGHTEN_MIN_M, r * SIM.PUSHBACK_STRAIGHTEN)), T = this.pushTurn(), turnLen = rt * T.len;
+    const straight = lead - rt, total = straight + turnLen + (r - rt);
     // a nose direction in runway-local terms (along, across) as a heading
     const hdgOf = (nt, na) => Math.atan2(a.dirX * nt + a.perX * na, -(a.dirZ * nt + a.perZ * na));
     const pose = (k) => {
       const s = clamp(k, 0, 1) * total;
       let t = gate.t, across = start - s, nt = 0, na = 1;
-      if (s > straight) {
-        const th = (s - straight) / r;
-        t = gate.t + r - r * Math.cos(th); across = L.APRON_LANE + r - r * Math.sin(th);
+      if (s > straight + turnLen) {
+        t = gate.t + rt + (s - straight - turnLen); across = L.APRON_LANE;
+        nt = -1; na = 0;
+      } else if (s > straight) {
+        const u = clamp((s - straight) / turnLen, 0, 1) * T.n, i = Math.min(T.n - 1, Math.floor(u)), f = u - i;
+        const go = lerp(T.go[i], T.go[i + 1], f), side = lerp(T.side[i], T.side[i + 1], f), th = lerp(T.th[i], T.th[i + 1], f);
+        t = gate.t + rt * side; across = L.APRON_LANE + rt - rt * go;
         nt = -Math.sin(th); na = Math.cos(th);
       }
       const p = this.at(a, t, across);
       return { x: p.x, z: p.z, hdg: hdgOf(nt, na), t, across };
     };
     return { r, length: total, pose, end: pose(1) };
+  },
+  // the push back's quarter turn, 1 by 1 (built once): the way it goes (go), how far it has come
+  // aside (side) and turned (th) at n + 1 even steps along it, and its length; the turn tightens
+  // over the first PUSHBACK_TURN_EASE of it, holds, and opens over the last (a cosine each)
+  pushTurn() {
+    if (this.pushTurnTable) return this.pushTurnTable;
+    const n = 240, sub = 16, q = SIM.PUSHBACK_TURN_EASE;
+    const bend = (v) => v < q ? (1 - Math.cos(Math.PI * v / q)) / 2 : v > 1 - q ? (1 - Math.cos(Math.PI * (1 - v) / q)) / 2 : 1;
+    let area = 0;
+    for (let i = 0; i < n * sub; i++) area += bend((i + 0.5) / (n * sub)) / (n * sub);
+    const k = Math.PI / 2 / area, go = [0], side = [0], th = [0];
+    let x = 0, y = 0, h = 0;
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < sub; j++) {
+        const v = (i * sub + j + 0.5) / (n * sub), dh = k * bend(v) / (n * sub);
+        x += Math.cos(h + dh / 2) / (n * sub); y += Math.sin(h + dh / 2) / (n * sub); h += dh;
+      }
+      go.push(x); side.push(y); th.push(h);
+    }
+    // (scaled to come out 1 by 1: the turn is the same either way round, so x and y end alike)
+    for (let i = 0; i <= n; i++) { go[i] /= x; side[i] /= y; }
+    th[n] = Math.PI / 2;
+    this.pushTurnTable = { n, go, side, th, len: 1 / x };
+    return this.pushTurnTable;
+  },
+
+  // the tug on its tow bar at the nose gear of an aeroplane being pushed back (pose: the
+  // aeroplane's { x, z, hdg }, len: its length), turning as a real one does: the bar is pinned to
+  // the nose gear and turns the nose wheel, so it points the way the nose gear rolls; the tug is
+  // pinned to the bar's other end and follows that pin as a trailer follows its hitch (steering
+  // all four wheels, its middle rolls only along its own length), so in a turn it swings out
+  // and the bar bends at both pins. s: the state of the last call (null: straight at the nose,
+  // as the tug waits at the gate); returns it, with x, z: the tug's middle, ry: its heading as
+  // three.js turns it (+z ahead, towards the aeroplane), bar: the bar's angle off the tug's axis
+  tow(s, pose, len) {
+    const fx = hdgX(pose.hdg), fz = hdgZ(pose.hdg), g = len * SIM.NOSE_GEAR_SHARE;
+    const nx = pose.x + fx * g, nz = pose.z + fz * g, rear = SIM.TUG_HITCH_M;
+    if (!s) s = { nx, nz, bx: fx, bz: fz, rx: nx + fx * (SIM.TOW_BAR_M + rear), rz: nz + fz * (SIM.TOW_BAR_M + rear), x: 0, z: 0, ry: 0, bar: 0 };
+    const dx = nx - s.nx, dz = nz - s.nz, d = Math.hypot(dx, dz);
+    if (d > 1e-3) {
+      // the nose wheel rolls the way the nose gear goes; the bar on the aeroplane's nose side of it
+      const sg = dx * fx + dz * fz < 0 ? -1 : 1;
+      s.bx = sg * dx / d; s.bz = sg * dz / d; s.nx = nx; s.nz = nz;
+    }
+    const hx = nx + s.bx * SIM.TOW_BAR_M, hz = nz + s.bz * SIM.TOW_BAR_M;
+    let ux = hx - s.rx, uz = hz - s.rz;
+    const ul = Math.hypot(ux, uz) || 1;
+    ux /= ul; uz /= ul;
+    s.rx = hx - ux * rear; s.rz = hz - uz * rear;
+    s.x = hx - ux * SIM.TUG_HITCH_M; s.z = hz - uz * SIM.TUG_HITCH_M;
+    s.ry = Math.atan2(ux, uz);
+    s.bar = wrapRad(Math.atan2(-s.bx, -s.bz) - s.ry);
+    return s;
   },
 
   // the stands a flight takes at an airport: its own, and for an aeroplane wider than the

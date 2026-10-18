@@ -967,28 +967,29 @@ const Scene3D = {
     pool.material.opacity = dark * (L.landing ? 0.65 : 0.5) * fall * (1 - smoothstep(reach * 0.6, reach, t));
   },
 
-  // the pushback tug: at the nose gear from the gate to the end of the push back; then it lets go,
-  // backs away from the nose in an arc, turns and drives back to where it waited at the stand,
+  // the pushback tug: on its tow bar at the nose gear from the gate to the end of the push back,
+  // turning as it pushes, the bar bending at both pins (World.tow); then it lets go, the bar
+  // straightens, it backs away from the nose in an arc, turns and drives back to where it waited at the stand,
   // and stays parked there until the aeroplane takes off. On its way back it waits for a baggage
   // train just ahead of it, and the trains for it (Traffic in baggage3d.js: tugMover)
   updateTug(fl, ax) {
     const tug = this.tug, st = fl.st, p = fl.phase;
-    if (this.tugFlight !== fl) { this.tugFlight = fl; this.tugHome = null; this.tugAway = null; }
+    if (this.tugFlight !== fl) { this.tugFlight = fl; this.tugHome = null; this.tugAway = null; this.tugTow = null; }
     if (!this.tugMover) this.tugMover = { waitFor: null, pieces: [], rec: null };
     const m = this.tugMover;
     m.rec = fl.world ? this.airports3D.get(fl.world.id) || null : null;
     m.waitFor = null;
     if (p === 'GATE' || p === 'PUSHBACK') {
-      const d = fl.dims;
-      const nx = ax.nose.x, nz = ax.nose.z, l = Math.hypot(nx, nz) || 1;
-      const fx = nx / l, fz = nz / l;
-      const gx = st.pos.x + fx * d.len * 0.38, gz = st.pos.z + fz * d.len * 0.38;   // the nose gear
-      const x = gx + fx * 6.0, z = gz + fz * 6.0, y = fl.groundHeight(), h = Math.atan2(-fx, -fz);   // facing the aeroplane
+      const fx = hdgX(st.hdg), fz = hdgZ(st.hdg);
+      // (at the gate straight at the nose, facing the aeroplane)
+      const w = this.tugTow = World.tow(p === 'GATE' ? null : this.tugTow, { x: st.pos.x, z: st.pos.z, hdg: st.hdg }, fl.dims.len);
+      const x = w.x, z = w.z, y = fl.groundHeight(), h = w.ry, bar = w.bar;
       tug.visible = true;
       tug.position.set(x, y, z);
       tug.rotation.y = h;
+      tug.userData.bar.rotation.y = bar;
       if (p === 'GATE') this.tugHome = { x, z, h };
-      else this.tugAway = { k: 0, last: null, stuck: 0, x, z, y, h, fx, fz };
+      else this.tugAway = { k: 0, last: null, stuck: 0, x, z, y, h, bar, fx, fz };
       this.tugPieces(fl);
       return;
     }
@@ -1009,20 +1010,22 @@ const Scene3D = {
     const q = this.tugPose(a, a.k);
     tug.position.set(q.x, a.y, q.z);
     tug.rotation.y = q.hdg;
+    tug.userData.bar.rotation.y = q.bar;
     this.tugPieces(fl);
   },
-  // the tug k seconds after the push back's end, on its way back (tugPath): { x, z, hdg }
+  // the tug k seconds after the push back's end, on its way back (tugPath): { x, z, hdg, bar }
+  // (the tow bar, let go of the nose gear, swung straight while the tug waits)
   tugPose(a, k) {
     const P = a.path;
-    if (k < P.wait) return { x: a.x, z: a.z, hdg: a.h };
+    if (k < P.wait) return { x: a.x, z: a.z, hdg: a.h, bar: (a.bar || 0) * (1 - smoothstep(0, P.wait, k)) };
     if (k < P.wait + P.backS) {
       // backing away: the tug moves tail first along the first curve
       const u = smoothstep(0, 1, (k - P.wait) / P.backS), q = bez(P.back, u), dq = bezD(P.back, u);
-      return { x: q[0], z: q[1], hdg: Math.atan2(-dq[0], -dq[1]) };
+      return { x: q[0], z: q[1], hdg: Math.atan2(-dq[0], -dq[1]), bar: 0 };
     }
     // then forward to its place by the stand, where it turns to how it waited
     const u = smoothstep(0, 1, Math.min(1, (k - P.wait - P.backS) / P.fwdS)), q = bez(P.fwd, u), dq = bezD(P.fwd, u);
-    return { x: q[0], z: q[1],
+    return { x: q[0], z: q[1], bar: 0,
       hdg: u < 0.999 && Math.hypot(dq[0], dq[1]) > 1e-6 ? Math.atan2(dq[0], dq[1]) : Math.atan2(P.fwd[3][0] - P.fwd[2][0], P.fwd[3][1] - P.fwd[2][1]) };
   },
   // the points along the tug's body in the departure airport's frame, for the baggage trains (Traffic)
@@ -1035,9 +1038,10 @@ const Scene3D = {
     for (const k of [-1.6, 0, 1.6]) m.pieces.push({ t: c.t + (f.t - c.t) * k, across: c.across + (f.across - c.across) * k });
   },
   // the tug's way back: a curve tail first away from the nose to the far side of the apron lane,
-  // then forward round to its place at the stand (both cubic, in the ground plane [x, z])
+  // setting off straight back along its own axis (it may stand at an angle to the aeroplane after
+  // the turn), then forward round to its place at the stand (both cubic, in the ground plane [x, z])
   tugPath(a, home) {
-    const fx = a.fx, fz = a.fz;
+    const fx = a.fx, fz = a.fz, bx = -Math.sin(a.h), bz = -Math.cos(a.h);
     // the side of the lane the stand is on
     const hx = home.x - a.x, hz = home.z - a.z, along = hx * fx + hz * fz;
     let sx = hx - fx * along, sz = hz - fz * along;
@@ -1045,7 +1049,7 @@ const Scene3D = {
     if (sl < 1) { sx = -fz; sz = fx; } else { sx /= sl; sz /= sl; }
     const p0 = [a.x, a.z];
     const p3 = [a.x + fx * 10 - sx * 5, a.z + fz * 10 - sz * 5];         // ahead of the nose, on the far side
-    const back = [p0, [a.x + fx * 5, a.z + fz * 5], [p3[0] + sx * 1.5 + fx * 1.5, p3[1] + sz * 1.5 + fz * 1.5], p3];
+    const back = [p0, [a.x + bx * 5, a.z + bz * 5], [p3[0] + sx * 1.5 + fx * 1.5, p3[1] + sz * 1.5 + fz * 1.5], p3];
     // at the end of backing the tug points ahead and across, towards the stand's side; forward
     // from there, round in front of the nose and in to its place, nose first towards the terminal
     const dl = Math.hypot(home.x - p3[0], home.z - p3[1]) || 1;

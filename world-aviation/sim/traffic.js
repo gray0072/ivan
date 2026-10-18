@@ -278,7 +278,7 @@ const AirTraffic = {
       onGround: true, gear: 1, flaps: p.kind === 'dep' ? 0.35 : 1, engines: false, power: 0,
       lights: { nav: false, beacon: false, strobe: false, landing: false, taxi: false },
       legs: [], leg: 0, lt: 0, s: 0, waitFor: null, vehWait: 0, k: 1, gone: false, parked: false,
-      tug: null                        // the push back's tug: { x, z, ry: turned as three.js turns it } (render/traffic3d.js draws it)
+      tug: null, tow: null             // the push back's tug: { x, z, ry: turned as three.js turns it, bar: its tow bar's angle } (render/traffic3d.js draws it); tow: World.tow's state
     };
     this.movers.push(m);
     return m;
@@ -323,11 +323,11 @@ const AirTraffic = {
     return m;
   },
   trackLeg(tr, yieldRoute) { return { type: 'track', tr, stops: [], yieldRoute }; },
-  // where the push back's tug waits and comes back to: at the nose gear of the aeroplane at the
-  // stand, facing it
+  // where the push back's tug waits and comes back to: on its tow bar at the nose gear of the
+  // aeroplane at the stand, facing it
   tugSpot(pose, d) {
-    const fx = hdgX(pose.hdg), fz = hdgZ(pose.hdg), k = d.len * 0.38 + 6;
-    return { x: pose.x + fx * k, z: pose.z + fz * k, ry: Math.atan2(-fx, -fz) };
+    const w = World.tow(null, pose, d.len);
+    return { x: w.x, z: w.z, ry: w.ry, bar: 0 };
   },
 
   // ---------- each frame ----------
@@ -406,7 +406,9 @@ const AirTraffic = {
         const q = L.path.pose(u);
         m.v = L.path.length / TRAFFIC.PUSH_S;
         m.x = q.x; m.z = q.z; m.hdg = q.hdg;
-        m.tug = this.tugSpot(q, m.dims);
+        // (the tug turning as it pushes, its tow bar bending: World.tow)
+        m.tow = World.tow(m.tow, q, m.dims.len);
+        m.tug = { x: m.tow.x, z: m.tow.z, ry: m.tow.ry, bar: m.tow.bar };
         if (m.lt >= TRAFFIC.PUSH_S) { m.v = 0; m.tugFrom = Object.assign({}, m.tug); next(); }
         break;
       }
@@ -429,7 +431,7 @@ const AirTraffic = {
     if (k >= 1 && m.tugDone) return;
     m.tugDone = k >= 1;
     const u = smoothstep(0, 1, k), A = m.tugFrom, B = m.tugHome;
-    m.tug = { x: lerp(A.x, B.x, u), z: lerp(A.z, B.z, u), ry: lerpAngle(A.ry, B.ry, smoothstep(0, 0.6, k)) };
+    m.tug = { x: lerp(A.x, B.x, u), z: lerp(A.z, B.z, u), ry: lerpAngle(A.ry, B.ry, smoothstep(0, 0.6, k)), bar: A.bar * (1 - smoothstep(0, 0.4, k)) };
   },
 
   // along a track: its limits, its stops, giving way; true at its end
