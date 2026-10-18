@@ -16,7 +16,9 @@
 //   - what is hidden, and what was asked to be kept (a flag in the
 //     wind), is left as it is; instanced meshes and points too.
 // Used by Airport3D.build (airport3d.js) for the buildings, the
-// landside and the boards, and for each parked aeroplane.
+// landside, the boards and the equipment, and for each parked
+// aeroplane; the parked aeroplanes of neighbouring stands are then
+// baked together (combine, show: Airport3D.build, setParked).
 // ============================================================
 
 const Merge3D = {
@@ -50,11 +52,62 @@ const Merge3D = {
     for (const o of baked) { if (o.parent) o.parent.remove(o); o.geometry.dispose(); }
     for (const o of drop) if (o.parent) o.parent.remove(o);
     this.prune(parent, keep);
+    return this.emit(parent, bins, opts.tag);
+  },
+
+  // Bake copies of the meshes under roots (objects out of the scene, shown or not: their own
+  // transforms count, as they are) into parent, leaving the roots as they were. Each baked mesh
+  // keeps where each root's triangles are in its index (userData.roots: [from, to) by the root's
+  // place in roots) and a copy of the index, so show() can hide one root and bring it back without
+  // the roots' own geometry. A mesh that cannot be baked goes in as a copy of its own
+  // (userData.root). For the parked aeroplanes of neighbouring stands (Airport3D.build)
+  combine(parent, roots, tag) {
+    parent.updateMatrixWorld(true);
+    const toParent = new THREE.Matrix4().copy(parent.matrixWorld).invert();
+    const bins = new Map(), night = new Map(), apart = [];
+    roots.forEach((r, k) => {
+      r.updateMatrixWorld(true);
+      r.traverse((o) => {
+        if (!o.isMesh || o.isInstancedMesh || o.isSkinnedMesh || !o.geometry || !o.geometry.attributes.position) return;
+        this.root = k;
+        if (!this.add(bins, o, toParent, night, true)) apart.push([o, k]);
+      });
+    });
+    this.root = undefined;
+    const out = this.emit(parent, bins, tag);
+    for (const m of out) m.userData.index = m.geometry.index.array.slice();
+    for (const [o, k] of apart) {
+      const c = new THREE.Mesh(o.geometry, o.material);
+      new THREE.Matrix4().multiplyMatrices(toParent, o.matrixWorld).decompose(c.position, c.quaternion, c.scale);
+      c.renderOrder = o.renderOrder;
+      c.userData.root = k;
+      parent.add(c);
+      out.push(c);
+    }
+    return out;
+  },
+
+  // show or hide root k of a combine() in its baked meshes: its triangles collapsed onto one
+  // vertex (drawn as nothing), or put back from the index's copy
+  show(meshes, k, on) {
+    for (const m of meshes) {
+      if (m.userData.root !== undefined) { if (m.userData.root === k) m.visible = on; continue; }
+      const r = m.userData.roots && m.userData.roots[k];
+      if (!r) continue;
+      const idx = m.geometry.index, a = idx.array, src = m.userData.index;
+      if (on) a.set(src.subarray(r[0], r[1]), r[0]); else a.fill(src[r[0]], r[0], r[1]);
+      idx.needsUpdate = true;
+    }
+  },
+
+  // one mesh per bin, into parent
+  emit(parent, bins, tag) {
     const out = [];
     for (const b of bins.values()) {
       const mesh = new THREE.Mesh(this.geometry(b), b.mat);
       mesh.renderOrder = b.order;
-      mesh.userData.baked = opts.tag || true;
+      mesh.userData.baked = tag || true;
+      if (b.roots) mesh.userData.roots = b.roots;
       parent.add(mesh);
       out.push(mesh);
     }
@@ -79,7 +132,7 @@ const Merge3D = {
       const key = this.matKey(r.mat, night) + '|' + uv + col + '|' + mesh.renderOrder;
       let b = bins.get(key);
       if (!b) { b = { mat: r.mat, order: mesh.renderOrder, uv, col, parts: [] }; bins.set(key, b); }
-      b.parts.push({ geo, m4, flip, start: r.start, end: r.end });
+      b.parts.push({ geo, m4, flip, start: r.start, end: r.end, root: this.root });
     }
     return true;
   },
@@ -124,6 +177,11 @@ const Merge3D = {
         if (col) for (let k = 0; k < b.col; k++) col[o * b.col + k] = C.array[i * C.itemSize + k];
       }
       const I = p.geo.index;
+      // (combine: where each root's triangles are in the index; a root's parts come one after another)
+      if (p.root !== undefined) {
+        const rr = (b.roots = b.roots || {})[p.root] || (b.roots[p.root] = [io, io]);
+        rr[1] = io + p.end - p.start;
+      }
       for (let i = p.start; i < p.end; i += 3) {
         const a = (I ? I.getX(i) : i) - v0, b1 = (I ? I.getX(i + 1) : i + 1) - v0, c = (I ? I.getX(i + 2) : i + 2) - v0;
         // a mirrored part turns its triangles the other way round, so they still face outwards

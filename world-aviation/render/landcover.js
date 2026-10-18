@@ -39,7 +39,7 @@ const LandCover = {
   xs: null, ys: null,             // the tile's block lines across and down, 0..1
   bomb: false,                    // each copy of the tile turned and shifted (WebGL 2: textureGrad)
   uniforms: null,
-  mat: null,
+  mat: null, matFar: null,
 
   // the tiles at N x N texels (QUALITY.landTex), mipmapped and sharp at a slant (aniso);
   // webgl2: the copies of the tile can be shuffled
@@ -76,13 +76,24 @@ const LandCover = {
     u.uLandN.value.set(this.xs.length, this.ys.length);
   },
 
-  // the terrain's material: vertex colours with the land cover over them (one for both meshes)
-  material() {
-    if (this.mat) return this.mat;
+  // the terrain's material: vertex colours with the land cover over them. hole: the far mesh's,
+  // which leaves out the ground the near mesh covers (holeAt) — the logarithmic depth buffer
+  // writes each fragment's depth, so the GPU cannot skip the hidden ones, and shaded the land
+  // twice over there
+  material(hole) {
+    const key = hole ? 'matFar' : 'mat';
+    if (this[key]) return this[key];
     const m = new THREE.MeshLambertMaterial({ vertexColors: true });
     const u = this.uniforms;
     m.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, u);
+      if (hole) {
+        sh.uniforms.uLandHole = this.hole;
+        sh.fragmentShader = sh.fragmentShader
+          .replace('#include <common>', 'uniform vec3 uLandHole;\n#include <common>')
+          .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' +
+            '  if (length(vLandW - uLandHole.xy) < uLandHole.z) discard;');
+      }
       sh.vertexShader = sh.vertexShader
         .replace('#include <common>', 'attribute vec3 land;\nvarying vec3 vLand;\nvarying vec2 vLandW;\n#include <common>')
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLand = land;\nvLandW = (modelMatrix * vec4(transformed, 1.0)).xz;');
@@ -99,9 +110,12 @@ const LandCover = {
         sh.fragmentShader = landCentroid(sh.fragmentShader);
       }
     };
-    m.customProgramCacheKey = () => 'landcover1' + this.bomb;
-    return (this.mat = m);
+    m.customProgramCacheKey = () => 'landcover1' + this.bomb + (hole ? 'hole' : '');
+    return (this[key] = m);
   },
+  // the far mesh's hole: the circle of radius r round (cx, cz), world metres; r 0 for none
+  hole: { value: new THREE.Vector3() },
+  holeAt(cx, cz, r) { this.hole.value.set(cx, cz, r); },
 
   // dark: 0 by day, 1 at night — the lights come on
   update(dark) {

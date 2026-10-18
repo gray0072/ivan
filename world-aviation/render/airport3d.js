@@ -38,6 +38,7 @@
 
 const RWY_SHOULDER = 7.5;          // paved shoulder outside the runway edge line, metres
 const RWY_BLAST = 60;              // blast pad before and after the runway, metres
+const PARKED_SET = 5;              // the parked aeroplanes of this many neighbouring stands are drawn as one (Airport3D.setParked)
 
 const Airport3D = {
   // opts: { aniso, maxTex, hi, quality } — anisotropy, the largest texture side, a high-detail ground, the QUALITY preset
@@ -115,10 +116,37 @@ const Airport3D = {
       Merge3D.bake(plane, null, { dropHidden: true, tag: 'parked' });
       plane.position.set(gate.standX, a.elev + aircraftDims(type).gearH, gate.standZ);
       plane.rotation.y = Math.PI - gate.parkHdg * DEG;
-      group.add(plane);
       rec.parked.push(plane);
     }
+    // ... and not drawn one by one: the aeroplanes of PARKED_SET neighbouring stands are baked
+    // together, a mesh per material for the lot (a big airport's 20-odd stands were over 200 draw
+    // calls); rec.parked keeps each one, out of the scene, for its place and its flags, its own
+    // geometry let go (the set hides one by its place in the bake: setParked)
+    const order = a.gates.map((g) => g.index).sort((i, j) => a.gates[i].t - a.gates[j].t);
+    rec.parkedSets = [];
+    for (let i = 0; i < order.length; i += PARKED_SET) {
+      const members = order.slice(i, i + PARKED_SET), sg = new THREE.Group();
+      const meshes = Merge3D.combine(sg, members.map((k) => rec.parked[k]), 'parked');
+      for (const m of meshes) m.userData.gfx = 'apt.parked';
+      group.add(sg);
+      rec.parkedSets.push({ members, meshes, group: sg, key: members.join(',') });
+    }
+    for (const p of rec.parked) {
+      p.traverse((o) => { if (o.geometry && o.userData.baked) o.geometry.dispose(); });
+      for (const c of p.children.slice()) if (c.userData.baked) p.remove(c);
+    }
     return rec;
+  },
+
+  // the parked aeroplanes at the stands kept empty (userData.inUse, set by Scene3D.applyGates)
+  // hidden in their set's bake, the others shown
+  setParked(rec) {
+    for (const s of rec.parkedSets || []) {
+      const key = s.members.filter((i) => !rec.parked[i].userData.inUse).join(',');
+      if (key === s.key) continue;
+      s.key = key;
+      s.members.forEach((i, k) => Merge3D.show(s.meshes, k, !rec.parked[i].userData.inUse));
+    }
   },
 
   // ---------- ground markings ----------
@@ -737,7 +765,7 @@ const Airport3D = {
 
   // ---------- windsock, ILS aerials, signs ----------
   buildEquipment(a, rec, at, tex, lambert) {
-    const h = a.half;
+    const h = a.half, first = rec.frame.children.length;
     // the windsock, left of the touchdown zone
     const ws = new THREE.Group();
     at(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 7, 6), lambert(0xe0e0e0)), -h + 220, -(RWY_HALF_WIDTH + 70), 3.5);
@@ -769,6 +797,9 @@ const Airport3D = {
       this.sign(rec, at, tex, 'A' + (i + 1), '#111111', '#f6c700', n.rapid ? n.t - 25 : n.t + 22, RWY_HALF_WIDTH + 30);
     });
     this.gateSigns(a, rec, at, tex);
+    // all of it, but the windsock (it swings in the wind), baked into a mesh per material: the
+    // masts, the boxes and the signs were a draw call each, a sign's six faces six
+    Merge3D.bake(rec.frame, rec.frame.children.slice(first), { keep: new Set([ws]), tag: 'equipment' });
   },
 
   // The direction signs to the stands at the forks of the parallel taxiway: before each lane
@@ -811,12 +842,12 @@ const Airport3D = {
             if (!spot && clear(n.t - dir * off, across)) spot = [n.t - dir * off, across];
           }
         }
-        if (spot) this.dirSign(at, tex, (dir > 0 ? '→ ' : '← ') + label, spot[0], spot[1], dir);
+        if (spot) this.dirSign(rec, at, tex, (dir > 0 ? '→ ' : '← ') + label, spot[0], spot[1], dir);
       }
     });
   },
   // a yellow direction sign facing the traffic coming along +t (dir 1) or -t (-1); its back dark
-  dirSign(at, tex, text, t, across, dir) {
+  dirSign(rec, at, tex, text, t, across, dir) {
     const cv = document.createElement('canvas');
     const g = cv.getContext('2d');
     g.font = 'bold 42px Arial, sans-serif';
@@ -825,10 +856,11 @@ const Airport3D = {
     g.fillStyle = '#f6c700'; g.fillRect(0, 0, cv.width, 64);
     g.fillStyle = '#111111'; g.font = 'bold 42px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(text, cv.width / 2, 34);
-    const face = new THREE.MeshLambertMaterial({ map: tex(cv, 4) }), back = new THREE.MeshLambertMaterial({ color: 0x2a2d31 });
+    const back = new THREE.MeshLambertMaterial({ color: 0x2a2d31 });
     const W = 1.1 * cv.width / 64;
+    const geo = new THREE.BoxGeometry(W, 1.1, 0.4), face = this.signFace(rec, tex, cv, geo);
     const mats = dir > 0 ? [back, back, back, back, face, back] : [back, back, back, back, back, face];
-    at(new THREE.Mesh(new THREE.BoxGeometry(W, 1.1, 0.4), mats), t, across, 0.9);
+    at(new THREE.Mesh(geo, mats), t, across, 0.9);
   },
 
   sign(rec, at, tex, text, bg, fg, t, across) {
@@ -839,10 +871,21 @@ const Airport3D = {
     g.strokeStyle = fg; g.lineWidth = 4; g.strokeRect(6, 6, 244, 52);
     g.fillStyle = fg; g.font = 'bold 42px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(text, 128, 34);
-    const face = new THREE.MeshLambertMaterial({ map: tex(cv, 4) });
-    const box = new THREE.Mesh(new THREE.BoxGeometry(4.4, 1.1, 0.4), [face, face, face, face, face, face]);
+    const geo = new THREE.BoxGeometry(4.4, 1.1, 0.4), face = this.signFace(rec, tex, cv, geo);
+    const box = new THREE.Mesh(geo, [face, face, face, face, face, face]);
     box.rotation.y = Math.PI / 2;
     at(box, t, across, 0.9);
+  },
+
+  // a sign's face: its canvas drawn into the airport's sign atlas and the geometry's uv moved
+  // there, so all the signs share one material and bake into one draw call (a texture of its
+  // own once the atlas is full)
+  signFace(rec, tex, cv, geo) {
+    if (!rec.signAtlas) rec.signAtlas = new TexAtlas(tex, 1024, 1024, 4);
+    const at = rec.signAtlas, cell = at.put(cv);
+    if (!cell) return new THREE.MeshLambertMaterial({ map: tex(cv, 4) });
+    at.fit(geo, cell);
+    return at.mat || (at.mat = new THREE.MeshLambertMaterial({ map: at.texture }));
   },
 
   // ---------- per frame: flags and the windsock in the wind, the PAPI, the flasher ----------
@@ -936,6 +979,39 @@ const Airport3D = {
     for (const t of rec.textures) t.dispose();
   }
 };
+
+// ---------- a texture atlas ----------
+// Canvases drawn side by side, in rows, into one canvas of W x H, so the meshes that show them
+// share a texture (and a material, and once baked one draw call): the signs, the stand numbers.
+// tex: the airport's texture maker (Airport3D.build); aniso: its anisotropy
+class TexAtlas {
+  constructor(tex, W, H, aniso) {
+    this.W = W; this.H = H;
+    this.cv = document.createElement('canvas');
+    this.cv.width = W; this.cv.height = H;
+    this.g = this.cv.getContext('2d');
+    this.texture = tex(this.cv, aniso);
+    this.x = 0; this.y = 0; this.rowH = 0;
+    this.mat = null;
+  }
+  // a canvas drawn into the next free place: its cell { x, y, w, h } (pixels), or null when full
+  put(src, gap = 4) {
+    const w = src.width, h = src.height;
+    if (this.x + w > this.W) { this.x = 0; this.y += this.rowH + gap; this.rowH = 0; }
+    if (w > this.W || this.y + h > this.H) return null;
+    this.g.drawImage(src, this.x, this.y);
+    const cell = { x: this.x, y: this.y, w, h };
+    this.x += w + gap; this.rowH = Math.max(this.rowH, h);
+    this.texture.needsUpdate = true;
+    return cell;
+  }
+  // a geometry's uv (0..1 over its own canvas) moved into its cell (the canvas's top at v = 1)
+  fit(geo, c) {
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, (c.x + uv.getX(i) * c.w) / this.W, 1 - (c.y + (1 - uv.getY(i)) * c.h) / this.H);
+    return geo;
+  }
+}
 
 // ---------- the ground texture ----------
 // The colours of an airport's buildings: one scheme per airport, picked by its code, for the

@@ -168,7 +168,10 @@ const Scene3D = {
     });
     this.sky = new THREE.Mesh(geo, mat);
     this.sky.frustumCulled = false;
-    this.sky.renderOrder = -1000;
+    // drawn after everything solid, only where nothing else is (its depth is the far plane's, and
+    // it writes none of its own, so the GPU skips the covered pixels; drawn first, every pixel of
+    // the screen was shaded for it)
+    this.sky.renderOrder = 1000;
     this.scene.add(this.sky);
   },
 
@@ -282,7 +285,7 @@ const Scene3D = {
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeBoundingSphere();
     if (this.farMesh) { this.scene.remove(this.farMesh); this.farMesh.geometry.dispose(); }
-    this.farMesh = new THREE.Mesh(geo, LandCover.material());
+    this.farMesh = new THREE.Mesh(geo, LandCover.material(true));
     this.farMesh.renderOrder = 0;
     this.scene.add(this.farMesh);
   },
@@ -307,6 +310,7 @@ const Scene3D = {
       this.nearOx = this.nearOz = null;    // a new mesh: its origin is set by the next build
       this.nearHs = new Float32Array((n + 1) * (n + 1));
       this.nearBuild = null;
+      LandCover.holeAt(0, 0, 0);
     }
   },
 
@@ -316,6 +320,7 @@ const Scene3D = {
   startNearBuild(cx, cz, cell) {
     const n = this.nearN, w = n + 1;
     const half = (n * cell) / 2;
+    LandCover.holeAt(0, 0, 0);
     this.nearBuild = {
       cx: Math.round((cx - half) / cell) * cell + half,
       cz: Math.round((cz - half) / cell) * cell + half,
@@ -323,7 +328,7 @@ const Scene3D = {
     };
   },
 
-  // minCell: at the fastest time steps the cells are as big as it takes for a rebuild (four
+  // minCell: at the fastest time steps the cells are as big as it takes for a rebuild (four to eight
   // frames) to finish before the aeroplane has flown out of it
   updateNearTerrain(px, pz, altAgl, force, minCell) {
     this.buildNearTerrain();
@@ -348,12 +353,21 @@ const Scene3D = {
       this.nearMesh.position.set(ox, 0, oz);
       bld.row = 0;
       bld.full = true;
+      bld.done = false;
     }
+    // a finished mesh is left alone until the next rebuild (rewriting its last rows every frame
+    // cost a millisecond or two and a 200 KB upload, a phone several times that)
+    if (bld.done) return;
     const w = bld.rows, cell = bld.cell;
     const x0 = bld.cx - bld.half, z0 = bld.cz - bld.half;
     const hs = this.nearHs, pos = this.nearPos, nor = this.nearNor, col = this.nearCol, land = this.nearLand;
     const taper = { cx: bld.cx, cz: bld.cz, half: bld.half };   // fade into the far mesh at the edge
-    const budget = bld.full ? w : Math.ceil(w / 4);
+    // as many rows a frame as fit in NEAR_BUILD_MS by what a row cost last time, a quarter of the
+    // mesh at most and an eighth at least: a rebuild is 4-8 frames (on a phone 4 frames of about
+    // 10 ms were a stutter every few seconds)
+    const most = Math.ceil(w / 4), least = Math.ceil(w / 8);
+    const budget = bld.full ? w : clamp(Math.floor(NEAR_BUILD_MS / (this.nearRowMs || 1e-3)), least, most);
+    const t0 = performance.now();
     const c = [0, 0, 0], ld = [0, 0, 0];
     let done = 0;
     while (bld.row < w && done < budget) {
@@ -363,7 +377,7 @@ const Scene3D = {
       done++;
     }
     // write the rows that are ready, plus their neighbours for the normals
-    const jStart = bld.full ? 0 : Math.max(0, bld.row - budget - 1), jEnd = Math.min(w - 1, bld.row);
+    const jStart = bld.full ? 0 : Math.max(0, bld.row - done - 1), jEnd = Math.min(w - 1, bld.row);
     bld.full = false;
     for (let j = jStart; j <= jEnd; j++) {
       for (let i = 0; i < w; i++) {
@@ -381,14 +395,27 @@ const Scene3D = {
         land[k * 3] = ld[0]; land[k * 3 + 1] = ld[1]; land[k * 3 + 2] = ld[2];
       }
     }
+    // only the rows written go up to the GPU, together with any written since the last upload
+    // (three.js sets the range's count back to -1 once it has sent it; warmup writes several
+    // times before a frame is drawn)
     const g = this.nearMesh.geometry;
-    g.attributes.position.needsUpdate = true;
-    g.attributes.normal.needsUpdate = true;
-    g.attributes.color.needsUpdate = true;
-    g.attributes.land.needsUpdate = true;
+    for (const att of [g.attributes.position, g.attributes.normal, g.attributes.color, g.attributes.land]) {
+      const r = att.updateRange;
+      let from = jStart * w * 3, to = (jEnd + 1) * w * 3;
+      if (r.count !== -1) { from = Math.min(from, r.offset); to = Math.max(to, r.offset + r.count); }
+      r.offset = from; r.count = to - from;
+      att.needsUpdate = true;
+    }
+    if (done) {
+      const ms = (performance.now() - t0) / done;
+      this.nearRowMs = this.nearRowMs ? this.nearRowMs * 0.7 + ms * 0.3 : ms;
+    }
     if (bld.row >= w) {
       g.computeBoundingSphere();
       bld.done = true;
+      // the far mesh leaves out the ground under it (render/landcover.js), out to near its edge,
+      // where it fades into the far mesh (Terrain.heightAt's taper); none while it is rebuilt
+      LandCover.holeAt(bld.cx, bld.cz, bld.half * NEAR_HOLE);
     }
   },
 
@@ -447,6 +474,7 @@ const Scene3D = {
       rec.parked[i].visible = !inUse;
       Apron3D.setGate(rec, i, inUse);            // no vehicles there, the bridge retracted
     });
+    Airport3D.setParked(rec);                    // (drawn baked together, a few stands a mesh)
   },
 
   // ---------- clouds and trees ----------
@@ -578,6 +606,7 @@ const Scene3D = {
     this.camera.aspect = cw / ch;
     this.camera.updateProjectionMatrix();
     this.w = w; this.h = h;
+    this.cw = cw; this.ch = ch;
     // the markings measure their lines in the canvas's pixels (render/airport3d.js)
     if (typeof MARK_RES !== 'undefined') this.renderer.getDrawingBufferSize(MARK_RES.value);
   },
@@ -871,10 +900,14 @@ const Scene3D = {
     const parkedM = this.quality.parkedM || 0;
     for (const rec of this.airports3D.values()) {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
-      // (the parked aeroplanes only near the eye on the lightest presets: QUALITY.parkedM)
+      // (the parked aeroplanes only near the eye on the lightest presets: QUALITY.parkedM; a set
+      // of neighbouring stands baked together shows while any of its aeroplanes is that near)
       if (parkedM || rec.parkedCut) {
         rec.parkedCut = !!parkedM;
-        for (const p of rec.parked) p.visible = !p.userData.inUse && (!parkedM || Math.hypot(p.position.x + rec.group.position.x - eye.x, p.position.z + rec.group.position.z - eye.z) < parkedM);
+        for (const s of rec.parkedSets) s.group.visible = !parkedM || s.members.some((i) => {
+          const p = rec.parked[i];
+          return !p.userData.inUse && Math.hypot(p.position.x - eye.x, p.position.z - eye.z) < parkedM;
+        });
       }
       if (d < 30000) Airport3D.update(rec, this.time, eye, fl.surfaceWindNow(), dark, env.vis, own);
       Responders3D.update(rec, fl, rec.a.id === fl.arrival.id ? this.arrivalGate : null, this.time, dark);
@@ -1079,6 +1112,9 @@ const Scene3D = {
     for (const o of culled) o.frustumCulled = true;
   },
   render() {
+    // a phone turned round: its resize event can come before the window has its new size, or
+    // not at all — so the size is checked every frame, and the picture never stays stretched
+    if (window.innerWidth !== this.cw || window.innerHeight !== this.ch) this.resize();
     this.renderer.render(this.scene, this.camera);
     if (this.pipPose && this.pipRect) this.renderPip();
   },
@@ -1109,6 +1145,11 @@ const Scene3D = {
 const SKY_TMP = new THREE.Color(), SKY_TMP2 = new THREE.Color();
 const STAR_A = new THREE.Vector3(), STAR_P = new THREE.Vector3(), STAR_W = new THREE.Vector3();
 const STAR_M = new THREE.Matrix4(), STAR_S = new THREE.Vector3();
+// the far terrain is left out under the near mesh out to this share of its half-width (a circle
+// inside the square, where the near mesh's detail fades into the far mesh's)
+const NEAR_HOLE = 0.95;
+// the near mesh's rebuild: about this many milliseconds of a frame (updateNearTerrain)
+const NEAR_BUILD_MS = 2;
 const NIGHT_GLOW_DIR = new THREE.Vector3(0.3, 0.9, -0.3).normalize();
 
 // ---------- procedural textures ----------

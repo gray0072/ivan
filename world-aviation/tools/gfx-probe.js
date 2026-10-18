@@ -107,6 +107,11 @@ const GfxProbe = {
         if (u) { const v = u.value; u.value = 0; undo.push(() => { u.value = v; }); }
         continue;
       }
+      if (name === 'nearTerrain') {
+        // (the far mesh leaves out the ground under the near one: drawn whole while it is hidden)
+        const h = LandCover.hole.value, r = h.z;
+        h.z = 0; undo.push(() => { h.z = r; });
+      }
       for (const o of this.objects(name)) { const v = o.visible; o.visible = false; undo.push(() => { o.visible = v; }); }
     }
     return () => { for (const f of undo.reverse()) f(); };

@@ -33,6 +33,7 @@
 // ============================================================
 
 const APRON_FLOOD = 0xffe3b8;      // the colour of the floodlights
+const STAND_PLATE_ATLAS_W = 1024;   // the stand numbers' atlas: this wide, four 256-px plates a row
 const MAST_CLEAR = 52;             // a floodlight mast from a taxilane centreline, metres (ICAO code F: 50.5)
 const EDGE_LAMP_H = 1.2;           // the airside lamps along the apron's edge: this tall (below the lowest wing tip) ...
 const EDGE_LAMP_GAP = 45;          // ... about this far apart
@@ -246,22 +247,30 @@ const Apron3D = {
     rec.night = rec.night || [];
     const P = (t, across) => [across, -t];          // frame x, z
 
-    // ---- the stand numbers: a plate on the lead-in line, a board on the terminal
+    // ---- the stand numbers: a plate on the lead-in line, a board on the terminal; all of them
+    // drawn into one texture (TexAtlas, airport3d.js) and baked together: three draw calls for the
+    // lot, not three a stand
+    const first = rec.frame.children.length;
+    const platesRow = Math.max(1, Math.floor(STAND_PLATE_ATLAS_W / 256)), plateRows = Math.ceil(a.gates.length / platesRow);
+    const atlas = new TexAtlas(tex, STAND_PLATE_ATLAS_W, Math.pow(2, Math.ceil(Math.log2(Math.max(256, plateRows * 256)))), 8);
+    const plateMat = new THREE.MeshLambertMaterial({ map: atlas.texture, polygonOffset: true, polygonOffsetFactor: -2 });
+    const boardMat = new THREE.MeshLambertMaterial({ map: atlas.texture, emissiveMap: atlas.texture, emissive: 0x000000 });
+    rec.night.push({ mat: boardMat, color: new THREE.Color(0xffffff), k: 0.8 });
+    const boxMat = new THREE.MeshLambertMaterial({ color: 0x1b232c });
     for (const gate of a.gates) {
-      const plate = tex(standNumberCanvas(gate.plate || gate.number), 8);
-      const g1 = new THREE.PlaneGeometry(6, 6);
+      const cell = atlas.put(standNumberCanvas(gate.plate || gate.number), 0);
+      const g1 = atlas.fit(new THREE.PlaneGeometry(6, 6), cell);
       g1.rotateX(-Math.PI / 2); g1.rotateY(-Math.PI / 2);   // upright for a pilot rolling in towards the terminal
-      at(new THREE.Mesh(g1, new THREE.MeshLambertMaterial({ map: plate, polygonOffset: true, polygonOffsetFactor: -2 })), gate.t, L.APRON_LANE + 26, 0.17);
+      at(new THREE.Mesh(g1, plateMat), gate.t, L.APRON_LANE + 26, 0.17);
       // the board stands out from the glass on a dark box, clear of the window frames (their
       // faces are 1 m out: a board in that plane mixed with them)
-      const g2 = new THREE.PlaneGeometry(4.5, 4.5);
+      const g2 = atlas.fit(new THREE.PlaneGeometry(4.5, 4.5), cell);
       g2.rotateY(-Math.PI / 2);
-      const bm = new THREE.MeshLambertMaterial({ map: plate, emissiveMap: plate, emissive: 0x000000 });
-      rec.night.push({ mat: bm, color: new THREE.Color(0xffffff), k: 0.8 });
       const bb = behind(gate.t), by = bb ? Math.min(bb.h - 3, 12) : 9;
-      at(new THREE.Mesh(cellBox(0.7, 5.1, 5.1), new THREE.MeshLambertMaterial({ color: 0x1b232c })), gate.t, front - 1.35, by);
-      at(new THREE.Mesh(g2, bm), gate.t, front - 1.8, by);
+      at(new THREE.Mesh(cellBox(0.7, 5.1, 5.1), boxMat), gate.t, front - 1.35, by);
+      at(new THREE.Mesh(g2, boardMat), gate.t, front - 1.8, by);
     }
+    Merge3D.bake(rec.frame, rec.frame.children.slice(first), { night: rec.night, tag: 'standNumbers' });
 
     // ---- the stands
     a.gates.forEach((gate, i) => {
