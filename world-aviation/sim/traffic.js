@@ -45,7 +45,10 @@
 // extended centreline on the glide path. No drawing (render/traffic3d.js),
 // no sound (core/audio.js reads loudest); the tower's lines go to the
 // flight's messages. Collide.step runs into them as into the parked
-// aeroplanes. Used by game.js, sim/collide.js and sim/copilot.js.
+// aeroplanes, on the ground and in the air (the flight is lost); the
+// tower calls a caution and then an alert as the player closes on one, and
+// too close in the air the flight is lost (proximity). Used by game.js,
+// sim/collide.js and sim/copilot.js.
 // ============================================================
 
 const TRACK_DS = 2;          // metres between the points of a track
@@ -341,8 +344,10 @@ const AirTraffic = {
     for (let left = dt; left > 1e-6; left -= h) {
       const step = Math.min(h, left);
       this.time += step;
-      for (const m of this.movers) if (!m.gone) this.step(m, step * m.k);
+      // (one the player ran into stays where they met: sim/collide.js)
+      for (const m of this.movers) if (!m.gone && !m.hit) this.step(m, step * m.k);
     }
+    if (!intro) this.proximity(fl);
     for (const m of this.movers) this.lightsFor(m);
     this.movers = this.movers.filter((m) => !m.gone);
   },
@@ -658,15 +663,69 @@ const AirTraffic = {
   },
 
   // ---------- what the others ask ----------
-  // the ones on the ground at airport a (Collide.step runs into them)
-  onGroundAt(a) { return this.movers.filter((m) => !m.gone && m.onGround && m.a === a); },
+  // the ones near p ({ x, y, z }), on the ground or in the air: within their half length or span
+  // and `reach` (Collide.step runs into them)
+  near(p, reach) {
+    return this.movers.filter((m) => !m.gone && Math.hypot(m.x - p.x, m.z - p.z) < m.r + reach && Math.abs(m.y - p.y) < m.r + reach);
+  },
+  // The tower watches the gap between the player and each of them (gap):
+  //   - in the air (both flying): the gap between the spheres round the two (their half
+  //     length or span): under CAUTION_AIR_M the tower's caution, under DANGER_AIR_M its traffic
+  //     alert, under CLOSE_AIR_M the flight is lost (a near collision);
+  //   - on the ground (both): the gap between their bodies (fuselage and wing points, body), with
+  //     the player taxiing (ALERT_MIN_KT): under CAUTION_GROUND_M the caution, under
+  //     DANGER_GROUND_M the order to stop.
+  // A call only while the gap closes, each level once (m.alert), said again once the gap has
+  // grown ALERT_RESET_K times past it. Touching is a collision (sim/collide.js).
+  proximity(fl) {
+    const st = fl.st, T = TRAFFIC;
+    if (fl.failure || fl.incident) return;
+    const pr = Math.max(fl.dims.len, fl.dims.span) / 2;
+    const taxiing = fl.groundSpeedKt() >= T.ALERT_MIN_KT;
+    let mine = null;
+    for (const m of this.movers) {
+      if (m.gone || m.hit) continue;
+      let gap, lim;
+      let calls = true;
+      if (!st.onGround && !m.onGround) {
+        gap = Math.hypot(m.x - st.pos.x, m.y - st.pos.y, m.z - st.pos.z) - pr - m.r;
+        lim = [T.CAUTION_AIR_M, T.DANGER_AIR_M];
+        if (gap < T.CLOSE_AIR_M) {
+          fl.fail('collision', tr('Near collision with {who} — far too close in the air.', { who: m.callsign }));
+          return;
+        }
+      } else if (st.onGround && m.onGround && m.a === fl.nearestApt()) {
+        // (the far ones skipped before the bodies are compared)
+        const far = Math.hypot(m.x - st.pos.x, m.z - st.pos.z) - pr - m.r;
+        if (far > T.CAUTION_GROUND_M * T.ALERT_RESET_K) { m.alert = 0; m.gap = far; continue; }
+        mine = mine || this.bodyAt(st.pos.x, st.pos.z, st.hdg, fl.dims);
+        gap = Infinity;
+        for (const p of mine) for (const q of this.body(m)) gap = Math.min(gap, Math.hypot(p.x - q.x, p.z - q.z));
+        lim = [T.CAUTION_GROUND_M, T.DANGER_GROUND_M];
+        calls = taxiing;
+      } else { m.alert = 0; m.gap = undefined; continue; }
+      const closing = m.gap !== undefined && gap < m.gap - 1e-3;
+      m.gap = gap;
+      const lvl = gap < lim[1] ? 2 : gap < lim[0] ? 1 : 0;
+      if (m.alert && gap > lim[m.alert - 1] * T.ALERT_RESET_K) m.alert = gap > lim[0] * T.ALERT_RESET_K ? 0 : 1;
+      if (lvl <= (m.alert || 0) || !closing || !calls) continue;
+      m.alert = lvl;
+      const who = m.callsign, air = !st.onGround;
+      if (lvl === 1) fl.info(air ? tr('Tower: caution — traffic {who} close to you, keep your distance', { who })
+        : tr('Tower: caution — {who} close to you, slow down and give way', { who }));
+      else fl.warn('TRAFFIC', air ? tr('Tower: TRAFFIC ALERT — {who} dangerously close, turn away now!', { who })
+        : tr('Tower: STOP — you are about to hit {who}!', { who }));
+    }
+  },
   // the points along m's body in the airport's frame { t, across } (the apron's vehicles keep
   // clear of them: Traffic in render/baggage3d.js)
   pieces(m) { return this.body(m).map((p) => World.local(m.a, p.x, p.z)); },
   // ... in the world: { x, z } along the fuselage and the wings
-  body(m) {
-    const d = m.dims, fx = hdgX(m.hdg), fz = hdgZ(m.hdg), rx = -fz, rz = fx, out = [];
-    const add = (f, s) => out.push({ x: m.x + fx * f + rx * s, z: m.z + fz * f + rz * s });
+  body(m) { return this.bodyAt(m.x, m.z, m.hdg, m.dims); },
+  // ... of an aeroplane of dims d at (x, z) heading hdg
+  bodyAt(x, z, hdg, d) {
+    const fx = hdgX(hdg), fz = hdgZ(hdg), rx = -fz, rz = fx, out = [];
+    const add = (f, s) => out.push({ x: x + fx * f + rx * s, z: z + fz * f + rz * s });
     for (const f of [0.5, 0.25, 0, -0.25, -0.5]) add(f * d.len, 0);
     for (const s of [-0.45, -0.25, 0.25, 0.45]) add(-0.05 * d.len, s * d.span);
     return out;

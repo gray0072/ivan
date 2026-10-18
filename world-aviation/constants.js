@@ -286,6 +286,15 @@ const TRAFFIC = {
   ROUTE_CLEAR_M: 10,           // the one landing after keeps this far (and both half spans) off the player's way to the stand ahead
   VEHICLE_WAIT_S: 10,          // waits for a vehicle in its way at most this long
   AHEAD_HINT_M: 250,           // the taxi prompt says "traffic ahead" with one this close ahead on the player's way
+  // the tower watching the gap to the player (closing): in the air between the spheres round the
+  // two (half length or span), on the ground between their bodies with the player taxiing
+  CAUTION_AIR_M: 900,          // in the air: the tower's caution under this ...
+  DANGER_AIR_M: 300,           // ... its traffic alert under this ...
+  CLOSE_AIR_M: 15,             // ... and the flight lost under this (a near collision)
+  CAUTION_GROUND_M: 40,        // on the ground: the caution under this ...
+  DANGER_GROUND_M: 12,         // ... the order to stop under this (touching: the flight lost)
+  ALERT_MIN_KT: 2,             // on the ground only with the player taxiing at least this fast
+  ALERT_RESET_K: 1.5,          // a call said again once the gap has grown this many times past its level
   STEP_S: 0.1                  // the simulation's step (a frame is cut into these)
 };
 
