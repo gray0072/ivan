@@ -84,6 +84,7 @@ const Incident3D = {
     tug.position.set(w.x, Terrain.surfaceAt(w.x, w.z), w.z);
     tug.rotation.y = w.ry;
     tug.userData.bar.rotation.y = w.bar;
+    Apron3D.towBarTo(tug, fl.ac);
   },
 
   updatePolice(p, time, dark) {

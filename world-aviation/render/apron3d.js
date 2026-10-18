@@ -41,6 +41,7 @@ const EDGE_LAMP_GAP = 45;          // ... about this far apart
 // its circle (half its length or span) plus GIVE_WAY_PAD, now and where it will be over the next
 // GIVE_WAY_AHEAD_S seconds; a vehicle stops GIVE_WAY_GAP metres short of that ground
 const GIVE_WAY_PAD = 8, GIVE_WAY_AHEAD_S = 8, GIVE_WAY_GAP = 30;
+const TOW_PIN_H = 0.6;             // the pushback tug's tow bar pin: this high (its far end at the nose wheel's axle)
 
 // A kit of boxes and cylinders in vertex colours, merged into one mesh. Parts are placed
 // in the current frame; push(x, y, z, ry) starts a frame (turned by ry about y) and pop()
@@ -497,20 +498,29 @@ const Apron3D = {
 
   // the pushback tug for the player's own departure, in world coordinates (Scene3D moves it); its
   // tow bar to the nose gear turns on its pin at the tug's front (userData.bar: rotation.y is its
-  // angle off the tug's axis, World.tow)
+  // angle off the tug's axis, World.tow) and tilts down or up to the nose wheel's axle (towBarTo).
+  // The bar is yellow like the tug: a grey one, the concrete's colour, cut across the nose wheel
+  // like the ground line, and the wheel looked sunk a third into the apron
   makeTug() {
     const group = new THREE.Group(), k = kit(), b = kit();
     Vehicles.tug(k);
     group.add(k.mesh());
     const bar = new THREE.Group();
-    bar.position.set(0, 0, SIM.TUG_HITCH_M);
-    b.box(0.25, 0.25, SIM.TOW_BAR_M, 0, 0.6, SIM.TOW_BAR_M / 2, '#d0d0cc')
-      .box(0.5, 0.3, 0.5, 0, 0.6, 0, '#33363a')
-      .box(0.7, 0.2, 0.3, 0, 0.55, SIM.TOW_BAR_M - 0.1, '#33363a');
+    bar.position.set(0, TOW_PIN_H, SIM.TUG_HITCH_M);
+    bar.rotation.order = 'YXZ';
+    b.box(0.25, 0.25, SIM.TOW_BAR_M, 0, 0, SIM.TOW_BAR_M / 2, '#e3b51c')
+      .box(0.5, 0.3, 0.5, 0, 0, 0, '#33363a')
+      .box(0.7, 0.2, 0.3, 0, -0.05, SIM.TOW_BAR_M - 0.1, '#33363a');
     bar.add(b.mesh());
     group.add(bar);
     group.userData.bar = bar;
     return group;
+  },
+  // the tug's tow bar on the nose gear of ac (its far end at the nose wheel's axle), or level
+  // (ac null: let go of the nose gear)
+  towBarTo(tug, ac) {
+    const axle = ac ? modelLayout(ac).wheelR : TOW_PIN_H;
+    tug.userData.bar.rotation.x = Math.asin(clamp((TOW_PIN_H - axle) / SIM.TOW_BAR_M, -0.5, 0.5));
   }
 };
 

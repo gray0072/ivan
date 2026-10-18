@@ -94,6 +94,7 @@ const Traffic3D = {
     rec.tug.position.set(q.x, m.a.elev, q.z);
     rec.tug.rotation.y = q.ry;
     rec.tug.userData.bar.rotation.y = q.bar || 0;
+    Apron3D.towBarTo(rec.tug, m.tugFrom ? null : m.p.ac);
     if (!rec.tugV) rec.tugV = Collide.vehicle(m.a, 'tug', null);
     Collide.placeVehicleWorld(rec.tugV, q.x, q.z, q.ry);
   },

@@ -1029,6 +1029,7 @@ const Scene3D = {
       tug.position.set(x, y, z);
       tug.rotation.y = h;
       tug.userData.bar.rotation.y = bar;
+      Apron3D.towBarTo(tug, fl.ac);
       if (p === 'GATE') this.tugHome = { x, z, h };
       else this.tugAway = { k: 0, last: null, stuck: 0, x, z, y, h, bar, fx, fz };
       this.tugPieces(fl);
@@ -1052,6 +1053,7 @@ const Scene3D = {
     tug.position.set(q.x, a.y, q.z);
     tug.rotation.y = q.hdg;
     tug.userData.bar.rotation.y = q.bar;
+    Apron3D.towBarTo(tug, null);
     this.tugPieces(fl);
   },
   // the tug k seconds after the push back's end, on its way back (tugPath): { x, z, hdg, bar }
