@@ -66,11 +66,14 @@ const LandCover = {
     if (old) { old.uLandA.value.dispose(); old.uLandL.value.dispose(); }
     const u = this.uniforms || (this.uniforms = {
       uLandA: { value: null }, uLandL: { value: null }, uLandNight: { value: 0 }, uLandMean: { value: 0.5 },
-      uLandXs: { value: null }, uLandYs: { value: null }, uLandN: { value: new THREE.Vector2() }
+      uLandXs: { value: null }, uLandYs: { value: null }, uLandN: { value: new THREE.Vector2() },
+      uLandTexN: { value: 1024 }, uLandStreetOff: { value: 0 }
     });
     u.uLandA.value = tex(t.a);
     u.uLandL.value = tex(t.l);
     u.uLandMean.value = t.mean;
+    u.uLandTexN.value = N;
+    u.uLandStreetOff.value = t.streetOff;
     u.uLandXs.value = lines(this.xs);
     u.uLandYs.value = lines(this.ys);
     u.uLandN.value.set(this.xs.length, this.ys.length);
@@ -84,6 +87,7 @@ const LandCover = {
     const key = hole ? 'matFar' : 'mat';
     if (this[key]) return this[key];
     const m = new THREE.MeshLambertMaterial({ vertexColors: true });
+    m.extensions = { derivatives: true };      // dFdx for the lights' read (WebGL 1; built into WebGL 2)
     const u = this.uniforms;
     m.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, u);
@@ -158,7 +162,7 @@ const LandCover = {
 // wooded the country is, urban: a real city here); vLandW the world position.
 const LAND_FRAG_PARS = `
 uniform sampler2D uLandA, uLandL;
-uniform float uLandNight, uLandMean;
+uniform float uLandNight, uLandMean, uLandTexN, uLandStreetOff;
 uniform float uLandXs[${LAND_LINES}], uLandYs[${LAND_LINES}];
 uniform vec2 uLandN;
 varying vec3 vLand;
@@ -213,15 +217,23 @@ const LAND_FRAG = `
   vec3 roofs = vec3(0.42, 0.4, 0.38) * (0.65 + 0.7 * AL.b) * (0.8 + 0.4 * dot(A.rgb, vec3(0.3, 0.5, 0.2)));
   c = mix(c, mix(roofs, vec3(0.25, 0.25, 0.26), street * 0.85), city);
   diffuseColor.rgb = c;
-  // the lights after dusk, read from a sharper level than the rest so they stay points far off
+  // the lights after dusk, read from a sharper level than the rest so they stay points — but only
+  // while a texel still covers about a pixel: further off that read hit the streets' lines (a
+  // texel wide) here and missed them there, and as the view moved the cities shimmered in bright
+  // bands. There the filtered read (AL) instead, its mean as bright: the city's unlit streets
+  // (0.2) taken off as their share of the tile (uLandStreetOff)
+  vec2 ldx = dFdx(us), ldy = dFdy(us);
+  float lightFar = smoothstep(0.0, 1.0, log2(max(length(ldx), length(ldy)) * uLandTexN));
   if (uLandNight > 0.0) {
 #ifdef LAND_BOMB
     vec4 LN = textureGrad(uLandL, t, gx * 0.35, gy * 0.35);
 #else
     vec4 LN = texture2D(uLandL, us, -1.5);
 #endif
+    float villageL = mix(LN.r, AL.r, lightFar);
+    float cityL = mix(max(LN.g - 0.2, 0.0), max(AL.g - uLandStreetOff, 0.0), lightFar);
     totalEmissiveRadiance += uLandNight * vec3(1.0, 0.62, 0.28)
-      * (LN.r * (1.0 - forest) * mix(0.8, town, village) * vLand.x * 1.6 + max(LN.g - 0.2, 0.0) * city * 1.75);
+      * (villageL * (1.0 - forest) * mix(0.8, town, village) * vLand.x * 1.6 + cityL * city * 1.75);
   }
 }
 `;
@@ -404,7 +416,11 @@ function landTiles(N) {
   // the mean brightness of the ground (the regions' tone is taken about it)
   let sum = 0;
   for (let i = 0; i < N * N * 4; i += 4) sum += a[i] + a[i + 1] + a[i + 2];
-  return { a, l, xs, ys, mean: sum / (N * N * 3 * 255) };
+  // the city's street lights far off (the shader's filtered read): what the unlit streets add to
+  // the mean of l.g over what its lights add (max(g - 0.2, 0) each texel)
+  let g = 0, lit = 0;
+  for (let i = 1; i < N * N * 4; i += 4) { g += l[i] / 255; lit += Math.max(l[i] / 255 - 0.2, 0); }
+  return { a, l, xs, ys, mean: sum / (N * N * 3 * 255), streetOff: (g - lit) / (N * N) };
 }
 
 // the shortest way between two places on a wrapping tile of n
