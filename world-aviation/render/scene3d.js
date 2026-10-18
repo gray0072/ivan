@@ -870,14 +870,15 @@ const Scene3D = {
     // ---- clouds
     const wind = fl.windAt(st.pos.y);
     this.updateClouds(st.pos.x, st.pos.z, env.cloudBase, env.cloudTop, wind.x * 30, wind.z * 30);
-    // ---- trees
-    if (this.quality.trees) {
+    // ---- trees (none high up or at the fast time steps: VIEW.TREES_MAX_*)
+    const treesNear = st.pos.y - (this.lastGround || 0) < VIEW.TREES_MAX_AGL_M && flown < VIEW.TREES_MAX_STEP_M;
+    if (this.quality.trees && treesNear) {
       const key = Math.round(st.pos.x / 700) + ',' + Math.round(st.pos.z / 700);
       this.updateTrees(st.pos.x, st.pos.z, key);
     }
     // (shed by the Auto quality: in the dark they are black on black)
     const treesOff = this.shed.has('trees') && dark > 0.6;
-    if (this.trees) this.trees.visible = this.treesPlaced > 0 && !treesOff;
+    if (this.trees) this.trees.visible = treesNear && this.treesPlaced > 0 && !treesOff;
     for (const rec of this.airports3D.values()) for (const t of rec.trees || []) t.visible = !treesOff;
 
     // ---- airports in view

@@ -1482,6 +1482,11 @@ const VIEW = {
   // the haze is about HAZE_M deep: above it the fog thins as the height grows, to HAZE_MIN of
   // its density, so from the cruise the ground below still shows (Scene3D)
   HAZE_M: 2000, HAZE_MIN: 0.15,
+  // the terrain's 3D trees (Scene3D.updateTrees, within 4.2 km, laid out again every 700 m) are
+  // left alone and hidden above TREES_MAX_AGL_M, where they are a few pixels at most, and while a
+  // frame flies more than TREES_MAX_STEP_M (the fast time steps): laid out anew every frame they
+  // took several milliseconds of it and only flickered
+  TREES_MAX_AGL_M: 3000, TREES_MAX_STEP_M: 350,
   FOG_DENSITY: 1 / 62000,      // 1/e per metre
   COCKPIT_DRAW_DIST: 12000
 };
