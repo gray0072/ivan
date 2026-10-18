@@ -369,6 +369,23 @@ const AircraftModels = {
     return g;
   },
 
+  // Bake what never moves against the body into a mesh per material (Merge3D.bake), for an
+  // aeroplane that flies (the player's, Scene3D; the traffic's, Traffic3D): an aeroplane built
+  // is 55-150 meshes, most of them still. Each gear leg is baked into its own few meshes (it
+  // folds as one), each propeller's blades into one (they turn and hide as one, the blur disc
+  // kept apart); the legs, the propellers, the fans and the lights stay as they are, and the
+  // control surfaces too — or, with opts.surfaces false, they are baked as animate() set them
+  // last (the traffic: its flaps set first as it flies them)
+  bake(model, opts) {
+    const u = model.userData, keepSurf = !(opts && opts.surfaces === false);
+    for (const leg of u.gear) Merge3D.bake(leg.pivot, null, { tag: 'gear' });
+    for (const p of u.props) p.userData.blades = Merge3D.bake(p, p.userData.blades, { tag: 'blades' });
+    const keep = new Set([...u.gear.map((g) => g.pivot), ...u.props, ...(u.fans || [])]);
+    if (keepSurf) for (const list of Object.values(u.surf)) for (const m of list) keep.add(m.parent);
+    Merge3D.bake(model, null, { keep, tag: opts && opts.tag });
+    return model;
+  },
+
   // spin the propellers and the fans, fold the gear; called every frame for the player's aircraft
   animate(model, st) {
     for (const p of model.userData.props) {

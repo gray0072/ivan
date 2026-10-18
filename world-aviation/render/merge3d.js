@@ -18,7 +18,9 @@
 // Used by Airport3D.build (airport3d.js) for the buildings, the
 // landside, the boards and the equipment, and for each parked
 // aeroplane; the parked aeroplanes of neighbouring stands are then
-// baked together (combine, show: Airport3D.build, setParked).
+// baked together (combine, show: Airport3D.build, setParked). And by
+// AircraftModels.bake (models.js) for the still parts of the aeroplanes
+// that fly: the player's (Scene3D) and the traffic's (Traffic3D).
 // ============================================================
 
 const Merge3D = {

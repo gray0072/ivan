@@ -924,8 +924,14 @@ const Scene3D = {
     const finish = fl.ac.legend && typeof Career !== 'undefined' ? Career.mriyaFinish().id : null;
     const ownKey = fl.ac.id + '|' + airline + '|' + finish;
     if (!this.ownAircraft || this.ownAircraftId !== ownKey) {
-      if (this.ownAircraft) this.scene.remove(this.ownAircraft);
-      this.ownAircraft = AircraftModels.build(fl.ac, { airline, finish });
+      if (this.ownAircraft) {
+        this.scene.remove(this.ownAircraft);
+        // (the liveries are AircraftModels' own, kept for the next one in that paint)
+        this.ownAircraft.traverse((c) => { if (c.geometry) c.geometry.dispose(); });
+      }
+      // its still parts baked into a mesh per material; the gear, the propellers, the fans, the
+      // control surfaces and the lights kept apart, as they move (AircraftModels.bake)
+      this.ownAircraft = AircraftModels.bake(AircraftModels.build(fl.ac, { airline, finish }), { tag: 'own' });
       this.ownAircraftId = ownKey;
       this.scene.add(this.ownAircraft);
     }

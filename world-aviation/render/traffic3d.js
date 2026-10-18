@@ -7,9 +7,10 @@
 // its airline's paint (AircraftModels.build), built when the flight
 // starts (behind the boot screen: prepare) for every one the flight
 // may see, its still parts baked into a mesh per material
-// (Merge3D.bake: the flaps set first as it flies them, the take-off's
-// or the landing's) — the gear, the propellers, the fans and the
-// lights kept apart, as they move: the gear folds after the take-off,
+// (AircraftModels.bake: the flaps set first as it flies them, the
+// take-off's or the landing's) — the gear (each leg baked on its own),
+// the propellers, the fans and the lights kept apart, as they move:
+// the gear folds after the take-off,
 // the propellers spin, the lights come on as its crew has them
 // (AirTraffic.lightsFor). The push back's tug at the nose of the
 // departure ahead, solid like the apron's other vehicles (a vehicle
@@ -37,11 +38,9 @@ const Traffic3D = {
   build(p) {
     if (this.models.has(p)) return this.models.get(p);
     const model = AircraftModels.build(p.ac, { airline: p.airline });
-    const u = model.userData;
     // the flaps as it flies them, then the parts that never move against the body baked
     AircraftModels.animate(model, { gear: 1, flaps: p.kind === 'dep' ? 0.35 : 1, propSpeed: 0 });
-    const keep = new Set([...u.gear.map((g) => g.pivot), ...u.props, ...(u.fans || [])]);
-    Merge3D.bake(model, null, { keep, tag: 'traffic' });
+    AircraftModels.bake(model, { surfaces: false, tag: 'traffic' });
     model.visible = false;
     this.scene.add(model);
     const rec = { model, tug: null, tugV: null, a: p.a };
