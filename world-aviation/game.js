@@ -142,8 +142,9 @@ const Game = {
         // (a flight school's lesson: the instructor's hands on the stick, sim/lesson.js)
       } else this.pilotControls(dt, this.lesson ? Lesson.shape(ax, fl, dt) : ax);
 
-      if (fl.phase === 'PUSHBACK') this.updatePushback(dt);
       const simDt = fl.update(dt);
+      // (after the physics: the tug alone moves the aeroplane, nothing nudges it off the path)
+      if (fl.phase === 'PUSHBACK') this.updatePushback(dt);
       sys.update(simDt);
       if (this.practice) this.updatePractice(simDt);
       this.updatePhase(dt);
@@ -497,7 +498,7 @@ const Game = {
     const q = p.path.pose(smoothstep(0, 1, clamp(p.t / SIM.PUSHBACK_S, 0, 1)));
     st.vel.x = 0; st.vel.z = 0;
     st.pos.x = q.x; st.pos.z = q.z;
-    st.hdg = q.hdg;
+    st.hdg = q.hdg; st.yawRate = 0; st.turnRate = 0;
     st.parkingBrake = false;
     if (p.t >= SIM.PUSHBACK_S) {
       st.parkingBrake = true;

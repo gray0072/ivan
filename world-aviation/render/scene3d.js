@@ -1014,8 +1014,10 @@ const Scene3D = {
     m.waitFor = null;
     if (p === 'GATE' || p === 'PUSHBACK') {
       const fx = hdgX(st.hdg), fz = hdgZ(st.hdg);
-      // (at the gate straight at the nose, facing the aeroplane)
-      const w = this.tugTow = World.tow(p === 'GATE' ? null : this.tugTow, { x: st.pos.x, z: st.pos.z, hdg: st.hdg }, fl.dims.len);
+      // (at the gate straight at the nose, facing the aeroplane; the push back's tow starts afresh
+      // where the aeroplane stands at its first moment, so a drift at the stand never turns the bar)
+      const w = World.tow(p === 'GATE' ? null : this.tugTow, { x: st.pos.x, z: st.pos.z, hdg: st.hdg }, fl.dims.len);
+      this.tugTow = p === 'GATE' ? null : w;
       const x = w.x, z = w.z, y = fl.groundHeight(), h = w.ry, bar = w.bar;
       tug.visible = true;
       tug.position.set(x, y, z);
