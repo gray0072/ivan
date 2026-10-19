@@ -907,25 +907,40 @@ function liftingSurface(def, mat, surf, side) {
     const c = def.rootC + (def.tipC - def.rootC) * f, t = def.tRoot + (def.tTip - def.tRoot) * f;
     return [def.semi * f, s * t * yt(x) * (s > 0 ? up : lo), -def.semi * f * tanS - x * c];
   };
-  // the ring of a section between chord fractions x0 and x1: upper surface back to front, lower front to back
+  // the ring of a section between chord fractions x0 and x1: upper surface back to front, lower front to back.
+  // The walls across the chord (the hinge line's, the trailing edge's) have points of their own
+  // (p.of: the skin's point it copies), so the skin's shading doesn't bend round onto them: it left
+  // a bright streak along the hinge line, a few pixels wide, that rippled as you drove past
   const N = 9;
   const xs = (x0, x1) => { const r = []; for (let i = 0; i <= N; i++) r.push(x0 + (x1 - x0) * (0.5 - 0.5 * Math.cos(Math.PI * i / N))); return r; };
+  const copy = (p, of) => Object.assign(p.slice(), { of });
   const ring = (f, x0, x1, pt) => {
-    const X = xs(x0, x1), r = [];
-    for (let i = N; i >= 0; i--) r.push(pt(f, X[i], 1));
-    for (let i = x0 === 0 ? 1 : 0; i <= N; i++) r.push(pt(f, X[i], -1));
+    const X = xs(x0, x1), up = [], lo = [];
+    for (let i = N; i >= 0; i--) up.push(pt(f, X[i], 1));
+    for (let i = x0 === 0 ? 1 : 0; i <= N; i++) lo.push(pt(f, X[i], -1));
+    const r = [copy(up[0], 1), ...up];                                       // the rear wall's top
+    if (x0 !== 0) r.push(copy(up[N], N + 1), copy(lo[0], N + 4));            // the front wall
+    const k = r.length;
+    r.push(...lo, copy(lo[lo.length - 1], k + lo.length - 1));               // the rear wall's foot
     return r;
   };
-  // a loft through rings, optionally closed at both ends
+  // a loft through rings, optionally closed at both ends (the caps on points of their own too:
+  // sharing the skin's, they tilted its shading along the whole span). The walls and the caps are
+  // shaded as the skin they meet: they are inside the wing where the pieces meet, and seen through
+  // the hairline cracks between the pieces with a shading of their own they sparkled along the seams
   const loft = (rings, caps) => {
-    const pos = [], idx = [], K = rings[0].length;
-    for (const r of rings) for (const p of r) pos.push(p[0], p[1], p[2]);
+    const pos = [], idx = [], K = rings[0].length, same = [];                // same: [point, the skin's point it is shaded as]
+    rings.forEach((r, i) => r.forEach((p, j) => {
+      if (p.of !== undefined) same.push(i * K + j, i * K + p.of);
+      pos.push(p[0], p[1], p[2]);
+    }));
     for (let i = 0; i + 1 < rings.length; i++) for (let j = 0; j < K; j++) {
       const a = i * K + j, b = i * K + (j + 1) % K, c = a + K, e = b + K;
       idx.push(a, c, b, b, c, e);
     }
     if (caps) for (const [ri, flip] of [[0, true], [rings.length - 1, false]]) {
-      const base = ri * K;
+      const base = pos.length / 3;
+      rings[ri].forEach((p, j) => { same.push(base + j, ri * K + (p.of === undefined ? j : p.of)); pos.push(p[0], p[1], p[2]); });
       for (let j = 1; j + 1 < K; j++) idx.push(...(flip ? [base, base + j + 1, base + j] : [base, base + j, base + j + 1]));
     }
     const geo = new THREE.BufferGeometry();
@@ -940,6 +955,8 @@ function liftingSurface(def, mat, surf, side) {
       geo.setIndex(idx);
       geo.computeVertexNormals();
     }
+    const nor = geo.attributes.normal;
+    for (let k = 0; k < same.length; k += 2) nor.setXYZ(same[k], nor.getX(same[k + 1]), nor.getY(same[k + 1]), nor.getZ(same[k + 1]));
     return geo;
   };
   const cut = def.cut;
