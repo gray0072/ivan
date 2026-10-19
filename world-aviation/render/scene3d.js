@@ -310,6 +310,7 @@ const Scene3D = {
       this.nearOx = this.nearOz = null;    // a new mesh: its origin is set by the next build
       this.nearHs = new Float32Array((n + 1) * (n + 1));
       this.nearBuild = null;
+      this.nearLast = null;
       LandCover.holeAt(0, 0, 0);
     }
   },
@@ -317,15 +318,27 @@ const Scene3D = {
   // The near mesh follows the aeroplane. Cell size grows with height so the mesh
   // always covers roughly 4-30 km; rows are rebuilt a few per frame so there is
   // never a visible hitch.
+  // While it is rebuilt its rows are partly the last finished mesh's, partly the new one's: the far
+  // mesh's hole stays round the last finished one, smaller by how far the new one has moved, so
+  // both cover it (dropped while a rebuild went on, the far mesh was drawn under the whole near
+  // mesh — at the fast time steps, where a rebuild hardly ever finished, the land was shaded twice
+  // over on every frame)
   startNearBuild(cx, cz, cell) {
     const n = this.nearN, w = n + 1;
     const half = (n * cell) / 2;
-    LandCover.holeAt(0, 0, 0);
+    const b = this.nearBuild;
+    if (b && !b.done) this.nearLast = null;           // a rebuild cut short: its rows a third mix
     this.nearBuild = {
       cx: Math.round((cx - half) / cell) * cell + half,
       cz: Math.round((cz - half) / cell) * cell + half,
       cell, row: 0, rows: w, half
     };
+    const L = this.nearLast, nb = this.nearBuild;
+    if (L) LandCover.holeAt(L.cx, L.cz, Math.max(0, Math.min(L.half, half) * NEAR_HOLE - Math.hypot(nb.cx - L.cx, nb.cz - L.cz)));
+    else LandCover.holeAt(0, 0, 0);
+    // nothing finished to show (a new flight, a new preset, back from the fast time steps): the
+    // mesh's rows lie somewhere else entirely, so it is hidden until this build is done
+    if (!L) this.nearMesh.visible = false;
   },
 
   // minCell: at the fastest time steps the cells are as big as it takes for a rebuild (four to eight
@@ -334,11 +347,25 @@ const Scene3D = {
     this.buildNearTerrain();
     const b = this.nearBuild;
     const cellNow = Math.max(minCell || 0, clamp(this.quality.nearCell + (altAgl || 0) * 0.04, this.quality.nearCell, 420));
+    // Cells that big (the fast time steps) step over the near mesh's relief (Terrain.heightAt's
+    // noise, 2.6 km and 0.7 km across) and are as coarse as the far mesh's: the far mesh is drawn
+    // alone, with no hole, and the near mesh neither built nor drawn — at x512 it was rebuilt every
+    // few frames for nothing. When the time slows down it shows again once it has been built whole.
+    if (cellNow > NEAR_MAX_CELL_M) {
+      if (b || this.nearMesh.visible) {
+        this.nearBuild = null; this.nearLast = null;
+        this.nearMesh.visible = false;
+        LandCover.holeAt(0, 0, 0);
+      }
+      return;
+    }
     if (force || !b) {
       this.startNearBuild(px, pz, cellNow);
     } else {
+      // (a rebuild under way is let finish unless the aeroplane is well on: started anew every few
+      // frames at the fast time steps, it never did)
       const moved = Math.hypot(px - b.cx, pz - b.cz);
-      if (moved > b.cell * 2.5 || Math.abs(cellNow - b.cell) > b.cell * 0.6) {
+      if (moved > b.cell * (b.done ? 2.5 : 8) || Math.abs(cellNow - b.cell) > b.cell * 0.6) {
         this.startNearBuild(px, pz, cellNow);
       }
     }
@@ -413,8 +440,11 @@ const Scene3D = {
     if (bld.row >= w) {
       g.computeBoundingSphere();
       bld.done = true;
+      this.nearLast = { cx: bld.cx, cz: bld.cz, half: bld.half };
+      this.nearMesh.visible = true;
       // the far mesh leaves out the ground under it (render/landcover.js), out to near its edge,
-      // where it fades into the far mesh (Terrain.heightAt's taper); none while it is rebuilt
+      // where it fades into the far mesh (Terrain.heightAt's taper); while it is rebuilt, round
+      // the last one finished (startNearBuild)
       LandCover.holeAt(bld.cx, bld.cz, bld.half * NEAR_HOLE);
     }
   },
@@ -425,6 +455,7 @@ const Scene3D = {
     GroundLights.build(this.scene, this.quality);
     for (const id of Array.from(this.airports3D.keys())) this.dropAirport(id);
     this.nearBuild = null;
+    this.nearLast = null;
     this.treeKey = null;
     this.builtAt = performance.now();
   },
@@ -806,7 +837,7 @@ const Scene3D = {
     const warm = smoothstep(-0.14, 0.0, sun.el) * (1 - smoothstep(0.05, 0.4, sun.el));   // dusk colours
     this.dark = dark;
     GroundLights.update(dark, this.shed.has('lights'));
-    LandCover.update(dark);
+    LandCover.update(dark, eye.y - this.lastGround);
     const lit = day > 0.05 ? sd : md.y > 0.05 ? md : NIGHT_GLOW_DIR;    // the moon lights the night, or the sky's glow when it is down
     this.sun.position.copy(eye).addScaledVector(lit, 50000);
     this.sun.target.position.copy(eye);
@@ -865,7 +896,10 @@ const Scene3D = {
 
     // ---- terrain follow
     // (cells a power of two times 420 m, so they do not change with every frame's length)
-    const flown = Math.hypot(st.vel.x, st.vel.z) * env.timeAccel * Math.min(dt, SIM.MAX_FRAME_DT) * 1.6;
+    // (the most of the last second or so: with the frames' lengths jittering, the cells flapped
+    // between two sizes and the near mesh was started anew every few frames)
+    const flownNow = Math.hypot(st.vel.x, st.vel.z) * env.timeAccel * Math.min(dt, SIM.MAX_FRAME_DT) * 1.6;
+    const flown = this.flown = Math.max(flownNow, (this.flown || 0) * Math.pow(0.25, dt));
     const minCell = flown > 420 ? 420 * Math.pow(2, Math.ceil(Math.log2(flown / 420))) : 0;
     this.updateNearTerrain(st.pos.x, st.pos.z, Math.max(0, st.pos.y - (this.lastGround || 0)), false, minCell);
     // ---- clouds
@@ -1160,6 +1194,9 @@ const STAR_M = new THREE.Matrix4(), STAR_S = new THREE.Vector3();
 // the far terrain is left out under the near mesh out to this share of its half-width (a circle
 // inside the square, where the near mesh's detail fades into the far mesh's)
 const NEAR_HOLE = 0.95;
+// the near mesh is left out (the far mesh drawn alone) when its cells would be bigger than this,
+// metres: past half its relief noise's 2.6 km it has nothing the far mesh has not (updateNearTerrain)
+const NEAR_MAX_CELL_M = 1300;
 // the near mesh's rebuild: about this many milliseconds of a frame (updateNearTerrain)
 const NEAR_BUILD_MS = 2;
 const NIGHT_GLOW_DIR = new THREE.Vector3(0.3, 0.9, -0.3).normalize();

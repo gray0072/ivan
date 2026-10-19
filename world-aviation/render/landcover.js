@@ -35,6 +35,10 @@ const LAND_ROT_A = [0.97, 0.24];   // the farmland tile's turn (cos, sin)
 const LAND_ROT_C = [0.6, 0.8];     // the woods' turn
 const LAND_ROT_B = [[0.82, -0.57], [0.34, 0.94]];  // the regions' turns
 const LAND_LINES = 16;             // room for the tile's block lines in the shader
+// the fields' anisotropic filtering by the eye's height (WebGL 2): as the texture's (LOW) up to
+// FROM_M over the ground, down to HIGH taps from TO_M — from there only the far ground in the
+// haze is seen at a slant, and the taps cost about a tenth of the frame at 4K
+const LAND_ANISO = { FROM_M: 1500, TO_M: 5000, LOW: 8, HIGH: 2 };
 
 const LandCover = {
   N: 0,
@@ -55,25 +59,29 @@ const LandCover = {
     this.xs = t.xs.slice(0, Math.min(LAND_LINES, t.xs.length - 1)).map((x) => x / N);
     this.ys = t.ys.slice(0, Math.min(LAND_LINES, t.ys.length - 1)).map((y) => y / N);
     const lines = (v) => { const o = new Float32Array(LAND_LINES); for (let i = 0; i < LAND_LINES; i++) o[i] = v[Math.min(i, v.length - 1)]; return o; };
-    const tex = (data) => {
+    const tex = (data, an) => {
       const x = new THREE.DataTexture(data, N, N, THREE.RGBAFormat);
       x.wrapS = x.wrapT = THREE.RepeatWrapping;
       x.magFilter = THREE.LinearFilter;
       x.minFilter = THREE.LinearMipmapLinearFilter;
       x.generateMipmaps = true;
-      x.anisotropy = aniso || 1;
+      x.anisotropy = an || 1;
       x.needsUpdate = true;
       return x;
     };
     const old = this.uniforms;
-    if (old) { old.uLandA.value.dispose(); old.uLandL.value.dispose(); }
+    if (old) { old.uLandA.value.dispose(); old.uLandL.value.dispose(); old.uLandB.value.dispose(); }
     const u = this.uniforms || (this.uniforms = {
-      uLandA: { value: null }, uLandL: { value: null }, uLandNight: { value: 0 }, uLandMean: { value: 0.5 },
+      uLandA: { value: null }, uLandL: { value: null }, uLandB: { value: null }, uLandNight: { value: 0 }, uLandMean: { value: 0.5 },
       uLandXs: { value: null }, uLandYs: { value: null }, uLandN: { value: new THREE.Vector2() },
-      uLandTexN: { value: 1024 }, uLandStreetOff: { value: 0 }
+      uLandTexN: { value: 1024 }, uLandStreetOff: { value: 0 }, uLandAniso: { value: 64 }
     });
-    u.uLandA.value = tex(t.a);
-    u.uLandL.value = tex(t.l);
+    u.uLandA.value = tex(t.a, aniso);
+    u.uLandL.value = tex(t.l, aniso);
+    // the same farmland tile for its reads at the woods' and the regions' scales: noise tens of
+    // kilometres across has nothing for anisotropic filtering to keep sharp, and at a slant
+    // those three reads with it cost as much as the fields' own
+    u.uLandB.value = tex(t.a, 1);
     u.uLandMean.value = t.mean;
     u.uLandTexN.value = N;
     u.uLandStreetOff.value = t.streetOff;
@@ -125,9 +133,13 @@ const LandCover = {
   hole: { value: new THREE.Vector3() },
   holeAt(cx, cz, r) { this.hole.value.set(cx, cz, r); },
 
-  // dark: 0 by day, 1 at night — the lights come on
-  update(dark) {
-    if (this.uniforms) this.uniforms.uLandNight.value = smoothstep(0.1, 0.7, dark);
+  // dark: 0 by day, 1 at night — the lights come on; agl: the eye's height over the ground, m —
+  // the fields' anisotropic filtering held to fewer taps high up (LAND_ANISO)
+  update(dark, agl) {
+    if (!this.uniforms) return;
+    this.uniforms.uLandNight.value = smoothstep(0.1, 0.7, dark);
+    const A = LAND_ANISO, k = smoothstep(A.FROM_M, A.TO_M, agl || 0);
+    this.uniforms.uLandAniso.value = k > 0 ? lerp(A.LOW, A.HIGH, k) : 64;
   },
 
   // the woods at (x, z) as the shader sees them close by, for the trees (land: Terrain.colorAt's
@@ -165,8 +177,8 @@ const LandCover = {
 // wooded the country is, urban: a real city here, wild: how much of the farmland gives way to
 // the land's own ground — the desert, the tundra, the winter's snow); vLandW the world position.
 const LAND_FRAG_PARS = `
-uniform sampler2D uLandA, uLandL;
-uniform float uLandNight, uLandMean, uLandTexN, uLandStreetOff;
+uniform sampler2D uLandA, uLandL, uLandB;
+uniform float uLandNight, uLandMean, uLandTexN, uLandStreetOff, uLandAniso;
 uniform float uLandXs[${LAND_LINES}], uLandYs[${LAND_LINES}];
 uniform vec2 uLandN;
 varying vec4 vLand;
@@ -178,9 +190,9 @@ const LAND_FRAG = `
   // the regions and the woods: the tile's noise read at unrelated scales
   vec2 ub1 = vec2(${LAND_ROT_B[0][0]} * w.x + ${LAND_ROT_B[0][1]} * w.y, ${-LAND_ROT_B[0][1]} * w.x + ${LAND_ROT_B[0][0]} * w.y) / ${LAND_REGION_M[0].toFixed(1)};
   vec2 ub2 = vec2(${LAND_ROT_B[1][0]} * w.x + ${LAND_ROT_B[1][1]} * w.y, ${-LAND_ROT_B[1][1]} * w.x + ${LAND_ROT_B[1][0]} * w.y) / ${LAND_REGION_M[1].toFixed(1)};
-  vec4 B1 = texture2D(uLandA, ub1), B2 = texture2D(uLandA, ub2);
+  vec4 B1 = texture2D(uLandB, ub1), B2 = texture2D(uLandB, ub2);
   vec2 uc = vec2(${LAND_ROT_C[0]} * w.x + ${LAND_ROT_C[1]} * w.y, ${-LAND_ROT_C[1]} * w.x + ${LAND_ROT_C[0]} * w.y) / ${LAND_WOOD_M.toFixed(1)};
-  float woodN = texture2D(uLandA, uc).a;
+  float woodN = texture2D(uLandB, uc).a;
   vec2 us = vec2(${LAND_ROT_A[0]} * w.x + ${LAND_ROT_A[1]} * w.y, ${-LAND_ROT_A[1]} * w.x + ${LAND_ROT_A[0]} * w.y) / ${LAND_TILE_M.toFixed(1)};
 #ifdef LAND_BOMB
   // each copy of the tile turned, mirrored and shifted by whole blocks (LandCover.tileAt);
@@ -194,6 +206,11 @@ const LAND_FRAG = `
   if ((h & 2u) != 0u) { g.x = 1.0 - g.x; gx.x = -gx.x; gy.x = -gy.x; }
   if ((h & 4u) != 0u) { g.y = 1.0 - g.y; gx.y = -gx.y; gy.y = -gy.y; }
   vec2 t = g + vec2(uLandXs[int((h >> 3u) % uint(uLandN.x))], uLandYs[int((h >> 11u) % uint(uLandN.y))]);
+  // high up the anisotropic filtering held to uLandAniso taps: the shorter gradient lengthened to
+  // that share of the longer (only the far ground in the haze is seen at a slant from there)
+  float lgx = length(gx), lgy = length(gy), lgm = max(lgx, lgy) / uLandAniso;
+  if (lgx < lgm) gx = lgx > 1e-12 ? gx * (lgm / lgx) : vec2(-gy.y, gy.x) / uLandAniso;
+  if (lgy < lgm) gy = lgy > 1e-12 ? gy * (lgm / lgy) : vec2(-gx.y, gx.x) / uLandAniso;
   vec4 A = textureGrad(uLandA, t, gx, gy);
   vec4 AL = textureGrad(uLandL, t, gx, gy);
 #else
