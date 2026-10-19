@@ -12,7 +12,9 @@
 //     plus FOLLOW_ME.LEAD_S seconds of the aeroplane's speed past the
 //     nose, setting off in time to get up to that speed: it waits when
 //     the aeroplane stops and never backs up; caught up, it speeds up
-//     (harder still inside GAP_M) and goes up to RUN_KT instead of MAX_KT
+//     (harder still inside GAP_M) and goes up to RUN_KT instead of MAX_KT;
+//     the aeroplane coming up to it off the runway some other way (from
+//     the side, across a corner) counts by its straight distance too
 //   - by the stand it drives on along the apron lane past the stand
 //     ahead of the aeroplane turning in, turns off it on an arc
 //     (FOLLOW_ME.TURN_R) and drives up beside the stand to its waiting
@@ -106,10 +108,25 @@ const FollowMe3D = {
       // (the nose on the car's own way, which takes the corners on their curves: off the runway the
       // guidance's distance, which is less than 0 there)
       const ac = g.along < 0 ? g.along : this.project(st.pos.x, st.pos.z);
-      const nose = ac + fl.dims.len / 2, gap = this.s - F.CAR_LEN / 2 - nose, lead = F.GAP_M + F.LEAD_S * vAc;
+      let nose = ac + fl.dims.len / 2;
+      const lead = F.GAP_M + F.LEAD_S * vAc;
+      // (come up to the car some other way, from the side or across a corner, off the runway and not
+      // past the car's front: the straight distance from the nose to the car's back, never more than
+      // the way's, counts too, so it sets off as the aeroplane comes near instead of all at once)
+      let near = false;
+      if (this.s < this.end && Math.abs(World.local(fl.arrival, st.pos.x, st.pos.z).across) > LAYOUT.RWY_HALF_WIDTH) {
+        const half = F.CAR_LEN / 2, a = this.at(this.s - half), b = this.at(this.s + half);
+        const nx = st.pos.x + hdgX(st.hdg) * fl.dims.len / 2, nz = st.pos.z + hdgZ(st.hdg) * fl.dims.len / 2;
+        const d = Math.hypot(nx - a.x, nz - a.z);
+        if ((nx - b.x) * (b.x - a.x) + (nz - b.z) * (b.z - a.z) < 0 && this.s - half - d > nose) {
+          nose = this.s - half - d;
+          near = d < lead;
+        }
+      }
+      const gap = this.s - F.CAR_LEN / 2 - nose;
       const target = nose + F.CAR_LEN / 2 + lead + Math.max(0, vAc * vAc - this.v * this.v) / (2 * F.ACCEL_MS2);
       const cap = (gap < lead ? F.RUN_KT : F.MAX_KT) * KTS;           // caught up: faster than a car leads
-      want = Math.min(this.moved || g.along >= 0 ? Math.max(0, vAc + (target - this.s) * 0.5) : 0, cap);
+      want = Math.min(this.moved || near || g.along >= 0 ? Math.max(0, vAc + (target - this.s) * 0.5) : 0, cap);
       if (gap < F.GAP_M) accel = F.RUN_ACCEL_MS2;
     } else if (this.path) {
       // the engines winding down: off home along the service road
