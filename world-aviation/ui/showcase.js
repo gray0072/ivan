@@ -36,9 +36,10 @@ const Showcase = {
   start(ac, id) {
     const S = SHOWCASE;
     Game.stopCine();
-    // the world there: the last flight's, if the airport is in it
-    if (!World.here[id]) {
-      World.prepare(id, id);
+    // the world there: the last flight's, if the airport is in it (in the career's month: the snow)
+    const fresh = !World.here[id];
+    if (World.setMonth(Career.data.season || 0) || fresh) {
+      if (fresh) World.prepare(id, id);
       Scene3D.setTheatre();
     }
     const a = World.here[id];

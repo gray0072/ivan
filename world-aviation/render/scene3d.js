@@ -241,9 +241,9 @@ const Scene3D = {
     const pos = new Float32Array(vw * vh * 3);
     const col = new Float32Array(vw * vh * 3);
     const nor = new Float32Array(vw * vh * 3);
-    const land = new Float32Array(vw * vh * 3);
+    const land = new Float32Array(vw * vh * 4);
     const heights = new Float32Array(vw * vh);
-    const c = [0, 0, 0], ld = [0, 0, 0];
+    const c = [0, 0, 0], ld = [0, 0, 0, 0, 0];
     for (let j = 0; j < vh; j++) {
       for (let i = 0; i < vw; i++) {
         const k = j * vw + i;
@@ -265,7 +265,7 @@ const Scene3D = {
         const slope = 1 - ny / l;
         Terrain.colorAt(pos[k * 3], pos[k * 3 + 2], heights[k], slope, c, ld);
         col[k * 3] = c[0] / 255; col[k * 3 + 1] = c[1] / 255; col[k * 3 + 2] = c[2] / 255;
-        land[k * 3] = ld[0]; land[k * 3 + 1] = ld[1]; land[k * 3 + 2] = ld[2];
+        land[k * 4] = ld[0]; land[k * 4 + 1] = ld[1]; land[k * 4 + 2] = ld[2]; land[k * 4 + 3] = ld[3];
       }
     }
     const idx = new Uint32Array(nx * nz * 6);
@@ -281,7 +281,7 @@ const Scene3D = {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    geo.setAttribute('land', new THREE.BufferAttribute(land, 3));
+    geo.setAttribute('land', new THREE.BufferAttribute(land, 4));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeBoundingSphere();
     if (this.farMesh) { this.scene.remove(this.farMesh); this.farMesh.geometry.dispose(); }
@@ -304,7 +304,7 @@ const Scene3D = {
       this.nearNor = geo.attributes.normal.array;
       geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array((n + 1) * (n + 1) * 3), 3));
       this.nearCol = geo.attributes.color.array;
-      geo.setAttribute('land', new THREE.BufferAttribute(new Float32Array((n + 1) * (n + 1) * 3), 3));
+      geo.setAttribute('land', new THREE.BufferAttribute(new Float32Array((n + 1) * (n + 1) * 4), 4));
       this.nearLand = geo.attributes.land.array;
       this.nearN = n;
       this.nearOx = this.nearOz = null;    // a new mesh: its origin is set by the next build
@@ -368,7 +368,7 @@ const Scene3D = {
     const most = Math.ceil(w / 4), least = Math.ceil(w / 8);
     const budget = bld.full ? w : clamp(Math.floor(NEAR_BUILD_MS / (this.nearRowMs || 1e-3)), least, most);
     const t0 = performance.now();
-    const c = [0, 0, 0], ld = [0, 0, 0];
+    const c = [0, 0, 0], ld = [0, 0, 0, 0, 0];
     let done = 0;
     while (bld.row < w && done < budget) {
       const j = bld.row;
@@ -392,7 +392,7 @@ const Scene3D = {
         const wx = x0 + i * cell, wz = z0 + j * cell;
         Terrain.colorAt(wx, wz, hs[k], slope, c, ld);
         col[k * 3] = c[0] / 255; col[k * 3 + 1] = c[1] / 255; col[k * 3 + 2] = c[2] / 255;
-        land[k * 3] = ld[0]; land[k * 3 + 1] = ld[1]; land[k * 3 + 2] = ld[2];
+        land[k * 4] = ld[0]; land[k * 4 + 1] = ld[1]; land[k * 4 + 2] = ld[2]; land[k * 4 + 3] = ld[3];
       }
     }
     // only the rows written go up to the GPU, together with any written since the last upload
@@ -401,7 +401,7 @@ const Scene3D = {
     const g = this.nearMesh.geometry;
     for (const att of [g.attributes.position, g.attributes.normal, g.attributes.color, g.attributes.land]) {
       const r = att.updateRange;
-      let from = jStart * w * 3, to = (jEnd + 1) * w * 3;
+      let from = jStart * w * att.itemSize, to = (jEnd + 1) * w * att.itemSize;
       if (r.count !== -1) { from = Math.min(from, r.offset); to = Math.max(to, r.offset + r.count); }
       r.offset = from; r.count = to - from;
       att.needsUpdate = true;
@@ -543,16 +543,17 @@ const Scene3D = {
     const n = this.quality.trees;
     const m = new THREE.Matrix4();
     const rng = makeRng(Math.round(px / 1000) * 7919 + Math.round(pz / 1000) * 104729);
-    const radius = 4200, c = [0, 0, 0], land = [0, 0, 0];
+    const radius = 4200, c = [0, 0, 0], land = [0, 0, 0, 0, 0];
     let placed = 0;
     for (let i = 0; i < n * 4 && placed < n; i++) {
       const a = rng.next() * TAU, r = Math.sqrt(rng.next()) * radius;
       const x = px + Math.cos(a) * r, z = pz + Math.sin(a) * r;
       const h = Terrain.heightAt(x, z);
       if (h < 6 || h > 900) continue;
-      // trees stand in the woods of the land cover, a few along the fields
+      // trees stand in the woods of the land cover, a few along the fields; none in the desert
+      // or the tundra (land[4])
       Terrain.colorAt(x, z, h, 0, c, land);
-      if (rng.next() > Math.max(0.03, LandCover.forestAt(x, z, land))) continue;
+      if (rng.next() > Math.max(0.03, LandCover.forestAt(x, z, land)) * (1 - land[4])) continue;
       const s = 6 + rng.next() * 9;
       m.makeScale(s, s * (0.8 + rng.next() * 0.7), s);
       m.setPosition(x, h, z);

@@ -18,9 +18,12 @@
 //     streets, lone farms, and a grid of street lights for the real
 //     cities.
 // How much of each shows comes from the terrain (Terrain.colorAt's
-// `land`): fields in the lowlands, none on rock, snow, sand or the
-// water; more woods in the north, the tropics and the hills; the
-// real cities of data/cities.js grey with their streets lit.
+// `land`): none on rock, the mountains' snow or the water; more woods
+// in the north, the tropics and the hills; the real cities of
+// data/cities.js grey with their streets lit. Where the climate
+// grows no crops (the desert, the tundra) or the winter's snow lies,
+// the fields give way to the land's own ground, mottled by the tile's
+// noise (under the snow the woods dark, the villages kept).
 // Used by Scene3D (the terrain material, the trees).
 // ============================================================
 
@@ -99,7 +102,7 @@ const LandCover = {
             '  if (length(vLandW - uLandHole.xy) < uLandHole.z) discard;');
       }
       sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', 'attribute vec3 land;\nvarying vec3 vLand;\nvarying vec2 vLandW;\n#include <common>')
+        .replace('#include <common>', 'attribute vec4 land;\nvarying vec4 vLand;\nvarying vec2 vLandW;\n#include <common>')
         .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLand = land;\nvLandW = (modelMatrix * vec4(transformed, 1.0)).xz;');
       sh.fragmentShader = sh.fragmentShader
         .replace('#include <common>', (this.bomb ? '#define LAND_BOMB\n' : '') + LAND_FRAG_PARS + '#include <common>')
@@ -115,7 +118,7 @@ const LandCover = {
         sh.fragmentShader = landCentroid(sh.fragmentShader);
       }
     };
-    m.customProgramCacheKey = () => 'landcover1' + this.bomb + (hole ? 'hole' : '');
+    m.customProgramCacheKey = () => 'landcover2' + this.bomb + (hole ? 'hole' : '');
     return (this[key] = m);
   },
   // the far mesh's hole: the circle of radius r round (cx, cz), world metres; r 0 for none
@@ -138,8 +141,8 @@ const LandCover = {
     const t = this.tileAt((LAND_ROT_A[0] * x + LAND_ROT_A[1] * z) / LAND_TILE_M, (-LAND_ROT_A[1] * x + LAND_ROT_A[0] * z) / LAND_TILE_M);
     const v = at(this.l, t[0], t[1]);
     if (v > 0.9) return 0;                              // a village
-    const cov = noise(LAND_ROT_C, LAND_WOOD_M) + (Math.min(v, 0.7) - 0.5) * 0.4;
-    const woods = land[1], tS = woods * 0.6 + 0.06, tB = woods * 0.8 - 0.15;
+    const cov = noise(LAND_ROT_C, LAND_WOOD_M) + (Math.min(v, 0.7) - 0.5) * 0.4 * (1 - (land[3] || 0));
+    const woods = land[1], tS = woods * 0.6 + 0.06 * smoothstep(0, 0.1, woods), tB = woods * 0.8 - 0.15;
     const f = Math.max(1 - smoothstep(tS - 0.012, tS + 0.012, cov), 1 - smoothstep(tB - 0.02, tB + 0.02, covB));
     return f * land[0];
   },
@@ -159,13 +162,14 @@ const LandCover = {
 };
 
 // The shader: the same sums as forestAt. vLand = (patch: how much land cover shows, woods: how
-// wooded the country is, urban: a real city here); vLandW the world position.
+// wooded the country is, urban: a real city here, wild: how much of the farmland gives way to
+// the land's own ground — the desert, the tundra, the winter's snow); vLandW the world position.
 const LAND_FRAG_PARS = `
 uniform sampler2D uLandA, uLandL;
 uniform float uLandNight, uLandMean, uLandTexN, uLandStreetOff;
 uniform float uLandXs[${LAND_LINES}], uLandYs[${LAND_LINES}];
 uniform vec2 uLandN;
-varying vec3 vLand;
+varying vec4 vLand;
 varying vec2 vLandW;
 `;
 const LAND_FRAG = `
@@ -198,23 +202,33 @@ const LAND_FRAG = `
 #endif
   float woods = vLand.y;
   float village = smoothstep(0.82, 0.95, AL.a);
-  float cov = woodN + (min(AL.a, 0.7) - 0.5) * 0.4;           // the woods' edges follow the fields a little
+  float cov = woodN + (min(AL.a, 0.7) - 0.5) * 0.4 * (1.0 - vLand.w);   // the woods' edges follow the fields a little (where there are any)
   float covB = (B1.a + B2.a) * 0.5;
-  float tS = woods * 0.6 + 0.06, tB = woods * 0.8 - 0.15;
+  float tS = woods * 0.6 + 0.06 * smoothstep(0.0, 0.1, woods), tB = woods * 0.8 - 0.15;   // (no woods where none grow)
   float bigWood = 1.0 - smoothstep(tB - 0.02, tB + 0.02, covB);
   float forest = max(1.0 - smoothstep(tS - 0.012, tS + 0.012, cov), bigWood);
-  // a village shows in open country (the regions' cover high), fewer in wooded land
-  float town = village * smoothstep(0.3, 0.55, covB) * (1.0 - 0.7 * woods) * (1.0 - bigWood);
   vec3 base = diffuseColor.rgb;
-  vec3 c = mix(base, A.rgb, 0.72 * (1.0 - village));          // the fields, keeping a little of the land's colour
-  c = mix(c, base * vec3(0.56, 0.7, 0.56) * (0.6 + 0.8 * AL.b), forest);   // the woods: darker than the open land, the crowns
-  c = mix(c, A.rgb, town * (1.0 - forest));                    // the villages
-  c *= 0.88 + 0.9 * (dot(B1.rgb + B2.rgb, vec3(0.1667)) - uLandMean);   // the regions' tone
+  float wild = vLand.w;
+  float snow = smoothstep(0.5, 0.68, base.b);                 // the snow on the ground (nothing else is this blue-white)
+  // the land's own ground where nothing is grown (the desert, the tundra, the snow): its colour
+  // mottled by the tile's noise and the stands' clumps (less under the snow)
+  vec3 natural = base * (0.86 + (0.5 * (A.a - 0.5) + 0.5 * (AL.b - 0.5)) * (1.0 - 0.6 * snow));
+  // a village shows in open country (the regions' cover high), fewer in wooded land and few in
+  // the desert and the tundra
+  float town = village * smoothstep(0.3, 0.55, covB) * (1.0 - 0.7 * woods) * (1.0 - bigWood) * (1.0 - 0.8 * wild * (1.0 - snow));
+  vec3 c = mix(base, mix(A.rgb, natural, wild), mix(0.72, 1.0, wild) * (1.0 - village));   // the fields, keeping a little of the land's colour
+  // the woods: darker than the open land (dark under the snow, with the snow in the gaps), the crowns
+  vec3 woodC = mix(base * vec3(0.56, 0.7, 0.56), vec3(0.11, 0.14, 0.12), snow) * (0.6 + 0.8 * AL.b);
+  c = mix(c, mix(woodC, base * 0.75, 0.4 * snow * smoothstep(0.55, 0.75, AL.b)), forest);
+  c = mix(c, mix(A.rgb, natural, 0.5 * snow), town * (1.0 - forest));   // the villages
+  // the regions' tone (on the wild land from the smooth noise, not the fields' blocks)
+  c *= mix(0.88 + 0.9 * (dot(B1.rgb + B2.rgb, vec3(0.1667)) - uLandMean), 0.9 + 0.35 * (B1.a - B2.a), wild);
   c = mix(base, c, vLand.x);
   // the real cities: roofs in blocks between the streets of the grid, its parks the woods
   float city = vLand.z * (1.0 - 0.6 * forest);
   float street = smoothstep(0.08, 0.18, AL.g);
   vec3 roofs = vec3(0.42, 0.4, 0.38) * (0.65 + 0.7 * AL.b) * (0.8 + 0.4 * dot(A.rgb, vec3(0.3, 0.5, 0.2)));
+  roofs = mix(roofs, base * 0.85, 0.5 * snow);
   c = mix(c, mix(roofs, vec3(0.25, 0.25, 0.26), street * 0.85), city);
   diffuseColor.rgb = c;
   // the lights after dusk, read from a sharper level than the rest so they stay points — but only
@@ -233,7 +247,7 @@ const LAND_FRAG = `
     float villageL = mix(LN.r, AL.r, lightFar);
     float cityL = mix(max(LN.g - 0.2, 0.0), max(AL.g - uLandStreetOff, 0.0), lightFar);
     totalEmissiveRadiance += uLandNight * vec3(1.0, 0.62, 0.28)
-      * (villageL * (1.0 - forest) * mix(0.8, town, village) * vLand.x * 1.6 + cityL * city * 1.75);
+      * (villageL * (1.0 - forest) * mix(0.8 - 0.65 * wild * (1.0 - snow), town, village) * vLand.x * 1.6 + cityL * city * 1.75);
   }
 }
 `;

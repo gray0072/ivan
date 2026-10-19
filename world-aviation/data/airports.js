@@ -237,10 +237,11 @@ const AIRPORT_LOOK = {
   AKL: ['kiwi', '#3b3b3b']
 };
 
-// ---------- The trees round each airport ----------
-// The climate that picks the trees outside the fence (render/perimeter3d.js), where the latitude
-// alone would get it wrong (by the latitude: tropical under 20°, subtropical to 30°, warm to 42°,
-// temperate to 58°, boreal north of it and at every Arctic field)
+// ---------- The climate of each airport ----------
+// The climate that picks the trees outside the fence (render/perimeter3d.js), the airport's grass
+// (render/airport3d.js) and the look of the land round it (Terrain.lookAt), where the latitude
+// alone would get it wrong (Terrain.climateOf; by the latitude: tropical under 20°, subtropical to
+// 30°, warm to 42°, temperate to 58°, boreal north of it and at every Arctic field)
 const AIRPORT_CLIMATE = {
   tundra: ['LYR', 'SFJ', 'KEF', 'FAE', 'VAW', 'RET', 'HTG', 'DYR', 'NSK'],     // no trees: low willow scrub
   larch: ['YKS', 'IKT', 'KJA'],                                               // the Siberian taiga

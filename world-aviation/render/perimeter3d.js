@@ -15,8 +15,8 @@
 //     texture has their shadows), and woods and copses round the field
 //     outside the fence — never on the extended centreline, the roads,
 //     the car park, the buildings or the water. The climate
-//     (AIRPORT_CLIMATE in data/airports.js, else the latitude) picks the
-//     mix: spruce, pine and birch in the north, larch in Siberia, oak
+//     (Terrain.climateOf: AIRPORT_CLIMATE in data/airports.js, else the
+//     latitude) picks the mix: spruce, pine and birch in the north, larch in Siberia, oak
 //     and poplar in the temperate belt, cypress, stone pine and olive by
 //     the Mediterranean, poplars in the steppe oases, date palms in the
 //     desert, coconut palms and broadleaves in the tropics, acacias on
@@ -100,11 +100,6 @@ const Perimeter3D = {
   },
 
   // ---------- the trees ----------
-  climate(a) {
-    for (const k in AIRPORT_CLIMATE) if (AIRPORT_CLIMATE[k].indexOf(a.id) >= 0) return k;
-    const lat = Math.abs(a.lat);
-    return a.arctic || lat >= 58 ? 'boreal' : lat < 20 ? 'tropical' : lat < 30 ? 'subtropical' : lat < 42 ? 'warm' : lat < 58 ? 'temperate' : 'boreal';
-  },
   // the leaves of the deciduous trees this month at the airport: green, autumn or bare
   leaves(a, climate) {
     if (['boreal', 'larch', 'temperate', 'warm', 'steppe'].indexOf(climate) < 0 || Math.abs(a.lat) < 35) return 'green';
@@ -117,7 +112,8 @@ const Perimeter3D = {
   },
 
   trees(a, rec, at, quality) {
-    const climate = this.climate(a), mix = TREE_MIXES[climate];
+    // (the airport's climate, shared with its grass and the land round it: Terrain.climateOf)
+    const climate = Terrain.climateOf(a), mix = TREE_MIXES[climate];
     const leaves = this.leaves(a, climate);
     const k = (quality && quality.aptTrees !== undefined ? quality.aptTrees : 1) * (mix.density || 1);
     const budget = Math.round((AIRPORT_TREES[a.terminal] || AIRPORT_TREES.small) * k);

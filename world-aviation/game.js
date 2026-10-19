@@ -1234,9 +1234,10 @@ const Game = {
     this.setup = Career.flightSetup(contract, { seed: opts.seed || 0, skipPushback: opts.skipPushback });
     const s = this.setup;
     const lesson = opts.lesson || null;       // a flight school's lesson (data/lessons.js)
-    // the flight's own world: projection, terrain, airports laid out
-    if (World.key !== contract.fromId + '>' + contract.toId) {
-      World.prepare(contract.fromId, contract.toId);
+    // the flight's own world: projection, terrain, airports laid out (in the career's month: the snow)
+    const fresh = World.key !== contract.fromId + '>' + contract.toId;
+    if (World.setMonth(Career.data.season || 0) || fresh) {
+      if (fresh) World.prepare(contract.fromId, contract.toId);
       Scene3D.setTheatre();
     }
     s.from = World.here[contract.fromId];
@@ -1365,8 +1366,9 @@ const Game = {
     AirTraffic.stop();
     Traffic3D.clear();
     const s = Career.flightSetup(contract, { seed: 0, skipPushback: Career.skipPushback });
-    if (World.key !== contract.fromId + '>' + contract.toId) {
-      World.prepare(contract.fromId, contract.toId);
+    const fresh = World.key !== contract.fromId + '>' + contract.toId;
+    if (World.setMonth(Career.data.season || 0) || fresh) {
+      if (fresh) World.prepare(contract.fromId, contract.toId);
       Scene3D.setTheatre();
     }
     const from = World.here[contract.fromId], to = World.here[contract.toId];

@@ -7,8 +7,9 @@
 // runway centre turned with the runway, local x = across (towards
 // the terminal), local z = -t (t runs down the runway), y = up.
 //
-//   - the ground: one canvas texture with the grass (mown strips),
-//     taxiways (shoulders, edge and centre lines), the apron (concrete
+//   - the ground: one canvas texture with the ground of the airport's
+//     climate (mown grass, dry grass, sand, tundra, the winter's snow:
+//     groundLook, the same look as the land round it), taxiways (shoulders, edge and centre lines), the apron (concrete
 //     slabs, stands, a service road), the landside roads, the car
 //     park and the perimeter road
 //   - the runway: its own fine texture (concrete ends with joints,
@@ -1459,6 +1460,29 @@ function roundPolyline(pts, rad, steps) {
   return out;
 }
 
+// The ground of an airport by its climate, from the same look as the land round it
+// (Terrain.lookAt at the field, its own climate there: Terrain.climateOf), so the ground
+// texture fades into terrain of the same kind: the green grass of the temperate and the
+// northern fields (a lusher green in the tropics), dry yellow-olive grass in the steppe and by
+// the Mediterranean (golden on the savanna), sand in the desert, the tundra's olive-brown moss,
+// and the winter's snow. grass: the colour (sRGB 0..255); mown: how much the mowing shows;
+// snow: 0..1 (whole above 0.97); snowC: its colour
+const GROUND_TONE = 0.62;      // the terrain's vertex colours as the land cover shows them, on the whole (flat-ground shading, its mottle and the regions' tone)
+const GROUND_TONE_SNOW = 0.74; // the same for the snow (mottled less)
+function groundLook(a) {
+  const L = Terrain.lookAt(a.x, a.z, a.elev), climate = Terrain.climateOf(a);
+  // the terrain's colours are linear (vertex colours), the canvas's sRGB
+  const srgb = (v, tone) => { v = clamp(v / 255 * (tone || GROUND_TONE), 0, 1); return 255 * (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055); };
+  const land = Terrain.groundRGB(L, Math.abs(a.lat), 0.5, [0, 0, 0]).map((v) => srgb(v));
+  const lush = climate === 'tropical' || climate === 'subtropical' ? 1 : L.trop;
+  const green = [lerp(95, 62, lush), lerp(110, 106, lush), lerp(71, 48, lush)];
+  const k = clamp(L.dry + L.tundra + L.arid, 0, 1);
+  return {
+    L, climate, grass: green.map((v, i) => lerp(v, land[i], k)), mown: 1 - k,
+    snow: smoothstep(0.2, 0.8, L.snow), snowC: [234, 238, 247].map((v) => srgb(v, GROUND_TONE_SNOW))
+  };
+}
+
 function makeGroundCanvas(a, id, ch) {
   const L = LAYOUT;
   const { tMin, tMax, aMin, aMax } = groundBox(a);
@@ -1472,22 +1496,56 @@ function makeGroundCanvas(a, id, ch) {
   const rect = (t0, t1, a0, a1) => { const p = P(t1, a0), q = P(t0, a1); g.fillRect(p[0], p[1], q[0] - p[0], q[1] - p[1]); };
   const px = (m, min) => Math.max(min || 1, m * sx);
   const rng = makeRng(hashStr(a.id));
-  const arctic = a.arctic;
+  const look = groundLook(a), G = look.grass, C = look.L;
+  const rgba = (c, al, k) => 'rgba(' + clamp(c[0] * (k || 1), 0, 255).toFixed(0) + ',' + clamp(c[1] * (k || 1), 0, 255).toFixed(0) + ',' + clamp(c[2] * (k || 1), 0, 255).toFixed(0) + ',' + al + ')';
+  const blots = (n, color, s0, s1, round) => {
+    g.fillStyle = color;
+    for (let i = 0; i < n; i++) {
+      const x = rng.range(0, cw), y = rng.range(0, ch), s = rng.range(s0, s1);
+      if (round) { g.beginPath(); g.ellipse(x, y, s, s * rng.range(0.5, 1), rng.range(0, Math.PI), 0, TAU); g.fill(); } else g.fillRect(x, y, s, s * rng.range(0.6, 1.4));
+    }
+  };
 
-  // grass, mowing stripes along the runway and a lighter runway strip
-  g.fillStyle = arctic ? '#7d876f' : '#5f6e47';
+  // the ground of the airport's climate (groundLook): grass with mowing stripes along the
+  // runway, dry grass, sand with dry scrub, moss and lichen; a lighter runway strip
+  g.fillStyle = rgba(G, 1);
   g.fillRect(0, 0, cw, ch);
   for (let across = aMin; across < aMax; across += 24) {
-    g.fillStyle = ((across / 24) | 0) % 2 ? 'rgba(255,255,230,0.03)' : 'rgba(0,20,0,0.03)';
+    g.fillStyle = ((across / 24) | 0) % 2 ? 'rgba(255,255,230,' + (0.03 * look.mown).toFixed(3) + ')' : 'rgba(0,20,0,' + (0.03 * look.mown).toFixed(3) + ')';
     rect(tMin, tMax, across, across + 24);
   }
   for (let i = 0; i < 3200; i++) {
     const v = rng.range(-18, 18);
-    g.fillStyle = 'rgba(' + (95 + v | 0) + ',' + (112 + v | 0) + ',' + (72 + v * 0.5 | 0) + ',0.3)';
+    g.fillStyle = rgba([G[0] + v, G[1] + 2 + v, G[2] + 1 + v * 0.5], 0.3);
     g.fillRect(rng.range(0, cw), rng.range(0, ch), rng.range(2, 12), rng.range(2, 12));
   }
-  g.fillStyle = 'rgba(160,180,115,0.18)';
+  const px1 = Math.max(1, sx);                        // a metre on the canvas
+  if (C.arid > 0.3) blots(Math.round(2400 * C.arid), rgba(G, 0.35, 0.72), px1 * 1.5, px1 * 4);             // tussocks of dry grass
+  if (C.dry > 0.3) {
+    blots(Math.round(260 * C.dry), rgba(G, 0.14, 1.14), px1 * 14, px1 * 50, true);                         // drifts of paler sand
+    blots(Math.round(4000 * C.dry), rgba([104, 96, 62], 0.45), px1 * 0.7, px1 * 2, true);                  // the dry scrub
+  }
+  if (C.tundra > 0.3) {
+    blots(Math.round(6000 * C.tundra), rgba(G, 0.2, 0.72), px1 * 1.5, px1 * 7, true);                      // darker moss and the wet hollows
+    blots(Math.round(5000 * C.tundra), rgba([196, 192, 160], 0.22), px1 * 0.8, px1 * 2.5, true);           // pale lichen
+  }
+  g.fillStyle = rgba([G[0] + 65, G[1] + 70, G[2] + 44].map((v, i) => lerp(G[i] * 1.25, v, look.mown)), 0.18);
   rect(-a.half - 160, a.half + 160, -110, 110);
+  // the winter's snow over it all (the pavement drawn over it stays ploughed, banked up along its
+  // edges: the shoulders below), in patches where it comes and goes
+  if (look.snow > 0) {
+    const S = look.snowC;
+    if (look.snow > 0.97) { g.fillStyle = rgba(S, 1); g.fillRect(0, 0, cw, ch); }
+    else blots(Math.round(7000 * look.snow), rgba(S, 0.9), px1 * 8, px1 * 40, true);
+    // the drifts: long and thin, all one way (the wind's)
+    for (const [n, color] of [[2400, rgba(S, 0.16, 0.92)], [2400, 'rgba(255,255,255,0.14)']]) {
+      g.fillStyle = color;
+      for (let i = 0, m = Math.round(n * look.snow); i < m; i++) {
+        const s = rng.range(px1 * 3, px1 * 14);
+        g.beginPath(); g.ellipse(rng.range(0, cw), rng.range(0, ch), s, s * rng.range(0.15, 0.3), 0.6 + rng.range(-0.15, 0.15), 0, TAU); g.fill();
+      }
+    }
+  }
 
   const asphalt = (path, wM, color) => { g.strokeStyle = color; g.lineWidth = px(wM, 1.2); g.stroke(path); };
   const line = (pts) => { const p = new Path2D(); pts.forEach(([t, ac], i) => { const q = P(t, ac); if (i) p.lineTo(q[0], q[1]); else p.moveTo(q[0], q[1]); }); return p; };
@@ -1531,9 +1589,10 @@ function makeGroundCanvas(a, id, ch) {
     const a0 = Math.min(...a.landside.map((b) => b.across - b.acrossSize / 2)), a1 = Math.max(...a.landside.map((b) => b.across + b.acrossSize / 2));
     g.fillStyle = '#6a6d6f'; rect(t0 - 10, t1 + 10, a0 - 10, a1 + 8);
   }
-  // trees along the landside road
-  for (let t = r.t0 - 200; t < r.t1 + 100; t += 14) {
-    g.fillStyle = 'rgba(38,62,34,0.9)';
+  // trees along the landside road (none in the tundra: Perimeter3D), dark on green grass, else
+  // their shadows
+  for (let t = r.t0 - 200; t < r.t1 + 100 && look.climate !== 'tundra'; t += 14) {
+    g.fillStyle = look.mown > 0.6 && look.snow < 0.5 ? 'rgba(38,62,34,0.9)' : look.snow >= 0.5 ? 'rgba(96,108,128,0.55)' : rgba(G, 0.6, 0.45);
     const q = P(t, c1 + 8);
     g.beginPath(); g.arc(q[0], q[1], px(3.2, 1.5), 0, TAU); g.fill();
   }
@@ -1555,7 +1614,8 @@ function makeGroundCanvas(a, id, ch) {
     for (const pts of polys) { pts.forEach(([t, ac], i) => { const q = P(t, ac); if (i) p.lineTo(q[0], q[1]); else p.moveTo(q[0], q[1]); }); p.closePath(); }
     g.fillStyle = color; g.fill(p);
   };
-  fill(Taxiways.pavement(plan, TWY_SHOULDER), '#8a8574');
+  // (the shoulders: in the winter the banks of the snow ploughed off the pavement)
+  fill(Taxiways.pavement(plan, TWY_SHOULDER), look.snow > 0.5 ? rgba(look.snowC, 1, 0.94) : '#8a8574');
   const pave = Taxiways.pavement(plan, 0);
   fill(pave, a.remote ? '#857c6c' : '#65696d');
   paveWear(g, pave, plan, P, px, rng, a.remote);

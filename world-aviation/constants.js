@@ -45,6 +45,15 @@ const WORLD = {
 
 };
 
+// ---------- The landscape's climate (Terrain.lookAt in sim/terrain.js) ----------
+// The land's look by its climate and the month: the desert's sand, the steppe's dry grass, the
+// tundra past the tree line, the tropics' deep green, and the winter's snow
+const LANDSCAPE = {
+  SNOW_T: [0, -4],             // the snow lies on the land as the month's mean temperature there falls from 0 to -4 °C
+  TUNDRA_COLD: 7,              // °C colder than the latitude's mean past the tree line, all year (Norilsk: snow from October to May)
+  CLIMATE_NEAR_M: [25000, 60000]   // round each airport its own climate (Terrain.climateOf, the trees') takes over the land's look: fully within the first, fading out by the second
+};
+
 // ---------- Simulation ----------
 const SIM = {
   FIXED_DT: 1 / 60,            // physics step, seconds

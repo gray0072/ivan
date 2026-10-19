@@ -11,6 +11,11 @@
 // same on every flight). Detail noise is added when the height is
 // sampled, airports are flattened to their elevation, and corridors
 // keep the approaches and departures clear.
+// The land's colours follow its climate (Terrain.lookAt): the
+// deserts' sand, the steppe's and the Mediterranean's dry grass,
+// the tropics' deep green, the tundra past the tree line, and the
+// winter's snow by the month; round each airport its own climate
+// (Terrain.climateOf, the one its trees grow in) takes over.
 // ============================================================
 
 const TERRAIN = {
@@ -25,6 +30,7 @@ const TERRAIN = {
 const Terrain = {
   built: false,
   g: null,            // the grid: {x0, z0, cell (world m), cellKm, w, h, height}
+  month: 6,           // the month of the flight's world (0 = January; Career.data.season): the snow
 
   // Build the heightmap for a box of world metres {x0, x1, z0, z1}
   build(box) {
@@ -260,6 +266,77 @@ const Terrain = {
     });
     TERRAIN.aptGrid = grid;
     TERRAIN.aptList = airports;
+    // round each airport the land looks as its own climate (lookAt)
+    TERRAIN.climPatches = airports.map((a) => ({ x: a.x, z: a.z, look: CLIMATE_LOOK[this.climateOf(a)] })).filter((p) => p.look);
+  },
+
+  // ---------- the climate ----------
+  // The climate of an airport: the trees outside its fence (render/perimeter3d.js), its grass
+  // (render/airport3d.js) and the land round it (lookAt). AIRPORT_CLIMATE (data/airports.js)
+  // where the latitude alone would get it wrong, else the latitude: tropical under 20°,
+  // subtropical to 30°, warm to 42°, temperate to 58°, boreal north of it and at every Arctic field
+  climateOf(a) {
+    for (const k in AIRPORT_CLIMATE) if (AIRPORT_CLIMATE[k].indexOf(a.id) >= 0) return k;
+    const lat = Math.abs(a.lat);
+    return a.arctic || lat >= 58 ? 'boreal' : lat < 20 ? 'tropical' : lat < 30 ? 'subtropical' : lat < 42 ? 'warm' : 'temperate';
+  },
+
+  // How the land looks at (x, z), h metres up, in the flight's month, each 0..1 (into out):
+  //   trop    the lush tropics
+  //   dry     the desert's sand and scrub
+  //   arid    dry grass: the steppe, the Mediterranean, the savanna
+  //   tundra  moss and lichen past the tree line
+  //   wild    how much of the farmland gives way to the land's own ground (render/landcover.js)
+  //   snow    the winter's snow on the ground (its mean: colorAt breaks it into patches at the edge)
+  // From the latitude and the regions below (DESERTS, ARID_LANDS, TREE_LINE); within
+  // LANDSCAPE.CLIMATE_NEAR_M of an airport its own climate (climateOf) takes over, so the
+  // ground round the field matches its grass and its trees. The snow comes from the month's
+  // mean temperature there (seasonTemp in sim/world.js), colder up high, past the tree line and
+  // in the heart of the continents in winter.
+  lookAt(x, z, h, out) {
+    const geo = Theatre.toGeo(x, z);
+    return this.lookGeo(geo.lat, geo.lon, x, z, h, out || {});
+  },
+  lookGeo(lat, lon, x, z, h, out) {
+    const alat = Math.abs(lat);
+    let dry = boxesAt(DESERTS, lat, lon), arid = boxesAt(ARID_LANDS, lat, lon);
+    let tundra = lat > 0 ? smoothstep(-1.5, 1.5, lat - treeLine(lon)) : 0;
+    const P = TERRAIN.climPatches;
+    if (P) {
+      const R0 = LANDSCAPE.CLIMATE_NEAR_M[0], R1 = LANDSCAPE.CLIMATE_NEAR_M[1];
+      for (let i = 0; i < P.length; i++) {
+        const p = P[i], dx = x - p.x, dz = z - p.z, d2 = dx * dx + dz * dz;
+        if (d2 >= R1 * R1) continue;
+        const w = 1 - smoothstep(R0, R1, Math.sqrt(d2)), L = p.look;
+        dry = lerp(dry, L.dry, w); arid = lerp(arid, L.arid, w); tundra = lerp(tundra, L.tundra, w);
+      }
+    }
+    arid *= 1 - dry;
+    tundra *= 1 - dry;
+    const season = Math.cos((this.month - 6.5) / 12 * TAU) * (lat < 0 ? -1 : 1);   // +1 midsummer, -1 midwinter
+    const winter = winterAt(lat, lon);
+    const temp = seasonTemp(lat, season) - Math.max(0, h) * 0.0065 + winter * (0.5 - 0.5 * season) -
+      LANDSCAPE.TUNDRA_COLD * tundra * (1 - smoothstep(0, 4, winter));
+    out.trop = smoothstep(18, 8, alat);
+    out.dry = dry; out.arid = arid; out.tundra = tundra;
+    out.wild = clamp(dry + tundra + 0.65 * arid, 0, 1);
+    out.snow = smoothstep(LANDSCAPE.SNOW_T[0], LANDSCAPE.SNOW_T[1], temp) * (1 - 0.7 * dry) * (1 - 0.3 * arid);
+    return out;
+  },
+
+  // The land's own colour where nothing is grown on it (0..255, the vertex colours' linear
+  // scale, into out): the woods and meadows of the latitude, the tropics' deep green, dry grass
+  // (golden nearer the equator), sand, the tundra's olive-brown moss. L: lookAt's; n: noise 0..1
+  groundRGB(L, alat, n, out) {
+    const birch = smoothstep(63, 56, alat) * 0.65 + 0.12;
+    let r = lerp(30, 104, birch) + n * 20, g = lerp(62, 122, birch) + n * 24, b = lerp(36, 66, birch) + n * 14;
+    r = lerp(r, 26, L.trop); g = lerp(g, 72, L.trop); b = lerp(b, 30, L.trop);
+    const sav = smoothstep(26, 14, alat), k = L.arid * 0.85;
+    r = lerp(r, lerp(150, 174, sav) + n * 22, k); g = lerp(g, lerp(138, 146, sav) + n * 18, k); b = lerp(b, lerp(84, 78, sav) + n * 12, k);
+    r = lerp(r, 196 + n * 20, L.dry); g = lerp(g, 168 + n * 18, L.dry); b = lerp(b, 118 + n * 14, L.dry);
+    r = lerp(r, 88 + n * 26, L.tundra); g = lerp(g, 94 + n * 22, L.tundra); b = lerp(b, 52 + n * 12, L.tundra);
+    out[0] = r; out[1] = g; out[2] = b;
+    return out;
   },
 
   // Flatten the ground around every airport so runways are level
@@ -338,51 +415,57 @@ const Terrain = {
   },
 
   // Vertex colour for terrain, written into out[0..2] as 0..255. land (optional, for the
-  // renderer's land cover, render/landcover.js) gets [patch, woods, urban], each 0..1: how much
-  // of the fields, woods and villages show (none on the water, the beaches, rock, snow, sand),
-  // how wooded the country is, and how much of a real city is here.
+  // renderer's land cover, render/landcover.js) gets [patch, woods, urban, wild, bare], each
+  // 0..1: how much of the land cover shows (none on the water, the beaches, rock or the
+  // mountains' snow), how wooded the country is, how much of a real city is here, how much of
+  // the farmland gives way to the land's own ground (the desert, the tundra, the winter's snow:
+  // lookAt's wild), and how bare of trees the land is (the desert, the tundra).
   colorAt(x, z, h, slope, out, land) {
     const geo = Theatre.toGeo(x, z);
     const alat = Math.abs(geo.lat);
     const n1 = fbm(x / 5200 + 21, z / 5200 - 13, 3);
     const n2 = fbm(x / 1100 - 5, z / 1100 + 7, 2);
-    let r, g, b, patch = 0, woods = 0;
+    // (wild and bare on the water and the beaches too: the far mesh's triangles reach from them
+    // to the land, and a wild of 0 there showed half the fields over the desert or the tundra)
+    const L = this.lookGeo(geo.lat, geo.lon, x, z, h, TERRAIN_LOOK);
+    let r, g, b, patch = 0, woods = 0, wild = L.wild, bare = clamp(L.dry + L.tundra, 0, 1);
     if (h < 0.5) {
       r = 44 + n1 * 20; g = 54 + n1 * 24; b = 58 + n1 * 18;
-    } else if (h < 14 && alat < 68) {
-      r = 170 + n2 * 24; g = 158 + n2 * 20; b = 128 + n2 * 22;                       // beaches
     } else {
-      const snowLine = alat < 63 ? lerp(4800, 1250, smoothstep(20, 60, alat)) : lerp(1250, 560, smoothstep(63, 72, alat));
-      const rock = clamp(smoothstep(0.26, 0.62, slope) + smoothstep(snowLine * 0.55, snowLine * 0.95, h) * 0.85, 0, 1);
-      const birch = smoothstep(63, 56, alat) * 0.65 + 0.12;
-      let fr = lerp(30, 104, birch) + n2 * 20;
-      let fg = lerp(62, 122, birch) + n2 * 24;
-      let fb = lerp(36, 66, birch) + n2 * 14;
-      // deep green in the tropics
-      const trop = smoothstep(18, 8, alat);
-      fr = lerp(fr, 34, trop); fg = lerp(fg, 84, trop); fb = lerp(fb, 34, trop);
-      // sand and dry scrub in the deserts
-      const dry = desertAt(geo.lat, geo.lon);
-      fr = lerp(fr, 196 + n2 * 20, dry); fg = lerp(fg, 168 + n2 * 18, dry); fb = lerp(fb, 118 + n2 * 14, dry);
-      const rr = 112 + n2 * 38, rg = 104 + n2 * 32, rb = 96 + n2 * 28;
-      r = lerp(fr, rr, rock); g = lerp(fg, rg, rock); b = lerp(fb, rb, rock);
-      const snowAmt = clamp(smoothstep(snowLine, snowLine + 320, h + n1 * 340), 0, 1);
-      r = lerp(r, 234 + n2 * 16, snowAmt); g = lerp(g, 238 + n2 * 14, snowAmt); b = lerp(b, 247, snowAmt);
-      const tundra = smoothstep(69.5, 72.5, alat) * (1 - snowAmt) * (1 - rock);
-      r = lerp(r, 126 + n2 * 24, tundra); g = lerp(g, 122 + n2 * 20, tundra); b = lerp(b, 92, tundra);
-      // faint patchwork of clearings and fields in the lowlands
-      const field = smoothstep(320, 80, h) * (1 - rock) * (1 - dry) * smoothstep(0.55, 0.75, fbm(x / 2600 + 31, z / 2600 + 17, 2));
-      r = lerp(r, 108 + n2 * 30, field * 0.5); g = lerp(g, 126 + n2 * 26, field * 0.5); b = lerp(b, 78, field * 0.5);
-      if (land) {
-        // fields in the kind lowlands; the woods thicken in the taiga, the tropics and the hills,
-        // and from one region to the next
-        patch = (1 - rock) * (1 - snowAmt) * (1 - tundra) * (1 - 0.75 * dry) * (1 - 0.6 * smoothstep(700, 2000, h));
-        const taiga = smoothstep(56, 61, alat) * (1 - smoothstep(66, 70, alat));
-        woods = 0.2 + 0.5 * taiga + 0.4 * trop + 0.3 * smoothstep(200, 800, h) + (fbm(x / 41000 - 3, z / 41000 + 5, 2) - 0.5) * 0.6;
-        woods = clamp(woods * (1 - dry), 0, 0.95);
+      // beaches along the coast (the raw ground's low there: not a low airfield levelled inland,
+      // which stood in the sand at Singapore)
+      if (h < 14 && alat < 68 && this.rawAt(x, z) < 14) {
+        r = 170 + n2 * 24; g = 158 + n2 * 20; b = 128 + n2 * 22;
+      } else {
+        const snowLine = alat < 63 ? lerp(4800, 1250, smoothstep(20, 60, alat)) : lerp(1250, 560, smoothstep(63, 72, alat));
+        const rock = clamp(smoothstep(0.26, 0.62, slope) + smoothstep(snowLine * 0.55, snowLine * 0.95, h) * 0.85, 0, 1);
+        // the land's own colour: the woods and meadows, the tropics, dry grass, sand, the tundra
+        const f = this.groundRGB(L, alat, n2, TERRAIN_RGB);
+        const rr = 112 + n2 * 38, rg = 104 + n2 * 32, rb = 96 + n2 * 28;
+        r = lerp(f[0], rr, rock); g = lerp(f[1], rg, rock); b = lerp(f[2], rb, rock);
+        const snowAmt = clamp(smoothstep(snowLine, snowLine + 320, h + n1 * 340), 0, 1);
+        r = lerp(r, 234 + n2 * 16, snowAmt); g = lerp(g, 238 + n2 * 14, snowAmt); b = lerp(b, 247, snowAmt);
+        // faint patchwork of clearings and fields in the green lowlands
+        const field = smoothstep(320, 80, h) * (1 - rock) * (1 - L.wild) * smoothstep(0.55, 0.75, fbm(x / 2600 + 31, z / 2600 + 17, 2));
+        r = lerp(r, 108 + n2 * 30, field * 0.5); g = lerp(g, 126 + n2 * 26, field * 0.5); b = lerp(b, 78, field * 0.5);
+        if (land) {
+          // the land cover everywhere but on rock and the mountains' snow (the farmland where
+          // it is not wild); the woods thicken in the taiga, the tropics and the hills, and from
+          // one region to the next, and thin out in the dry lands and past the tree line
+          patch = (1 - rock) * (1 - snowAmt) * (1 - 0.6 * smoothstep(700, 2000, h));
+          const taiga = smoothstep(56, 61, alat) * (1 - smoothstep(66, 70, alat));
+          woods = 0.2 + 0.5 * taiga + 0.55 * L.trop + 0.3 * smoothstep(200, 800, h) + (fbm(x / 41000 - 3, z / 41000 + 5, 2) - 0.5) * 0.6;
+          woods = clamp(woods * (1 - L.dry) * (1 - L.tundra) * (1 - 0.45 * L.arid), 0, 0.95);
+        }
+      }
+      // the winter's snow, in patches where it comes and goes; less of it on the steep slopes
+      const snow = clamp((L.snow - 0.5) * 2.2 + 0.5 + (n1 - 0.5) * 1.6, 0, 1) * (1 - 0.6 * smoothstep(0.35, 0.7, slope));
+      if (snow > 0) {
+        r = lerp(r, 234 + n2 * 16, snow); g = lerp(g, 238 + n2 * 14, snow); b = lerp(b, 247, snow);
+        wild = Math.max(wild, snow);
       }
     }
-    if (land) { land[0] = patch; land[1] = woods; land[2] = h < 0.5 ? 0 : this.urbanAt(x, z, n2); }
+    if (land) { land[0] = patch; land[1] = woods; land[2] = h < 0.5 ? 0 : this.urbanAt(x, z, n2); land[3] = wild; land[4] = bare; }
     const shade = clamp(0.8 + slope * 0.5, 0.72, 1.16);
     out[0] = clamp(r * shade, 0, 255);
     out[1] = clamp(g * shade, 0, 255);
@@ -408,20 +491,78 @@ function elevation(sdf, mtn, lon, lat) {
   return Math.min(h, 8800);
 }
 
-// The great deserts, 0..1 with soft edges: [lon0, lat0, lon1, lat1]
+// ---------- the climates' regions (Terrain.lookGeo) ----------
+// Each a list of boxes [lon0, lat0, lon1, lat1], 0..1 with soft edges (boxesAt).
+// The great deserts: the Sahara, Arabia, Iran and the Thar, the Karakum, the Gobi and the
+// Taklamakan, Australia's interior, the Mojave and Sonora, the Kalahari and the Namib, the
+// Atacama and the Peruvian coast, Patagonia, the Negev and Sinai
 const DESERTS = [
-  [-17, 15, 35, 31], [35, 15, 60, 32], [55, 25, 72, 36], [90, 38, 115, 46], [76, 36, 92, 42],
-  [115, -32, 145, -20], [-118, 26, -103, 37], [12, -29, 26, -18], [-71, -27, -68, -18], [-71, -50, -64, -38]
+  [-17, 15, 35, 31], [35, 15, 60, 32], [55, 25, 72, 36], [50, 27, 61, 34], [69, 24, 73, 29], [53, 37, 66, 44],
+  [90, 38, 115, 46], [76, 36, 92, 42], [115, -32, 145, -20], [-118, 26, -103, 37], [12, -29, 26, -18],
+  [-71, -27, -68, -18], [-80, -24, -75.5, -5], [-71, -50, -64, -38], [33, 28, 35.5, 31]
 ];
-function desertAt(lat, lon) {
+// Dry grass, the farmland drier: the Mediterranean's summer (Iberia, the Maghreb, the Aegean,
+// Anatolia, the Levant, California, central Chile, the Cape), the steppe (Iran and Iraq, central
+// Asia and Mongolia, the Great Plains, Mexico, Argentina's west, north-west India), the savanna
+// (the Sahel, East Africa, southern Africa, Brazil's north-east) and Australia's dry ring
+const ARID_LANDS = [
+  [-8, 36, 0, 41.5], [-9, 30, 11, 36], [21, 35, 30, 39], [30, 37, 44, 40.5], [33.5, 30, 37, 35.5],
+  [-123, 32, -117, 39], [-72, -37, -69.5, -29], [17, -35, 21, -31], [38, 30, 62, 39], [46, 42, 88, 52],
+  [88, 40, 120, 49], [-118, 31, -98, 49], [-110, 18, -97, 30], [-68, -38, -62, -24], [66, 22, 80, 31],
+  [-17, 10, 40, 16], [33, -10, 45, 12], [14, -32, 32, -17], [-44, -12, -37, -4], [113, -35, 150, -15]
+];
+// Winters colder or milder than the latitude's (seasonTemp), [lon0, lat0, lon1, lat1, °C at
+// midwinter]: the hearts of the continents colder — Russia and Siberia, Manchuria, the Canadian
+// prairies, the Midwest and Quebec; the shores of the Atlantic milder (the Gulf Stream) —
+// western Europe, Denmark and Skåne, Norway's west coast, Iceland and the Faroes. The
+// tundra's own cold (LANDSCAPE.TUNDRA_COLD) is left off where the sea keeps it mild
+const WINTERS = [
+  [30, 45, 140, 65, -6], [100, 40, 140, 50, -8], [-110, 38, -76, 62, -10], [-80, 44, -60, 62, -10],
+  [-12, 43, 10, 58, 4], [8, 54, 13, 58, 3], [4, 58, 8, 64, 5], [-25, 61, -5, 67, 7]
+];
+function winterAt(lat, lon) {
   let v = 0;
-  for (const d of DESERTS) {
+  for (const d of WINTERS) v += boxesAt([d], lat, lon) * d[4];
+  return v;
+}
+function boxesAt(boxes, lat, lon) {
+  let v = 0;
+  for (const d of boxes) {
     const k = Math.min(smoothstep(d[0] - 3, d[0] + 2, lon), smoothstep(d[2] + 3, d[2] - 2, lon),
       smoothstep(d[1] - 3, d[1] + 2, lat), smoothstep(d[3] + 3, d[3] - 2, lat));
     if (k > v) v = k;
   }
   return v;
 }
+function desertAt(lat, lon) { return boxesAt(DESERTS, lat, lon); }
+
+// The northern tree line, [longitude, latitude] (between them by the longitude): the tundra
+// north of it — low in Labrador, Greenland, Iceland and Chukotka, high in Fennoscandia
+const TREE_LINE = [
+  [-180, 64], [-168, 64], [-160, 68], [-100, 68], [-95, 60], [-60, 57], [-55, 59], [-25, 61], [-12, 62],
+  [0, 69], [5, 70.5], [30, 70], [40, 68], [60, 67.5], [160, 67], [170, 63], [180, 64]
+];
+function treeLine(lon) {
+  for (let i = 1; i < TREE_LINE.length; i++) {
+    const p = TREE_LINE[i - 1], q = TREE_LINE[i];
+    if (lon <= q[0]) return lerp(p[1], q[1], clamp((lon - p[0]) / (q[0] - p[0]), 0, 1));
+  }
+  return TREE_LINE[TREE_LINE.length - 1][1];
+}
+
+// The land round an airport by its climate (Terrain.climateOf): how dry, arid and tundra it is
+// (lookGeo); the green climates clear the desert's and the tundra's look off the field's
+// surroundings, so the ground matches the trees
+const CLIMATE_LOOK = {
+  tundra: { dry: 0, arid: 0, tundra: 1 },
+  boreal: { dry: 0, arid: 0, tundra: 0 }, larch: { dry: 0, arid: 0, tundra: 0 },
+  temperate: { dry: 0, arid: 0, tundra: 0 }, warm: { dry: 0, arid: 0, tundra: 0 },
+  subtropical: { dry: 0, arid: 0, tundra: 0 }, tropical: { dry: 0, arid: 0, tundra: 0 },
+  mediterranean: { dry: 0, arid: 0.8, tundra: 0 }, steppe: { dry: 0, arid: 1, tundra: 0 },
+  savanna: { dry: 0, arid: 1, tundra: 0 }, eucalypt: { dry: 0, arid: 0.25, tundra: 0 },
+  desert: { dry: 1, arid: 0, tundra: 0 }
+};
+const TERRAIN_LOOK = {}, TERRAIN_RGB = [0, 0, 0];     // colorAt's scratch
 
 // Distance from (px, pz) to the segment a-b
 function segDist(px, pz, ax, az, bx, bz) {

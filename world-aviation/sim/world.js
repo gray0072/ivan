@@ -139,6 +139,15 @@ const World = {
     this.key = key;
   },
 
+  // the month of the flight's world (Career.data.season): the snow on the land and round the
+  // airports (Terrain.lookAt); true when it changed — the scene's terrain and airports are
+  // then to be built again (Scene3D.setTheatre)
+  setMonth(m) {
+    if (Terrain.month === m) return false;
+    Terrain.month = m;
+    return true;
+  },
+
   // world point from runway-local coordinates
   at(a, t, across) {
     return { x: a.x + a.dirX * t + a.perX * across, z: a.z + a.dirZ * t + a.perZ * across };
