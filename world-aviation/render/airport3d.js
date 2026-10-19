@@ -325,6 +325,8 @@ const Airport3D = {
     const style = terminalStyle(a);
     b.roofTop = () => h + 1.6;
     b.roofAt = () => h + 1.6;
+    // and b.roofSpan, how far across the roof reaches: [over the apron, over the road]
+    b.roofSpan = [front - 6, back + 2];
     // the stretches of the apron front taken by a banner or a sign, [t0, t1] (kept clear by adverts3d.js)
     b.frontTaken = [];
     at(new THREE.Mesh(cellBox(b.acrossSize, h, b.along), lambert(id.paint.terminal)), b.t, b.across, h / 2);
@@ -359,24 +361,26 @@ const Airport3D = {
     at(new THREE.Mesh(cellBox(0.4, h * 0.3, b.along * 0.9), back2), b.t, back + 0.2, h * 0.55);
     if (style) this.terminalRoof(a, b, rec, at, lambert, id, style);
     // the name of the airport in big letters on the roof, facing the apron and the road (at a
-    // big airport on the middle terminal, the others carry their number)
+    // big airport on the middle terminal, the others carry their number), along the roof but
+    // its far end on the terminal that flies the flags (signSpan): they stand beside the letters
     const several = b.terms > 1, sign = roofName(a);
-    if (sign.b !== b) this.terminalPanel(a, b, rec, at, tex, lambert, id);
+    if (sign !== b) this.terminalPanel(a, b, rec, at, tex, lambert, id);
     else {
-      const name = rec.label, lh = sign.lh, lw = sign.lw;
+      const name = rec.label, n = name.length, [s0, s1] = signSpan(b), st = (s0 + s1) / 2;
+      const lh = clamp((s1 - s0) * 0.9 / (n * 0.78), 7, h > 18 ? 24 : 16), lw = Math.min(s1 - s0, n * lh * 0.8);
       const lt = tex(makeLettersCanvas(name, id.color), 8);
       // (lit at night)
       const letters = new THREE.MeshLambertMaterial({ map: lt, emissiveMap: lt, emissive: 0x000000, transparent: true, alphaTest: 0.35, side: THREE.FrontSide });
       rec.night.push({ mat: letters, color: new THREE.Color(0xffffff), k: 0.9 });
+      const frameMat = lambert(0x6c7378);
       for (const side of [-1, 1]) {
-        const across = side < 0 ? front + 4 : back - 4, y0 = b.roofTop(across);
+        const across = signAcross(b, side), y0 = signBase(b, across, side);
         const geo = new THREE.PlaneGeometry(lw, lh);
         geo.rotateY(side * Math.PI / 2);
-        at(new THREE.Mesh(geo, letters), b.t, across + side * 0.6, y0 + lh / 2);
-        // the frame the letters stand on, and its legs down to the roof under a big one
-        const frameMat = lambert(0x6c7378);
-        at(new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, lw * 0.96), frameMat), b.t, across, y0 + 0.6);
-        if (y0 > h + 3) for (let k = -2; k <= 2; k++) at(new THREE.Mesh(new THREE.BoxGeometry(0.4, y0 - h, 0.4), frameMat), b.t + k * lw * 0.22, across, h + (y0 - h) / 2);
+        at(new THREE.Mesh(geo, letters), st, across + side * 0.6, y0 + lh / 2);
+        // the frame the letters stand on, and its legs down to the roof under it
+        at(new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, lw * 0.96), frameMat), st, across, y0 + 0.6);
+        for (let k = -2; k <= 2; k++) signLeg(b, at, frameMat, st + k * lw * 0.22, across, y0, 0.4);
       }
     }
     // the welcome banner on the apron side, above the glass, at the departure end of the
@@ -417,8 +421,9 @@ const Airport3D = {
     rec.night.push({ mat: glow, color: new THREE.Color(0xffd9a0), k: 0.6 });
     rec.night.push({ mat: shell, color: shellColor.clone().multiplyScalar(0.35), k: 0.5 });
     const put = (geo, mat) => at(new THREE.Mesh(geo, mat), 0, 0, 0);
-    const top = (fn) => {
+    const top = (fn, span) => {
       b.roofAt = fn;
+      b.roofSpan = [Math.min(b.roofSpan[0], span[0]), Math.max(b.roofSpan[1], span[1])];
       b.roofTop = (ac) => { let m = -Infinity; for (let t = t0; t <= t1; t += 3) m = Math.max(m, fn(t, ac)); return m + 0.2; };
     };
     if (style === 'wing') {
@@ -459,7 +464,7 @@ const Airport3D = {
         const t = t0 + b.along * u;
         return [front - 0.25, h + (yAt(t, front) - 1.4 - h) * v, -t];
       }), glow);
-      top(yAt);
+      top(yAt, [x0, x1]);
     } else if (style === 'vaults') {
       const W = 34, rise = 9, R = (W * W / 4 + rise * rise) / (2 * rise), half = Math.asin(W / 2 / R);
       const n = Math.max(1, Math.round((b.along + 10) / W)), span = n * W;
@@ -496,7 +501,7 @@ const Airport3D = {
       top((t, ac) => {
         const k = ((t - (b.t - span / 2)) % W + W) % W - W / 2;
         return base + Math.sqrt(Math.max(0, R * R - k * k)) - (R - rise);
-      });
+      }, [x0, x1]);
     } else if (style === 'tents') {
       const R = 12, H = 15, step = 26;
       const pts = [];
@@ -521,7 +526,7 @@ const Airport3D = {
           if (d < R) y = Math.max(y, h + 0.6 + H * (1 - Math.pow(d / R, 1 / 1.7)));
         }
         return y;
-      });
+      }, b.roofSpan);
     } else {
       // folded: a sawtooth of folded plates across the building, the ridges rising out over the
       // apron to tall glazed gables, the valleys low over the road side
@@ -554,7 +559,7 @@ const Airport3D = {
       top((t, ac) => {
         const k = Math.abs(((t - (b.t - span / 2)) % W + W) % W - W / 2) / (W / 2);    // 0 on a ridge, 1 in a valley
         return lerp(ridge(ac), valley(ac), clamp(k, 0, 1));
-      });
+      }, [x0, x1]);
     }
   },
 
@@ -576,27 +581,28 @@ const Airport3D = {
     const map = tex(cv, 8);
     const mat = new THREE.MeshLambertMaterial({ map, emissiveMap: map, emissive: 0x000000 });
     rec.night.push({ mat, color: new THREE.Color(0xffffff), k: 0.75 });
-    const ph = clamp(b.h * 0.55, 7, 12), pw = ph * 4;
-    const front = b.across - b.acrossSize / 2, back = b.across + b.acrossSize / 2;
+    const [s0, s1] = signSpan(b), pt = (s0 + s1) / 2;
+    const ph = Math.min(clamp(b.h * 0.55, 7, 12), (s1 - s0) / 4), pw = ph * 4;
+    const frameMat = lambert(0x4a5157);
     for (const side of [-1, 1]) {
       const geo = new THREE.PlaneGeometry(pw, ph);
       geo.rotateY(side * Math.PI / 2);
-      const across = side < 0 ? front + 4 : back - 4;
-      const y0 = b.roofTop ? b.roofTop(across) : b.h + 1.6;
-      at(new THREE.Mesh(geo, mat), b.t, across + side * 0.35, y0 + ph / 2);
-      at(new THREE.Mesh(cellBox(0.6, ph + 0.6, pw + 0.6), lambert(0x4a5157)), b.t, across, y0 + ph / 2);
-      if (y0 > b.h + 3) at(new THREE.Mesh(new THREE.BoxGeometry(0.5, y0 - b.h, pw * 0.6), lambert(0x4a5157)), b.t, across, b.h + (y0 - b.h) / 2);
+      const across = signAcross(b, side), y0 = signBase(b, across, side);
+      at(new THREE.Mesh(geo, mat), pt, across + side * 0.35, y0 + ph / 2);
+      at(new THREE.Mesh(cellBox(0.6, ph + 0.6, pw + 0.6), frameMat), pt, across, y0 + ph / 2);
+      for (let k = -1; k <= 1; k++) signLeg(b, at, frameMat, pt + k * pw * 0.3, across, y0, 0.5);
     }
   },
 
   // three flagpoles on the roof at the far end of the (last) terminal: the country, the city, and
-  // the region's (data/regions.js) where it has one, else the country's again
+  // the region's (data/regions.js) where it has one, else the country's again; in their own
+  // stretch of the roof (FLAG_STRIP), beside the name or the number, never behind it
   terminalFlags(a, b, rec, at, tex, id) {
-    if (b.terms > 1 && b.term !== b.terms) return;
-    const ft = b.t + b.along / 2 - 22, front = b.across - b.acrossSize / 2;
+    if (!fliesFlags(b)) return;
+    const ft = b.t + b.along / 2 - 6, front = b.across - b.acrossSize / 2;
     const reg = AIRPORT_REGIONS[a.id], region = reg && RegionFlags.has(reg[0]) ? reg[0] : null;
     for (let i = 0; i < 3; i++) {
-      this.flag(rec, at, tex, a.country, i === 1 ? id : null, ft - i * 11, front + 10, b.roofAt ? b.roofAt(ft - i * 11, front + 10) - 0.3 : b.h + 1.6, 13, 8, i === 2 ? region : null);
+      this.flag(rec, at, tex, a.country, i === 1 ? id : null, ft - i * 9, front + 8, b.roofAt(ft - i * 9, front + 8) - 0.3, 13, 8, i === 2 ? region : null);
     }
   },
 
@@ -1118,13 +1124,37 @@ function strut(at, mat, p, q, r) {
 // the airport's name in big letters on a terminal's roof: which terminal carries it (the only
 // one, or the middle one), the letters' height and the sign's length along the building, metres
 // (the floodlight masts keep out of its way: apron3d.js)
+// the terminal with the airport's name on its roof: the middle one
 function roofName(a) {
   const terms = a.buildings.filter((b) => b.kind === 'terminal');
-  const b = terms[Math.ceil(terms.length / 2) - 1];
-  if (!b) return { b: null, lh: 0, lw: 0 };
-  const n = roofLabel(a).length;
-  const lh = clamp(b.along * 0.9 / (n * 0.78), 7, b.h > 18 ? 24 : 16);
-  return { b, lh, lw: Math.min(b.along * 0.92, n * lh * 0.8) };
+  return terms[Math.ceil(terms.length / 2) - 1] || null;
+}
+
+// The signs on a terminal's roof (the name, a terminal's number) and the flags beside them.
+// FLAG_STRIP: the far end of the roof kept for the three flags (9 m apart, 6 m from the end, and
+// the cloth streaming 8 m from the last pole)
+const FLAG_STRIP = 34;
+function fliesFlags(b) { return b.terms === 1 || b.term === b.terms; }
+// [t0, t1]: the stretch along the roof a sign may take
+function signSpan(b) {
+  const t0 = b.t - b.along / 2, t1 = b.t + b.along / 2;
+  return [t0 + 4, t1 - (fliesFlags(b) ? FLAG_STRIP : 4)];
+}
+// a sign stands just inside the roof's edge on its side (side -1: the apron, 1: the road)...
+function signAcross(b, side) { return side < 0 ? b.roofSpan[0] + 2.5 : b.roofSpan[1] - 2.5; }
+// ... and high enough that no part of the roof between it and that edge hides its foot from the
+// ground there (from below, a line rising 0.3 m per metre towards the building): the plain slab's
+// edge, a wing's lip, the folded plates' ridges
+function signBase(b, across, side) {
+  const edge = b.roofSpan[side < 0 ? 0 : 1];
+  let y = b.roofTop(across);
+  for (let d = 1; d <= Math.abs(edge - across); d++) y = Math.max(y, b.roofTop(across + side * d) + 0.3 * d);
+  return y;
+}
+// a leg from the roof under it up to a sign standing at y0 over it
+function signLeg(b, at, mat, t, across, y0, w) {
+  const r = b.roofAt(t, across) - 0.3;
+  if (y0 - r > 0.5) at(new THREE.Mesh(new THREE.BoxGeometry(w, y0 - r, w), mat), t, across, r + (y0 - r) / 2);
 }
 
 // The airport's name on its roof, upper case: in the game's language at the airports of the
