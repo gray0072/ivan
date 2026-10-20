@@ -963,8 +963,8 @@ const Career = {
     if (result.cheated) {
       d.stats.cheats += result.cheatsUsed || 1;
       // not paid, but the aeroplane is there: the board is dealt again from the arrival (a
-      // round-the-world leg does not count)
-      d.lastTo = c.toId;
+      // round-the-world leg does not count, and leaves the pilot where they were)
+      if (!c.rtw) d.lastTo = c.toId;
       const rtw = Rtw.legCheated(c);
       this.generateContracts();
       this.save();
@@ -989,8 +989,9 @@ const Career = {
     const order = ['F', 'E', 'D', 'C', 'B', 'A', 'A+'];
     if (!d.stats.bestGrade || order.indexOf(result.grade) > order.indexOf(d.stats.bestGrade)) d.stats.bestGrade = result.grade;
     if (total > d.stats.bestPay) d.stats.bestPay = total;
-    d.lastTo = c.toId;
-    if (c.toId === d.base) d.lastTo = d.base;
+    // the pilot is now at the arrival — but a round-the-world leg leaves them where they were:
+    // only the expedition's aeroplane moves on to its next stop (Rtw: active.at)
+    if (!c.rtw) d.lastTo = c.toId;
     // (the expedition's finish, logged as it ended, stays on top of the flight's line)
     const done = rtw && rtw.finish ? d.log.splice(0, rtw.finish.legend ? 2 : 1) : [];
     d.log.unshift(dayLabel(c, result, d.log.length));
