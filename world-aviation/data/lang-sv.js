@@ -1598,7 +1598,6 @@ const TEXT_SV = {
   'GND SPEED': 'MARKFART',
   'AIRSPEED': 'FART',
   'TAS': 'TAS',
-  'ATTITUDE': 'HORISONT',
   'RA': 'RA',
   'ALT': 'HÖJD',
   'TURN': 'SVÄNG',

@@ -273,7 +273,9 @@ const Instruments = {
   adi(ctx, x, y, r, fl) {
     this.mark('adi', x - r, y - r, 2 * r, 2 * r);
     const st = fl.st;
-    this.bezel(ctx, x, y, r, tr('ATTITUDE'), null);
+    // no name on the case: the sphere fills the whole face, as on a real one (a name under it
+    // would only peek out at the sides where it is longer than the face is wide, as in Russian)
+    this.bezel(ctx, x, y, r, null, null);
     ctx.save();
     ctx.beginPath(); ctx.arc(x, y, r * 0.93, 0, TAU); ctx.clip();
     ctx.translate(x, y);
