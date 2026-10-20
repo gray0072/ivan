@@ -905,6 +905,8 @@ const Scene3D = {
     const wc = WATER_SIZE_M / WATER_CELLS;
     this.water.position.x = Math.round(st.pos.x / wc) * wc;
     this.water.position.z = Math.round(st.pos.z / wc) * wc;
+    // the coast read in metres from the aeroplane, not from the world's middle (render/coast3d.js)
+    Coast3D.setOrigin(st.pos.x, st.pos.z);
 
     // ---- terrain follow
     // (cells a power of two times 420 m, so they do not change with every frame's length)

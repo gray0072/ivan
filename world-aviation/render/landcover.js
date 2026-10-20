@@ -110,10 +110,10 @@ const LandCover = {
         .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' +
           (hole ? '  if (length(vLandW.xz - uLandHole.xy) < uLandHole.z) discard;\n' : '') + COAST_TERRAIN_PRE);
       sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', 'attribute vec4 land;\nvarying vec4 vLand;\nvarying vec3 vLandW;\n#include <common>')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLand = land;\nvLandW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+        .replace('#include <common>', 'attribute vec4 land;\nvarying vec4 vLand;\nvarying vec3 vLandW;\n' + Coast3D.VERT_PARS + '#include <common>')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLand = land;\nvLandW = (modelMatrix * vec4(transformed, 1.0)).xyz;\n' + Coast3D.VERT);
       sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', (this.bomb ? '#define LAND_BOMB\n' : '') + Coast3D.defines() + LAND_FRAG_PARS + COAST_PARS + '#include <common>')
+        .replace('#include <common>', (this.bomb ? '#define LAND_BOMB\n' : '') + Coast3D.defines() + LAND_FRAG_PARS + 'varying vec2 vCoastR;\n' + COAST_PARS + '#include <common>')
         .replace('#include <color_fragment>', '#include <color_fragment>\n' + LAND_FRAG + COAST_TERRAIN_FRAG);
       // Multisampled, a pixel is shaded at its centre even when the triangle covers only one
       // of its samples off the centre: the far mesh's triangles, thin slivers at the horizon,
@@ -126,7 +126,7 @@ const LandCover = {
         sh.fragmentShader = landCentroid(sh.fragmentShader);
       }
     };
-    m.customProgramCacheKey = () => 'landcover3' + this.bomb + Coast3D.half + (hole ? 'hole' : '');
+    m.customProgramCacheKey = () => 'landcover4' + this.bomb + Coast3D.half + (hole ? 'hole' : '');
     return (this[key] = m);
   },
   // the far mesh's hole: the circle of radius r round (cx, cz), world metres; r 0 for none
