@@ -87,9 +87,9 @@ const MriyaPlan = {
     return rows.map((z) => [side * l.mainX, z]);
   },
   sponson(side) {
-    const l = this.lay, r = l.R * 0.38 * 0.72, len = l.wheelR * 2.3 * (l.mainRows - 1) + l.wheelR * 5;
-    const [cx, cy] = this.toPlan(side * l.R * 0.98, l.mainZ);
-    const half = len / 2 + l.R * 0.38, pts = [];
+    const l = this.lay, sp = l.sponson, r = sp.rx, len = l.wheelR * 2.3 * (l.mainRows - 1) + l.wheelR * 5;
+    const [cx, cy] = this.toPlan(side * sp.x, l.mainZ);
+    const half = len / 2 + sp.ry, pts = [];
     for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8; pts.push([cx + Math.cos(a) * r, cy - half + r - Math.sin(a) * r]); }
     for (let i = 0; i <= 8; i++) { const a = Math.PI * i / 8; pts.push([cx - Math.cos(a) * r, cy + half - r + Math.sin(a) * r]); }
     return pts;

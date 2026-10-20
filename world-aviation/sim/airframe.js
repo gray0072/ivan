@@ -77,13 +77,16 @@ function modelLayout(ac, look) {
       engines.push({ f, side, x: side * spanAt(f), y: ny, z: leAt(f) + dia * 0.75 + lift * 1.2, dia, len: dia * (four ? 2.0 : 1.75) });
     }
   }
-  // the gear: the wheels, the main legs and the nose leg
+  // the gear: the wheels, the main legs and the nose leg; the An-124's and the An-225's main
+  // gear stands under the middle of its sponson (centre x, y, half width rx, half height ry),
+  // wide and deep enough for a pair of wheels lifted into it
   const wheelR = Math.max(0.28, d.fus * 0.13);
+  const sponson = look.sponsons ? { x: R * 0.98, y: -R * 0.62, rx: R * 0.38 * 0.78, ry: R * 0.38 } : null;
   return {
     L, R, S, hk, top, halfW, bub, jet, high, sweep, semi, rootC, tipC, thick, wingY, wingZ, dihedral, spanAt, leAt, yAt,
     twin, tTop, finRoot, finTip, finH, finSweep, finZ, finY, tSemi, tRoot, tTip, tSweep, tailZ, tailY,
     engines, wheelR, gearH: d.gearH, noseZ: L * 0.38, mainRows: look.mainRows || 2,
-    mainX: high ? R * 1.05 : R * (S > 50 ? 1.15 : 0.95), mainZ: -L * 0.03
+    mainX: sponson ? sponson.x : high ? R * 1.05 : R * (S > 50 ? 1.15 : 0.95), mainZ: -L * 0.03, sponson
   };
 }
 

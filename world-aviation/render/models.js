@@ -272,10 +272,12 @@ const AircraftModels = {
 
     // ---- landing gear: nose gear and two main legs (they reach y = -gearH). Each leg hangs
     // from a pivot at its top and folds up about it: the nose gear forwards, a jet's main
-    // gear inwards into the belly, a turboprop's forwards into the nacelle.
-    const wheelR = Math.max(0.28, d.fus * 0.13);
+    // gear inwards into the belly, a turboprop's forwards into the nacelle. The An-124's and
+    // the An-225's long bogies would stand up through the fuselage folding so: they rise
+    // straight up into their sponsons instead (fold ['lift', metres]).
+    const wheelR = lay.wheelR;
     const legR = Math.max(0.07, d.fus * 0.025);
-    const mainX = propGear ? propGear.x : high ? R * 1.05 : R * (S > 50 ? 1.15 : 0.95);
+    const mainX = propGear ? propGear.x : lay.mainX, spon = lay.sponson;
     const mainZ = propGear ? wingZ - rootC * 0.55 : -L * 0.03;
     const noseZ = L * 0.38;
     const gear = [];
@@ -307,7 +309,7 @@ const AircraftModels = {
         pivot.add(w);
       }
       g.add(tag(name, pivot));
-      gear.push({ pivot, axis: fold[0], angle: fold[1] });
+      gear.push({ pivot, axis: fold[0], angle: fold[1], y: pivot.position.y });
     };
     const big = S > 50 || !!look.mainRows;                           // (the Beluga's A300 bogies, though its span is under 50 m)
     const FWD = ['x', -Math.PI / 2];                                   // the foot swings forwards and up
@@ -321,6 +323,12 @@ const AircraftModels = {
     addLeg(0, noseZ, R * 0.75, big ? [[-wheelR * 0.4, 0], [wheelR * 0.4, 0]] : [[0, 0]], FWD, 'gearNose');
     for (const side of [1, -1]) {
       const wheels = big ? bogie(look.mainRows || 2) : [[0, 0]];
+      if (spon) {
+        // the leg's top just inside the sponson's bottom, so it is still inside its top with
+        // the wheels lifted to the sponson's middle
+        addLeg(side * mainX, mainZ, R * 0.97, wheels, ['lift', d.gearH - wheelR + spon.y], 'gearMain');
+        continue;
+      }
       const legTop = propGear ? propGear.top : high ? R * 0.5 : R * 0.7;
       addLeg(side * mainX, mainZ, legTop, wheels, propGear || high ? FWD : ['z', -side * Math.PI / 2], 'gearMain');
     }
@@ -332,10 +340,10 @@ const AircraftModels = {
       // the An-124's and the An-225's main gear sits in long fairings along the sides of the belly
       const rows = look.mainRows || 2, len = wheelR * 2.3 * (rows - 1) + wheelR * 5;
       for (const side of [1, -1]) {
-        const sp = new THREE.Mesh(new THREE.CapsuleGeometry(R * 0.38, len, 6, 16), base);
+        const sp = new THREE.Mesh(new THREE.CapsuleGeometry(spon.ry, len, 6, 16), base);
         sp.rotation.x = Math.PI / 2;
-        sp.scale.set(0.72, 1, 1);
-        sp.position.set(side * R * 0.98, -R * 0.62, mainZ);
+        sp.scale.set(spon.rx / spon.ry, 1, 1);
+        sp.position.set(side * spon.x, spon.y, mainZ);
         g.add(tag('sponson', sp));
       }
     }
@@ -402,7 +410,11 @@ const AircraftModels = {
     for (const f of model.userData.fans || []) f.rotation.z -= (st.propSpeed || 0) * 0.11;
     const down = st.gear === undefined ? 1 : clamp(st.gear, 0, 1);
     for (const leg of model.userData.gear) {
-      leg.pivot.rotation[leg.axis] = leg.angle * (1 - down);
+      if (leg.axis === 'lift') {
+        // eased, so the bogie starts and stops gently in its sponson
+        const u = 1 - down;
+        leg.pivot.position.y = leg.y + leg.angle * u * u * (3 - 2 * u);
+      } else leg.pivot.rotation[leg.axis] = leg.angle * (1 - down);
       leg.pivot.visible = down > 0.02;
     }
     // the control surfaces: angles in radians, + = trailing edge up (rudder: to the right)
