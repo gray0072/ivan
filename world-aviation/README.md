@@ -213,7 +213,7 @@ The whole game — the menus, the briefings and debriefs, the prompts and messag
 
 **Units** on the title screen (and in the pause): aviation units — feet, knots, nautical miles, fpm — or **metric**: metres, km/h, kilometres, m/s, rounded to sensible numbers. Prompts, messages, screens and the instruments all follow the setting.
 
-The **moving map** (**M**) draws the track you have actually flown — yellow on the ground, green in the air — over the planned route. On a big computer screen a **mini map** stays in the top right corner while you fly; **M** switches between the mini map, the big map and no map. The maps show the arrival runway with its final approach (a dashed line and an arrow in the landing direction). On a phone or a tablet the map fills the screen and zooms in as you get closer, like the mini map.
+The **moving map** (**M**) draws the track you have actually flown — yellow on the ground, green in the air — over the planned route. On a big computer screen a **mini map** stays in the top right corner while you fly; **M** switches between the mini map, the big map and no map; below 1 000 ft on the approach, where the mini map hides itself, **M** brings it back and hides it again. The maps show the arrival runway with its final approach (a dashed line and an arrow in the landing direction). On a phone or a tablet the map fills the screen and zooms in as you get closer, like the mini map.
 
 On the approach the **ILS** scales and the **glide path rings** show the way to the runway — see [Instruments](#instruments).
 

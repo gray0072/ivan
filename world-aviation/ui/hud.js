@@ -11,6 +11,8 @@
 const HUD = {
   messages: [],
   mapOpen: false,          // the big map overlay
+  miniLowApproach: false,  // the flight is on the last 1 000 ft of the approach, where it hides by itself
+  miniOnApproach: false,   // ... and M has brought it back there (until the approach is over)
   miniWanted: true,        // the mini map in the corner (large desktop screens only), remembered
   promptCollapsed: false,  // touch screens: the prompt folded to one line by a tap
   bannerText: '',
@@ -411,12 +413,14 @@ const HUD = {
 
   // ---------- map ----------
   // A large desktop window keeps a mini map in the top right corner; M cycles
-  // mini -> big -> off -> mini. Elsewhere M opens and closes the big map.
+  // mini -> big -> off -> mini. On the last 1 000 ft of the approach, where the mini map
+  // hides by itself, M just shows and hides it. Elsewhere M opens and closes the big map.
   bigScreen() {
     return !Input.isCoarse && window.innerWidth >= CONTROLS.MINIMAP_MIN_W && window.innerHeight >= CONTROLS.MINIMAP_MIN_H;
   },
   toggleMap() {
-    if (this.bigScreen()) {
+    if (this.bigScreen() && !this.mapOpen && this.miniLowApproach) this.miniOnApproach = !this.miniOnApproach;
+    else if (this.bigScreen()) {
       if (this.mapOpen) { this.mapOpen = false; this.miniWanted = false; }
       else if (this.miniWanted) this.mapOpen = true;
       else this.miniWanted = true;
@@ -449,13 +453,15 @@ const HUD = {
   },
 
   // the mini map is there when it helps and gone when it would be in the way: in the air,
-  // not during a checklist, not on the last 1 000 ft of the approach
+  // not during a checklist, not on the last 1 000 ft of the approach (unless M brings it back)
   updateMini(fl, sys, helpOpen) {
     const cv = this.mini;
     if (!cv) return;
     const st = fl.st;
-    const show = this.bigScreen() && this.miniWanted && !this.mapOpen && !helpOpen && !st.onGround &&
-      fl.phase !== 'TAKEOFF' && !(sys && sys.checklist) && !(fl.phase === 'APPROACH' && fl.altAgl() < 1000 * FT);
+    this.miniLowApproach = fl.phase === 'APPROACH' && fl.altAgl() < 1000 * FT;
+    if (!this.miniLowApproach) this.miniOnApproach = false;
+    const show = this.bigScreen() && (this.miniLowApproach ? this.miniOnApproach : this.miniWanted) && !this.mapOpen && !helpOpen &&
+      !st.onGround && fl.phase !== 'TAKEOFF' && !(sys && sys.checklist);
     if (cv.hidden === show) {
       cv.hidden = !show;
       // the checklist card (or its result, which stays a while) moves down under the map

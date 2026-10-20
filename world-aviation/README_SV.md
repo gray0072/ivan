@@ -213,7 +213,7 @@ Hela spelet — menyerna, genomgångarna och rapporterna, uppmaningarna och medd
 
 **Units** på startskärmen (och i pausen): flygets enheter — fot, knop, nautiska mil, fot per minut — eller **metriska**: meter, km/h, kilometer, m/s, avrundade till rimliga tal. Uppmaningar, meddelanden, skärmar och instrument följer inställningen.
 
-**Kartan** (**M**) ritar spåret du faktiskt har flugit — gult på marken, grönt i luften — ovanpå den planerade rutten. På en stor datorskärm syns en **minikarta** uppe till höger under flygningen; **M** växlar mellan minikartan, den stora kartan och ingen karta. Kartorna visar landningsbanan vid ankomsten med sin slutliga inflygning (en streckad linje och en pil i landningsriktningen). På mobil och surfplatta fyller kartan skärmen och zoomar in när du närmar dig, som minikartan.
+**Kartan** (**M**) ritar spåret du faktiskt har flugit — gult på marken, grönt i luften — ovanpå den planerade rutten. På en stor datorskärm syns en **minikarta** uppe till höger under flygningen; **M** växlar mellan minikartan, den stora kartan och ingen karta; under 1 000 fot på inflygningen, där minikartan döljer sig själv, tar **M** fram den och döljer den igen. Kartorna visar landningsbanan vid ankomsten med sin slutliga inflygning (en streckad linje och en pil i landningsriktningen). På mobil och surfplatta fyller kartan skärmen och zoomar in när du närmar dig, som minikartan.
 
 Under inflygningen visar **ILS**-skalorna och **glidbanans ringar** vägen till banan — se [Instrument](#instrument).
 
