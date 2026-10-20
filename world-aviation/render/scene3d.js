@@ -575,6 +575,10 @@ const Scene3D = {
     const m = new THREE.Matrix4();
     const rng = makeRng(Math.round(px / 1000) * 7919 + Math.round(pz / 1000) * 104729);
     const radius = 4200, c = [0, 0, 0], land = [0, 0, 0, 0, 0];
+    // (placed about where they are laid out, not the world's origin: an airport is far from it, and
+    // in world coordinates the instances lost their precision and wobbled as the camera moved)
+    const ox = Math.round(px), oz = Math.round(pz);
+    this.trees.position.set(ox, 0, oz);
     let placed = 0;
     for (let i = 0; i < n * 4 && placed < n; i++) {
       const a = rng.next() * TAU, r = Math.sqrt(rng.next()) * radius;
@@ -587,7 +591,7 @@ const Scene3D = {
       if (rng.next() > Math.max(0.03, LandCover.forestAt(x, z, land)) * (1 - land[4])) continue;
       const s = 6 + rng.next() * 9;
       m.makeScale(s, s * (0.8 + rng.next() * 0.7), s);
-      m.setPosition(x, h, z);
+      m.setPosition(x - ox, h, z - oz);
       this.trees.setMatrixAt(placed, m);
       placed++;
     }
