@@ -212,7 +212,7 @@ const Audio2 = {
     // --- the airflow: speed, the gear, the flaps, the spoiler in the air
     const tas = st.tas / KTS;
     const sp = clamp(tas / 140, 0, 1.4);
-    const extra = (st.gear * 0.5 + st.flaps * 0.08 + (!st.onGround ? st.spoiler * 0.6 : 0)) * clamp(tas / 90, 0, 1);
+    const extra = (st.gear * 0.5 + st.flaps * 0.08 + (!st.onGround ? (st.spoilerEffect || 0) * 0.6 : 0)) * clamp(tas / 90, 0, 1);
     set(v.windG.gain, (sp * 0.16 + extra * 0.12 + (Scene3D.inCloud || 0) * 0.04) * (inside ? 1 : 0.6 * att + 0.2), 0.2);
     set(v.windF.frequency, 350 + tas * 3.2 - extra * 150, 0.2);
 

@@ -426,7 +426,7 @@ const AircraftModels = {
     for (const p of s.elevator) p.rotation.x = clamp(st.elevator || 0, -1, 1) * 0.4;
     for (const p of s.rudder) p.rotation.x = clamp(st.rudder || 0, -1, 1) * 0.4;
     const sp = clamp(st.spoiler || 0, 0, 1);
-    for (const p of s.spoiler) { p.visible = sp > 0.02; p.rotation.x = sp * 0.85; }
+    for (const p of s.spoiler) { p.visible = sp > 0.02; p.rotation.x = sp * SIM.SPOILER_MAX_DEG * DEG; }
     // the lights (st.lights from Scene3D.lightsFor): the beacon flashes once a second, the
     // strobes twice in quick succession every 1.2 s; the glow bigger in the dark
     const Lt = model.userData.lights, on = st.lights;

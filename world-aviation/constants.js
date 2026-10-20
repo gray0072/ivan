@@ -120,7 +120,9 @@ const SIM = {
   TOW_BAR_M: 3.2,              // the pushback tug's tow bar: from the nose gear to the pin on the tug ...
   TUG_HITCH_M: 2.8,            // ... the pin this far ahead of the tug's middle, which rolls only along its length (it steers all four wheels)
   CRASH_BANK_DEG: 25,          // a wing on the ground at more bank than this is a crash
-  SPOILER_BRAKE_GAIN: 0.35,    // the spoiler out on the ground: the wheel brakes this much stronger
+  SPOILER_BRAKE_GAIN: 0.35,    // the spoiler out on the ground: the wheel brakes this much stronger (at full deflection)
+  SPOILER_TRANSIT_S: 1.2,      // seconds for the spoiler panels to go all the way out or in (eased at both ends)
+  SPOILER_MAX_DEG: 49,         // the panels' full deflection; lift dump, drag and brake gain grow with sin(angle)
   FLARE_TRIM_HOLD_M: 150,      // by hand on the approach below this height (AGL) the pitch trim stays put
   RADIO_ALT_MAX_FT: 2500,      // the radio altitude (height above the ground) shows in the attitude indicator below this
   // ... and turns amber below this on the way down to land; the autopilot lets go of the glide

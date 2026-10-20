@@ -63,7 +63,7 @@ const Flight = {
       elevator: 0, aileron: 0, rudder: 0, steer: 0, throttle: 0,
       flaps: 0, flapsTarget: 0,
       gear: 1, gearTarget: 1,
-      spoiler: 0, brakes: 0, brakeInput: 0, parkingBrake: true,
+      spoiler: 0, spoilerTravel: 0, spoilerExt: 0, spoilerEffect: 0, brakes: 0, brakeInput: 0, parkingBrake: true,
       onGround: true, wasAirborne: false,
       alpha: 0, beta: 0, ias: 0, tas: 0, vs: 0, gLoad: 1,
       fuel: 0, fuelFlow: 0, thrust: 0,
@@ -574,6 +574,11 @@ const Flight = {
     if (st.gear !== st.gearTarget) {
       st.gear = approach(st.gear, st.gearTarget, dt / SIM.GEAR_TRANSIT_S);
     }
+    // the spoiler panels follow the lever (st.spoiler) at a steady rate, eased at both ends: st.spoilerExt
+    // is the share of their full angle, st.spoilerEffect what they do at that angle (sin of the angle)
+    st.spoilerTravel = approach(st.spoilerTravel, st.spoiler > 0.5 ? 1 : 0, dt / SIM.SPOILER_TRANSIT_S);
+    st.spoilerExt = st.spoilerTravel * st.spoilerTravel * (3 - 2 * st.spoilerTravel);
+    st.spoilerEffect = Math.sin(st.spoilerExt * SIM.SPOILER_MAX_DEG * DEG) / Math.sin(SIM.SPOILER_MAX_DEG * DEG);
     // brakes come on progressively
     st.brakes = approach(st.brakes, st.brakeInput, dt / SIM.BRAKE_RAMP_S);
 
@@ -619,11 +624,11 @@ const Flight = {
       }
       cl += this.flapCl() * Math.min(1, st.flaps);
       cl *= (1 - e.iceAmount * 0.25);
-      if (st.spoiler) cl *= 0.7;
+      cl *= 1 - 0.3 * st.spoilerEffect;
       // ground effect: less induced drag in the last half wingspan
       const ge = clamp(this.altAgl() / (this.dims.span * 0.6), 0.4, 1);
       const cd = ac.cd0 + ac.kInd * cl * cl * ge + (ac.flaps[Math.round(st.flaps) - 1] || { cd: 0 }).cd +
-        st.gear * ac.gearCd + st.spoiler * 0.06 + e.iceAmount * 0.025 + Math.abs(st.beta) * 0.25;
+        st.gear * ac.gearCd + st.spoilerEffect * 0.06 + e.iceAmount * 0.025 + Math.abs(st.beta) * 0.25;
       const lift = q * ac.wingArea * cl;
       const drag = q * ac.wingArea * cd;
       fx += lx * lift - vhx * drag;
@@ -825,8 +830,8 @@ const Flight = {
     const g = SIM.GRAVITY;
     const sys = this.systems;
     const brakeFactor = sys ? sys.brakeFactor : 1;
-    // the spoiler out on the ground dumps the lift and puts the weight on the wheels: the brakes bite harder
-    let decel = surf.roll * g + surf.brake * st.brakes * brakeFactor * (1 + SIM.SPOILER_BRAKE_GAIN * st.spoiler) * g;
+    // the spoiler out on the ground (as far as it is out) dumps the lift and puts the weight on the wheels: the brakes bite harder
+    let decel = surf.roll * g + surf.brake * st.brakes * brakeFactor * (1 + SIM.SPOILER_BRAKE_GAIN * st.spoilerEffect) * g;
     if (st.parkingBrake) decel = Math.max(decel, 3.5);
     vf -= Math.sign(vf) * Math.min(Math.abs(vf), decel * dt);
     if (st.parkingBrake && Math.abs(vf) < 0.4) vf = 0;

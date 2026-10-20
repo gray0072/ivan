@@ -995,7 +995,7 @@ const Scene3D = {
       if (sys) for (const e of sys.engines) n1 += e.n1 / sys.engines.length;
       AircraftModels.animate(this.ownAircraft, {
         gear: st.gear, propSpeed: n1 * 0.9, flaps: st.flaps / Math.max(1, fl.ac.flaps.length),
-        aileron: st.aileron, elevator: st.elevator, rudder: st.rudder, spoiler: st.spoiler ? 1 : 0,
+        aileron: st.aileron, elevator: st.elevator, rudder: st.rudder, spoiler: st.spoilerExt || 0,
         lights: this.lightsFor(fl, sys), time: this.time, dark
       });
     }
