@@ -10,7 +10,9 @@
 // missing ones one per frame so the screen never stalls, and frees
 // the renderer when the queue is empty. The title screen (ui/title.js)
 // asks it for bigger pictures of airliners in flight in an airline's
-// colours: AircraftPreview.hero(id, airline, light, cb). An img[data-ac="ghost|A225"]
+// colours, from one of a few angles: AircraftPreview.hero(id, airline,
+// light, pose, cb); it keeps the renderer while the title runs (keep)
+// and lets it go with letGo(). An img[data-ac="ghost|A225"]
 // gets the type as a pale hologram (the Mriya's card before it is built), and
 // img[data-ac="finish|A225|<finish>"] the Mriya in one of its finishes (data/mriya.js).
 // ============================================================
@@ -19,7 +21,15 @@ const AircraftPreview = {
   W: 720, H: 360,            // picture size, pixels (cards show it at about half that)
   urls: new Map(),           // aircraft id -> object URL of the finished picture
   HERO_W: 1280, HERO_H: 640, // the title screen's pictures
-  queue: [],                 // aircraft ids (or hero keys 'hero|id|airline|light') still to draw
+  // the title's angles: where the camera is (ahead of the left wing, below it) and the aeroplane's
+  // pitch and bank towards the camera
+  HERO_POSES: [
+    { dir: [0.6, -0.14, 0.78], tilt: [-0.05, 0, -0.12] },
+    { dir: [0.74, -0.07, 0.66], tilt: [-0.03, 0, -0.2] },
+    { dir: [0.46, -0.22, 0.86], tilt: [-0.07, 0, -0.06] }
+  ],
+  queue: [],                 // aircraft ids (or hero keys 'hero|id|airline|light|pose') still to draw
+  keep: false,               // the title is drawing pictures now and then: the renderer stays
   waiting: new Map(),        // key -> callbacks waiting for that picture
   renderer: null,
   shadowTex: null,
@@ -35,9 +45,9 @@ const AircraftPreview = {
     this.kick();
   },
   // a picture of a type in flight in an airline's colours, lit for the title's sky (light: day,
-  // dusk or night); cb(url) once it is drawn
-  hero(id, airline, light, cb) {
-    const key = 'hero|' + id + '|' + airline + '|' + light;
+  // dusk or night), seen from HERO_POSES[pose]; cb(url) once it is drawn
+  hero(id, airline, light, pose, cb) {
+    const key = 'hero|' + id + '|' + airline + '|' + light + '|' + pose;
     if (this.urls.has(key)) { cb(this.urls.get(key)); return; }
     if (!this.waiting.has(key)) this.waiting.set(key, []);
     this.waiting.get(key).push(cb);
@@ -53,13 +63,22 @@ const AircraftPreview = {
     if (pic) pic.classList.remove('loading');
   },
 
+  // the title is gone: the pictures it still waits for are not drawn, and the renderer goes
+  letGo() {
+    this.keep = false;
+    this.queue = this.queue.filter((k) => !k.startsWith('hero|'));
+    for (const k of [...this.waiting.keys()]) if (k.startsWith('hero|')) this.waiting.delete(k);
+    if (!this.busy) this.release();
+  },
+
   next() {
     const id = this.queue.shift();
+    if (!id) { this.busy = false; if (!this.keep) this.release(); return; }
     const part = id.split('|'), hero = part[0] === 'hero', ghost = part[0] === 'ghost', finish = part[0] === 'finish' ? part[2] : null;
     const ac = AIRCRAFT.find((a) => a.id === (hero || ghost || finish ? part[1] : id));
     if (ac) {
       let canvas = null;
-      try { canvas = this.draw(ac, hero ? { airline: part[2], light: part[3] } : null, ghost, finish); } catch (err) { canvas = null; }
+      try { canvas = this.draw(ac, hero ? { airline: part[2], light: part[3], pose: this.HERO_POSES[+part[4] || 0] } : null, ghost, finish); } catch (err) { canvas = null; }
       if (canvas) {
         const done = (blob) => {
           if (!blob) return;
@@ -75,7 +94,7 @@ const AircraftPreview = {
     if (this.queue.length) { requestAnimationFrame(() => this.next()); return; }
     // the last one is on its way: let the GPU go once it has been read back
     this.busy = false;
-    setTimeout(() => { if (!this.busy) this.release(); }, 400);
+    setTimeout(() => { if (!this.busy && !this.keep) this.release(); }, 400);
   },
 
   release() {
@@ -138,7 +157,7 @@ const AircraftPreview = {
       model = AircraftModels.build(ac, { airline: hero.airline });
       AircraftModels.animate(model, { gear: 0, flaps: 0, propSpeed: 1 });
       // a gentle bank towards the camera, the nose a little up
-      model.rotation.set(-0.05, 0, -0.12);
+      model.rotation.set(...hero.pose.tilt);
     }
     scene.add(model);
 
@@ -147,7 +166,7 @@ const AircraftPreview = {
     const box = new THREE.Box3().setFromObject(model);
     const centre = box.getCenter(new THREE.Vector3());
     const cam = new THREE.PerspectiveCamera(hero ? 22 : 24, W / H, 0.5, 4000);
-    const dir = (hero ? new THREE.Vector3(0.6, -0.14, 0.78) : new THREE.Vector3(0.78, 0.36, 0.62)).normalize();
+    const dir = (hero ? new THREE.Vector3(...hero.pose.dir) : new THREE.Vector3(0.78, 0.36, 0.62)).normalize();
     const size = box.getSize(new THREE.Vector3());
     const radius = Math.max(size.x, size.z) * 0.5;
     let dist = radius / Math.tan(cam.fov * DEG / 2) * (hero ? 0.6 : 0.64);

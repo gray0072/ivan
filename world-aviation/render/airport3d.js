@@ -934,6 +934,8 @@ const Airport3D = {
         return Math.hypot(s.x1 + dx * u - p.x, s.z1 + dz * u - p.z) > s.w / 2 + 7 + w;
       });
     };
+    // every sign with the clear spots it may take, the best first
+    const signs = [];
     lanes.forEach((n, i) => {
       const gs = near[i];
       if (!gs.length) return;
@@ -942,16 +944,35 @@ const Airport3D = {
       for (const dir of [1, -1]) {
         // (coming along +t the apron is on the right: the turn into the lane is a right turn)
         const cv = dirSignCanvas((dir > 0 ? '→ ' : '← ') + label), w = DIR_SIGN_H * cv.width / 64 / 2;
-        const off = Math.max(14, 9 + w);
-        let spot = null;
-        for (const back of [45, 60, 75, 32]) {
+        const off = Math.max(14, 9 + w), spots = [];
+        for (const back of [45, 60, 75, 32, 90]) {
           for (const across of [LAYOUT.TWY_OFFSET - half - off, LAYOUT.TWY_OFFSET + half + off]) {
-            if (!spot && clear(n.t - dir * back, across, w)) spot = [n.t - dir * back, across];
+            if (clear(n.t - dir * back, across, w)) spots.push([n.t - dir * back, across]);
           }
         }
-        if (spot) this.dirSign(rec, at, tex, cv, spot[0], spot[1], dir);
+        if (spots.length) signs.push({ cv, w, dir, spots, spot: null });
       }
     });
+    // no sign stands in another's line of sight: on the same line beside the taxiway, a board
+    // less than DIR_SIGN_VIEW before another (as its traffic comes) hides it from afar — the
+    // "← C2–C3" for one lane and the "→ C4" for the next stood back to back, 5 m apart
+    const hides = (s, sp, o, op) => Math.abs(op[1] - sp[1]) < o.w + s.w + 1 && (Math.abs(op[0] - sp[0]) < 2 ||
+      (s.dir * (sp[0] - op[0]) > 0 && s.dir * (sp[0] - op[0]) < DIR_SIGN_VIEW) ||
+      (o.dir * (op[0] - sp[0]) > 0 && o.dir * (op[0] - sp[0]) < DIR_SIGN_VIEW));
+    const placed = [];
+    const blockers = (s, sp, but) => placed.filter((o) => o !== but && hides(s, sp, o, o.spot));
+    for (const s of signs) {
+      s.spot = s.spots.find((sp) => !blockers(s, sp).length) || null;
+      // none free: one sign in the way moves to another of its spots, if that leaves both seen
+      for (const sp of s.spot ? [] : s.spots) {
+        const [o, more] = blockers(s, sp);
+        if (more) continue;
+        const alt = o.spots.find((op) => op !== o.spot && !hides(s, sp, o, op) && !blockers(o, op, o).length);
+        if (alt) { o.spot = alt; s.spot = sp; break; }
+      }
+      if (s.spot) placed.push(s);
+    }
+    for (const s of placed) this.dirSign(rec, at, tex, s.cv, s.spot[0], s.spot[1], s.dir);
   },
   // a yellow direction sign (its face drawn by dirSignCanvas) facing the traffic coming along +t
   // (dir 1) or -t (-1); its back dark
@@ -1233,6 +1254,10 @@ function roofName(a) {
 // the other signs, to be read from the cockpit while turning towards the stands; the board as
 // long as its text (a 64-px tall canvas, 160 px at least)
 const DIR_SIGN_H = 1.65;
+// how far before a direction sign (as its traffic comes) no other one may stand on its line
+// beside the taxiway, metres: seen 26 m off the centreline from 300 m away, a board ~60 m in
+// front of another covers it (Airport3D.gateSigns)
+const DIR_SIGN_VIEW = 60;
 function dirSignCanvas(text) {
   const cv = document.createElement('canvas');
   const g = cv.getContext('2d');
