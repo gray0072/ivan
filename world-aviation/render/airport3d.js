@@ -127,6 +127,11 @@ const Airport3D = {
     rec.parkedSets = [];
     for (let i = 0; i < order.length; i += PARKED_SET) {
       const members = order.slice(i, i + PARKED_SET), sg = new THREE.Group();
+      // (baked about the middle of its stands, not the world's origin: an airport is far from it,
+      // and its vertices in world coordinates lost their precision, the aeroplanes warping and
+      // wobbling as the camera moved)
+      const mid = members.reduce((m, k) => m.add(rec.parked[k].position), new THREE.Vector3()).divideScalar(members.length);
+      sg.position.copy(mid);
       const meshes = Merge3D.combine(sg, members.map((k) => rec.parked[k]), 'parked');
       for (const m of meshes) m.userData.gfx = 'apt.parked';
       group.add(sg);
