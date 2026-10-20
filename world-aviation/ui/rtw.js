@@ -179,10 +179,10 @@ const RtwScreen = {
       '<div class="btnRow"><button class="btn default" data-act="rtw" data-v="editSave"' + (chk && chk.ok ? '' : ' disabled') + '>' + tr('Use this route') + '</button>' +
       '<button class="btn" data-act="rtw" data-v="editCancel">' + tr('Cancel') + '</button></div></section>' : '';
     const confirm = this.confirm === 'abandon'
-      ? '<div class="rtwConfirm"><p>' + tr('Abandon the expedition? The legs flown stay in the history, the reward is gone.') + '</p>' +
+      ? '<div class="rtwConfirm rtwEnd"><p>' + tr('Abandon the expedition? The legs flown stay in the history, the reward is gone.') + '</p>' +
         '<div class="btnRow"><button class="btn danger" data-act="rtw" data-v="abandonYes">' + tr('Abandon it') + '</button>' +
         '<button class="btn default" data-act="rtw" data-v="abandonNo">' + tr('Keep going') + '</button></div></div>'
-      : '<div class="btnRow"><button class="btn" data-act="rtw" data-v="abandon">' + tr('Abandon the expedition') + '</button></div>';
+      : '<div class="btnRow rtwEnd"><button class="btn" data-act="rtw" data-v="abandon">' + tr('Abandon the expedition') + '</button></div>';
     return next + editing +
       (this.edit ? '' : '<section class="rtwSec"><h3>' + tr('The legs') + '</h3>' + this.legsHtml(a.plan, Rtw.check(a.plan, ac), 0, a) + '</section>') +
       this.passportHtml(a.legs) + confirm;

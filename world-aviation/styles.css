@@ -1905,6 +1905,8 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 .rtwMode.iron { background: #3b434c; color: #e3e8ee; box-shadow: inset 0 0 0 1px #8a949e; }
 .rtwConfirm { margin: 8px 0; padding: 10px 14px; border: 1px solid #ff7a5c; border-radius: 12px; background: rgba(60, 20, 12, 0.5); }
 .rtwConfirm p { margin: 0 0 4px; color: #ffd0c2; }
+/* Abandon (or its confirm), the last thing of an expedition under way: kept clear of the panel below */
+.rtwEnd { margin-bottom: 22px; }
 /* the passport: a stamp per leg, tilted a little, the airport's colour round it */
 .rtwPassport { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; padding: 12px; border-radius: 12px;
   background: repeating-linear-gradient(0deg, #101923 0 23px, #13202c 23px 24px); }
