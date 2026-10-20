@@ -611,13 +611,13 @@ const RtwScreen = {
     g.fillText(tr(e.type === 'A225' ? 'The Dream round the world' : iron ? 'Iron round the world' : 'Round the world'), W / 2, 185);
     g.font = 'italic 28px Georgia, serif';
     g.fillStyle = '#dfe7f2';
-    g.fillText(tr('This is to certify that'), W / 2, 240);
+    g.fillText(tr('This certificate is awarded to'), W / 2, 240);
     g.font = '700 46px Georgia, serif';
     g.fillStyle = '#ffffff';
     g.fillText(e.pilot || Career.data.pilot.name, W / 2, 298);
     g.font = '26px Georgia, serif';
     g.fillStyle = '#dfe7f2';
-    g.fillText(tr('flew round the world in the {ac}, from {id} to {id} across every meridian', { ac: ac ? ac.name : e.type, id: e.plan[0] }), W / 2, 344);
+    g.fillText(tr('for a flight round the world in the {ac}, from {id} to {id} across every meridian', { ac: ac ? ac.name : e.type, id: e.plan[0] }), W / 2, 344);
     // the route on a map of the whole world
     this.drawFlatMap(g, 120, 380, W - 240, 330, e.plan);
     g.font = '700 24px system-ui, sans-serif';
