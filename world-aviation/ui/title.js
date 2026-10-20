@@ -18,7 +18,7 @@
 const TITLE_HEROES = [['A359', 'SK'], ['A388', 'EK'], ['B789', 'QF'], ['B748F', 'CV'], ['B77W', 'LH'], ['A333', 'FI'], ['A3XL', 'BGA'],
   ['A359', 'AY'], ['B77W', 'CX'], ['B789', 'NH'], ['BCS3', 'LX'], ['B738', 'DY'], ['A320NEO', 'VY'], ['A388', 'SQ'], ['A124', 'RU']];
 const TITLE_HERO_S = 9;            // seconds each aeroplane stays
-const TITLE_FADE_S = 2.4;          // the change-over between two aeroplanes
+const TITLE_FADE_S = 3.2;          // the change-over between two aeroplanes
 const TITLE_POSES = 3;             // the angles AircraftPreview.hero draws, one per aeroplane in turn
 const TITLE_SKY_ORDER = ['dawn', 'day', 'dusk', 'night'];
 const TITLE_SKY_HOLD_S = 26;       // seconds each time of day stays
@@ -155,7 +155,7 @@ const TitleSky = {
     }
 
     // the full moon with its seas, drawn once
-    const mr = Math.max(w, h) * TITLE_MOON_R, ms = Math.ceil(mr * 4);
+    const mr = Math.max(w, h) * TITLE_MOON_R, ms = Math.ceil(mr * 9);   // (room for the whole of its halo)
     const moon = document.createElement('canvas');
     moon.width = moon.height = Math.ceil(ms * dpr);
     const g = moon.getContext('2d');
@@ -215,9 +215,10 @@ const TitleSky = {
     const w = this.w, h = this.h, dpr = this.dpr;
     // (the strip starts a heap's height above the layer's line, so the domes are not cut)
     const R = Math.max(w, h), pad = Math.ceil(R * sp.r[1] * 1.6);
-    const W = Math.ceil(w * 1.2), top = this.horizon + h * sp.y - pad, H = Math.ceil(h - top + h * 0.05);
+    // (a whole number of device pixels wide, so the strip repeats without a seam)
+    const cw = Math.ceil(w * 1.2 * dpr), W = cw / dpr, top = this.horizon + h * sp.y - pad, H = Math.ceil(h - top + h * 0.05);
     const cv = document.createElement('canvas');
-    cv.width = Math.ceil(W * dpr); cv.height = Math.ceil(H * dpr);
+    cv.width = cw; cv.height = Math.ceil(H * dpr);
     const g = cv.getContext('2d');
     g.scale(dpr, dpr);
     g.translate(0, pad);
@@ -270,7 +271,7 @@ const TitleSky = {
       g.fillStyle = hz; g.fillRect(0, -pad, W, H);
       g.globalCompositeOperation = 'source-over';
     }
-    return { cv, W, top };
+    return { cv, W, top, pat: null };
   },
 
   frame() {
@@ -342,10 +343,19 @@ const TitleSky = {
     // the far clouds, then the aeroplane, then the near clouds sweeping under it
     const layer = (i) => {
       if (dt) this.cloudX[i] = (this.cloudX[i] + dt * TITLE_CLOUDS[i].speed * (this.still ? TITLE_STILL_CLOUDS : 1) * (w / 1200)) % sa.layers[i].W;
-      const x = this.cloudX[i];
+      const x = this.cloudX[i], dpr = this.dpr;
       for (const [L, a] of sb && k > 0 ? [[sa.layers[i], 1], [sb.layers[i], k]] : [[sa.layers[i], 1]]) {
         g.globalAlpha = a;
-        for (const j of [0, 1]) g.drawImage(L.cv, -x + j * L.W, L.top, L.W, L.cv.height / this.dpr);
+        // a pattern repeating along x, moved by a fraction of a pixel too: no seam where it wraps
+        if (L.pat === null) L.pat = (typeof DOMMatrix !== 'undefined' && g.createPattern(L.cv, 'repeat-x')) || false;
+        if (L.pat && L.pat.setTransform) {
+          const y = Math.round(L.top * dpr);
+          L.pat.setTransform(new DOMMatrix([1, 0, 0, 1, -x * dpr, y]));
+          g.setTransform(1, 0, 0, 1, 0, 0);
+          g.fillStyle = L.pat;
+          g.fillRect(0, y, this.canvas.width, L.cv.height);
+          g.setTransform(dpr, 0, 0, dpr, 0, 0);
+        } else for (const j of [0, 1]) g.drawImage(L.cv, -x + j * L.W, L.top, L.W, L.cv.height / dpr);
       }
       g.globalAlpha = 1;
     };
@@ -444,24 +454,30 @@ const TitleSky = {
         g.drawImage(img, -iw / 2, -ih / 2, iw, ih);
       }
     };
-    // k: 0..1 how far in; slide: 1 coming in from behind (the right, further off), -1 leaving ahead (the left, nearer)
-    const one = (hero, k, slide) => {
-      const e = smooth01(k);
+    // one aeroplane at alpha a, dx (of the picture's width) off its place and s times its size,
+    // floating on the air
+    const one = (hero, a, dx, s) => {
+      if (a <= 0.003) return;
       const bob = Math.sin(tt * 0.7) * h * 0.006 * move, sway = Math.sin(tt * 0.45) * 0.012 * move;
-      const s = 1 - slide * 0.06 * (1 - e) * move;
+      s = 1 + (s - 1) * move;
       g.save();
-      g.translate(cx + slide * iw * 0.12 * (1 - e) * move + Math.sin(tt * 0.3) * 6 * move, cy + bob);
+      g.translate(cx + dx * iw * move + Math.sin(tt * 0.3) * 6 * move, cy + bob);
       g.rotate(sway);
       g.scale(s, s);
-      pic(hero, e);
+      pic(hero, a);
       g.restore();
+      g.globalAlpha = 1;
     };
+    // coming in from behind: from the right and further off, slowing down into its place
+    const arrive = (hero, q) => { const d = 1 - (1 - q) * (1 - q); one(hero, smooth01(q), (1 - d) * 0.16, 1 - (1 - d) * 0.08); };
     const T = this.heroT, F = TITLE_FADE_S;
     if (T < F && this.prev >= 0 && this.prev !== this.hero) {
-      // the previous one leaves ahead while this one comes in
-      one(list[this.prev], 1 - T / F, -1);
-      one(list[this.hero], T / F, 1);
-    } else if (T < F && this.prev < 0) one(list[this.hero], T / F, 1);
-    else one(list[this.hero], 1, 0);
+      // the previous one speeds up ahead (to the left and nearer) and is gone before this one
+      // is fully in, so the two never show as one double picture
+      const p = Math.min(1, T / (F * 0.5)), q = (T - F * 0.35) / (F * 0.65);
+      one(list[this.prev], 1 - smooth01(p), -p * p * 0.22, 1 + p * p * 0.08);
+      if (q > 0) arrive(list[this.hero], q);
+    } else if (T < F && this.prev < 0) arrive(list[this.hero], T / F);
+    else one(list[this.hero], 1, 0, 1);
   }
 };
