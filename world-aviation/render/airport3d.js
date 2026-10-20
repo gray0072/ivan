@@ -21,8 +21,8 @@
 //     name in big letters on the terminal roof (both sides; in Russian
 //     or Swedish at that country's airports when the game is), a welcome
 //     banner with the city symbol and the flag, the national, the city
-//     and the region's flags on the roof and the national one on the
-//     tower (streaming downwind), the home airlines' logos on the
+//     and the region's flags on the roof beside the name and the national
+//     one on the tower (streaming downwind, floodlit at night), the home airlines' logos on the
 //     hangars, and their aeroplanes at the gates (data/airports.js,
 //     data/airlines.js, data/regions.js, art/)
 //   - the local products' boards: adverts3d.js
@@ -93,8 +93,15 @@ const Airport3D = {
     // the helicopters on their pads, the fire engines, the GA area's vehicles (ga3d.js)
     Ga3D.build(a, rec, at, tex);
     // the buildings, the landside and the boards never move: baked into a mesh per material
-    // (merge3d.js), all but the flags' cloth, which streams in the wind
-    Merge3D.bake(frame, frame.children.slice(built), { keep: new Set(rec.flags.map((f) => f.holder)), night: rec.night, tag: 'buildings' });
+    // (merge3d.js), all but the flags' cloth, which streams in the wind, and their beams, drawn
+    // only after dusk (by day they would cost their fill for nothing): baked on their own
+    const keep = new Set(rec.flags.map((f) => f.holder));
+    if (rec.flagBeams) keep.add(rec.flagBeams);
+    Merge3D.bake(frame, frame.children.slice(built), { keep, night: rec.night, tag: 'buildings' });
+    if (rec.flagBeams) {
+      Merge3D.bake(rec.flagBeams, null, { tag: 'flagBeams' });
+      rec.flagBeams.visible = false;
+    }
     // the perimeter fence and the trees outside it, of the airport's climate (perimeter3d.js)
     Perimeter3D.build(a, rec, at, tex, opts.quality);
     this.buildEquipment(a, rec, at, tex, lambert);
@@ -368,9 +375,10 @@ const Airport3D = {
     if (style) this.terminalRoof(a, b, rec, at, lambert, id, style);
     // the name of the airport in big letters on the roof, facing the apron and the road (at a
     // big airport on the middle terminal, the others carry their number), along the roof but
-    // its far end on the terminal that flies the flags (signSpan): they stand beside the letters
+    // its far end (signSpan): the flags stand there, left of the letters as seen from the apron
     const several = b.terms > 1, sign = roofName(a);
-    if (sign !== b) this.terminalPanel(a, b, rec, at, tex, lambert, id);
+    b.named = sign === b;
+    if (!b.named) this.terminalPanel(a, b, rec, at, tex, lambert, id);
     else {
       const name = rec.label, n = name.length, [s0, s1] = signSpan(b), st = (s0 + s1) / 2;
       const lh = clamp((s1 - s0) * 0.9 / (n * 0.78), 7, h > 18 ? 24 : 16), lw = Math.min(s1 - s0, n * lh * 0.8);
@@ -388,10 +396,12 @@ const Airport3D = {
         at(new THREE.Mesh(new THREE.BoxGeometry(0.6, 1.2, lw * 0.96), frameMat), st, across, y0 + 0.6);
         for (let k = -2; k <= 2; k++) signLeg(b, at, frameMat, st + k * lw * 0.22, across, y0, 0.4);
       }
+      // (the letters' left end, seen from the apron, is their end towards the far end of the roof)
+      this.terminalFlags(a, b, rec, at, tex, id, st + lw / 2);
     }
     // the welcome banner on the apron side, above the glass, at the departure end of the
-    // building (the first terminal), and the flags at the other end (the last)
-    if (several && b.term !== 1) { this.terminalFlags(a, b, rec, at, tex, id); return; }
+    // building (the first terminal)
+    if (several && b.term !== 1) return;
     const bh = Math.max(8, h * 0.62), bw = Math.min(b.along * 0.45, bh * 3.2);
     const bt = b.t - b.along / 2 + bw / 2 + 6;
     b.frontTaken.push([bt - bw / 2, bt + bw / 2]);
@@ -405,7 +415,6 @@ const Airport3D = {
     const bgeo2 = new THREE.PlaneGeometry(bw, bh);
     bgeo2.rotateY(Math.PI / 2);
     at(new THREE.Mesh(bgeo2, bannerMat), b.t, back + 0.6, h - bh / 2 - 0.4);
-    if (!several) this.terminalFlags(a, b, rec, at, tex, id);
   },
   // The roof of a big airport's terminal, over the box of the building, in one of four designs
   // (terminalStyle): its shell in the roof's colour (the real one's, termRoof, else a light
@@ -600,15 +609,17 @@ const Airport3D = {
     }
   },
 
-  // three flagpoles on the roof at the far end of the (last) terminal: the country, the city, and
-  // the region's (data/regions.js) where it has one, else the country's again; in their own
-  // stretch of the roof (FLAG_STRIP), beside the name or the number, never behind it
-  terminalFlags(a, b, rec, at, tex, id) {
-    if (!fliesFlags(b)) return;
-    const ft = b.t + b.along / 2 - 6, front = b.across - b.acrossSize / 2;
+  // three flagpoles on the roof of the terminal with the airport's name, left of the letters as
+  // seen from the apron (from their end, le, towards the far end of the roof), FLAG_GAP from them
+  // and FLAG_STEP apart, in the stretch kept for them (FLAG_STRIP), never behind the letters:
+  // the country, the city, and the region's (data/regions.js) where it has one, else the
+  // country's again
+  terminalFlags(a, b, rec, at, tex, id, le) {
+    const front = b.across - b.acrossSize / 2, ac = front + 8;
     const reg = AIRPORT_REGIONS[a.id], region = reg && RegionFlags.has(reg[0]) ? reg[0] : null;
     for (let i = 0; i < 3; i++) {
-      this.flag(rec, at, tex, a.country, i === 1 ? id : null, ft - i * 9, front + 8, b.roofAt(ft - i * 9, front + 8) - 0.3, 13, 8, i === 2 ? region : null);
+      const t = le + FLAG_GAP + i * FLAG_STEP;
+      this.flag(rec, at, tex, a.country, i === 1 ? id : null, t, ac, b.roofAt(t, ac) - 0.3, 13, 8, i === 2 ? region : null);
     }
   },
 
@@ -744,10 +755,41 @@ const Airport3D = {
   },
 
   // a flagpole with a flag that streams downwind (update); city: the airport identity for a city
-  // flag, region: the key of a region's flag (art/regions.js)
+  // flag, region: the key of a region's flag (art/regions.js). After dark it is floodlit from its
+  // foot: two lamps on the roof by the pole, a soft beam of light up the pole (flagBeams) and
+  // the cloth lit in its own colours, brightest near the lamps
   flag(rec, at, tex, country, city, t, across, y, pole, fw, region) {
     const fh = fw * 2 / 3;
-    at(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, pole, 6), new THREE.MeshLambertMaterial({ color: 0xe8e8e8 })), t, across, y + pole / 2);
+    const poleMat = new THREE.MeshLambertMaterial({ color: 0xe8e8e8 });
+    rec.night.push({ mat: poleMat, color: new THREE.Color(FLAG_LIGHT), k: 0.35 });
+    at(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, pole, 6), poleMat), t, across, y + pole / 2);
+    // the lamps: a dark housing each side of the pole, its glass tilted up at the flag
+    const housing = new THREE.MeshLambertMaterial({ color: 0x3a3f44 });
+    const lens = new THREE.MeshLambertMaterial({ color: 0x8a8a80 });
+    rec.night.push({ mat: lens, color: new THREE.Color(FLAG_LIGHT), k: 1 });
+    for (const s of [-1, 1]) {
+      at(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.36, 0.5), housing), t + s * 0.9, across, y + 0.18);
+      const g = at(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.42), lens), t + s * 0.9, across, y + 0.37);
+      g.rotation.x = s * 0.35;
+    }
+    // the beam: three crossed planes through the pole, a soft shaft widening up to the top of the
+    // flag (additive, faded in at dusk: update)
+    if (!rec.flagBeams) {
+      rec.flagBeams = at(new THREE.Group(), 0, 0, 0);
+      rec.beamMat = new THREE.MeshBasicMaterial({
+        map: tex(beamCanvas(), 2), color: FLAG_LIGHT, transparent: true, opacity: 0, depthWrite: false,
+        blending: THREE.AdditiveBlending, side: THREE.DoubleSide
+      });
+    }
+    const bw = fw * 1.7, bh = pole + 1;
+    for (let k = 0; k < 3; k++) {
+      const g = new THREE.PlaneGeometry(bw, bh);
+      g.rotateY(k * Math.PI / 3);
+      const m = new THREE.Mesh(g, rec.beamMat);
+      m.renderOrder = 5;
+      m.position.set(across, y + bh / 2, -t);
+      rec.flagBeams.add(m);
+    }
     const src = document.createElement('canvas');
     src.width = 192; src.height = 128;
     const g = src.getContext('2d');
@@ -768,7 +810,18 @@ const Airport3D = {
     const geo = new THREE.PlaneGeometry(fw, fh, 12, 4);
     geo.translate(fw / 2 + 0.22, -fh / 2, 0);
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0.22, 0, 0), Math.hypot(fw, fh) * 1.05 + 0.5);
-    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex(cv, 4), side: THREE.DoubleSide }));
+    // (lit at night: the flag again, brightest at the hoist's foot over the lamps, softer to the fly)
+    const lit = document.createElement('canvas');
+    lit.width = 256; lit.height = 128;
+    const lg = lit.getContext('2d');
+    lg.drawImage(cv, 0, 0);
+    const gr = lg.createRadialGradient(0, 150, 10, 0, 150, 300);
+    gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.5, '#e6e6e6'); gr.addColorStop(1, '#8c8c8c');
+    lg.globalCompositeOperation = 'multiply';
+    lg.fillStyle = gr; lg.fillRect(0, 0, 256, 128);
+    const clothMat = new THREE.MeshLambertMaterial({ map: tex(cv, 4), emissiveMap: tex(lit, 4), emissive: 0x000000, side: THREE.DoubleSide });
+    rec.night.push({ mat: clothMat, color: new THREE.Color(FLAG_LIGHT), k: 0.85 });
+    const mesh = new THREE.Mesh(geo, clothMat);
     const holder = new THREE.Group();
     holder.add(mesh);
     at(holder, t, across, y + pole - 0.2);
@@ -909,6 +962,11 @@ const Airport3D = {
     const far = Math.hypot(eye.x - a.x, eye.z - a.z) - a.half;
     const seen = far < Math.max(5000, (vis || 20000) * 2.5);
     for (const p of [rec.lights, rec.flasher, rec.papiPoints]) if (p) p.visible = seen;
+    // the flags' beams after dusk, out to where the lights are seen
+    if (rec.flagBeams) {
+      rec.beamMat.opacity = (dark || 0) * FLAG_BEAM_OPACITY;
+      rec.flagBeams.visible = seen && (dark || 0) > 0.01;
+    }
     if (rec.lights) rec.lights.material.size = 2.6 + 1.4 * (dark || 0);
     // the taxiway lights (blue edges, green centrelines) are switched on from dusk and in poor
     // visibility, as at a real airfield; on a clear day they are off (bright dots on the grass
@@ -1136,15 +1194,40 @@ function roofName(a) {
   return terms[Math.ceil(terms.length / 2) - 1] || null;
 }
 
-// The signs on a terminal's roof (the name, a terminal's number) and the flags beside them.
-// FLAG_STRIP: the far end of the roof kept for the three flags (9 m apart, 6 m from the end, and
-// the cloth streaming 8 m from the last pole)
-const FLAG_STRIP = 34;
-function fliesFlags(b) { return b.terms === 1 || b.term === b.terms; }
-// [t0, t1]: the stretch along the roof a sign may take
+// The signs on a terminal's roof (the name, a terminal's number) and the flags beside the name.
+// FLAG_GAP: from the letters' end to the first pole (the cloth streaming towards them, 8 m, stays
+// clear); FLAG_STEP: between two poles (seen at 45 degrees one flag no longer covers the next);
+// FLAG_STRIP: the far end of the roof kept for them (the last cloth streaming 8 m past its pole,
+// 2 m short of the end)
+const FLAG_GAP = 12, FLAG_STEP = 14;
+const FLAG_STRIP = FLAG_GAP + 2 * FLAG_STEP + 10;
+// the flags' floodlights (Airport3D.flag): their colour, and the beam's brightness at full night
+const FLAG_LIGHT = 0xfff1d8, FLAG_BEAM_OPACITY = 0.32;
+// a beam of light from a lamp at the foot of a flagpole: a soft shaft, narrow at the foot and
+// widening upwards, brightest along the pole, fading out to its sides and towards its top
+function beamCanvas() {
+  const W = 64, H = 256, cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'), img = g.createImageData(W, H);
+  for (let y = 0; y < H; y++) {
+    const up = 1 - y / (H - 1);                       // 0 at the foot, 1 at the top
+    const half = 0.1 + 0.4 * up;                      // the shaft's half width, of the canvas
+    const fall = smoothstep(0, 0.06, up) * (1 - 0.55 * up) * (1 - smoothstep(0.82, 1, up));
+    for (let x = 0; x < W; x++) {
+      const d = Math.abs((x + 0.5) / W - 0.5) / half;
+      const v = Math.round(255 * fall * Math.exp(-d * d * 2.2) * clamp(1.4 - d * 0.4, 0, 1));
+      const i = (y * W + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return cv;
+}
+// [t0, t1]: the stretch along the roof a sign may take (b.named: the terminal with the name)
 function signSpan(b) {
   const t0 = b.t - b.along / 2, t1 = b.t + b.along / 2;
-  return [t0 + 4, t1 - (fliesFlags(b) ? FLAG_STRIP : 4)];
+  return [t0 + 4, t1 - (b.named ? FLAG_STRIP : 4)];
 }
 // a sign stands just inside the roof's edge on its side (side -1: the apron, 1: the road)...
 function signAcross(b, side) { return side < 0 ? b.roofSpan[0] + 2.5 : b.roofSpan[1] - 2.5; }
