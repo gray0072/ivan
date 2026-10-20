@@ -41,11 +41,12 @@ Object.assign(Vehicles, {
     if (loaded !== false) Vehicles.uld(k, 0, 0.65, z, rng);
     return k;
   },
-  // an LD3 container: a narrow base and the wider top (its stepped contour), a darker door
+  // an LD3 container: a narrow base and the wider top (its stepped contour), a darker door (10 cm
+  // proud: 3 cm out it flickered against the container's face)
   uld(k, x, y, z, rng) {
     const c = ULD_COLORS[(rng.next() * ULD_COLORS.length) | 0];
     k.box(1.55, 0.6, 1.5, x - 0.2, y + 0.3, z, c).box(1.95, 1.0, 1.5, x, y + 1.1, z, c)
-      .box(1.6, 1.3, 0.04, x - 0.05, y + 0.8, z + 0.76, '#7d8387');
+      .box(1.6, 1.3, 0.1, x - 0.05, y + 0.8, z + 0.8, '#7d8387');
     return k;
   },
   // a netted pallet: a flat aluminium base, the freight stacked on it under a net
@@ -157,27 +158,26 @@ const Cargo3D = {
   building(a, b, rec, at, tex, lambert, id) {
     const P = id.paint, h = b.h, len = b.along, w = b.acrossSize;
     const front = b.across - w / 2, back = b.across + w / 2, t0 = b.t - len / 2, t1 = b.t + len / 2;
-    const k = kit();
+    // (its walls cut into cells like the terminal's, passed close by: kit(true))
+    const k = kit(true);
     const hex = (c) => '#' + new THREE.Color(c).getHexString();
     const wall = hex(P.hangar), door = hex(P.door), trim = hex(P.trim), roof = hex(P.roof);
-    // the shell: profiled cladding (a rib every 6 m on the long faces), a dark plinth, the roof slab
-    k.box(w, h, len, b.across, h / 2, -b.t, wall).box(w + 0.3, 1.2, len + 0.3, b.across, 0.6, -b.t, '#4a4e52')
-      .box(w + 1.6, 0.9, len + 1.6, b.across, h + 0.45, -b.t, roof);
-    for (let t = t0 + 3; t < t1 - 1; t += 6) {
-      for (const ac of [front - 0.15, back + 0.15]) k.box(0.3, h - 1.2, 0.35, ac, h / 2 + 0.6, -t, trim);
-    }
+    // the shell: profiled cladding (a rib every 6 m on the long faces, painted: stripeMat), a dark
+    // plinth, the roof slab
+    at(new THREE.Mesh(paintedBox(w, h, len, 6, 1), stripeMat(tex, wall, trim, 0.35 / 6, false)), b.t, b.across, h / 2);
+    k.box(w + 0.3, 1.2, len + 0.3, b.across, 0.6, -b.t, '#4a4e52').box(w + 1.6, 0.9, len + 1.6, b.across, h + 0.45, -b.t, roof);
     // the roof plant: a few air handlers
     for (let i = 0; i < Math.max(2, Math.round(len / 60)); i++) {
       k.box(5, 1.8, 7, b.across + (i % 2 ? 8 : -6), h + 1.8, -(t0 + len * (i + 0.5) / Math.max(2, Math.round(len / 60))), '#8e9498');
     }
     // the apron front: two roller doors for the containers either side of each stand's
-    // middle (the stand's board above them, apron3d.js), a dark opening under each slatted leaf
-    const dh = b.big ? 6 : 4.5;
+    // middle (the stand's board above them, apron3d.js), in yellow frames, their leaves' slats
+    // painted (stripeMat)
+    const dh = b.big ? 6 : 4.5, leaf = stripeMat(tex, door, '#3a3f44', 0.06 / 0.6, true);
     for (const g of a.gates.filter((x) => x.cargo)) {
       for (const dt of [-12, 12]) {
-        k.box(0.5, dh + 0.6, 6.6, front - 0.25, (dh + 0.6) / 2, -(g.t + dt), '#e3b51c')
-          .box(0.6, dh, 5.8, front - 0.3, dh / 2, -(g.t + dt), door);
-        for (let y = 0.6; y < dh; y += 0.6) k.box(0.62, 0.06, 5.8, front - 0.3, y, -(g.t + dt), '#3a3f44');
+        k.box(0.5, dh + 0.6, 6.6, front - 0.25, (dh + 0.6) / 2, -(g.t + dt), '#e3b51c');
+        at(new THREE.Mesh(paintedBox(0.6, dh, 5.8, 1, 0.6), leaf), g.t + dt, front - 0.3, dh / 2);
       }
     }
     // the far end: the dock doors for the trucks (a.cargoYard), under a canopy
@@ -200,24 +200,25 @@ const Cargo3D = {
     rec.night.push({ mat: win, color: new THREE.Color(0xfff0c8), k: 0.5 });
     if (b.big) at(new THREE.Mesh(cellBox(0.3, 1.6, len * 0.9), win), b.t, front - 0.4, h - 1.8);
     at(new THREE.Mesh(cellBox(0.3, 1.4, len * 0.8), win), b.t, back + 0.4, h * 0.6);
-    // CARGO on the roof, both ways, lit at night
+    // CARGO on the roof, both ways, lit at night (BAND_PROUD off its board)
     const bw = Math.min(len * 0.55, b.big ? 42 : 20), bh = bw / 4.2, y = h + 1.6 + bh / 2;
     const sign = tex(this.signCanvas(id), 8);
     const sm = new THREE.MeshLambertMaterial({ map: sign, emissiveMap: sign, emissive: 0x000000 });
     rec.night.push({ mat: sm, color: new THREE.Color(0xffffff), k: 0.75 });
     for (const s of [-1, 1]) {
-      const geo = new THREE.PlaneGeometry(bw, bh);
+      const geo = new THREE.PlaneGeometry(bw, bh, Math.ceil(bw / 12), Math.ceil(bh / 12));
       geo.rotateY(s * Math.PI / 2);
-      at(new THREE.Mesh(geo, sm), b.t, b.across + s * 0.3, y);
+      at(new THREE.Mesh(geo, sm), b.t, b.across + s * (0.25 + BAND_PROUD), y);
     }
     at(new THREE.Mesh(cellBox(0.5, bh + 0.4, bw + 0.4), lambert(0x1b232c)), b.t, b.across, y);
     for (const dt of [-bw * 0.35, 0, bw * 0.35]) at(new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.6, 0.4), lambert(0x55595d)), b.t + dt, b.across, h + 0.8);
-    // a cargo carrier's logo on the apron front, beside the first stand (clear of the doors)
+    // a cargo carrier's logo on the apron front, beside the first stand (clear of the doors),
+    // BAND_PROUD off its board
     const al = this.carrier(a, 0);
     if (al) {
       const g0 = a.gates.find((g) => g.cargo);
       at(new THREE.Mesh(cellBox(0.4, 3.6, 17), lambert(0x1b232c)), g0.t - 22, front - 0.3, Math.min(h - 3, 12));
-      Airport3D.logoBoard(rec, at, tex, al, g0.t - 22, front - 0.55, Math.min(h - 3, 12), 16, 3);
+      Airport3D.logoBoard(rec, at, tex, al, g0.t - 22, front - 0.5 - BAND_PROUD, Math.min(h - 3, 12), 16, 3);
     }
   },
 

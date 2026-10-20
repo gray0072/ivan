@@ -1320,6 +1320,43 @@ function cellBox(w, h, d) {
   return new THREE.BoxGeometry(w, h, d, n(w), n(h), n(d));
 }
 
+// how far a coloured band round a building, and a sign or a logo off the board or the wall
+// behind it, stand proud, metres: at 5 cm they flickered against it in the log depth buffer
+// (ga3d.js, cargo3d.js)
+const BAND_PROUD = 0.3;
+
+// A building's face with thin lines painted on it, not built as boxes (the ribs of a cargo
+// shed's cladding, a roller door's slats): far off the texture's mipmaps blend them into the
+// face, where boxes thinner than a pixel flicker as you move (and slats a few cm proud of their
+// door flickered against it), like the terminal's mullions. The material: one span of the
+// pattern, the ground and a stripe `frac` of the span wide across its middle, upright (a rib
+// every span along the face) or, when `rows`, lying (a slat every span up it); CSS colours, as
+// the kit's (apron3d.js). tex: Airport3D.build's
+function stripeMat(tex, ground, stripe, frac, rows) {
+  const cv = document.createElement('canvas');
+  cv.width = rows ? 4 : 128; cv.height = rows ? 128 : 4;
+  const g = cv.getContext('2d');
+  g.fillStyle = ground; g.fillRect(0, 0, cv.width, cv.height);
+  g.fillStyle = stripe;
+  const s = 128 * frac;
+  if (rows) g.fillRect(0, 64 - s / 2, 4, s); else g.fillRect(64 - s / 2, 0, s, 4);
+  const map = tex(cv);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  return new THREE.MeshLambertMaterial({ map });
+}
+// ... and its box: a cellBox whose long faces (across x: a building's apron front and back) wear
+// the pattern, a span every su metres along them and sv metres up them, from the box's start (its
+// +z end) and its foot; its other faces the edge of a span, plain ground
+function paintedBox(w, h, d, su, sv) {
+  const geo = cellBox(w, h, d);
+  const pos = geo.attributes.position, nor = geo.attributes.normal, uv = geo.attributes.uv;
+  for (let i = 0; i < uv.count; i++) {
+    if (Math.abs(nor.getX(i)) > 0.5) uv.setXY(i, (d / 2 - pos.getZ(i)) / su, (pos.getY(i) + h / 2) / sv);
+    else uv.setXY(i, 0, 0);
+  }
+  return geo;
+}
+
 // one 12 m span of a glass front: the glass, a 0.8 m mullion in the middle (colours as the
 // materials' hex, linear: painted in sRGB, as the texture is read back)
 function mullionCanvas(glassHex, barHex) {

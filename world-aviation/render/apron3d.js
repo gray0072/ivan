@@ -46,8 +46,9 @@ const TOW_PIN_H = 0.6;             // the pushback tug's tow bar pin: this high 
 
 // A kit of boxes and cylinders in vertex colours, merged into one mesh. Parts are placed
 // in the current frame; push(x, y, z, ry) starts a frame (turned by ry about y) and pop()
-// ends it. A vehicle's own frame: forward = +z, wheels on y = 0.
-function kit() {
+// ends it. A vehicle's own frame: forward = +z, wheels on y = 0. cells: its boxes cut into
+// cells of about 12 m (cellBox), for a building's walls passed close by (cargo3d.js, ga3d.js).
+function kit(cells) {
   const parts = [];
   let base = new THREE.Matrix4();
   const stack = [];
@@ -63,7 +64,7 @@ function kit() {
     parts.push({ g, color });
   };
   const k = {
-    box(w, h, d, x, y, z, color, rx, ry, rz) { add(new THREE.BoxGeometry(w, h, d), x, y, z, color, rx, ry, rz); return k; },
+    box(w, h, d, x, y, z, color, rx, ry, rz) { add(cells ? cellBox(w, h, d) : new THREE.BoxGeometry(w, h, d), x, y, z, color, rx, ry, rz); return k; },
     cyl(r1, r2, h, seg, x, y, z, color, rx, ry, rz) { add(new THREE.CylinderGeometry(r1, r2, h, seg || 10), x, y, z, color, rx, ry, rz); return k; },
     // a wheel with its axle across the vehicle (along x)
     wheel(x, z, r) { return k.cyl(r, r, r * 0.7, 10, x, r, z, '#1c1e21', 0, 0, Math.PI / 2); },

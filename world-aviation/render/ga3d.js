@@ -48,9 +48,6 @@ const POST_VANS = {
   'United Kingdom': ['#da202a', '#f2c418'], Germany: ['#ffcc00', '#1c1c1c'], France: ['#ffcc00', '#003da5'], Canada: ['#da202a', '#ffffff']
 };
 const GA_FIRE_BAYS = 4;          // the fire station's bays (the hose tower past the last)
-// how far the coloured bands round the buildings (and the rescue station's roof signs off their
-// board) stand proud, metres: at 5 cm they flickered against the walls in the log depth buffer
-const BAND_PROUD = 0.3;
 
 // ---------- the vehicles (forward = +z, on y = 0; see Vehicles in apron3d.js) ----------
 Object.assign(Vehicles, {
@@ -92,8 +89,9 @@ Object.assign(Vehicles, {
     const L = H.len, W = look === 'light' ? 1.5 : look === 'mi8' ? 2.5 : 2.2, Hc = look === 'light' ? 1.5 : look === 'mi8' ? 2.4 : 2.0;
     const y0 = look === 'light' ? 0.6 : 0.55, Lc = L * (look === 'mi8' ? 0.55 : 0.5), zc = L * 0.18;
     const front = zc + Lc / 2, back = zc - Lc / 2, boomY = y0 + Hc * 0.68;
-    // the cabin, its lower part in the second colour, a stripe; the nose and the cockpit glass
-    k.box(W, Hc, Lc, 0, y0 + Hc / 2, zc, c.body).box(W + 0.03, Hc * 0.34, Lc, 0, y0 + Hc * 0.17, zc, c.lower)
+    // the cabin, its lower part in the second colour (a little proud all round: its ends flush
+    // with the cabin's flickered), a stripe; the nose and the cockpit glass
+    k.box(W, Hc, Lc, 0, y0 + Hc / 2, zc, c.body).box(W + 0.06, Hc * 0.34, Lc + 0.06, 0, y0 + Hc * 0.17, zc, c.lower)
       .box(W + 0.05, Hc * 0.08, Lc * 0.92, 0, y0 + Hc * 0.42, zc, c.stripe)
       .box(W * 0.9, Hc * 0.55, L * 0.07, 0, y0 + Hc * 0.3, front + L * 0.035, c.lower)
       .box(W * 0.84, Hc * 0.42, L * 0.06, 0, y0 + Hc * 0.68, front + L * 0.02, '#1d2833', -0.35)
@@ -111,15 +109,17 @@ Object.assign(Vehicles, {
     // the tail boom, from the cabin's back to the fin, tapering
     const boom = back - (-L / 2) - 0.6;
     k.cyl(Hc * (look === 'mi8' ? 0.26 : 0.2), Hc * 0.1, boom, 10, 0, boomY, back - boom / 2, c.body, Math.PI / 2);
-    // the fin (a light one's is a big fenestron), the tailplane, the tail rotor
+    // the fin (a light one's is a big fenestron, 10 cm proud of it each side: 1.5 cm out it
+    // flickered), the tailplane, the tail rotor (a disc thick enough to stay a steady line seen
+    // edge on, nose or tail first from the apron)
     if (look === 'light') {
       k.box(0.35, Hc * 1.0, L * 0.12, 0, boomY + Hc * 0.25, -L / 2 + L * 0.06, c.body)
-        .cyl(Hc * 0.28, Hc * 0.28, 0.38, 12, 0, boomY + Hc * 0.15, -L / 2 + L * 0.06, '#2b2f33', 0, 0, Math.PI / 2)
+        .cyl(Hc * 0.28, Hc * 0.28, 0.55, 12, 0, boomY + Hc * 0.15, -L / 2 + L * 0.06, '#2b2f33', 0, 0, Math.PI / 2)
         .box(W * 1.3, 0.08, L * 0.05, 0, boomY, -L / 2 + L * 0.18, c.body);
     } else {
       k.box(0.25, Hc * 1.05, L * 0.07, 0, boomY + Hc * 0.42, -L / 2 + L * 0.04, c.body)
         .box(W * 1.35, 0.1, L * 0.05, 0, boomY + 0.1, -L / 2 + L * 0.14, c.body)
-        .cyl(H.rotorR * 0.17, H.rotorR * 0.17, 0.06, 12, (look === 'mi8' ? -1 : 1) * 0.3, boomY + Hc * 0.6, -L / 2 + L * 0.04, '#3a3d40', 0, 0, Math.PI / 2);
+        .cyl(H.rotorR * 0.17, H.rotorR * 0.17, 0.16, 12, (look === 'mi8' ? -1 : 1) * 0.35, boomY + Hc * 0.6, -L / 2 + L * 0.04, '#3a3d40', 0, 0, Math.PI / 2);
     }
     // the gear: skids on struts, or wheels (and the sponsons they fold into, the Mi-8's side tanks)
     if (look === 'light') {
@@ -155,7 +155,8 @@ const Ga3D = {
 
   // ---------- the buildings (World.buildBuildings: kinds ga, medevac, rescue, fire) ----------
   building(a, b, rec, at, tex, lambert, id) {
-    const k = kit();
+    // (its walls cut into cells like the terminal's, passed close by: kit(true))
+    const k = kit(true);
     const P = id.paint, hex = (c) => '#' + new THREE.Color(c).getHexString();
     const h = b.h, w = b.acrossSize, len = b.along;
     const front = b.across - w / 2, back = b.across + w / 2, t0 = b.t - len / 2, t1 = b.t + len / 2;
@@ -166,15 +167,19 @@ const Ga3D = {
       const map = tex(cv, 8);
       const mat = new THREE.MeshLambertMaterial({ map, emissiveMap: map, emissive: 0x000000 });
       rec.night.push({ mat, color: new THREE.Color(0xffffff), k: 0.8 });
-      const geo = new THREE.PlaneGeometry(hgt * cv.width / cv.height, hgt);
+      const sw = hgt * cv.width / cv.height;
+      const geo = new THREE.PlaneGeometry(sw, hgt, Math.ceil(sw / 12), Math.ceil(hgt / 12));
       geo.rotateY((side || -1) * Math.PI / 2);
       at(new THREE.Mesh(geo, mat), t, across, y);
     };
-    // a roller door on the apron front, from ta to tb, dh tall, its slats showing
+    // a roller door on the apron front, from ta to tb, dh tall, in its frame, the leaf's slats
+    // painted (stripeMat: a material for each colour of leaf)
+    const leaves = {};
     const door = (ta, tb, dh, frame, leaf) => {
       const dw = tb - ta, tm = (ta + tb) / 2;
-      k.box(0.5, dh + 0.6, dw + 0.8, front - 0.25, (dh + 0.6) / 2, -tm, frame).box(0.6, dh, dw, front - 0.3, dh / 2, -tm, leaf);
-      for (let y = 0.7; y < dh; y += 0.7) k.box(0.62, 0.06, dw, front - 0.32, y, -tm, '#3a3f44');
+      k.box(0.5, dh + 0.6, dw + 0.8, front - 0.25, (dh + 0.6) / 2, -tm, frame);
+      leaves[leaf] = leaves[leaf] || stripeMat(tex, leaf, '#3a3f44', 0.06 / 0.7, true);
+      at(new THREE.Mesh(paintedBox(0.6, dh, dw, 1, 0.7), leaves[leaf]), tm, front - 0.3, dh / 2);
     };
     // the windows along the back (lit at night)
     at(new THREE.Mesh(cellBox(0.3, 1.3, len * 0.8), win), b.t, back + 0.3, h * 0.55);
@@ -192,7 +197,8 @@ const Ga3D = {
       if (gs.length === 1) door(gs[0].t + 6, t1 - 4, h * 0.72, '#e3b51c', hex(P.door));
       // the bush operator's logo over the first hangar door
       const al = this.operator(a, 0);
-      if (al && gs.length > 1) Airport3D.logoBoard(rec, at, tex, al, (gs[0].t + gs[1].t) / 2, front - 0.6, h * 0.86, gs[1].t - gs[0].t - 14, h * 0.22);
+      // (BAND_PROUD off the door frames under it)
+      if (al && gs.length > 1) Airport3D.logoBoard(rec, at, tex, al, (gs[0].t + gs[1].t) / 2, front - 0.5 - BAND_PROUD, h * 0.86, gs[1].t - gs[0].t - 14, h * 0.22);
     } else if (b.kind === 'medevac') {
       // white, a red band under the roof (BAND_PROUD off the walls); the door past the stand's
       // board, AIR AMBULANCE and the Star of Life beside it
