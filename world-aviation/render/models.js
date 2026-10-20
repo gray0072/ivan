@@ -1062,7 +1062,10 @@ function liftingSurface(def, mat, surf, side) {
       const a = i * K + j, b = i * K + (j + 1) % K, c = a + K, e = b + K;
       idx.push(a, c, b, b, c, e);
     }
-    if (caps) for (const [ri, flip] of [[0, true], [rings.length - 1, false]]) {
+    // (the caps wound as the skin is here, facing in, and turned out with it below: wound the
+    // other way, they faced in and were culled, so the sky showed through the slot between the
+    // halves of the Mriya's tailplane and through the seams of the pieces)
+    if (caps) for (const [ri, flip] of [[0, false], [rings.length - 1, true]]) {
       const base = pos.length / 3;
       rings[ri].forEach((p, j) => { same.push(base + j, ri * K + (p.of === undefined ? j : p.of)); pos.push(p[0], p[1], p[2]); });
       for (let j = 1; j + 1 < K; j++) idx.push(...(flip ? [base, base + j + 1, base + j] : [base, base + j, base + j + 1]));
