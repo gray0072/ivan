@@ -1156,7 +1156,7 @@ const UI = {
       '<div class="debriefTitle">' + tr('Practice landing · {id} runway {rwy}', { id: c.toId, rwy: Game.flight ? Game.flight.arrival.rwyName : '' }) +
       (r.ok ? '' : '<br>' + esc(r.reason)) + '</div>' +
       '</div>' +
-      (r.ok ? '<h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(r.landed) : '') +
+      (r.ok ? '<h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(r.landed, r.score) : '') +
       '<p class="repGain">' + repLine + '</p>' +
       (r.cheated ? '<p class="need">' + tr('Cheats used — no pay, no reputation, no records') + '</p>' : '') +
       '<p class="fineprint">' + tr('Practice fee {fee}', { fee: fmtMoney(r.fee) }) +
@@ -1182,7 +1182,7 @@ const UI = {
         : arrowsHtml(tr('Flight complete · {from} → {to}', { from: result.contract.fromId, to: result.contract.toId }))) + '</div>' +
       '</div>' +
       (failed ? '' :
-        '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(landed) + LandingJoke.html(result, failed) +
+        '<div class="cols"><div><h3>' + tr('Touchdown') + '</h3>' + touchdownGrid(landed, result.score) + LandingJoke.html(result, failed) +
         '</div><div><h3>' + tr('In the log') + '</h3><ul class="unlocks">' +
         '<li>' + tr('Block time {b} · real time {r}', { b: fmtTime(result.blockSec), r: fmtTime(result.realSec) }) + '</li>' +
         '<li>' + tr('Fuel used {kg} kg (plan {p} kg)', { kg: Math.round(result.fuelUsed), p: result.contract.fuelKg }) + '</li>' +
@@ -1586,17 +1586,53 @@ const UI = {
   }
 };
 
-// the touchdown numbers, in the debrief and after a practice landing
-function touchdownGrid(landed) {
-  return '<div class="cGrid">' +
-    row2(tr('Vertical speed'), (landed ? landed.fpm : 0) + ' fpm') +
-    row2(tr('Speed'), (landed ? landed.ias : 0) + ' kt (Vref ' + (landed ? landed.vref : 0) + ')') +
-    row2(tr('From the threshold'), (landed ? landed.fromThr : 0) + ' m') +
-    row2(tr('Off the centreline'), (landed ? Math.abs(landed.offset) : 0) + ' m') +
-    row2(tr('Bank / crab'), (landed ? Math.round(landed.bank) + '° / ' + Math.abs(landed.crab) + '°' : '—')) +
-    row2(tr('Surface'), landed ? esc(tr(landed.surf)) : '—') +
+// the touchdown numbers, in the debrief, after a practice landing and a lesson: each with its own
+// small letter and the points it cost (Game.landingScore), and under them the score on the grades' scale
+function touchdownGrid(landed, score) {
+  const L = landed || {};
+  const part = (key) => score ? score.parts.find((p) => p.key === key) : null;
+  const pts = (lost) => Math.round(lost * 100);
+  const mark = (p) => !p ? '<i class="tdMark"></i>'
+    : '<i class="tdMark" title="' + esc(tr('{n} of {m} points lost', { n: pts(p.lost), m: pts(p.weight) })) + '">' +
+      '<small>' + (pts(p.lost) ? '−' + pts(p.lost) : '') + '</small>' +
+      (p.grade ? '<em class="' + gradeClass(p.grade) + '">' + p.grade + '</em>' : '<em class="gNone"></em>') + '</i>';
+  const row = (label, value, p) => '<div class="tdRow"><span>' + esc(label) + '</span><b>' + value + '</b>' + mark(p) + '</div>';
+  // the damage and the grass: only the points they cost, no letter of their own
+  const extra = (lost, weight) => lost ? { lost, weight, grade: '' } : null;
+  const rows =
+    row(tr('Vertical speed'), (L.fpm || 0) + ' fpm', part('fpm')) +
+    row(tr('Speed'), (L.ias || 0) + ' kt <small>(Vref ' + (L.vref || 0) + ')</small>', part('speed')) +
+    row(tr('From the threshold'), (L.fromThr || 0) + ' m', part('thr')) +
+    row(tr('Off the centreline'), Math.abs(L.offset || 0) + ' m', part('offset')) +
+    row(tr('Bank'), Math.round(L.bank || 0) + '°', part('bank')) +
+    row(tr('Crab'), Math.abs(L.crab || 0) + '°', part('crab')) +
+    row(tr('Surface'), landed ? esc(tr(landed.surf)) : '—', score && extra(score.grassLost, LANDING_GRADE.GRASS)) +
+    (score && score.damageLost ? row(tr('Damage'), Math.round(score.damage * 100) + ' %', extra(score.damageLost, LANDING_GRADE.DAMAGE)) : '');
+  return '<div class="tdGrid">' + rows + '</div>' + (score ? scoreScale(score) : '');
+}
+
+// the score on the scale of the grades F … A+ (LANDING_GRADE.LETTERS), the pin at the score, and the sum
+function scoreScale(score) {
+  const LO = 0.2, HI = 1;                          // the scale's ends: below 20 all is F
+  const cuts = LANDING_GRADE.LETTERS.slice().reverse().concat([[HI, '']]);
+  const at = (v) => (clamp(v, LO, HI) - LO) / (HI - LO) * 100;
+  let segs = '<span class="gF' + (score.grade === 'F' ? ' on' : '') + '" style="--w:' + at(cuts[0][0]) + '%">F</span>';
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const g = cuts[i][1];
+    segs += '<span class="' + gradeClass(g) + (score.grade === g ? ' on' : '') + '" style="--w:' + (at(cuts[i + 1][0]) - at(cuts[i][0])) + '%">' + g + '</span>';
+  }
+  const lost = score.parts.reduce((s, p) => s + Math.round(p.lost * 100), 0) + Math.round(score.damageLost * 100) + Math.round(score.grassLost * 100);
+  const bonus = Math.round(score.bonus * 100);
+  const total = 100 - lost + bonus;
+  return '<div class="tdScore">' +
+    '<div class="tdScale">' + segs + '<i class="tdPin" style="--at:' + at(score.score) + '%"></i></div>' +
+    '<p>' + tr('Score {s} of 100', { s: '<b>' + total + '</b>' }) + ' · ' +
+    tr('{n} for the landing', { n: '−' + lost }) + ' · ' +
+    tr('{n} for the difficulty', { n: (bonus < 0 ? '−' : '+') + Math.abs(bonus) }) + '</p>' +
     '</div>';
 }
+// a grade's colour class: gAp (A+), gA … gF
+function gradeClass(g) { return 'g' + g.replace('+', 'p'); }
 
 function loadText(c) {
   const kg = Math.round(c.payloadKg).toLocaleString('sv-SE');

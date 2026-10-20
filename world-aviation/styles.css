@@ -1510,6 +1510,61 @@ button, input, select { font-family: inherit; }
 .grade.bad { border-color: #ff7a5c; color: #ffd0c2; }
 .grade.word { font-size: 20px; padding: 12px 12px; }
 .debriefTitle { min-width: 0; font-size: 18px; color: #cfdae5; overflow-wrap: anywhere; }
+/* the touchdown numbers, each with its own small letter and the points it cost, and the score's scale */
+.tdGrid { display: grid; gap: 2px; font-size: 12px; }
+.tdRow { display: grid; grid-template-columns: 1fr auto 58px; align-items: center; gap: 10px; min-height: 22px; border-bottom: 1px dashed rgba(140, 170, 200, 0.1); }
+.tdRow span { color: #8296a8; }
+.tdRow b { text-align: right; }
+.tdRow b small { font-weight: 400; color: #8296a8; }
+.tdMark { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-style: normal; }
+.tdMark small { font-size: 11px; color: #ff9d85; font-variant-numeric: tabular-nums; }
+.tdMark em {
+  min-width: 26px;
+  padding: 1px 4px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: 16px;
+  text-align: center;
+  background: rgba(10, 18, 28, 0.6);
+}
+.gAp, .gA { --g: #7de08a; }
+.gB { --g: #b8dc6e; }
+.gC { --g: #e9cf62; }
+.gD { --g: #f2a65a; }
+.gE { --g: #ff8a5c; }
+.gF { --g: #ff5c5c; }
+.tdMark em { color: var(--g); }
+.tdMark em.gNone { visibility: hidden; }
+.tdScore { margin: 10px 0 4px; }
+.tdScore p { margin: 6px 0 0; font-size: 12px; color: #8296a8; }
+.tdScore p b { font-size: 14px; color: #e6edf4; }
+.tdScale { position: relative; display: flex; height: 18px; border-radius: 6px; overflow: hidden; }
+.tdScale span {
+  flex: none;
+  width: var(--w);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  color: #0d1b2a;
+  background: var(--g);
+  opacity: 0.28;
+}
+.tdScale span.on { opacity: 1; }
+.tdPin {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--at);
+  width: 3px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(13, 27, 42, 0.8), 0 0 6px rgba(255, 255, 255, 0.7);
+}
 @media (max-width: 520px) { .debriefTop { gap: 12px; } .debriefTitle { font-size: 16px; } }
 .cols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 table.money { width: 100%; font-size: 13px; border-collapse: collapse; }

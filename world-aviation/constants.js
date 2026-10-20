@@ -195,6 +195,25 @@ const SIM = {
 // surface hard; a bounce within BOUNCE_S seconds of the graded touchdown gets a "whoa"
 const CABIN_REACTION = { OVATION_FPM: 100, APPLAUSE_FPM: 200, POLITE_FPM: 320, FIRM_FPM: 450, BANK_DEG: 5, BOUNCE_S: 6 };
 
+// The landing's grade (Game.landingScore): a score of 1 (100 points), each touchdown number costing
+// up to its `weight` as it strays from its `ideal`, the whole weight at `span` away (the distance
+// from the threshold: `span` m or `spanRwy` of the runway, whichever is longer); the damage costs
+// up to DAMAGE, grass under a type not made for it GRASS; the difficulty adds its gradeBonus and
+// TOLERANCE_BONUS × its touchdownTolerance. LETTERS: the least score of each grade, below the last F.
+// The debrief shows each number's own letter: the grade if every number were as good as this one.
+const LANDING_GRADE = {
+  fpm: { ideal: 150, span: 650, weight: 0.26 },             // fpm, the vertical speed
+  speed: { ideal: 0, span: 22, weight: 0.14 },              // kt off Vref
+  thr: { ideal: 300, span: 400, spanRwy: 0.3, weight: 0.14 },  // m from the threshold
+  offset: { ideal: 0, span: 15, weight: 0.1 },              // m off the centreline
+  bank: { ideal: 0, span: 12, weight: 0.1 },                // degrees
+  crab: { ideal: 0, span: 12, weight: 0.1 },                // degrees
+  DAMAGE: 0.4,
+  GRASS: 0.3,
+  TOLERANCE_BONUS: 0.2,
+  LETTERS: [[0.96, 'A+'], [0.88, 'A'], [0.78, 'B'], [0.66, 'C'], [0.5, 'D'], [0.3, 'E']]
+};
+
 // The comic lines in the debrief after a successful flight (ui/landingjoke.js, the lines in
 // data/landingjokes.js). The touchdown's line: each trait of the graded touchdown is measured
 // against its threshold — the sink rate against HARD_FPM, the bank against BANK_DEG, the distance

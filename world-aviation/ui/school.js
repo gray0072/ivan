@@ -79,7 +79,7 @@ const School = {
     const next = LESSONS[num] || null;            // (the lesson after this one; none after the last)
     let body;
     if (r.ok) {
-      const graded = r.landed ? '<h3>' + tr('Touchdown') + ' · ' + tr('grade {g}', { g: r.grade }) + '</h3>' + touchdownGrid(r.landed) +
+      const graded = r.landed ? '<h3>' + tr('Touchdown') + ' · ' + tr('grade {g}', { g: r.grade }) + '</h3>' + touchdownGrid(r.landed, r.score) +
         (r.landed.fpm > SIM.TOUCHDOWN_HARD_FPM ? '<p class="fineprint">' + tr('A hard one: at 30 ft idle and raise the nose a little — the flare.') + '</p>' : '') : '';
       body = '<div class="debriefTop"><div class="grade top">✓</div><div class="debriefTitle">' +
         tr('Lesson {n} passed · {title}', { n: num, title: esc(tr(def.title)) }) + '</div></div>' +

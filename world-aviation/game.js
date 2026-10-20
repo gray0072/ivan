@@ -1117,9 +1117,10 @@ const Game = {
     Input.active = false;
     el('hud').hidden = true;
     if (HUD.mapOpen) HUD.closeMap();
-    const grade = ok ? this.gradeLanding(fl.landed, fl, Career.difficulty) : '';
+    const score = ok ? this.landingScore(fl.landed, fl, Career.difficulty) : null;
+    const grade = score ? score.grade : '';
     const rep = ok ? Career.practiceReward(this.contract, grade, this.cheated) : 0;
-    this.result = { practice: true, ok, grade, reason: reason || '', landed: ok ? fl.landed : null, rep, fee: this.practice.fee,
+    this.result = { practice: true, ok, grade, score, reason: reason || '', landed: ok ? fl.landed : null, rep, fee: this.practice.fee,
       contract: this.contract, cheated: this.cheated };
     Audio2.update(0, null, null);
     UI.showPracticeResult(this.result);
@@ -1185,10 +1186,11 @@ const Game = {
     if (HUD.mapOpen) HUD.closeMap();
     ok = ok && L.passed;
     const landed = fl.landed && fl.landed.t !== undefined ? fl.landed : null;
-    const grade = landed ? this.gradeLanding(landed, fl, DIFFICULTY.easy) : '';
+    const score = landed ? this.landingScore(landed, fl, DIFFICULTY.easy) : null;
+    const grade = score ? score.grade : '';
     const first = ok && !this.cheated && Career.passLesson(L.def.id);
     if (ok) Lesson.passed(L.def);
-    this.result = { lesson: L.def, ok, reason: reason || '', kind: kind || '', grade, landed, cheated: this.cheated, first, attempt: L.attempt };
+    this.result = { lesson: L.def, ok, reason: reason || '', kind: kind || '', grade, score, landed, cheated: this.cheated, first, attempt: L.attempt };
     Lesson.stop();
     this.lesson = null;
     Audio2.update(0, null, null);
@@ -1569,10 +1571,11 @@ const Game = {
     if (HUD.mapOpen) HUD.closeMap();
     const landed = fl.landed || { fpm: 0, bank: 0, ias: 0, vref: 0, crab: 0, fromThr: 0, offset: 0, damage: 0 };
     const diff = Career.difficulty;
-    const grade = failed ? 'F' : this.gradeLanding(landed, fl, diff);
+    const score = failed ? null : this.landingScore(landed, fl, diff);
+    const grade = score ? score.grade : 'F';
     const mishandled = sys.checklistFailed.length;
     const result = {
-      contract: this.contract, grade, failed, mishandled,
+      contract: this.contract, grade, score, failed, mishandled,
       handled: sys.checklistDone.length,
       damage: clamp(fl.st.damage, 0, 1), fuelUsed: this.fuel0 - fl.st.fuel,
       blockSec: fl.elapsed, realSec: fl.realElapsed, pushbackSkipped: this.setup.skipPushback, timeOfDay: this.setup.timeOfDay,
@@ -1590,23 +1593,36 @@ const Game = {
     Audio2.cue(grade === 'A+' || grade === 'A' ? 'good' : failed ? 'bad' : 'click');
   },
 
-  gradeLanding(landed, fl, diff) {
-    let score = 1;
-    score -= clamp(Math.abs(landed.fpm - 150) / 650, 0, 1) * 0.26;
-    score -= clamp(Math.abs(landed.ias - landed.vref) / 22, 0, 1) * 0.14;
-    score -= clamp(Math.abs(landed.fromThr - 300) / Math.max(400, fl.arrival.rwyLen * 0.3), 0, 1) * 0.14;
-    score -= clamp(Math.abs(landed.offset || 0) / 15, 0, 1) * 0.1;
-    score -= clamp(Math.abs(landed.bank) / 12, 0, 1) * 0.1;
-    score -= clamp(Math.abs(landed.crab) / 12, 0, 1) * 0.1;
-    score -= clamp(fl.st.damage, 0, 1) * 0.4;
-    if (landed.surf === 'grass' && fl.ac.surfaces.indexOf('grass') < 0) score -= 0.3;
-    score += diff.gradeBonus + diff.touchdownTolerance * 0.2;
-    if (score >= 0.96) return 'A+';
-    if (score >= 0.88) return 'A';
-    if (score >= 0.78) return 'B';
-    if (score >= 0.66) return 'C';
-    if (score >= 0.5) return 'D';
-    if (score >= 0.3) return 'E';
+  gradeLanding(landed, fl, diff) { return this.landingScore(landed, fl, diff).grade; },
+
+  // the grade and what made it (LANDING_GRADE): each touchdown number's points lost (`lost`, of its
+  // `weight`) and its own letter — the grade if every number were as good as this one — the damage's
+  // and the grass's, the difficulty's bonus, the score
+  landingScore(landed, fl, diff) {
+    const G = LANDING_GRADE;
+    const bonus = diff.gradeBonus + diff.touchdownTolerance * G.TOLERANCE_BONUS;
+    const allW = ['fpm', 'speed', 'thr', 'offset', 'bank', 'crab'].reduce((s, k) => s + G[k].weight, 0);
+    const part = (key, v, span) => {
+      const k = G[key], f = clamp(Math.abs(v - k.ideal) / (span || k.span), 0, 1);
+      return { key, lost: f * k.weight, weight: k.weight, grade: this.gradeLetter(1 + bonus - f * allW) };
+    };
+    const parts = [
+      part('fpm', landed.fpm),
+      part('speed', landed.ias - landed.vref),
+      part('thr', landed.fromThr, Math.max(G.thr.span, fl.arrival.rwyLen * G.thr.spanRwy)),
+      part('offset', landed.offset || 0),
+      part('bank', landed.bank),
+      part('crab', landed.crab)
+    ];
+    const damage = clamp(fl.st.damage, 0, 1);
+    const damageLost = damage * G.DAMAGE;
+    const grassLost = landed.surf === 'grass' && fl.ac.surfaces.indexOf('grass') < 0 ? G.GRASS : 0;
+    const score = 1 - parts.reduce((s, p) => s + p.lost, 0) - damageLost - grassLost + bonus;
+    return { parts, damage, damageLost, grassLost, bonus, score, grade: this.gradeLetter(score) };
+  },
+  gradeLetter(score) {
+    const L = LANDING_GRADE.LETTERS;
+    for (let i = 0; i < L.length; i++) if (score >= L[i][0]) return L[i][1];
     return 'F';
   },
 
