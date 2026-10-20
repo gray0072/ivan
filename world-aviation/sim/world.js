@@ -135,6 +135,7 @@ const World = {
       this.here[meta.id] = placed;
     }
     Terrain.fitAirports(this.airports);
+    Terrain.coastAirports(this.airports);
     Terrain.buildAirportGrid(this.airports);
     this.key = key;
   },

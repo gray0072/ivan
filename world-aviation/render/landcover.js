@@ -101,20 +101,20 @@ const LandCover = {
     m.extensions = { derivatives: true };      // dFdx for the lights' read (WebGL 1; built into WebGL 2)
     const u = this.uniforms;
     m.onBeforeCompile = (sh) => {
-      Object.assign(sh.uniforms, u);
-      if (hole) {
-        sh.uniforms.uLandHole = this.hole;
-        sh.fragmentShader = sh.fragmentShader
-          .replace('#include <common>', 'uniform vec3 uLandHole;\n#include <common>')
-          .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' +
-            '  if (length(vLandW - uLandHole.xy) < uLandHole.z) discard;');
-      }
-      sh.vertexShader = sh.vertexShader
-        .replace('#include <common>', 'attribute vec4 land;\nvarying vec4 vLand;\nvarying vec2 vLandW;\n#include <common>')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLand = land;\nvLandW = (modelMatrix * vec4(transformed, 1.0)).xz;');
+      Object.assign(sh.uniforms, u, Coast3D.uniforms);
+      // the far mesh's hole first (no reads at all there), then the coast (render/coast3d.js):
+      // the sea bed under the water left out before the land cover's reads
+      if (hole) sh.uniforms.uLandHole = this.hole;
       sh.fragmentShader = sh.fragmentShader
-        .replace('#include <common>', (this.bomb ? '#define LAND_BOMB\n' : '') + LAND_FRAG_PARS + '#include <common>')
-        .replace('#include <color_fragment>', '#include <color_fragment>\n' + LAND_FRAG);
+        .replace('#include <common>', (hole ? 'uniform vec3 uLandHole;\n' : '') + '#include <common>')
+        .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\n' +
+          (hole ? '  if (length(vLandW.xz - uLandHole.xy) < uLandHole.z) discard;\n' : '') + COAST_TERRAIN_PRE);
+      sh.vertexShader = sh.vertexShader
+        .replace('#include <common>', 'attribute vec4 land;\nvarying vec4 vLand;\nvarying vec3 vLandW;\n#include <common>')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLand = land;\nvLandW = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', (this.bomb ? '#define LAND_BOMB\n' : '') + Coast3D.defines() + LAND_FRAG_PARS + COAST_PARS + '#include <common>')
+        .replace('#include <color_fragment>', '#include <color_fragment>\n' + LAND_FRAG + COAST_TERRAIN_FRAG);
       // Multisampled, a pixel is shaded at its centre even when the triangle covers only one
       // of its samples off the centre: the far mesh's triangles, thin slivers at the horizon,
       // then read their varyings extrapolated far outside them — negative colours, black
@@ -126,7 +126,7 @@ const LandCover = {
         sh.fragmentShader = landCentroid(sh.fragmentShader);
       }
     };
-    m.customProgramCacheKey = () => 'landcover2' + this.bomb + (hole ? 'hole' : '');
+    m.customProgramCacheKey = () => 'landcover3' + this.bomb + Coast3D.half + (hole ? 'hole' : '');
     return (this[key] = m);
   },
   // the far mesh's hole: the circle of radius r round (cx, cz), world metres; r 0 for none
@@ -182,11 +182,11 @@ uniform float uLandNight, uLandMean, uLandTexN, uLandStreetOff, uLandAniso;
 uniform float uLandXs[${LAND_LINES}], uLandYs[${LAND_LINES}];
 uniform vec2 uLandN;
 varying vec4 vLand;
-varying vec2 vLandW;
+varying vec3 vLandW;
 `;
 const LAND_FRAG = `
 {
-  vec2 w = vLandW;
+  vec2 w = vLandW.xz;
   // the regions and the woods: the tile's noise read at unrelated scales
   vec2 ub1 = vec2(${LAND_ROT_B[0][0]} * w.x + ${LAND_ROT_B[0][1]} * w.y, ${-LAND_ROT_B[0][1]} * w.x + ${LAND_ROT_B[0][0]} * w.y) / ${LAND_REGION_M[0].toFixed(1)};
   vec2 ub2 = vec2(${LAND_ROT_B[1][0]} * w.x + ${LAND_ROT_B[1][1]} * w.y, ${-LAND_ROT_B[1][1]} * w.x + ${LAND_ROT_B[1][0]} * w.y) / ${LAND_REGION_M[1].toFixed(1)};

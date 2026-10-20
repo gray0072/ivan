@@ -139,10 +139,11 @@ const Perimeter3D = {
       return true;
     };
     const place = [];
-    // on solid ground: not the sea, a lake or a beach (the raw terrain, before the field is levelled)
+    // on solid ground: not the sea, a lake or a beach (the coast, the field's ground counted as
+    // land up to its edge)
     const ground = (t, ac) => {
       const p = World.at(a, t, ac);
-      if (Terrain.rawAt(p.x, p.z) < 1.6) return null;
+      if (Terrain.coastAt(p.x, p.z) < 60) return null;
       const h = Terrain.heightAt(p.x, p.z);
       return h < 1.2 ? null : h - a.elev;
     };

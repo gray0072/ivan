@@ -217,14 +217,16 @@ const Scene3D = {
     this.scene.add(this.stars);
   },
 
+  // The sea plane, cut to the coast per pixel (render/coast3d.js). It follows the aeroplane by
+  // whole cells (a fixed plane round the world's middle ended 800 km out, short of a long
+  // route's ends), and its cells are small enough to keep the world position its pixels read
+  // the coast at precise (WATER_CELLS)
   buildWater() {
-    const geo = new THREE.PlaneGeometry(1600000, 1600000, 4, 4);
+    Coast3D.init(this.renderer.capabilities.isWebGL2);
+    const geo = new THREE.PlaneGeometry(WATER_SIZE_M, WATER_SIZE_M, WATER_CELLS, WATER_CELLS);
     geo.rotateX(-Math.PI / 2);
-    const mat = new THREE.MeshPhongMaterial({
-      color: 0x2c4f66, shininess: 90, specular: 0x9fc8de, transparent: true, opacity: 0.92
-    });
-    this.water = new THREE.Mesh(geo, mat);
-    this.water.position.y = WORLD.SEA_LEVEL - 0.5;
+    this.water = new THREE.Mesh(geo, Coast3D.waterMaterial());
+    this.water.position.y = COAST_WATER_Y;
     this.water.renderOrder = 1;
     this.scene.add(this.water);
   },
@@ -284,9 +286,11 @@ const Scene3D = {
     geo.setAttribute('land', new THREE.BufferAttribute(land, 4));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.computeBoundingSphere();
+    Coast3D.update();
     if (this.farMesh) { this.scene.remove(this.farMesh); this.farMesh.geometry.dispose(); }
     this.farMesh = new THREE.Mesh(geo, LandCover.material(true));
     this.farMesh.renderOrder = 0;
+    Coast3D.trackEye(this.farMesh);
     this.scene.add(this.farMesh);
   },
 
@@ -299,6 +303,7 @@ const Scene3D = {
       this.nearMesh = new THREE.Mesh(geo, LandCover.material());
       this.nearMesh.frustumCulled = false;
       this.nearMesh.renderOrder = 2;
+      Coast3D.trackEye(this.nearMesh);
       this.scene.add(this.nearMesh);
       this.nearPos = geo.attributes.position.array;
       this.nearNor = geo.attributes.normal.array;
@@ -518,7 +523,7 @@ const Scene3D = {
         map: this.cloudTex, transparent: true, depthWrite: false, opacity: 0.85, fog: true
       }));
       s.userData = { r: 900 + rand.range(0, 2600), base: rand.range(0, 1), h: rand.range(0.25, 1) };
-      s.renderOrder = 10;   // after the see-through sea (1), or lakes and the sea paint over the clouds
+      s.renderOrder = 10;   // after the sea (1, blended for its soft shore), or lakes and the sea paint over the clouds
       this.cloudGroup.add(s);
     }
     this.scene.add(this.cloudGroup);
@@ -895,8 +900,11 @@ const Scene3D = {
       const cc = SKY_TMP2.setHex(0x3a4250).lerp(SKY_TMP.setHex(0xffffff), day).lerp(SKY_TMP.setHex(0xffc8a0), warm * 0.6);
       for (const c of this.clouds) c.material.color.copy(cc);
     }
-    this.water.material.opacity = 0.9;
+    // (the water is opaque now: the sea bed under it is no longer drawn, render/coast3d.js)
     this.water.material.color.setHex(env.snowy && st.pos.y < 400 ? 0x8fa4ad : 0x2c4f66);
+    const wc = WATER_SIZE_M / WATER_CELLS;
+    this.water.position.x = Math.round(st.pos.x / wc) * wc;
+    this.water.position.z = Math.round(st.pos.z / wc) * wc;
 
     // ---- terrain follow
     // (cells a power of two times 420 m, so they do not change with every frame's length)
@@ -1203,6 +1211,9 @@ const NEAR_HOLE = 0.95;
 const NEAR_MAX_CELL_M = 1300;
 // the near mesh's rebuild: about this many milliseconds of a frame (updateNearTerrain)
 const NEAR_BUILD_MS = 2;
+// the sea plane: metres across (past the camera's far plane all round), and cells across it —
+// 25 km, so the world position its pixels read the coast at stays precise (buildWater)
+const WATER_SIZE_M = 1600000, WATER_CELLS = 64;
 const NIGHT_GLOW_DIR = new THREE.Vector3(0.3, 0.9, -0.3).normalize();
 
 // ---------- procedural textures ----------

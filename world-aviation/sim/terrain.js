@@ -11,6 +11,10 @@
 // same on every flight). Detail noise is added when the height is
 // sampled, airports are flattened to their elevation, and corridors
 // keep the approaches and departures clear.
+// The shore itself is not the grid's: a distance field of the
+// coastline (Terrain.coast) with noise added (coastAt) decides land
+// or sea, the heights follow it, and the renderer draws the same
+// line per pixel (render/coast3d.js).
 // The land's colours follow its climate (Terrain.lookAt): the
 // deserts' sand, the steppe's and the Mediterranean's dry grass,
 // the tropics' deep green, the tundra past the tree line, and the
@@ -24,7 +28,18 @@ const TERRAIN = {
   cityGrid: null, cityGridCell: 40000, cityKey: '',   // the real cities in a grid (urbanAt)
   // the ground round each airport brought to its real elevation (fitAirports): what is more than
   // fitSlackM off it, fully within fitInnerM and fading out by fitOuterM
-  fitSlackM: 150, fitInnerM: 15000, fitOuterM: 60000
+  fitSlackM: 150, fitInnerM: 15000, fitOuterM: 60000,
+  // the coast (buildCoast): its distance field's texels (at least coastTexelM, at most
+  // coastTexMax across), how far from the line it is kept (coastBandM, at least 3 texels)
+  coastTexelM: 800, coastTexMax: 1536, coastBandM: 6000,
+  // the noise that breaks up the polygons' straight edges: [tile metres, amplitude metres (its
+  // full range), turn in radians] — a coarse one for the bays and the headlands, a fine one for
+  // the shore's own wiggles. Its share (the field's k) is less where the data is detailed
+  // (edges shorter than coastDetailM[1]: down to coastNoiseMin by coastDetailM[0]) and none on
+  // an airport's ground, fading in by coastAptM from it
+  coastNoise: [[120000, 10000, 0.6], [6100, 600, 2.1]],
+  coastDetailM: [6000, 60000], coastNoiseMin: 0.15, coastAptM: 6000,
+  coastRiseM: 500     // the land rises from the shore to its own height over this many metres
 };
 
 const Terrain = {
@@ -50,10 +65,19 @@ const Terrain = {
       let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
       for (const p of pts) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); }
       if (x1 < box.x0 - reach || x0 > box.x1 + reach || z1 < box.z0 - reach || z0 > box.z1 + reach) return null;
+      // A polygon round the far side of the globe (holding the point opposite the middle of the
+      // world: South America on a flight in East Asia, Eurasia at Lima or Auckland, Africa at
+      // Honolulu) is turned inside out by the projection, a ring round the whole plane, and its
+      // fill made the whole world of the flight land, without a sea: it is left out (it is half
+      // the globe away) — known by its projection holding the middle where the globe's does not
+      const lon0 = Theatre.lon0, lat0 = Theatre.lat0;
+      const onGlobe = insidePolygon(poly, lon0, lat0) || insidePolygon(poly, lon0 + 360, lat0) || insidePolygon(poly, lon0 - 360, lat0);
+      if (insidePolygon(pts, 0, 0) !== onGlobe) return null;
       return pts;
     };
     const land = LAND_POLYGONS.map(project).filter(Boolean);
     const water = WATER_POLYGONS.map(project).filter(Boolean);
+    this.buildCoast(box, land, water);
 
     // --- land or water: a scanline fill, one row at a time
     const isLand = new Uint8Array(w * h);
@@ -138,6 +162,158 @@ const Terrain = {
     this.built = true;
   },
 
+  // ---------- the coast ----------
+  // The coastline polygons are coarse (a point every degree or two) and the grid's cells 5-18 km,
+  // so where the land meets the water is not left to the grid: Terrain.coast is a signed
+  // distance field of the polygons' real edges (where land meets water, not where two land
+  // polygons overlap), metres, + on land, in texels of 0.8-3.4 km out to coastBandM from the
+  // line, and with it k, how much of the noise is added there (coastAt). The renderer reads the
+  // same field and the same noise per pixel (render/coast3d.js): the shore is a sharp line at
+  // any height, it stays put as the near mesh is rebuilt, and it is the same on both meshes.
+  // { x0, z0 (texel 0's middle), texel, w, h, band, reach (the most the noise adds), sdf, k }
+  buildCoast(box, land, water) {
+    const T = TERRAIN;
+    const span = Math.max(box.x1 - box.x0, box.z1 - box.z0);
+    const band = Math.max(T.coastBandM, 3 * Math.max(T.coastTexelM, span / (T.coastTexMax - 1)));
+    // (the field reaches past the box by the band: the edges just outside it count inside)
+    const texel = Math.max(T.coastTexelM, (span + 2 * band) / (T.coastTexMax - 1));
+    const x0 = box.x0 - band, z0 = box.z0 - band;
+    const w = Math.ceil((box.x1 - box.x0 + 2 * band) / texel) + 1, h = Math.ceil((box.z1 - box.z0 + 2 * band) / texel) + 1;
+    // land or water at each texel's middle: a scanline fill, land first, then the water in it
+    const mask = new Uint8Array(w * h), xs = [];
+    const fill = (pts, z, row, value) => {
+      xs.length = 0;
+      for (let i = 0, k = pts.length - 1; i < pts.length; k = i++) {
+        const zi = pts[i][1], zk = pts[k][1];
+        if ((zi > z) === (zk > z)) continue;
+        xs.push(pts[i][0] + (z - zi) * (pts[k][0] - pts[i][0]) / (zk - zi));
+      }
+      if (xs.length < 2) return;
+      xs.sort((a, b) => a - b);
+      for (let k = 0; k + 1 < xs.length; k += 2) {
+        const i0 = Math.max(0, Math.ceil((xs[k] - x0) / texel)), i1 = Math.min(w - 1, Math.floor((xs[k + 1] - x0) / texel));
+        for (let i = i0; i <= i1; i++) mask[row + i] = value;
+      }
+    };
+    for (let j = 0; j < h; j++) {
+      const z = z0 + j * texel;
+      for (const p of land) fill(p, z, j * w, 1);
+      for (const p of water) fill(p, z, j * w, 0);
+    }
+    const maskAt = (x, z) => {
+      const i = Math.round((x - x0) / texel), j = Math.round((z - z0) / texel);
+      return i < 0 || j < 0 || i >= w || j >= h ? -1 : mask[j * w + i];
+    };
+    // the distance to the nearest real edge, and k blended over the edges near by (weighted by
+    // their nearness, so it has no step where one edge's texels meet another's)
+    const dist = new Float32Array(w * h).fill(band), ks = new Float32Array(w * h), ws = new Float32Array(w * h);
+    const capsule = (ax, az, bx, bz, k) => {
+      const dx = bx - ax, dz = bz - az;
+      const j0 = Math.max(0, Math.ceil((Math.min(az, bz) - band - z0) / texel));
+      const j1 = Math.min(h - 1, Math.floor((Math.max(az, bz) + band - z0) / texel));
+      for (let j = j0; j <= j1; j++) {
+        const z = z0 + j * texel;
+        // the part of the edge within the band of this row, and the band either side of it
+        let xa = Math.min(ax, bx), xb = Math.max(ax, bx);
+        if (Math.abs(dz) > 1e-6) {
+          let s0 = (z - band - az) / dz, s1 = (z + band - az) / dz;
+          if (s0 > s1) { const q = s0; s0 = s1; s1 = q; }
+          s0 = Math.max(0, s0); s1 = Math.min(1, s1);
+          if (s0 > s1) continue;
+          xa = ax + dx * s0; xb = ax + dx * s1;
+          if (xa > xb) { const q = xa; xa = xb; xb = q; }
+        }
+        const i0 = Math.max(0, Math.ceil((xa - band - x0) / texel)), i1 = Math.min(w - 1, Math.floor((xb + band - x0) / texel));
+        for (let i = i0; i <= i1; i++) {
+          const d = segDist(x0 + i * texel, z, ax, az, bx, bz);
+          if (d >= band) continue;
+          const n = j * w + i;
+          if (d < dist[n]) dist[n] = d;
+          const q = 1 - d / band, wt = q * q / ((d + 2000) * (d + 2000));
+          ks[n] += wt * k; ws[n] += wt;
+        }
+      }
+    };
+    // each edge in pieces of half a texel, kept where the mask differs either side of it,
+    // consecutive pieces kept as one run
+    const side = texel * 0.8;
+    for (const pts of land.concat(water)) {
+      for (let e = 0; e < pts.length; e++) {
+        const a = pts[e], b = pts[(e + 1) % pts.length];
+        const dx = b[0] - a[0], dz = b[1] - a[1], len = Math.hypot(dx, dz);
+        if (len < 1) continue;
+        const k = lerp(T.coastNoiseMin, 1, smoothstep(T.coastDetailM[0], T.coastDetailM[1], len));
+        const nx = -dz / len * side, nz = dx / len * side, n = Math.ceil(len / (texel * 0.5));
+        let run = -1;
+        for (let s = 0; s <= n; s++) {
+          let real = false;
+          if (s < n) {
+            const mx = a[0] + dx * (s + 0.5) / n, mz = a[1] + dz * (s + 0.5) / n;
+            const p = maskAt(mx + nx, mz + nz), q = maskAt(mx - nx, mz - nz);
+            real = p >= 0 && q >= 0 && p !== q;
+          }
+          if (real && run < 0) run = s;
+          if (!real && run >= 0) {
+            capsule(a[0] + dx * run / n, a[1] + dz * run / n, a[0] + dx * s / n, a[1] + dz * s / n, k);
+            run = -1;
+          }
+        }
+      }
+    }
+    const sdf = new Float32Array(w * h), kk = new Float32Array(w * h);
+    for (let n = 0; n < w * h; n++) {
+      sdf[n] = mask[n] ? dist[n] : -dist[n];
+      kk[n] = ws[n] > 0 ? ks[n] / ws[n] : 1;
+    }
+    let reach = 0;
+    for (const nz of T.coastNoise) reach += nz[1] / 2;
+    this.coast = { x0, z0, texel, w, h, band, reach, sdf, k: kk };
+  },
+
+  // The airports' ground is land (the levelled box of flattenAirports, its corners rounded),
+  // and the coast round it keeps to the data, the noise fading in by coastAptM from it: a field
+  // by the sea is never under water, nor its approach lights' ground cut into by a bay
+  coastAirports(airports) {
+    const c = this.coast;
+    if (!c) return;
+    const R = TERRAIN.coastAptM, rr = 600;
+    for (const a of airports) {
+      const halfLen = Math.max(a.rwyLen / 2 + 500, (a.tMax || 0) + 300, -(a.tMin || 0) + 300) + 300;
+      const ht = halfLen - rr, ha = 1400 + 300 - rr, ac = LAYOUT.TERMINAL / 2;
+      const reachM = Math.hypot(halfLen, 1700) + R;
+      const i0 = Math.max(0, Math.floor((a.x - reachM - c.x0) / c.texel)), i1 = Math.min(c.w - 1, Math.ceil((a.x + reachM - c.x0) / c.texel));
+      const j0 = Math.max(0, Math.floor((a.z - reachM - c.z0) / c.texel)), j1 = Math.min(c.h - 1, Math.ceil((a.z + reachM - c.z0) / c.texel));
+      for (let j = j0; j <= j1; j++) {
+        for (let i = i0; i <= i1; i++) {
+          const dx = c.x0 + i * c.texel - a.x, dz = c.z0 + j * c.texel - a.z;
+          const qt = Math.abs(dx * a.dirX + dz * a.dirZ) - ht, qa = Math.abs(dx * a.perX + dz * a.perZ - ac) - ha;
+          // the signed distance to the rounded box, + inside — grown by most of a texel, so that
+          // read bilinearly between texels as big as the field (3-4 km on a long route) it is
+          // still land all over the box
+          const sd = rr - (Math.hypot(Math.max(qt, 0), Math.max(qa, 0)) + Math.min(Math.max(qt, qa), 0)) + 0.75 * c.texel;
+          if (sd < -R) continue;
+          const n = j * c.w + i;
+          if (sd > c.sdf[n]) c.sdf[n] = Math.min(sd, c.band);
+          c.k[n] *= smoothstep(0, R, -sd);
+        }
+      }
+    }
+    c.version = (c.version || 0) + 1;
+  },
+
+  // The coast at (x, z): metres from the shore, + on land, - at sea — the field (bilinear, as
+  // the GPU reads it) plus k times the noise (coastNoise). Without a field, the grid's land or sea
+  coastAt(x, z) {
+    const c = this.coast;
+    if (!c) return this.rawAt(x, z) > 0 ? 1e4 : -1e4;
+    const fx = clamp((x - c.x0) / c.texel, 0, c.w - 1.001), fz = clamp((z - c.z0) / c.texel, 0, c.h - 1.001);
+    const ix = Math.floor(fx), iz = Math.floor(fz), tx = fx - ix, tz = fz - iz;
+    const n = iz * c.w + ix, w = c.w, s = c.sdf, k = c.k;
+    const d = lerp(lerp(s[n], s[n + 1], tx), lerp(s[n + w], s[n + w + 1], tx), tz);
+    if (d > c.reach + 1 || d < -c.reach - 1) return d;
+    return d + lerp(lerp(k[n], k[n + 1], tx), lerp(k[n + w], k[n + w + 1], tx), tz) * coastNoise(x, z);
+  },
+
   // bilinear height of the grid, world metres
   rawAt(x, z) {
     const g = this.g;
@@ -161,7 +337,7 @@ const Terrain = {
       d += (fbm(x / 700 + 11, z / 700 - 7, 2) - 0.5) * 15 * amp;
       h = Math.max(1.2, raw + d);
     }
-    h = this.flattenAirports(x, z, h);
+    h = this.shore(x, z, h);
     if (taper) {
       const k = 1 - smoothstep(taper.half * 0.55, taper.half * 0.98, Math.hypot(x - taper.cx, z - taper.cz));
       if (k < 1) h = lerp(this.farHeight(x, z), h, k);
@@ -175,8 +351,23 @@ const Terrain = {
 
   // The far mesh sits a little under the real ground so the near mesh always wins
   farHeight(x, z) {
-    const h = this.flattenAirports(x, z, this.rawAt(x, z));
+    const h = this.shore(x, z, this.rawAt(x, z));
     return h > 1 ? Math.max(1, h - 30) : h;
+  },
+
+  // The ground h at (x, z) set by the coast (coastAt), whatever the coarse grid says there, and
+  // levelled round the airports: under the water at sea (1.5 m at the shore, 10 m deeper a km
+  // out, or the grid's own sea bed where it is deeper), above it on land, low along the shore
+  // and rising to the land's own height over coastRiseM — so the near and the far mesh meet the
+  // water where the renderer draws the shore (render/coast3d.js), and the flat beach under it
+  // lies just above the water
+  shore(x, z, h) {
+    const c = this.coastAt(x, z);
+    if (c < 0) h = Math.min(h, -1.5 + c * 0.01);
+    else h = Math.max(0.6, lerp(0.6, h, smoothstep(0, TERRAIN.coastRiseM, c)));
+    h = this.flattenAirports(x, z, h);
+    // (the levelled ground blends out over 5 km, which raised the sea round a coastal field)
+    return c < 0 ? Math.min(h, -1.5) : h;
   },
 
   // A vertex of the far mesh (cells of `cell` metres). It is under the ground at its own spot,
@@ -416,8 +607,8 @@ const Terrain = {
 
   // Vertex colour for terrain, written into out[0..2] as 0..255. land (optional, for the
   // renderer's land cover, render/landcover.js) gets [patch, woods, urban, wild, bare], each
-  // 0..1: how much of the land cover shows (none on the water, the beaches, rock or the
-  // mountains' snow), how wooded the country is, how much of a real city is here, how much of
+  // 0..1: how much of the land cover shows (none on rock or the mountains' snow; the shader
+  // leaves it off the beaches and the water), how wooded the country is, how much of a real city is here, how much of
   // the farmland gives way to the land's own ground (the desert, the tundra, the winter's snow:
   // lookAt's wild), and how bare of trees the land is (the desert, the tundra).
   colorAt(x, z, h, slope, out, land) {
@@ -425,47 +616,39 @@ const Terrain = {
     const alat = Math.abs(geo.lat);
     const n1 = fbm(x / 5200 + 21, z / 5200 - 13, 3);
     const n2 = fbm(x / 1100 - 5, z / 1100 + 7, 2);
-    // (wild and bare on the water and the beaches too: the far mesh's triangles reach from them
-    // to the land, and a wild of 0 there showed half the fields over the desert or the tundra)
+    // (the sea bed coloured as the land by it: the shore, the beach and the water are drawn per
+    // pixel from the coast's field, render/coast3d.js — in the vertex colours a far triangle
+    // reaching from the sea bed to the land smeared the sea's grey and the sand kilometres in)
+    h = Math.max(h, 1);
     const L = this.lookGeo(geo.lat, geo.lon, x, z, h, TERRAIN_LOOK);
     let r, g, b, patch = 0, woods = 0, wild = L.wild, bare = clamp(L.dry + L.tundra, 0, 1);
-    if (h < 0.5) {
-      r = 44 + n1 * 20; g = 54 + n1 * 24; b = 58 + n1 * 18;
-    } else {
-      // beaches along the coast (the raw ground's low there: not a low airfield levelled inland,
-      // which stood in the sand at Singapore)
-      if (h < 14 && alat < 68 && this.rawAt(x, z) < 14) {
-        r = 170 + n2 * 24; g = 158 + n2 * 20; b = 128 + n2 * 22;
-      } else {
-        const snowLine = alat < 63 ? lerp(4800, 1250, smoothstep(20, 60, alat)) : lerp(1250, 560, smoothstep(63, 72, alat));
-        const rock = clamp(smoothstep(0.26, 0.62, slope) + smoothstep(snowLine * 0.55, snowLine * 0.95, h) * 0.85, 0, 1);
-        // the land's own colour: the woods and meadows, the tropics, dry grass, sand, the tundra
-        const f = this.groundRGB(L, alat, n2, TERRAIN_RGB);
-        const rr = 112 + n2 * 38, rg = 104 + n2 * 32, rb = 96 + n2 * 28;
-        r = lerp(f[0], rr, rock); g = lerp(f[1], rg, rock); b = lerp(f[2], rb, rock);
-        const snowAmt = clamp(smoothstep(snowLine, snowLine + 320, h + n1 * 340), 0, 1);
-        r = lerp(r, 234 + n2 * 16, snowAmt); g = lerp(g, 238 + n2 * 14, snowAmt); b = lerp(b, 247, snowAmt);
-        // faint patchwork of clearings and fields in the green lowlands
-        const field = smoothstep(320, 80, h) * (1 - rock) * (1 - L.wild) * smoothstep(0.55, 0.75, fbm(x / 2600 + 31, z / 2600 + 17, 2));
-        r = lerp(r, 108 + n2 * 30, field * 0.5); g = lerp(g, 126 + n2 * 26, field * 0.5); b = lerp(b, 78, field * 0.5);
-        if (land) {
-          // the land cover everywhere but on rock and the mountains' snow (the farmland where
-          // it is not wild); the woods thicken in the taiga, the tropics and the hills, and from
-          // one region to the next, and thin out in the dry lands and past the tree line
-          patch = (1 - rock) * (1 - snowAmt) * (1 - 0.6 * smoothstep(700, 2000, h));
-          const taiga = smoothstep(56, 61, alat) * (1 - smoothstep(66, 70, alat));
-          woods = 0.2 + 0.5 * taiga + 0.55 * L.trop + 0.3 * smoothstep(200, 800, h) + (fbm(x / 41000 - 3, z / 41000 + 5, 2) - 0.5) * 0.6;
-          woods = clamp(woods * (1 - L.dry) * (1 - L.tundra) * (1 - 0.45 * L.arid), 0, 0.95);
-        }
-      }
-      // the winter's snow, in patches where it comes and goes; less of it on the steep slopes
-      const snow = clamp((L.snow - 0.5) * 2.2 + 0.5 + (n1 - 0.5) * 1.6, 0, 1) * (1 - 0.6 * smoothstep(0.35, 0.7, slope));
-      if (snow > 0) {
-        r = lerp(r, 234 + n2 * 16, snow); g = lerp(g, 238 + n2 * 14, snow); b = lerp(b, 247, snow);
-        wild = Math.max(wild, snow);
-      }
+    const snowLine = alat < 63 ? lerp(4800, 1250, smoothstep(20, 60, alat)) : lerp(1250, 560, smoothstep(63, 72, alat));
+    const rock = clamp(smoothstep(0.26, 0.62, slope) + smoothstep(snowLine * 0.55, snowLine * 0.95, h) * 0.85, 0, 1);
+    // the land's own colour: the woods and meadows, the tropics, dry grass, sand, the tundra
+    const f = this.groundRGB(L, alat, n2, TERRAIN_RGB);
+    const rr = 112 + n2 * 38, rg = 104 + n2 * 32, rb = 96 + n2 * 28;
+    r = lerp(f[0], rr, rock); g = lerp(f[1], rg, rock); b = lerp(f[2], rb, rock);
+    const snowAmt = clamp(smoothstep(snowLine, snowLine + 320, h + n1 * 340), 0, 1);
+    r = lerp(r, 234 + n2 * 16, snowAmt); g = lerp(g, 238 + n2 * 14, snowAmt); b = lerp(b, 247, snowAmt);
+    // faint patchwork of clearings and fields in the green lowlands
+    const field = smoothstep(320, 80, h) * (1 - rock) * (1 - L.wild) * smoothstep(0.55, 0.75, fbm(x / 2600 + 31, z / 2600 + 17, 2));
+    r = lerp(r, 108 + n2 * 30, field * 0.5); g = lerp(g, 126 + n2 * 26, field * 0.5); b = lerp(b, 78, field * 0.5);
+    if (land) {
+      // the land cover everywhere but on rock and the mountains' snow (the farmland where
+      // it is not wild); the woods thicken in the taiga, the tropics and the hills, and from
+      // one region to the next, and thin out in the dry lands and past the tree line
+      patch = (1 - rock) * (1 - snowAmt) * (1 - 0.6 * smoothstep(700, 2000, h));
+      const taiga = smoothstep(56, 61, alat) * (1 - smoothstep(66, 70, alat));
+      woods = 0.2 + 0.5 * taiga + 0.55 * L.trop + 0.3 * smoothstep(200, 800, h) + (fbm(x / 41000 - 3, z / 41000 + 5, 2) - 0.5) * 0.6;
+      woods = clamp(woods * (1 - L.dry) * (1 - L.tundra) * (1 - 0.45 * L.arid), 0, 0.95);
     }
-    if (land) { land[0] = patch; land[1] = woods; land[2] = h < 0.5 ? 0 : this.urbanAt(x, z, n2); land[3] = wild; land[4] = bare; }
+    // the winter's snow, in patches where it comes and goes; less of it on the steep slopes
+    const snow = clamp((L.snow - 0.5) * 2.2 + 0.5 + (n1 - 0.5) * 1.6, 0, 1) * (1 - 0.6 * smoothstep(0.35, 0.7, slope));
+    if (snow > 0) {
+      r = lerp(r, 234 + n2 * 16, snow); g = lerp(g, 238 + n2 * 14, snow); b = lerp(b, 247, snow);
+      wild = Math.max(wild, snow);
+    }
+    if (land) { land[0] = patch; land[1] = woods; land[2] = this.urbanAt(x, z, n2); land[3] = wild; land[4] = bare; }
     const shade = clamp(0.8 + slope * 0.5, 0.72, 1.16);
     out[0] = clamp(r * shade, 0, 255);
     out[1] = clamp(g * shade, 0, 255);
@@ -563,6 +746,59 @@ const CLIMATE_LOOK = {
   desert: { dry: 1, arid: 0, tundra: 0 }
 };
 const TERRAIN_LOOK = {}, TERRAIN_RGB = [0, 0, 0];     // colorAt's scratch
+
+// ---------- the coast's noise (Terrain.coastAt; the shader's the same, render/coast3d.js) ----------
+// A tile of smooth noise that wraps, COAST_NOISE_N x COAST_NOISE_N bytes, read bilinearly as the
+// GPU reads a texture (texel middles at half a texel), once at each scale of TERRAIN.coastNoise,
+// each read turned by its own angle: 0..255 about 128, ±0.5 of the amplitude at the most
+const COAST_NOISE_N = 256;
+const COAST_NOISE = (() => {
+  const N = COAST_NOISE_N, r = makeRng(31337), f = new Float32Array(N * N);
+  let amp = 1;
+  for (const P of [4, 8, 16, 32, 64]) {
+    const lat = new Float32Array(P * P);
+    for (let i = 0; i < P * P; i++) lat[i] = r.next();
+    for (let y = 0; y < N; y++) {
+      const fy = y / N * P, iy = fy | 0, ty = smoothstep(0, 1, fy - iy), y0 = iy * P, y1 = ((iy + 1) % P) * P;
+      for (let x = 0; x < N; x++) {
+        const fx = x / N * P, ix = fx | 0, tx = smoothstep(0, 1, fx - ix), x1 = (ix + 1) % P;
+        f[y * N + x] += amp * lerp(lerp(lat[y0 + ix], lat[y0 + x1], tx), lerp(lat[y1 + ix], lat[y1 + x1], tx), ty);
+      }
+    }
+    amp *= 0.6;
+  }
+  // about its mean, three of its deviations to ±0.5
+  let m = 0, v = 0;
+  for (const q of f) m += q;
+  m /= f.length;
+  for (const q of f) v += (q - m) * (q - m);
+  const sd = Math.sqrt(v / f.length) || 1, out = new Uint8Array(N * N);
+  for (let i = 0; i < f.length; i++) out[i] = Math.round(clamp(0.5 + (f[i] - m) / (6 * sd), 0, 1) * 255);
+  return out;
+})();
+// the reads' turns and scales: [cos / tile, sin / tile, amplitude]
+const COAST_NOISE_READS = TERRAIN.coastNoise.map(([S, A, q]) => [Math.cos(q) / S, Math.sin(q) / S, A]);
+function coastNoise(x, z) {
+  const N = COAST_NOISE_N, d = COAST_NOISE, M = N - 1;
+  let sum = 0;
+  for (const [c, s, A] of COAST_NOISE_READS) {
+    const u = (c * x + s * z) * N - 0.5, v = (-s * x + c * z) * N - 0.5;
+    const iu = Math.floor(u), iv = Math.floor(v), tu = u - iu, tv = v - iv;
+    const a = iu & M, b = (iu + 1) & M, r0 = (iv & M) * N, r1 = ((iv + 1) & M) * N;
+    sum += A * (lerp(lerp(d[r0 + a], d[r0 + b], tu), lerp(d[r1 + a], d[r1 + b], tu), tv) / 255 - 0.5);
+  }
+  return sum;
+}
+
+// Is (x, y) inside the polygon [[x, y], ...]? (even-odd)
+function insidePolygon(pts, x, y) {
+  let r = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) r = !r;
+  }
+  return r;
+}
 
 // Distance from (px, pz) to the segment a-b
 function segDist(px, pz, ax, az, bx, bz) {
