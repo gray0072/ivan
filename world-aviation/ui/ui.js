@@ -1587,15 +1587,17 @@ const UI = {
 };
 
 // the touchdown numbers, in the debrief, after a practice landing and a lesson: each with its own
-// small letter and the points it cost (Game.landingScore), and under them the score on the grades' scale
+// small letter and the bonus points it earned of its most (Game.landingScore), and under them the
+// score on the grades' scale; the damage and the grass are the only points taken away
 function touchdownGrid(landed, score) {
   const L = landed || {};
   const part = (key) => score ? score.parts.find((p) => p.key === key) : null;
   const pts = (lost) => Math.round(lost * 100);
   const mark = (p) => !p ? '<i class="tdMark"></i>'
-    : '<i class="tdMark" title="' + esc(tr('{n} of {m} points lost', { n: pts(p.lost), m: pts(p.weight) })) + '">' +
-      '<small>' + (pts(p.lost) ? '−' + pts(p.lost) : '') + '</small>' +
-      (p.grade ? '<em class="' + gradeClass(p.grade) + '">' + p.grade + '</em>' : '<em class="gNone"></em>') + '</i>';
+    : p.grade ? '<i class="tdMark" title="' + esc(tr('{n} of {m} points', { n: pts(p.weight) - pts(p.lost), m: pts(p.weight) })) + '">' +
+      '<small class="earned">+' + (pts(p.weight) - pts(p.lost)) + '<s>/' + pts(p.weight) + '</s></small>' +
+      '<em class="' + gradeClass(p.grade) + '">' + p.grade + '</em></i>'
+      : '<i class="tdMark"><small>−' + pts(p.lost) + '</small><em class="gNone"></em></i>';
   const row = (label, value, p) => '<div class="tdRow"><span>' + esc(label) + '</span><b>' + value + '</b>' + mark(p) + '</div>';
   // the damage and the grass: only the points they cost, no letter of their own
   const extra = (lost, weight) => lost ? { lost, weight, grade: '' } : null;
@@ -1621,14 +1623,22 @@ function scoreScale(score) {
     const g = cuts[i][1];
     segs += '<span class="' + gradeClass(g) + (score.grade === g ? ' on' : '') + '" style="--w:' + (at(cuts[i + 1][0]) - at(cuts[i][0])) + '%">' + g + '</span>';
   }
-  const lost = score.parts.reduce((s, p) => s + Math.round(p.lost * 100), 0) + Math.round(score.damageLost * 100) + Math.round(score.grassLost * 100);
-  const bonus = Math.round(score.bonus * 100);
-  const total = 100 - lost + bonus;
+  // the sum: the points every landing gets, the touchdown's bonus of its most, the damage and the
+  // grass taken away, the difficulty's
+  const pts = (v) => Math.round(v * 100);
+  const most = score.parts.reduce((s, p) => s + pts(p.weight), 0);
+  const earned = score.parts.reduce((s, p) => s + pts(p.weight) - pts(p.lost), 0);
+  const dmg = pts(score.damageLost), grass = pts(score.grassLost), bonus = pts(score.bonus);
+  const total = 100 - most + earned - dmg - grass + bonus;
+  const signed = (v) => (v < 0 ? '−' : '+') + Math.abs(v);
   return '<div class="tdScore">' +
     '<div class="tdScale">' + segs + '<i class="tdPin" style="--at:' + at(score.score) + '%"></i></div>' +
     '<p>' + tr('Score {s} of 100', { s: '<b>' + total + '</b>' }) + ' · ' +
-    tr('{n} for the landing', { n: '−' + lost }) + ' · ' +
-    tr('{n} for the difficulty', { n: (bonus < 0 ? '−' : '+') + Math.abs(bonus) }) + '</p>' +
+    tr('{n} for the landing', { n: '+' + (100 - most) }) + ' · ' +
+    tr('{n} of {m} for the touchdown', { n: '<b class="earned">+' + earned + '</b>', m: most }) +
+    (dmg ? ' · ' + tr('{n} for the damage', { n: '−' + dmg }) : '') +
+    (grass ? ' · ' + tr('{n} for the grass', { n: '−' + grass }) : '') + ' · ' +
+    tr('{n} for the difficulty', { n: signed(bonus) }) + '</p>' +
     '</div>';
 }
 // a grade's colour class: gAp (A+), gA … gF

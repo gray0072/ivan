@@ -1512,12 +1512,15 @@ button, input, select { font-family: inherit; }
 .debriefTitle { min-width: 0; font-size: 18px; color: #cfdae5; overflow-wrap: anywhere; }
 /* the touchdown numbers, each with its own small letter and the points it cost, and the score's scale */
 .tdGrid { display: grid; gap: 2px; font-size: 12px; }
-.tdRow { display: grid; grid-template-columns: 1fr auto 58px; align-items: center; gap: 10px; min-height: 22px; border-bottom: 1px dashed rgba(140, 170, 200, 0.1); }
+.tdRow { display: grid; grid-template-columns: 1fr auto 78px; align-items: center; gap: 10px; min-height: 22px; border-bottom: 1px dashed rgba(140, 170, 200, 0.1); }
 .tdRow span { color: #8296a8; }
 .tdRow b { text-align: right; }
 .tdRow b small { font-weight: 400; color: #8296a8; }
 .tdMark { display: flex; align-items: center; justify-content: flex-end; gap: 6px; font-style: normal; }
 .tdMark small { font-size: 11px; color: #ff9d85; font-variant-numeric: tabular-nums; }
+.tdMark small.earned { color: #8fd49a; font-weight: 700; }
+.tdMark small s { text-decoration: none; font-weight: 400; color: #6c8094; }
+.tdScore p b.earned { font-size: 12px; color: #8fd49a; }
 .tdMark em {
   min-width: 26px;
   padding: 1px 4px;
