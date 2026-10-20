@@ -8,8 +8,10 @@
 //     slightly drooping nose, a constant cabin, and a tail cone whose
 //     top line stays level while the belly sweeps up to the tail
 //   - a canvas livery wrapped around it: windows, cheatline, belly,
-//     cockpit glass; in an airline's colours (data/airlines.js) also
-//     its titles, and its emblem on both sides of the fin
+//     cockpit glass (painted by where each texel lies on the nose,
+//     paintCockpit; the 747's on its upper deck's own canvas); in an
+//     airline's colours (data/airlines.js) also its titles, and its
+//     emblem on both sides of the fin
 //   - tapered, swept wings with dihedral and an airfoil section that
 //     thins towards a rounded tip, a swept fin and tailplane (or a
 //     T-tail), winglets
@@ -89,10 +91,11 @@ const AircraftModels = {
     const skin = mat({ map: this.livery(ac, d, al, fin) });
     g.add(tag('fuselage', new THREE.Mesh(body.geo, skin)));
     if (look.hump) {
-      // the 747 upper deck: blended into the nose, its roof sloping down into the fuselage further back
-      const hump = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 16), base);
-      hump.scale.set(R * 0.74, R * 0.9, L * 0.22);                 // its roof 1.4 R above the axis
-      hump.position.set(0, R * 0.5, L * 0.26);
+      // the 747 upper deck: blended into the nose, its roof sloping down into the fuselage further
+      // back (its roof 1.4 R above the axis), the cockpit glass at its front
+      const hump = new THREE.Mesh(new THREE.SphereGeometry(1, 28, 16), mat({ map: this.humpLivery(ac, d, al, look) }));
+      hump.scale.set(R * HUMP.rx, R * HUMP.ry, L * HUMP.rz);
+      hump.position.set(0, R * HUMP.y, L * HUMP.z);
       g.add(tag('fuselage', hump));
     }
     if (look.bubble) {
@@ -448,7 +451,7 @@ const AircraftModels = {
     // a double deck: the main deck windows lower down, the upper deck's above them, the cockpit
     // between the two, and the cheatline and the belly pushed down (by `lo` degrees) below them
     const dd = look.decks === 2;
-    const rows = dd ? [65, 104] : [78], lo = dd ? 16 : 0, ck = dd ? 22 : 0;
+    const rows = dd ? [65, 104] : [78], lo = dd ? 16 : 0;
     if (fin) {
       // the Mriya in its finish: lighter on the roof, deeper under the belly, its lines along each
       // side (one under the other, or one stripe flowing through their colours) and its name over them
@@ -555,16 +558,40 @@ const AircraftModels = {
       g.strokeStyle = 'rgba(60,70,80,0.6)'; g.lineWidth = 1.5;
       g.strokeRect(W * 0.62, yAt(60), Math.max(10, 3.4 * px), yAt(40));          // main deck cargo door
     }
-    // cockpit glass at the nose
-    g.fillStyle = '#1a2430';
-    const cx = W * (1 - Math.min(0.09, 2.6 / L));
-    for (const c of [62 + ck, 298 - ck]) g.fillRect(cx, yAt(c - 12), Math.max(6, 1.5 * px), yAt(16));
-    g.beginPath();
-    g.moveTo(cx + 1.4 * px, yAt(330 - ck)); g.lineTo(cx + 2.4 * px, yAt(345 - ck)); g.lineTo(cx + 2.4 * px, yAt(360 - ck));
-    g.lineTo(cx + 1.4 * px, yAt(360 - ck)); g.closePath(); g.fill();
-    g.beginPath();
-    g.moveTo(cx + 1.4 * px, yAt(30 + ck)); g.lineTo(cx + 2.4 * px, yAt(15 + ck)); g.lineTo(cx + 2.4 * px, yAt(ck));
-    g.lineTo(cx + 1.4 * px, yAt(ck)); g.closePath(); g.fill();
+    // the cockpit glass round the nose (on the 747's upper deck instead: humpLivery)
+    if (!look.hump) {
+      const R = d.radius, hk = look.tall || 1, gl = cockpitGlass(look, L, R);
+      const at = (x, y) => {
+        const z = -L / 2 + L * x / W, th = y / H * TAU, c = fuselageRing(L, R, z);
+        return [-Math.sin(th) * c.r, c.y + (Math.cos(th) * hk + hk - 1) * c.r, z];
+      };
+      // (the upper half only, the top at both ends of the canvas: no sill is lower)
+      const x0 = Math.floor(W * (1 - gl.dMax / L)), y1 = Math.ceil(yAt(100));
+      paintCockpit(g, gl, at, x0, W, 0, y1);
+      paintCockpit(g, gl, at, x0, W, H - y1, H);
+    }
+    const tex = paintedTexture(cv);
+    this.liveries.set(key, tex);
+    return tex;
+  },
+
+  // The 747's upper deck (look.hump): a canvas round its sphere (x = round it, its front at a
+  // quarter; y = from its top down) in the body's colour, the cockpit glass at its front
+  humpLivery(ac, d, al, look) {
+    const key = ac.id + '|' + (al ? al.code : '') + '|hump';
+    if (this.liveries.has(key)) return this.liveries.get(key);
+    const W = 512, H = 256, L = d.len, R = d.radius;
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const g = cv.getContext('2d');
+    g.fillStyle = look.base || '#f3f5f7';
+    g.fillRect(0, 0, W, H);
+    const sx = R * HUMP.rx, sy = R * HUMP.ry, sz = L * HUMP.rz, y0 = R * HUMP.y, z0 = L * HUMP.z;
+    // (three.js's sphere: x = -cos φ sin θ, y = cos θ, z = sin φ sin θ; its front half is φ < π)
+    paintCockpit(g, cockpitGlass(look, L, R), (x, y) => {
+      const ph = x / W * TAU, th = y / H * Math.PI;
+      return [-Math.cos(ph) * Math.sin(th) * sx, y0 + Math.cos(th) * sy, z0 + Math.sin(ph) * Math.sin(th) * sz];
+    }, 0, W / 2, 0, H);
     const tex = paintedTexture(cv);
     this.liveries.set(key, tex);
     return tex;
@@ -717,6 +744,91 @@ function lampCanvas() {
 }
 
 function frontDoorFromNose(L) { return L * (1 - FRONT_DOOR_U) - 0.425; }
+
+// The cockpit glass, painted into the skin's canvas by where each texel lies on the body (so it
+// follows the nose's real shape and reads the same from ahead, from the side and from above):
+// a band between a sill and a header, as heights over the body's middle in shares of its half
+// height (the sill rising a little towards the sides, which gives the front panes their shallow
+// V seen from ahead); in it the two front panes either side of the centre post, ending at a post
+// that leans in towards the top, and behind them two side windows, their posts and the rear edge
+// raked forward towards the top (shares of the nose's length: fuselageRing). Per kind of body:
+// a double deck has it lower, between its decks, the Belugas under the hold's forehead, the
+// 747 on its upper deck (humpLivery).
+const COCKPIT_GLASS = {
+  normal: { sill: 0.38, sillK: 0.12, head: 0.72, headK: -0.02, p1: 0.5, p1k: 0.12, d2: 0.52, dEnd: 0.72, rake: 0.12, rake2: 0.06 },
+  decks: { sill: 0.05, sillK: 0.12, head: 0.36, headK: -0.02, p1: 0.5, p1k: 0.12, d2: 0.42, dEnd: 0.56, rake: 0.12, rake2: 0.06 },
+  bubble: { sill: 0.2, sillK: 0.12, head: 0.54, headK: -0.02, p1: 0.5, p1k: 0.12, d2: 0.42, dEnd: 0.56, rake: 0.1, rake2: 0.05 },
+  hump: { sill: 0.64, sillK: 0.1, head: 1.0, headK: -0.02, p1: 0.4, p1k: 0.1, d2: 0.6, dEnd: 0.82, rake: 0.12, rake2: 0.06 }
+};
+// the 747's upper deck: a sphere (half axes rx, ry over R and rz over L) centred y over R above
+// the axis and z over L ahead of the middle
+const HUMP = { rx: 0.74, ry: 0.9, rz: 0.22, y: 0.5, z: 0.26 };
+function cockpitGlass(look, L, R) {
+  const hk = look.tall || 1, nl = Math.min(L * 0.14, R * 2.8);
+  const k = COCKPIT_GLASS[look.hump ? 'hump' : look.bubble ? 'bubble' : look.decks === 2 ? 'decks' : 'normal'];
+  // clear of the front passenger door
+  let dEnd = k.dEnd * nl;
+  if (!look.freighter) dEnd = Math.min(dEnd, frontDoorFromNose(L) - 0.65);
+  return {
+    L, R, yMid: (hk - 1) * R, Rv: hk * R, post: Math.max(0.06, R * 0.05),
+    sill: k.sill, sillK: k.sillK, head: k.head, headK: k.headK, p1: k.p1, p1k: k.p1k,
+    dEnd, d2: Math.min(k.d2 * nl, dEnd * 0.74), rake: k.rake * nl, rake2: k.rake2 * nl, dMax: dEnd + 0.1
+  };
+}
+// where a point of the body (model axes) is glass: -1 if not, else how high in the band (0 at
+// the sill, 1 at the header)
+function glassAt(gl, p) {
+  const ax = Math.abs(p[0]), d = gl.L / 2 - p[2];
+  if (d > gl.dMax || d < 0) return -1;
+  const a = ax / gl.R, q = (p[1] - gl.yMid) / gl.Rv;
+  const qs = gl.sill + gl.sillK * a, qh = gl.head + gl.headK * a;
+  if (q < qs || q > qh) return -1;
+  const t = (q - qs) / (qh - qs), hw = gl.post / 2;
+  if (d > gl.dEnd - gl.rake * t || ax < hw) return -1;          // the rear edge, the centre post
+  const x1 = gl.R * (gl.p1 - gl.p1k * t);
+  if (Math.abs(ax - x1) < hw) return -1;                         // the front panes' outer posts
+  if (ax > x1 && Math.abs(d - (gl.d2 - gl.rake2 * t)) < hw) return -1;   // between the side windows
+  return t;
+}
+// the glass's colour by its height in the band: dark at the sill, the sky's light in its upper
+// part (sRGB)
+const GLASS_LOW = [16, 24, 34], GLASS_MID = [28, 42, 58], GLASS_HIGH = [88, 116, 142];
+function glassColour(t) {
+  const c = [0, 0, 0];
+  const a = t < 0.55 ? t / 0.55 : (t - 0.55) / 0.45, s = a * a * (3 - 2 * a);
+  const p = t < 0.55 ? GLASS_LOW : GLASS_MID, q = t < 0.55 ? GLASS_MID : GLASS_HIGH;
+  for (let n = 0; n < 3; n++) c[n] = p[n] + (q[n] - p[n]) * s;
+  return c;
+}
+// paint the glass over the canvas's texels [x0, x1) × [y0, y1); at(x, y): the point of the body
+// a canvas position lies on. Each texel's corners are looked at first; one whose corners all lie
+// off the glass is left as it is, one with all on it is painted from its middle, and only those
+// on an edge take 4 × 4 samples, for the panes' smooth edges (a livery is painted in a few ms).
+function paintCockpit(g, gl, at, x0, x1, y0, y1) {
+  const w = x1 - x0, h = y1 - y0, N = 4;
+  if (w <= 0 || h <= 0) return;
+  const img = g.getImageData(x0, y0, w, h), px = img.data;
+  const corner = new Float32Array((w + 1) * (h + 1));
+  for (let j = 0; j <= h; j++) for (let i = 0; i <= w; i++) corner[j * (w + 1) + i] = glassAt(gl, at(x0 + i, y0 + j));
+  const paint = (o, t, k) => {
+    const c = glassColour(t);
+    for (let n = 0; n < 3; n++) px[o + n] += (c[n] - px[o + n]) * k;
+  };
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+    const a = j * (w + 1) + i;
+    const c0 = corner[a], c1 = corner[a + 1], c2 = corner[a + w + 1], c3 = corner[a + w + 2];
+    const on = (c0 >= 0) + (c1 >= 0) + (c2 >= 0) + (c3 >= 0), o = (j * w + i) * 4;
+    if (on === 0) continue;
+    if (on === 4) { paint(o, (c0 + c1 + c2 + c3) / 4, 1); continue; }
+    let cov = 0, ts = 0;
+    for (let a = 0; a < N; a++) for (let b = 0; b < N; b++) {
+      const t = glassAt(gl, at(x0 + i + (a + 0.5) / N, y0 + j + (b + 0.5) / N));
+      if (t >= 0) { cov++; ts += t; }
+    }
+    if (cov) paint(o, ts / cov, cov / (N * N));
+  }
+  g.putImageData(img, x0, y0);
+}
 
 // The fuselage's cross-section at z (model axes, the nose at L / 2): its radius r and how far its
 // centre sits above the axis, y
