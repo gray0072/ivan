@@ -774,24 +774,34 @@ const Airport3D = {
 
   // a flagpole with a flag that streams downwind (update); city: the airport identity for a city
   // flag, region: the key of a region's flag (art/regions.js). After dark it is floodlit from its
-  // foot: two lamps on the roof by the pole, a soft beam of light up the pole (flagBeams) and
-  // the cloth lit in its own colours, brightest near the lamps
+  // foot: four lamps on the roof round the pole, a short soft cone of light rising from each
+  // (flagBeams), the pole only faintly lit and the cloth lit in its own colours
   flag(rec, at, tex, country, city, t, across, y, pole, fw, region) {
     const fh = fw * 2 / 3;
     const poleMat = new THREE.MeshLambertMaterial({ color: 0xe8e8e8 });
-    rec.night.push({ mat: poleMat, color: new THREE.Color(FLAG_LIGHT), k: 0.35 });
+    rec.night.push({ mat: poleMat, color: new THREE.Color(FLAG_LIGHT), k: FLAG_POLE_GLOW });
     at(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, pole, 6), poleMat), t, across, y + pole / 2);
-    // the lamps: a dark housing each side of the pole, its glass tilted up at the flag
+    // the lamps: four on a ring round the pole (FLAG_LAMP_RING, on the diagonals), each a dark
+    // housing with its glass tilted up at the flag
     const housing = new THREE.MeshLambertMaterial({ color: 0x3a3f44 });
     const lens = new THREE.MeshLambertMaterial({ color: 0x8a8a80 });
     rec.night.push({ mat: lens, color: new THREE.Color(FLAG_LIGHT), k: 1 });
-    for (const s of [-1, 1]) {
-      at(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.36, 0.5), housing), t + s * 0.9, across, y + 0.18);
-      const g = at(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.42), lens), t + s * 0.9, across, y + 0.37);
-      g.rotation.x = s * 0.35;
+    const lamps = [0, 1, 2, 3].map((k) => {
+      const ang = Math.PI / 4 + k * Math.PI / 2;
+      return { dt: Math.cos(ang) * FLAG_LAMP_RING, da: Math.sin(ang) * FLAG_LAMP_RING };
+    });
+    for (const l of lamps) {
+      // (turned to face the pole: rotation.y points the glass's tilt, rotation.x, inwards)
+      const face = Math.atan2(-l.da, l.dt);
+      const box = at(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.4), housing), t + l.dt, across + l.da, y + 0.15);
+      box.rotation.y = face;
+      const g = at(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.05, 0.34), lens), t + l.dt, across + l.da, y + 0.31);
+      g.rotation.order = 'YXZ';
+      g.rotation.set(0.4, face, 0);
     }
-    // the beam: three crossed planes through the pole, a soft shaft widening up to the top of the
-    // flag (additive, faded in at dusk: update)
+    // the light in the air: from each lamp a short cone (two crossed planes) leaning in towards
+    // the pole and fading out well below the flag, so the lamps read as four points of light
+    // round the foot and the pole itself stays dim (additive, faded in at dusk: update)
     if (!rec.flagBeams) {
       rec.flagBeams = at(new THREE.Group(), 0, 0, 0);
       rec.beamMat = new THREE.MeshBasicMaterial({
@@ -799,14 +809,25 @@ const Airport3D = {
         blending: THREE.AdditiveBlending, side: THREE.DoubleSide
       });
     }
-    const bw = fw * 1.7, bh = pole + 1;
-    for (let k = 0; k < 3; k++) {
-      const g = new THREE.PlaneGeometry(bw, bh);
-      g.rotateY(k * Math.PI / 3);
-      const m = new THREE.Mesh(g, rec.beamMat);
-      m.renderOrder = 5;
-      m.position.set(across, y + bh / 2, -t);
-      rec.flagBeams.add(m);
+    const bw = 3.2, bh = Math.min(pole * 0.5, 6);
+    for (const l of lamps) {
+      const ox = across + l.da, oz = -(t + l.dt);
+      for (let k = 0; k < 2; k++) {
+        const g = new THREE.PlaneGeometry(bw, bh);
+        g.translate(0, bh / 2, 0);
+        g.rotateY(Math.atan2(l.dt, l.da) + k * Math.PI / 2);
+        // (leaning in: its top shifted two thirds of the way to the pole)
+        const p = g.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+          const up = p.getY(i) / bh;
+          p.setX(i, p.getX(i) - l.da * 0.65 * up);
+          p.setZ(i, p.getZ(i) + l.dt * 0.65 * up);
+        }
+        const m = new THREE.Mesh(g, rec.beamMat);
+        m.renderOrder = 5;
+        m.position.set(ox, y + 0.3, oz);
+        rec.flagBeams.add(m);
+      }
     }
     const src = document.createElement('canvas');
     src.width = 192; src.height = 128;
@@ -1232,18 +1253,20 @@ const FLAG_GAP = 12, FLAG_STEP = 14;
 // the welcome banner ends this far short of the first stand's number board (STAND_BOARD, apron3d.js)
 const BANNER_GAP = 4;
 const FLAG_STRIP = FLAG_GAP + 2 * FLAG_STEP + 10;
-// the flags' floodlights (Airport3D.flag): their colour, and the beam's brightness at full night
-const FLAG_LIGHT = 0xfff1d8, FLAG_BEAM_OPACITY = 0.32;
-// a beam of light from a lamp at the foot of a flagpole: a soft shaft, narrow at the foot and
-// widening upwards, brightest along the pole, fading out to its sides and towards its top
+// the flags' floodlights (Airport3D.flag): their colour, the brightness of each lamp's cone at
+// full night, the radius of the ring of four lamps round the pole (m) and how much the pole
+// itself is lit (a share of the light's colour; the cloth gets 0.85)
+const FLAG_LIGHT = 0xfff1d8, FLAG_BEAM_OPACITY = 0.3, FLAG_LAMP_RING = 1.1, FLAG_POLE_GLOW = 0.1;
+// the cone of light from one lamp at the foot of a flagpole: narrow and brightest just over the
+// lamp, widening upwards and fading out long before its top, soft at its sides
 function beamCanvas() {
   const W = 64, H = 256, cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const g = cv.getContext('2d'), img = g.createImageData(W, H);
   for (let y = 0; y < H; y++) {
     const up = 1 - y / (H - 1);                       // 0 at the foot, 1 at the top
-    const half = 0.1 + 0.4 * up;                      // the shaft's half width, of the canvas
-    const fall = smoothstep(0, 0.06, up) * (1 - 0.55 * up) * (1 - smoothstep(0.82, 1, up));
+    const half = 0.12 + 0.34 * up;                    // the cone's half width, of the canvas
+    const fall = smoothstep(0, 0.05, up) * Math.pow(1 - up, 2.2);
     for (let x = 0; x < W; x++) {
       const d = Math.abs((x + 0.5) / W - 0.5) / half;
       const v = Math.round(255 * fall * Math.exp(-d * d * 2.2) * clamp(1.4 - d * 0.4, 0, 1));
