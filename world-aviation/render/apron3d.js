@@ -34,6 +34,7 @@
 
 const APRON_FLOOD = 0xffe3b8;      // the colour of the floodlights
 const STAND_PLATE_ATLAS_W = 1024;   // the stand numbers' atlas: this wide, four 256-px plates a row
+const STAND_BOARD = 5.1;           // a stand's number board on the terminal: this wide (the welcome banner keeps clear of it)
 const MAST_CLEAR = 52;             // a floodlight mast from a taxilane centreline, metres (ICAO code F: 50.5)
 const EDGE_LAMP_H = 1.2;           // the airside lamps along the apron's edge: this tall (below the lowest wing tip) ...
 const EDGE_LAMP_GAP = 45;          // ... about this far apart
@@ -265,10 +266,10 @@ const Apron3D = {
       at(new THREE.Mesh(g1, plateMat), gate.t, L.APRON_LANE + 26, 0.17);
       // the board stands out from the glass on a dark box, clear of the window frames (their
       // faces are 1 m out: a board in that plane mixed with them)
-      const g2 = atlas.fit(new THREE.PlaneGeometry(4.5, 4.5), cell);
+      const g2 = atlas.fit(new THREE.PlaneGeometry(STAND_BOARD - 0.6, STAND_BOARD - 0.6), cell);
       g2.rotateY(-Math.PI / 2);
       const bb = behind(gate.t), by = bb ? Math.min(bb.h - 3, 12) : 9;
-      at(new THREE.Mesh(cellBox(0.7, 5.1, 5.1), boxMat), gate.t, front - 1.35, by);
+      at(new THREE.Mesh(cellBox(0.7, STAND_BOARD, STAND_BOARD), boxMat), gate.t, front - 1.35, by);
       at(new THREE.Mesh(g2, boardMat), gate.t, front - 1.8, by);
     }
     Merge3D.bake(rec.frame, rec.frame.children.slice(first), { night: rec.night, tag: 'standNumbers' });
@@ -362,10 +363,13 @@ const Apron3D = {
       for (let i = 0; i < n; i++) masts.push([n === 1 ? (t0 + t1) / 2 : t0 + (t1 - t0) * i / (n - 1), airside, false]);
     }
     const termA = front - 7.5;
+    // (the first one a little nearer its stand; never in front of the welcome banner (bn): past
+    // its outer end, by the end of the building, if it would be)
+    const bn = term && term.banner;
     for (let i = 0; i <= a.gates.length; i++) {
-      // (the first one a little nearer its stand, clear of the welcome banner)
       const sp = (g) => (g.cargo ? L.CARGO_SPACING : g.ga ? L.GA_SPACING : L.GATE_SPACING) / 2;
-      const t = i === 0 ? a.gates[0].t - 30 : i < a.gates.length ? a.gates[i].t - sp(a.gates[i]) : a.gates[i - 1].t + sp(a.gates[i - 1]);
+      let t = i === 0 ? a.gates[0].t - 30 : i < a.gates.length ? a.gates[i].t - sp(a.gates[i]) : a.gates[i - 1].t + sp(a.gates[i - 1]);
+      if (i === 0 && bn && t > bn[0] - 3.5 && t < bn[1] + 3.5) t = bn[0] - 3.5;
       masts.push([t, termA, true]);
     }
     // (the terminal's below its roof edge, so seen from the apron they never stand in front of

@@ -400,11 +400,18 @@ const Airport3D = {
       this.terminalFlags(a, b, rec, at, tex, id, st + lw / 2);
     }
     // the welcome banner on the apron side, above the glass, at the departure end of the
-    // building (the first terminal)
+    // building (the first terminal), ending BANNER_GAP short of the first stand's number board
+    // (apron3d.js): a banner that would reach it is drawn smaller
     if (several && b.term !== 1) return;
-    const bh = Math.max(8, h * 0.62), bw = Math.min(b.along * 0.45, bh * 3.2);
-    const bt = b.t - b.along / 2 + bw / 2 + 6;
-    b.frontTaken.push([bt - bw / 2, bt + bw / 2]);
+    let bh = Math.max(8, h * 0.62), bw = Math.min(b.along * 0.45, bh * 3.2);
+    const b0 = b.t - b.along / 2 + 6;
+    const board = a.gates.find((g) => Math.abs(g.t - b.t) <= b.along / 2);
+    const room = board ? board.t - STAND_BOARD / 2 - BANNER_GAP - b0 : Infinity;
+    if (bw > room) { bh *= room / bw; bw = room; }
+    const bt = b0 + bw / 2;
+    // (b.banner: where it is along the building, for the apron's floodlight masts to keep clear)
+    b.banner = [bt - bw / 2, bt + bw / 2];
+    b.frontTaken.push(b.banner.slice());
     const banner = tex(makeBannerCanvas(a, id), 8);
     const bannerMat = new THREE.MeshLambertMaterial({ map: banner, emissiveMap: banner, emissive: 0x000000 });
     rec.night.push({ mat: bannerMat, color: new THREE.Color(0xffffff), k: 0.7 });
@@ -570,7 +577,18 @@ const Airport3D = {
         gable.computeVertexNormals();
         put(gable, glow);
         for (const tv of [ta, tb]) strut(at, accent, [x0, valley(x0) - 0.4, -tv], [x0, ridge(x0) + 0.4, -tc], 0.5);
+        // (and the fold's end over the road side, closed in the shell)
+        const end = new THREE.BufferGeometry();
+        end.setAttribute('position', new THREE.Float32BufferAttribute([x1, valley(x1), -ta, x1, ridge(x1), -tc, x1, valley(x1), -tb], 3));
+        end.computeVertexNormals();
+        put(end, shell);
       }
+      // the soffit: a flat ceiling under the folds along their valleys, so from below the
+      // overhangs show a plain underside, not the inside of the folds
+      put(gridSurface(1, 3, (u, v) => {
+        const ac = x0 + (x1 - x0) * u, t = b.t - span / 2 + span * v;
+        return [ac, valley(ac) - 0.05, -t];
+      }), shell);
       top((t, ac) => {
         const k = Math.abs(((t - (b.t - span / 2)) % W + W) % W - W / 2) / (W / 2);    // 0 on a ridge, 1 in a valley
         return lerp(ridge(ac), valley(ac), clamp(k, 0, 1));
@@ -613,14 +631,14 @@ const Airport3D = {
   // seen from the apron (from their end, le, towards the far end of the roof), FLAG_GAP from them
   // and FLAG_STEP apart, in the stretch kept for them (FLAG_STRIP), never behind the letters:
   // the country, the city, and the region's (data/regions.js) where it has one, else the
-  // country's again
+  // country's again. All three on one line and their cloths at one height, 13 m over the highest
+  // of their feet: on a vaulted or folded roof a pole in a dip is the longer
   terminalFlags(a, b, rec, at, tex, id, le) {
     const front = b.across - b.acrossSize / 2, ac = front + 8;
     const reg = AIRPORT_REGIONS[a.id], region = reg && RegionFlags.has(reg[0]) ? reg[0] : null;
-    for (let i = 0; i < 3; i++) {
-      const t = le + FLAG_GAP + i * FLAG_STEP;
-      this.flag(rec, at, tex, a.country, i === 1 ? id : null, t, ac, b.roofAt(t, ac) - 0.3, 13, 8, i === 2 ? region : null);
-    }
+    const ts = [0, 1, 2].map((i) => le + FLAG_GAP + i * FLAG_STEP);
+    const foot = ts.map((t) => b.roofAt(t, ac) - 0.3), top = Math.max(...foot) + 13;
+    ts.forEach((t, i) => this.flag(rec, at, tex, a.country, i === 1 ? id : null, t, ac, foot[i], top - foot[i], 8, i === 2 ? region : null));
   },
 
   // The control tower, by the airport's size (b.size): b.h is the height of the cab's floor,
@@ -883,15 +901,16 @@ const Airport3D = {
       near[k].push(g);
     }
     const half = (LAYOUT.TWY_WIDTHS[a.terminal] || LAYOUT.TWY_WIDTH) / 2;
-    const clear = (t, across) => {
-      if (across > LAYOUT.APRON_LANE - 70 || across < RWY_HALF_WIDTH + 40) return false;
+    // (w: the sign's half length, across the taxiway: its ends keep clear of the pavement too)
+    const clear = (t, across, w) => {
+      if (across + w > LAYOUT.APRON_LANE - 70 || across - w < RWY_HALF_WIDTH + 40) return false;
       const r = a.apronRect;
       if (r && t > r.t0 - 10 && t < r.t1 + 10 && across > LAYOUT.TWY_OFFSET + half) return false;
       const p = World.at(a, t, across);
       return a.twySegs.every((s) => {
         const dx = s.x2 - s.x1, dz = s.z2 - s.z1, l2 = dx * dx + dz * dz || 1;
         const u = clamp(((p.x - s.x1) * dx + (p.z - s.z1) * dz) / l2, 0, 1);
-        return Math.hypot(s.x1 + dx * u - p.x, s.z1 + dz * u - p.z) > s.w / 2 + 7;
+        return Math.hypot(s.x1 + dx * u - p.x, s.z1 + dz * u - p.z) > s.w / 2 + 7 + w;
       });
     };
     lanes.forEach((n, i) => {
@@ -901,31 +920,26 @@ const Airport3D = {
       const label = (a.terminals > 1 && !gs[0].cargo && !gs[0].ga ? 'T' + gs[0].terminal + ' ' : '') + span;
       for (const dir of [1, -1]) {
         // (coming along +t the apron is on the right: the turn into the lane is a right turn)
+        const cv = dirSignCanvas((dir > 0 ? '→ ' : '← ') + label), w = DIR_SIGN_H * cv.width / 64 / 2;
+        const off = Math.max(14, 9 + w);
         let spot = null;
-        for (const off of [45, 60, 75, 32]) {
-          for (const across of [LAYOUT.TWY_OFFSET - half - 14, LAYOUT.TWY_OFFSET + half + 14]) {
-            if (!spot && clear(n.t - dir * off, across)) spot = [n.t - dir * off, across];
+        for (const back of [45, 60, 75, 32]) {
+          for (const across of [LAYOUT.TWY_OFFSET - half - off, LAYOUT.TWY_OFFSET + half + off]) {
+            if (!spot && clear(n.t - dir * back, across, w)) spot = [n.t - dir * back, across];
           }
         }
-        if (spot) this.dirSign(rec, at, tex, (dir > 0 ? '→ ' : '← ') + label, spot[0], spot[1], dir);
+        if (spot) this.dirSign(rec, at, tex, cv, spot[0], spot[1], dir);
       }
     });
   },
-  // a yellow direction sign facing the traffic coming along +t (dir 1) or -t (-1); its back dark
-  dirSign(rec, at, tex, text, t, across, dir) {
-    const cv = document.createElement('canvas');
-    const g = cv.getContext('2d');
-    g.font = 'bold 42px Arial, sans-serif';
-    const w = Math.min(1024, Math.max(160, Math.ceil(g.measureText(text).width) + 48));
-    cv.width = Math.pow(2, Math.ceil(Math.log2(w))); cv.height = 64;
-    g.fillStyle = '#f6c700'; g.fillRect(0, 0, cv.width, 64);
-    g.fillStyle = '#111111'; g.font = 'bold 42px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(text, cv.width / 2, 34);
+  // a yellow direction sign (its face drawn by dirSignCanvas) facing the traffic coming along +t
+  // (dir 1) or -t (-1); its back dark
+  dirSign(rec, at, tex, cv, t, across, dir) {
     const back = new THREE.MeshLambertMaterial({ color: 0x2a2d31 });
-    const W = 1.1 * cv.width / 64;
-    const geo = new THREE.BoxGeometry(W, 1.1, 0.4), face = this.signFace(rec, tex, cv, geo);
+    const H = DIR_SIGN_H, W = H * cv.width / 64;
+    const geo = new THREE.BoxGeometry(W, H, 0.4), face = this.signFace(rec, tex, cv, geo);
     const mats = dir > 0 ? [back, back, back, back, face, back] : [back, back, back, back, back, face];
-    at(new THREE.Mesh(geo, mats), t, across, 0.9);
+    at(new THREE.Mesh(geo, mats), t, across, 0.35 + H / 2);
   },
 
   sign(rec, at, tex, text, bg, fg, t, across) {
@@ -1194,12 +1208,29 @@ function roofName(a) {
   return terms[Math.ceil(terms.length / 2) - 1] || null;
 }
 
+// The direction signs to the stands (Airport3D.gateSigns): DIR_SIGN_H tall, half as big again as
+// the other signs, to be read from the cockpit while turning towards the stands; the board as
+// long as its text (a 64-px tall canvas, 160 px at least)
+const DIR_SIGN_H = 1.65;
+function dirSignCanvas(text) {
+  const cv = document.createElement('canvas');
+  const g = cv.getContext('2d');
+  g.font = 'bold 42px Arial, sans-serif';
+  cv.width = Math.min(1024, Math.max(160, Math.ceil(g.measureText(text).width) + 48)); cv.height = 64;
+  g.fillStyle = '#f6c700'; g.fillRect(0, 0, cv.width, 64);
+  g.fillStyle = '#111111'; g.font = 'bold 42px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, cv.width / 2, 34);
+  return cv;
+}
+
 // The signs on a terminal's roof (the name, a terminal's number) and the flags beside the name.
 // FLAG_GAP: from the letters' end to the first pole (the cloth streaming towards them, 8 m, stays
 // clear); FLAG_STEP: between two poles (seen at 45 degrees one flag no longer covers the next);
 // FLAG_STRIP: the far end of the roof kept for them (the last cloth streaming 8 m past its pole,
 // 2 m short of the end)
 const FLAG_GAP = 12, FLAG_STEP = 14;
+// the welcome banner ends this far short of the first stand's number board (STAND_BOARD, apron3d.js)
+const BANNER_GAP = 4;
 const FLAG_STRIP = FLAG_GAP + 2 * FLAG_STEP + 10;
 // the flags' floodlights (Airport3D.flag): their colour, and the beam's brightness at full night
 const FLAG_LIGHT = 0xfff1d8, FLAG_BEAM_OPACITY = 0.32;
