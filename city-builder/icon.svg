@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3fb6ec"/>
+      <stop offset="1" stop-color="#b8e6fb"/>
+    </linearGradient>
+    <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#sky)"/>
+    <circle cx="96" cy="104" r="44" fill="#ffeb3b"/>
+    <circle cx="96" cy="104" r="62" fill="#ffeb3b" opacity="0.25"/>
+    <ellipse cx="392" cy="82" rx="58" ry="20" fill="#ffffff" opacity="0.9"/>
+    <ellipse cx="420" cy="68" rx="30" ry="18" fill="#ffffff" opacity="0.9"/>
+    <g id="city">
+      <!-- the island: grass on top, earth sides -->
+      <path d="M42 357L256 464V488L42 381Z" fill="#8d6e63"/>
+      <path d="M256 464L470 357V381L256 488Z" fill="#6d4c41"/>
+      <path d="M256 250L470 357L256 464L42 357Z" fill="#7cc04a"/>
+      <!-- the road -->
+      <path d="M84.8 335.6L298.8 442.6L277.4 453.3L63.4 346.3Z" fill="#555c63"/>
+      <path d="M74 341L288 448" stroke="#ffffff" stroke-width="4" stroke-dasharray="14 12"/>
+      <!-- a tree behind the tower -->
+      <rect x="236" y="262" width="8" height="24" fill="#6d4c41"/>
+      <circle cx="240" cy="254" r="24" fill="#43a047"/>
+      <!-- the tower -->
+      <path d="M245.3 330.25L298.8 357V167L245.3 140.25Z" fill="#90caf9"/>
+      <path d="M298.8 357L352.3 330.25V140.25L298.8 167Z" fill="#5a8fc6"/>
+      <path d="M298.8 113.5L352.3 140.25L298.8 167L245.3 140.25Z" fill="#d6ecfc"/>
+      <g stroke="#fff59d" stroke-width="8" stroke-dasharray="11 7">
+        <path d="M252 172L293 192.5M252 202L293 222.5M252 232L293 252.5M252 262L293 282.5M252 292L293 312.5"/>
+      </g>
+      <g stroke="#ffe082" stroke-width="8" stroke-dasharray="11 7" opacity="0.8">
+        <path d="M305 192.5L346 172M305 222.5L346 202M305 252.5L346 232M305 282.5L346 262M305 312.5L346 292"/>
+      </g>
+      <!-- the shop -->
+      <path d="M266.7 399.8L309.5 421.2V351.2L266.7 329.8Z" fill="#ffb74d"/>
+      <path d="M309.5 421.2L352.3 399.8V329.8L309.5 351.2Z" fill="#ef7c00"/>
+      <path d="M309.5 308.4L352.3 329.8L309.5 351.2L266.7 329.8Z" fill="#ffe0b2"/>
+      <path d="M272 382L304 398V372L272 356Z" fill="#4f6f8c"/>
+      <!-- the house -->
+      <path d="M122.25 338.3L170.4 362.35V307.35L122.25 283.3Z" fill="#fff3e0"/>
+      <path d="M170.4 362.35L218.55 338.3V283.3L170.4 307.35Z" fill="#dcc29c"/>
+      <path d="M140 347L156 355V331L140 323Z" fill="#795548"/>
+      <path d="M170.4 259.2L122.25 283.3L146.3 250.3L194.5 226.2Z" fill="#ef5350"/>
+      <path d="M218.55 283.3L170.4 307.35L146.3 250.3L194.5 226.2Z" fill="#c62828"/>
+      <path d="M122.25 283.3L170.4 307.35L146.3 250.3Z" fill="#fff3e0"/>
+      <!-- a tree in front -->
+      <rect x="401" y="330" width="9" height="28" fill="#6d4c41"/>
+      <circle cx="405.5" cy="318" r="28" fill="#2e9d4a"/>
+      <circle cx="397" cy="310" r="12" fill="#66bb6a"/>
+    </g>
+  </g>
+</svg>

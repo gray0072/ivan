@@ -35,6 +35,10 @@ Training game for school kids: a process runs (a flower dries out, zombies appro
 
 Cockpit-view flight simulator and airline career (three.js, vendored): it starts with Swedish domestic flights out of Stockholm Arlanda, then Scandinavia, then the whole world region by region (141 real airports, terrain built per flight from world coastline and mountain data). Gate-to-gate flights with pushback, engine start, taxi guidance, a real-forces flight model, an autopilot with NAV/ILS, emergencies worked with QRH checklists, contracts, eighteen real aircraft to lease, a training tree and a flight school of seven short lessons for a beginner — and, at the end, the An-225 Mriya to build again part by part and a flight round the world by the rules of the real records; playable in English, Russian or Swedish. Full spec: [`world-aviation/SPEC.md`](world-aviation/SPEC.md).
 
+### city-builder
+
+Isometric city-building game for kids (a simple SimCity): roads, houses, shops, factories and parks on a random map with a river, a lake and forests; residents, jobs, happiness and taxes; houses that grow into apartment blocks; milestones from Hamlet to Metropolis that unlock new buildings; fires, spring floods and bankruptcy; the city saved in the browser; playable in English, Russian or Swedish. Full spec: [`city-builder/SPEC.md`](city-builder/SPEC.md).
+
 ## Project structure
 
 ```
@@ -121,6 +125,21 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 │   ├── ui/                   # instruments, cockpit, hud, ui (screens), coach (a lesson's steps in the flight), school (the flight school's screens), filters (board and hangar), title (the title's sky), mriya (the assembly hall), fireworks, rtw (round the world: its screen, the finish, the certificate), incident (after a collision)
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── docs/                 # instrument screenshots and showcase.gif (English UI) used by the READMEs
+│   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
+│   ├── manifest.webmanifest  # PWA manifest
+│   └── screenshot.png
+├── city-builder/
+│   ├── SPEC.md               # the game's own spec
+│   ├── index.html            # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── constants.js, game.js # tuning, main loop and the flow (menu, play, pause, milestones, bankruptcy, cheats)
+│   ├── data/                 # buildings (the toolbar's tools), milestones, lang-ru / lang-sv (translations)
+│   ├── core/                 # i18n, utils, events, audio, input (mouse, touch gestures, keys, fullscreen), storage (the saved city, records), cursor, update
+│   ├── sim/                  # state, mapgen (the random map), roads, build, city (the monthly life), disasters (fires, floods), traffic
+│   ├── art/                  # flag-gb / flag-ru / flag-se.svg (the language switcher)
+│   ├── render/               # sprites (procedural isometric drawings), render (camera, ground, depth-sorted objects, effects)
+│   ├── ui/                   # screens, hud, toolbar, info (the building card), budget, sounds, fireworks
+│   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest
 │   └── screenshot.png

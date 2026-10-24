@@ -51,6 +51,15 @@
       <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Spela</b></a> · <a href="flight-simulator/">Källkod</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/city-builder/"><img src="city-builder/screenshot.png" alt="Skärmbild från City Builder"></a>
+      <h3><img src="city-builder/icon.svg" alt="" width="28" height="28" align="center"> City Builder</h3>
+      <p>Stadsbyggarspel: bygg vägar, hus, affärer och fabriker, håll invånarna glada och låt ett torp växa till en metropol — se upp för bränder och vårflod.</p>
+      <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Spela</b></a> · <a href="city-builder/">Källkod</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Det bästa
@@ -92,7 +101,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # specifikation och regler för hela repot
 ├── AGENTS.md                # instruktioner för AI-agenter (CLAUDE.md pekar hit)
-└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator
+└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder
     ├── SPEC.md              # spelets specifikation
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # koden, ordnad efter roll

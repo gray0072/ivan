@@ -51,6 +51,15 @@
       <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Play</b></a> · <a href="flight-simulator/">Source</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/city-builder/"><img src="city-builder/screenshot.png" alt="City Builder screenshot"></a>
+      <h3><img src="city-builder/icon.svg" alt="" width="28" height="28" align="center"> City Builder</h3>
+      <p>City-building game: lay roads, build houses, shops and factories, keep the residents happy and grow a hamlet into a metropolis — mind the fires and the spring floods.</p>
+      <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Play</b></a> · <a href="city-builder/">Source</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Highlights
@@ -92,7 +101,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # repo-wide spec and conventions
 ├── AGENTS.md                # instructions for AI coding agents (CLAUDE.md points here)
-└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator
+└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder
     ├── SPEC.md              # spec of this game
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # the code, by role

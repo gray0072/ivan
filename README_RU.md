@@ -51,6 +51,15 @@
       <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Играть</b></a> · <a href="flight-simulator/">Исходники</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/city-builder/"><img src="city-builder/screenshot.png" alt="Скриншот City Builder"></a>
+      <h3><img src="city-builder/icon.svg" alt="" width="28" height="28" align="center"> City Builder</h3>
+      <p>Градостроитель: прокладывай дороги, строй дома, магазины и фабрики, заботься о жителях и преврати хутор в мегаполис — берегись пожаров и весенних наводнений.</p>
+      <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Играть</b></a> · <a href="city-builder/">Исходники</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Особенности
@@ -92,7 +101,7 @@ npx serve .        # или просто открой любой index.html в �
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # спецификация и правила всего репозитория
 ├── AGENTS.md                # инструкции для AI-агентов (CLAUDE.md ссылается сюда)
-└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator
+└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder
     ├── SPEC.md              # спецификация этой игры
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # код, разложенный по ролям
