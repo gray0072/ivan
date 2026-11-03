@@ -47,7 +47,7 @@ An unfinished game stays saved, so you can come back and press **Continue**. **â
 
 The levels change only the help, not the rules:
 
-- **Easy:** free rows show what the dice would score, and the best move is suggested with the other moves under it. **All moves** lists everything you can do now and the gain of each move.
+- **Easy:** free rows show what the dice would score, and the best move is suggested with the other moves under it. **All moves** lists everything you can do now and the gain of each move; the **?** button explains why a move is best and what it means for your final total.
 - **Medium:** free rows show what the dice would score, no advice.
 - **Hard:** no help, work the points out yourself.
 

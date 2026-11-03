@@ -47,7 +47,7 @@ Ett oavslutat spel sparas, så du kan komma tillbaka och trycka på **Fortsätt*
 
 Nivåerna ändrar bara hjälpen, inte reglerna:
 
-- **Lätt:** lediga rader visar vad tärningarna skulle ge, bästa draget föreslås och andra drag visas under det. **Alla drag** listar allt du kan göra nu och vinsten av varje drag.
+- **Lätt:** lediga rader visar vad tärningarna skulle ge, bästa draget föreslås och andra drag visas under det. **Alla drag** listar allt du kan göra nu och vinsten av varje drag, och knappen **?** förklarar varför ett drag är bäst och vad det betyder för din slutsumma.
 - **Medel:** lediga rader visar vad tärningarna skulle ge, inga råd.
 - **Svår:** ingen hjälp, räkna ut poängen själv.
 

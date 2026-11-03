@@ -2,8 +2,9 @@
 
 // Yacht — the moves and what each brings, shown on Easy: an exact calculation over the 252 sets of five dice. For
 // each set and rolls left, the best of writing now or holding some dice and rolling, where writing
-// is worth the row's points minus ROW_WORTH (what giving the row up costs). It looks at one turn
-// only, so it is good advice, not perfect play. Read by ui/card.js and ui/table.js; has no state of the game.
+// is worth the row's points plus what the rows left then can bring (data/state-values.js). So it is
+// the best play for the highest average total, to the end of the game. Read by ui/card.js and
+// ui/table.js; has no state of the game.
 
 const Advisor = (() => {
   // every sorted set of k dice with its probability
@@ -52,14 +53,27 @@ const Advisor = (() => {
   }
   const SET_HOLDS = SETS.map((s) => holdsOf(s.dice));
 
+  // what the free rows can bring with the best play, by a mask of the free rows
+  const STATE_VALUE = new Float32Array(STATE_VALUES.length / 2);
+  for (let i = 0; i < STATE_VALUE.length; i++) {
+    const t = STATE_VALUE_ALPHABET.indexOf(STATE_VALUES[2 * i]) * 64 + STATE_VALUE_ALPHABET.indexOf(STATE_VALUES[2 * i + 1]);
+    STATE_VALUE[i] = STATE_VALUE_MIN + t / 10;
+  }
+  const ROW_BIT = {};
+  ALL_ROWS.forEach((r, i) => { ROW_BIT[r.id] = 1 << i; });
+  const maskOf = (free) => free.reduce((m, r) => m | ROW_BIT[r], 0);
+  // what using up a row costs: the rows left bring this much less than the free rows did
+  const rowCost = (r, mask) => STATE_VALUE[mask] - STATE_VALUE[mask ^ ROW_BIT[r]];
+
   // writing a set into the best free row: { value, row, points, scores } for each set, for a first
   // roll or a later one; `scores` is false when that row would be given up or not closed
   function writeTable(free, firstRoll) {
+    const mask = maskOf(free);
     return SETS.map((s) => {
       let best = -Infinity, row = null, score = null;
       for (const r of free) {
         const sc = rowScore(r, s.dice, firstRoll ? 1 : 2);
-        const v = sc.p - ROW_WORTH[r];
+        const v = sc.p - rowCost(r, mask);
         if (v > best) { best = v; row = r; score = sc; }
       }
       return { value: best, row, points: score.p, scores: !isLoss(row, score) };
@@ -115,14 +129,15 @@ const Advisor = (() => {
   //   { write: rowId, points, doubled, loss, gain } — writing into a free row, or
   //   { hold: [faces], points, gain, aim: rowId, chance: 0..1 } — keeping these dice and rolling.
   // `points` is what goes on the sheet (for a roll: on average, by the best moves to the end of the
-  // turn); `gain` is how much that beats what the row usually brings (ROW_WORTH), the number the
-  // moves are compared by.
+  // turn); `gain` is how much the move changes what the player can expect by the end of the game,
+  // the number the moves are compared by.
   function options(cells, dice, rollNo) {
     const free = ALL_ROWS.map((r) => r.id).filter((r) => !cells[r]);
     if (!free.length) return [];
+    const mask = maskOf(free);
     const list = free.map((r) => {
       const sc = rowScore(r, dice, rollNo);
-      return { write: r, points: sc.p, doubled: sc.d, loss: isLoss(r, sc), gain: sc.p - ROW_WORTH[r] };
+      return { write: r, points: sc.p, doubled: sc.d, loss: isLoss(r, sc), gain: sc.p - rowCost(r, mask) };
     });
     if (rollNo < ROLLS_PER_TURN) {
       const lv = levels(free);
@@ -143,5 +158,10 @@ const Advisor = (() => {
     return options(cells, dice, rollNo)[0] || null;
   }
 
-  return { advise, options };
+  // what a player's free rows can bring from now on, before a roll
+  function expected(cells) {
+    return STATE_VALUE[maskOf(ALL_ROWS.map((r) => r.id).filter((r) => !cells[r]))];
+  }
+
+  return { advise, options, expected };
 })();

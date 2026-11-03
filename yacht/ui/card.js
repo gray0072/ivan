@@ -2,7 +2,7 @@
 
 // Yacht — the player card (whose turn, their place, sums, how far from the leader, rows left), the
 // message line under the dice (the turn, the advice, what a second tap would write), the other moves
-// with what each brings and the dialog with all of them. Used by game.js.
+// with what each brings, the dialog with all of them and the one explaining them. Used by game.js.
 
 const Card = {
   render() {
@@ -67,6 +67,21 @@ const Card = {
       (o.aim ? '<span class="aim">' + esc(this.aimText(o)) + '</span>' : '') + '</td>' +
       '<td>' + esc((o.hold ? '≈' : '') + numText(Math.round(o.points))) + (o.doubled ? '<sup>×2</sup>' : '') + '</td>' +
       '<td class="' + (o.gain < 0 ? 'minus' : 'plus') + '"><b>' + esc(signed(Math.round(o.gain))) + '</b></td></tr>').join('');
+  },
+
+  // the Why this move dialog: where the player stands and the best moves taken apart
+  renderWhy(list) {
+    const cells = Turn.player().cells;
+    const now = totalOf(cells);
+    const ahead = Math.round(Advisor.expected(cells));
+    document.getElementById('whyNow').textContent = tr('Before this turn your free rows could bring about {n} more points, a final total of about {total}.', { n: numText(ahead), total: numText(now + ahead) });
+    document.getElementById('whyList').innerHTML = list.slice(0, WHY_MOVES).map((o, i) => {
+      const points = Math.round(o.points);
+      const all = ahead + Math.round(o.gain);
+      const params = { points: numText(points), rest: numText(all - points), total: numText(now + all), gain: signed(Math.round(o.gain)) };
+      const text = o.write ? tr('{points} now + about {rest} from the other rows: a final total of about {total}. Gain {gain}.', params) : tr('About {points} this turn + about {rest} from the other rows: a final total of about {total}. Gain {gain}.', params);
+      return '<li class="' + (i === 0 ? 'bestMove' : '') + '"><b>' + esc(this.moveText(o)) + '</b><span>' + esc(text) + '</span></li>';
+    }).join('');
   },
 
   messageText({ note, armed, advice, busy }) {

@@ -247,7 +247,8 @@ body[data-tex="marble"] {
 /* ---------- under the dice ---------- */
 #controls { display: flex; gap: 8px; flex: none; }
 #controls .btn { flex: 1; margin: 0; min-height: 42px; }
-#controls #undoBtn, #controls #movesBtn { flex: 0 1 auto; }
+#controls #undoBtn, #controls #movesBtn, #controls #whyBtn { flex: 0 1 auto; }
+#controls #whyBtn { min-width: 42px; padding-left: 0; padding-right: 0; font-weight: 700; }
 #msg {
   margin: 0;
   min-height: 2.6em;
@@ -494,6 +495,16 @@ body[data-tex="marble"] {
 #movesTable .plus { color: #8ef0b6; }
 #movesTable .minus { color: #ff9e9e; }
 #movesTable tr.bestMove td { background: rgba(255,209,102,0.14); }
+
+/* why this move */
+#whyList { list-style: none; margin: 8px 0; padding: 0; text-align: left; font-size: 14px; }
+#whyList li { padding: 6px 8px; border-top: 1px solid rgba(255,255,255,0.12); }
+#whyList li.bestMove { background: rgba(255,209,102,0.14); }
+#whyList b { display: block; }
+#whyList b::first-letter { text-transform: uppercase; }
+#whyList span { font-size: 12.5px; color: #dbe0e4; }
+#whyText { text-align: left; font-size: 13.5px; line-height: 1.4; color: #dbe0e4; }
+#whyText p { margin: 8px 0; }
 
 /* results and statistics */
 #overTable { width: 100%; border-collapse: collapse; margin: 8px 0; }

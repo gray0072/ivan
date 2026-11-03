@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#1f5b3f">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
 
@@ -35,6 +35,7 @@
         <button type="button" class="btn default" id="rollBtn"></button>
         <button type="button" class="btn secondary" id="undoBtn" hidden data-i18n>↩ Undo</button>
         <button type="button" class="btn secondary" id="movesBtn" hidden data-i18n>All moves</button>
+        <button type="button" class="btn secondary" id="whyBtn" hidden data-i18n-title="Why this move">?</button>
       </div>
       <p id="msg" role="status"></p>
       <div id="alts" hidden></div>
@@ -169,12 +170,26 @@
 
   <div id="movesPanel" class="panel" hidden>
     <h1 data-i18n>All moves</h1>
-    <p class="fine" data-i18n>Points: what goes on the sheet; for a roll, on average by the best moves to the end of the turn. Gain: how much that beats what this row usually brings in a game. The higher, the better; it looks at this turn only.</p>
+    <p class="fine" data-i18n>Points: what goes on the sheet; for a roll, on average by the best moves to the end of the turn. Gain: how much the move adds to the final total you can expect, or takes from it, with the best play to the end of the game. The higher, the better.</p>
     <table id="movesTable">
       <thead><tr><th class="mv" data-i18n>Move</th><th data-i18n>Points</th><th data-i18n>Gain</th></tr></thead>
       <tbody id="movesList"></tbody>
     </table>
     <div class="btnRow"><button type="button" class="btn default" id="movesCloseBtn" data-i18n>Close</button></div>
+  </div>
+
+  <div id="whyPanel" class="panel" hidden>
+    <h1 data-i18n>Why this move</h1>
+    <p class="fine" id="whyNow"></p>
+    <ul id="whyList"></ul>
+    <div id="whyText">
+      <p data-i18n>The moves are compared by what you can expect at the end of the game, not by the points of this turn. A move's gain is how much it raises that expectation or lowers it.</p>
+      <p data-i18n>A row can only be used once. Writing little in a row that often brings a lot, like Chance or Two pairs written after a first roll, loses what it could have brought later, so a move with more points can still be the worse one.</p>
+      <p data-i18n>A row is also a place for a bad turn. Giving up a hard row costs more than the few points it usually brings: the next bad turn will have to go into a dearer row, and a school row not closed costs −40.</p>
+      <p data-i18n>A bad roll has no good move: then every gain is below zero and the best move is the one that loses least.</p>
+      <p data-i18n>The calculation is exact for the highest average final total, with the best play to the end of the game. It does not look at the other players, so when you must catch up a riskier move can be right.</p>
+    </div>
+    <div class="btnRow"><button type="button" class="btn default" id="whyCloseBtn" data-i18n>Close</button></div>
   </div>
 
   <div id="confirmPanel" class="panel" hidden>
@@ -189,10 +204,11 @@
 
 <canvas id="fx"></canvas>
 
-<script src="constants.js?v=2"></script>
+<script src="constants.js?v=3"></script>
 <script src="data/rows.js?v=1"></script>
-<script src="data/lang-ru.js?v=2"></script>
-<script src="data/lang-sv.js?v=2"></script>
+<script src="data/state-values.js?v=1"></script>
+<script src="data/lang-ru.js?v=3"></script>
+<script src="data/lang-sv.js?v=3"></script>
 <script src="core/i18n.js?v=1"></script>
 <script src="core/utils.js?v=1"></script>
 <script src="core/events.js?v=1"></script>
@@ -203,17 +219,17 @@
 <script src="sim/state.js?v=1"></script>
 <script src="sim/scoring.js?v=1"></script>
 <script src="sim/turn.js?v=1"></script>
-<script src="sim/advisor.js?v=2"></script>
+<script src="sim/advisor.js?v=3"></script>
 <script src="sim/stats.js?v=1"></script>
 <script src="ui/sounds.js?v=1"></script>
 <script src="ui/fireworks.js?v=1"></script>
 <script src="ui/tabletop.js?v=1"></script>
 <script src="ui/dice.js?v=2"></script>
 <script src="ui/table.js?v=1"></script>
-<script src="ui/card.js?v=2"></script>
+<script src="ui/card.js?v=3"></script>
 <script src="ui/screens.js?v=1"></script>
 <script src="ui/groups.js?v=1"></script>
 <script src="ui/statsview.js?v=1"></script>
-<script src="game.js?v=2"></script>
+<script src="game.js?v=3"></script>
 </body>
 </html>

@@ -87,6 +87,7 @@ const Flow = {
     }
     document.getElementById('undoBtn').hidden = !Run.undo;
     document.getElementById('movesBtn').hidden = !moves;
+    document.getElementById('whyBtn').hidden = !moves;
     Card.alternatives(moves);
     Card.message({ note: this.note, armed: this.armed, advice, busy });
   },
@@ -240,6 +241,7 @@ const Flow = {
     if (Screens.top() === 'editor') { GroupEditor.readInputs(); GroupEditor.render(); }
     if (Screens.top() === 'statsPanel') StatsView.render();
     if (Screens.top() === 'movesPanel' && Flow.moves()) Card.renderMoves(Flow.moves());
+    if (Screens.top() === 'whyPanel' && Flow.moves()) Card.renderWhy(Flow.moves());
     if (Run) {
       Flow.render();
       if (Run.over) Screens.renderOver(standings(Run), Run.cheated);
@@ -326,6 +328,13 @@ const Flow = {
     Screens.open('movesPanel');
   });
   on('movesCloseBtn', () => Screens.back());
+  on('whyBtn', () => {
+    const list = Flow.moves();
+    if (!list) return;
+    Card.renderWhy(list);
+    Screens.open('whyPanel');
+  });
+  on('whyCloseBtn', () => Screens.back());
   on('tray', (e) => {
     const b = e.target.closest('button[data-die]');
     if (b) Flow.toggleDie(+b.dataset.die);

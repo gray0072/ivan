@@ -1,7 +1,6 @@
 'use strict';
 
-// Yacht — the tuning values: the rules' numbers, limits, timings, the worth of the rows for the
-// advice and the table's choices. Loaded before everything else.
+// Yacht — the tuning values: the rules' numbers, limits, timings and the table's choices. Loaded before everything else.
 
 const DICE_COUNT = 5;               // dice in a turn
 const ROLLS_PER_TURN = 3;           // rolls a player has in a turn
@@ -27,10 +26,7 @@ const ROLL_TUMBLE_MS = 620;
 const DIE_SPIN_TURNS = 2;           // whole turns a die makes on each axis on its way out, at least
 
 const HINT_ALTERNATIVES = 2;         // other moves shown under the best one on Easy; the rest are behind All moves
-
-// What a row is worth on average in a game, in points (found with a bot playing the advice): what
-// giving it up costs when the advice compares rows. Not a rule, only used by sim/advisor.js.
-const ROW_WORTH = { g: 1, c: 12, bs: 9, ls: 4, fh32: 15, fh23: 13, pp: 30, t3: 22, ch: 42, s6: -4, s5: -3, s4: -3, s3: -4, s2: -4, s1: -4 };
+const WHY_MOVES = 4;                 // moves taken apart in the Why this move dialog
 
 // The table top: the colours to pick from (key, colour) and the textures (styles.css, body[data-tex])
 const TABLE_COLORS = [
