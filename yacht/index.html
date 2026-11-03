@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="The dice game Yacht (Yahtzee, dice poker) for up to 10 players on one device: a leather cup, your own table, saved groups and statistics.">
+<title>Yacht</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
+<link rel="manifest" href="manifest.webmanifest?v=1">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
+<meta name="theme-color" content="#1f5b3f">
+<link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+
+<div id="game" hidden>
+  <div id="topbar">
+    <span id="roundText"></span>
+    <span class="grow"></span>
+    <button type="button" class="round" id="hudStatsBtn" data-i18n-title="Statistics">📊</button>
+    <button type="button" class="round" id="soundBtn" data-i18n-title="Sound">🔊</button>
+    <button type="button" class="round" id="pauseBtn" data-i18n-title="Pause (Esc)">☰</button>
+  </div>
+  <div id="play">
+    <div id="left">
+      <div id="card"></div>
+      <div id="tray">
+        <div class="rail"></div>
+        <button type="button" id="cup" data-i18n-title="Roll"><img src="art/cup.svg?v=1" alt="" draggable="false"></button>
+      </div>
+      <div id="controls">
+        <button type="button" class="btn default" id="rollBtn"></button>
+        <button type="button" class="btn secondary" id="undoBtn" hidden data-i18n>↩ Undo</button>
+      </div>
+      <p id="msg" role="status"></p>
+    </div>
+    <div id="sheetWrap"><table id="sheet"></table></div>
+  </div>
+</div>
+
+<div id="banner"></div>
+
+<div id="overlay" hidden>
+  <div id="menu" class="panel" hidden>
+    <div class="langPick" role="group" aria-label="Language"></div>
+    <img class="logoCup" src="art/cup.svg?v=1" alt="">
+    <h1 class="logo" data-i18n>Yacht</h1>
+    <p class="tagline" data-i18n>Five dice, a leather cup, three rolls and a sheet to fill. The dice game for up to 10 players on one device.</p>
+
+    <p class="label" id="groupsLabel" data-i18n>Group of players</p>
+    <div id="groupList"></div>
+    <div class="btnRow"><button type="button" class="btn secondary" id="newGroupBtn" data-i18n>+ New group</button></div>
+
+    <div id="groupActions" hidden>
+      <div id="continueBox" hidden>
+        <button type="button" class="btn default big" id="continueBtn" data-i18n>Continue</button>
+        <p class="fine" id="continueInfo"></p>
+      </div>
+      <div class="btnRow">
+        <button type="button" class="btn default" id="newGameBtn" data-i18n>New Game</button>
+        <button type="button" class="btn secondary" id="editGroupBtn" data-i18n>Edit</button>
+        <button type="button" class="btn secondary" id="statsBtn" data-i18n>Statistics</button>
+      </div>
+    </div>
+
+    <p class="label" data-i18n>Difficulty</p>
+    <div class="btnRow diffPick"></div>
+    <p class="fine diffText"></p>
+
+    <div class="btnRow small">
+      <span data-i18n>Sound</span>
+      <button type="button" class="btn toggle" data-sound="on" data-i18n>On</button>
+      <button type="button" class="btn toggle" data-sound="off" data-i18n>Off</button>
+    </div>
+
+    <p class="label" data-i18n>Table</p>
+    <div class="tablePick"></div>
+
+    <div class="btnRow small">
+      <button type="button" class="btn secondary" id="helpBtn" data-i18n>How to play</button>
+    </div>
+    <div id="help" hidden>
+      <p data-i18n>Each player in turn rolls five dice up to three times: tap the dice you want to keep, then roll the others. After any roll write the dice into one free row of your column, even if it scores nothing. After 15 rounds the highest total wins.</p>
+      <p data-i18n><b>Written after the first roll, a combination counts double.</b></p>
+      <table id="helpRows"></table>
+      <p data-i18n><b>Phone and tablet:</b> the game goes fullscreen. Tap the cup or Roll, tap dice to hold them and tap a free row to write. The sheet scrolls with a finger.</p>
+      <p data-i18n><b>Keyboard:</b> Space rolls, keys 1–5 hold or release a die, Esc pauses.</p>
+    </div>
+  </div>
+
+  <div id="editor" class="panel" hidden>
+    <h1 id="editorTitle"></h1>
+    <label class="field"><span data-i18n>Group name</span><input type="text" id="editName" maxlength="24" autocomplete="off"></label>
+    <p class="label" data-i18n>Players, in turn order</p>
+    <ol id="editPlayers"></ol>
+    <div class="btnRow"><button type="button" class="btn secondary" id="addPlayerBtn"></button></div>
+    <p class="fine" id="editNote" hidden data-i18n>This group has an unfinished game: changes apply from the next game.</p>
+    <p class="error" id="editError" role="alert"></p>
+    <div class="btnRow">
+      <button type="button" class="btn default" id="saveGroupBtn" data-i18n>Save</button>
+      <button type="button" class="btn secondary" id="cancelGroupBtn" data-i18n>Cancel</button>
+    </div>
+    <div class="btnRow small"><button type="button" class="btn danger" id="deleteGroupBtn" data-i18n>Delete group</button></div>
+  </div>
+
+  <div id="pausePanel" class="panel" hidden>
+    <h1 data-i18n>Paused</h1>
+    <div class="btnCol">
+      <button type="button" class="btn default" id="resumeBtn" data-i18n>Continue</button>
+      <button type="button" class="btn secondary" id="pauseStatsBtn" data-i18n>Statistics</button>
+      <button type="button" class="btn secondary" id="pauseNewBtn" data-i18n>New Game</button>
+      <button type="button" class="btn secondary" id="pauseMenuBtn" data-i18n>Main Menu</button>
+    </div>
+    <div class="btnRow small">
+      <span data-i18n>Sound</span>
+      <button type="button" class="btn toggle" data-sound="on" data-i18n>On</button>
+      <button type="button" class="btn toggle" data-sound="off" data-i18n>Off</button>
+    </div>
+    <p class="label" data-i18n>Table</p>
+    <div class="tablePick"></div>
+  </div>
+
+  <div id="overPanel" class="panel" hidden>
+    <div class="langPick" role="group" aria-label="Language"></div>
+    <h1 id="overTitle"></h1>
+    <table id="overTable">
+      <thead><tr><th data-i18n>Place</th><th class="nm" data-i18n>Player</th><th data-i18n>Game</th><th data-i18n>School</th><th data-i18n>Total</th></tr></thead>
+      <tbody id="overList"></tbody>
+    </table>
+    <p class="fine" id="overCheat" hidden data-i18n>Cheats were used: this game is not in the statistics.</p>
+    <p class="label" data-i18n>Difficulty</p>
+    <div class="btnRow diffPick"></div>
+    <p class="fine diffText"></p>
+    <div class="btnRow">
+      <button type="button" class="btn default" id="againBtn" data-i18n>Play Again</button>
+      <button type="button" class="btn secondary" id="overSheetBtn" data-i18n>View the sheet</button>
+    </div>
+    <div class="btnRow">
+      <button type="button" class="btn secondary" id="overStatsBtn" data-i18n>Statistics</button>
+      <button type="button" class="btn secondary" id="overMenuBtn" data-i18n>Main Menu</button>
+    </div>
+    <div class="btnRow small">
+      <span data-i18n>Sound</span>
+      <button type="button" class="btn toggle" data-sound="on" data-i18n>On</button>
+      <button type="button" class="btn toggle" data-sound="off" data-i18n>Off</button>
+    </div>
+  </div>
+
+  <div id="statsPanel" class="panel wide" hidden>
+    <h1 id="statsTitle"></h1>
+    <p class="fine" id="statsCount"></p>
+    <p class="fine" id="statsRunning" hidden data-i18n>The game in progress is not counted yet.</p>
+    <div class="btnRow small" id="statsTabs">
+      <button type="button" class="btn toggle" data-tab="players" data-i18n>Players</button>
+      <button type="button" class="btn toggle" data-tab="rows" data-i18n>Rows</button>
+      <button type="button" class="btn toggle" data-tab="games" data-i18n>Games</button>
+    </div>
+    <div id="statsBody"></div>
+    <div class="btnRow">
+      <button type="button" class="btn default" id="statsCloseBtn" data-i18n>Close</button>
+    </div>
+    <div class="btnRow small"><button type="button" class="btn danger" id="statsClearBtn" data-i18n>Clear statistics</button></div>
+  </div>
+
+  <div id="confirmPanel" class="panel" hidden>
+    <h1 id="confirmTitle"></h1>
+    <p id="confirmText"></p>
+    <div class="btnRow">
+      <button type="button" class="btn default" id="confirmYes"></button>
+      <button type="button" class="btn secondary" id="confirmNo" data-i18n>Cancel</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+
+<script src="constants.js?v=1"></script>
+<script src="data/rows.js?v=1"></script>
+<script src="data/lang-ru.js?v=1"></script>
+<script src="data/lang-sv.js?v=1"></script>
+<script src="core/i18n.js?v=1"></script>
+<script src="core/utils.js?v=1"></script>
+<script src="core/events.js?v=1"></script>
+<script src="core/audio.js?v=1"></script>
+<script src="core/groups.js?v=1"></script>
+<script src="core/cursor.js?v=1"></script>
+<script src="core/update.js?v=1"></script>
+<script src="sim/state.js?v=1"></script>
+<script src="sim/scoring.js?v=1"></script>
+<script src="sim/turn.js?v=1"></script>
+<script src="sim/advisor.js?v=1"></script>
+<script src="sim/stats.js?v=1"></script>
+<script src="ui/sounds.js?v=1"></script>
+<script src="ui/fireworks.js?v=1"></script>
+<script src="ui/tabletop.js?v=1"></script>
+<script src="ui/dice.js?v=1"></script>
+<script src="ui/table.js?v=1"></script>
+<script src="ui/card.js?v=1"></script>
+<script src="ui/screens.js?v=1"></script>
+<script src="ui/groups.js?v=1"></script>
+<script src="ui/statsview.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body>
+</html>

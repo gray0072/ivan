@@ -58,7 +58,12 @@
       <p>Stadsbyggarspel: bygg vägar, hus, affärer och fabriker, håll invånarna glada och låt ett torp växa till en metropol — se upp för bränder och vårflod.</p>
       <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Spela</b></a> · <a href="city-builder/">Källkod</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/yacht/"><img src="yacht/screenshot.png" alt="Skärmbild från Yatzy"></a>
+      <h3><img src="yacht/icon.svg" alt="" width="28" height="28" align="center"> Yatzy</h3>
+      <p>Tärningsspelet som också kallas Yacht och tärningspoker, för upp till 10 spelare på en enhet: läderbägare, sparade spelargrupper, statistik och ett bord efter eget val.</p>
+      <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Spela</b></a> · <a href="yacht/">Källkod</a></p>
+    </td>
   </tr>
 </table>
 
@@ -101,7 +106,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # specifikation och regler för hela repot
 ├── AGENTS.md                # instruktioner för AI-agenter (CLAUDE.md pekar hit)
-└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder
+└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht
     ├── SPEC.md              # spelets specifikation
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # koden, ordnad efter roll

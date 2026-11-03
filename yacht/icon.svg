@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4a2712"/>
+      <stop offset="0.4" stop-color="#b8763c"/>
+      <stop offset="1" stop-color="#3a1e0d"/>
+    </linearGradient>
+    <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="#1f5b3f"/>
+    <!-- the cup, tipped over its dice -->
+    <g transform="rotate(-38 256 200)">
+      <path d="M150 62 L168 300 A88 20 0 0 0 344 300 L362 62 Z" fill="url(#cup)"/>
+      <path d="M160 200 A96 20 0 0 0 352 200" fill="none" stroke="#f0dcae" stroke-width="7" stroke-dasharray="17 13" stroke-linecap="round"/>
+      <path d="M256 92 L256 288" stroke="#f0dcae" stroke-width="7" stroke-dasharray="17 13" stroke-linecap="round"/>
+      <ellipse cx="256" cy="62" rx="106" ry="26" fill="#8a5428"/>
+      <ellipse cx="256" cy="64" rx="90" ry="18" fill="#1d0e06"/>
+    </g>
+    <!-- two dice in front of it -->
+    <g transform="rotate(-12 170 382)">
+      <rect x="92" y="304" width="156" height="156" rx="28" fill="#fff8e7"/>
+      <g fill="#1b1b22"><circle cx="130" cy="342" r="16"/><circle cx="210" cy="342" r="16"/><circle cx="170" cy="382" r="16"/><circle cx="130" cy="422" r="16"/><circle cx="210" cy="422" r="16"/></g>
+    </g>
+    <g transform="rotate(14 362 376)">
+      <rect x="292" y="306" width="140" height="140" rx="26" fill="#fff8e7"/>
+      <circle cx="362" cy="376" r="24" fill="#c9202e"/>
+    </g>
+  </g>
+</svg>

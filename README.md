@@ -58,7 +58,12 @@
       <p>City-building game: lay roads, build houses, shops and factories, keep the residents happy and grow a hamlet into a metropolis — mind the fires and the spring floods.</p>
       <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Play</b></a> · <a href="city-builder/">Source</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/yacht/"><img src="yacht/screenshot.png" alt="Yacht screenshot"></a>
+      <h3><img src="yacht/icon.svg" alt="" width="28" height="28" align="center"> Yacht</h3>
+      <p>The dice game also known as Yahtzee and dice poker, for up to 10 players on one device: a leather cup, saved groups of players, statistics and a table of your choice.</p>
+      <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Play</b></a> · <a href="yacht/">Source</a></p>
+    </td>
   </tr>
 </table>
 
@@ -101,7 +106,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # repo-wide spec and conventions
 ├── AGENTS.md                # instructions for AI coding agents (CLAUDE.md points here)
-└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder
+└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht
     ├── SPEC.md              # spec of this game
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # the code, by role

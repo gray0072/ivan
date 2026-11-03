@@ -58,7 +58,12 @@
       <p>Градостроитель: прокладывай дороги, строй дома, магазины и фабрики, заботься о жителях и преврати хутор в мегаполис — берегись пожаров и весенних наводнений.</p>
       <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Играть</b></a> · <a href="city-builder/">Исходники</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/yacht/"><img src="yacht/screenshot.png" alt="Скриншот игры Яхт"></a>
+      <h3><img src="yacht/icon.svg" alt="" width="28" height="28" align="center"> Яхт</h3>
+      <p>Яхт, он же Yahtzee и покер на костях, для компании до 10 игроков на одном устройстве: кожаный стакан, сохранённые группы игроков, статистика и стол на выбор.</p>
+      <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Играть</b></a> · <a href="yacht/">Исходники</a></p>
+    </td>
   </tr>
 </table>
 
@@ -101,7 +106,7 @@ npx serve .        # или просто открой любой index.html в �
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # спецификация и правила всего репозитория
 ├── AGENTS.md                # инструкции для AI-агентов (CLAUDE.md ссылается сюда)
-└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder
+└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht
     ├── SPEC.md              # спецификация этой игры
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # код, разложенный по ролям

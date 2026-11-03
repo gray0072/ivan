@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6a3a1c"/>
+      <stop offset="0.4" stop-color="#c98443"/>
+      <stop offset="1" stop-color="#5a3016"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#1f5b3f"/>
+  <!-- the artwork stays inside the circle of radius 170 round the middle -->
+  <g transform="translate(256 256) scale(0.6) translate(-256 -256)">
+    <g transform="rotate(-38 256 200)">
+      <path d="M150 62 L168 300 A88 20 0 0 0 344 300 L362 62 Z" fill="url(#cup)"/>
+      <path d="M160 200 A96 20 0 0 0 352 200" fill="none" stroke="#f0dcae" stroke-width="9" stroke-dasharray="20 15" stroke-linecap="round"/>
+      <ellipse cx="256" cy="62" rx="106" ry="26" fill="#a0632f"/>
+      <ellipse cx="256" cy="64" rx="90" ry="18" fill="#2b1509"/>
+    </g>
+    <g transform="rotate(-12 170 382)">
+      <rect x="92" y="304" width="156" height="156" rx="28" fill="#fff8e7"/>
+      <g fill="#1b1b22"><circle cx="130" cy="342" r="17"/><circle cx="210" cy="342" r="17"/><circle cx="170" cy="382" r="17"/><circle cx="130" cy="422" r="17"/><circle cx="210" cy="422" r="17"/></g>
+    </g>
+    <g transform="rotate(14 362 376)">
+      <rect x="292" y="306" width="140" height="140" rx="26" fill="#fff8e7"/>
+      <circle cx="362" cy="376" r="26" fill="#c9202e"/>
+    </g>
+  </g>
+</svg>

@@ -39,6 +39,10 @@ Cockpit-view flight simulator and airline career (three.js, vendored): it starts
 
 Isometric city-building game for kids (a simple SimCity): roads, houses, shops, factories and parks on a random map with a river, a lake and forests; residents, jobs, happiness and taxes; houses that grow into apartment blocks; milestones from Hamlet to Metropolis that unlock new buildings; fires, spring floods and bankruptcy; the city saved in the browser; playable in English, Russian or Swedish. Full spec: [`city-builder/SPEC.md`](city-builder/SPEC.md).
 
+### yacht
+
+The dice game Yacht (Yahtzee, dice poker) by the rules and score sheet of a family's paper game, for 1–10 players on one device: a leather cup and 3D dice on a table of your choice of colour and texture, saved groups of players, statistics, hints on three levels; playable in English, Russian or Swedish. Full spec: [`yacht/SPEC.md`](yacht/SPEC.md).
+
 ## Project structure
 
 ```
@@ -139,6 +143,20 @@ Isometric city-building game for kids (a simple SimCity): roads, houses, shops, 
 │   ├── art/                  # flag-gb / flag-ru / flag-se.svg (the language switcher)
 │   ├── render/               # sprites (procedural isometric drawings), render (camera, ground, depth-sorted objects, effects)
 │   ├── ui/                   # screens, hud, toolbar, info (the building card), budget, sounds, fireworks
+│   ├── README.md, README_RU.md, README_SV.md
+│   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
+│   ├── manifest.webmanifest  # PWA manifest
+│   └── screenshot.png
+├── yacht/
+│   ├── SPEC.md               # the game's own spec
+│   ├── index.html            # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── constants.js, game.js # tuning, the flow (screens, buttons, keys, saving, cheats)
+│   ├── data/                 # rows (the rows of the sheet), lang-ru / lang-sv (translations)
+│   ├── core/                 # i18n, utils, events, audio, groups (the saved groups and settings), cursor, update
+│   ├── sim/                  # state, scoring, turn (rolling, holding, writing, undo), advisor (the best move), stats
+│   ├── art/                  # cup.svg (the leather cup), flag-gb / flag-ru / flag-se.svg (the language switcher)
+│   ├── ui/                   # dice (the cup and the 3D dice), table (the score sheet), card, screens, groups (the editor), statsview, tabletop (the table's colour and texture), sounds, fireworks
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest
