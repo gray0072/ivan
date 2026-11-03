@@ -26,6 +26,8 @@ const ROLL_TIP_MS = 180;
 const ROLL_TUMBLE_MS = 620;
 const DIE_SPIN_TURNS = 2;           // whole turns a die makes on each axis on its way out, at least
 
+const HINT_ALTERNATIVES = 2;         // other moves shown under the best one on Easy; the rest are behind All moves
+
 // What a row is worth on average in a game, in points (found with a bot playing the advice): what
 // giving it up costs when the advice compares rows. Not a rule, only used by sim/advisor.js.
 const ROW_WORTH = { g: 1, c: 12, bs: 9, ls: 4, fh32: 15, fh23: 13, pp: 30, t3: 22, ch: 42, s6: -4, s5: -3, s4: -3, s3: -4, s2: -4, s1: -4 };

@@ -1,7 +1,8 @@
 'use strict';
 
-// Yacht — the player card (whose turn, their place, sums, how far from the leader, rows left) and the
-// message line under the dice (the turn, the advice, what a second tap would write). Used by game.js.
+// Yacht — the player card (whose turn, their place, sums, how far from the leader, rows left), the
+// message line under the dice (the turn, the advice, what a second tap would write), the other moves
+// with what each brings and the dialog with all of them. Used by game.js.
 
 const Card = {
   render() {
@@ -33,6 +34,41 @@ const Card = {
     box.textContent = this.messageText(state);
   },
 
+  // a move in words, to go inside a sentence: write 30 in 3:0, give up G, keep 5 5 5 and roll, roll all five
+  moveText(o) {
+    if (o.write) {
+      const row = ROW_BY_ID[o.write];
+      if (!row.face && o.loss) return tr('give up {row}', { row: rowLabel(row) });
+      return tr('write {value} in {row}', { value: cellText(row, { p: o.points }), row: rowLabel(row) });
+    }
+    return o.hold.length ? tr('keep {dice} and roll', { dice: o.hold.join(' ') }) : tr('roll all five');
+  },
+  // what it brings: gain +8, or 33 on average, gain +12
+  payoffText(o) {
+    const gain = signed(Math.round(o.gain));
+    return o.write ? tr('gain {gain}', { gain }) : tr('{points} on average, gain {gain}', { points: numText(Math.round(o.points)), gain });
+  },
+  aimText(o) {
+    return o.aim ? tr('Most often {row}: about {pct}%', { row: rowLabel(ROW_BY_ID[o.aim]), pct: Math.round(o.chance * 100) }) : '';
+  },
+
+  // the other moves under the message on Easy
+  alternatives(list) {
+    const box = document.getElementById('alts');
+    box.hidden = Run.difficulty !== 'easy' || Run.over;
+    box.innerHTML = (list || []).slice(1, 1 + HINT_ALTERNATIVES).map((o) =>
+      '<div>' + esc(tr('Or: {move}, {payoff}', { move: this.moveText(o), payoff: this.payoffText(o) })) + '</div>').join('');
+  },
+
+  // the dialog with every move
+  renderMoves(list) {
+    document.getElementById('movesList').innerHTML = list.map((o, i) =>
+      '<tr class="' + (i === 0 ? 'bestMove' : '') + '"><td class="mv">' + esc(this.moveText(o)) +
+      (o.aim ? '<span class="aim">' + esc(this.aimText(o)) + '</span>' : '') + '</td>' +
+      '<td>' + esc((o.hold ? '≈' : '') + numText(Math.round(o.points))) + (o.doubled ? '<sup>×2</sup>' : '') + '</td>' +
+      '<td class="' + (o.gain < 0 ? 'minus' : 'plus') + '"><b>' + esc(signed(Math.round(o.gain))) + '</b></td></tr>').join('');
+  },
+
   messageText({ note, armed, advice, busy }) {
     if (armed) {
       const row = ROW_BY_ID[armed];
@@ -56,12 +92,7 @@ const Card = {
   },
 
   adviceText(a) {
-    if (a.write) {
-      const row = ROW_BY_ID[a.write];
-      return tr('Best move: write {value} in {row}.', { value: cellText(row, rowScore(a.write, Run.dice, Run.rollNo)), row: rowLabel(row) });
-    }
-    const aim = a.aim ? tr('Aiming at {row}: about {pct}%.', { row: rowLabel(ROW_BY_ID[a.aim]), pct: Math.round(a.chance * 100) }) : '';
-    if (!a.hold.length) return (tr('Best move: roll all five.') + ' ' + aim).trim();
-    return (tr('Best move: keep {dice} and roll.', { dice: a.hold.join(' ') }) + ' ' + aim).trim();
+    const best = tr('Best move: {move}, {payoff}.', { move: this.moveText(a), payoff: this.payoffText(a) });
+    return a.aim ? best + ' ' + this.aimText(a) + '.' : best;
   }
 };

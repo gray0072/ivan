@@ -57,15 +57,17 @@ const Flow = {
   },
 
   // ---------- drawing ----------
-  advice() {
+  // every move with what it brings, the best first (Easy only)
+  moves() {
     if (!Run || Run.over || Run.difficulty !== 'easy' || Run.rollNo === 0) return null;
-    if (!this.adviceCache) this.adviceCache = Advisor.advise(Turn.player().cells, Run.dice, Run.rollNo);
+    if (!this.adviceCache) this.adviceCache = Advisor.options(Turn.player().cells, Run.dice, Run.rollNo);
     return this.adviceCache;
   },
   render() {
     if (!Run) return;
     const busy = DiceView.isBusy();
-    const advice = busy ? null : this.advice();
+    const moves = busy ? null : this.moves();
+    const advice = moves && moves[0];
     document.getElementById('roundText').textContent = Run.over ? tr('The game is over') : tr('Round {n} / {all}', { n: Turn.round(), all: ALL_ROWS.length });
     if (!Run.over) Card.render();
     document.getElementById('card').hidden = Run.over;
@@ -84,6 +86,8 @@ const Flow = {
       rollBtn.disabled = busy || !Turn.canRoll();
     }
     document.getElementById('undoBtn').hidden = !Run.undo;
+    document.getElementById('movesBtn').hidden = !moves;
+    Card.alternatives(moves);
     Card.message({ note: this.note, armed: this.armed, advice, busy });
   },
   changed() {
@@ -235,6 +239,7 @@ const Flow = {
     Tabletop.render();
     if (Screens.top() === 'editor') { GroupEditor.readInputs(); GroupEditor.render(); }
     if (Screens.top() === 'statsPanel') StatsView.render();
+    if (Screens.top() === 'movesPanel' && Flow.moves()) Card.renderMoves(Flow.moves());
     if (Run) {
       Flow.render();
       if (Run.over) Screens.renderOver(standings(Run), Run.cheated);
@@ -314,6 +319,13 @@ const Flow = {
   on('rollBtn', () => Flow.roll());
   on('cup', () => Flow.roll());
   on('undoBtn', () => Flow.undo());
+  on('movesBtn', () => {
+    const list = Flow.moves();
+    if (!list) return;
+    Card.renderMoves(list);
+    Screens.open('movesPanel');
+  });
+  on('movesCloseBtn', () => Screens.back());
   on('tray', (e) => {
     const b = e.target.closest('button[data-die]');
     if (b) Flow.toggleDie(+b.dataset.die);

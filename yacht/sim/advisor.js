@@ -1,6 +1,6 @@
 'use strict';
 
-// Yacht — the best move, shown on Easy: an exact calculation over the 252 sets of five dice. For
+// Yacht — the moves and what each brings, shown on Easy: an exact calculation over the 252 sets of five dice. For
 // each set and rolls left, the best of writing now or holding some dice and rolling, where writing
 // is worth the row's points minus ROW_WORTH (what giving the row up costs). It looks at one turn
 // only, so it is good advice, not perfect play. Read by ui/card.js and ui/table.js; has no state of the game.
@@ -52,15 +52,17 @@ const Advisor = (() => {
   }
   const SET_HOLDS = SETS.map((s) => holdsOf(s.dice));
 
-  // writing a set into the best free row: { value, row } for each set, for a first roll or a later one
-  function writeTable(cells, free, firstRoll) {
+  // writing a set into the best free row: { value, row, points, scores } for each set, for a first
+  // roll or a later one; `scores` is false when that row would be given up or not closed
+  function writeTable(free, firstRoll) {
     return SETS.map((s) => {
-      let best = -Infinity, row = null;
+      let best = -Infinity, row = null, score = null;
       for (const r of free) {
-        const v = rowScore(r, s.dice, firstRoll ? 1 : 2).p - ROW_WORTH[r];
-        if (v > best) { best = v; row = r; }
+        const sc = rowScore(r, s.dice, firstRoll ? 1 : 2);
+        const v = sc.p - ROW_WORTH[r];
+        if (v > best) { best = v; row = r; score = sc; }
       }
-      return { value: best, row };
+      return { value: best, row, points: score.p, scores: !isLoss(row, score) };
     });
   }
 
@@ -70,10 +72,12 @@ const Advisor = (() => {
     return v;
   }
 
-  // the policy after this roll: for each set the value, and either the row or the kept dice
-  function levels(cells, free) {
-    const later = writeTable(cells, free, false);
+  // the policy after a roll: for each set the value and the points it ends in, and either the row or
+  // the kept dice
+  function levels(free) {
+    const later = writeTable(free, false);
     const v0 = later.map((w) => w.value);
+    const p0 = later.map((w) => w.points);
     const lvl1 = SETS.map((s, i) => {
       let best = later[i].value, hold = null;
       for (const key of SET_HOLDS[i]) {
@@ -81,24 +85,25 @@ const Advisor = (() => {
         const v = holdValue(key, v0);
         if (v > best + 1e-9) { best = v; hold = key; }
       }
-      return { value: best, row: hold === null ? later[i].row : null, hold };
+      return { value: best, row: hold === null ? later[i].row : null, hold, points: hold === null ? p0[i] : holdValue(hold, p0) };
     });
-    return { later, v0, lvl1, v1: lvl1.map((e) => e.value) };
+    return { later, v0, p0, lvl1, v1: lvl1.map((e) => e.value), p1: lvl1.map((e) => e.points) };
   }
 
   // which row a kept set most likely scores in, and how likely: follows the best moves to the end;
   // an end that gives a row up is no aim
   function aim(key, rollsAfter, lv) {
     const chance = {};
-    const add = (row, set, w) => {
-      if (!isLoss(row, rowScore(row, SETS[set].dice, 2))) chance[row] = (chance[row] || 0) + w;
+    const add = (set, w) => {
+      const e = lv.later[set];
+      if (e.scores) chance[e.row] = (chance[e.row] || 0) + w;
     };
     for (const n of HOLDS[key].next) {
-      if (rollsAfter === 0) add(lv.later[n.set].row, n.set, n.weight);
+      if (rollsAfter === 0) add(n.set, n.weight);
       else {
         const e = lv.lvl1[n.set];
-        if (e.row) add(e.row, n.set, n.weight);
-        else for (const m of HOLDS[e.hold].next) add(lv.later[m.set].row, m.set, n.weight * m.weight);
+        if (e.row) add(n.set, n.weight);
+        else for (const m of HOLDS[e.hold].next) add(m.set, n.weight * m.weight);
       }
     }
     let best = null;
@@ -106,27 +111,37 @@ const Advisor = (() => {
     return { row: best, chance: best ? chance[best] : 0 };
   }
 
-  // The advice for a player's dice after their roll number rollNo (1–3):
-  //   { write: rowId } or { hold: [faces], aim: rowId, chance: 0..1 }
-  function advise(cells, dice, rollNo) {
+  // Every move a player has after their roll number rollNo (1–3), the best first:
+  //   { write: rowId, points, doubled, loss, gain } — writing into a free row, or
+  //   { hold: [faces], points, gain, aim: rowId, chance: 0..1 } — keeping these dice and rolling.
+  // `points` is what goes on the sheet (for a roll: on average, by the best moves to the end of the
+  // turn); `gain` is how much that beats what the row usually brings (ROW_WORTH), the number the
+  // moves are compared by.
+  function options(cells, dice, rollNo) {
     const free = ALL_ROWS.map((r) => r.id).filter((r) => !cells[r]);
-    if (!free.length) return null;
-    const i = SET_INDEX[keyOf(dice)];
-    const lv = levels(cells, free);
-    const now = writeTable(cells, free, rollNo === 1)[i];
-    if (rollNo >= ROLLS_PER_TURN) return { write: now.row };
-    const rollsAfter = ROLLS_PER_TURN - rollNo - 1;
-    const values = rollsAfter === 0 ? lv.v0 : lv.v1;
-    let best = now.value, hold = null;
-    for (const key of SET_HOLDS[i]) {
-      if (key.length === DICE_COUNT) continue;
-      const v = holdValue(key, values);
-      if (v > best + 1e-9) { best = v; hold = key; }
+    if (!free.length) return [];
+    const list = free.map((r) => {
+      const sc = rowScore(r, dice, rollNo);
+      return { write: r, points: sc.p, doubled: sc.d, loss: isLoss(r, sc), gain: sc.p - ROW_WORTH[r] };
+    });
+    if (rollNo < ROLLS_PER_TURN) {
+      const lv = levels(free);
+      const rollsAfter = ROLLS_PER_TURN - rollNo - 1;
+      const values = rollsAfter === 0 ? lv.v0 : lv.v1;
+      const points = rollsAfter === 0 ? lv.p0 : lv.p1;
+      for (const key of SET_HOLDS[SET_INDEX[keyOf(dice)]]) {
+        if (key.length === DICE_COUNT) continue;
+        const a = aim(key, rollsAfter, lv);
+        list.push({ hold: key.split('').map(Number), points: holdValue(key, points), gain: holdValue(key, values), aim: a.row, chance: a.chance });
+      }
     }
-    if (hold === null) return { write: now.row };
-    const a = aim(hold, rollsAfter, lv);
-    return { hold: hold.split('').map(Number), aim: a.row, chance: a.chance };
+    return list.sort((x, y) => y.gain - x.gain);
   }
 
-  return { advise };
+  // The best move
+  function advise(cells, dice, rollNo) {
+    return options(cells, dice, rollNo)[0] || null;
+  }
+
+  return { advise, options };
 })();

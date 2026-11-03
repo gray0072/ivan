@@ -63,7 +63,7 @@ The game ends when every player has filled all 15 rows. The result goes into the
 
 The three levels change only the help, never the rules. The level is per game; it is chosen on the start screen and on the game-over dialog, and remembered.
 
-- **Easy:** free rows show what the current dice would score; the best move is shown: which dice to hold (marked on the dice), or which row to write in (marked in the table), with a line saying what it aims for and how likely that is. 
+- **Easy:** free rows show what the current dice would score; the best move is shown: which dice to hold (marked on the dice), or which row to write in (marked in the table), with what it brings. Under it the next `HINT_ALTERNATIVES` (2) moves, and **All moves** opens a dialog with every move the player has: each free row and each set of dice to keep. Each has its **points** (what goes on the sheet; for a roll, on average by the best moves to the end of the turn), its **gain** (how much that beats what the row usually brings, `ROW_WORTH`: the number the moves are ranked by), and for a roll the row it most often scores in, with the chance. The smallest phones and phones on their side have only the best move and All moves.
 - **Medium:** free rows show what the current dice would score. No advice.
 - **Hard:** no scores shown in free rows. The game still counts the points when a row is tapped.
 
@@ -71,7 +71,7 @@ On every level a tap on a row's label explains the row in the message line.
 
 On all levels, writing `—` or `−40` asks for a second tap on the same row (the row is marked and the message line says what it would write), so a slip cannot cost a row. On Hard the second tap is asked for every row, so it does not give away what the row would score.
 
-**The advice** (`sim/advisor.js`) is an exact calculation over the 252 sets of five dice: for each set and rolls left, the best of writing now or holding some dice and rolling, where writing is worth the row's points minus `ROW_WORTH[row]`, the row's average value in a game (what giving it up costs). It looks at one turn only, and it is not perfect play.
+**The advice** (`sim/advisor.js`, `Advisor.options`) is an exact calculation over the 252 sets of five dice: for each set and rolls left, the best of writing now or holding some dice and rolling, where writing is worth the row's points minus `ROW_WORTH[row]`, the row's average value in a game (what giving it up costs). It looks at one turn only, and it is not perfect play.
 
 ## Screens
 
@@ -83,6 +83,7 @@ On all levels, writing `—` or `−40` asks for a second tap on the same row (t
   - **Score table:** the rows of the paper sheet, a column per player, the current one highlighted and scrolled into view; the labels column stays while scrolling sideways. Free rows of the current player are buttons, with the possible score on Easy and Medium; doubled scores are marked `×2`.
   - In portrait (a phone, a tablet) these stack and the sheet scrolls by itself; in landscape (a desktop, a tablet, a phone on its side) the dice and the card are on the left, the sheet on the right. Screens of 600 × 600 px and up get the big dice; small phones and phones on their side a smaller table, so the sheet keeps its room. On touch screens the sheet's rows are taller, for a finger.
   - **Undo:** after a row is written, an **↩ Undo** button stays until the next player rolls, and takes the row and the dice back.
+- **All moves dialog** (Easy, after a roll, the button next to Roll): see Difficulty; what points and gain mean, then the moves, the best first and marked. It only shows them; Close goes back to the turn.
 - **Pause dialog:** Continue (default), Statistics, New Game (asks first, the unfinished game is not counted), Main Menu (the game stays saved), Sound On / Off, the table's colour and texture.
 - **Game-over dialog:** the places with names and totals, a line for the winner, the difficulty toggles (pre-selected), **Play Again**, Statistics, Main Menu, Sound On / Off; **View the sheet** hides the dialog to look at the table (a Results button brings it back); fireworks. A note when cheats were used: this game is not in the statistics.
 - **Statistics** (from the start screen, the game and the game-over dialog), for the selected group, with three tabs:
@@ -132,14 +133,14 @@ yacht/
 ├── sim/state.js         # the running game's state
 ├── sim/scoring.js       # what a row scores for five dice; sums and places
 ├── sim/turn.js          # rolling, holding, writing, undo, next player, the end
-├── sim/advisor.js       # the best move (Easy)
+├── sim/advisor.js       # every move and what it brings (Easy)
 ├── sim/stats.js         # statistics of a group's finished games
 ├── art/flag-*.svg       # the language switcher
 ├── art/cup.svg          # the leather dice cup
 ├── ui/dice.js           # the 3D dice and the cup: the roll's animation
 ├── ui/tabletop.js       # the table's colour and texture
 ├── ui/table.js          # the score table
-├── ui/card.js           # the player card and the message line
+├── ui/card.js           # the player card, the message line, the other moves, the All moves dialog
 ├── ui/screens.js        # start screen, pause, game over, banner
 ├── ui/groups.js         # the group editor
 ├── ui/statsview.js      # the statistics dialog
