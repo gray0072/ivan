@@ -36,7 +36,7 @@ The rows, in the order of the paper sheet:
 | *Place* | | | I, II, III … by total; equal totals share a place |
 
 - **First-roll double:** a combination row (G … Ш) written after the first roll of the turn counts **× 2**. School rows are never doubled.
-- A combination row given up (the dice do not fit) is written as `—` and counts 0.
+- A combination row given up (the dice do not fit) is written as `—` and counts 0. On the sheet it is drawn as a pen's stroke across the whole cell, so it cannot be taken for the small grey `—` a free row shows when these dice would score nothing there.
 - **School row** of face F, with n dice showing F:
   - n = 3: the row is closed, 0 points, written `+`;
   - n > 3: closed with (n − 3) × F, written `+2` (four twos), `+8` (five fours);
