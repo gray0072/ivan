@@ -231,7 +231,7 @@ body[data-tex="marble"] {
 .die.held::before, .die.hintKeep::before {
   content: '';
   position: absolute;
-  inset: -7px;
+  inset: calc(var(--d) * -0.2);
   border-radius: 22%;
   transform: translateZ(calc(var(--d) / -2));
   pointer-events: none;
