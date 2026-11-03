@@ -121,8 +121,8 @@ body[data-tex="marble"] {
   position: relative;
   height: 188px;
   flex: none;
-  perspective: 700px;
-  perspective-origin: 40% 15%;
+  perspective: 1400px;
+  perspective-origin: 40% 40%;
   overflow: hidden;
   border-radius: 10px;
 }

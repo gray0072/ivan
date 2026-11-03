@@ -65,7 +65,10 @@ const DiceView = (() => {
       const gap = 12, rail = DICE_COUNT * m.d + (DICE_COUNT - 1) * gap;
       return { x: Math.max(4, (m.W - m.cupW - rail) / 2) + i * (m.d + gap), y: 11, tilt: 0 };
     }
-    const areaW = Math.max(m.d, m.W - m.cupW - 16), areaH = Math.max(m.d, m.H - m.railH - 8);
+    const areaW = Math.max(m.d, m.W - m.cupW - 16);
+    // with room to spare, a margin at the bottom: a turned die looks bigger than its box
+    const free = m.H - m.railH - 8;
+    const areaH = Math.max(m.d, free - clamp(free - 2.2 * m.d, 0, m.d * 0.5));
     const cw = areaW / 3, ch = areaH / 2;
     const s = die.spot;
     return {
