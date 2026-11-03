@@ -48,8 +48,26 @@ const Card = {
     const gain = signed(Math.round(o.gain));
     return o.write ? tr('gain {gain}', { gain }) : tr('{points} on average, gain {gain}', { points: numText(Math.round(o.points)), gain });
   },
-  aimText(o) {
-    return o.aim ? tr('Most often {row}: about {pct}%', { row: rowLabel(ROW_BY_ID[o.aim]), pct: Math.round(o.chance * 100) }) : '';
+  // the row a roll aims at, in words: the School's rows say what they ask for when there is room
+  aimName(row, long) {
+    if (!row.face) return tr(row.name);
+    return long ? tr('School {face} (three dice of {face}, or −{n})', { face: row.face, n: SCHOOL_MISS }) : tr('School {face}', { face: row.face });
+  },
+  // how a roll can end, a line each: the rows it aims at, the other rows, and what happens if nothing fits
+  endingsHtml(o) {
+    if (!o.hold) return '';
+    const pct = (b) => Math.round(b.chance * 100);
+    const shown = o.aims.filter((b) => b.chance >= AIM_MIN_CHANCE).slice(0, AIM_ROWS);
+    const lines = shown.map((b) => tr('{row}: chance {pct}%, gives about {points}, gain {gain}', {
+      row: this.aimName(ROW_BY_ID[b.row], true), pct: pct(b), points: numText(Math.round(b.points)), gain: signed(Math.round(b.gain))
+    }));
+    const rest = o.aims.filter((b) => !shown.includes(b)).reduce((sum, b) => sum + b.chance, 0);
+    if (Math.round(rest * 100) > 0) lines.push(tr('Other rows: chance {pct}%', { pct: Math.round(rest * 100) }));
+    if (o.miss && pct(o.miss) > 0) {
+      const move = this.moveText({ write: o.miss.row, loss: true, points: -SCHOOL_MISS });
+      lines.push(tr('Otherwise {move}: chance {pct}%, gain {gain}', { move, pct: pct(o.miss), gain: signed(Math.round(o.miss.gain)) }));
+    }
+    return lines.map((l) => '<span class="aim">' + esc(l) + '</span>').join('');
   },
 
   // the other moves under the message on Easy
@@ -64,7 +82,7 @@ const Card = {
   renderMoves(list) {
     document.getElementById('movesList').innerHTML = list.map((o, i) =>
       '<tr class="' + (i === 0 ? 'bestMove' : '') + '"><td class="mv">' + esc(this.moveText(o)) +
-      (o.aim ? '<span class="aim">' + esc(this.aimText(o)) + '</span>' : '') + '</td>' +
+      this.endingsHtml(o) + '</td>' +
       '<td>' + esc((o.hold ? '≈' : '') + numText(Math.round(o.points))) + (o.doubled ? '<sup>×2</sup>' : '') + '</td>' +
       '<td class="' + (o.gain < 0 ? 'minus' : 'plus') + '"><b>' + esc(signed(Math.round(o.gain))) + '</b></td></tr>').join('');
   },
@@ -80,7 +98,7 @@ const Card = {
       const all = ahead + Math.round(o.gain);
       const params = { points: numText(points), rest: numText(all - points), total: numText(now + all), gain: signed(Math.round(o.gain)) };
       const text = o.write ? tr('{points} now + about {rest} from the other rows: a final total of about {total}. Gain {gain}.', params) : tr('About {points} this turn + about {rest} from the other rows: a final total of about {total}. Gain {gain}.', params);
-      return '<li class="' + (i === 0 ? 'bestMove' : '') + '"><b>' + esc(this.moveText(o)) + '</b><span>' + esc(text) + '</span></li>';
+      return '<li class="' + (i === 0 ? 'bestMove' : '') + '"><b>' + esc(this.moveText(o)) + '</b>' + this.endingsHtml(o) + '<span>' + esc(text) + '</span></li>';
     }).join('');
   },
 
@@ -108,6 +126,8 @@ const Card = {
 
   adviceText(a) {
     const best = tr('Best move: {move}, {payoff}.', { move: this.moveText(a), payoff: this.payoffText(a) });
-    return a.aim ? best + ' ' + this.aimText(a) + '.' : best;
+    const aim = a.hold && a.aims[0];
+    if (!aim) return best;
+    return best + ' ' + tr('Aim: {row}, chance {pct}%, gives about {points}.', { row: this.aimName(ROW_BY_ID[aim.row], false), pct: Math.round(aim.chance * 100), points: numText(Math.round(aim.points)) });
   }
 };
