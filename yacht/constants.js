@@ -26,7 +26,7 @@ const ROLL_TUMBLE_MS = 620;
 const DIE_SPIN_TURNS = 2;           // whole turns a die makes on each axis on its way out, at least
 
 const HINT_ALTERNATIVES = 2;         // other moves shown under the best one on Easy; the rest are behind All moves
-const WHY_MOVES = 4;                 // moves taken apart in the Why this move dialog
+const WHY_MOVES = 10;                // moves taken apart in the Why this move dialog
 
 // The table top: the colours to pick from (key, colour) and the textures (styles.css, body[data-tex])
 const TABLE_COLORS = [
