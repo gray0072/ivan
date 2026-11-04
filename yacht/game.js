@@ -34,6 +34,9 @@ const Flow = {
     if (!group || !group.current) return;
     enterFullscreen();
     setRun(group.current);
+    // the level picked on the start screen is the one played, also in a game already going
+    Run.difficulty = Screens.difficulty;
+    this.save();
     this.enter();
   },
   enter() {
