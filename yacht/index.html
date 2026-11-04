@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#1f5b3f">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 
@@ -171,7 +171,7 @@
   <div id="movesPanel" class="panel" hidden>
     <h1 data-i18n>All moves</h1>
     <p class="fine" data-i18n>Points: what goes on the sheet; for a roll, on average by the best moves to the end of the turn. Gain: how much the move adds to the final total you can expect, or takes from it, with the best play to the end of the game. The higher, the better.</p>
-    <p class="fine" data-i18n>Under a roll: how the turn can end with the best moves. Each line has the row, the chance of ending there, the outcomes with their chances and the gain of that ending. In the School, 4×5 → +5 means four dice of 5, which write +5 in the row. All the chances of a roll add up to 100%, and each outcome's points times its chance, added up, make the roll's average points. The gain of the roll is the same kind of average of the gains, so a good aim can still be a poor move when it often fails.</p>
+    <p class="fine" data-i18n>Under a roll: how the turn can end with the best moves. Each line has the row, the chance of ending there, the outcomes with their chances and the gain of that ending. In the School, <span class="nowrap">4×5 <i class="arrow"></i> +5</span> means four dice of 5, which write +5 in the row. All the chances of a roll add up to 100%, and each outcome's points times its chance, added up, make the roll's average points. The gain of the roll is the same kind of average of the gains, so a good aim can still be a poor move when it often fails.</p>
     <table id="movesTable">
       <thead><tr><th class="mv" data-i18n>Move</th><th data-i18n>Points</th><th data-i18n>Gain</th></tr></thead>
       <tbody id="movesList"></tbody>
@@ -188,7 +188,7 @@
       <p data-i18n>The gain can be far above the points of the turn. Three dice of a face bring few points in the School, but they close a row that could have cost −40, and that saved loss is in the gain.</p>
       <p data-i18n>A row can only be used once. Writing little in a row that often brings a lot, like Chance or Two pairs written after a first roll, loses what it could have brought later, so a move with more points can still be the worse one.</p>
       <p data-i18n>A row is also a place for a bad turn. Giving up a hard row costs more than the few points it usually brings: the next bad turn will have to go into a dearer row, and a school row not closed costs −40.</p>
-      <p data-i18n>Under a roll: how the turn can end with the best moves. Each line has the row, the chance of ending there, the outcomes with their chances and the gain of that ending. In the School, 4×5 → +5 means four dice of 5, which write +5 in the row. All the chances of a roll add up to 100%, and each outcome's points times its chance, added up, make the roll's average points. The gain of the roll is the same kind of average of the gains, so a good aim can still be a poor move when it often fails.</p>
+      <p data-i18n>Under a roll: how the turn can end with the best moves. Each line has the row, the chance of ending there, the outcomes with their chances and the gain of that ending. In the School, <span class="nowrap">4×5 <i class="arrow"></i> +5</span> means four dice of 5, which write +5 in the row. All the chances of a roll add up to 100%, and each outcome's points times its chance, added up, make the roll's average points. The gain of the roll is the same kind of average of the gains, so a good aim can still be a poor move when it often fails.</p>
       <p data-i18n>A green row only means that these dice score there; it is not advice. The move to make is the row with the dashed frame, or the dice marked to keep.</p>
       <p data-i18n>A bad roll has no good move: then every gain is below zero and the best move is the one that loses least.</p>
       <p data-i18n>The calculation is exact for the highest average final total, with the best play to the end of the game. It does not look at the other players, so when you must catch up a riskier move can be right.</p>
@@ -211,8 +211,8 @@
 <script src="constants.js?v=7"></script>
 <script src="data/rows.js?v=1"></script>
 <script src="data/state-values.js?v=1"></script>
-<script src="data/lang-ru.js?v=7"></script>
-<script src="data/lang-sv.js?v=7"></script>
+<script src="data/lang-ru.js?v=8"></script>
+<script src="data/lang-sv.js?v=8"></script>
 <script src="core/i18n.js?v=1"></script>
 <script src="core/utils.js?v=1"></script>
 <script src="core/events.js?v=1"></script>
@@ -230,7 +230,7 @@
 <script src="ui/tabletop.js?v=1"></script>
 <script src="ui/dice.js?v=3"></script>
 <script src="ui/table.js?v=1"></script>
-<script src="ui/card.js?v=6"></script>
+<script src="ui/card.js?v=7"></script>
 <script src="ui/screens.js?v=1"></script>
 <script src="ui/groups.js?v=1"></script>
 <script src="ui/statsview.js?v=1"></script>
