@@ -173,7 +173,7 @@ const Card = {
     if (busy) return '';
     if (Run.over) return tr('The game is over.');
     if (Run.rollNo === 0) {
-      const turn = tr('{name}, your turn: roll the dice!', { name: Turn.player().name });
+      const turn = tr('{name}, your turn: hold Roll to shake the cup, let go to throw!', { name: Turn.player().name });
       // on Easy, a reminder of what the school asks while it is not done
       const open = SCHOOL_ROWS.some((r) => !Turn.player().cells[r.id]);
       return Run.difficulty === 'easy' && open ? turn + ' ' + tr('A school row closes with three dice of its face; if not, it costs −{n}.', { n: SCHOOL_MISS }) : turn;

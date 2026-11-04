@@ -61,6 +61,6 @@ Knappen 📊 visar gruppens statistik: vinster, medelvärden, bästa och sämsta
 
 ## Styrning
 
-**Telefon och surfplatta:** spelet öppnas i helskärm. Tryck på bägaren eller Kasta, tryck på tärningar för att behålla dem och på en ledig rad för att skriva in. Protokollet rullas med fingret.
+**Telefon och surfplatta:** spelet öppnas i helskärm. Håll in bägaren eller Kasta för att skaka bägaren och släpp för att kasta. Tryck på tärningar för att behålla dem och på en ledig rad för att skriva in. Protokollet rullas med fingret.
 
-**Mus och tangentbord:** klicka på samma saker. Mellanslag kastar, tangenterna 1–5 behåller eller släpper en tärning, Esc pausar.
+**Mus och tangentbord:** klicka på samma saker och håll in knappen för att skaka bägaren. Håll in mellanslag för att skaka och släpp för att kasta; tangenterna 1–5 behåller eller släpper en tärning, Esc pausar.

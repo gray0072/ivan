@@ -150,7 +150,9 @@ body[data-tex="marble"] {
   filter: drop-shadow(-4px 6px 6px rgba(0,0,0,0.5));
   z-index: 3;
 }
-#cup img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+#cup img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+/* held down: a finger on them must not start a scroll, that would cancel the press */
+#cup, #rollBtn { touch-action: none; }
 #cup:disabled { cursor: default; filter: drop-shadow(-4px 6px 6px rgba(0,0,0,0.5)) saturate(0.7) brightness(0.8); }
 #cup.ready { animation: cupReady 1.6s ease-in-out infinite; }
 #cup.shake { animation: cupShake 130ms linear infinite; }

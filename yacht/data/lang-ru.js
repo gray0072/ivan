@@ -41,8 +41,8 @@ const TEXT_RU = {
   // how to play
   'Each player in turn rolls five dice up to three times: tap the dice you want to keep, then roll the others. After any roll write the dice into one free row of your column, even if it scores nothing. After 15 rounds the highest total wins.': 'Игроки по очереди бросают пять костей, до трёх раз за ход: нажмите на кости, которые хотите оставить, и бросьте остальные. После любого броска запишите результат в одну свободную строку своего столбца, даже если он ничего не даёт. После 15 ходов побеждает наибольшая сумма.',
   '<b>Written after the first roll, a combination counts double.</b>': '<b>Комбинация, записанная после первого броска, считается вдвойне.</b>',
-  '<b>Phone and tablet:</b> the game goes fullscreen. Tap the cup or Roll, tap dice to hold them and tap a free row to write. The sheet scrolls with a finger.': '<b>Телефон и планшет:</b> игра открывается на весь экран. Нажмите на стакан или «Бросить», нажимайте на кости, чтобы оставить их, и на свободную строку, чтобы записать. Лист прокручивается пальцем.',
-  '<b>Keyboard:</b> Space rolls, keys 1–5 hold or release a die, Esc pauses.': '<b>Клавиатура:</b> пробел бросает, клавиши 1–5 оставляют кость или отпускают её, Esc ставит на паузу.',
+  '<b>Phone and tablet:</b> the game goes fullscreen. Press and hold the cup or Roll to shake the cup, let go to throw. Tap dice to hold them and tap a free row to write. The sheet scrolls with a finger.': '<b>Телефон и планшет:</b> игра открывается на весь экран. Зажмите стакан или «Бросить», чтобы трясти стакан, и отпустите, чтобы бросить. Нажимайте на кости, чтобы оставить их, и на свободную строку, чтобы записать. Лист прокручивается пальцем.',
+  '<b>Keyboard:</b> hold Space to shake the cup, let go to throw. Keys 1–5 hold or release a die, Esc pauses.': '<b>Клавиатура:</b> зажмите пробел, чтобы трясти стакан, и отпустите, чтобы бросить. Клавиши 1–5 оставляют кость или отпускают её, Esc ставит на паузу.',
   'School': 'Школа',
   'Three dice of the row\'s face close it: +, no points. Each die more adds that face: four twos score 2, five fours score 8. A row not closed costs −{n}.': 'Три кости нужной грани закрывают строку: пишется +, без очков. Каждая кость сверх трёх добавляет эту грань: четыре двойки дают 2, пять четвёрок дают 8. Незакрытая строка стоит −{n}.',
 
@@ -118,7 +118,7 @@ const TEXT_RU = {
   'Die {n}: {face}, held': 'Кость {n}: {face}, оставлена',
   'Tap {row} again to write it.': 'Нажмите {row} ещё раз, чтобы записать.',
   'Tap {row} again to write {value} there.': 'Нажмите {row} ещё раз, чтобы записать туда {value}.',
-  '{name}, your turn: roll the dice!': '{name}, ваш ход: бросайте кости!',
+  '{name}, your turn: hold Roll to shake the cup, let go to throw!': '{name}, ваш ход: зажмите «Бросить», чтобы трясти стакан, и отпустите!',
   'All five dice are held: write into a row, or release a die to roll.': 'Оставлены все пять костей: запишите результат в строку или отпустите кость, чтобы бросить.',
   'No rolls left: write into a row.': 'Броски закончились: запишите результат в строку.',
   'Tap dice to hold them, roll again or write into a row.': 'Нажимайте на кости, чтобы оставить их, бросайте ещё раз или записывайте результат в строку.',

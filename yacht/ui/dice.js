@@ -1,8 +1,9 @@
 'use strict';
 
 // Yacht — the leather cup and the five 3D dice on the table (CSS 3D, no canvas): where each die lies,
-// and the roll's animation: the dice not held fly into the cup, it shakes, tips over, they tumble
-// out to random places, it stands up again. Reads Run, tells the flow when it is done. Used by game.js.
+// and the roll's animation: the dice not held fly into the cup, it shakes for as long as the player
+// holds it, tips over when let go, they tumble out to random places, it stands up again. Reads Run,
+// tells the flow when to draw the dice and when it is done. Used by game.js.
 
 const DiceView = (() => {
   // the rotation of the cube that brings each face to the front (the faces are placed in styles.css)
@@ -14,6 +15,10 @@ const DiceView = (() => {
   const dice = [];
   let timers = [];
   let busy = false;
+  let inHand = false;    // from the press until the cup tips: the button stays pressable, or it could lose the release
+  let release = null;    // set once let go: what to do when the cup tips
+  let rolling = [];      // the dice in the cup
+  let shakenAt = 0;      // when the cup has shaken for long enough
 
   function faceHtml(f) {
     let cells = '';
@@ -127,6 +132,8 @@ const DiceView = (() => {
   function clearTimers() {
     timers.forEach(clearTimeout);
     timers = [];
+    inHand = false;
+    release = null;
   }
   function after(ms, fn) { timers.push(setTimeout(fn, ms)); }
 
@@ -153,23 +160,44 @@ const DiceView = (() => {
     setSlot(i);
   }
 
-  function roll(done) {
-    clearTimers();
-    const rolling = [];
-    for (let i = 0; i < DICE_COUNT; i++) if (!Run.held[i]) rolling.push(i);
+  function rattle() {
+    if (!inHand) return;
+    GameEvents.emit('cupShake', { ms: ROLL_RATTLE_MS });
+    after(ROLL_RATTLE_MS, rattle);
+  }
 
+  // the cup is taken: the dice go in, the ones on the table visibly, and it shakes until let go
+  function press() {
+    clearTimers();
+    rolling = [];
+    for (let i = 0; i < DICE_COUNT; i++) if (!Run.held[i]) rolling.push(i);
     busy = true;
-    // the dice go in, the ones on the table visibly
+    inHand = true;
+    shakenAt = performance.now() + ROLL_GATHER_MS + ROLL_SHAKE_MS;
     rolling.forEach(setInCup);
     after(ROLL_GATHER_MS, () => {
       cup.classList.add('shake');
-      GameEvents.emit('cupShake', { ms: ROLL_SHAKE_MS });
+      rattle();
     });
-    after(ROLL_GATHER_MS + ROLL_SHAKE_MS, () => {
-      cup.classList.remove('shake');
-      cup.classList.add('tip');
-    });
-    after(ROLL_GATHER_MS + ROLL_SHAKE_MS + ROLL_TIP_MS, () => {
+  }
+
+  // let go: the cup tips as soon as it has shaken for long enough. draw() puts the new faces into Run
+  function letGo(draw, done) {
+    if (!inHand || release) return;
+    release = { draw, done };
+    const wait = shakenAt - performance.now();
+    if (wait > 0) after(wait, throwDice);
+    else throwDice();
+  }
+
+  function throwDice() {
+    const { draw, done } = release;
+    inHand = false;
+    release = null;
+    draw();
+    cup.classList.remove('shake');
+    cup.classList.add('tip');
+    after(ROLL_TIP_MS, () => {
       const heldSpots = dice.map((d) => d.spot);
       newSpots();
       dice.forEach((d, i) => { if (Run.held[i]) d.spot = heldSpots[i]; });
@@ -180,8 +208,8 @@ const DiceView = (() => {
         setSlot(i);
       });
     });
-    after(ROLL_GATHER_MS + ROLL_SHAKE_MS + ROLL_TIP_MS + ROLL_TUMBLE_MS * 0.55, () => cup.classList.remove('tip'));
-    after(ROLL_GATHER_MS + ROLL_SHAKE_MS + ROLL_TIP_MS + ROLL_TUMBLE_MS, () => {
+    after(ROLL_TIP_MS + ROLL_TUMBLE_MS * 0.55, () => cup.classList.remove('tip'));
+    after(ROLL_TIP_MS + ROLL_TUMBLE_MS, () => {
       rolling.forEach((i) => dice[i].el.classList.remove('tumble'));
       busy = false;
       done();
@@ -202,9 +230,9 @@ const DiceView = (() => {
       const label = tr(Run.held[i] ? 'Die {n}: {face}, held' : 'Die {n}: {face}', { n: i + 1, face: Run.dice[i] });
       die.el.setAttribute('aria-label', label);
     });
-    cup.disabled = busy || !Turn.canRoll();
+    cup.disabled = !inHand && (busy || !Turn.canRoll());
     cup.classList.toggle('ready', !busy && Turn.canRoll() && Run.rollNo === 0);
   }
 
-  return { build, sync, sweep, moved, roll, refresh, isBusy: () => busy };
+  return { build, sync, sweep, moved, press, letGo, refresh, isBusy: () => busy, inHand: () => inHand, isHeld: () => inHand && !release };
 })();

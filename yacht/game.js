@@ -50,6 +50,7 @@ const Flow = {
     this.save();
     fireworks.stop();
     setRun(null);
+    DiceView.sync();
     document.getElementById('game').hidden = true;
     Screens.closeAll();
     Screens.renderMenu();
@@ -83,9 +84,9 @@ const Flow = {
       rollBtn.disabled = false;
     } else {
       rollBtn.textContent = tr('Roll ({n})', { n: ROLLS_PER_TURN - Run.rollNo });
-      rollBtn.disabled = busy || !Turn.canRoll();
+      rollBtn.disabled = !DiceView.inHand() && (busy || !Turn.canRoll());
     }
-    document.getElementById('undoBtn').hidden = !Run.undo;
+    document.getElementById('undoBtn').hidden = !Run.undo || busy;
     document.getElementById('movesBtn').hidden = !moves;
     document.getElementById('whyBtn').hidden = !moves;
     Card.alternatives(moves);
@@ -98,14 +99,28 @@ const Flow = {
   },
 
   // ---------- a turn ----------
+  // the cup is taken: it shakes until it is let go
+  press() {
+    if (!Run || Run.over || DiceView.isBusy() || !Turn.canRoll()) return false;
+    this.changed();
+    DiceView.press();
+    this.render();
+    return true;
+  },
+  // let go: only now the dice are drawn, so what comes up really depends on the moment
+  letGo() {
+    DiceView.letGo(() => {
+      if (!Turn.roll()) return;
+      this.changed();
+      this.save();
+      this.render();
+    }, () => this.render());
+  },
+  // a roll with no holding: a screen reader's click, Results at the end of the game
   roll() {
     if (!Run) return;
     if (Run.over) { Screens.open('overPanel'); return; }
-    if (DiceView.isBusy() || !Turn.roll()) return;
-    this.changed();
-    this.save();
-    DiceView.roll(() => this.render());
-    this.render();
+    if (this.press()) this.letGo();
   },
   toggleDie(i) {
     if (!Run || DiceView.isBusy() || !Turn.toggleHold(i)) return;
@@ -133,7 +148,7 @@ const Flow = {
     Sheet.showCurrent();
   },
   undo() {
-    if (!Run || !Turn.undo()) return;
+    if (!Run || DiceView.isBusy() || !Turn.undo()) return;
     this.changed();
     this.save();
     DiceView.sync();
@@ -320,6 +335,24 @@ const Flow = {
   // the game
   on('rollBtn', () => Flow.roll());
   on('cup', () => Flow.roll());
+  // held down they shake the cup and letting go throws, wherever the finger is by then; the click that
+  // follows finds the dice busy. Going away from the page throws too, its release would never come.
+  let pressedBy = null;
+  for (const id of ['rollBtn', 'cup']) {
+    $(id).addEventListener('pointerdown', (e) => {
+      if (e.button === 0 && !DiceView.isHeld() && Flow.press()) pressedBy = e.pointerId;
+    });
+    $(id).addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+  const dropCup = (e) => {
+    if (e.pointerId !== pressedBy) return;
+    pressedBy = null;
+    Flow.letGo();
+  };
+  window.addEventListener('pointerup', dropCup);
+  window.addEventListener('pointercancel', dropCup);
+  window.addEventListener('blur', () => Flow.letGo());
+  document.addEventListener('visibilitychange', () => { if (document.hidden) Flow.letGo(); });
   on('undoBtn', () => Flow.undo());
   on('movesBtn', () => {
     const list = Flow.moves();
@@ -406,10 +439,14 @@ const Flow = {
         const b = [...document.querySelectorAll('#' + top + ' .btn.default')].find((x) => !x.closest('[hidden]') && !x.hidden);
         if (b) b.click();
       }
-      else if (Run) Flow.roll();
+      else if (Run && Run.over) Flow.roll();
+      else Flow.press();
       return;
     }
     if (!Screens.top() && Run && /^[1-5]$/.test(e.key)) Flow.toggleDie(+e.key - 1);
+  });
+  document.addEventListener('keyup', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') Flow.letGo();
   });
 
   window.addEventListener('storage', (e) => {

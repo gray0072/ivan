@@ -18,9 +18,11 @@ const CURSOR_HIDE_MS = 2000;        // a still mouse hides its cursor in fullscr
 const BANNER_MS = 3000;             // how long a banner stays
 const MAX_FPS = 60;                 // the fireworks' frame limit
 
-// The roll's animation, in ms: the dice fly into the cup, it shakes, tips, they tumble out, it stands up
+// The roll's animation, in ms: the dice fly into the cup, it shakes while it is held down, tips, they
+// tumble out, it stands up
 const ROLL_GATHER_MS = 220;
-const ROLL_SHAKE_MS = 520;
+const ROLL_SHAKE_MS = 520;          // the shake lasts at least this long, also after a quick tap
+const ROLL_RATTLE_MS = 260;         // one burst of the rattle, repeated for as long as the cup shakes
 const ROLL_TIP_MS = 180;
 const ROLL_TUMBLE_MS = 620;
 const DIE_SPIN_TURNS = 2;           // whole turns a die makes on each axis on its way out, at least

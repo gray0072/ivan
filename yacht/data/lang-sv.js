@@ -41,8 +41,8 @@ const TEXT_SV = {
   // how to play
   'Each player in turn rolls five dice up to three times: tap the dice you want to keep, then roll the others. After any roll write the dice into one free row of your column, even if it scores nothing. After 15 rounds the highest total wins.': 'Spelarna kastar i tur och ordning fem tärningar upp till tre gånger: tryck på de tärningar du vill behålla och kasta de andra. Efter varje kast kan du skriva in tärningarna på en ledig rad i din kolumn, även om det inte ger några poäng. Efter 15 rundor vinner den högsta summan.',
   '<b>Written after the first roll, a combination counts double.</b>': '<b>En kombination som skrivs in efter första kastet räknas dubbelt.</b>',
-  '<b>Phone and tablet:</b> the game goes fullscreen. Tap the cup or Roll, tap dice to hold them and tap a free row to write. The sheet scrolls with a finger.': '<b>Telefon och surfplatta:</b> spelet öppnas i helskärm. Tryck på bägaren eller Kasta, tryck på tärningar för att behålla dem och på en ledig rad för att skriva in. Protokollet rullas med fingret.',
-  '<b>Keyboard:</b> Space rolls, keys 1–5 hold or release a die, Esc pauses.': '<b>Tangentbord:</b> mellanslag kastar, tangenterna 1–5 behåller eller släpper en tärning, Esc pausar.',
+  '<b>Phone and tablet:</b> the game goes fullscreen. Press and hold the cup or Roll to shake the cup, let go to throw. Tap dice to hold them and tap a free row to write. The sheet scrolls with a finger.': '<b>Telefon och surfplatta:</b> spelet öppnas i helskärm. Håll in bägaren eller Kasta för att skaka bägaren och släpp för att kasta. Tryck på tärningar för att behålla dem och på en ledig rad för att skriva in. Protokollet rullas med fingret.',
+  '<b>Keyboard:</b> hold Space to shake the cup, let go to throw. Keys 1–5 hold or release a die, Esc pauses.': '<b>Tangentbord:</b> håll in mellanslag för att skaka bägaren och släpp för att kasta. Tangenterna 1–5 behåller eller släpper en tärning, Esc pausar.',
   'School': 'Skola',
   'Three dice of the row\'s face close it: +, no points. Each die more adds that face: four twos score 2, five fours score 8. A row not closed costs −{n}.': 'Tre tärningar med radens tal stänger raden: +, inga poäng. Varje tärning utöver det lägger till talet: fyra tvåor ger 2, fem fyror ger 8. En rad som inte stängs kostar −{n}.',
 
@@ -118,7 +118,7 @@ const TEXT_SV = {
   'Die {n}: {face}, held': 'Tärning {n}: {face}, behålls',
   'Tap {row} again to write it.': 'Tryck på {row} igen för att skriva in.',
   'Tap {row} again to write {value} there.': 'Tryck på {row} igen för att skriva in {value}.',
-  '{name}, your turn: roll the dice!': '{name}, din tur: kasta tärningarna!',
+  '{name}, your turn: hold Roll to shake the cup, let go to throw!': '{name}, din tur: håll in Kasta för att skaka bägaren och släpp!',
   'All five dice are held: write into a row, or release a die to roll.': 'Alla fem tärningar behålls: skriv in på en rad, eller släpp en tärning för att kasta.',
   'No rolls left: write into a row.': 'Inga kast kvar: skriv in på en rad.',
   'Tap dice to hold them, roll again or write into a row.': 'Tryck på tärningar för att behålla dem, kasta igen eller skriv in på en rad.',

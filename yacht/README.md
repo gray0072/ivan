@@ -61,6 +61,6 @@ The 📊 button shows a group's statistics: wins, averages, best and worst games
 
 ## Controls
 
-**Phone and tablet:** the game goes fullscreen. Tap the cup or Roll, tap dice to hold them, tap a free row to write. The sheet scrolls with a finger.
+**Phone and tablet:** the game goes fullscreen. Press and hold the cup or Roll to shake the cup, let go to throw. Tap dice to hold them, tap a free row to write. The sheet scrolls with a finger.
 
-**Mouse and keyboard:** click the same things. Space rolls, keys 1–5 hold or release a die, Esc pauses.
+**Mouse and keyboard:** click the same things, holding the button down to shake the cup. Hold Space to shake, let go to throw; keys 1–5 hold or release a die, Esc pauses.
