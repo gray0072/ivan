@@ -4,12 +4,6 @@
 // message line under the dice (the turn, the advice, what a second tap would write), the other moves
 // with what each brings, the dialog with all of them and the one explaining them. Used by game.js.
 
-// the → of a text as the drawn arrow (.arrow in styles.css): a font's own sits low on a phone. The line
-// may break next to a drawing even at a no-break space, so what is joined to it is kept on one line.
-function arrowsHtml(html) {
-  return html.replace(/[^ \n]*→[^ \n]*/g, (run) => '<span class="nowrap">' + run.split('→').join('<i class="arrow"></i>') + '</span>');
-}
-
 const Card = {
   render() {
     const box = document.getElementById('card');
@@ -37,7 +31,7 @@ const Card = {
   // the line under the dice; `note` is a text that stays until the next action
   message(state) {
     const box = document.getElementById('msg');
-    box.innerHTML = arrowsHtml(esc(this.messageText(state)));
+    box.textContent = this.messageText(state);
   },
 
   // a move in words, to go inside a sentence: write 30 in 3:0, give up G, keep 5 5 5 and roll, roll all five
@@ -111,7 +105,7 @@ const Card = {
       const move = this.moveText({ write: o.miss.row, loss: true, points: -SCHOOL_MISS });
       lines.push(tr('Otherwise {move}: chance {pct}%, gain {gain}', { move, pct: pct(o.miss), gain: signed(Math.round(o.miss.gain)) }));
     }
-    return lines.map((l) => '<span class="aim">' + arrowsHtml(esc(l)) + '</span>').join('');
+    return lines.map((l) => '<span class="aim">' + esc(l) + '</span>').join('');
   },
   // where a roll's average comes from: every outcome's points times its chance, added up. When
   // there are too many outcomes, by row; nothing when the roll can end in one way only.

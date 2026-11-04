@@ -129,3 +129,5 @@ npx serve .        # или просто открой любой index.html в �
 ## 📄 Лицензия
 
 [MIT](LICENSE)
+
+Рисунки эмодзи: [Twemoji](https://github.com/jdecked/twemoji), © Twitter, Inc и другие участники, [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).

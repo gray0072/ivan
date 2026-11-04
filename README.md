@@ -129,3 +129,5 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ## 📄 License
 
 [MIT](LICENSE)
+
+Emoji drawings: [Twemoji](https://github.com/jdecked/twemoji), © Twitter, Inc and other contributors, [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).

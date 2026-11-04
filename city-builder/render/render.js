@@ -361,10 +361,7 @@ const Renderer = (() => {
     c.fillStyle = 'rgba(255,255,255,0.92)';
     c.beginPath(); c.arc(x, y, s * 0.75, 0, Math.PI * 2); c.fill();
     if (ring) { c.strokeStyle = ring; c.lineWidth = s * 0.14; c.stroke(); }
-    c.font = Math.round(s) + 'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
-    c.textAlign = 'center'; c.textBaseline = 'middle';
-    c.fillStyle = '#000';
-    c.fillText(text, x, y + s * 0.05);
+    Icons.draw(c, text, x, y, s * 1.1);
   }
   function drawIcons(R, view) {
     for (const b of city.buildings) {
@@ -430,9 +427,8 @@ const Renderer = (() => {
     img.width = img.height = Math.round(size * r);
     const g = img.getContext('2d');
     if (tool === 'bulldoze') {
-      g.font = Math.round(size * 0.72 * r) + 'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
-      g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText('🚜', img.width / 2, img.height * 0.55);
+      const s = img.width * 0.8;
+      Icons.image('🚜', null, (im) => g.drawImage(im, (img.width - s) / 2, (img.height - s) / 2, s, s));
       return img;
     }
     let w = 1, h = 1, height = 14;

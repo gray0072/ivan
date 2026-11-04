@@ -66,6 +66,7 @@ fish-frenzy/
 │   ├── input.js        keyboard, split-screen touch joystick and boost zones, fullscreen
 │   ├── quality.js      Auto graphics (createAutoGraphics): preset from the device and the frame rate
 │   ├── cursor.js       hides the mouse cursor in fullscreen while it is still
+│   ├── icons.js        arrows, symbols and emoji drawn the same on every device, from data/icons.js (tools/icons-build.js)
 │   └── update.js       picks up a new deploy, reloading only on the start screen
 ├── sim/                no drawing, no DOM, no sound: what happens is emitted as game events
 │   ├── state.js        shared state: screen size, difficulty, run flags, the player, every entity list

@@ -129,3 +129,5 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 ## 📄 Licens
 
 [MIT](LICENSE)
+
+Emojibilder: [Twemoji](https://github.com/jdecked/twemoji), © Twitter, Inc och andra bidragsgivare, [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/).

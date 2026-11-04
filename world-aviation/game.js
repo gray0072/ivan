@@ -319,10 +319,10 @@ const Game = {
     ctx.save();
     // dark outlines instead of a panel: the colours read against a bright sky, the view stays open
     ctx.shadowColor = 'rgba(0,0,0,0.85)'; ctx.shadowBlur = 3;
-    const say = (t, x, y, c) => {
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,12,18,0.8)'; ctx.strokeText(t, x, y);
-      ctx.fillStyle = c; ctx.fillText(t, x, y);
-    };
+    const say = (t, x, y, c) => Icons.drawText(ctx, t, x, y, c, (part, px) => {
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(8,12,18,0.8)'; ctx.strokeText(part, px, y);
+      ctx.fillStyle = c; ctx.fillText(part, px, y);
+    });
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = 'rgba(216,226,236,0.45)';
     ctx.beginPath();
@@ -1468,7 +1468,7 @@ const Game = {
     const b = el('cinePause');
     b.hidden = false;
     b.classList.toggle('on', !!this.tourPaused);
-    b.innerHTML = esc(this.tourPaused ? '▶ ' + tr('Resume') : '❚❚ ' + tr('Pause')) + (Input.isCoarse ? '' : ' <kbd>P</kbd>');
+    b.innerHTML = esc(this.tourPaused ? '▶ ' + tr('Resume') : '⏸ ' + tr('Pause')) + (Input.isCoarse ? '' : ' <kbd>P</kbd>');
   },
 
   endTour() {

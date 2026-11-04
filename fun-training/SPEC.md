@@ -236,6 +236,7 @@ fun-training/
 │   ├── nav.js       # spatial keyboard / TV-remote focus navigation
 │   ├── quality.js   # automatic graphics quality (canvas resolution by device and frame rate)
 │   ├── cursor.js    # hides the mouse cursor in fullscreen while it is still
+│   ├── icons.js     # arrows, symbols and emoji drawn the same on every device, from data/icons.js (tools/icons-build.js)
 │   └── update.js    # picks up a new deploy, reloading only on the player list or a home screen
 ├── progress.js      # levels: boss kinds, which step is open, level complete, stars, diamonds per boss
 ├── tasks/           # task types, one file each; tasks.js first, then the types

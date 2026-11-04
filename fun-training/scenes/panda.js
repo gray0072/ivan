@@ -597,10 +597,7 @@ function createPandaScene(opts) {
     ctx.strokeStyle = '#8a1a3a';
     ctx.lineWidth = 5;
     ctx.stroke();
-    ctx.font = 'bold 34px "Trebuchet MS", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🐼', x, y + 2);
+    Icons.draw(ctx, '🐼', x, y + 1, 40);
   }
 
   function drawEffects(ctx) {

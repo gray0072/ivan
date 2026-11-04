@@ -460,9 +460,9 @@ body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !i
     pointer-events: auto;
     touch-action: none;
   }
-  #prompt::before { content: "▾ "; color: #8d99a6; font-size: 10px; }
+  #prompt::before { content: ""; --sign: var(--signOpen); margin-right: 3px; color: #8d99a6; font-size: 10px; }
   #prompt.collapsed { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
-  #prompt.collapsed::before { content: "▸ "; }
+  #prompt.collapsed::before { --sign: var(--signRight); }
   #prompt.collapsed .more { display: none; }
   #throttleKnob { font: 700 10px/36px system-ui, sans-serif; color: #e6edf4; text-align: center; }
   /* the messages: at the top, between the left column and the buttons, the last three */
@@ -504,7 +504,7 @@ body.touring #touch, body.incident #touch, body.cineOn #touch { display: none !i
   #strip.compact:not(.fuelShort) .stripRow.key, #strip.fuelOnly > .big { display: none; }
   #strip.fuelShort .stripRow.key { color: #ff9c7a; font-weight: 700; }
   #strip.fuelShort.fuelOnly { border-color: rgba(255, 122, 92, 0.55); }
-  #strip.compact .stripRow.route::after { content: " ▸"; color: #8d99a6; font-size: 11px; }
+  #strip.compact .stripRow.route::after { content: ""; --sign: var(--signRight); margin-left: 3px; color: #8d99a6; font-size: 11px; }
 }
 /* a phone held upright: the buttons across the top, the strip and the prompt under them on the
    left, the messages on the right, the thrust lever on the right of the panel under its
@@ -743,6 +743,18 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 }
 .btn.picked { border-color: rgba(111, 177, 232, 0.55); background: rgba(36, 64, 90, 0.6); color: #cfe6fa; }
 .btn.big { padding: 12px 26px; font-size: 16px; }
+/* the signs in a ::before or ::after, where the Icons engine does not reach: drawn the same way */
+:root {
+  --signTick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' d='M4.5 12.5 9.8 18 19.5 6.5'/%3E%3C/svg%3E");
+  --signRight: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M8 6.5 17 12l-9 5.5z'/%3E%3C/svg%3E");
+  --signOpen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' d='M6.5 8h11L12 17z'/%3E%3C/svg%3E");
+  --signDown: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round' d='M12 4.5v14M5.5 13l6.5 6.5 6.5-6.5'/%3E%3C/svg%3E");
+}
+#prompt::before, #strip.compact .stripRow.route::after, .trGo::after, .lic::before,
+#coach .coachSteps li.done::before, #coach .coachSteps li.now::before {
+  display: inline-block; width: 1em; height: 1em; vertical-align: -0.14em; background: currentColor;
+  -webkit-mask: var(--sign) center / contain no-repeat; mask: var(--sign) center / contain no-repeat;
+}
 /* the way on carries an arrow forward, the way back an arrow back: drawn arrows (an SVG mask in
    the text's colour), the same on every phone, not a font's thin arrow characters */
 .btn.fwd, .btn.back { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
@@ -759,7 +771,7 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
   --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 5.5 8.5 12l6.5 6.5'/%3E%3C/svg%3E");
   margin-left: -5px;
 }
-/* a flight's way, ARN ✈ LED (routeHtml / routeArrow in ui/hud.js): the two ends kept on a line,
+/* a flight's way between two airports (routeHtml / routeArrow in ui/hud.js): the two ends kept on a line,
    the arrow between them a contrail fading in behind a small aeroplane, sized by the text */
 .rt { display: inline-flex; align-items: center; flex-wrap: wrap; }
 .rtArrow { flex: none; width: 1.75em; height: 0.875em; margin: 0 0.3em; vertical-align: -0.08em; color: #6fb1e8; overflow: visible; }
@@ -1144,7 +1156,7 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
   margin: 2px 2px 0 0; padding: 2px 9px; border: 1px solid rgba(255, 217, 122, 0.45); border-radius: 20px;
   background: rgba(255, 217, 122, 0.1); color: #ffd97a; font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1.5; cursor: pointer;
 }
-.trGo::after { content: ' ↓'; opacity: 0.7; }
+.trGo::after { content: ''; --sign: var(--signDown); margin-left: 4px; opacity: 0.7; }
 .trGo:hover { background: rgba(255, 217, 122, 0.2); }
 .trNext { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 12px; color: #9fb0c3; line-height: 1.45; }
 .trNext b { color: #e3edf6; }
@@ -1422,7 +1434,7 @@ img.flag { width: 18px; height: 12px; vertical-align: -1px; margin-right: 5px; b
 .cvProgress i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #3d7a52, #7de08a); }
 .licList { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
 .lic { padding: 4px 10px 4px 8px; border-radius: 20px; border: 1px solid rgba(125, 224, 138, 0.3); background: #14221a; color: #c4f0cf; }
-.lic::before { content: '✓'; margin-right: 5px; color: #7de08a; font-weight: 700; }
+.lic::before { content: ''; --sign: var(--signTick); margin-right: 5px; color: #7de08a; }
 .cvNone { color: #7f8fa1; }
 
 .unlocks, .log { margin: 0; padding-left: 18px; font-size: 12px; color: #a3b3c3; line-height: 1.6; }
@@ -2078,10 +2090,10 @@ canvas.fireworks { position: fixed; inset: 0; width: 100%; height: 100%; z-index
 #coach .coachSteps li { position: relative; padding: 2px 0 2px 18px; color: #7f8b97; }
 #coach .coachSteps li::before { content: '•'; position: absolute; left: 4px; }
 #coach .coachSteps li.done { color: #8fbf98; }
-#coach .coachSteps li.done::before { content: '✓'; left: 2px; color: #7de08a; }
+#coach .coachSteps li.done::before { content: ''; --sign: var(--signTick); left: 2px; color: #7de08a; }
 #coach .coachSteps li.passed::before { content: '–'; }
 #coach .coachSteps li.now { margin: 3px 0; padding: 5px 8px 6px 18px; border-radius: 7px; background: rgba(255, 217, 122, 0.1); color: #f1f5f9; }
-#coach .coachSteps li.now::before { content: '▸'; top: 5px; color: #ffd97a; }
+#coach .coachSteps li.now::before { content: ''; --sign: var(--signRight); top: 8px; color: #ffd97a; }
 #coach .coachSteps li.now > b { display: block; font-size: 13px; color: #fff6dc; }
 #coach .coachSteps b b { color: #ffd97a; }
 #coach .coachSteps li.now .why { display: block; margin-top: 3px; color: #c5d2de; font-size: 11.5px; }

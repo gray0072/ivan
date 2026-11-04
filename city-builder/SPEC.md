@@ -137,6 +137,7 @@ city-builder/
 │   ├── input.js        mouse, touch (tap, drag, pinch), wheel, keys held, fullscreen
 │   ├── storage.js      save / load of the city, the difficulty, the records
 │   ├── cursor.js       hides the mouse cursor in fullscreen while it is still
+│   ├── icons.js        arrows, symbols and emoji drawn the same on every device, from data/icons.js (tools/icons-build.js)
 │   └── update.js       picks up a new deploy, reloading only on the start screen
 ├── sim/                no drawing, no DOM, no sound
 │   ├── state.js        shared state: the city (saved) and run (rebuilt), tile helpers

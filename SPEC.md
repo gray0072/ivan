@@ -57,6 +57,7 @@ The dice game Yacht (Yahtzee, dice poker) by the rules and score sheet of a fami
 ├── LICENSE                  # MIT
 ├── manifest.webmanifest      # PWA manifest of the gallery (icons from assets/)
 ├── tools/pwa-icons.sh        # renders a folder's PWA PNG icons from its SVGs with headless Chrome
+├── tools/icons-build.js      # packs each game's arrows, symbols and emoji as drawings (tools/icons/: the engine, the one-colour signs, the Twemoji files)
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
 ├── tools/cdp.js              # drives a page in headless Chrome (phone or desktop) from a steps file: screenshots, page errors
 ├── .gitattributes            # every text file stored with LF line endings

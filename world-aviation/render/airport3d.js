@@ -943,7 +943,7 @@ const Airport3D = {
       const label = (a.terminals > 1 && !gs[0].cargo && !gs[0].ga ? 'T' + gs[0].terminal + ' ' : '') + span;
       for (const dir of [1, -1]) {
         // (coming along +t the apron is on the right: the turn into the lane is a right turn)
-        const cv = dirSignCanvas((dir > 0 ? '→ ' : '← ') + label), w = DIR_SIGN_H * cv.width / 64 / 2;
+        const cv = dirSignCanvas(dir, label), w = DIR_SIGN_H * cv.width / 64 / 2;
         const off = Math.max(14, 9 + w), spots = [];
         for (const back of [45, 60, 75, 32, 90]) {
           for (const across of [LAYOUT.TWY_OFFSET - half - off, LAYOUT.TWY_OFFSET + half + off]) {
@@ -1258,14 +1258,19 @@ const DIR_SIGN_H = 1.65;
 // beside the taxiway, metres: seen 26 m off the centreline from 300 m away, a board ~60 m in
 // front of another covers it (Airport3D.gateSigns)
 const DIR_SIGN_VIEW = 60;
-function dirSignCanvas(text) {
+function dirSignCanvas(dir, text) {
   const cv = document.createElement('canvas');
   const g = cv.getContext('2d');
   g.font = 'bold 42px Arial, sans-serif';
-  cv.width = Math.min(1024, Math.max(160, Math.ceil(g.measureText(text).width) + 48)); cv.height = 64;
+  const tw = g.measureText(text).width, arrow = 56;
+  cv.width = Math.min(1024, Math.max(160, Math.ceil(tw + arrow) + 48)); cv.height = 64;
   g.fillStyle = '#f6c700'; g.fillRect(0, 0, cv.width, 64);
-  g.fillStyle = '#111111'; g.font = 'bold 42px Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText(text, cv.width / 2, 34);
+  // the arrow is drawn, so it is the same on every device and there as soon as the sign is
+  const x0 = (cv.width - tw - arrow) / 2, tip = dir > 0 ? x0 + 42 : x0 + 2, tail = dir > 0 ? x0 + 2 : x0 + 42, s = Math.sign(tip - tail);
+  g.strokeStyle = '#111111'; g.lineWidth = 7; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(tail, 32); g.lineTo(tip, 32); g.moveTo(tip - s * 15, 17); g.lineTo(tip, 32); g.lineTo(tip - s * 15, 47); g.stroke();
+  g.fillStyle = '#111111'; g.font = 'bold 42px Arial, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+  g.fillText(text, x0 + arrow, 34);
   return cv;
 }
 

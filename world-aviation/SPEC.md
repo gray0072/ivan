@@ -565,6 +565,7 @@ world-aviation/
 │   ├── utils.js            math, noise, RNG, geodesy, the per-flight projection (Theatre), formatting
 │   ├── input.js            keyboard, touch joystick/throttle/buttons, fullscreen
 │   ├── cursor.js           hides the mouse cursor in fullscreen while it is still
+│   ├── icons.js            arrows, symbols and emoji drawn the same on every device, from data/icons.js (tools/icons-build.js)
 │   ├── update.js           picks up a new deploy, reloading only on the title or operations screen
 │   ├── cloud.js            the cloud save: a Google sign-in (Supabase) per career, the accounts' sessions, sync and merge
 │   ├── audio.js            synthesized engines, airflow, wheels, brakes, hydraulics, warnings, spoken callouts, the cabin chime
