@@ -106,17 +106,19 @@ const Advisor = (() => {
 
   // how a kept set can end, following the best moves to the end of the turn. aims: the rows it scores
   // in, the likeliest first; miss: all the ends that give a row up or leave it not closed, named by
-  // the likeliest such row. Each with its chance, the points it brings and its gain: the gains
-  // weighted by the chances add up to the gain of the roll.
+  // the likeliest such row. Each with its chance, the points it brings on average, its gain and values:
+  // every number of points it can end with and the chance of that, the lowest first. The gains
+  // weighted by the chances add up to the gain of the roll, and the values to its points.
   function endings(key, rollsAfter, lv) {
     const hits = {}, misses = {};
     const add = (set, w) => {
       const e = lv.later[set];
       const into = e.scores ? hits : misses;
-      const b = into[e.row] || (into[e.row] = { row: e.row, chance: 0, points: 0, gain: 0 });
+      const b = into[e.row] || (into[e.row] = { row: e.row, chance: 0, points: 0, gain: 0, values: {} });
       b.chance += w;
       b.points += w * e.points;
       b.gain += w * e.value;
+      b.values[e.points] = (b.values[e.points] || 0) + w;
     };
     for (const n of HOLDS[key].next) {
       if (rollsAfter === 0) add(n.set, n.weight);
@@ -127,12 +129,18 @@ const Advisor = (() => {
       }
     }
     const byChance = (x, y) => y.chance - x.chance;
-    const mean = (b) => ({ row: b.row, chance: b.chance, points: b.points / b.chance, gain: b.gain / b.chance });
+    const mean = (b) => ({
+      row: b.row, chance: b.chance, points: b.points / b.chance, gain: b.gain / b.chance,
+      values: Object.keys(b.values).map(Number).sort((x, y) => x - y).map((p) => ({ points: p, chance: b.values[p] }))
+    });
     const failed = Object.values(misses).sort(byChance);
     let miss = null;
     if (failed.length) {
-      miss = { row: failed[0].row, chance: 0, points: 0, gain: 0 };
-      for (const b of failed) { miss.chance += b.chance; miss.points += b.points; miss.gain += b.gain; }
+      miss = { row: failed[0].row, chance: 0, points: 0, gain: 0, values: {} };
+      for (const b of failed) {
+        miss.chance += b.chance; miss.points += b.points; miss.gain += b.gain;
+        for (const p of Object.keys(b.values)) miss.values[p] = (miss.values[p] || 0) + b.values[p];
+      }
       miss = mean(miss);
     }
     return { aims: Object.values(hits).sort(byChance).map(mean), miss };
@@ -141,7 +149,9 @@ const Advisor = (() => {
   // Every move a player has after their roll number rollNo (1–3), the best first:
   //   { write: rowId, points, doubled, loss, gain } — writing into a free row, or
   //   { hold: [faces], points, gain, aims: [ending], miss: ending | null } — keeping these dice and
-  //   rolling, where an ending is { row: rowId, chance: 0..1, points, gain } (see endings).
+  //   rolling, where an ending is { row: rowId, chance: 0..1, points, gain, values: [{ points, chance }] }
+  //   (see endings) and an aim also has now: what its row would take from the dice as they lie, null
+  //   when it would be given up or not closed.
   // `points` is what goes on the sheet (for a roll: on average, by the best moves to the end of the
   // turn); `gain` is how much the move changes what the player can expect by the end of the game,
   // the number the moves are compared by.
@@ -161,6 +171,10 @@ const Advisor = (() => {
       for (const key of SET_HOLDS[SET_INDEX[keyOf(dice)]]) {
         if (key.length === DICE_COUNT) continue;
         const e = endings(key, rollsAfter, lv);
+        for (const a of e.aims) {
+          const sc = rowScore(a.row, dice, rollNo);
+          a.now = isLoss(a.row, sc) ? null : sc.p;
+        }
         list.push({ hold: key.split('').map(Number), points: holdValue(key, points), gain: holdValue(key, values), aims: e.aims, miss: e.miss });
       }
     }

@@ -43,24 +43,62 @@ const Card = {
     }
     return o.hold.length ? tr('keep {dice} and roll', { dice: o.hold.join(' ') }) : tr('roll all five');
   },
-  // what it brings: gain +8, or 33 on average, gain +12
-  payoffText(o) {
+  // what it brings: gain +8, or 1.3 points this turn on average, gain +12; short for the lines under
+  // the best move, which must leave the sheet its room
+  payoffText(o, short) {
     const gain = signed(Math.round(o.gain));
-    return o.write ? tr('gain {gain}', { gain }) : tr('{points} on average, gain {gain}', { points: numText(Math.round(o.points)), gain });
+    if (o.write) return tr('gain {gain}', { gain });
+    const points = this.averageText(o.points);
+    return short ? tr('{points} on average, gain {gain}', { points, gain }) : tr('{points} points this turn on average, gain {gain}', { points, gain });
+  },
+  // an average: small ones keep a decimal, or 1.3 would read as 1
+  averageText(v) {
+    const r = Math.round(v * 10) / 10;
+    if (Math.abs(r) >= 10 || Number.isInteger(r)) return numText(Math.round(r));
+    return (r < 0 ? '−' : '') + dec1(Math.abs(r));
+  },
+  // a chance in percent, never rounded down to nothing
+  pctText(chance) {
+    return chance < 0.005 ? '<1' : String(Math.round(chance * 100));
   },
   // the row a roll aims at, in words: the School's rows say what they ask for when there is room
   aimName(row, long) {
     if (!row.face) return tr(row.name);
     return long ? tr('School {face} (three dice of {face}, or −{n})', { face: row.face, n: SCHOOL_MISS }) : tr('School {face}', { face: row.face });
   },
+  // an outcome the way the sheet writes it; in the School also with the dice it takes: 4×5 → +5,
+  // on one line
+  outcomeText(row, points) {
+    const text = cellText(row, { p: points });
+    return row.face && points >= 0 ? (SCHOOL_TARGET + points / row.face) + '×' + row.face + '\u00a0→\u00a0' + text : text;
+  },
+  // what a row can end with: one number, each outcome with its chance, or a range if there are too many
+  outcomesText(b, withAverage) {
+    const row = ROW_BY_ID[b.row];
+    if (b.values.length === 1) return tr('gives {value}', { value: this.outcomeText(row, b.values[0].points) });
+    const average = this.averageText(b.points);
+    if (b.values.length > AIM_VALUES) {
+      const min = cellText(row, { p: b.values[0].points });
+      const max = cellText(row, { p: b.values[b.values.length - 1].points });
+      return tr('from {min} to {max}, {average} on average', { min, max, average });
+    }
+    const list = b.values.map((v) => tr('{outcome} ({pct}%)', { outcome: this.outcomeText(row, v.points), pct: this.pctText(v.chance) }).replace(/ /g, '\u00a0')).join(', ');
+    return withAverage ? tr('{list}, {average} on average', { list, average }) : list;
+  },
+  // the turn ends in this row for sure and what the dice already give there can only get better, so
+  // the roll is to improve the row, not to get it
+  improves(b) {
+    return Math.round(b.chance * 100) >= 100 && b.now !== null && b.values[0].points >= b.now && b.values[b.values.length - 1].points > b.now;
+  },
   // how a roll can end, a line each: the rows it aims at, the other rows, and what happens if nothing fits
   endingsHtml(o) {
     if (!o.hold) return '';
     const pct = (b) => Math.round(b.chance * 100);
     const shown = o.aims.filter((b) => b.chance >= AIM_MIN_CHANCE).slice(0, AIM_ROWS);
-    const lines = shown.map((b) => tr('{row}: chance {pct}%, gives about {points}, gain {gain}', {
-      row: this.aimName(ROW_BY_ID[b.row], true), pct: pct(b), points: numText(Math.round(b.points)), gain: signed(Math.round(b.gain))
-    }));
+    const lines = shown.map((b) => {
+      const params = { row: this.aimName(ROW_BY_ID[b.row], true), pct: pct(b), details: this.outcomesText(b, true), gain: signed(Math.round(b.gain)) };
+      return pct(b) >= 100 ? tr('{row}: {details}, gain {gain}', params) : tr('{row}: chance {pct}%, {details}, gain {gain}', params);
+    });
     const rest = o.aims.filter((b) => !shown.includes(b)).reduce((sum, b) => sum + b.chance, 0);
     if (Math.round(rest * 100) > 0) lines.push(tr('Other rows: chance {pct}%', { pct: Math.round(rest * 100) }));
     if (o.miss && pct(o.miss) > 0) {
@@ -69,13 +107,33 @@ const Card = {
     }
     return lines.map((l) => '<span class="aim">' + esc(l) + '</span>').join('');
   },
+  // where a roll's average comes from: every outcome's points times its chance, added up. When
+  // there are too many outcomes, by row; nothing when the roll can end in one way only.
+  averageSumText(o) {
+    const ends = o.aims.concat(o.miss || []);
+    const all = {};
+    for (const b of ends) for (const v of b.values) all[v.points] = (all[v.points] || 0) + v.chance;
+    let terms = Object.keys(all).map(Number).sort((x, y) => x - y).map((p) => ({ points: p, chance: all[p] }));
+    if (terms.length > AVERAGE_TERMS) {
+      const shown = o.aims.filter((b) => b.chance >= AIM_MIN_CHANCE).slice(0, AIM_ROWS);
+      const rest = ends.filter((b) => !shown.includes(b));
+      terms = shown.slice();
+      if (rest.length) {
+        const chance = rest.reduce((sum, b) => sum + b.chance, 0);
+        terms.push({ points: rest.reduce((sum, b) => sum + b.chance * b.points, 0) / chance, chance });
+      }
+    }
+    if (terms.length < 2) return '';
+    const sum = terms.map((t) => this.averageText(t.points) + '\u00a0×\u00a0' + this.pctText(t.chance) + '%').join(' + ');
+    return tr('Average this turn: {sum} ≈ {average}.', { sum, average: this.averageText(o.points) });
+  },
 
   // the other moves under the message on Easy
   alternatives(list) {
     const box = document.getElementById('alts');
     box.hidden = Run.difficulty !== 'easy' || Run.over;
     box.innerHTML = (list || []).slice(1, 1 + HINT_ALTERNATIVES).map((o) =>
-      '<div>' + esc(tr('Or: {move}, {payoff}', { move: this.moveText(o), payoff: this.payoffText(o) })) + '</div>').join('');
+      '<div>' + esc(tr('Or: {move}, {payoff}', { move: this.moveText(o), payoff: this.payoffText(o, true) })) + '</div>').join('');
   },
 
   // the dialog with every move
@@ -83,7 +141,7 @@ const Card = {
     document.getElementById('movesList').innerHTML = list.map((o, i) =>
       '<tr class="' + (i === 0 ? 'bestMove' : '') + '"><td class="mv">' + esc(this.moveText(o)) +
       this.endingsHtml(o) + '</td>' +
-      '<td>' + esc((o.hold ? '≈' : '') + numText(Math.round(o.points))) + (o.doubled ? '<sup>×2</sup>' : '') + '</td>' +
+      '<td>' + esc(o.hold ? '≈' + this.averageText(o.points) : numText(o.points)) + (o.doubled ? '<sup>×2</sup>' : '') + '</td>' +
       '<td class="' + (o.gain < 0 ? 'minus' : 'plus') + '"><b>' + esc(signed(Math.round(o.gain))) + '</b></td></tr>').join('');
   },
 
@@ -96,9 +154,11 @@ const Card = {
     document.getElementById('whyList').innerHTML = list.slice(0, WHY_MOVES).map((o, i) => {
       const points = Math.round(o.points);
       const all = ahead + Math.round(o.gain);
-      const params = { points: numText(points), rest: numText(all - points), total: numText(now + all), gain: signed(Math.round(o.gain)) };
+      const params = { points: o.hold ? this.averageText(o.points) : numText(points), rest: numText(all - points), total: numText(now + all), gain: signed(Math.round(o.gain)) };
       const text = o.write ? tr('{points} now + about {rest} from the other rows: a final total of about {total}. Gain {gain}.', params) : tr('About {points} this turn + about {rest} from the other rows: a final total of about {total}. Gain {gain}.', params);
-      return '<li class="' + (i === 0 ? 'bestMove' : '') + '"><b>' + esc(this.moveText(o)) + '</b>' + this.endingsHtml(o) + '<span>' + esc(text) + '</span></li>';
+      const sum = o.hold ? this.averageSumText(o) : '';
+      return '<li class="' + (i === 0 ? 'bestMove' : '') + '"><b>' + esc(this.moveText(o)) + '</b>' + this.endingsHtml(o) +
+        (sum ? '<span class="aim">' + esc(sum) + '</span>' : '') + '<span>' + esc(text) + '</span></li>';
     }).join('');
   },
 
@@ -128,6 +188,18 @@ const Card = {
     const best = tr('Best move: {move}, {payoff}.', { move: this.moveText(a), payoff: this.payoffText(a) });
     const aim = a.hold && a.aims[0];
     if (!aim) return best;
-    return best + ' ' + tr('Aim: {row}, chance {pct}%, gives about {points}.', { row: this.aimName(ROW_BY_ID[aim.row], false), pct: Math.round(aim.chance * 100), points: numText(Math.round(aim.points)) });
+    const row = ROW_BY_ID[aim.row];
+    const name = this.aimName(row, false);
+    const pct = Math.round(aim.chance * 100);
+    const details = this.outcomesText(aim, false);
+    let text = best + ' ';
+    if (this.improves(aim)) text += tr('Aim: improve {row}, now {now}. Outcomes: {details}.', { row: name, now: this.outcomeText(row, aim.now), details });
+    else if (pct >= 100) text += tr('Aim: {row}: {details}.', { row: name, details });
+    else text += tr('Aim: {row}, chance {pct}%: {details}.', { row: name, pct, details });
+    if (a.miss && Math.round(a.miss.chance * 100) > 0) {
+      const move = this.moveText({ write: a.miss.row, loss: true, points: -SCHOOL_MISS });
+      text += ' ' + tr('Otherwise {move}: chance {pct}%.', { move, pct: Math.round(a.miss.chance * 100) });
+    }
+    return text;
   }
 };
