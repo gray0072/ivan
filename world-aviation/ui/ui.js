@@ -1200,13 +1200,13 @@ const UI = {
       this.promoHtml(p.promoted) +
       (p.rep ? '<p class="repGain">' + tr('Reputation with {who}', { who: esc(tr(FACTIONS[result.contract.faction].name)) }) +
         ': <b>' + (p.rep > 0 ? '+' : '') + p.rep.toFixed(1) + '</b></p>' : '') +
-      (p.bankrupt ? '<p class="need">' + tr('Your balance is below −50 000 kr. Nobody will lease you an aeroplane any more — this career is over.') + '</p>' : '') +
+      // in debt: never the end of a career — the flights pay it off, the purchases wait
+      (Career.data.money < 0 ? '<p class="need">' + tr('Your balance is {sum} below zero. Keep flying: the next flights pay it off; courses and purchases wait until it is above zero again.', { sum: fmtMoney(-Career.data.money) }) + '</p>' : '') +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
       '<div class="btnRow">' +
-      (p.bankrupt ? '<button class="btn default" data-act="gameover">' + tr('Start again') + '</button>'
-        : failed && !(p.rtw && p.rtw.lost) ? '<button class="btn default" data-act="retry">' + tr('Try again') + '</button><button class="btn" data-act="ops">' + tr('Back to ops') + '</button>'
-          : failed ? '<button class="btn default" data-act="ops">' + tr('Back to ops') + '</button>'
-          : '<button class="btn default fwd" data-act="ops">' + tr('Next flight') + '</button>') +
+      (failed && !(p.rtw && p.rtw.lost) ? '<button class="btn default" data-act="retry">' + tr('Try again') + '</button><button class="btn" data-act="ops">' + tr('Back to ops') + '</button>'
+        : failed ? '<button class="btn default" data-act="ops">' + tr('Back to ops') + '</button>'
+        : '<button class="btn default fwd" data-act="ops">' + tr('Next flight') + '</button>') +
       '</div>';
     this.panel(body, 'debrief');
     // the last leg round the world: the finish over the debrief, once
@@ -1567,7 +1567,6 @@ const UI = {
         else if (Game.contract && Rtw.ironAtStake(Game.contract)) RtwScreen.confirmQuit('restart');
         else if (Game.contract) { Game.mode = 'ops'; Game.launch(Game.contract, { skipPushback: Career.skipPushback }); }
         break;
-      case 'gameover': Cloud.careerDeleted(); Career.reset(); Cloud.careerOpened(); Game.mode = 'menu'; this.showTitle(); break;
       default: break;
     }
   },

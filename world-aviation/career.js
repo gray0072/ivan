@@ -996,11 +996,10 @@ const Career = {
     const done = rtw && rtw.finish ? d.log.splice(0, rtw.finish.legend ? 2 : 1) : [];
     d.log.unshift(dayLabel(c, result, d.log.length));
     d.log = done.concat(d.log).slice(0, 24);
-    const bankrupt = d.money < CONTRACTS.START_DEBT_LIMIT;
     const promoted = this.checkRank();
     this.generateContracts();
     this.save();
-    return { lines, total, rep, grade: result.grade, records: true, bankrupt, promoted, rtw };
+    return { lines, total, rep, grade: result.grade, records: true, promoted, rtw };
   },
 
   // The invoice of a flight landed (the debrief's lines): the contract and its bonuses, the lease
@@ -1071,7 +1070,7 @@ const Career = {
       // a round-the-world leg: flown again, or (Iron) the expedition is over
       const rtw = Rtw.legLost(result.contract, result.reason);
       this.save();
-      return { lines, total, rep: -rep, bankrupt: d.money < CONTRACTS.START_DEBT_LIMIT, rtw };
+      return { lines, total, rep: -rep, rtw };
     }
     d.stats.cheats += result.cheated ? 1 : 0;
     const rtw = result.contract ? Rtw.legCheated(result.contract) : null;

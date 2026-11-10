@@ -421,7 +421,8 @@ function careerRun(seed) {
     if (LOG) console.log('    ' + lpad(n + 1, 3) + ' ' + pad(best.ac.id, 8) + pad(best.c.faction, 6) + best.c.fromId + '-' + best.c.toId + lpad(best.c.distanceNm, 6) + ' nm  ' +
       lpad(k(d.money - before), 6) + '  +' + out.rep.toFixed(1) + ' rep  (' + (want || 'money') + ')  money ' + k(d.money) +
       '  rep ' + Math.round(d.rep.pax) + '/' + Math.round(d.rep.cargo) + '/' + Math.round(d.rep.bush));
-    if (out.bankrupt) { bankrupt = true; break; }
+    // (a career is never ended by debt, but the bot should never get deep into it)
+    if (d.money < -50000) { bankrupt = true; break; }
   }
   const n = flights.length;
   const share = {};
@@ -477,7 +478,7 @@ function careerPart() {
     (cargoLate.length ? ': late ' + cargoLate.map((x) => x.c.name + ' +' + x.late).join(', ') : ''));
   const types = median(runs.map((r) => r.types));
   check(types >= TARGET.TYPES_FLOWN_MIN, types + ' types flown (at least ' + TARGET.TYPES_FLOWN_MIN + ')');
-  check(!runs.some((r) => r.bankrupt), 'never bankrupt');
+  check(!runs.some((r) => r.bankrupt), 'never more than 50 000 kr in debt');
 }
 
 // ============================================================

@@ -1392,7 +1392,6 @@ const CONTRACTS = {
   FUEL_TAXI_KG_PER_ENGINE: 25,
   FUEL_RATE: 4.3,               // SEK per kg of fuel burnt
   START_MONEY: 48000,
-  START_DEBT_LIMIT: -50000,
   GRADE_MULT: { 'A+': 1.35, A: 1.22, B: 1.08, C: 0.95, D: 0.75, E: 0.55, F: 0.4 }
 };
 
