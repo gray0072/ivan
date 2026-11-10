@@ -65,6 +65,15 @@
       <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Play</b></a> · <a href="yacht/">Source</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/wiggle-wars/"><img src="wiggle-wars/screenshot.png" alt="Wiggle Wars screenshot"></a>
+      <h3><img src="wiggle-wars/icon.svg" alt="" width="28" height="28" align="center"> Wiggle Wars</h3>
+      <p>Turn-based artillery with worms: bazookas, grenades, air strikes and crates on a land that blows apart — one against one on one phone, against the computer, or a twelve-mission campaign.</p>
+      <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Play</b></a> · <a href="wiggle-wars/">Source</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Highlights
@@ -106,7 +115,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # repo-wide spec and conventions
 ├── AGENTS.md                # instructions for AI coding agents (CLAUDE.md points here)
-└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht
+└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars
     ├── SPEC.md              # spec of this game
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # the code, by role

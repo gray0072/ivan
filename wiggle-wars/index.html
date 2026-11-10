@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Turn-based artillery with worms: bazookas, grenades, air strikes and crates on a destructible land. One against one on one phone, against the computer, or a twelve-mission campaign.">
+<title>Wiggle Wars</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
+<link rel="manifest" href="manifest.webmanifest?v=1">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
+<meta name="theme-color" content="#16324a">
+<link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" hidden>
+  <div class="hudLeft">
+    <div id="timer" class="timer"><b id="timerNum"></b><span id="timerWho"></span></div>
+    <div id="goal" class="chip" hidden></div>
+  </div>
+  <div id="wind" class="wind" data-i18n-title="Wind">
+    <div class="windBar"><div class="windL" id="windL"></div><div class="windR" id="windR"></div></div>
+    <span id="windText"></span>
+  </div>
+  <button class="round" id="pauseBtn" data-i18n-title="Pause (Esc)">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="5" y="4" width="4.5" height="16" rx="1.5"/><rect x="14.5" y="4" width="4.5" height="16" rx="1.5"/></svg>
+  </button>
+</div>
+
+<div id="teamBars" hidden></div>
+<div id="banner"></div>
+
+<div id="controls" hidden>
+  <button id="weaponBtn" class="ctl weapon" data-i18n-title="Weapons (Q)"><span class="wIcon"></span><span class="wText"><b class="wName"></b><span class="wAmmo"></span></span></button>
+  <button id="fuseBtn" class="ctl fuse" data-i18n-title="Fuse (1–5)" hidden></button>
+  <div id="touchBtns" hidden>
+    <button id="flipBtn" class="ctl tbtn" data-i18n-title="Back flip">↶</button>
+    <button id="jumpBtn" class="ctl tbtn" data-i18n-title="Jump">↗</button>
+    <button id="fireBtn" class="ctl fire" data-i18n>Fire</button>
+  </div>
+</div>
+
+<div id="arsenal" class="card" hidden>
+  <div class="cardHead"><h2 data-i18n>Weapons</h2><button class="x" id="arsenalClose" data-i18n-title="Close">✖</button></div>
+  <div class="grid" id="arsenalGrid"></div>
+  <p class="fine" id="arsenalDesc"></p>
+</div>
+
+<div id="overlay">
+  <div id="menu" class="panel" hidden>
+    <div class="langPick" role="group" aria-label="Language"></div>
+    <div class="logoArt"><canvas id="logoWorm" width="120" height="90"></canvas></div>
+    <h1 class="logo">Wiggle Wars</h1>
+    <p class="tagline" data-i18n>Bazookas, grenades and air strikes on a land that blows apart. Play one against one on one phone, against the computer — or win the campaign!</p>
+    <div class="btnCol">
+      <button class="btn default big" id="versusBtn" data-i18n>Versus</button>
+      <button class="btn big" id="campaignBtn"><span data-i18n>Campaign</span> <span id="campaignStars" class="starsSmall"></span></button>
+    </div>
+    <p class="label" data-i18n>Difficulty</p>
+    <div class="btnRow" id="menuDiff"></div>
+    <p class="fine" id="menuDiffText"></p>
+    <div class="btnRow small">
+      <span data-i18n>Sound</span>
+      <button class="btn toggle" data-sound="on" data-i18n>On</button>
+      <button class="btn toggle" data-sound="off" data-i18n>Off</button>
+    </div>
+    <div class="btnRow small">
+      <button class="btn secondary" id="helpBtn" data-i18n>How to play</button>
+    </div>
+    <div id="help" hidden>
+      <p data-i18n>Two teams of worms take turns. On your turn walk, jump, aim and fire one weapon before the time runs out — then run for cover! A worm that falls into the water is gone. The last team standing wins.</p>
+      <p data-i18n>Hold <b>Fire</b> longer to shoot further. The <b>wind</b> at the top carries bazooka shots and air strikes. Grenades bounce and go off when their fuse runs out (1–5 seconds). The dotted line shows where your last shot flew.</p>
+      <p data-i18n>Crates fall from the sky: health, weapons and tools like the jetpack, the teleport, double damage and low gravity. Oil barrels and mines blow up. In sudden death the water rises after every turn.</p>
+      <p data-i18n><b>Keyboard:</b> ← → walk, ↑ ↓ aim, Space hold to fire, Enter jump, Backspace back flip, 1–5 the fuse, Q or Tab or the right mouse button the weapons, C the camera back to the worm, Esc pause. Click the map to pick a target, drag it to look around, the wheel zooms.</p>
+      <p data-i18n><b>Phone and tablet:</b> the game goes fullscreen. A joystick appears where you touch the left half: sideways to walk, up and down to aim. Hold <b>Fire</b> at the bottom right to shoot; Jump and Back flip are above it. Tap the map to pick a target, drag it to look around, pinch to zoom.</p>
+    </div>
+  </div>
+
+  <div id="setupPanel" class="panel wide" hidden>
+    <h1 data-i18n>Versus</h1>
+    <div class="teams" id="setupTeams"></div>
+    <div class="setupGrid">
+      <div class="setupCol" id="setupRows"></div>
+      <div class="setupCol">
+        <canvas id="mapPreview" width="300" height="150"></canvas>
+        <div class="btnRow"><button class="btn toggle" id="newMapBtn" data-i18n>New map</button></div>
+        <p class="label" data-i18n>Weapons</p>
+        <div class="btnRow small"><button class="btn toggle" id="allWeapons" data-i18n>All</button><button class="btn toggle" id="noWeapons" data-i18n>None</button></div>
+        <div class="weaponPick" id="setupWeapons"></div>
+      </div>
+    </div>
+    <div class="btnRow">
+      <button class="btn default big" id="startBtn" data-i18n>Start</button>
+      <button class="btn secondary" id="setupBack" data-i18n>Back</button>
+    </div>
+  </div>
+
+  <div id="campaignPanel" class="panel wide" hidden>
+    <h1 data-i18n>Campaign</h1>
+    <p class="fine" id="campaignTotal"></p>
+    <div class="missions" id="missionList"></div>
+    <div class="btnRow"><button class="btn secondary" id="campaignBack" data-i18n>Back</button></div>
+  </div>
+
+  <div id="briefingPanel" class="panel" hidden>
+    <p class="label" id="briefNum"></p>
+    <h1 id="briefName"></h1>
+    <p class="tagline" id="briefStory"></p>
+    <div class="brief">
+      <div class="row"><span data-i18n>Goal</span><b id="briefGoal"></b></div>
+      <div class="row"><span data-i18n>Your team</span><b id="briefYou"></b></div>
+      <div class="row" id="briefEnemyRow"><span data-i18n>The enemy</span><b id="briefEnemy"></b></div>
+      <div class="row"><span data-i18n>Best</span><b id="briefBest"></b></div>
+    </div>
+    <div class="weaponIcons" id="briefWeapons"></div>
+    <div class="btnRow">
+      <button class="btn default big" id="briefStart" data-i18n>Start</button>
+      <button class="btn secondary" id="briefBack" data-i18n>Back</button>
+    </div>
+  </div>
+
+  <div id="pausePanel" class="panel" hidden>
+    <h1 data-i18n>⏸ Paused</h1>
+    <div class="btnCol">
+      <button class="btn default" id="resumeBtn" data-i18n>Continue</button>
+      <button class="btn secondary" id="restartBtn" data-i18n>Restart</button>
+      <button class="btn secondary" id="pauseMenuBtn" data-i18n>Main Menu</button>
+    </div>
+    <div class="btnRow small">
+      <span data-i18n>Sound</span>
+      <button class="btn toggle" data-sound="on" data-i18n>On</button>
+      <button class="btn toggle" data-sound="off" data-i18n>Off</button>
+    </div>
+  </div>
+
+  <div id="resultPanel" class="panel" hidden>
+    <h1 id="resultTitle"></h1>
+    <div class="bigStars" id="resultStars"></div>
+    <div class="record" id="resultBest" hidden data-i18n>🏆 New best!</div>
+    <p id="resultText"></p>
+    <table class="resultTable" id="resultTable"></table>
+    <p class="fine" id="resultCheat" hidden data-i18n>Cheats were used — no stars are saved.</p>
+    <p class="label" data-i18n>Difficulty</p>
+    <div class="btnRow" id="resultDiff"></div>
+    <div class="btnRow">
+      <button class="btn default" id="nextBtn" data-i18n>Next mission</button>
+      <button class="btn" id="againBtn" data-i18n>Play Again</button>
+      <button class="btn secondary" id="resultMenuBtn" data-i18n>Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+
+<script src="data/icons.js?v=1"></script>
+<script src="core/icons.js?v=1"></script>
+<script src="constants.js?v=1"></script>
+<script src="data/weapons.js?v=1"></script>
+<script src="data/themes.js?v=1"></script>
+<script src="data/names.js?v=1"></script>
+<script src="data/missions.js?v=1"></script>
+<script src="data/lang-ru.js?v=1"></script>
+<script src="data/lang-sv.js?v=1"></script>
+<script src="core/i18n.js?v=1"></script>
+<script src="core/utils.js?v=1"></script>
+<script src="core/events.js?v=1"></script>
+<script src="core/audio.js?v=1"></script>
+<script src="core/input.js?v=1"></script>
+<script src="core/storage.js?v=1"></script>
+<script src="core/cursor.js?v=1"></script>
+<script src="core/update.js?v=1"></script>
+<script src="sim/state.js?v=1"></script>
+<script src="sim/terrain.js?v=1"></script>
+<script src="sim/mapgen.js?v=1"></script>
+<script src="sim/physics.js?v=1"></script>
+<script src="sim/weapons.js?v=1"></script>
+<script src="sim/objects.js?v=1"></script>
+<script src="sim/turn.js?v=1"></script>
+<script src="sim/match.js?v=1"></script>
+<script src="sim/ai.js?v=1"></script>
+<script src="art/weapons.js?v=1"></script>
+<script src="render/camera.js?v=1"></script>
+<script src="render/terrainview.js?v=1"></script>
+<script src="render/backdrop.js?v=1"></script>
+<script src="render/render.js?v=1"></script>
+<script src="ui/screens.js?v=1"></script>
+<script src="ui/setup.js?v=1"></script>
+<script src="ui/hud.js?v=1"></script>
+<script src="ui/arsenal.js?v=1"></script>
+<script src="ui/sounds.js?v=1"></script>
+<script src="ui/fireworks.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body>
+</html>

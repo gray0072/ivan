@@ -43,6 +43,10 @@ Isometric city-building game for kids (a simple SimCity): roads, houses, shops, 
 
 The dice game Yacht (Yahtzee, dice poker) by the rules and score sheet of a family's paper game, for 1–10 players on one device: a leather cup and 3D dice on a table of your choice of colour and texture, saved groups of players, statistics, hints on three levels; playable in English, Russian or Swedish. Full spec: [`yacht/SPEC.md`](yacht/SPEC.md).
 
+### wiggle-wars
+
+Turn-based artillery game in the genre of Worms (original simple graphics): two teams of worms on a destructible 2D land over the water, a dozen weapons and tools (bazooka, homing missile, grenades, shotgun, bat, dynamite, mines, air strike, drill, jetpack, teleport, plank), wind, parachuted crates, mines, oil barrels, sudden death with rising water; one against one hot seat on one phone or tablet, against a computer that aims with the game's own physics, or a twelve-mission campaign with three stars each; worms per team, health, weapons, map kind and theme (a low-gravity Moon among them) are set before a match; playable in English, Russian or Swedish. Full spec: [`wiggle-wars/SPEC.md`](wiggle-wars/SPEC.md).
+
 ## Project structure
 
 ```
@@ -158,6 +162,21 @@ The dice game Yacht (Yahtzee, dice poker) by the rules and score sheet of a fami
 │   ├── sim/                  # state, scoring, turn (rolling, holding, writing, undo), advisor (the best move), stats
 │   ├── art/                  # cup.svg (the leather cup), flag-gb / flag-ru / flag-se.svg (the language switcher)
 │   ├── ui/                   # dice (the cup and the 3D dice), table (the score sheet), card, screens, groups (the editor), statsview, tabletop (the table's colour and texture), sounds, fireworks
+│   ├── README.md, README_RU.md, README_SV.md
+│   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
+│   ├── manifest.webmanifest  # PWA manifest
+│   └── screenshot.png
+├── wiggle-wars/
+│   ├── SPEC.md               # the game's own spec
+│   ├── index.html            # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── constants.js, game.js # tuning, the flow (menu with the CPU demo, setup, campaign, match, pause, results, cheats)
+│   ├── data/                 # weapons, themes (and the map kinds), missions (the campaign), names (worms, team colours), lang-ru / lang-sv (translations)
+│   ├── core/                 # i18n, utils, events, audio, input (keys, touch joystick, taps, pinch, mouse, fullscreen), storage (setup, campaign stars), cursor, update
+│   ├── sim/                  # state, terrain (the land bitmap), mapgen (the four map kinds), physics (bodies), weapons (shots, explosions), objects (crates, mines, barrels, targets), turn (the turn's phases, Control), match (a new match or mission), ai (the computer)
+│   ├── art/                  # weapons (the weapons' pictures), flag-gb / flag-ru / flag-se.svg (the language switcher)
+│   ├── render/               # camera, terrainview (the land canvas, craters), backdrop (sky, parallax, water), render (worms, objects, shots, effects, aim)
+│   ├── ui/                   # screens, setup (the versus setup), hud, arsenal (the weapon panel), sounds, fireworks
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest

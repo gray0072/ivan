@@ -65,6 +65,15 @@
       <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Играть</b></a> · <a href="yacht/">Исходники</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/wiggle-wars/"><img src="wiggle-wars/screenshot.png" alt="Скриншот Wiggle Wars"></a>
+      <h3><img src="wiggle-wars/icon.svg" alt="" width="28" height="28" align="center"> Wiggle Wars</h3>
+      <p>Пошаговая артиллерия с червяками: базуки, гранаты, авиаудары и ящики на разрушаемой земле — один на один на одном телефоне, против компьютера или кампания из двенадцати миссий.</p>
+      <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Играть</b></a> · <a href="wiggle-wars/">Исходники</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Особенности
@@ -106,7 +115,7 @@ npx serve .        # или просто открой любой index.html в �
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # спецификация и правила всего репозитория
 ├── AGENTS.md                # инструкции для AI-агентов (CLAUDE.md ссылается сюда)
-└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht
+└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars
     ├── SPEC.md              # спецификация этой игры
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # код, разложенный по ролям

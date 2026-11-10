@@ -24,7 +24,9 @@ const GALLERY_LANG = {
     ytAlt: 'Yacht screenshot',
     ytDesc: 'The dice game Yacht, also known as Yahtzee and dice poker, for up to 10 players on one device: shake the leather cup, keep the dice you like and fill the score sheet. Saved groups of players, statistics, hints on three levels, and a table in the colour and texture you choose. English, Russian and Swedish.',
     cbAlt: 'City Builder screenshot',
-    cbDesc: 'A city-building game: lay roads, build houses, shops and factories, keep the residents happy and watch cottages grow into apartment blocks. Grow a hamlet into a Village, a Town, a City and a Metropolis, put out fires, hold back spring floods and don\'t go bankrupt. Three difficulty levels, records, English, Russian and Swedish.'
+    cbDesc: 'A city-building game: lay roads, build houses, shops and factories, keep the residents happy and watch cottages grow into apartment blocks. Grow a hamlet into a Village, a Town, a City and a Metropolis, put out fires, hold back spring floods and don\'t go bankrupt. Three difficulty levels, records, English, Russian and Swedish.',
+    wwAlt: 'Wiggle Wars screenshot',
+    wwDesc: 'A turn-based artillery game with worms, in the spirit of Worms: bazookas, grenades, air strikes, a jetpack and a dozen more weapons on a land that blows apart, with wind, crates, mines and oil barrels. One against one on one phone or tablet, against the computer, or a twelve-mission campaign with stars. Pick the worms per team, the weapons and the map; English, Russian and Swedish.'
   },
   ru: {
     name: 'Русский',
@@ -47,7 +49,9 @@ const GALLERY_LANG = {
     ytAlt: 'Скриншот игры Яхт',
     ytDesc: 'Яхт, он же Yahtzee и покер на костях, для компании до 10 игроков на одном устройстве: трясите кожаный стакан, оставляйте нужные кости и заполняйте лист. Сохранённые группы игроков, статистика, подсказки на трёх уровнях и стол нужного цвета и фактуры. Английский, русский и шведский языки.',
     cbAlt: 'Скриншот City Builder',
-    cbDesc: 'Градостроитель: прокладывайте дороги, стройте дома, магазины и фабрики, заботьтесь о жителях и смотрите, как домики вырастают в многоэтажки. Превратите хутор в Деревню, Посёлок, Город и Мегаполис, тушите пожары, сдерживайте весенние наводнения и не обанкротьтесь. Три уровня сложности, рекорды, английский, русский и шведский языки.'
+    cbDesc: 'Градостроитель: прокладывайте дороги, стройте дома, магазины и фабрики, заботьтесь о жителях и смотрите, как домики вырастают в многоэтажки. Превратите хутор в Деревню, Посёлок, Город и Мегаполис, тушите пожары, сдерживайте весенние наводнения и не обанкротьтесь. Три уровня сложности, рекорды, английский, русский и шведский языки.',
+    wwAlt: 'Скриншот Wiggle Wars',
+    wwDesc: 'Пошаговая артиллерия с червяками в духе Worms: базуки, гранаты, авиаудары, реактивный ранец и ещё десяток видов оружия на разрушаемой земле, с ветром, ящиками, минами и бочками с нефтью. Один на один на одном телефоне или планшете, против компьютера или кампания из двенадцати миссий со звёздами. Число червей в команде, оружие и карта — на выбор; английский, русский и шведский языки.'
   },
   sv: {
     name: 'Svenska',
@@ -70,6 +74,8 @@ const GALLERY_LANG = {
     ytAlt: 'Skärmbild från Yatzy',
     ytDesc: 'Tärningsspelet Yatzy, även känt som Yacht och tärningspoker, för upp till 10 spelare på en enhet: skaka läderbägaren, behåll de tärningar du vill ha och fyll i protokollet. Sparade spelargrupper, statistik, tips på tre nivåer och ett bord i den färg och struktur du väljer. Engelska, ryska och svenska.',
     cbAlt: 'Skärmbild från City Builder',
-    cbDesc: 'Ett stadsbyggarspel: bygg vägar, hus, affärer och fabriker, håll invånarna glada och se stugorna växa till höghus. Låt ett torp bli en By, en Småstad, en Stad och en Metropol, släck bränder, stoppa vårfloden och gå inte i konkurs. Tre svårighetsgrader, rekord, engelska, ryska och svenska.'
+    cbDesc: 'Ett stadsbyggarspel: bygg vägar, hus, affärer och fabriker, håll invånarna glada och se stugorna växa till höghus. Låt ett torp bli en By, en Småstad, en Stad och en Metropol, släck bränder, stoppa vårfloden och gå inte i konkurs. Tre svårighetsgrader, rekord, engelska, ryska och svenska.',
+    wwAlt: 'Skärmbild från Wiggle Wars',
+    wwDesc: 'Ett turbaserat artillerispel med maskar i Worms anda: bazookor, granater, flyganfall, raketryggsäck och ett dussin vapen till på en mark som sprängs i bitar, med vind, lådor, minor och oljefat. En mot en på en telefon eller surfplatta, mot datorn eller en kampanj med tolv uppdrag och stjärnor. Välj antal maskar per lag, vapnen och kartan; engelska, ryska och svenska.'
   }
 };

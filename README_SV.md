@@ -65,6 +65,15 @@
       <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Spela</b></a> · <a href="yacht/">Källkod</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/wiggle-wars/"><img src="wiggle-wars/screenshot.png" alt="Skärmbild från Wiggle Wars"></a>
+      <h3><img src="wiggle-wars/icon.svg" alt="" width="28" height="28" align="center"> Wiggle Wars</h3>
+      <p>Turbaserat artilleri med maskar: bazookor, granater, flyganfall och lådor på en mark som sprängs i bitar — en mot en på en telefon, mot datorn eller en kampanj med tolv uppdrag.</p>
+      <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Spela</b></a> · <a href="wiggle-wars/">Källkod</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Det bästa
@@ -106,7 +115,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # specifikation och regler för hela repot
 ├── AGENTS.md                # instruktioner för AI-agenter (CLAUDE.md pekar hit)
-└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht
+└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars
     ├── SPEC.md              # spelets specifikation
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # koden, ordnad efter roll
