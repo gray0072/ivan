@@ -8,16 +8,18 @@
 function isWorking(b) { return b.connected && !b.damaged && !b.ruin && !b.fire; }
 function jobsOf(b) { return isWorking(b) ? def(b).jobs || 0 : 0; }
 
-// the nearest fire station covering a tile, or null
-function coveringStation(x, y) {
-  let best = null, bestD = Infinity;
+// the fire stations covering a tile, the nearest first: [{ s, d (tiles) }]
+function coveringStations(x, y) {
+  const out = [];
   for (const s of city.buildings) {
     if (s.type !== 'fireStation' || s.ruin) continue;
-    const d = distToRect(x + 0.5, y + 0.5, s.x, s.y, 2, 2);
-    if (d <= BUILDINGS.fireStation.cover && d < bestD) { best = s; bestD = d; }
+    const sd = def(s);
+    const d = distToRect(x + 0.5, y + 0.5, s.x, s.y, sd.w, sd.h);
+    if (d <= sd.cover) out.push({ s, d });
   }
-  return best;
+  return out.sort((a, b) => a.d - b.d);
 }
+function coveringStation(x, y) { const l = coveringStations(x, y); return l.length ? l[0].s : null; }
 
 // a house's happiness and what it is made of: { value, parts: [{ text, delta }] }
 function houseHappiness(h) {
@@ -75,8 +77,8 @@ function refreshStats() {
 function demand() {
   const st = city.stats;
   const free = st.jobs - st.workforce;
-  const airports = city.buildings.filter((b) => b.type === 'airport' && isWorking(b)).length;
-  return clamp(0.5 + free / Math.max(8, st.workforce * 0.25), DEMAND_MIN, DEMAND_MAX) + airports * (BUILDINGS.airport.arrivals - 1);
+  const planes = city.buildings.reduce((s, b) => s + (b.type === 'airport' && isWorking(b) ? def(b).arrivals - 1 : 0), 0);
+  return clamp(0.5 + free / Math.max(8, st.workforce * 0.25), DEMAND_MIN, DEMAND_MAX) + planes;
 }
 
 function monthStep() {
@@ -85,7 +87,7 @@ function monthStep() {
   const st = city.stats;
   const dem = demand();
   const schoolNear = (h) => city.buildings.some((s) => s.type === 'school' && isWorking(s) &&
-    distToRect(h.x + 0.5, h.y + 0.5, s.x, s.y, 2, 2) <= BUILDINGS.school.effect.radius);
+    distToRect(h.x + 0.5, h.y + 0.5, s.x, s.y, def(s).w, def(s).h) <= def(s).effect.radius);
 
   // residents and houses
   for (const h of city.buildings) {

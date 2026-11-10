@@ -64,7 +64,11 @@ const FIRE_SPREAD_CHANCE = 0.15; // per try: a fire spreads to fewer than one ne
 const FIRE_SPREAD_GAP = 1;      // tiles between footprints a fire can jump
 const FIRE_FACTORY_WEIGHT = 3;  // a factory catches fire this many times as often
 const TRUCK_SPEED = 5;          // tiles per second (game time)
-const EXTINGUISH_TIME = 2;      // s the truck spends on the fire
+const EXTINGUISH_TIME = 2;      // s the truck (or the helicopter) spends on the fire
+const HELI_SPEED = 8;           // tiles per second (game time): the fire helicopter flies straight, over everything
+const HELI_ALT = 110;           // px up it flies at
+const HELI_CLIMB = 70;          // px per second it rises from its pad and comes down to it
+const HELI_PAD = { u: 1.15, v: 0.9, z: 27 };   // where it stands on its station: tiles from the station's corner, px up
 const FLOOD_REACH_MIN = 2;      // tiles the water spreads from the river
 const FLOOD_REACH_MAX = 3;
 const FLOOD_RISE_TIME = 6;      // s for the water to come up (and to go down)
@@ -75,6 +79,7 @@ const CAR_PER_RESIDENTS = 25;   // one car on the roads per this many residents
 const CARS_MAX = 60;
 const CAR_SPEED = 1.6;          // tiles per second (game time)
 const PLANE_EVERY = 14;         // s between take-offs at an airport
+const PLANE_EVERY_BIG = 7;      // … at an international airport
 
 // ---------- difficulty ----------
 const DIFFICULTY = {

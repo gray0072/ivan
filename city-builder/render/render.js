@@ -82,9 +82,9 @@ const Renderer = (() => {
     c.drawImage(e.img, x - e.ox, y - e.oy, e.img.width / e.s, e.img.height / e.s);
     if (alpha !== undefined) c.globalAlpha = 1;
   }
-  function buildingSprite(type, level, variant, ruin) {
+  function buildingSprite(type, level, variant, ruin, up) {
     const d = BUILDINGS[type];
-    const look = ruin ? 'ruins' : type;
+    const look = ruin ? 'ruins' : up ? type + '2' : type;
     const n = SPRITE_VARIANTS[look] || 1;
     const lv = look === 'house' ? level : 0;
     return sprite(look + ':' + lv + ':' + (variant % n) + ':' + d.w + 'x' + d.h, d.w, d.h, spriteHeight(look, lv),
@@ -211,9 +211,9 @@ const Renderer = (() => {
     }
   }
 
-  // tiles within the reach of an effect (a park's, a fire station's…), tinted while placing or selected
-  function drawReach(type, x, y) {
-    const d = BUILDINGS[type];
+  // tiles within the reach of an effect (a park's, a fire station's…), tinted while placing or selected;
+  // d: the building's numbers (def(b) for one standing, so an upgraded one shows its own reach)
+  function drawReach(d, x, y) {
     const r = d.cover || (d.effect && d.effect.radius);
     if (!r) return;
     const good = d.cover || d.effect.happy > 0;
@@ -260,9 +260,16 @@ const Renderer = (() => {
     }
   }
 
+  // the look of a building as it stands now: its type, "2" when upgraded, or the ruins
+  function lookOf(b) { return b.ruin ? 'ruins' : b.up ? b.type + '2' : b.type; }
+  function heightOf(b) { return spriteHeight(lookOf(b), b.level); }
+
   function drawBuilding(b) {
     const d = def(b);
-    drawSprite(buildingSprite(b.type, b.level, b.variant, b.ruin), b.x, b.y);
+    drawSprite(buildingSprite(b.type, b.level, b.variant, b.ruin, b.up), b.x, b.y);
+    // the helicopter waits on its pad while it is not out at a fire
+    if (d.heli && !b.ruin && !run.trucks.some((t) => t.kind === 'heli' && t.station === b))
+      drawHeli(c, b.x + HELI_PAD.u, b.y + HELI_PAD.v, HELI_PAD.z, 1, -0.6, run.time, false);
     let wet = false;
     if (city.flood) for (let y = b.y; y < b.y + d.h && !wet; y++) for (let x = b.x; x < b.x + d.w && !wet; x++) wet = isFlooded(x, y);
     if (wet) {
@@ -272,10 +279,10 @@ const Renderer = (() => {
     }
     if (b.damaged && !b.fire) {
       c.fillStyle = 'rgba(40,30,20,0.35)';
-      const [x, y] = P(b.x + d.w / 2, b.y + d.h / 2, spriteHeight(b.type, b.level) * 0.35);
+      const [x, y] = P(b.x + d.w / 2, b.y + d.h / 2, heightOf(b) * 0.35);
       c.beginPath(); c.ellipse(x, y, 10 * d.w, 7 * d.w, 0, 0, Math.PI * 2); c.fill();
     }
-    if (b.fire) flames(b.x + d.w / 2, b.y + d.h / 2, spriteHeight(b.type, b.level) * 0.55, Math.min(1.6, 0.7 + d.w * 0.3));
+    if (b.fire) flames(b.x + d.w / 2, b.y + d.h / 2, heightOf(b) * 0.55, Math.min(1.6, 0.7 + d.w * 0.3));
   }
 
   function drawObjects(R) {
@@ -296,6 +303,7 @@ const Renderer = (() => {
       obj(list, p.u - 0.15, p.v - 0.15, p.u + 0.15, p.v + 0.15, () => drawCar(c, p.u, p.v, p.dx, p.dy, car.color));
     }
     for (const tr of run.trucks) {
+      if (tr.kind === 'heli') continue;
       const i = Math.min(Math.floor(tr.pos), tr.path.length - 1), j = Math.min(i + 1, tr.path.length - 1);
       const p = vehiclePos(tr.path[i], tr.path[j], tr.pos - i, 0.14);
       if (i === j) { const q = vehiclePos(tr.path[Math.max(0, i - 1)], tr.path[i], 1, 0.14); p.dx = q.dx; p.dy = q.dy; }
@@ -311,7 +319,7 @@ const Renderer = (() => {
   function spray(p, b) {
     const d = def(b);
     const [x0, y0] = P(p.u, p.v, 12);
-    const [x1, y1] = P(b.x + d.w / 2, b.y + d.h / 2, spriteHeight(b.type, b.level) * 0.6);
+    const [x1, y1] = P(b.x + d.w / 2, b.y + d.h / 2, heightOf(b) * 0.6);
     c.strokeStyle = 'rgba(160,220,255,0.85)'; c.lineWidth = 2;
     c.setLineDash([3, 3]); c.lineDashOffset = -run.time * 40;
     c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo((x0 + x1) / 2, Math.min(y0, y1) - 30, x1, y1); c.stroke();
@@ -330,28 +338,48 @@ const Renderer = (() => {
       const d = def(b);
       if (b.x + d.w < R.x0 - 2 || b.x > R.x1 || b.y + d.h < R.y0 - 2 || b.y > R.y1) continue;
       if (b.type === 'factory' && isWorking(b)) {
-        for (let k = 0; k < 6; k++) {
-          const ph = (t * 0.3 + k / 6 + b.id * 0.13) % 1;
-          puff(b.x + 1.75 + ph * 0.9, b.y + 0.5 - ph * 0.5, 74 + ph * 50, 4 + ph * 11, 0.4 * (1 - ph), 'rgba(200,200,200,A)');
+        // a modern factory's filter lets out only a little white steam
+        const n = b.up ? 3 : 6;
+        for (let k = 0; k < n; k++) {
+          const ph = (t * 0.3 + k / n + b.id * 0.13) % 1;
+          if (b.up) puff(b.x + 1.75 + ph * 0.6, b.y + 0.5 - ph * 0.3, 74 + ph * 30, 3 + ph * 6, 0.35 * (1 - ph), 'rgba(250,250,250,A)');
+          else puff(b.x + 1.75 + ph * 0.9, b.y + 0.5 - ph * 0.5, 74 + ph * 50, 4 + ph * 11, 0.4 * (1 - ph), 'rgba(200,200,200,A)');
         }
       }
       if (b.fire) {
-        const z = spriteHeight(b.type, b.level) * 0.6 + 20;
+        const z = heightOf(b) * 0.6 + 20;
         for (let k = 0; k < 7; k++) {
           const ph = (t * 0.45 + k / 7) % 1;
           puff(b.x + d.w / 2 + ph * 1.2, b.y + d.h / 2 - ph * 0.6, z + ph * 70, 6 + ph * 16, 0.55 * (1 - ph), 'rgba(60,55,50,A)');
         }
       }
       if (b.type === 'airport' && isWorking(b)) {
-        const ph = (t + b.id * 3.7) % PLANE_EVERY;
-        if (ph < 12) {
+        // an international airport sends a plane twice as often (and a big one), so two may be out at once
+        const every = b.up ? PLANE_EVERY_BIG : PLANE_EVERY;
+        for (let n = 0; n < 2; n++) {
+          const ph = (t + b.id * 3.7) % every + n * every;
+          if (ph >= 12) continue;
           const roll = ph < 5 ? 5.2 * Math.pow(ph / 5, 2) : 5.2 + (ph - 5) * 2.1;
           const z = ph < 5 ? 0 : (ph - 5) * 16;
           c.globalAlpha = clamp((12 - ph) / 2, 0, 1);
-          drawPlane(c, b.x + 3.15, b.y + 7.2 - roll, z, 0, -1, 1.1, '#ffffff');
+          drawPlane(c, b.x + 3.15, b.y + 7.2 - roll, z, 0, -1, b.up ? 1.45 : 1.1, '#ffffff');
           c.globalAlpha = 1;
         }
       }
+    }
+    // the fire helicopters in the air, and the water they pour on a fire
+    for (const h of run.trucks) {
+      if (h.kind !== 'heli') continue;
+      const p = heliPos(h);
+      if (h.state === 'work') {
+        const b = h.target, d = def(b);
+        const [x0, y0] = P(p.u, p.v, p.z - 2), [x1, y1] = P(b.x + d.w / 2, b.y + d.h / 2, heightOf(b) * 0.7);
+        c.strokeStyle = 'rgba(160,220,255,0.85)'; c.lineWidth = 3;
+        c.setLineDash([4, 4]); c.lineDashOffset = -run.time * 60;
+        for (const o of [-3, 0, 3]) { c.beginPath(); c.moveTo(x0 + o, y0); c.lineTo(x1 + o * 2.5, y1); c.stroke(); }
+        c.setLineDash([]);
+      }
+      drawHeli(c, p.u, p.v, p.z, p.du, p.dv, run.time, true);
     }
   }
 
@@ -367,7 +395,7 @@ const Renderer = (() => {
     for (const b of city.buildings) {
       const d = def(b);
       if (b.x + d.w < R.x0 || b.x > R.x1 || b.y + d.h < R.y0 || b.y > R.y1) continue;
-      const z = spriteHeight(b.ruin ? 'ruins' : b.type, b.level) + 14;
+      const z = heightOf(b) + 14;
       const u = b.x + d.w / 2, v = b.y + d.h / 2;
       if (b.ruin || b.type === 'embankment' || b.fire) continue;
       if (!b.connected && b.type !== 'park') icon(u, v, z, '🚧', '#e53935');
@@ -393,13 +421,13 @@ const Renderer = (() => {
     drawGround(R, view);
 
     if (view.selected) {
-      drawReach(view.selected.type, view.selected.x, view.selected.y);
       const d = def(view.selected);
+      drawReach(d, view.selected.x, view.selected.y);
       outline(view.selected.x, view.selected.y, d.w, d.h, '#ffeb3b', 2.5);
     }
     if (view.ghost) {
       const d = BUILDINGS[view.ghost.type];
-      drawReach(view.ghost.type, view.ghost.x, view.ghost.y);
+      drawReach(d, view.ghost.x, view.ghost.y);
       const tiles = [];
       for (let y = view.ghost.y; y < view.ghost.y + d.h; y++) for (let x = view.ghost.x; x < view.ghost.x + d.w; x++) tiles.push([x, y]);
       fillTiles(tiles, view.ghost.ok ? 'rgba(80,220,100,0.45)' : 'rgba(240,70,60,0.5)');

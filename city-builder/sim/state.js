@@ -11,7 +11,7 @@ const T_GRASS = 0, T_WATER = 1, T_FOREST = 2;
 //   name, seed, difficulty, money, tax, month (whole months since the start), tick (s into the month),
 //   terrain: Uint8Array (T_*), road: Uint8Array (1 = road / bridge), highwayY,
 //   buildings: [{ id, type, x, y, level, residents, workers, happy, happyMonths, sadMonths,
-//                 damaged, fire (s burning, 0 = none), ruin, connected, variant }],
+//                 damaged, fire (s burning, 0 = none), ruin, connected, variant, up (upgraded) }],
 //   nextId, milestone, cheated, debtMonths, debtWarned,
 //   stats: { population, jobs, workforce, employed, unemployment, income, expense, taxRes, taxBiz,
 //            upkeepRoads, upkeepBuildings },
@@ -26,7 +26,7 @@ const run = {
   linked: new Uint8Array(MAP_SIZE * MAP_SIZE),    // road tiles connected to the highway
   linksDirty: true,                               // roads or buildings changed: recompute `linked`
   happyDirty: true,                               // something that changes happiness was built or removed
-  trucks: [],                                     // fire trucks on the way: { station, target, path, i, t, state }
+  trucks: [],                                     // fire trucks and helicopters on the way: { kind, station, target, state, t, … }
   cars: [],                                       // decorative traffic
   planes: [],                                     // decorative planes at the airports
   time: 0                                         // game seconds since the page opened (animations)
@@ -36,7 +36,14 @@ function idx(x, y) { return y * MAP_SIZE + x; }
 function inMap(x, y) { return x >= 0 && y >= 0 && x < MAP_SIZE && y < MAP_SIZE; }
 function buildingAt(x, y) { return inMap(x, y) ? run.byId.get(run.occ[idx(x, y)]) || null : null; }
 function isRoad(x, y) { return inMap(x, y) && city.road[idx(x, y)] === 1; }
-function def(b) { return BUILDINGS[b.type]; }
+// an upgraded building's numbers: its first version's, with what the upgrade changes put over them
+// (the price is the whole price paid, so a repair costs half of it)
+const UPGRADED = {};
+for (const t in BUILDINGS) {
+  const d = BUILDINGS[t];
+  if (d.upgrade) UPGRADED[t] = Object.assign({}, d, d.upgrade, { price: d.price + d.upgrade.price, upgrade: null });
+}
+function def(b) { return b.up ? UPGRADED[b.type] : BUILDINGS[b.type]; }
 
 // rebuilds the tile index from the building list (after a load or a new map)
 function reindex() {
@@ -57,4 +64,8 @@ function reindex() {
 function unlocked(type) {
   const d = BUILDINGS[type] || TOOL_INFO[type];
   return !!d && (city.cheatUnlockAll || d.unlock <= city.milestone);
+}
+function upgradeUnlocked(type) {
+  const up = BUILDINGS[type] && BUILDINGS[type].upgrade;
+  return !!up && (city.cheatUnlockAll || up.unlock <= city.milestone);
 }

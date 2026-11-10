@@ -2,7 +2,7 @@
 
 // City Builder — the card about the building picked on the map: what it is, its level, residents or
 // workers, the happiness of a house and what it is made of, the "no road" / damaged / on fire state,
-// and the Repair / Demolish buttons. game.js opens it on a tap and refreshes it while it is open.
+// what its upgrade gives (or when it opens), and the Upgrade / Repair / Demolish buttons. game.js opens it on a tap and refreshes it while it is open.
 
 const Info = (() => {
   const card = document.getElementById('info');
@@ -35,8 +35,13 @@ const Info = (() => {
     if (!b.connected && !b.ruin && b.type !== 'embankment' && b.type !== 'park') html += '<p class="warn">🚧 ' + tr('No road to the highway: nobody can get here.') + '</p>';
     if (b.fire) html += '<p class="warn">🔥 ' + tr('On fire!') + '</p>';
     else if (b.damaged) html += '<p class="warn">🔧 ' + tr('Damaged: it does not work until it is repaired.') + '</p>';
+    const upc = upgradeCheck(b), up = BUILDINGS[b.type].upgrade;
+    const canUp = upc && upgradeUnlocked(b.type);
+    if (canUp) html += '<p class="upgrade"><b>' + tr('Upgrade: {name}', { name: tr(up.name) }) + '</b><br>' + tr(up.desc) + '</p>';
+    else if (upc) html += '<p class="upgrade locked">🔒 ' + tr('{tool} opens when the city becomes a {title}', { tool: tr(up.name), title: tr(MILESTONES[up.unlock].name) }) + '</p>';
     html += '<div class="btnRow">';
     if (b.damaged && !b.fire) html += '<button class="btn default" data-act="repair">' + tr('Repair') + ' · ' + money(repairCost(b)) + '</button>';
+    if (canUp) html += '<button class="btn ' + (b.damaged || b.fire ? 'secondary' : 'default') + '" data-act="upgrade">' + tr('Upgrade') + ' · ' + money(upc.cost) + '</button>';
     html += '<button class="btn secondary" data-act="demolish">' + (b.ruin ? tr('Clear') : tr('Demolish')) + ' · ' + money(BULLDOZE_PRICE) + '</button>';
     html += '</div>';
     if (html !== lastHtml) { card.innerHTML = html; lastHtml = html; }
@@ -47,6 +52,7 @@ const Info = (() => {
     if (!btn || !b) return;
     if (btn.dataset.act === 'close') close();
     else if (btn.dataset.act === 'repair') { repair(b); render(); }
+    else if (btn.dataset.act === 'upgrade') { upgrade(b); render(); }
     else if (btn.dataset.act === 'demolish') { if (demolish(b)) close(); }
   });
 

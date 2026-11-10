@@ -94,6 +94,8 @@ const Sfx = {
   },
   flood() { noise(1.6, 0.25, 'lowpass', 300, 1200); noise(1.2, 0.12, 'bandpass', 600, 300, 0.5, 2); tone(140, 70, 0.8, 'sine', 0.12, 0.2); },
   splashOut() { noise(0.6, 0.15, 'lowpass', 1500, 300); },
+  upgrade() { tone(120, 60, 0.3, 'sine', 0.3); noise(0.25, 0.12, 'lowpass', 700, 150); notes([523, 659, 784, 1047], 'triangle', 0.07, 0.09); },
+  heli() { for (let i = 0; i < 12; i++) noise(0.06, 0.13, 'lowpass', 520, 260, i * 0.085); tone(95, 85, 1.0, 'sawtooth', 0.025); },
   repair() { tone(1400, 1400, 0.05, 'square', 0.04); tone(1400, 1400, 0.05, 'square', 0.04, 0.12); tone(1800, 1800, 0.08, 'square', 0.04, 0.24); },
   burnDown() { noise(0.9, 0.22, 'lowpass', 400, 60); tone(110, 40, 0.8, 'sawtooth', 0.1); },
   milestone() { notes([523, 659, 784, 1047, 784, 1047, 1319], 'triangle', 0.12, 0.12, 0.3); },

@@ -255,6 +255,9 @@ button.chip:hover { background: rgba(30, 50, 70, 0.92); }
 .card .parts { margin: 6px 0 0; padding: 0; list-style: none; }
 .card .parts li { display: flex; justify-content: space-between; padding: 2px 0; font-size: 13px; }
 .card .warn { color: #ffcc80; margin: 8px 0 0; }
+.card .upgrade { margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(255,179,0,0.13); font-size: 13px; line-height: 1.35; }
+.card .upgrade b { color: #ffd54f; }
+.card .upgrade.locked { background: rgba(255,255,255,0.06); color: #9fb0c3; }
 .card .btnRow { justify-content: flex-start; margin-top: 12px; }
 .happyBar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden; margin: 4px 0; }
 .happyBar div { height: 100%; }

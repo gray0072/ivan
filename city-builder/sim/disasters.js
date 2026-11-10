@@ -1,8 +1,9 @@
 'use strict';
 
 // City Builder — fires and floods. A fire burns a building down unless a fire station's truck,
-// driving along the roads, gets there first; it may jump to the neighbours. A spring flood spreads
-// from the water over the shore (an embankment stops it) and damages what it reaches.
+// driving along the roads, or the helicopter of an upgraded station, flying straight, gets there
+// first; it may jump to the neighbours. A spring flood spreads from the water over the shore (an
+// embankment stops it) and damages what it reaches.
 // Used by sim/city.js (monthDisasters, disastersUpdate) and the cheats in game.js.
 
 function rectGap(a, b) {
@@ -47,15 +48,77 @@ function burnDown(b) {
   GameEvents.emit('burnedDown', { b });
 }
 
-// a truck for a burning building from the nearest free station covering it, along the roads
+function busy(st, kind) { return run.trucks.some((t) => t.station === st && t.kind === kind); }
+// the map point over a building's middle, and a station's helicopter pad
+function middle(b) { const d = def(b); return { u: b.x + d.w / 2, v: b.y + d.h / 2 }; }
+function padOf(st) { return { u: st.x + HELI_PAD.u, v: st.y + HELI_PAD.v }; }
+
+// help for a burning building from the nearest station covering it that has some free: its
+// helicopter, which flies straight, or its truck, along the roads within the first version's cover
 function dispatch(b) {
   if (run.trucks.some((t) => t.target === b)) return;
-  const st = coveringStation(b.x, b.y);
-  if (!st || st.damaged || st.fire || run.trucks.some((t) => t.station === st)) return;
-  const path = roadPath(roadsAround(st), roadsAround(b));
-  if (!path) return;
-  run.trucks.push({ station: st, target: b, path, pos: 0, state: 'go', t: 0 });
-  GameEvents.emit('truckOut', { b });
+  for (const { s: st, d } of coveringStations(b.x, b.y)) {
+    if (st.damaged || st.fire) continue;
+    if (def(st).heli && !busy(st, 'heli')) {
+      const from = padOf(st), to = middle(b);
+      run.trucks.push({ kind: 'heli', station: st, target: b, from, to, len: Math.hypot(to.u - from.u, to.v - from.v), pos: 0, z: HELI_PAD.z, state: 'up', t: 0 });
+      GameEvents.emit('heliOut', { b });
+      return;
+    }
+    if (d <= BUILDINGS.fireStation.cover && !busy(st, 'truck')) {
+      const path = roadPath(roadsAround(st), roadsAround(b));
+      if (path) {
+        run.trucks.push({ kind: 'truck', station: st, target: b, path, pos: 0, state: 'go', t: 0 });
+        GameEvents.emit('truckOut', { b });
+        return;
+      }
+    }
+  }
+}
+
+// where a helicopter is now: { u, v, z, du, dv }
+function heliPos(h) {
+  const k = h.len > 0 ? clamp(h.pos / h.len, 0, 1) : 1;
+  return { u: lerp(h.from.u, h.to.u, k), v: lerp(h.from.v, h.to.v, k), z: h.z, du: h.to.u - h.from.u || 1, dv: h.to.v - h.from.v };
+}
+// the helicopter turns back to its pad from wherever it is
+function heliHome(h) {
+  const p = heliPos(h);
+  h.from = { u: p.u, v: p.v };
+  h.to = padOf(h.station);
+  h.len = Math.hypot(h.to.u - p.u, h.to.v - p.v);
+  h.pos = 0;
+  h.state = 'back';
+}
+function putOut(t) {
+  if (!t.target.fire) return;
+  t.target.fire = 0;
+  t.target.damaged = true;
+  run.happyDirty = true;
+  GameEvents.emit('extinguished', { b: t.target, kind: t.kind });
+}
+
+// up from the pad, across to the fire, water on it, back, down; true when it has landed
+function heliUpdate(h, dt) {
+  if ((h.state === 'up' || h.state === 'go') && !h.target.fire) heliHome(h);
+  if (h.state === 'up') {
+    h.z = Math.min(HELI_ALT, h.z + HELI_CLIMB * dt);
+    if (h.z >= HELI_ALT) h.state = 'go';
+  } else if (h.state === 'go' || h.state === 'back') {
+    h.z = Math.min(HELI_ALT, h.z + HELI_CLIMB * dt);
+    h.pos += HELI_SPEED * dt;
+    if (h.pos >= h.len) {
+      h.pos = h.len;
+      if (h.state === 'go') { h.state = 'work'; h.t = 0; } else h.state = 'down';
+    }
+  } else if (h.state === 'work') {
+    h.t += dt;
+    if (h.t >= EXTINGUISH_TIME) { putOut(h); heliHome(h); }
+  } else if (h.state === 'down') {
+    h.z -= HELI_CLIMB * dt;
+    if (h.z <= HELI_PAD.z) return true;
+  }
+  return false;
 }
 
 function fireUpdate(dt) {
@@ -75,6 +138,7 @@ function fireUpdate(dt) {
   }
   for (let i = run.trucks.length - 1; i >= 0; i--) {
     const t = run.trucks[i];
+    if (t.kind === 'heli') { if (heliUpdate(t, dt)) run.trucks.splice(i, 1); continue; }
     if (t.state === 'go' && !t.target.fire) {
       // burnt down (or out) before the truck got there: turn back
       t.path = t.path.slice(0, Math.floor(t.pos) + 1).reverse();
@@ -92,12 +156,7 @@ function fireUpdate(dt) {
     } else if (t.state === 'work') {
       t.t += dt;
       if (t.t >= EXTINGUISH_TIME) {
-        if (t.target.fire) {
-          t.target.fire = 0;
-          t.target.damaged = true;
-          run.happyDirty = true;
-          GameEvents.emit('extinguished', { b: t.target });
-        }
+        putOut(t);
         t.path = t.path.slice().reverse();
         t.pos = 0;
         t.state = 'back';

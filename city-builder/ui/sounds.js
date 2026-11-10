@@ -17,6 +17,8 @@
   GameEvents.on('bulldozed', () => once('bulldoze', Sfx.bulldoze));
   GameEvents.on('cantBuild', () => once('error', Sfx.error, 0.3));
   GameEvents.on('repaired', () => once('repair', Sfx.repair));
+  GameEvents.on('upgraded', () => once('upgrade', Sfx.upgrade));
+  GameEvents.on('heliOut', () => once('heli', Sfx.heli, 1));
   GameEvents.on('month', (e) => { if (e.income > 0) Sfx.coins(Math.ceil(e.income / 500)); });
   GameEvents.on('houseGrew', () => once('grow', Sfx.grow, 0.4));
   GameEvents.on('fire', () => once('alarm', Sfx.alarm, 3));

@@ -25,11 +25,12 @@ Open [index.html](index.html) in a browser. There is no build step and no server
 - Every building needs a **road** that leads to the **highway** on the left edge of the map. A building without one shows a 🚧 sign. Over water a road becomes a bridge.
 - **Houses** fill up with residents. About a third of them work in **shops**, **factories** and the city's services. Too few jobs make everyone unhappy.
 - **Happiness:** parks, shops, schools, a stadium and a fire station nearby make a house happier. Factory smoke, airport noise, unemployment and high taxes make it sadder. Tap a house to see what its happiness is made of, or press 😊 to see a face over every house.
+- **Upgrades:** tap a building to open its card. Once the city is big enough, most buildings can be upgraded there to a second, better version on the same spot: a shop into a **Shopping Mall** (many more jobs), a factory into a **Modern Factory** (twice the jobs, much less smoke), a park into a **Big Park**, a fire station into a **Helicopter Fire Station**, a school into a **University**, a stadium into an **Arena** and an airport into an **International Airport**.
 - A full house that has been happy for three months grows: cottage → house → apartment block. An apartment block also needs a school nearby.
 - **Money:** every month residents and businesses pay taxes and you pay upkeep for roads, parks and services. Tap the money to open the budget and move the tax slider. Higher taxes bring more money but make people less happy.
 - **Debt:** you can drop below $0, but after a few months in debt the city goes bankrupt and the game is over.
-- **Titles:** at 50 residents your city becomes a Village (unlocks the Fire Station and the Embankment), at 250 a Town (School), at 1 000 a City (Stadium) and at 3 000 a Metropolis (Airport, and fireworks!). The fastest time to each title is a record.
-- **Fires:** a building can catch fire, factories most often, and the fire may jump to its neighbours. A fire station's truck drives along the roads and puts out fires in its area. Without one, the building burns down to ruins.
+- **Titles:** at 50 residents your city becomes a Village (unlocks the Fire Station, the Embankment and the Big Park), at 250 a Town (School, Shopping Mall, Modern Factory, Helicopter Fire Station), at 1 000 a City (Stadium, University) and at 3 000 a Metropolis (Airport, Arena, International Airport, and fireworks!). The fastest time to each title is a record.
+- **Fires:** a building can catch fire, factories most often, and the fire may jump to its neighbours. A fire station's truck drives along the roads and puts out fires in its area. The helicopter of an upgraded station flies straight there, over everything, and covers twice as far. Without them, the building burns down to ruins.
 - **Floods:** in spring the river may flood the shore. An **embankment** on the shore stops the water. Flooded buildings are damaged.
 - **Damaged** buildings don't work until you repair them, either from the building's card or with *Repair all*.
 - The city saves itself, so you can come back later and press **Continue**.
@@ -60,7 +61,7 @@ Fires and floods start only once the city is a Village.
 
 ## Sound
 
-All sounds are made by the game itself: building, roads, the bulldozer, coins every month, the fire alarm, the flood, a fanfare for every new title and the city's hum, which grows with the population. Switch them off with **Sound: Off** on the start screen or in the pause menu. The choice is remembered.
+All sounds are made by the game itself: building, roads, the bulldozer, coins every month, the fire alarm, the helicopter, the flood, a fanfare for every new title and the city's hum, which grows with the population. Switch them off with **Sound: Off** on the start screen or in the pause menu. The choice is remembered.
 
 ## Records
 

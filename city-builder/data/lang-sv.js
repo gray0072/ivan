@@ -16,6 +16,7 @@ const TEXT_SV = {
   'How to play': 'Så spelar du',
   'Pick a building in the toolbar at the bottom and click or tap the map to build it. Every building needs a <b>road</b> that leads to the highway on the left edge of the map: drag to draw roads. Over water a road becomes a bridge.': 'Välj en byggnad i verktygsfältet längst ner och klicka eller tryck på kartan för att bygga den. Varje byggnad behöver en <b>väg</b> som leder till motorvägen vid kartans vänstra kant: dra för att rita vägar. Över vatten blir vägen en bro.',
   'Residents move into <b>houses</b>, work in <b>shops</b> and <b>factories</b> and pay taxes every month. Parks, shops and schools make them happy; factory smoke and too few jobs make them sad. Happy full houses grow bigger.': 'Invånarna flyttar in i <b>hus</b>, jobbar i <b>affärer</b> och <b>fabriker</b> och betalar skatt varje månad. Parker, affärer och skolor gör dem glada; fabriksrök och för få jobb gör dem ledsna. Fulla hus med glada invånare växer.',
+  'Tap a building to open its card. Once the city is big enough, most buildings can be <b>upgraded</b> there: a shop into a shopping mall, a fire station into one with a helicopter, a school into a university, and more.': 'Tryck på en byggnad för att öppna dess kort. När staden har vuxit kan de flesta byggnader <b>uppgraderas</b> där: en butik till ett köpcentrum, en brandstation till en med helikopter, en skola till ett universitet och mer.',
   'As the city grows it becomes a Village, a Town, a City and a Metropolis, and new buildings open up. Watch out for <b>fires</b> (build fire stations) and spring <b>floods</b> (build embankments on the shore). Don\'t stay in debt too long — the city would go bankrupt!': 'När staden växer blir den en By, en Småstad, en Stad och en Metropol, och nya byggnader blir tillgängliga. Se upp för <b>bränder</b> (bygg brandstationer) och <b>översvämningar</b> på våren (bygg vallar vid stranden). Var inte skuldsatt för länge — då går staden i konkurs!',
   '<b>Mouse:</b> left click builds, drag draws roads, right drag or the arrow keys move the map, the wheel zooms. Keys: R road, H house, S shop, F factory, P park, B bulldozer, Space stops time, Esc pause.': '<b>Mus:</b> vänsterklick bygger, dra för att rita vägar, högerdrag eller piltangenterna flyttar kartan, hjulet zoomar. Tangenter: R väg, H hus, S affär, F fabrik, P park, B bulldozer, mellanslag stoppar tiden, Esc paus.',
   '<b>Phone and tablet:</b> the game goes fullscreen. Tap to build, drag with one finger to move the map (or to draw a road with the road tool), pinch with two fingers to zoom. Big buildings ask for a ✔ before they are built.': '<b>Mobil och surfplatta:</b> spelet visas i helskärm. Tryck för att bygga, dra med ett finger för att flytta kartan (eller rita en väg med vägverktyget), nyp med två fingrar för att zooma. Stora byggnader byggs först efter ✔.',
@@ -81,6 +82,21 @@ const TEXT_SV = {
   'Planes bring more new residents every month — but they are loud.': 'Flygplanen tar hit fler nya invånare varje månad — men de låter mycket.',
   'Drag to draw a road. Every building needs one. Over water it is a bridge.': 'Dra för att rita en väg. Varje byggnad behöver en. Över vatten blir den en bro.',
   'Removes buildings, roads, ruins and trees.': 'Tar bort byggnader, vägar, ruiner och träd.',
+  // the upgrades (data/buildings.js)
+  'Shopping Mall': 'Köpcentrum',
+  'Modern Factory': 'Modern fabrik',
+  'Big Park': 'Stor park',
+  'Helicopter Fire Station': 'Brandstation med helikopter',
+  'University': 'Universitet',
+  'Arena': 'Inomhusarena',
+  'International Airport': 'Internationell flygplats',
+  'A big mall: many more jobs, and houses in a wider area are happier.': 'Ett stort köpcentrum: många fler jobb, och husen i ett större område blir gladare.',
+  'Twice the jobs, and a filter on the chimney: much less smoke.': 'Dubbelt så många jobb och ett filter på skorstenen: mycket mindre rök.',
+  'A playground and a fountain: houses in a wider area are even happier.': 'En lekplats och en fontän: husen i ett större område blir ännu gladare.',
+  'A fire helicopter flies straight to fires twice as far away, no road needed. The truck still drives to the near ones.': 'En brandhelikopter flyger raka vägen till bränder dubbelt så långt bort, ingen väg behövs. Brandbilen kör fortfarande till de nära.',
+  'Many jobs, and houses in a wide area are happier and can grow into apartment blocks.': 'Många jobb, och husen i ett stort område blir gladare och kan växa till höghus.',
+  'A covered arena with matches and concerts all year: even happier houses in a huge area.': 'En arena med tak, matcher och konserter hela året: ännu gladare hus i ett jättestort område.',
+  'Big planes from all over the world: even more new residents and many more jobs.': 'Stora plan från hela världen: ännu fler nya invånare och många fler jobb.',
   '{tool} opens when the city becomes a {title}': '{tool} blir tillgänglig när staden blir en {title}',
   'opens at {title}': 'öppnas vid {title}',
 
@@ -92,6 +108,7 @@ const TEXT_SV = {
   'Flooded': 'Översvämmat',
   'Only on the shore, next to water': 'Bara på stranden, intill vattnet',
   'Not enough money': 'Inte tillräckligt med pengar',
+  'Repair it first': 'Laga den först',
   'Nothing to remove here': 'Inget att ta bort här',
   'Can\'t build a road here': 'Här går det inte att bygga väg',
 
@@ -125,6 +142,8 @@ const TEXT_SV = {
   'Repair': 'Laga',
   'Clear': 'Röj',
   'Demolish': 'Riv',
+  'Upgrade: {name}': 'Uppgradering: {name}',
+  'Upgrade': 'Uppgradera',
 
   // ---------- the budget ----------
   'Last month': 'Förra månaden',
@@ -143,6 +162,8 @@ const TEXT_SV = {
   'Main Menu': 'Huvudmeny',
   '{name} is now a {title}!': '{name} är nu en {title}!',
   'New: {list}': 'Nytt: {list}',
+  'Upgrades: {list}': 'Uppgraderingar: {list}',
+  'Tap a building to upgrade it.': 'Tryck på en byggnad för att uppgradera den.',
   'Your residents are proud of their city!': 'Invånarna är stolta över sin stad!',
   'It took': 'Det tog',
   'Best ({difficulty})': 'Bäst ({difficulty})',
@@ -159,6 +180,8 @@ const TEXT_SV = {
   '🔥 A fire broke out!': '🔥 Det har börjat brinna!',
   'A building burned down. Build a fire station nearby!': 'En byggnad brann ner. Bygg en brandstation i närheten!',
   '🚒 The firefighters put the fire out!': '🚒 Brandkåren släckte branden!',
+  '🚁 The fire helicopter put the fire out!': '🚁 Brandhelikoptern släckte branden!',
+  '{name} is ready!': '{name} — klart!',
   '🌊 Spring flood! The river is rising.': '🌊 Vårflod! Vattnet stiger.',
   'The water has gone down. Repair the damaged buildings.': 'Vattnet har sjunkit undan. Laga de skadade byggnaderna.',
   'The water has gone down. Nothing was damaged!': 'Vattnet har sjunkit undan. Inget skadades!',
@@ -169,5 +192,6 @@ const TEXT_SV = {
   'Cheat: a fire': 'Fusk: en brand',
   'Cheat: a flood': 'Fusk: en översvämning',
   'Cheat: every house grows': 'Fusk: alla hus växer',
-  'Cheat: every building unlocked': 'Fusk: alla byggnader upplåsta'
+  'Cheat: every building unlocked': 'Fusk: alla byggnader upplåsta',
+  'Cheat: every building upgraded': 'Fusk: alla byggnader uppgraderade'
 };

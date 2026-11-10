@@ -197,6 +197,9 @@ function cheat(n) {
   } else if (n === 8) {
     for (const h of city.buildings) if (h.type === 'house' && !h.ruin) { h.level = Math.min(3, h.level + 1); h.residents = HOUSE_CAPACITY[h.level]; }
     text = tr('Cheat: every house grows');
+  } else if (n === 9) {
+    for (const b of city.buildings) if (BUILDINGS[b.type].upgrade && !b.ruin) b.up = true;
+    text = tr('Cheat: every building upgraded');
   } else if (n === 0) {
     city.cheatUnlockAll = true;
     text = tr('Cheat: every building unlocked');
@@ -310,7 +313,8 @@ GameEvents.on('cantBuild', (e) => Hud.showBanner(tr(e.reason)));
 GameEvents.on('month', () => { if (!preview) Storage.saveCity(city); });
 GameEvents.on('fire', () => Hud.showBanner(tr('🔥 A fire broke out!')));
 GameEvents.on('burnedDown', () => Hud.showBanner(tr('A building burned down. Build a fire station nearby!')));
-GameEvents.on('extinguished', () => Hud.showBanner(tr('🚒 The firefighters put the fire out!')));
+GameEvents.on('extinguished', (e) => Hud.showBanner(e.kind === 'heli' ? tr('🚁 The fire helicopter put the fire out!') : tr('🚒 The firefighters put the fire out!')));
+GameEvents.on('upgraded', (e) => Hud.showBanner(tr('{name} is ready!', { name: tr(def(e.b).name) })));
 GameEvents.on('flood', () => Hud.showBanner(tr('🌊 Spring flood! The river is rising.')));
 GameEvents.on('floodOver', (e) => Hud.showBanner(e.hit ? tr('The water has gone down. Repair the damaged buildings.') : tr('The water has gone down. Nothing was damaged!')));
 GameEvents.on('debt', (e) => Hud.showBanner(tr('💸 The city is in debt! Raise taxes or build less.')));

@@ -1,8 +1,9 @@
 'use strict';
 
-// City Builder — building, demolishing and repairing: where each thing may stand, what it costs,
-// and the lines of road, embankment or bulldozer drawn with a drag. Every change is reported as
-// a game event (built, roadBuilt, bulldozed, repaired, cantBuild). Used by game.js and ui/info.js.
+// City Builder — building, upgrading, demolishing and repairing: where each thing may stand, what it
+// costs, and the lines of road, embankment or bulldozer drawn with a drag. Every change is reported
+// as a game event (built, upgraded, roadBuilt, bulldozed, repaired, cantBuild). Used by game.js and
+// ui/info.js.
 
 function isFlooded(x, y) {
   const f = city.flood;
@@ -38,7 +39,7 @@ function placeBuilding(type, x, y) {
   const b = {
     id: city.nextId++, type, x, y, level: type === 'house' ? 1 : 0, residents: 0, workers: 0,
     happy: 50, happyMonths: 0, sadMonths: 0, damaged: false, fire: 0, ruin: false, connected: false,
-    variant: Math.floor(Math.random() * 8)
+    variant: Math.floor(Math.random() * 8), up: false
   };
   for (let ty = y; ty < y + d.h; ty++) for (let tx = x; tx < x + d.w; tx++) {
     const i = idx(tx, ty);
@@ -147,6 +148,27 @@ function applyLine(tool, tiles) {
 }
 
 // ---------- the info panel's buttons ----------
+
+// can b be upgraded to its second version now? → { ok, cost, reason } (null: it has none)
+function upgradeCheck(b) {
+  const up = BUILDINGS[b.type].upgrade;
+  if (!up || b.up || b.ruin) return null;
+  const cost = up.price;
+  if (!upgradeUnlocked(b.type)) return { ok: false, cost, reason: 'Not unlocked yet' };
+  if (b.fire || b.damaged) return { ok: false, cost, reason: 'Repair it first' };
+  if (city.money < cost) return { ok: false, cost, reason: 'Not enough money' };
+  return { ok: true, cost };
+}
+function upgrade(b) {
+  const c = upgradeCheck(b);
+  if (!c) return false;
+  if (!c.ok) { GameEvents.emit('cantBuild', { reason: c.reason }); return false; }
+  city.money -= c.cost;
+  b.up = true;
+  run.happyDirty = true;
+  GameEvents.emit('upgraded', { b, cost: c.cost });
+  return true;
+}
 
 function repairCost(b) { return Math.round(def(b).price * REPAIR_SHARE); }
 function repair(b) {

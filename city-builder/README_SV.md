@@ -25,11 +25,12 @@ Spelet finns på engelska, ryska och svenska: välj språk högst upp på starts
 - Varje byggnad behöver en **väg** som leder till **motorvägen** vid kartans vänstra kant. En byggnad utan väg visar en 🚧-skylt. Över vatten blir vägen en bro.
 - **Hus** fylls med invånare. Ungefär en tredjedel av dem jobbar i **affärer**, **fabriker** och stadens tjänster. För få jobb gör alla ledsna.
 - **Glädje:** parker, affärer, skolor, en arena och en brandstation i närheten gör ett hus gladare. Fabriksrök, flygbuller, arbetslöshet och höga skatter gör det ledsnare. Tryck på ett hus för att se vad glädjen består av, eller tryck på 😊 för att se ett ansikte över varje hus.
+- **Uppgraderingar:** tryck på en byggnad för att öppna dess kort. När staden har vuxit kan de flesta byggnader uppgraderas där till en andra, bättre version på samma plats: en affär till ett **köpcentrum** (många fler jobb), en fabrik till en **modern fabrik** (dubbelt så många jobb och mycket mindre rök), en park till en **stor park**, en brandstation till en **brandstation med helikopter**, en skola till ett **universitet**, en arena till en **inomhusarena** och en flygplats till en **internationell flygplats**.
 - Ett fullt hus som har varit glatt i tre månader växer: stuga → hus → höghus. Ett höghus behöver också en skola i närheten.
 - **Pengar:** varje månad betalar invånare och företag skatt, och du betalar underhåll för vägar, parker och tjänster. Tryck på pengarna för att öppna budgeten och flytta skattereglaget. Högre skatt ger mer pengar men gör invånarna mindre glada.
 - **Skulder:** pengarna får gå under $0, men efter några månader med skulder går staden i konkurs och spelet är slut.
-- **Titlar:** vid 50 invånare blir staden en By (Brandstation och Vall blir tillgängliga), vid 250 en Småstad (Skola), vid 1 000 en Stad (Arena) och vid 3 000 en Metropol (Flygplats, och fyrverkerier!). Den snabbaste tiden till varje titel blir ett rekord.
-- **Bränder:** en byggnad kan börja brinna, oftast en fabrik, och elden kan sprida sig till grannarna. Brandbilen från en brandstation kör längs vägarna och släcker bränder i sitt område. Utan brandstation brinner byggnaden ner till ruiner.
+- **Titlar:** vid 50 invånare blir staden en By (Brandstation, Vall och Stor park blir tillgängliga), vid 250 en Småstad (Skola, Köpcentrum, Modern fabrik, Brandstation med helikopter), vid 1 000 en Stad (Arena, Universitet) och vid 3 000 en Metropol (Flygplats, Inomhusarena, Internationell flygplats, och fyrverkerier!). Den snabbaste tiden till varje titel blir ett rekord.
+- **Bränder:** en byggnad kan börja brinna, oftast en fabrik, och elden kan sprida sig till grannarna. Brandbilen från en brandstation kör längs vägarna och släcker bränder i sitt område. Helikoptern från en uppgraderad station flyger raka vägen dit, över allt, och når dubbelt så långt. Utan hjälp brinner byggnaden ner till ruiner.
 - **Översvämningar:** på våren kan floden svämma över stranden. En **vall** på stranden stoppar vattnet. Översvämmade byggnader skadas.
 - **Skadade** byggnader fungerar inte förrän du lagar dem, på byggnadens kort eller med *Laga allt*.
 - Staden sparas av sig själv, så du kan komma tillbaka senare och trycka på **Fortsätt**.
@@ -60,7 +61,7 @@ Bränder och översvämningar börjar först när staden har blivit en By.
 
 ## Ljud
 
-Spelet skapar alla ljud själv: bygge, vägar, bulldozern, mynt varje månad, brandlarmet, översvämningen, en fanfar för varje ny titel och stadens sorl, som växer med befolkningen. Stäng av dem med **Ljud: Av** på startskärmen eller i pausmenyn. Valet sparas.
+Spelet skapar alla ljud själv: bygge, vägar, bulldozern, mynt varje månad, brandlarmet, helikoptern, översvämningen, en fanfar för varje ny titel och stadens sorl, som växer med befolkningen. Stäng av dem med **Ljud: Av** på startskärmen eller i pausmenyn. Valet sparas.
 
 ## Rekord
 

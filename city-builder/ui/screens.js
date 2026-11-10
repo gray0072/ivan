@@ -99,9 +99,11 @@ const Screens = (() => {
     document.getElementById('msBigIcon').textContent = m.icon;
     document.getElementById('msTitle').textContent = tr('{name} is now a {title}!', { name: city.name, title: tr(m.name) });
     const opened = [...Object.keys(BUILDINGS), ...Object.keys(TOOL_INFO)].filter((k) => (BUILDINGS[k] || TOOL_INFO[k]).unlock === e.index);
-    document.getElementById('msUnlocks').innerHTML = opened.length
-      ? tr('New: {list}', { list: '<b>' + opened.map((k) => tr((BUILDINGS[k] || TOOL_INFO[k]).name)).join(', ') + '</b>' })
-      : tr('Your residents are proud of their city!');
+    const ups = Object.keys(BUILDINGS).filter((k) => BUILDINGS[k].upgrade && BUILDINGS[k].upgrade.unlock === e.index);
+    const lines = [];
+    if (opened.length) lines.push(tr('New: {list}', { list: '<b>' + opened.map((k) => tr((BUILDINGS[k] || TOOL_INFO[k]).name)).join(', ') + '</b>' }));
+    if (ups.length) lines.push(tr('Upgrades: {list}', { list: '<b>' + ups.map((k) => tr(BUILDINGS[k].upgrade.name)).join(', ') + '</b>' }), tr('Tap a building to upgrade it.'));
+    document.getElementById('msUnlocks').innerHTML = lines.length ? lines.join('<br>') : tr('Your residents are proud of their city!');
     document.getElementById('msTime').textContent = durationText(e.months);
     document.getElementById('msBestLabel').textContent = tr('Best ({difficulty})', { difficulty: tr(DIFFICULTY_NAMES[city.difficulty]) });
     document.getElementById('msBest').textContent = e.record ? durationText(e.record.best) : '—';

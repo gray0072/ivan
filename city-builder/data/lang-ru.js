@@ -16,6 +16,7 @@ const TEXT_RU = {
   'How to play': 'Как играть',
   'Pick a building in the toolbar at the bottom and click or tap the map to build it. Every building needs a <b>road</b> that leads to the highway on the left edge of the map: drag to draw roads. Over water a road becomes a bridge.': 'Выбери здание на панели внизу и нажми на карту, чтобы его построить. Каждому зданию нужна <b>дорога</b>, ведущая к шоссе у левого края карты: дороги рисуются перетаскиванием. Над водой дорога становится мостом.',
   'Residents move into <b>houses</b>, work in <b>shops</b> and <b>factories</b> and pay taxes every month. Parks, shops and schools make them happy; factory smoke and too few jobs make them sad. Happy full houses grow bigger.': 'Жители заселяются в <b>дома</b>, работают в <b>магазинах</b> и на <b>фабриках</b> и каждый месяц платят налоги. Парки, магазины и школы их радуют, а дым фабрик и нехватка работы огорчают. Полные дома со счастливыми жителями растут.',
+  'Tap a building to open its card. Once the city is big enough, most buildings can be <b>upgraded</b> there: a shop into a shopping mall, a fire station into one with a helicopter, a school into a university, and more.': 'Нажми на здание, чтобы открыть его карточку. Когда город подрастёт, большинство зданий там можно <b>улучшить</b>: магазин — в торговый центр, пожарную часть — в часть с вертолётом, школу — в университет, и не только.',
   'As the city grows it becomes a Village, a Town, a City and a Metropolis, and new buildings open up. Watch out for <b>fires</b> (build fire stations) and spring <b>floods</b> (build embankments on the shore). Don\'t stay in debt too long — the city would go bankrupt!': 'Растущий город становится Деревней, Посёлком, Городом и Мегаполисом, и открываются новые здания. Берегись <b>пожаров</b> (строй пожарные части) и весенних <b>наводнений</b> (строй дамбы на берегу). Не живи долго в долг — город обанкротится!',
   '<b>Mouse:</b> left click builds, drag draws roads, right drag or the arrow keys move the map, the wheel zooms. Keys: R road, H house, S shop, F factory, P park, B bulldozer, Space stops time, Esc pause.': '<b>Мышь:</b> левый щелчок строит, перетаскивание рисует дороги, правая кнопка или стрелки двигают карту, колесо приближает. Клавиши: R дорога, H дом, S магазин, F фабрика, P парк, B бульдозер, пробел останавливает время, Esc пауза.',
   '<b>Phone and tablet:</b> the game goes fullscreen. Tap to build, drag with one finger to move the map (or to draw a road with the road tool), pinch with two fingers to zoom. Big buildings ask for a ✔ before they are built.': '<b>Телефон и планшет:</b> игра открывается на весь экран. Нажми, чтобы строить, веди одним пальцем, чтобы двигать карту (или рисовать дорогу, если выбрана дорога), своди и разводи два пальца, чтобы приблизить. Большие здания строятся только после ✔.',
@@ -81,6 +82,21 @@ const TEXT_RU = {
   'Planes bring more new residents every month — but they are loud.': 'Самолёты каждый месяц привозят больше новых жителей — но они шумят.',
   'Drag to draw a road. Every building needs one. Over water it is a bridge.': 'Перетаскивай, чтобы нарисовать дорогу. Она нужна каждому зданию. Над водой это мост.',
   'Removes buildings, roads, ruins and trees.': 'Убирает здания, дороги, руины и деревья.',
+  // the upgrades (data/buildings.js)
+  'Shopping Mall': 'Торговый центр',
+  'Modern Factory': 'Современная фабрика',
+  'Big Park': 'Большой парк',
+  'Helicopter Fire Station': 'Пожарная часть с вертолётом',
+  'University': 'Университет',
+  'Arena': 'Арена',
+  'International Airport': 'Международный аэропорт',
+  'A big mall: many more jobs, and houses in a wider area are happier.': 'Большой торговый центр: намного больше работы, и жителям в большем районе веселее.',
+  'Twice the jobs, and a filter on the chimney: much less smoke.': 'Вдвое больше работы, а фильтр на трубе — намного меньше дыма.',
+  'A playground and a fountain: houses in a wider area are even happier.': 'Детская площадка и фонтан: жителям в большем районе ещё веселее.',
+  'A fire helicopter flies straight to fires twice as far away, no road needed. The truck still drives to the near ones.': 'Пожарный вертолёт летит напрямую к пожарам вдвое дальше, дороги ему не нужны. К ближним пожарам по-прежнему ездит машина.',
+  'Many jobs, and houses in a wide area are happier and can grow into apartment blocks.': 'Много работы, а дома в большом районе счастливее и могут вырасти в многоэтажки.',
+  'A covered arena with matches and concerts all year: even happier houses in a huge area.': 'Крытая арена с матчами и концертами круглый год: ещё больше радости для огромного района.',
+  'Big planes from all over the world: even more new residents and many more jobs.': 'Большие самолёты со всего мира: ещё больше новых жителей и намного больше работы.',
   '{tool} opens when the city becomes a {title}': '{tool} откроется, когда город получит звание «{title}»',
   'opens at {title}': 'откроется на звании «{title}»',
 
@@ -92,6 +108,7 @@ const TEXT_RU = {
   'Flooded': 'Затоплено',
   'Only on the shore, next to water': 'Только на берегу, рядом с водой',
   'Not enough money': 'Не хватает денег',
+  'Repair it first': 'Сначала почини',
   'Nothing to remove here': 'Здесь нечего убирать',
   'Can\'t build a road here': 'Здесь нельзя проложить дорогу',
 
@@ -125,6 +142,8 @@ const TEXT_RU = {
   'Repair': 'Починить',
   'Clear': 'Убрать',
   'Demolish': 'Снести',
+  'Upgrade: {name}': 'Улучшение: {name}',
+  'Upgrade': 'Улучшить',
 
   // ---------- the budget ----------
   'Last month': 'Прошлый месяц',
@@ -143,6 +162,8 @@ const TEXT_RU = {
   'Main Menu': 'Главное меню',
   '{name} is now a {title}!': 'Новое звание города {name}: {title}!',
   'New: {list}': 'Открыто: {list}',
+  'Upgrades: {list}': 'Улучшения: {list}',
+  'Tap a building to upgrade it.': 'Нажми на здание, чтобы улучшить его.',
   'Your residents are proud of their city!': 'Жители гордятся своим городом!',
   'It took': 'Понадобилось',
   'Best ({difficulty})': 'Рекорд ({difficulty})',
@@ -159,6 +180,8 @@ const TEXT_RU = {
   '🔥 A fire broke out!': '🔥 Начался пожар!',
   'A building burned down. Build a fire station nearby!': 'Здание сгорело. Построй рядом пожарную часть!',
   '🚒 The firefighters put the fire out!': '🚒 Пожарные потушили огонь!',
+  '🚁 The fire helicopter put the fire out!': '🚁 Пожарный вертолёт потушил огонь!',
+  '{name} is ready!': '{name} — готово!',
   '🌊 Spring flood! The river is rising.': '🌊 Весеннее половодье! Вода поднимается.',
   'The water has gone down. Repair the damaged buildings.': 'Вода спала. Почини повреждённые здания.',
   'The water has gone down. Nothing was damaged!': 'Вода спала. Ничего не пострадало!',
@@ -169,5 +192,6 @@ const TEXT_RU = {
   'Cheat: a fire': 'Чит: пожар',
   'Cheat: a flood': 'Чит: наводнение',
   'Cheat: every house grows': 'Чит: все дома выросли',
-  'Cheat: every building unlocked': 'Чит: открыты все здания'
+  'Cheat: every building unlocked': 'Чит: открыты все здания',
+  'Cheat: every building upgraded': 'Чит: все здания улучшены'
 };
