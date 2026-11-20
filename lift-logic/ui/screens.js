@@ -88,21 +88,35 @@ const Screens = (() => {
     row.hidden = st === 'unavailable';
     if (row.hidden) return;
     const signIn = '<button class="btn small cloudIn" data-cloud="in">' + GOOGLE_G_SVG + escapeHtml(tr('Sign in with Google')) + '</button>';
+    // a sign-in that could not go (no network) or did not finish
+    const notice = Cloud.notice ? '<p class="fine cloudNotice">' + escapeHtml(Cloud.notice === 'offline'
+      ? tr('No network — sign in once you are online.') : tr('The sign-in did not finish — try again.')) + '</p>' : '';
     if (st === 'off') {
-      row.innerHTML = signIn + '<p class="fine">' + escapeHtml(tr('Keep your stars and programs in the cloud and play on any device.')) + '</p>';
+      row.innerHTML = signIn + '<p class="fine">' + escapeHtml(tr('Keep your stars and programs in the cloud and play on any device.')) + '</p>' + notice;
+      return;
+    }
+    const email = Cloud.email ? '<p class="fine">☁ ' + escapeHtml(Cloud.email) + '</p>' : '';
+    // signed in, but the account's copy could not be read: try again, or play on with this device's progress
+    if (st === 'loadFailed') {
+      row.innerHTML = '<span class="cloudState loadFailed">' + escapeHtml(tr('Couldn\'t load your cloud progress')) + '</span>' +
+        '<div class="cloudChoice"><button class="btn small" data-cloud="retry">' + escapeHtml(tr('Try again')) + '</button>' +
+        '<button class="btn small secondary" data-cloud="local">' + escapeHtml(tr('Play with the progress on this device')) + '</button></div>' + email;
       return;
     }
     const text = { syncing: tr('Syncing…'), synced: tr('Synced'), error: tr('Sync failed — it tries again later'),
+      local: tr('Playing with the progress on this device — it syncs once the network is back'),
       signedOut: tr('Signed out — sign in again to sync') }[st];
     row.innerHTML = '<span class="cloudState ' + st + '">' + escapeHtml(text) + '</span>' +
       (st === 'signedOut' ? signIn : '<button class="btn small secondary" data-cloud="out">' + escapeHtml(tr('Sign out')) + '</button>') +
-      (Cloud.email ? '<p class="fine">☁ ' + escapeHtml(Cloud.email) + '</p>' : '');
+      email + notice;
   }
   $('accountRow').addEventListener('click', (e) => {
     const b = e.target.closest('[data-cloud]');
     if (!b) return;
     Sfx.tap();
     if (b.dataset.cloud === 'in') Cloud.signIn();
+    else if (b.dataset.cloud === 'retry') Cloud.retry();
+    else if (b.dataset.cloud === 'local') Cloud.playLocal();
     else { Cloud.signOut(); renderAccount(); }
   });
   $('continueBtn').addEventListener('click', () => { ensureAudio(); const n = Progress.next(); if (n) openBrief(n); });

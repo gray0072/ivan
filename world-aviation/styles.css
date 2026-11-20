@@ -810,7 +810,11 @@ h3 { margin: 14px 0 6px; font-size: 14px; text-transform: uppercase; letter-spac
 .cloudState.error::before, .cloudState.conflict::before { background: #f0c36a; }
 .cloudCard p { margin: 8px 0; }
 .cloudCard .btnRow { margin-top: 10px; }
-.cloudState.signedOut::before { background: #f0c36a; }
+.cloudState.signedOut::before, .cloudState.loadFailed::before { background: #f0c36a; }
+.cloudState.local::before { background: #6f8193; }
+.cloudChoice { display: flex; flex-wrap: wrap; gap: 8px 10px; flex-basis: 100%; }
+.titleAccount .cloudChoice { justify-content: flex-end; }
+.cloudNotice { flex-basis: 100%; color: #f0c36a; margin: 0; }
 
 /* ---------- the careers on this device (UI.showCareers) ---------- */
 .careerList { display: flex; flex-direction: column; gap: 10px; margin: 14px 0 4px; }

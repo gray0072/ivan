@@ -211,7 +211,11 @@ button { font-family: inherit; touch-action: manipulation; }
 .cloudState::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #6f8193; flex: none; }
 .cloudState.synced::before { background: #7de08a; }
 .cloudState.syncing::before { background: #6fb1e8; }
-.cloudState.error::before, .cloudState.signedOut::before { background: #f0c36a; }
+.cloudState.error::before, .cloudState.signedOut::before, .cloudState.loadFailed::before { background: #f0c36a; }
+.cloudState.local::before { background: #6f8193; }
+.cloudState.local { flex: 1 1 200px; text-align: left; }
+.account .cloudChoice { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; }
+.account .cloudNotice { color: #f0c36a; }
 .btn.key { background: #2b3f54; }
 #continueBtn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 20px; }
 #continueBtn small { font-size: 12px; font-weight: 600; opacity: 0.8; }

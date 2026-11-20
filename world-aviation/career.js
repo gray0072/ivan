@@ -343,6 +343,7 @@ const Career = {
   // is, the log), and what only ever grows is kept from both — the courses, the aircraft, the regions,
   // the Mriya's parts and finishes, the flights in each type and to each airport, the records, the
   // rank and the round-the-world marks, records and history. Counts take the larger, never the sum, so merging again changes nothing.
+  // Whatever only one copy has (a field a newer version added) is kept from it.
   mergeCloud(remote) {
     const local = this.data;
     this.data = remote;
@@ -352,6 +353,16 @@ const Career = {
     const o = d === local ? other : local;
     const union = (a, b) => a.concat(b.filter((x) => a.indexOf(x) < 0));
     const maxEach = (a, b) => { for (const k in b) a[k] = Math.max(a[k] || 0, b[k]); };
+    // what only the other copy has (a newer version's progress, unknown to this one) is kept as it is,
+    // so an older version of the game never drops it from the cloud
+    const plain = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
+    const fill = (a, b) => {
+      for (const k in b) {
+        if (a[k] === undefined) a[k] = b[k];
+        else if (plain(a[k]) && plain(b[k])) fill(a[k], b[k]);
+      }
+    };
+    fill(d, o);
     d.courses = union(d.courses, o.courses);
     d.aircraft = union(d.aircraft, o.aircraft);
     d.regions = union(d.regions, o.regions);

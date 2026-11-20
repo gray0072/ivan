@@ -1323,5 +1323,11 @@ const TEXT_RU = {
   "Synced": "Синхронизировано",
   "Sync failed — it tries again later": "Синхронизация не удалась — попробую позже",
   "Signed out — sign in again to sync": "Вход сброшен — войдите снова для синхронизации",
+  "Couldn't load your cloud progress": "Не удалось загрузить прогресс из облака",
+  "Try again": "Попробовать снова",
+  "Play with the progress on this device": "Играть с прогрессом на этом устройстве",
+  "Playing with the progress on this device — it syncs once the network is back": "Игра идёт с прогрессом этого устройства — он синхронизируется, когда вернётся сеть",
+  "No network — sign in once you are online.": "Нет сети — войди, когда появится интернет.",
+  "The sign-in did not finish — try again.": "Вход не завершился — попробуй ещё раз.",
   "Keep your stars and programs in the cloud and play on any device.": "Храни звёзды и программы в облаке и играй на любом устройстве."
 };

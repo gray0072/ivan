@@ -300,21 +300,34 @@ const UI = {
     const st = Cloud.status;
     if (!Career.data) {
       return '<button class="btn cloudIn" data-act="cloudIn" data-v="list" title="' + esc(tr('Sign in with a Google account to bring its careers to this device.')) + '">' +
-        GOOGLE_G_SVG + tr('Sign in with Google') + '</button>';
+        GOOGLE_G_SVG + tr('Sign in with Google') + '</button>' + this.cloudNotice();
     }
     if (st === 'off' || st === 'signedOut') {
       return (st === 'signedOut' ? '<span class="cloudState signedOut">' + esc(this.cloudStatusText()) + '</span>' : '') +
         '<button class="btn cloudIn" data-act="cloudIn" data-v="career" title="' + esc(tr('Keep the career in the cloud and fly it on any device.')) + '">' +
-        GOOGLE_G_SVG + tr('Sign in with Google') + '</button>';
+        GOOGLE_G_SVG + tr('Sign in with Google') + '</button>' + this.cloudNotice();
     }
+    if (st === 'loadFailed') return '<span class="cloudState loadFailed" title="' + esc(Career.data.cloud.email) + '">' + esc(this.cloudStatusText()) + '</span>' + this.cloudChoice();
     return '<span class="cloudState ' + st + '" title="' + esc(Career.data.cloud.email) + '">' + esc(this.cloudStatusText()) + '</span>' +
       '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button>';
+  },
+  // signed in, but the account's careers could not be read: try again, or play on with this device's progress
+  cloudChoice() {
+    return '<div class="cloudChoice"><button class="btn" data-act="cloudRetry">' + tr('Try again') + '</button>' +
+      '<button class="btn" data-act="cloudLocal">' + tr('Play with the progress on this device') + '</button></div>';
+  },
+  // a sign-in that could not go (no network) or did not finish
+  cloudNotice() {
+    if (!Cloud.notice) return '';
+    return '<p class="fineprint cloudNotice">' + esc(Cloud.notice === 'offline' ? tr('No network — sign in once you are online.') : tr('The sign-in did not finish — try again.')) + '</p>';
   },
   cloudStatusText() {
     switch (Cloud.status) {
       case 'syncing': return tr('Syncing…');
       case 'synced': return tr('Synced');
       case 'error': return tr('Sync failed — it tries again later');
+      case 'loadFailed': return tr('Couldn\'t load your cloud progress');
+      case 'local': return tr('Playing with the progress on this device — it syncs once the network is back');
       case 'signedOut': return tr('Signed out — sign in again to sync');
       default: return '';
     }
@@ -328,14 +341,15 @@ const UI = {
     if (c) {
       body = '<p><span class="cloudState ' + st + '">' + esc(this.cloudStatusText()) + '</span></p>' +
         '<p class="fineprint">' + esc(tr('Syncs with {email}', { email: c.email })) + '</p>' +
+        (st === 'loadFailed' ? this.cloudChoice() : '') +
         '<div class="btnRow">' + (st === 'signedOut' ? '<button class="btn cloudIn" data-act="cloudIn" data-v="career">' + GOOGLE_G_SVG + tr('Sign in with Google') + '</button>' : '') +
-        '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button></div>';
+        '<button class="btn" data-act="cloudOut">' + tr('Sign out') + '</button></div>' + this.cloudNotice();
     } else {
       const known = Cloud.accounts();
       body = '<p class="fineprint">' + esc(tr('Keep the career in the cloud and fly it on any device.')) + ' ' +
         esc(tr('Each career has its own sign-in: a new career starts signed out.')) + '</p>' +
         '<div class="btnRow">' + known.map((a) => '<button class="btn" data-act="cloudLink" data-v="' + esc(a.user) + '">☁ ' + esc(tr('Sync with {email}', { email: a.email })) + '</button>').join('') +
-        '<button class="btn cloudIn" data-act="cloudIn" data-v="career">' + GOOGLE_G_SVG + tr(known.length ? 'Another Google account' : 'Sign in with Google') + '</button></div>';
+        '<button class="btn cloudIn" data-act="cloudIn" data-v="career">' + GOOGLE_G_SVG + tr(known.length ? 'Another Google account' : 'Sign in with Google') + '</button></div>' + this.cloudNotice();
     }
     return '<section class="cvCard cloudCard"><h3>' + tr('Cloud save') + '</h3>' + body + '</section>';
   },
@@ -1472,6 +1486,8 @@ const UI = {
       case 'cloudIn': Cloud.signIn(v === 'career'); break;
       case 'cloudLink': Cloud.linkTo(Cloud.accounts().find((a) => a.user === v)); this.refreshCloud(); break;
       case 'cloudOut': Cloud.signOut(); this.refreshCloud(); break;
+      case 'cloudRetry': Cloud.retry(); this.refreshCloud(); break;
+      case 'cloudLocal': Cloud.playLocal(); this.refreshCloud(); break;
       case 'back':
         if (this.backTo === 'pause' && Game.mode === 'paused') { this.backTo = null; this.showPause(); }
         else this.showTitle();

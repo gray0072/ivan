@@ -85,17 +85,24 @@ const Progress = (() => {
   // ---------- the cloud copy (core/cloud.js) ----------
   // everything that travels between devices: the progress and the programs; the settings, the difficulty,
   // the sound and the language stay this device's
+  // (parts of the cloud's copy this version does not know, from a newer one: sent back as they came)
+  let unknown = {};
   function snapshot() {
-    return { v: 1, progress: p, programs: Store.json(KEYS.programs, {}), programTimes: Store.json(KEYS.programTimes, {}) };
+    return Object.assign({}, unknown, { v: 1, progress: p, programs: Store.json(KEYS.programs, {}), programTimes: Store.json(KEYS.programTimes, {}) });
   }
   // another device's copy merged into this one: what only ever grows is kept from both (the stars per
   // difficulty, the larger of each; the medals, the cards, the papers, hint 3 used, the missions passed
   // by the cheat, everything open), the last mission played is the later one, and each mission's program
-  // is the one saved last. Merging the same copy again changes nothing. Returns whether anything changed.
+  // is the one saved last. What this version does not know (a newer version's progress) is kept as it
+  // came, so an old version never drops it from the cloud. Merging the same copy again changes nothing.
+  // Returns whether anything changed.
   function merge(remote) {
     if (!remote || typeof remote !== 'object') return false;
     const before = JSON.stringify(snapshot());
     const r = remote.progress || {};
+    for (const k in r) if (p[k] === undefined && r[k] !== undefined) p[k] = r[k];
+    unknown = {};
+    for (const k in remote) if (['v', 'progress', 'programs', 'programTimes'].indexOf(k) < 0) unknown[k] = remote[k];
     for (const id in r.stars || {}) {
       const mine = p.stars[id] = p.stars[id] || {};
       for (const d in r.stars[id]) mine[d] = Math.max(mine[d] || 0, r.stars[id][d] || 0);
@@ -112,7 +119,7 @@ const Progress = (() => {
     for (const id in rp) {
       if (rp[id] && (!progs[id] || (rt[id] || 0) > (times[id] || 0))) { progs[id] = rp[id]; times[id] = rt[id] || 0; }
     }
-    if (JSON.stringify({ v: 1, progress: p, programs: progs, programTimes: times }) === before) return false;
+    if (JSON.stringify(Object.assign({}, unknown, { v: 1, progress: p, programs: progs, programTimes: times })) === before) return false;
     Store.setJson(KEYS.progress, p);
     Store.setJson(KEYS.programs, progs);
     Store.setJson(KEYS.programTimes, times);

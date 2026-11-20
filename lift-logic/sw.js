@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "b662d070db9d";
+const VERSION = "061d8b6b1bde";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -30,7 +30,7 @@ const FILES = [
   "art/people.js?v=3",
   "constants.js?v=4",
   "core/audio.js?v=2",
-  "core/cloud.js?v=1",
+  "core/cloud.js?v=2",
   "core/cursor.js?v=1",
   "core/events.js?v=1",
   "core/i18n.js?v=1",
@@ -43,8 +43,8 @@ const FILES = [
   "data/facts.js?v=3",
   "data/icons.js?v=3",
   "data/jokes.js?v=3",
-  "data/lang-ru.js?v=4",
-  "data/lang-sv.js?v=4",
+  "data/lang-ru.js?v=5",
+  "data/lang-sv.js?v=5",
   "data/lifts.js?v=3",
   "data/missions/eiffel.js?v=1",
   "data/missions/empire.js?v=1",
@@ -71,7 +71,7 @@ const FILES = [
   "icon.svg?v=1",
   "lib/supabase.min.js?v=1",
   "manifest.webmanifest?v=3",
-  "progress.js?v=2",
+  "progress.js?v=3",
   "render/building.js?v=4",
   "render/minimap.js?v=1",
   "render/view.js?v=2",
@@ -86,7 +86,7 @@ const FILES = [
   "sim/state.js?v=1",
   "sim/stats.js?v=3",
   "sim/vm.js?v=3",
-  "styles.css?v=4",
+  "styles.css?v=5",
   "ui/blockview.js?v=2",
   "ui/editor.js?v=4",
   "ui/fireworks.js?v=1",
@@ -97,7 +97,7 @@ const FILES = [
   "ui/palette.js?v=4",
   "ui/results.js?v=1",
   "ui/runbar.js?v=2",
-  "ui/screens.js?v=3",
+  "ui/screens.js?v=4",
   "ui/slots.js?v=3",
   "ui/sounds.js?v=2",
   "ui/textview.js?v=1",

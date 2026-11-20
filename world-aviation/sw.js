@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "a4990a44a68f";
+const VERSION = "112c29074808";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -35,10 +35,10 @@ const FILES = [
   "art/regions.js?v=1",
   "art/routemap.js?v=3",
   "art/useicons.js?v=1",
-  "career.js?v=50",
+  "career.js?v=51",
   "constants.js?v=106",
   "core/audio.js?v=14",
-  "core/cloud.js?v=3",
+  "core/cloud.js?v=4",
   "core/crowd.js?v=1",
   "core/cursor.js?v=1",
   "core/fanfare.js?v=2",
@@ -56,8 +56,8 @@ const FILES = [
   "data/geodata.js?v=4",
   "data/icons.js?v=1",
   "data/landingjokes.js?v=2",
-  "data/lang-ru.js?v=89",
-  "data/lang-sv.js?v=89",
+  "data/lang-ru.js?v=90",
+  "data/lang-sv.js?v=90",
   "data/lessons.js?v=2",
   "data/mriya.js?v=5",
   "data/pilots.js?v=2",
@@ -110,7 +110,7 @@ const FILES = [
   "sim/terrain.js?v=11",
   "sim/traffic.js?v=3",
   "sim/world.js?v=31",
-  "styles.css?v=73",
+  "styles.css?v=74",
   "ui/cabin.js?v=4",
   "ui/coach.js?v=2",
   "ui/cockpit.js?v=11",
@@ -125,7 +125,7 @@ const FILES = [
   "ui/school.js?v=4",
   "ui/showcase.js?v=4",
   "ui/title.js?v=5",
-  "ui/ui.js?v=83",
+  "ui/ui.js?v=84",
 ];
 // false for the root gallery: its scope contains every game's folder, which belong to the games'
 // own workers, so it serves only the files in its list.

@@ -1323,5 +1323,11 @@ const TEXT_SV = {
   "Synced": "Synkad",
   "Sync failed — it tries again later": "Synken misslyckades — försöker igen senare",
   "Signed out — sign in again to sync": "Utloggad — logga in igen för att synka",
+  "Couldn't load your cloud progress": "Kunde inte hämta dina framsteg från molnet",
+  "Try again": "Försök igen",
+  "Play with the progress on this device": "Spela med framstegen på den här enheten",
+  "Playing with the progress on this device — it syncs once the network is back": "Du spelar med framstegen på den här enheten — de synkas när nätet är tillbaka",
+  "No network — sign in once you are online.": "Inget nät — logga in när du är uppkopplad.",
+  "The sign-in did not finish — try again.": "Inloggningen blev inte klar — försök igen.",
   "Keep your stars and programs in the cloud and play on any device.": "Spara dina stjärnor och program i molnet och spela på vilken enhet som helst."
 };
