@@ -14,9 +14,11 @@ const CAREERS_KEY = 'worldaviation.careers.v1';      // the careers on this devi
 const CAREER_SLOT = 'worldaviation.career.';         // + a career's id: that career
 const SETTINGS_KEY = 'worldaviation.settings.v1';    // the device's language, and the settings with no career open
 // a new career's settings (the language is the device's, above the careers)
-const SETTINGS_DEFAULT = { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', landingAid: true, noseUp: 'down', touchStick: true };
+// (parked, trees, traffic: the parked aeroplanes, the trees and the other traffic, there only for the
+// look, left out on a slow device: ui/loading.js)
+const SETTINGS_DEFAULT = { difficulty: 'medium', quality: 'auto', sound: true, units: 'aviation', landingAid: true, noseUp: 'down', touchStick: true, parked: true, trees: true, traffic: true };
 // the settings that stay with the device when a career comes in from the cloud
-const DEVICE_SETTINGS = ['quality', 'noseUp', 'touchStick'];
+const DEVICE_SETTINGS = ['quality', 'noseUp', 'touchStick', 'parked', 'trees', 'traffic'];
 
 const Career = {
   data: null,

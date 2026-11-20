@@ -453,7 +453,7 @@ const AircraftModels = {
     const W = 1024, H = 256;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
-    const g = cv.getContext('2d');
+    const g = cv.getContext('2d', { willReadFrequently: true });   // (read back: paintedTexture)
     const L = d.len;
     const px = W / L;                                   // canvas pixels per metre along the body
     const yAt = (deg) => deg / 360 * H;                 // angle from the top of the fuselage
@@ -579,8 +579,8 @@ const AircraftModels = {
       };
       // (the upper half only, the top at both ends of the canvas: no sill is lower)
       const x0 = Math.floor(W * (1 - gl.dMax / L)), y1 = Math.ceil(yAt(100));
-      paintCockpit(g, gl, at, x0, W, 0, y1);
-      paintCockpit(g, gl, at, x0, W, H - y1, H);
+      paintCockpit(g, gl, at, x0, W, 0, y1, ac.id + '|top');
+      paintCockpit(g, gl, at, x0, W, H - y1, H, ac.id + '|bottom');
     }
     const tex = paintedTexture(cv);
     this.liveries.set(key, tex);
@@ -595,7 +595,7 @@ const AircraftModels = {
     const W = 512, H = 256, L = d.len, R = d.radius;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
-    const g = cv.getContext('2d');
+    const g = cv.getContext('2d', { willReadFrequently: true });   // (read back: paintedTexture)
     g.fillStyle = look.base || '#f3f5f7';
     g.fillRect(0, 0, W, H);
     const sx = R * HUMP.rx, sy = R * HUMP.ry, sz = L * HUMP.rz, y0 = R * HUMP.y, z0 = L * HUMP.z;
@@ -603,7 +603,7 @@ const AircraftModels = {
     paintCockpit(g, cockpitGlass(look, L, R), (x, y) => {
       const ph = x / W * TAU, th = y / H * Math.PI;
       return [-Math.cos(ph) * Math.sin(th) * sx, y0 + Math.cos(th) * sy, z0 + Math.sin(ph) * Math.sin(th) * sz];
-    }, 0, W / 2, 0, H);
+    }, 0, W / 2, 0, H, ac.id + '|hump');
     const tex = paintedTexture(cv);
     this.liveries.set(key, tex);
     return tex;
@@ -621,7 +621,7 @@ const AircraftModels = {
     const W = 1024, H = 256, L = d.len;
     const cv = document.createElement('canvas');
     cv.width = W; cv.height = H;
-    const g = cv.getContext('2d');
+    const g = cv.getContext('2d', { willReadFrequently: true });   // (read back: paintedTexture)
     const yAt = (deg) => deg / 360 * H;
     g.fillStyle = lv.body;
     g.fillRect(0, 0, W, H);
@@ -709,7 +709,7 @@ const AircraftModels = {
         const H = 256, W = Math.min(512, Math.max(64, Math.round(H * span / h / 4) * 4));
         const cv = document.createElement('canvas');
         cv.width = W; cv.height = H;
-        const g = cv.getContext('2d');
+        const g = cv.getContext('2d', { willReadFrequently: true });   // (read back: paintedTexture)
         // side +1 (+x): the canvas runs from the leading edge towards the tail; side -1 the other way
         const U = (z) => (side > 0 ? (zMax - z) : (z - zMin)) / span * W;
         const V = (y) => (1 - y / h) * H;
@@ -816,15 +816,30 @@ function glassColour(t) {
 // a canvas position lies on. Each texel's corners are looked at first; one whose corners all lie
 // off the glass is left as it is, one with all on it is painted from its middle, and only those
 // on an edge take 4 × 4 samples, for the panes' smooth edges (a livery is painted in a few ms).
-function paintCockpit(g, gl, at, x0, x1, y0, y1) {
+// key: the type and the place (the glass is the same in every paint of a type): what it paints is
+// kept (GLASS_PAINT: each texel's place, colour and share), so the type's next paint only lays
+// it over its own (a big airport's parked aeroplanes are a dozen paints of a few types)
+const GLASS_PAINT = new Map();
+function paintCockpit(g, gl, at, x0, x1, y0, y1, key) {
   const w = x1 - x0, h = y1 - y0, N = 4;
   if (w <= 0 || h <= 0) return;
   const img = g.getImageData(x0, y0, w, h), px = img.data;
+  const kept = key && GLASS_PAINT.get(key + '|' + x0 + ',' + y0 + ',' + w + ',' + h);
+  if (kept) {
+    for (let m = 0; m < kept.o.length; m++) {
+      const o = kept.o[m], k = kept.k[m];
+      for (let n = 0; n < 3; n++) px[o + n] += (kept.c[m * 3 + n] - px[o + n]) * k;
+    }
+    g.putImageData(img, x0, y0);
+    return;
+  }
+  const list = { o: [], c: [], k: [] };
   const corner = new Float32Array((w + 1) * (h + 1));
   for (let j = 0; j <= h; j++) for (let i = 0; i <= w; i++) corner[j * (w + 1) + i] = glassAt(gl, at(x0 + i, y0 + j));
   const paint = (o, t, k) => {
     const c = glassColour(t);
     for (let n = 0; n < 3; n++) px[o + n] += (c[n] - px[o + n]) * k;
+    list.o.push(o); list.k.push(k); list.c.push(c[0], c[1], c[2]);
   };
   for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
     const a = j * (w + 1) + i;
@@ -840,6 +855,7 @@ function paintCockpit(g, gl, at, x0, x1, y0, y1) {
     if (cov) paint(o, ts / cov, cov / (N * N));
   }
   g.putImageData(img, x0, y0);
+  if (key) GLASS_PAINT.set(key + '|' + x0 + ',' + y0 + ',' + w + ',' + h, { o: Int32Array.from(list.o), c: Float64Array.from(list.c), k: Float64Array.from(list.k) });
 }
 
 // The fuselage's cross-section at z (model axes, the nose at L / 2): its radius r and how far its

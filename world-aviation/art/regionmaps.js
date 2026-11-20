@@ -29,7 +29,12 @@ const RegionMaps = {
     if (!next) return;
     this.warming = true;
     const idle = window.requestIdleCallback || ((f) => setTimeout(f, 200));
-    idle(() => { this.warming = false; this.url(next.id); this.warm(); }, { timeout: 2000 });
+    idle(() => {
+      this.warming = false;
+      // (not while a flight's world is built behind the loading screen: it waits, ui/loading.js)
+      if (typeof Loading !== 'undefined' && Loading.active) { setTimeout(() => this.warm(), 1000); return; }
+      this.url(next.id); this.warm();
+    }, { timeout: 2000 });
   },
 
   draw(g, regionId, w, h) {

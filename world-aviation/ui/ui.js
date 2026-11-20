@@ -90,6 +90,7 @@ const UI = {
     this.screen.hidden = false;
     // in the pause the flight stays in sight behind the glass (styles.css)
     this.screen.dataset.view = Game.mode === 'paused' ? 'pause' : '';
+    this.settingsOpen = false;
     this.screen.innerHTML = '<div class="panel ' + (cls || '') + '">' + Units.text(html) + '</div>';
     this.screen.scrollTop = 0;
     this.wire();
@@ -153,6 +154,7 @@ const UI = {
     if (r === 'careers') this.showCareers();
     else if (r === 'new') { this.newDifficulty = 'medium'; this.showNewCareer(); }
     else if (r === 'howto') { this.backTo = 'title'; this.showHowTo(); }
+    else if (r === 'settings') this.showSettings();
     else if (Career.data && this.tabs.indexOf(r) >= 0) { this.tab = r; this.showOps(); }
     else if (Career.data && r === 'school') { this.tab = 'dispatch'; this.school = true; this.showOps(); }
     else if (Career.data && r === 'rtw') RtwScreen.show();
@@ -212,10 +214,10 @@ const UI = {
       (account ? '<div class="titleAccount">' + account + '</div>' : '') +
       '<div class="titleSettings">' +
       '<div class="settingsRow">' + this.difficultyChips() + '</div>' +
-      '<div class="settingsRow">' +
-      this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.stickChip() + this.aidChip() + this.cabinChip() +
-      '</div></div>' +
+      '<div class="settingsRow">' + this.soundChip() + '</div>' +
+      '</div>' +
       '<div class="titleFoot">' +
+      '<button class="btn" data-act="settings">' + tr('Settings') + '</button>' +
       '<button class="btn" data-act="howto">' + tr('How to fly') + '</button>' +
       '</div>' +
       '<p class="fineprint">' + esc(tr(CAREER.INTRO)) + '</p>' +
@@ -1239,8 +1241,9 @@ const UI = {
         '<button class="btn" data-act="pauseAircraft">' + tr('The aircraft') + '</button>' : '') +
       '<button class="btn" data-act="restart">' + tr('Restart this flight') + '</button>' +
       '<button class="btn" data-act="howto2">' + tr('Controls') + '</button>' +
+      '<button class="btn" data-act="settings">' + tr('Settings') + '</button>' +
       '<button class="btn" data-act="ops">' + tr(fl && fl.lesson ? 'Leave the lesson' : 'Abandon, back to ops') + '</button></div>' +
-      '<div class="settingsRow">' + this.difficultyChips() + this.qualityChips() + this.soundChip() + this.unitChips() + this.pitchChips() + this.stickChip() + this.aidChip() + this.cabinChip() + '</div>' +
+      '<div class="settingsRow">' + this.difficultyChips() + this.soundChip() + '</div>' +
       '<p class="fineprint">' + tr('Esc, Space or Enter resumes. A new difficulty applies from the next flight or the restart.') + '</p>', 'narrow');
   },
 
@@ -1268,11 +1271,53 @@ const UI = {
     return '<div class="briefCols pauseApts">' + block(from, s.weather.dep, c.depGate) + block(to, s.weather.arr, c.arrGate) + '</div>';
   },
 
+  // ---------- settings ----------
+  // Every setting on a screen of its own, from the title and from the pause, by what it is about
+  // (the level and the sound are also right on the title and the pause: AGENTS.md); Back (Esc)
+  // goes back where it came from
+  showSettings() {
+    const paused = Game.mode === 'paused';
+    const sec = (title, html) => html ? '<section class="setSec"><h3>' + title + '</h3><div class="settingsRow">' + html + '</div></section>' : '';
+    this.panel(
+      '<div class="screenBar"><button class="btn back" data-act="settingsBack" data-esc>' + tr('Back') + '</button></div>' +
+      '<h2>' + tr('Settings') + '</h2>' +
+      sec(tr('Game'), this.difficultyChips() + this.aidChip() + this.unitChips()) +
+      sec(tr('Controls'), this.pitchChips() + this.stickChip()) +
+      sec(tr('Sound'), this.soundChip() + this.cabinChip()) +
+      sec(tr('Graphics'), this.qualityChips() + this.partChips() +
+        '<p class="fineprint">' + tr('The parked aircraft, the trees and the other traffic are there for the look: without them a flight loads faster and runs smoother on a slow device. Switched off, they go at once; switched on, they come back with the next flight at the latest.') + '</p>') +
+      (paused ? '<p class="fineprint">' + tr('A new difficulty applies from the next flight or the restart.') + '</p>' : ''),
+      'narrow settings');
+    this.settingsOpen = true;
+    if (!paused) this.route('settings');
+  },
+  // the screen a setting was changed on, drawn again
+  reshow() {
+    if (this.settingsOpen) this.showSettings();
+    else if (Game.mode === 'paused') this.showPause();
+    else this.showTitle();
+  },
+
+  // what is only there for the look, each On or Off (settings.parked, .trees, .traffic: ui/loading.js)
+  partChips() {
+    const name = { parked: 'Parked aircraft', trees: 'Trees', traffic: 'Other traffic' };
+    const tip = {
+      parked: 'the aircraft standing at the other stands of every airport',
+      trees: 'the trees round the airports and over the land',
+      traffic: 'the other aircraft taxiing, taking off and landing'
+    };
+    return Loading.PARTS.map((p) => {
+      const on = Career.settings[p] !== false;
+      return '<div class="setGroup"><span>' + tr(name[p]) + '</span><button class="chip' + (on ? ' on' : '') + '" data-act="part" data-v="' + p + '" title="' + esc(tr(tip[p])) + '">' +
+        tr(on ? 'On' : 'Off') + '</button></div>';
+    }).join('');
+  },
+
   // the graphics: Auto (the default: by the device, then by the frame rate in flight) or a fixed preset
-  // (on the title and in the pause)
+  // (in the settings)
   qualityChips() {
     const q = Career.settings.quality;
-    return '<div class="setGroup"><span>' + tr('Graphics') + '</span>' + ['auto'].concat(QUALITY_ORDER).map((d) =>
+    return '<div class="setGroup"><span>' + tr('Quality') + '</span>' + ['auto'].concat(QUALITY_ORDER).map((d) =>
       '<button class="chip' + (q === d ? ' on' : '') + '" data-act="quality" data-v="' + d + '">' +
       esc(tr(d === 'auto' ? 'Auto' : QUALITY[d].name)) + '</button>').join('') + '</div>';
   },
@@ -1429,12 +1474,12 @@ const UI = {
         Career.settings.quality = v; Career.saveSettings();
         Game.quality = pickQuality(v); Scene3D.setQuality(Game.quality);
         if (Game.mode === 'paused' && Game.flight) Scene3D.warmup(Game.flight);
-        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        this.reshow();
         break;
       case 'sound':
         Career.settings.sound = !Career.settings.sound; Career.saveSettings();
         Audio2.setMuted(!Career.settings.sound);
-        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        this.reshow();
         break;
       case 'rename': {
         this.renaming = true; this.showOps();
@@ -1458,27 +1503,36 @@ const UI = {
       case 'units':
         Career.settings.units = v; Career.saveSettings();
         Units.metric = v === 'metric';
-        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        this.reshow();
         break;
       case 'noseUp':
         Career.settings.noseUp = v; Career.saveSettings();
         Input.invertPitch = v === 'up';
-        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        this.reshow();
         break;
       case 'touchStick':
         Career.settings.touchStick = Career.settings.touchStick === false; Career.saveSettings();
         document.body.classList.toggle('stickRest', Career.settings.touchStick);
-        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        this.reshow();
         break;
       case 'landingAid':
         Career.settings.landingAid = Career.settings.landingAid === false; Career.saveSettings();
-        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        this.reshow();
         break;
       case 'cabinPa':
         Career.settings.cabinPa = Career.settings.cabinPa === false; Career.saveSettings();
         if (Career.settings.cabinPa === false && window.speechSynthesis && Audio2.paTalking) window.speechSynthesis.cancel();
-        if (Game.mode === 'paused') this.showPause(); else this.showTitle();
+        this.reshow();
         break;
+      case 'settings': this.showSettings(); break;
+      case 'settingsBack': if (Game.mode === 'paused') this.showPause(); else this.showTitle(); break;
+      case 'part': {
+        Career.settings[v] = Career.settings[v] === false; Career.saveSettings();
+        // the other traffic switched off in flight goes at once (on: from the next flight)
+        if (v === 'traffic' && Career.settings.traffic === false && AirTraffic.plan) { AirTraffic.stop(); Traffic3D.clear(); }
+        this.reshow();
+        break;
+      }
       case 'howto': this.backTo = 'title'; this.showHowTo(); break;
       case 'howto2': this.backTo = 'pause'; this.showHowTo(); break;
       case 'wipe': this.confirmWipe(); break;
@@ -1589,7 +1643,8 @@ const UI = {
 
   // re-render whichever screen is showing (after a setting changed)
   refresh() {
-    if (Game.mode === 'paused') this.showPause();
+    if (this.settingsOpen) this.showSettings();
+    else if (Game.mode === 'paused') this.showPause();
     else if (Game.mode === 'practice' && Game.result) this.showPracticeResult(Game.result);
     else if (Game.mode === 'lesson' && Game.result) School.showResult(Game.result);
     else if ((Game.mode === 'debrief' || Game.mode === 'failed') && Game.result) this.showDebrief(Game.result, Game.mode === 'failed');

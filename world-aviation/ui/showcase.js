@@ -23,14 +23,10 @@ const Showcase = {
     if (!ac || !here) return;
     this.acId = id;
     this.scroll = UI.screen.scrollTop;
-    const boot = el('bootScreen');
-    el('bootStatus').textContent = tr('Flying out to {id}…', { id: here.id });
-    boot.hidden = false;
-    el('screen').hidden = true;
-    frame().then(frame).then(() => {
-      this.start(ac, here.id);
-      Game.holdBoot();                 // up until the scene has been drawn (Game.revealScene)
-    });
+    // the loading screen, up until the scene has been drawn (Game.load, Game.revealScene)
+    Game.load(tr('Flying out to {id}…', { id: here.id }),
+      { fresh: !World.here[here.id], prepare: () => World.prepare(here.id, here.id) },
+      () => this.start(ac, here.id));
   },
 
   start(ac, id) {
@@ -88,7 +84,7 @@ const Showcase = {
     env.month = Career.data.season || 0;
 
     Scene3D.setFlightGates([], null);
-    Scene3D.warmup(fl);
+    Scene3D.warmup(fl, { arrival: !Game.loadingWorld });
     Game.mode = 'showcase';
     Game.helpOpen = false;
     Input.active = true;          // Enter, Space and Esc end it, P pauses it (Game.action)

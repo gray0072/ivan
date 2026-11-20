@@ -10,7 +10,8 @@
 // farm, the cargo terminal or shed, the GA terminal, the air ambulance's
 // hangar, the rescue station, the fire station, the landside behind the
 // terminal) as boxes, the aeroplanes parked at its stands (all but the stands
-// this flight uses, Flight.gatesInUse) as the prisms of their type
+// this flight uses, Flight.gatesInUse, and none where the picture leaves
+// them out: a.noParked) as the prisms of their type
 // (Airframe.solids), the helicopters on their pads (their body and the
 // disc of the main rotor), and the vehicles (a.vehicles: the ones standing
 // at the stands, the baggage trains, the FOLLOW ME car, the emergency
@@ -201,6 +202,8 @@ const Collide = {
     if (nearObs) {
       for (const ob of obs) {
         if (ob.gate && used.indexOf(ob.gate) >= 0) continue;
+        // (the parked aeroplanes left out of the picture, settings.parked: render/airport3d.js)
+        if (ob.kind === 'parked' && a.noParked) continue;
         if (Math.hypot(ob.ox - st.pos.x, ob.oz - st.pos.z) > ob.rad + reach || st.pos.y - reach > ob.top) continue;
         const k = this.touchAt(ob, pts, samples.length);
         if (k >= 0) { this.hit(fl, c, ob, pts[k]); return; }

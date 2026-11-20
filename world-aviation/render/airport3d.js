@@ -42,9 +42,20 @@ const RWY_BLAST = 60;              // blast pad before and after the runway, met
 const PARKED_SET = 5;              // the parked aeroplanes of this many neighbouring stands are drawn as one (Airport3D.setParked)
 
 const Airport3D = {
-  // opts: { aniso, maxTex, hi, quality } — anisotropy, the largest texture side, a high-detail ground, the QUALITY preset
-  build(a, opts) {
-    const L = LAYOUT;
+  // opts: { aniso, maxTex, hi, quality, off } — anisotropy, the largest texture side, a high-detail
+  // ground, the QUALITY preset, and off(part): true for a part left out ('parked': the parked
+  // aeroplanes, 'trees': the trees round it; asked again as the build goes on, so a part switched
+  // off while the airport is built is left out from there)
+  build(a, opts) { return runSteps(this.steps(a, opts)); },
+
+  // The build in steps (a generator): before each piece it yields { what, w, part } — what comes
+  // next, its weight (LOAD_COST: about its milliseconds on a desktop) and the part it belongs to
+  // when it can be left out — so a loading screen can show where it is and let the page breathe
+  // (Scene3D.airportSteps), and a build in the background can spread over frames. Returns the
+  // airport's record.
+  * steps(a, opts) {
+    const L = LAYOUT, C = LOAD_COST;
+    const off = opts.off || (() => false);
     const look = AIRPORT_LOOK[a.id] || ['star', '#2a5d8f'];
     const id = { symbol: look[0], color: look[1], airlines: airlinesAt(a), paint: buildingPaint(a) };
     // night: materials that light up after dark ({ mat, color, k }: emissive = color x dark x k)
@@ -69,6 +80,7 @@ const Airport3D = {
     const lambert = (color) => new THREE.MeshLambertMaterial({ color });
 
     // ---- the ground and the runway
+    yield { what: 'ground', w: C.GROUND * this.size(a) };
     const gnd = makeGroundCanvas(a, id, Math.min(opts.quality && opts.quality.aptTex || (opts.hi ? 4096 : 2048), opts.maxTex));
     // (both planes are cut into cells: the logarithmic depth buffer needs small triangles
     // close to the eye, or the terrain shows through)
@@ -76,22 +88,28 @@ const Airport3D = {
     ggeo.rotateX(-Math.PI / 2);
     at(new THREE.Mesh(ggeo, new THREE.MeshLambertMaterial({ map: tex(gnd.cv), transparent: true })), gnd.tC, gnd.aC, 0.05);
 
+    yield { what: 'runway', w: C.RUNWAY };
     const rw = makeRunwayCanvas(a, Math.min(opts.quality && opts.quality.aptTex ? opts.quality.aptTex * 2 : opts.hi ? 8192 : 4096, opts.maxTex));
     const rgeo = new THREE.PlaneGeometry(rw.W, rw.L, 1, Math.ceil(rw.L / 60));
     rgeo.rotateX(-Math.PI / 2);
     at(new THREE.Mesh(rgeo, new THREE.MeshLambertMaterial({ map: tex(rw.cv) })), 0, 0, 0.12);
 
+    yield { what: 'markings', w: C.MARKINGS * this.size(a) };
     this.buildLights(a, rec, at);
     this.buildMarkings(a, at, tex);
     const built = frame.children.length;
+    yield { what: 'buildings', w: C.BUILDINGS * this.size(a) };
     this.buildBuildings(a, rec, at, tex, lambert, id);
+    yield { what: 'landside', w: C.LANDSIDE * this.size(a) };
     Landside3D.build(a, rec, at, tex);
     // the boards of the region's and the country's products (adverts3d.js)
     Adverts3D.build(a, rec, at, tex);
+    yield { what: 'cargo', w: C.CARGO * this.size(a) };
     // the freight, the trucks and the crane round the cargo building (cargo3d.js)
     Cargo3D.build(a, rec, at, tex);
     // the helicopters on their pads, the fire engines, the GA area's vehicles (ga3d.js)
     Ga3D.build(a, rec, at, tex);
+    yield { what: 'bake', w: C.BAKE * this.size(a) };
     // the buildings, the landside and the boards never move: baked into a mesh per material
     // (merge3d.js), all but the flags' cloth, which streams in the wind, and their beams, drawn
     // only after dusk (by day they would cost their fill for nothing): baked on their own
@@ -102,8 +120,11 @@ const Airport3D = {
       Merge3D.bake(rec.flagBeams, null, { tag: 'flagBeams' });
       rec.flagBeams.visible = false;
     }
-    // the perimeter fence and the trees outside it, of the airport's climate (perimeter3d.js)
-    Perimeter3D.build(a, rec, at, tex, opts.quality);
+    // the perimeter fence and the trees outside it, of the airport's climate (perimeter3d.js);
+    // none when the trees are left out (Scene3D.parts)
+    yield { what: 'trees', w: C.TREES * this.size(a), part: 'trees' };
+    rec.noTrees = off('trees');
+    Perimeter3D.build(a, rec, at, tex, rec.noTrees ? Object.assign({}, opts.quality, { aptTrees: 0 }) : opts.quality);
     this.buildEquipment(a, rec, at, tex, lambert);
 
     // ---- parked aeroplanes at the gates (hidden where the player parks): the home airlines',
@@ -112,8 +133,18 @@ const Airport3D = {
     // stand: gate.parked, World.parkedType)
     const types = a.gates.map((gate) => gate.parked);
     // the life round the stands: bridges, vehicles, floodlights, traffic (apron3d.js)
+    yield { what: 'apron', w: C.APRON * this.size(a) };
     Apron3D.build(a, rec, at, tex, types);
+    // (left out, each stand keeps an empty frame in its place, for its flags; nothing is drawn
+    // there and nothing is solid: rec.noParked, a.noParked, sim/collide.js)
+    const place = (plane, gate) => {
+      plane.position.set(gate.standX, a.elev + aircraftDims(types[gate.index]).gearH, gate.standZ);
+      plane.rotation.y = Math.PI - gate.parkHdg * DEG;
+      return plane;
+    };
     for (const gate of a.gates) {
+      if (!off('parked')) yield { what: 'parked', n: gate.index + 1, of: a.gates.length, w: C.PARKED, part: 'parked' };
+      if (off('parked')) break;
       const type = types[gate.index];
       const al = gate.cargo ? Cargo3D.carrier(a, gate.number - 1) || id.airlines[0] || null
         : gate.medevac ? Ga3D.ambulanceOperator(a)
@@ -122,10 +153,17 @@ const Airport3D = {
       const plane = AircraftModels.build(type, { airline: al ? al.code : null });
       // (it stands still: its 60-80 parts baked into a mesh per material, its lights left out)
       Merge3D.bake(plane, null, { dropHidden: true, tag: 'parked' });
-      plane.position.set(gate.standX, a.elev + aircraftDims(type).gearH, gate.standZ);
-      plane.rotation.y = Math.PI - gate.parkHdg * DEG;
-      rec.parked.push(plane);
+      rec.parked.push(place(plane, gate));
     }
+    // switched off while they were built: the ones built so far are let go too
+    rec.noParked = a.noParked = off('parked');
+    if (rec.noParked) {
+      for (const p of rec.parked) p.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+      rec.parked = a.gates.map((gate) => place(new THREE.Group(), gate));
+      rec.parkedSets = [];
+      return rec;
+    }
+    yield { what: 'parkedSets', w: C.PARKED_SETS * a.gates.length / 10 };
     // ... and not drawn one by one: the aeroplanes of PARKED_SET neighbouring stands are baked
     // together, a mesh per material for the lot (a big airport's 20-odd stands were over 200 draw
     // calls); rec.parked keeps each one, out of the scene, for its place and its flags, its own
@@ -149,6 +187,19 @@ const Airport3D = {
       for (const c of p.children.slice()) if (c.userData.baked) p.remove(c);
     }
     return rec;
+  },
+
+  // how big the airport is to build, against a mid-sized one (1): its stands, its buildings,
+  // its runway (the weights of steps' LOAD_COST)
+  size(a) {
+    return clamp((a.gates.length + (a.buildings || []).length * 0.5 + a.rwyLen / 1000) / 16, 0.4, 3);
+  },
+
+  // what steps() will weigh in all (the loading screen's estimate before it starts); off: as in steps
+  cost(a, off) {
+    const C = LOAD_COST, k = this.size(a);
+    return k * (C.GROUND + C.MARKINGS + C.BUILDINGS + C.LANDSIDE + C.CARGO + C.BAKE + C.TREES + C.APRON) + C.RUNWAY +
+      (off && off('parked') ? 0 : a.gates.length * (C.PARKED + C.PARKED_SETS / 10));
   },
 
   // the parked aeroplanes at the stands kept empty (userData.inUse, set by Scene3D.applyGates)

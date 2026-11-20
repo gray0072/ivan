@@ -1473,6 +1473,27 @@ const AUTO_QUALITY = {
 // before it shows (Game.holdBoot): the first draws are slow and the canvas holds the old picture
 const BOOT_HOLD_FRAMES = 3;
 
+// The loading screen (ui/loading.js, Game.load) and the airports built in the background in flight
+// (Scene3D.buildLater):
+//   OFFER_S      seconds of loading before the screen offers to leave out what is only for the look
+//   SLICE_MS     the longest the loading works before it lets the page draw (its bar, a tap)
+//   PAINT_W      a step at least this heavy (LOAD_COST) gets the page drawn first, so its name shows
+//   LATER_MS     milliseconds a frame for an airport built in the background in flight
+//   LATER_AGL_M  ... only this high above the ground (a step there may take a frame or two)
+//   LATER_REACH  ... an airport on the way this many times its building distance ahead (otherAptM)
+const LOAD = { OFFER_S: 10, SLICE_MS: 40, PAINT_W: 25, LATER_MS: 6, LATER_AGL_M: 900, LATER_REACH: 1.5 };
+// What each step of the loading weighs, about its milliseconds on a desktop (the bar's share; on a
+// phone all take some four times as long): the world of the route (World.prepare), the land from
+// above (16 steps), the towns' lights; an airport's pieces for a mid-sized one (Airport3D.size
+// scales them), each parked aeroplane, their sets for ten stands, the big textures sent to the GPU;
+// the shaders and the first drawing of the whole scene (Scene3D.gpuSteps), each first frame
+const LOAD_COST = {
+  WORLD: 320, FAR: 450, LIGHTS: 60,
+  GROUND: 150, RUNWAY: 25, MARKINGS: 30, BUILDINGS: 60, LANDSIDE: 40, CARGO: 30, BAKE: 50, TREES: 15, APRON: 55,
+  PARKED: 40, PARKED_SETS: 20, TEXTURES: 10,
+  GPU: 2400, FRAME: 70
+};
+
 // The landing (or taxi) lights' pool on the ground at night (Scene3D.updateLandingPool): full
 // brightness within FULL_M of the lamps, then falling with the square of the distance (at 500 m a
 // fifth), gone at REACH_M — a landing light does not light the ground up from 500 m high

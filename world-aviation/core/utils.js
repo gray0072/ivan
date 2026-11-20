@@ -28,6 +28,11 @@ function approach(current, target, rate) {
 function wrapRad(a) { a = (a + Math.PI) % TAU; if (a < 0) a += TAU; return a - Math.PI; }
 function wrapDeg(d) { d = (d + 180) % 360; if (d < 0) d += 360; return d - 180; }
 function lerpAngle(a, b, t) { return a + wrapRad(b - a) * t; }
+// run a generator of steps to its end at once and give its result (a build in steps, built
+// without a loading screen: Scene3D.airportSteps, Game.load)
+function runSteps(it) {
+  for (;;) { const r = it.next(); if (r.done) return r.value; }
+}
 function expApproach(current, target, rate) { return target + (current - target) * Math.exp(-rate); }
 
 // ---------- Deterministic RNG ----------

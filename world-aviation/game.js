@@ -49,6 +49,10 @@ const Game = {
       return;
     }
     World.init();
+    // the parts left out (the parked aeroplanes, the trees): by the settings, or for this flight
+    // from the loading screen (ui/loading.js)
+    Scene3D.partOff = (p) => Loading.off(p);
+    Loading.init();
     Scene3D.setQuality(this.quality);
     Scene3D.resize();
     el('bootStatus').textContent = tr('Ready');
@@ -100,6 +104,8 @@ const Game = {
   // ---------- main loop ----------
   loop() {
     requestAnimationFrame(() => this.loop());
+    // (a world being built in steps behind the loading screen: nothing runs or is drawn, Game.load)
+    if (this.loadingWorld) return;
     const now = performance.now();
     let dt = (now - this.last) / 1000;
     this.last = now;
@@ -122,6 +128,7 @@ const Game = {
       this.draw2d(0);
     }
     if (this.bootHold && --this.bootHold <= 0) this.revealScene();
+    else if (this.bootHold) Loading.step({ what: 'frame', w: LOAD_COST.FRAME });
   },
 
   frame(dt) {
@@ -162,6 +169,8 @@ const Game = {
     Scene3D.camMode = cine ? (Cinematic.inside() ? 'cockpit' : 'cine') : this.camMode;
     Scene3D.pipRect = this.mode === 'flying' && !cine ? HUD.updatePip(fl, sys, this.camMode, this.helpOpen) : null;
     Scene3D.update(dt, fl, sys);
+    // the arrival, and an airport ahead on the way, built a few milliseconds a frame (render/scene3d.js)
+    if (this.mode === 'flying' && !this.bootHold) Scene3D.buildLater(fl, LOAD.LATER_MS);
     Scene3D.render();
     this.draw2d(dt);
     // a flight that ended in this frame (a practice landing, the debrief) is already silenced: keep it so
@@ -847,6 +856,8 @@ const Game = {
 
   // ---------- actions ----------
   action(name, arg) {
+    // (nothing while the world is built and first drawn behind the loading screen)
+    if (this.loadingWorld || this.bootHold) return;
     // the look round an airport or an aircraft: Enter, Space and Esc end it, P pauses it
     if (this.mode === 'tour' || this.mode === 'showcase') {
       if (name === 'tourPause') this.toggleTourPause();
@@ -1092,7 +1103,8 @@ const Game = {
     if (practice) fl.ap.gs = true;
     this.applyArrivalWeather();
     fl.setPhase('APPROACH');
-    Scene3D.warmup(fl);
+    // (behind the loading screen the arrival is built in steps after this: Game.load)
+    Scene3D.warmup(fl, { arrival: !this.loadingWorld });
   },
 
   // ---------- the practice landing ----------
@@ -1199,26 +1211,81 @@ const Game = {
   },
 
   // ---------- starting and ending flights ----------
-  // building a flight's world takes a moment: say so, then start
+  // building a flight's world takes a moment: the loading screen, then the flight
   launch(contract, opts) {
-    const boot = el('bootScreen');
-    el('bootStatus').textContent = tr('Preparing the route {from} → {to}…', { from: contract.fromId, to: contract.toId });
-    boot.hidden = false;
+    this.load(tr('Preparing the route {from} → {to}…', { from: contract.fromId, to: contract.toId }),
+      { fresh: World.key !== contract.fromId + '>' + contract.toId, prepare: () => World.prepare(contract.fromId, contract.toId) },
+      () => this.startFlight(contract, opts));
+  },
+
+  // The world of a flight, a look round an airport or an aircraft, built in steps behind the
+  // loading screen (ui/loading.js), which says how far it is and what it builds now: the land of
+  // the route (world.fresh: World.prepare(), world.prepare does it) and from above, in the career's
+  // month; then start() sets the flight up (its own airports left out: Scene3D.warmup's arrival),
+  // the airports round the aeroplane are built (Scene3D.aroundSteps; the arrival far away comes in
+  // the background in flight, Scene3D.buildLater), and the scene goes to the GPU piece by piece
+  // (Scene3D.gpuSteps). The game loop stands still meanwhile (loadingWorld).
+  async load(title, world, start) {
+    // (a second press while one loads is let go)
+    if (Loading.active) return;
+    const C = LOAD_COST, month = Career.data ? Career.data.season || 0 : 0;
+    Loading.begin(title);
     el('screen').hidden = true;
-    frame().then(frame).then(() => {
-      this.startFlight(contract, opts);
-      this.holdBoot();
-    });
+    await frame(); await frame();
+    this.loadingWorld = true;
+    try {
+      const theatre = world.fresh || Terrain.month !== month;
+      Loading.expect((world.fresh ? C.WORLD : 0) + (theatre ? C.FAR + C.LIGHTS : 0) + C.GPU + BOOT_HOLD_FRAMES * C.FRAME);
+      await this.runLoad(this.worldSteps(world, month));
+      start();
+      Loading.expect(Scene3D.aroundCost(this.flight));
+      await this.runLoad(Scene3D.aroundSteps(this.flight));
+      await this.runLoad(Scene3D.gpuSteps());
+    } catch (err) {
+      Loading.end();
+      throw err;
+    } finally {
+      this.loadingWorld = false;
+    }
+    // (the other traffic switched off on the loading screen after the flight was set up)
+    if (this.mode === 'flying' && Loading.off('traffic') && AirTraffic.plan) { AirTraffic.stop(); Traffic3D.clear(); }
+    this.last = performance.now();
+    this.holdBoot();
+  },
+  * worldSteps(world, month) {
+    if (World.setMonth(month) || world.fresh) {
+      if (world.fresh) {
+        yield { what: 'world', w: LOAD_COST.WORLD };
+        world.prepare();
+      }
+      yield* Scene3D.theatreSteps();
+    }
+  },
+  // run steps to their end, the page drawn (the bar, a tap on the screen) every LOAD.SLICE_MS and
+  // before a heavy step (so its name shows while it is built)
+  async runLoad(it) {
+    let t = performance.now();
+    for (;;) {
+      const r = it.next();
+      if (r.done) { Loading.step(null); return r.value; }
+      Loading.step(r.value);
+      if (performance.now() - t > LOAD.SLICE_MS || r.value.w >= LOAD.PAINT_W) { await frame(); t = performance.now(); }
+    }
   },
 
   // The screen that says the world is being built stays up until the new scene has been drawn a
-  // few times (BOOT_HOLD_FRAMES: the first draws compile the shaders and build the near terrain,
+  // few times (BOOT_HOLD_FRAMES: the first draws build the near terrain, the trees and the clouds,
   // and the canvas still holds the last flight's picture meanwhile), so nothing of the old scene
   // shows; the camera's flight starts from there.
-  holdBoot() { this.bootHold = BOOT_HOLD_FRAMES; },
+  holdBoot() {
+    this.bootHold = BOOT_HOLD_FRAMES;
+    if (Loading.active) Loading.step({ what: 'frame', w: LOAD_COST.FRAME });
+  },
   revealScene() {
     this.bootHold = 0;
     Scene3D.preload();
+    Loading.step(null);
+    Loading.end();
     el('bootScreen').hidden = true;
     this.last = performance.now();
     const sh = this.cineShot();
@@ -1288,7 +1355,8 @@ const Game = {
     env.moonPhase = (hashStr(contract.id + '/moon') >>> 0) % 10000 / 10000;
     env.month = Career.data.season || 0;
     // the other aeroplanes this flight may see (none in a lesson or a practice landing), sim/traffic.js
-    AirTraffic.start(this.flight, { off: !!lesson || !!this.practice, seed: s.seed, skipPushback: s.skipPushback, arrGate: this.arrivalGate });
+    // (none either when the player leaves them out: settings.traffic, ui/loading.js)
+    AirTraffic.start(this.flight, { off: !!lesson || !!this.practice || (typeof Loading !== 'undefined' && Loading.off('traffic')), seed: s.seed, skipPushback: s.skipPushback, arrGate: this.arrivalGate });
 
     const fx = s.fx;
     // (a lesson: no emergencies of its own — the whole flight's icing comes with its step — Easy's
@@ -1319,7 +1387,8 @@ const Game = {
       .concat(AirTraffic.reserved());
     Scene3D.setFlightGates(this.flight.gatesInUse, this.arrivalGate);
     Traffic3D.prepare(Scene3D.scene, AirTraffic);
-    Scene3D.warmup(this.flight);
+    // (behind the loading screen the airports are built in steps after this: Game.load)
+    Scene3D.warmup(this.flight, { arrival: !this.loadingWorld });
     HUD.reset();
     HUD.setPrompt('');
     HUD.updateStrip(this.flight, this.systems);
@@ -1351,15 +1420,10 @@ const Game = {
   // camera; at the end (or Enter, Space, Esc, a tap) the briefing is back.
   tour(contract, end) {
     if (typeof Cinematic === 'undefined' || !Scene3D.camera) return;
-    const boot = el('bootScreen');
-    el('bootStatus').textContent = tr('Flying out to {id}…', { id: end === 'dep' ? contract.fromId : contract.toId });
-    boot.hidden = false;
-    el('screen').hidden = true;
     this.mode = 'ops';
-    frame().then(frame).then(() => {
-      this.startTour(contract, end);
-      this.holdBoot();
-    });
+    this.load(tr('Flying out to {id}…', { id: end === 'dep' ? contract.fromId : contract.toId }),
+      { fresh: World.key !== contract.fromId + '>' + contract.toId, prepare: () => World.prepare(contract.fromId, contract.toId) },
+      () => this.startTour(contract, end));
   },
 
   startTour(contract, end) {
@@ -1398,7 +1462,8 @@ const Game = {
     env.month = Career.data.season || 0;
 
     Scene3D.setFlightGates(atHold ? [] : World.standsFor(a, gate, s.aircraft), dep ? null : gate);
-    Scene3D.warmup(fl);
+    // (only the airport looked round, and one near it: the other end is not needed)
+    Scene3D.warmup(fl, { arrival: !this.loadingWorld });
     Cinematic.tour(fl, a);
     this.mode = 'tour';
     this.helpOpen = false;

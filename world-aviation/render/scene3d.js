@@ -25,6 +25,11 @@
 //     car driving up, the smoke of a lost flight (incident3d.js)
 //   - the other aeroplanes taxiing, taking off and landing (traffic3d.js)
 // The cockpit itself is drawn in 2D on a canvas over the top.
+// What takes long to build is also built in steps (generators yielding
+// { what, w, part }: theatreSteps, airportSteps, aroundSteps, gpuSteps), for
+// the loading screen (ui/loading.js, Game.load) and for the airports built in
+// the background during a flight (buildLater); the parts a player may leave
+// out (the parked aeroplanes, the trees) are asked of partOff.
 // ============================================================
 
 const Scene3D = {
@@ -36,6 +41,8 @@ const Scene3D = {
   clouds: [], cloudGroup: null, cloudTex: null,
   trees: null, treeTex: null,
   airports3D: new Map(),          // id -> the airport's 3D record (Airport3D.build)
+  job: null,                      // the airport built in the background in flight: { a, it } (buildLater)
+  partOff: null,                  // (part) => true when 'parked' or 'trees' is left out (Game: settings.parked, settings.trees)
   ownAircraft: null,
   w: 0, h: 0, dpr: 1,
   shed: new Set(),                // what the Auto quality has shed (AUTO_QUALITY.STEPS: setShed)
@@ -232,9 +239,12 @@ const Scene3D = {
   },
 
   // ---------- terrain meshes ----------
-  buildFarTerrain() {
+  buildFarTerrain() { runSteps(this.farTerrainSteps()); },
+  // (in steps: a sixteenth of the rows of each pass a step)
+  * farTerrainSteps() {
     const tg = Terrain.g;
     if (!tg) return;
+    const w = LOAD_COST.FAR / 16;
     const cell = Math.max(this.quality.farCell, tg.cell * 0.75);
     const x0 = tg.x0, x1 = tg.x0 + (tg.w - 1) * tg.cell;
     const z0 = tg.z0, z1 = tg.z0 + (tg.h - 1) * tg.cell;
@@ -246,7 +256,9 @@ const Scene3D = {
     const land = new Float32Array(vw * vh * 4);
     const heights = new Float32Array(vw * vh);
     const c = [0, 0, 0], ld = [0, 0, 0, 0, 0];
+    const every = Math.max(1, Math.ceil(vh / 8));
     for (let j = 0; j < vh; j++) {
+      if (j % every === 0) yield { what: 'far', w };
       for (let i = 0; i < vw; i++) {
         const k = j * vw + i;
         const x = x0 + i * cell, z = z0 + j * cell;
@@ -257,6 +269,7 @@ const Scene3D = {
     }
     // normals from the grid, colours from the biome rules
     for (let j = 0; j < vh; j++) {
+      if (j % every === 0) yield { what: 'far', w };
       for (let i = 0; i < vw; i++) {
         const k = j * vw + i;
         const hl = heights[j * vw + Math.max(0, i - 1)], hr = heights[j * vw + Math.min(vw - 1, i + 1)];
@@ -455,9 +468,12 @@ const Scene3D = {
   },
 
   // a new flight's world: new far terrain, no old airports, a fresh near mesh
-  setTheatre() {
-    this.buildFarTerrain();
+  setTheatre() { runSteps(this.theatreSteps()); },
+  * theatreSteps() {
+    yield* this.farTerrainSteps();
+    yield { what: 'lights', w: LOAD_COST.LIGHTS };
     GroundLights.build(this.scene, this.quality);
+    this.job = null;
     for (const id of Array.from(this.airports3D.keys())) this.dropAirport(id);
     this.nearBuild = null;
     this.nearLast = null;
@@ -465,8 +481,10 @@ const Scene3D = {
     this.builtAt = performance.now();
   },
 
-  // build the whole near mesh at once (start of a flight, a teleport)
-  warmup(fl) {
+  // build the whole near mesh at once (start of a flight, a teleport); and the arrival, unless
+  // opts.arrival is false (Game.load: the airports round the aeroplane are built in steps,
+  // aroundSteps, and the arrival in the background in flight, buildLater)
+  warmup(fl, opts) {
     const st = fl.st;
     this.updateNearTerrain(st.pos.x, st.pos.z, Math.max(0, fl.altAgl()), true);
     let guard = 0;
@@ -474,19 +492,89 @@ const Scene3D = {
     this.treeKey = null;
     // the arrival is built now, behind the boot screen, not on the descent (where building a big
     // airport stuttered the picture); it is kept for the whole flight
-    if (fl.arrival && this.camera) this.buildAirport(fl.arrival);
+    if (fl.arrival && this.camera && !(opts && opts.arrival === false)) this.buildAirport(fl.arrival);
+    this.builtAt = performance.now();
+  },
+
+  // the airports the scene wants where the aeroplane is: those update() builds there at once
+  // (the flight's ends within 46 km, the others within the preset's otherAptM), the nearest first
+  wanted(fl) {
+    const st = fl.st, d = (a) => Math.hypot(a.x - st.pos.x, a.z - st.pos.z);
+    return World.airports.filter((a) => {
+      const ends = a === fl.arrival || a === fl.world;
+      return d(a) < (ends ? 46000 : this.quality.otherAptM || 46000);
+    }).sort((a, b) => d(a) - d(b));
+  },
+  // ... built in steps, behind the loading screen (Game.load)
+  * aroundSteps(fl) {
+    for (const a of this.wanted(fl)) if (this.toBuild(a)) yield* this.airportSteps(a);
+  },
+  // what aroundSteps will weigh (the loading screen's estimate)
+  aroundCost(fl) {
+    return this.wanted(fl).filter((a) => this.toBuild(a))
+      .reduce((sum, a) => sum + Airport3D.cost(a, (p) => this.off(p)) + LOAD_COST.TEXTURES, 0);
+  },
+
+  // a part the player leaves out (Game sets partOff from the settings)
+  off(part) { return !!(this.partOff && this.partOff(part)); },
+  // an airport not built yet, or built without a part switched back on since (its parked
+  // aeroplanes, its trees): built again by the next loading or in the background
+  stale(rec) { return (rec.noParked && !this.off('parked')) || (rec.noTrees && !this.off('trees')); },
+  toBuild(a) { const rec = this.airports3D.get(a.id); return !rec || this.stale(rec); },
+
+  // The arrival, and an airport the route passes within reach, built in the background in flight,
+  // a few milliseconds a frame (Game.frame), so the loading screen waits only for the airports
+  // round the aeroplane (aroundSteps). Only well up in the air (LOAD.LATER_AGL_M; one step, a
+  // painted ground texture or a parked aeroplane, may take a frame or two there), never at the
+  // fastest time steps for an airport on the way; one that comes within reach unfinished is
+  // finished at once (buildAirport).
+  buildLater(fl, ms) {
+    const st = fl.st, env = fl.env;
+    if (!this.job) {
+      if (st.onGround || st.pos.y - (this.lastGround || 0) < LOAD.LATER_AGL_M) return;
+      let best = null, bestD = Infinity;
+      for (const a of World.airports) {
+        if (!this.toBuild(a)) continue;
+        const d = Math.hypot(a.x - st.pos.x, a.z - st.pos.z);
+        const near = a !== fl.arrival && env.timeAccel < SIM.TIME_ACCEL_COAST_FROM && d < (this.quality.otherAptM || 46000) * LOAD.LATER_REACH;
+        if ((a === fl.arrival || near) && d < bestD) { best = a; bestD = d; }
+      }
+      if (!best) return;
+      this.job = { a: best, it: this.airportSteps(best) };
+    }
+    const t0 = performance.now();
+    do {
+      if (this.job.it.next().done) { this.job = null; break; }
+    } while (performance.now() - t0 < ms);
+    // (a stutter while it is built is not the scene being too heavy: Game.autoQuality)
     this.builtAt = performance.now();
   },
 
   // ---------- airports (airport3d.js) ----------
+  // (one being built in the background is finished now)
   buildAirport(a) {
+    if (this.job && this.job.a === a) { const it = this.job.it; this.job = null; return runSteps(it); }
+    return runSteps(this.airportSteps(a));
+  },
+  // in steps (Airport3D.steps), then its textures sent to the GPU one by one (a big ground
+  // texture is a stutter of its own when it is first drawn); into the scene once whole
+  * airportSteps(a) {
     // (built again when the name on its roof has changed with the game's language: roofLabel)
     const have = this.airports3D.get(a.id);
-    if (have && have.label === roofLabel(a)) return have;
+    if (have && have.label === roofLabel(a) && !this.stale(have)) return have;
     if (have) this.dropAirport(a.id);
-    const rec = Airport3D.build(a, {
-      aniso: this.maxAniso, maxTex: this.renderer.capabilities.maxTextureSize, hi: QUALITY_ORDER.indexOf(this.qualityName) > QUALITY_ORDER.indexOf('low'), quality: this.quality
+    const it = Airport3D.steps(a, {
+      aniso: this.maxAniso, maxTex: this.renderer.capabilities.maxTextureSize, hi: QUALITY_ORDER.indexOf(this.qualityName) > QUALITY_ORDER.indexOf('low'), quality: this.quality,
+      off: (p) => this.off(p)
     });
+    let r;
+    while (!(r = it.next()).done) { r.value.a = a; yield r.value; }
+    const rec = r.value;
+    const big = rec.textures.filter((t) => t.image && t.image.width * t.image.height >= 1 << 20);
+    for (const t of big) {
+      yield { what: 'textures', w: LOAD_COST.TEXTURES / big.length, a };
+      this.renderer.initTexture(t);
+    }
     this.scene.add(rec.group);
     this.airports3D.set(a.id, rec);
     this.applyGates(rec);
@@ -508,7 +596,8 @@ const Scene3D = {
       const inUse = used.indexOf(gate) >= 0;
       rec.parked[i].userData.inUse = inUse;
       rec.parked[i].visible = !inUse;
-      Apron3D.setGate(rec, i, inUse);            // no vehicles there, the bridge retracted
+      // no vehicles there, the bridge retracted (at every stand with the parked aeroplanes left out)
+      Apron3D.setGate(rec, i, inUse || rec.noParked || !!rec.parkedHidden);
     });
     Airport3D.setParked(rec);                    // (drawn baked together, a few stands a mesh)
   },
@@ -620,6 +709,7 @@ const Scene3D = {
     this.buildNearTerrain();
     this.buildTrees();
     this.buildClouds();
+    this.job = null;
     for (const id of Array.from(this.airports3D.keys())) this.dropAirport(id);
     this.builtAt = performance.now();
   },
@@ -920,13 +1010,14 @@ const Scene3D = {
     const wind = fl.windAt(st.pos.y);
     this.updateClouds(st.pos.x, st.pos.z, env.cloudBase, env.cloudTop, wind.x * 30, wind.z * 30);
     // ---- trees (none high up or at the fast time steps: VIEW.TREES_MAX_*)
-    const treesNear = st.pos.y - (this.lastGround || 0) < VIEW.TREES_MAX_AGL_M && flown < VIEW.TREES_MAX_STEP_M;
+    // (left out: settings.trees, partOff — at once, the ones round the airports too)
+    const treesNear = st.pos.y - (this.lastGround || 0) < VIEW.TREES_MAX_AGL_M && flown < VIEW.TREES_MAX_STEP_M && !this.off('trees');
     if (this.quality.trees && treesNear) {
       const key = Math.round(st.pos.x / 700) + ',' + Math.round(st.pos.z / 700);
       this.updateTrees(st.pos.x, st.pos.z, key);
     }
     // (shed by the Auto quality: in the dark they are black on black)
-    const treesOff = this.shed.has('trees') && dark > 0.6;
+    const treesOff = (this.shed.has('trees') && dark > 0.6) || this.off('trees');
     if (this.trees) this.trees.visible = treesNear && this.treesPlaced > 0 && !treesOff;
     for (const rec of this.airports3D.values()) for (const t of rec.trees || []) t.visible = !treesOff;
 
@@ -947,12 +1038,20 @@ const Scene3D = {
       pos: st.pos, vel: st.vel, r: Math.max(dims.len, dims.span) / 2, len: dims.len, rad: dims.radius, ac: fl.ac, landed: !!fl.landed,
       crewIn: Turnaround3D.arrived()
     } : null;
-    const parkedM = this.quality.parkedM || 0;
+    const parkedM = this.quality.parkedM || 0, parkedOff = this.off('parked');
     for (const rec of this.airports3D.values()) {
       const d = Math.hypot(rec.a.x - eye.x, rec.a.z - eye.z);
+      // the parked aeroplanes switched off since the airport was built: hidden, and no longer
+      // solid (sim/collide.js); switched back on, the ones built come back
+      if (parkedOff !== !!rec.parkedHidden) {
+        rec.parkedHidden = parkedOff;
+        rec.a.noParked = parkedOff || !!rec.noParked;
+        for (const s of rec.parkedSets) s.group.visible = !parkedOff;
+        this.applyGates(rec);
+      }
       // (the parked aeroplanes only near the eye on the lightest presets: QUALITY.parkedM; a set
       // of neighbouring stands baked together shows while any of its aeroplanes is that near)
-      if (parkedM || rec.parkedCut) {
+      if ((parkedM || rec.parkedCut) && !parkedOff) {
         rec.parkedCut = !!parkedM;
         for (const s of rec.parkedSets) s.group.visible = !parkedM || s.members.some((i) => {
           const p = rec.parked[i];
@@ -1154,11 +1253,49 @@ const Scene3D = {
   },
 
   dropAirport(id) {
+    if (this.job && this.job.a.id === id) this.job = null;
     const rec = this.airports3D.get(id);
     if (!rec) return;
     this.scene.remove(rec.group);
     Airport3D.dispose(rec);
     this.airports3D.delete(id);
+  },
+
+  // What preload does, in steps behind the loading screen: the scene drawn piece by piece (each
+  // with nothing left out for being out of view, through a layer of its own: the sky and the
+  // land, each airport's ground and buildings, its stands, ...), so every shader is compiled and
+  // every geometry and texture is on the GPU before the first frame, and the loading screen
+  // moves meanwhile
+  * gpuSteps() {
+    const r = this.renderer, cam = this.camera, scene = this.scene, L = 7;
+    const chunks = [];
+    for (const o of scene.children) {
+      if (o.isLight || !o.visible) continue;
+      const rec = Array.from(this.airports3D.values()).find((x) => x.group === o);
+      if (!rec) { chunks.push([o]); continue; }
+      // an airport: its frame's pieces a few at a time, and its parked aeroplanes' sets
+      const parts = rec.frame.children, n = Math.ceil(parts.length / 6) || 1;
+      for (let i = 0; i < parts.length; i += n) chunks.push(parts.slice(i, i + n));
+      chunks.push(o.children.filter((c) => c !== rec.frame));
+    }
+    const w = LOAD_COST.GPU / chunks.length;
+    const culled = [];
+    scene.traverse((o) => { if (o.frustumCulled) { o.frustumCulled = false; culled.push(o); } });
+    const lights = [this.hemi, this.sun];
+    const mark = (list, on) => { for (const o of list) o.traverse((x) => { if (on) x.layers.enable(L); else x.layers.disable(L); }); };
+    try {
+      for (const c of chunks) {
+        yield { what: 'gpu', w };
+        mark(lights, true); mark(c, true);
+        cam.layers.set(L);
+        r.render(scene, cam);
+        cam.layers.set(0);
+        mark(c, false); mark(lights, false);
+      }
+    } finally {
+      cam.layers.set(0);
+      for (const o of culled) o.frustumCulled = true;
+    }
   },
 
   // The scene drawn once with nothing left out for being out of view, behind the boot screen
