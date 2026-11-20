@@ -4,7 +4,8 @@
 // numbers, each landing's call buttons and its queue (moods and, small, where each person is going), the
 // shafts with the cabins, their displays and say bubbles, the plan as numbered flags next to the shaft, the
 // people walking away, the floating words, the variables shown with `show variable`, and the Lift's eyes
-// (what the lift can't sense goes grey). Reads `run`, never changes it. Used by game.js every frame.
+// (what the lift can't sense goes grey), a lift out of order, and the minimap of a tall building
+// (render/minimap.js). Reads `run`, never changes it. Used by game.js every frame.
 
 const BuildingView = (() => {
   const { ctx, st } = View;
@@ -44,7 +45,7 @@ const BuildingView = (() => {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold ' + Math.round(clamp(g.fh * 0.36, 11, 18)) + 'px ' + FONT;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(String(label), g.numW / 2, y + g.fh / 2);
+      ctx.fillText(floorText(label), g.numW / 2, y + g.fh / 2);
       // the call buttons, by the first shaft
       const h = run.hall[i];
       Art.callButtons(ctx, g.shaftX - 9, y + g.fh * 0.45, clamp(g.fh * 0.09, 3, 6), h.up, h.down, i < g.n - 1, i > 0, h.emergency);
@@ -70,7 +71,8 @@ const BuildingView = (() => {
       const x = g.shaftLeft(L.n - 1), y = g.baseY - (L.pos + 1) * g.fh;
       ctx.strokeStyle = '#7d8a99'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x + g.sw / 2, roofY); ctx.lineTo(x + g.sw / 2, y + 2); ctx.stroke();
-      Art.cabin(ctx, x + 3, y + 4, g.sw - 6, g.fh - 6, L, { grey: st.eyes });
+      Art.cabin(ctx, x + 3, y + 4, g.sw - 6, g.fh - 6, L, { grey: st.eyes || !L.working });
+      if (!L.working || L.failing) outOfOrder(x, y, g, L.working);
       if (run.lifts.length > 1 && st.follow === L.n) { ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 2, g.sw - 2, g.fh - 2); }
       Art.display(ctx, x + g.sw / 2, y + 3, Lift.floor(L), L.moving ? Lift.direction(L) : arrowShown(L), clamp(g.fh * 0.22, 8, 13), run.lifts.length > 1 ? L.letter : '');
       drawPlan(g, L, x);
@@ -80,6 +82,7 @@ const BuildingView = (() => {
     drawLeaving(g, dt);
     drawWords(g, dt);
     drawMonitors();
+    Minimap.draw(g);
     if (st.eyes) {
       ctx.fillStyle = 'rgba(10,20,35,0.78)';
       roundRect(ctx, 8, 8, 196, 24, 12); ctx.fill();
@@ -87,6 +90,38 @@ const BuildingView = (() => {
       ctx.fillText(tr('Lift\'s eyes: buttons only'), 18, 20);
     }
   }
+
+  // a lift out of order: yellow and black stripes over the cabin and a sign; a lift about to break: a ⚠
+  function outOfOrder(x, y, g, still) {
+    const cx = x + g.sw / 2, cy = y + g.fh / 2;
+    if (still) {
+      ctx.font = 'bold ' + Math.round(clamp(g.fh * 0.36, 11, 18)) + 'px ' + FONT;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillText('⚠', cx, y + g.fh * 0.22);
+      return;
+    }
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x + 3, y + g.fh * 0.38, g.sw - 6, g.fh * 0.24); ctx.clip();
+    for (let k = -2; k < 8; k++) {
+      ctx.fillStyle = k % 2 ? '#1b1b1b' : '#ffd23f';
+      ctx.beginPath();
+      const sx = x + k * g.sw / 6;
+      ctx.moveTo(sx, y + g.fh * 0.62); ctx.lineTo(sx + g.sw / 6, y + g.fh * 0.62); ctx.lineTo(sx + g.sw / 3, y + g.fh * 0.38); ctx.lineTo(sx + g.sw / 6, y + g.fh * 0.38); ctx.fill();
+    }
+    ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    const fs = Math.round(clamp(g.fh * 0.17, 7, 10));
+    ctx.font = 'bold ' + fs + 'px ' + FONT;
+    const text = tr('Out of order');
+    const tw = ctx.measureText(text).width + 8;
+    roundRect(ctx, cx - tw / 2, cy - fs * 2.2, tw, fs + 4, 3); ctx.fill();
+    ctx.fillStyle = '#ffd23f'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, cx, cy - fs * 1.7 + 1);
+  }
+
+  // a floor number as written: −1 with a real minus sign
+  function floorText(f) { return String(f).replace('-', '−'); }
 
   function arrowShown(L) { return L.doorPhase !== 'closed' ? Lift.arrow(L) : (L.plan.length ? Lift.arrow(L) : 'none'); }
 
@@ -111,7 +146,7 @@ const BuildingView = (() => {
           const fs = Math.round(clamp(g.fh * 0.2, 8, 11));
           ctx.font = 'bold ' + fs + 'px ' + FONT;
           ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-          const tag = String(p.to);
+          const tag = floorText(p.to);
           roundRect(ctx, pos.x - fs * 0.8, y - g.fh * 0.86 - fs, fs * 1.6, fs + 2, 3); ctx.fill();
           ctx.fillStyle = p.dir === 'up' ? '#2e7d32' : '#c62828';
           ctx.fillText(tag, pos.x, y - g.fh * 0.86 + 1);
@@ -214,6 +249,17 @@ const BuildingView = (() => {
     View.word(tr('Too heavy!'), 0, 0, '#ffcc80');
     const w = st.words[st.words.length - 1];
     w.floor = e.person.from; w.lift = e.lift.n;
+  });
+  GameEvents.on('broken', (e) => {
+    View.word(tr('Out of order!'), 0, 0, '#ffd23f');
+    const w = st.words[st.words.length - 1];
+    w.floor = Lift.floor(e.lift); w.lift = e.lift.n;
+  });
+  GameEvents.on('leftBehind', (e) => {
+    View.word(tr('Wait for me!'), 0, 0, '#ffcc80');
+    const w = st.words[st.words.length - 1];
+    w.floor = e.person.from;
+    w.x = View.layout().shaftX - 30;
   });
   GameEvents.on('furious', (e) => {
     View.word(tr('Grr!'), 0, 0, '#ff5252');

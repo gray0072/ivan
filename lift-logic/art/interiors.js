@@ -1,8 +1,9 @@
 'use strict';
 
 // Lift Logic — each building's floors, drawn from a few shapes: the house's flats, the school's classrooms,
-// the hotel's corridor with numbered doors, the hospital's wards, the office's desks, the lobby on the
-// ground floor and the ballroom, gym or canteen where a building has one. Used by render/building.js.
+// the hotel's corridor with numbered doors, the hospital's wards, the office's desks, the mall's shops and its
+// car park with parked cars, the lobby on the ground floor and the ballroom, gym, canteen, food court or
+// cinema where a building has one. Used by render/building.js.
 
 Art.interior = function (ctx, b, label, top, x, y, w, h) {
   const style = b.style;
@@ -61,9 +62,54 @@ Art.interior = function (ctx, b, label, top, x, y, w, h) {
       ctx.fillStyle = '#4fc3f7'; ctx.fillRect(dx + 10 * u, y + 18 * u, 12 * u, 7 * u);
     }
     ctx.fillStyle = 'rgba(160,200,235,0.35)'; ctx.fillRect(x, y, w, 5 * u);
+  } else if (style === 'mall') {
+    if (room === 'Car park') {
+      // concrete, pillars and parked cars
+      ctx.fillStyle = '#8d9499'; ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = '#6f777c'; ctx.fillRect(x, y + h - 6 * u, w, 6 * u);
+      const cars = ['#e53935', '#1e88e5', '#fdd835', '#43a047', '#f5f5f5', '#8e24aa'];
+      for (let k = 0; k < Math.floor(w / (58 * u)); k++) {
+        const cx = x + 10 * u + k * 58 * u;
+        ctx.fillStyle = '#b0b7bc'; ctx.fillRect(cx + 46 * u, y + 4 * u, 6 * u, h - 10 * u);
+        ctx.fillStyle = cars[(k + Math.abs(label) * 2) % cars.length];
+        roundRect(ctx, cx, y + 22 * u, 38 * u, 11 * u, 3 * u); ctx.fill();
+        roundRect(ctx, cx + 8 * u, y + 15 * u, 20 * u, 9 * u, 3 * u); ctx.fill();
+        ctx.fillStyle = '#cfe8f7'; ctx.fillRect(cx + 11 * u, y + 17 * u, 14 * u, 5 * u);
+        ctx.fillStyle = '#212121';
+        ctx.beginPath(); ctx.arc(cx + 9 * u, y + 34 * u, 4 * u, 0, Math.PI * 2); ctx.arc(cx + 29 * u, y + 34 * u, 4 * u, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#ffd23f'; ctx.font = 'bold ' + Math.round(14 * u) + 'px "Segoe UI", Arial, sans-serif';
+      ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      ctx.fillText('P ' + String(label).replace('-', '−'), x + w - 8, y + 4);
+    } else if (room === 'Food court') {
+      for (let k = 0; k < Math.floor(w / (50 * u)); k++) {
+        const tx = x + 25 * u + k * 50 * u;
+        ctx.fillStyle = k % 2 ? '#ff7043' : '#26a69a';
+        ctx.beginPath(); ctx.moveTo(tx - 16 * u, y + 16 * u); ctx.lineTo(tx, y + 7 * u); ctx.lineTo(tx + 16 * u, y + 16 * u); ctx.fill();
+        ctx.fillStyle = '#795548'; ctx.fillRect(tx - 1 * u, y + 16 * u, 2 * u, 14 * u);
+        ctx.fillStyle = '#fafafa'; ctx.fillRect(tx - 12 * u, y + 29 * u, 24 * u, 4 * u);
+      }
+    } else if (room === 'Cinema') {
+      ctx.fillStyle = '#311b92'; ctx.fillRect(x, y, w, h - 4 * u);
+      ctx.fillStyle = '#e3f2fd'; ctx.fillRect(x + 76 * u, y + 7 * u, Math.max(0, Math.min(w - 96 * u, 160 * u)), 18 * u);
+      ctx.fillStyle = '#b71c1c';
+      for (let k = 0; k < Math.floor(w / (16 * u)); k++) ctx.fillRect(x + 8 * u + k * 16 * u, y + 30 * u, 11 * u, 7 * u);
+    } else {
+      // shop windows with awnings
+      const awn = ['#e53935', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa'];
+      for (let k = 0; k < Math.floor(w / (62 * u)); k++) {
+        const sx = x + 10 * u + k * 62 * u;
+        ctx.fillStyle = '#d7ecfb'; ctx.fillRect(sx, y + 14 * u, 48 * u, 24 * u);
+        ctx.fillStyle = awn[(k + label) % awn.length];
+        for (let j = 0; j < 6; j++) { ctx.globalAlpha = j % 2 ? 0.75 : 1; ctx.fillRect(sx + j * 8 * u, y + 6 * u, 8 * u, 8 * u); }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = shade(awn[(k + label) % awn.length], -0.2);
+        ctx.fillRect(sx + 6 * u, y + 26 * u, 10 * u, 12 * u); ctx.fillRect(sx + 26 * u, y + 30 * u, 14 * u, 8 * u);
+      }
+    }
   }
   if (room && label !== 1) {
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillStyle = room === 'Car park' || room === 'Cinema' ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.45)';
     ctx.font = 'bold ' + Math.round(clamp(9 * u, 9, 13)) + 'px "Segoe UI", Arial, sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillText(tr(room), x + 6, y + 4);

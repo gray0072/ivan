@@ -20,6 +20,7 @@ const SAY_SHOW = 3;             // s a `say` bubble stays when it has no time of
 const MOOD_STEPS = [0.25, 0.5, 0.75]; // share of patience where the face changes
 const DAY_START_CLOCK = 8 * 60; // minutes since midnight at the start of a day, unless the mission says
 const LOAD_FULL = 100;          // load % that counts as `full?`
+const BREAK_WAIT_MAX = 25;      // s a lift due to break down still serves its plan before it stops anyway
 
 // ---------- the VM ----------
 const VM_STEPS_MAX = 2000;      // blocks one thread may run in one step before it is paused

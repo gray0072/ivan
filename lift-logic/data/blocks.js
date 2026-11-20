@@ -116,6 +116,7 @@ const BLOCKS = [
 
   // ---------- chapter 6 ----------
   { op: 'working', cat: 'sensing', shape: 'boolean', text: 'lift %1 working?', slots: ['num'], def: [1], ch: 6, js: 'group[%1].working' },
+  { op: 'cancelButtons', cat: 'lift', shape: 'stack', text: 'cancel buttons inside', ch: 6, js: 'lift.cancelButtons();' },
   { op: 'buttonsCount', cat: 'sensing', shape: 'reporter', text: 'buttons pressed inside', ch: 6, js: 'lift.buttonsPressed' },
   { op: 'forEach', cat: 'control', shape: 'c', text: 'for each %1 from %2 to %3', slots: ['var', 'num', 'num'], def: [null, 1, 5], ch: 6, js: 'for (%1 = %2; %1 <= %3; %1++) {' },
   { op: 'stop', cat: 'control', shape: 'stack', capIf: 'all', text: 'stop %1', slots: ['stop'], def: ['this script'], ch: 6, js: 'stop(%1);' },

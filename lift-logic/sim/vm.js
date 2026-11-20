@@ -128,6 +128,9 @@ const VM = (() => {
         if (!f.loop) { th.frames.pop(); continue; }
         if (!loopAgain(th, f)) { th.frames.pop(); continue; }
         f.i = 0;
+        // a counted loop (repeat N, for each) runs its turns at once, so two scripts of one lift started in
+        // the same moment don't mix up its variables; `forever` and `repeat until` give way every turn
+        if (f.loop.kind === 'repeat' || f.loop.kind === 'for') continue;
         // a loop turn that never waited: the Inspector calls a long run of them a busy loop
         if (!f.waited) { f.spins = (f.spins || 0) + 1; if (f.spins >= SPIN_NOTE) run.busyLoops[f.block.id] = true; }
         else f.spins = 0;
@@ -232,12 +235,14 @@ const VM = (() => {
         const f = floorArg(th, b, 0);
         if (f === null) return;
         if (b.op !== 'planRemove' && !Lift.canStopAt(L, f)) { fail(th, b, 'This lift doesn\'t stop at floor {n}', { n: f }); return; }
+        if (b.op !== 'planRemove' && run.planMax && L.plan.length >= run.planMax && L.plan.indexOf(f) < 0) { fail(th, b, 'This old lift remembers only {n} floor at a time — keep the rest in your own list', { n: run.planMax }); return; }
         if (b.op === 'planAdd') Lift.planAdd(L, f);
         else if (b.op === 'planFirst') Lift.planFirst(L, f);
         else Lift.planRemove(L, f);
         return;
       }
       case 'planClear': Lift.planClear(L); return;
+      case 'cancelButtons': Lift.cancelButtons(L); return;
       case 'stopHere': {
         if (th.hat.op !== 'onPass') { fail(th, b, '"stop here" works only inside "when I\'m about to pass floor"'); return; }
         const f = th.params.floor;

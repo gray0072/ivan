@@ -81,7 +81,11 @@ const MOMENTS = {
   postman: [['postman', 'Every letter delivered. Even the one for the cat.']],
   moving: [['grandson', 'Five boxes upstairs. My arms are noodles now.']],
   ride: [['kid', 'Someone rode up and down just for fun. We all know who.']],
-  emergency: [['doctor', 'The emergency was reached in {s} seconds. Good lift.']]
+  emergency: [['doctor', 'The emergency was reached in {s} seconds. Good lift.'], ['nurse', 'Code blue, and the lift was there in {s} seconds. I didn\'t even finish my sentence.']],
+  bed: [['bed', 'Straight up to the ward, not a single stop. Best ride of my life.'], ['nurse', 'The bed went up so smoothly, the patient slept through it.']],
+  lunch: [['cook', 'Three hundred lunches up to the canteen. The soup is still warm!'], ['office', 'I got to lunch before the queue. A miracle.']],
+  broken: [['gears', 'Lift {l} broke down, and the others covered for it. That\'s teamwork.'], ['manager', 'One lift out of order and nobody noticed. Perfect.']],
+  prankster: [['prankster', 'I pressed ALL the buttons and the lift just… ignored me. Not fair!'], ['gears', 'Tommy has met his match: a lift that can count.']]
 };
 
 // lines that belong to a building (its people and places)
@@ -89,8 +93,9 @@ const BUILDING_LINES = {
   grandma: [['rosa', 'Biscuit the cat rode the lift twice today. He thinks he owns it.'], ['rosa', 'The bakery says the lift brings more customers now.'], ['rosa', 'This old lift hasn\'t worked this well since 1962.']],
   school: [['principal', 'Not a single kid late for class. That\'s a first.'], ['kid', 'Can the lift do my homework too?'], ['janitor', 'The floors are clean and the lift is fast. A good day.']],
   hotel: [['hotelGuest', 'Five stars for the lift. The breakfast gets three.'], ['bellboy', 'Fastest luggage service in town!'], ['client', 'Darling, our guests are delighted.']],
-  hospital: [['doctor', 'The lift made it to surgery before the coffee went cold.'], ['nurse', 'Even the patients are smiling.']],
-  office: [['boss', 'Time is money, and the lift just saved both.'], ['office', 'I made it to the meeting. Sadly.']]
+  hospital: [['doctor', 'The lift made it to surgery before the coffee went cold.'], ['nurse', 'Even the patients are smiling.'], ['patient', 'The doors waited for me. Like a gentleman.'], ['visitor', 'I brought flowers and they arrived fresh.']],
+  office: [['boss', 'Time is money, and the lift just saved both.'], ['office', 'I made it to the meeting. Sadly.'], ['office', 'Two lifts and no race. Even the lifts are better at teamwork than my team.'], ['boss', 'I\'m giving the lifts a raise.']],
+  mall: [['manager', 'Shoppers are smiling. Shoppers who smile buy more.'], ['shopper', 'I found my car on the first try. Minus two!'], ['teen', 'Made the movie with time for popcorn.'], ['manager', 'Not one cart stuck in a door today.']]
 };
 
 // the newspaper's headlines: {n} delivered, {b} the building
@@ -99,5 +104,7 @@ const HEADLINES = [
   'NEW LIFT BRAIN AMAZES {b}',
   'RECORD DAY: {n} RIDES AND NOT ONE GRUMBLE',
   'LOCAL LIFT "SMARTER THAN MOST OF US", SAYS NEIGHBOUR',
-  'STAIRS REPORT RECORD LOW VISITORS'
+  'STAIRS REPORT RECORD LOW VISITORS',
+  'LIFTS WORK AS A TEAM AT {b}',
+  'NO STOPS FOR NOBODY: {n} HAPPY RIDERS'
 ];

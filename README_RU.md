@@ -75,7 +75,7 @@
     <td width="50%" valign="top">
       <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/screenshot.png" alt="Скриншот Lift Logic"></a>
       <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
-      <p>Стань мозгом лифта: собери его программу из блоков и смотри, как по ней живёт дом, — от бабушкиного дома до школы и отеля, 27 заданий со звёздами, подсказками и шутками.</p>
+      <p>Стань мозгом лифта: собери его программу из блоков и смотри, как по ней живёт дом, — от бабушкиного дома до школы, отеля, больницы, офисной башни и торгового центра, 54 задания со звёздами, подсказками и шутками.</p>
       <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Играть</b></a> · <a href="lift-logic/">Исходники</a></p>
     </td>
   </tr>

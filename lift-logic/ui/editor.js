@@ -618,10 +618,15 @@ const Editor = (() => {
     change(() => st.prog.vars.push({ name, all: !!all }), true);
     return true;
   }
+  function makeList(name, all) {
+    if (!name || st.prog.lists.some((l) => l.name === name)) return false;
+    change(() => st.prog.lists.push({ name, all: !!all }), true);
+    return true;
+  }
   function addMsg(name) { if (name && st.prog.msgs.indexOf(name) < 0) st.prog.msgs.push(name); }
 
   return { load, render, insert, undo, redo, onChange, applyGlow, setMarks, clearMarks, key, zoomBy, dragNew, paletteDrag,
-    count, setPendingSlot, setValue, makeVar, addMsg, locate, change,
+    count, setPendingSlot, setValue, makeVar, makeList, addMsg, locate, change,
     get prog() { return st.prog; }, get mission() { return st.mission; }, get sel() { return st.sel; },
     get canUndo() { return st.undo.length > 0; }, get canRedo() { return st.redo.length > 0; }, get dragging() { return !!dragging; } };
 })();

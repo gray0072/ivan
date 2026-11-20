@@ -14,7 +14,7 @@
 
 Ett programmeringspussel för barn från ungefär tio år och för vuxna: du är **Lifty, hissens hjärna**. Människor dyker upp på våningarna, trycker på anropsknapparna och åker; du bygger hissens program av färgglada block och ser ett helt hus leva efter det. Programmet vet bara det som en riktig hiss vet — sin våning, sina knappar, anropsknapparna i trapphallarna, sin last och klockan. Människorna ser det inte.
 
-På vägen lär du dig sekvenser, loopar, villkor, sensorer, händelser, variabler och riktiga hissalgoritmer: i **Mormors hus**, på **Lönnskolan** och på **Grand Hotel Sunrise** — 27 uppdrag med tre stjärnor var, tips, en inspektör som förklarar vad som gick fel, skämt och ett hissmuseum med riktig hisshistoria. Fler byggnader (ett sjukhus, ett kontorstorn, ett köpcentrum, Eiffeltornet, Empire State Building, Burj Khalifa och en rymdhiss) håller på att byggas.
+På vägen lär du dig sekvenser, loopar, villkor, sensorer, händelser, variabler, listor och riktiga hissalgoritmer: i **Mormors hus**, på **Lönnskolan**, på **Grand Hotel Sunrise**, på **S:t Hopps sjukhus** (nödanrop, sjukhussängar, långsamma patienter), i **Glastornet** (två och tre hissar med ett program, meddelanden mellan dem, klockan och rusningstiderna) och i **Megagallerian** (parkeringsplan under noll, kundvagnar, en busunge och en hiss ur funktion) — 54 uppdrag med tre stjärnor var, tips, en inspektör som förklarar vad som gick fel, skämt och ett hissmuseum med riktig hisshistoria. Fler byggnader (Eiffeltornet, Empire State Building, Burj Khalifa och en rymdhiss) håller på att byggas.
 
 Spelbart på engelska, ryska eller svenska: välj språk högst upp på startskärmen.
 
@@ -25,10 +25,11 @@ Spelbart på engelska, ryska eller svenska: välj språk högst upp på startsk�
 ## Så spelar du
 
 - **Fortsätt** öppnar nästa uppdrag; **Byggnader** visar alla. Ett uppdragskort berättar uppgiften, de tre stjärnorna och de nya blocken.
-- Överst på skärmen är **byggnaden**, nederst ditt **program**. Tryck på en färgknapp (Hiss, Känna av, Händelser, Kontroll, Operatorer, Variabler) för att se dess block, och tryck på ett block för att lägga det under det valda — eller dra det dit du vill.
+- Överst på skärmen är **byggnaden**, nederst ditt **program**. Tryck på en färgknapp (Hiss, Känna av, Händelser, Kontroll, Operatorer, Variabler, Listor) för att se dess block, och tryck på ett block för att lägga det under det valda — eller dra det dit du vill.
 - Tryck på ett block i ditt program för dess meny: **Flytta**, **Kopiera**, **Omslut** (lägg det i ett *om*, *upprepa* eller *för alltid*) och **Ta bort**. Tryck på en vit ruta för att skriva ett tal på en stor knappsats eller lägga ett sensorblock i den; en sexkantig ruta tar ett villkor.
 - **▶ Kör** startar dagen. Blocket som körs lyser, människornas ansikten går från 🙂 till 😠 medan de väntar, och hissen säger det du säger åt den. ⏸ pausar, ⏭ tar ett steg, **×1 / ×2 / ×4 / ×16** väljer hastighet och ⏩ hoppar till slutet. 👁 **Hissens ögon** visar bara det hissen kan känna av.
-- Tryck på en person för att se vem det är och vart den ska; tryck på hytten för att se dess plan och last.
+- Tryck på en person för att se vem det är och vart den ska; tryck på hytten för att se dess plan och last. Med flera hissar (A, B, C) följer skärmen den du tryckte på.
+- Ett högt hus får inte plats på en mobilskärm: dra i det, eller tryck på **minikartan** vid högra kanten — den visar ett streck för varje anrop (rött när någon har väntat länge) och en prick för varje hiss.
 - **Text** visar ditt program som JavaScript-liknande text.
 
 ### Uppdrag och stjärnor

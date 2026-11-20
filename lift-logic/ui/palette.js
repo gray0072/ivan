@@ -2,7 +2,8 @@
 
 // Lift Logic — the block palette: the category chips (only categories with opened blocks) and the sheet with
 // that category's blocks drawn in their real shapes. A tap puts the block at the editor's insert point; a
-// drag takes it to any place. Variables have "Make a variable" and a block per variable. On a phone the
+// drag takes it to any place. Variables have "Make a variable" and a block per variable, lists "Make a list"
+// and a block per list. On a phone the
 // sheet slides up over the scripts and closes after a block is placed; on a wide screen it stays open as
 // the middle column. Hint 2 lights up the blocks the engineer used. Used by game.js and ui/editor.js.
 
@@ -56,11 +57,23 @@ const Palette = (() => {
       list.appendChild(mk);
       for (const v of Editor.prog.vars) add({ id: 'p', op: 'var', args: [v.name] }, v.all && chapter >= 5 ? tr('for all lifts') : '');
     }
+    if (id === 'lists') {
+      const mk = document.createElement('button');
+      mk.type = 'button';
+      mk.className = 'btn small makeVar';
+      mk.textContent = tr('Make a list');
+      mk.addEventListener('click', makeList);
+      list.appendChild(mk);
+      for (const l of Editor.prog.lists) add({ id: 'p', op: 'list', args: [l.name] }, l.all ? tr('for all lifts') : '');
+    }
     for (const d of BLOCKS) {
       if (d.cat !== id || !opened(d)) continue;
       const b = BlockView.make(d.op);
       // a variable block starts with the first variable
-      (d.slots || []).forEach((s, k) => { if (s === 'var' && Editor.prog.vars[0]) b.args[k] = Editor.prog.vars[0].name; });
+      (d.slots || []).forEach((s, k) => {
+        if (s === 'var' && Editor.prog.vars[0]) b.args[k] = Editor.prog.vars[0].name;
+        if (s === 'list' && Editor.prog.lists[0]) b.args[k] = Editor.prog.lists[0].name;
+      });
       add(b);
     }
     renderChips();
@@ -87,6 +100,15 @@ const Palette = (() => {
       const make = (allLifts) => { if (!Editor.makeVar(name, allLifts)) Hud.toast(tr('There is already a variable "{v}".', { v: name })); open('variables'); };
       if (chapter >= 5 || all) Slots.choose(tr('Who uses "{v}"?', { v: name }), [{ label: tr('For this lift only'), value: false }, { label: tr('For all lifts'), value: true }], make);
       else make(false);
+    });
+  }
+
+  function makeList() {
+    Slots.ask(tr('Name of the new list'), '', (name) => {
+      name = String(name || '').trim().slice(0, 20);
+      if (!name) return;
+      const make = (allLifts) => { if (!Editor.makeList(name, allLifts)) Hud.toast(tr('There is already a list "{v}".', { v: name })); open('lists'); };
+      Slots.choose(tr('Who uses "{v}"?', { v: name }), [{ label: tr('For this lift only'), value: false }, { label: tr('For all lifts'), value: true }], make);
     });
   }
 

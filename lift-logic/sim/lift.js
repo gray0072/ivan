@@ -19,7 +19,7 @@ const Lift = {
       plan: [], cabin: new Set(), riders: [],
       idle: true, arrivals: {}, stops: 0, arrowOverride: null, callDir: null, holdUntil: 0, closeAsap: false,
       busyUntil: 0, openSince: 0, curStop: null, trip: null, tripId: 0, passFired: '',
-      say: null, energy: 0, emptyTrips: 0, vars: {}, threads: [], every: {}, working: true,
+      say: null, energy: 0, emptyTrips: 0, vars: {}, threads: [], every: {}, working: true, failing: 0, prankFloors: new Set(),
       zone: null
     };
   },
@@ -38,9 +38,14 @@ const Lift = {
   },
 
   // the arrow lamps: set by the program for this stop; an empty lift answering a call of one direction
-  // shows that direction; else the way to the next floor of the plan, none with an empty plan
+  // shows that direction; else the way to the next floor of the plan, none with an empty plan. The lamp
+  // is lit as the doors open and stays for the whole stop (with none, everyone waiting gets on)
   arrow(L) {
     if (L.arrowOverride) return L.arrowOverride;
+    if (L.stopArrow && !L.moving && L.doorPhase !== 'closed') return L.stopArrow;
+    return Lift.planArrow(L);
+  },
+  planArrow(L) {
     if (L.callDir && !L.moving) return L.callDir;
     const here = floorLabel(Lift.here(L));
     for (const f of L.plan) {
@@ -80,6 +85,7 @@ const Lift = {
   // ---------- each step ----------
   update(L, dt) {
     if (!L.working) return;
+    if (L.failing && !L.moving && L.doorPhase === 'closed' && !L.riders.length && (!L.plan.length || run.t - L.failing >= BREAK_WAIT_MAX)) { Lift.breakDown(L); return; }
     if (L.say && run.t >= L.say.until) L.say = null;
     switch (L.doorPhase) {
       case 'closed':
@@ -109,6 +115,7 @@ const Lift = {
         if (L.doors >= 1) {
           L.doorPhase = 'open';
           L.openSince = run.t;
+          L.stopArrow = Lift.planArrow(L);
           Lift.serveCalls(L);
         }
         break;
@@ -139,6 +146,7 @@ const Lift = {
     L.curStop = null;
     L.arrowOverride = null;
     L.callDir = null;
+    L.stopArrow = null;
     logEvent('depart', { lift: L.n, floor: Lift.floor(L), riders: L.riders.length });
     GameEvents.emit('depart', { lift: L });
   },
@@ -179,12 +187,14 @@ const Lift = {
     L.pos = to;
     if (arrived) { L.v = 0; Lift.arrive(L, false); return; }
     L.v = v;
-    // the braking point of the next floor that is not the target: `when I'm about to pass floor`
+    // the braking point of the nearest floor ahead the lift can still stop at (a fast lift needs more than
+    // one floor to brake), when it is not the target: `when I'm about to pass floor`
     if (v !== 0) {
-      const dir = Math.sign(v);
-      const nf = dir > 0 ? Math.floor(L.pos + 1e-6) + 1 : Math.ceil(L.pos - 1e-6) - 1;
+      const dir = Math.sign(v), brake = v * v / (2 * a);
+      let nf = dir > 0 ? Math.floor(L.pos + 1e-6) + 1 : Math.ceil(L.pos - 1e-6) - 1;
+      while (nf >= 0 && nf < run.floors.length && Math.abs(nf - L.pos) < brake - 0.02) nf += dir;
       if (nf >= 0 && nf < run.floors.length && nf !== ti && (ti - nf) * dir > 0) {
-        const gap = Math.abs(nf - L.pos), brake = v * v / (2 * a);
+        const gap = Math.abs(nf - L.pos);
         const key = L.tripId + ':' + nf;
         if (gap <= brake + PASS_MARGIN + Math.abs(v) * dt && L.passFired !== key) {
           L.passFired = key;
@@ -211,6 +221,7 @@ const Lift = {
     // an empty lift answering a call of one direction shows that direction for this stop
     const h = run.hall[i];
     L.callDir = !L.riders.length && h.up !== h.down ? (h.up ? 'up' : 'down') : null;
+    L.stopArrow = null;
     if (!auto) L.stops++;
     L.curStop = { lift: L.n, floor: label, t: run.t, said: [], auto, boarded: 0, alighted: 0, refused: {} };
     run.stopsLog.push(L.curStop);
@@ -224,12 +235,42 @@ const Lift = {
     GameEvents.emit('arrive', { lift: L, floor: label });
   },
 
+  // the lift goes out of service (a mission's breakdown): it finishes its riders and stands still for the
+  // rest of the day; its program stops, the other lifts of the group have to cover
+  breakDown(L) {
+    L.working = false;
+    L.failing = 0;
+    L.plan = [];
+    L.cabin.clear();
+    L.threads = [];
+    L.say = null;
+    L.idle = true;
+    logEvent('broken', { lift: L.n, floor: Lift.floor(L) });
+    GameEvents.emit('broken', { lift: L });
+  },
+
+  // `cancel buttons inside` (anti-nuisance): every lit cabin button goes off, and whoever is inside presses
+  // their own floor again
+  cancelButtons(L) {
+    if (!L.cabin.size) return;
+    L.cabin.clear();
+    L.prankFloors.clear();
+    run.counters.cancels++;
+    logEvent('cancelButtons', { lift: L.n, floor: Lift.floor(L) });
+    for (const p of L.riders) Lift.pressInside(L, p.to);
+  },
+
   // the floor the doors are open at was put in the plan again: it counts as reached
   mergePlan(L) {
     const label = Lift.floor(L);
     if (L.plan.indexOf(label) < 0) return;
     L.plan = L.plan.filter((f) => f !== label);
     L.arrivals[label] = (L.arrivals[label] || 0) + 1;
+    const h = run.hall[Lift.here(L)];
+    if (h.emergency) {
+      h.emergency = false;
+      logEvent('emergencyServed', { floor: label, waited: run.t - h.emergencyT });
+    }
     if (L.doorPhase === 'closing') Lift.reopen(L);
   },
 
@@ -239,18 +280,22 @@ const Lift = {
     GameEvents.emit('reopen', { lift: L });
   },
 
-  // the hall call goes off when the lift opens with a matching arrow (both with no arrow)
+  // the hall call goes off when the lift opens with a matching arrow (both with no arrow); slow walkers
+  // waiting there start walking to the doors
   serveCalls(L) {
     const i = Lift.here(L), a = Lift.arrow(L);
     if (a !== 'down') Building.clear(i, 'up');
     if (a !== 'up') Building.clear(i, 'down');
+    for (const p of People.waitingAt(i)) if (p.walk && p.reach === null) p.reach = run.t + p.walk;
   },
+  // a slow walker who has not reached the doors yet
+  walking(p) { return !!p.walk && (p.reach === null || run.t < p.reach); },
 
   // would a waiting person get on now (for the doors' light curtain)
   someoneBoards(L) {
     const i = Lift.here(L), a = Lift.arrow(L), room = L.cap - Lift.load(L);
     for (const p of People.waitingAt(i)) {
-      if ((a === 'none' || p.dir === a) && p.size <= room && Lift.canStopAt(L, p.to) && !L.curStop.refused[p.id]) return true;
+      if ((a === 'none' || p.dir === a || p.emergency) && p.size <= room && Lift.canStopAt(L, p.to) && !L.curStop.refused[p.id] && !Lift.walking(p)) return true;
     }
     return false;
   },
@@ -268,9 +313,12 @@ const Lift = {
     }
     Lift.serveCalls(L);
     const a = Lift.arrow(L);
+    let coming = null;
     for (const p of People.waitingAt(i)) {
-      if (a !== 'none' && p.dir !== a) continue;
+      // a doctor called to an emergency gets on whichever way the lift goes
+      if (a !== 'none' && p.dir !== a && !p.emergency) continue;
       if (!Lift.canStopAt(L, p.to)) continue;
+      if (Lift.walking(p)) { coming = coming || p; continue; }
       if (Lift.load(L) + p.size > L.cap) {
         if (!L.curStop.refused[p.id]) {
           L.curStop.refused[p.id] = true;
@@ -286,6 +334,12 @@ const Lift = {
       return;
     }
     if (run.t >= L.holdUntil && (L.closeAsap || run.t - L.openSince >= DWELL_MIN)) {
+      // a slow walker still on the way to the doors is left behind
+      if (coming && Lift.load(L) + coming.size <= L.cap) {
+        run.counters.leftBehind++;
+        logEvent('leftBehind', { lift: L.n, floor: label, id: coming.id });
+        GameEvents.emit('leftBehind', { lift: L, person: coming });
+      }
       L.doorPhase = 'closing';
       L.doorT = 0;
       GameEvents.emit('doorsClosing', { lift: L });
@@ -303,12 +357,18 @@ const Lift = {
       logEvent('emptyTrip', { lift: L.n, from: L.trip.from, to: stop.floor });
     }
     if (stop && Object.keys(stop.refused).length && stop.boarded === 0 && stop.alighted === 0) run.counters.fullStops++;
+    if (stop && !stop.auto && stop.boarded + stop.alighted === 0) {
+      run.counters.nobodyStops++;
+      // a stop for nobody at a floor only the prankster pressed
+      if (L.prankFloors.has(stop.floor)) run.counters.prankStops++;
+    }
+    if (stop) L.prankFloors.delete(stop.floor);
     L.trip = null;
     // whoever was left behind presses again; a call still lit is heard again
     const pressed = {};
     for (const p of People.waitingAt(i)) if (!Building.isLit(i, p.dir) && Building.press(i, p.dir)) pressed[p.dir] = true;
     const h = run.hall[i];
-    for (const dir of ['up', 'down']) if (h[dir] && !pressed[dir]) VM.event('onCall', null, { floor: run.floors[i], direction: dir });
+    if (!run.bellBroken) for (const dir of ['up', 'down']) if (h[dir] && !pressed[dir]) VM.event('onCall', null, { floor: run.floors[i], direction: dir });
     logEvent('doorsClosed', { lift: L.n, floor: Lift.floor(L) });
     VM.event('onDoorsClose', L, {});
     GameEvents.emit('doorsClosed', { lift: L });

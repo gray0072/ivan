@@ -63,7 +63,26 @@ const Stats = {
     noWrongWay(r) { return { ok: r.counters.wrongWay === 0, value: String(r.counters.wrongWay) }; },
     wrongWayMax(r, c) { return { ok: r.counters.wrongWay <= c.n, value: String(r.counters.wrongWay) }; },
     // the full lift stopped for calls it could not take at most n times
-    fullStopsMax(r, c) { return { ok: r.counters.fullStops <= c.n, value: String(r.counters.fullStops) }; }
+    fullStopsMax(r, c) { return { ok: r.counters.fullStops <= c.n, value: String(r.counters.fullStops) }; },
+    // the longest ride of a given character, from getting on to getting off (a bed goes straight there)
+    rideMax(r, c) {
+      const ps = r.people.filter((p) => p.who === c.who && p.state === 'done');
+      const worst = ps.reduce((m, p) => Math.max(m, p.tOff - p.tBoard), 0);
+      const all = r.people.filter((p) => p.who === c.who).length;
+      return { ok: all > 0 && ps.length === all && worst <= c.s * r.diff.limits + 1e-9, value: fmtNum(worst) + ' s' };
+    },
+    // slow walkers left behind by doors that closed while they were on their way
+    leftBehindMax(r, c) { return { ok: r.counters.leftBehind <= c.n, value: String(r.counters.leftBehind) }; },
+    // stops where nobody got on or off (the prankster's buttons)
+    nobodyStopsMax(r, c) { return { ok: r.counters.nobodyStops <= c.n, value: String(r.counters.nobodyStops) }; },
+    // stops for nobody at floors only the prankster pressed
+    prankStopsMax(r, c) { return { ok: r.counters.prankStops <= c.n, value: String(r.counters.prankStops) }; },
+    // the program uses one of the given blocks (the lesson of the mission)
+    uses(r, c) {
+      const ops = Prog.ops(r.program);
+      const ok = c.ops.some((op) => ops.indexOf(op) >= 0);
+      return { ok, value: ok ? '✓' : '✗' };
+    }
   }
 };
 

@@ -100,6 +100,7 @@ const Hud = (() => {
   function cabinCard(L, x, y) {
     const vars = Object.keys(L.vars).map((k) => escapeHtml(k) + ' = ' + escapeHtml(VM.toStr(L.vars[k]))).join(', ');
     $('card').innerHTML = '<b>' + tr('Lift {l}', { l: L.letter }) + '</b>' +
+      (!L.working ? '<div class="warn">' + tr('Out of order') + '</div>' : L.failing ? '<div class="warn">' + tr('Going out of order soon') + '</div>' : '') +
       '<div>' + tr('Floor {f}, {d}', { f: Lift.floor(L), d: tr(Lift.direction(L)) }) + '</div>' +
       '<div>' + tr('Plan: {p}', { p: L.plan.length ? L.plan.join(', ') : tr('empty') }) + '</div>' +
       '<div>' + tr('Load {p}% ({n} people)', { p: Lift.loadPct(L), n: L.riders.length }) + '</div>' +

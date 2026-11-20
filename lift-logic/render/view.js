@@ -93,10 +93,11 @@ const View = (() => {
   canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
   canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
 
-  // a tap: a person shows their card, a cabin is followed and shows its plan
+  // a tap: the minimap scrolls there, a person shows their card, a cabin is followed and shows its plan
   function tap(x, y) {
     if (!run) return;
     const g = layout();
+    if (Minimap.tap(x, y, g)) return;
     for (const id of Object.keys(st.pos)) {
       const p = st.pos[id];
       if (p.person && Math.abs(x - p.x) < g.fh * 0.3 && y < p.y + 4 && y > p.y - g.fh * 0.85) { Hud.personCard(p.person, x, y); return; }

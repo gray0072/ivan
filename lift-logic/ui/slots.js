@@ -38,6 +38,7 @@ const Slots = (() => {
     const hat = script && script.blocks[0] && BLOCK[script.blocks[0].op].shape === 'hat' ? script.blocks[0] : null;
     if (hat && kind !== 'bool') for (const s of BLOCK[hat.op].slots || []) if (s.startsWith('param:')) out.push({ op: 'param', args: [s.slice(6)] });
     if (kind !== 'bool') for (const v of Editor.prog.vars) out.push({ op: 'var', args: [v.name] });
+    if (kind !== 'bool') for (const l of Editor.prog.lists) out.push({ op: 'list', args: [l.name] });
     for (const d of BLOCKS) {
       if (d.hidden || !shapeOk(d) || !(d.ch <= ch || Palette.allOpen())) continue;
       if ((kind === 'dir3' || kind === 'arrow') && d.op !== 'myDir' && d.op !== 'dirOf') continue;
@@ -82,7 +83,25 @@ const Slots = (() => {
       if (o) body.appendChild(o);
       return;
     }
-    if (kind === 'var' || kind === 'list') {
+    if (kind === 'list') {
+      show(tr('Pick a list'));
+      const row = document.createElement('div');
+      row.className = 'choices';
+      for (const l of Editor.prog.lists) row.appendChild(button(escapeHtml(l.name), cur === l.name ? 'on' : 'toggle', () => { hide(); Editor.setValue(slot, l.name); }));
+      row.appendChild(button(tr('Make a list'), 'secondary', () => {
+        hide();
+        ask(tr('Name of the new list'), '', (name) => {
+          name = String(name || '').trim().slice(0, 20);
+          if (!name) return;
+          Editor.makeList(name, false);
+          Editor.setValue(slot, name);
+          Palette.refresh();
+        });
+      }));
+      body.appendChild(row);
+      return;
+    }
+    if (kind === 'var') {
       show(tr('Pick a variable'));
       const row = document.createElement('div');
       row.className = 'choices';

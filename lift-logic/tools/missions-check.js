@@ -5,7 +5,8 @@
 // (data/solutions/) at every difficulty and reports whether it passes, the stars it gets and its numbers,
 // and how close each star limit is. It fails when a reference doesn't get ★★★ on Medium, when an empty
 // program passes, or when the previous chapter's exam solution (a "naïve" program) already gets ★★★ — so
-// each mission needs its new idea. Proposed limits: ★★★ ≈ the reference × 1.1, ★★ ≈ × 1.4.
+// each mission needs its new idea; for a fix mission, when its buggy starting program already gets ★★★. Proposed
+// limits: ★★★ ≈ the reference × 1.1, ★★ ≈ × 1.4.
 //
 // Usage: node lift-logic/tools/missions-check.js [mission id…] [--verbose]
 
@@ -55,7 +56,13 @@ const out = vm.runInContext(`(() => {
     if (r.diffs.easy.stars < 3) r.problems.push('the reference gets ' + r.diffs.easy.stars + ' stars on Easy');
     const empty = simulate(m, Prog.parse('when ▶ clicked'), 'medium');
     if (empty.judged.pass) r.problems.push('an empty program passes');
-    const naive = exams[m.chapter - 1];
+    // a fix mission's buggy program (and a beat mission's starting one) must not already get ★★★
+    if (m.start && m.kind !== 'fill') {
+      const res = simulate(m, Prog.parse(m.start), 'medium');
+      r.start = { stars: res.judged.stars };
+      if (res.judged.stars >= 3) r.problems.push('the starting program already gets ★★★');
+    }
+    const naive = m.kind === 'fix' ? null : exams[m.chapter - 1];
     if (naive) {
       try {
         const res = simulate(m, Prog.parse(SOLUTIONS[naive]), 'medium');
@@ -86,6 +93,7 @@ for (const r of JSON.parse(out)) {
     for (const d of ['easy', 'medium', 'hard']) console.log('      ' + d.padEnd(7) + r.diffs[d].lines.join(' | ') + (r.diffs[d].notes.length ? '  notes: ' + r.diffs[d].notes.join(', ') : ''));
     console.log('      propose ' + JSON.stringify(r.propose));
   }
-  for (const p of r.problems) { console.log('   ! ' + p); bad++; }
+  // the solution of the mission before getting ★★★ too is only a warning: a chapter's solutions often build on each other
+  for (const p of r.problems) { const warn = / \(warning\)$/.test(p); console.log((warn ? '   ? ' : '   ! ') + p); if (!warn) bad++; }
 }
 process.exit(bad ? 1 : 0);

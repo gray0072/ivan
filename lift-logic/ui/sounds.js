@@ -15,6 +15,7 @@
   on('delivered', () => { if (!quiet()) Sfx.plusOne(); });
   on('gaveUp', () => { if (!quiet()) Sfx.grumble(); });
   on('tooHeavy', () => { if (!quiet()) Sfx.buzzer(); });
+  on('broken', () => Sfx.buzzer());
   on('blockError', (e) => { if (!quiet() && !e.flash) Sfx.error(); });
   on('runStart', () => Sfx.start());
   on('runStop', () => { Sfx.stop(); Hum.set(0); });

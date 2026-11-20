@@ -17,12 +17,14 @@ const Run = {
     run = {
       mission: m, building: b, difficulty, diff: DIFFICULTY[difficulty] || DIFFICULTY.medium, seed,
       t: 0, steps: 0, over: false, endReason: null, tEnd: null, day, lastSpawn: 0,
-      floors: floorLabels(m.floors || b.floors, m.basements || 0), lobby: m.lobby || 1,
+      floors: floorLabels(m.floors || b.floors, m.basements !== undefined ? m.basements : (b.basements || 0)), lobby: m.lobby || 1,
+      bellBroken: !!m.bellBroken, planMax: m.planMax || 0,
       clock0: m.clock !== undefined ? m.clock : DAY_START_CLOCK, clockRate: m.clockRate !== undefined ? m.clockRate : 1 / 60,
       program: Prog.clone(program), blocks: Prog.count(program),
       rng: seededRandom(seed), progRng: seededRandom((seed ^ 0x9e3779b9) >>> 0),
       energy: 0, delivered: 0, gaveUp: 0, total: 0,
-      counters: { says: 0, emptyTrips: 0, fullStops: 0, refused: 0, pranks: 0, wrongWay: 0 },
+      counters: { says: 0, emptyTrips: 0, fullStops: 0, refused: 0, pranks: 0, wrongWay: 0, leftBehind: 0, nobodyStops: 0, prankStops: 0, cancels: 0 },
+      breakdowns: (m.breakdowns || []).map((b) => Object.assign({}, b)),
       log: [], stopsLog: [], cheated: !!opts.cheated, cheatPatience: false, quietSince: null
     };
     Building.init();
@@ -42,6 +44,13 @@ const Run = {
     People.spawnDue();
     if (run.people.length !== before) run.lastSpawn = run.t;
     People.update();
+    // a lift due to break down goes out of service as soon as it stands empty (sim/lift.js)
+    for (const b of run.breakdowns) {
+      if (b.done || run.t + 1e-9 < b.t) continue;
+      b.done = true;
+      const L = run.lifts[b.lift - 1];
+      if (L && L.working) { L.failing = run.t; logEvent('failing', { lift: L.n }); GameEvents.emit('failing', { lift: L }); }
+    }
     for (const L of run.lifts) Lift.update(L, SIM_DT);
     VM.step();
     run.t = Math.round((run.t + SIM_DT) * 1000) / 1000;

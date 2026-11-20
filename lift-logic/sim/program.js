@@ -14,6 +14,7 @@
 //       go to floor ((current floor) + (1))
 //   set [stops] to 0           [ ] a dropdown or a variable, ( ) a value or a reporter, < > a boolean,
 //   say "Hello there"          "…" a text with spaces, _ an empty slot, a line ending in #lock is locked
+//   #shared taken              (a line of its own) these variables and lists are for all lifts
 
 const Prog = (() => {
   let seq = 0;
@@ -197,7 +198,10 @@ const Prog = (() => {
   function parse(src, shared) {
     const prog = empty();
     const ctx = { prog, params: [] };
-    const scripts = String(src).replace(/\r/g, '').split(/\n\s*\n/);
+    // a line `#shared a b` names the variables and lists that are for all lifts
+    shared = (shared || []).slice();
+    src = String(src).replace(/\r/g, '').replace(/^#shared (.+)$/gm, (all, names) => { shared.push(...names.trim().split(/[\s,]+/)); return ''; });
+    const scripts = src.split(/\n\s*\n/);
     let y = 20;
     for (const chunk of scripts) {
       const lines = chunk.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));

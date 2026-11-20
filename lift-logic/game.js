@@ -48,6 +48,9 @@ function resume() {
   pausedByMenu = false;
 }
 
+// a lift goes out of order: everybody should know
+GameEvents.on('broken', (e) => { if (run && !run.preview) Hud.banner(tr('Lift {l} is out of order!', { l: e.lift.letter }), 2600); });
+
 Screens.on('start', startMission);
 Screens.on('inMission', () => !!mission && !$('app').hidden);
 Screens.on('difficultyChanged', () => { if (Runner.state === 'running') { pausedByMenu = false; Runner.stop(); } Hud.targets(mission, false); });

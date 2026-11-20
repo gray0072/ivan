@@ -41,6 +41,7 @@ button { font-family: inherit; touch-action: manipulation; }
 .hchip.bad { background: rgba(150,30,30,0.85); }
 #card { position: absolute; z-index: 5; max-width: 240px; padding: 8px 10px; border-radius: 10px; background: rgba(13,27,42,0.94); border: 1px solid rgba(255,255,255,0.18); font-size: 13px; line-height: 1.4; box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
 #card .quote { color: #ffe082; font-style: italic; margin-top: 4px; }
+#card .warn { color: #ffd23f; font-weight: bold; }
 
 #runbar { grid-area: bar; display: flex; align-items: center; gap: 6px; padding: 0 calc(8px + env(safe-area-inset-right)) 0 calc(8px + env(safe-area-inset-left)); background: #13202d; border-top: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); touch-action: none; }
 .rb { flex: 0 0 auto; white-space: nowrap; height: 40px; min-width: 42px; border: 0; border-radius: 10px; background: #2b3f54; color: #fff; font-size: 17px; cursor: pointer; padding: 0 8px; }

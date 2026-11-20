@@ -86,7 +86,7 @@ const People = {
       t0: run.t, size: e.size || c.size, board: c.board, prank: !!c.prank,
       patience: (e.patience || c.patience) * run.diff.patience * (run.cheatPatience ? 1e6 : 1),
       state: 'waiting', mood: 0, lift: 0, tBoard: null, tOff: null, furious: false, emergency: !!e.emergency,
-      firstMove: 0, wrongWay: false, story: e.story || null
+      firstMove: 0, wrongWay: false, story: e.story || null, walk: c.walk || 0, reach: null
     };
     run.people.push(p);
     run.queues[fi].push(p);
@@ -108,7 +108,11 @@ const People = {
     Lift.pressInside(L, p.to);
     if (p.prank) {
       run.counters.pranks++;
-      for (const f of run.floors) if (Lift.canStopAt(L, f)) Lift.pressInside(L, f);
+      for (const f of run.floors) {
+        if (!Lift.canStopAt(L, f) || L.cabin.has(f)) continue;
+        Lift.pressInside(L, f);
+        if (L.cabin.has(f)) L.prankFloors.add(f);
+      }
     }
   },
 

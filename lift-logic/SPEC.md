@@ -2,13 +2,13 @@
 
 Developer/agent spec for the `lift-logic` project. Repo-wide conventions live in the root `SPEC.md` and `AGENTS.md`; this file only describes this game. Keep it in sync with the code.
 
-> **Status: first release — build sessions 1–3 done** (see "Build order" and "What is built"). Chapters 1–3 (Grandma's House, Maple School, Grand Sunrise Hotel, 27 missions) are playable end to end; the later buildings show on the map as under construction. Numbers come from `tools/missions-check.js` (see "Balancing").
+> **Status: build sessions 1–4 done** (see "Build order" and "What is built"). Chapters 1–6 (Grandma's House, Maple School, Grand Sunrise Hotel, St. Hope Hospital, Glass Tower, Mega Mall, 54 missions) are playable end to end; the later buildings show on the map as under construction. Numbers come from `tools/missions-check.js` (see "Balancing").
 
 ## What is built
 
-- **Done:** the simulation and the VM with every block of chapters 1–6 (lists and `for each` too; the palette shows a block from its chapter on); the tap-first editor on a phone (palette sheet, select / move / copy / wrap / delete, drag from the palette and inside the canvas, long press moves one block, slots with the number pad, dropdowns, conditions, "use a block", undo / redo, pinch and pan, copy / paste with the keyboard), the Text view; the building view with the HUD, the plan flags, monitors, floating words, person and cabin cards, the Lift's eyes; the run bar (run, pause, step, speeds, skip, resize); the start menu, the buildings map, the building screen, the mission card with Grandpa Gears' concept card and the new blocks, the pause menu; the results with stars, the Engineer's record and 🏅, the wait chart, the Inspector's notes with "Show me", the comic lines, the Museum card, the newspaper after an exam; hints 1–3 and the guided finger of the first missions; the Lift Museum (cards and concept cards); sounds and the lift music; the cheats; English, Russian and Swedish.
-- **Missions:** chapters 1–3 with reference solutions in `data/solutions/`, balanced by the checker (the reference gets ★★★ on Easy and Medium in every mission).
-- **Not yet (later sessions):** chapters 4–10 and the World Tour (the hospital and the office have their building data; their missions, emergencies in play, several lifts on screen side by side are the next session), own blocks (chapter 7), zones / express, double-deck cars, Endless, Daily challenge, Sandbox, sharing programs (`core/share.js`), Wardrobe, Achievements, the minimap of tall buildings, "Different day", saved named versions of a program, the start screen's demo lift.
+- **Done:** the simulation and the VM with every block of chapters 1–6 (lists and `for each` too; the palette shows a block from its chapter on); the tap-first editor on a phone (palette sheet, select / move / copy / wrap / delete, drag from the palette and inside the canvas, long press moves one block, slots with the number pad, dropdowns, conditions, "use a block", undo / redo, pinch and pan, copy / paste with the keyboard, variables and lists "for this lift only" or "for all lifts"), the Text view; the building view with the HUD, several lifts side by side, the plan flags, monitors, floating words, person and cabin cards, the Lift's eyes, a lift out of order, the minimap of a tall building; the run bar (run, pause, step, speeds, skip, resize); the start menu, the buildings map, the building screen, the mission card with Grandpa Gears' concept card and the new blocks, the pause menu; the results with stars, the Engineer's record and 🏅, the wait chart, the Inspector's notes with "Show me", the comic lines, the Museum card, the newspaper after an exam; hints 1–3 and the guided finger of the first missions; the Lift Museum (cards and concept cards); sounds and the lift music; the cheats; English, Russian and Swedish.
+- **Missions:** chapters 1–6 with reference solutions in `data/solutions/`, balanced by the checker (the reference gets ★★★ on Easy and Medium in every mission; the previous chapter's exam solution never gets ★★★; a fix mission's buggy program never gets ★★★).
+- **Not yet (later sessions):** chapters 7–10 and the World Tour, own blocks (chapter 7), zones / express, double-deck cars, Endless, Daily challenge, Sandbox, sharing programs (`core/share.js`), Wardrobe, Achievements, "Different day", saved named versions of a program, the start screen's demo lift.
 
 ### Rules settled while building
 
@@ -19,6 +19,16 @@ Developer/agent spec for the `lift-logic` project. Repo-wide conventions live in
 - On Hard the energy limits of the stars don't get stricter (the engineer's energy is often the least possible); waits do.
 - Missions and solutions are written in a small text notation (`Prog.parse`, see `sim/program.js`): one block per line, two spaces of indent inside a C block, `( )` values and reporters, `< >` conditions, `[ ]` dropdowns and variables, `_` an empty slot, `#lock` a locked block.
 - Changes to the first mission list: Tiny Lift is The Forever Lift on four floors in at most 6 blocks; The Patrol takes everyone up to the gym; Up First, Then Down and No Zig-Zag judge rides the wrong way first; Suitcases judges stops of a full lift for nothing.
+- **The arrow is lit as the doors open and stays for the whole stop** (or until the program sets it): with no arrow, everyone waiting gets on, even those going the other way — that is what `set arrow` is for. A doctor called to an emergency gets on whichever way the lift goes.
+- **`when I'm about to pass floor` names the nearest floor the lift can still stop at**: a fast lift at full speed needs more than one floor to brake, so the floors right in front of it pass without the event, and `stop here` inside it always works.
+- **Counted loops (`repeat N`, `for each`) run their turns at once** (up to `VM_STEPS_MAX` blocks); `forever` and `repeat until` give way at the end of every turn. So two scripts of one lift started in the same moment (two calls at once) never mix up the lift's variables halfway through a loop.
+- **The hospital's slow walkers** (`walk` in `data/people.js`, the patients from physiotherapy): once a lift opens on their floor they need that many seconds to reach the doors; doors that close before are counted as "left behind" (they press again and get on at the next stop). The light curtain doesn't see them coming.
+- **A broken call bell** (`bellBroken` in a mission): the call buttons light up but `when call button pressed` never fires — the lift has to look at the buttons itself (Who Waited Longest?, For Each Floor).
+- **An old lift with a tiny memory** (`planMax` in a mission): its plan holds that many floors; adding more gets a red mark ("keep the rest in your own list") — My Own Plan.
+- **A breakdown** (`breakdowns: [{ lift, t }]` in a mission): from time t the lift finishes its riders, goes out of service as soon as it stands empty (at most `BREAK_WAIT_MAX` s later even with a plan) and stays there; its program stops, `lift (n) working?` turns false, the view shows it striped with "Out of order".
+- **`cancel buttons inside`** (chapter 6, Lift): every lit cabin button goes off, and whoever is inside presses their own floor again (real anti-nuisance). Stops for nobody at a floor only the prankster pressed are counted for The Prankster's star.
+- Star tests added: `rideMax` (a character's longest ride), `leftBehindMax`, `nobodyStopsMax` (stops where nobody gets on or off — two lifts running to one call), `prankStopsMax`, and the hospital's `emergencies` (every emergency reached in time). Busy missions use "deliver at least 90 %" as the goal, so one unlucky give-up doesn't fail a good program.
+- The solution notation has `#shared a b` (a line of its own): those variables and lists are for all lifts.
 
 ## Idea
 
@@ -94,7 +104,7 @@ Fixed step `SIM_DT` (0.05 s of game time). Everything is deterministic from the 
 
 ### Lift
 
-- Moves along the shaft with a top speed `speed` (floors/s) and an acceleration `accel` (floors/s²) per lift type (`data/lifts.js`): Old (0.5 / 0.5), Standard (1 / 1), Fast (2.5 / 1.5), Express (6 / 2), Space climber (its own scale). A trip is a trapezoid of speed; the **braking point** for a floor is where it must start to slow down to stop there.
+- Moves along the shaft with a top speed `speed` (floors/s) and an acceleration `accel` (floors/s²) per lift type (`data/lifts.js`): Old (0.5 / 0.5), Standard (1 / 1), Bed (1.5 / 1.2, 12 places), Glass (1.5 / 1, 10 places, the mall), Fast (2.5 / 1.5), Express (6 / 2), Space climber (its own scale). A trip is a trapezoid of speed; the **braking point** for a floor is where it must start to slow down to stop there.
 - **Doors**: open `DOOR_TIME` (1.2 s), stay open at least `DWELL_MIN` (2.5 s) plus `BOARD_TIME` (0.8 s) per person getting on or off, close `DOOR_TIME`; someone in the doorway re-opens them (`someone in the doorway?` sensor). `hold doors (s)` adds time; `close doors` closes as soon as nobody is in the doorway (latecomers stay behind). The lift never moves with the doors open.
 - **Plan**: an ordered list of floors the lift will stop at. The lift always drives towards the first floor of the plan; arriving there it stops, removes that floor from the plan (and any other entry of the same floor), opens the doors. With the plan empty and the doors closed it is **idle** and stands still.
 - **Arrow** (the direction lamps over the doors and on the display): automatic by default — the direction towards the next floor of the plan after this stop, none when the plan is empty; `set arrow to (up/down/none)` overrides it for the current stop.
@@ -107,7 +117,7 @@ Fixed step `SIM_DT` (0.05 s of game time). Everything is deterministic from the 
 - A person appears on the landing, presses ▲ or ▼ if it isn't lit (the hall call), waits. When a lift of the group opens there: the people for this floor get off first, then those waiting get on if the lift's arrow matches their direction (or shows none) and there are places left, in queue order; each presses their floor's button inside (cabin call). The hall call goes off when a lift opens there with a matching arrow (both go off with no arrow); someone left behind presses it again.
 - **Patience** per character (`data/people.js`, × the difficulty): the face changes at 25 / 50 / 75 % of it; at 100 % the person **gives up** — walks to the stairs (a counted "gave up"), or, when the trip is longer than `STAIRS_MAX` (4) floors, stays furious (every second after that counts double in the stats).
 - Wait = from appearing to getting on; trip = from appearing to getting off at the destination.
-- Characters (examples, with patience in s at Medium): Grandma Rosa (90, slow: boards in 2 s), the Postman (60, visits several floors in a row), the Pizza Courier (25), Kids (40; the Prankster: presses every button inside), the Bellboy (60, a suitcase), a Doctor (30; with a bed: 6 places), Tourists (in groups that board together or not at all), Office workers (45), Shoppers (50, a cart), the Firefighter (ignores the queue in a drill).
+- Characters (examples, with patience in s at Medium): Grandma Rosa (90, slow: boards in 2 s), the Postman (60, visits several floors in a row), the Pizza Courier (25), Kids (40; the Prankster: presses every button inside), the Bellboy (80, a suitcase), a Doctor (45), a patient on a bed (60, 6 places), Patients from physiotherapy (90, walk 6 s to the doors), Nurses (60), Visitors (70), Office workers (60), Mr. Bigwig (45), Shoppers (70, a cart: 2 places), Teenagers (50), Tourists (in groups that board together or not at all), the Firefighter (ignores the queue in a drill).
 
 ### What the lift knows (sensors)
 
@@ -163,6 +173,7 @@ Same visual grammar as the Scratch family, own drawing: **hat** (starts a script
 | Variables | `for all lifts` / `for this lift only` when making a variable | 5 |
 | Variables | lists: `add ( ) to [list]`, `delete (i) of [list]`, `delete all of [list]`, `insert ( ) at (i) of [list]`, `item (i) of [list]`, `item # of ( ) in [list]`, `length of [list]`, `[list] contains ( )?` | 6 |
 | Control | `for each [i] from (a) to (b)`, `stop [this script / all]` | 6 |
+| Lift | `cancel buttons inside` (the riders press their own floor again) | 6 |
 | Operators | `( ) mod ( )`, `round ( )`, `join ( ) ( )` | 6 |
 | My Blocks | `define (name) (inputs…)` and the custom block itself; inputs: number, boolean, text | 7 |
 | Events | `when weather changes`, `when message from building [msg]` | 7 |
@@ -174,10 +185,10 @@ Each hat with inputs (floor, direction…) carries them as small reporter blocks
 ### How the program runs (the VM, `sim/vm.js`)
 
 - A program is a set of scripts, each starting with a hat. Each lift of a group runs its own copy (its own threads and "for this lift only" variables; "for all lifts" variables are shared).
-- Every step of the simulation: the world moves, then the events of this step are delivered (each starts a new **thread** of its hat's script, with its inputs), then every running thread runs until it **yields**. A thread yields at: `wait`, `wait until` (false), `go to floor` (until arrived and the doors closed), `broadcast and wait`, `say … for`, and at the end of each turn of a loop (as in Scratch, so `forever` never freezes the game).
+- Every step of the simulation: the world moves, then the events of this step are delivered (each starts a new **thread** of its hat's script, with its inputs), then every running thread runs until it **yields**. A thread yields at: `wait`, `wait until` (false), `go to floor` (until arrived and the doors closed), `broadcast and wait`, `say … for`, and at the end of each turn of `forever` and `repeat until` (as in Scratch, so `forever` never freezes the game); a counted loop (`repeat N`, `for each`) runs its turns at once.
 - A thread doing more than `VM_STEPS_MAX` (2 000) blocks in one step without yielding is paused until the next step, and the editor shows "Your lift is thinking too hard here" on that block (a loop with nothing that waits).
 - An event fires once per change: a call button pressed goes `off → on`, pressing a lit button again is nothing. A hat's own threads may run side by side (up to `THREADS_MAX` 32 per lift; more are dropped with a warning).
-- `when I'm about to pass floor (f)` fires when a moving lift reaches the braking point of a floor that is not its target; `stop here` inside it puts that floor first in the plan (too late anywhere else: the block flashes "Too late to stop").
+- `when I'm about to pass floor (f)` fires when a moving lift reaches the braking point of the nearest floor ahead it can still stop at (not its target); `stop here` inside it puts that floor first in the plan (too late anywhere else: the block flashes "Too late to stop").
 - `when I'm idle` fires when the lift becomes idle; `when doors close` before it starts moving, so the script can still change the plan.
 - Mistakes never crash the run: a floor out of range, a list item that isn't there, a division by zero — the block gets a red outline with the reason in a bubble ("There is no floor 12 here"), the value used is 0 / nothing, the run goes on.
 - The running blocks glow (each lift its own glow colour when several run one program; the followed lift's glow is the strong one).
@@ -275,47 +286,47 @@ Stars are kept per difficulty; the building's next mission opens when one is pas
 | 8 | Night Porter | Beat | `when I'm idle` → wait in the lobby, where the guests come. |
 | 9 | The Wedding | Exam | Guests, suitcases and the ballroom on 8. |
 
-**4. St. Hope Hospital** — 10 floors, a big bed lift, later two lifts. *Boolean logic, priorities, fairness.*
+**4. St. Hope Hospital** — 10 floors, one big bed lift. *Boolean logic, priorities, fairness.*
 
 | # | Name | Kind | What it is about |
 |---|---|---|---|
-| 1 | Code Blue | Build | `when emergency call` → that floor first, the doctors can't wait. |
-| 2 | Bed on Board | Build | With a bed inside (`load % > 50`) go straight there, `and` / `not`. |
-| 3 | Slow Steps | Build | Physiotherapy on 2: `someone in the doorway?`, `hold doors`. |
-| 4 | Who Waited Longest? | Beat (longest wait) | `waiting time on floor`: serve the longest wait first. |
-| 5 | Arrows Matter | Build | `set arrow`: people only get on going their way. |
-| 6 | Emergency Bug | Fix | The emergency script fights the normal one. |
-| 7 | Visiting Hours | Build | A wave of visitors up to the wards and back. |
-| 8 | Tiny Hospital | Tiny | A whole hospital lift in few blocks. |
-| 9 | Night Shift | Exam | Quiet nights with sudden emergencies; energy counts. |
+| 1 | Code Blue | Build | `when emergency call` → that floor first in the plan; every emergency reached within a limit. |
+| 2 | Bed on Board | Build | Beds from the ambulance entrance to the wards: with a bed inside (`load %` ≥ 50) put its floor first and don't stop on the way (`and` / `not`); the beds' longest ride counts. |
+| 3 | Slow Steps | Build | Patients from physiotherapy on 2 walk slowly to the doors: `hold doors` when arriving there; at most one left behind. |
+| 4 | Who Waited Longest? | Beat (longest wait) | The call bell is broken; the given program serves the lowest lit floor first and starves the top: serve the longest `waiting time on floor` instead. |
+| 5 | Arrows Matter | Build | Two people meet on a floor, one up, one down: with no arrow both get on — `set arrow`; at most one rides the wrong way. |
+| 6 | Emergency Bug | Fix | The emergency script does `clear plan` and the riders' floors are lost: put the floor first instead. |
+| 7 | Visiting Hours | Build | A bus of visitors every 40 s: hold the doors in the lobby so the group gets on together. |
+| 8 | Tiny Hospital | Tiny | Calls, buttons and emergencies in at most 6 blocks. |
+| 9 | Night Shift | Exam | Quiet nights with sudden emergencies, beds and slow patients; energy counts. |
 
-**5. Glass Tower (offices)** — 16 floors, 2 then 3 lifts. *Several agents, messages, shared variables, the clock.*
-
-| # | Name | Kind | What it is about |
-|---|---|---|---|
-| 1 | Two Is Better? | Build | Two lifts with the same simple program run to the same calls. |
-| 2 | The Nearest One Goes | Build | `floor of lift (n)`, `distance`: the nearest lift takes the call. |
-| 3 | Talk to Each Other | Build | `broadcast` / `when I receive`, a shared list of taken calls. |
-| 4 | Morning Rush | Beat | Up-peak: everyone from the lobby; go back there when idle, leave when full or after a few seconds. |
-| 5 | Lunch Time | Build | To and from the canteen on 8. |
-| 6 | Evening Rush | Beat | Down-peak: wait high up after 17:00 (`clock`). |
-| 7 | The Twins | Fix | Both lifts always move together. |
-| 8 | Three Lifts | Build | The same program for three lifts with `my number`. |
-| 9 | A Day at the Office | Exam | 07:00–19:00 compressed into 8 minutes. |
-
-**6. Mega Mall** — floors −3 … 5 (car park below), 3 lifts. *Lists, for-each, negative numbers, robustness.*
+**5. Glass Tower (offices)** — 16 floors, fast lifts, 2 then 3. *Several agents, messages, shared variables, the clock.*
 
 | # | Name | Kind | What it is about |
 |---|---|---|---|
-| 1 | Underground | Build | Basements: floors −1, −2, −3. |
-| 2 | My Own Plan | Build | A list variable as the lift's own to-do list. |
-| 3 | Shopping Carts | Build | Carts take two places: count the room left. |
-| 4 | The Prankster | Build | A boy presses every button: few people inside and many buttons → clear them (real anti-nuisance). |
-| 5 | For Each Floor | Tiny | `for each` instead of ten `if`s. |
-| 6 | Sale at Ten! | Build | `when clock is 10:00` a crowd heads for floor 4. |
-| 7 | Lost in the Car Park | Fix | A bug with negative floors. |
-| 8 | Out of Order | Build | One lift breaks (`lift (n) working?`), the others cover. |
-| 9 | Black Friday | Exam | Everything at once. |
+| 1 | Two Is Better? | Build | Two lifts with the same simple program run to the same calls: split the work with `my number` (lift 1 ▲, lift 2 ▼); few empty trips. |
+| 2 | The Nearest One Goes | Build | `floor of lift (n)`, `distance`: the nearer lift takes the call; few stops for nobody. |
+| 3 | Talk to Each Other | Build | Both lifts add every call; the one that arrives first puts the floor in a variable for all lifts and `broadcast`s, the other removes it from its plan (`when I receive`). |
+| 4 | Morning Rush | Beat | Up-peak, the same traffic on every difficulty: go back to the lobby when idle, hold the doors there a few seconds. |
+| 5 | Lunch Time | Build | To and from the canteen on 8: wait there when idle. |
+| 6 | Evening Rush | Beat | Down-peak from 17:00: `when clock is 17:00` sets a variable for all lifts; before five wait in the lobby, after five high up. |
+| 7 | The Twins | Fix | Both lifts compare lift 1 with lift 2, so both go together and some calls get no lift: each lift compares itself with the other. |
+| 8 | Three Lifts | Build | The same program for three lifts: a loop over the lifts finds the nearest. |
+| 9 | A Day at the Office | Exam | 07:00–19:00 compressed into 8 minutes (the clock runs 1.5 min/s): morning rush, lunch, evening rush. |
+
+**6. Mega Mall** — floors −3 … 5 (car park below, no floor 0), 3 glass lifts. *Lists, for-each, negative numbers, robustness.*
+
+| # | Name | Kind | What it is about |
+|---|---|---|---|
+| 1 | Underground | Build | Basements −1, −2, −3; people come from every level, so lifts sent back to the lobby drive for nothing — let idle lifts stay. |
+| 2 | My Own Plan | Build | The old service lift's plan holds one floor (`planMax`): a list as the lift's own to-do list, fed into the plan one by one. |
+| 3 | Shopping Carts | Build | One lift; waves of four carts and a teenager (9 of 10 places), then one more cart on the way: count the room left with `load %`. |
+| 4 | The Prankster | Build | Tommy presses every button: with many buttons and an almost empty lift, drop those floors and `cancel buttons inside`. |
+| 5 | For Each Floor | Tiny | The bell is broken: `for each f from −3 to 5`, skipping 0, visits every lit floor in at most 15 blocks. |
+| 6 | Sale at Ten! | Build | A crowd at 10:00 heads for floor 4: a list of entrances, `when clock is 9:59` each lift goes to its own. |
+| 7 | Lost in the Car Park | Fix | "Nearest" computed as floor − floor of lift: negative for lifts above, so a lift always comes from the top — use `distance`. |
+| 8 | Out of Order | Build | Lift B breaks down: skip the lifts that are not `working?` when looking for the nearest. |
+| 9 | Black Friday | Exam | Everything at once: the sale, carts, Tommy and lift C breaking down. |
 
 **7. Eiffel Tower, Paris** — ground, 1st, 2nd floor and the top; lifts in the pillars up to the 2nd floor, a second bank from the 2nd floor to the top. *Own blocks with inputs, transfers, events from outside.*
 
@@ -434,7 +445,7 @@ Picked on the start screen, in the pause menu and on the results screen (pre-sel
 
 ## Balancing (`tools/missions-check.js`)
 
-Every mission has a reference solution in `data/solutions/` (also used by Hint 3 and the Engineer's record). The checker loads the `sim/` files in Node, runs every solution on its mission at every difficulty and reports: passes or not, the stars it gets, its numbers, how close each star limit is. It fails when a reference doesn't get ★★★ on Medium, or when a "naïve" program (the previous chapter's exam solution, where it applies) already gets ★★★ — so each mission really needs its new idea. Star limits are written in the mission data, not computed at run time; the tool prints proposed ones (★★★ ≈ the reference × 1.1, ★★ ≈ × 1.4).
+Every mission has a reference solution in `data/solutions/` (also used by Hint 3 and the Engineer's record). The checker loads the `sim/` files in Node, runs every solution on its mission at every difficulty and reports: passes or not, the stars it gets, its numbers, how close each star limit is. It fails when a reference doesn't get ★★★ on Easy or Medium, when it has a block error, when an empty program passes, when a "naïve" program (the previous chapter's exam solution) already gets ★★★ — so each mission really needs its new idea — and, for a fix mission, when its buggy starting program already gets ★★★ (the naïve check is skipped there). The previous mission's solution getting ★★★ too is only printed as a warning (`?`): a chapter's solutions often build on each other. A beat mission whose numbers must not depend on luck uses flows with `fixed: true` (the same traffic on every difficulty). Star limits are written in the mission data, not computed at run time; the tool prints proposed ones (★★★ ≈ the reference × 1.1, ★★ ≈ × 1.4).
 
 ## Controls
 
@@ -491,7 +502,7 @@ lift-logic/
 │   ├── buildings.js    the buildings: floors, groups of lifts, interiors, client, colours
 │   ├── lifts.js        lift types: speed, acceleration, capacity, look
 │   ├── people.js       characters: names, looks, patience, places taken, lines
-│   ├── missions/       missions.js (the list, addMissions) and one file per building (grandma.js, school.js, hotel.js, …, tour.js): briefing, schedule, stars, hints, starting program, new blocks
+│   ├── missions/       missions.js (the list, addMissions) and one file per building (grandma.js, school.js, hotel.js, hospital.js, office.js, mall.js, …, tour.js): briefing, schedule, stars, hints, starting program, new blocks
 │   ├── solutions/      the reference solution of every mission (one file per building), in the text notation
 │   ├── jokes.js        the comic lines of the results and the newspaper's headlines, by trait, moment and building
 │   ├── facts.js        Lift Museum cards and Grandpa Gears' concept cards, with sources
@@ -523,7 +534,7 @@ lift-logic/
 ├── render/
 │   ├── view.js         camera, scroll, zoom, follow
 │   ├── building.js     floors, landings, shafts, cabins, plan flags, monitors, Lift's eyes
-│   └── minimap.js      (later)
+│   └── minimap.js      the strip of a tall building: calls, lifts, the part on screen; tap to scroll
 ├── ui/
 │   ├── screens.js      start, buildings map, building screen, mission card, results, pause
 │   ├── editor.js       the scripts canvas: select, move, wrap, undo, insert point
@@ -556,7 +567,7 @@ Prefix for storage and events: `liftLogic.`; manifest `short_name`: "Lift Logic"
 1. ✓ **Core loop:** `sim/` (building, lift, people, plan, sensors) + `vm.js` with the chapter 1–3 blocks, headless; the checker with the first 9 missions and their solutions.
 2. ✓ **Editor on a phone:** blocks drawn, palette sheet, select / move / wrap / delete, slots, undo, the text view; the building view with the HUD and the run bar.
 3. ✓ **Chapters 1–3 playable end to end:** mission card, hints, results with the Inspector, progress, the first Museum cards, sounds, the guided start. Play-test with a ten-year-old here before going on.
-4. Chapters 4–6 (priorities, several lifts, lists), the Lift's eyes, the minimap.
+4. ✓ Chapters 4–6 (priorities, several lifts, lists), the Lift's eyes, the minimap.
 5. Chapters 7–8 (own blocks, zones, express, tall buildings).
 6. Chapters 9–10, World Tour, Endless, Daily, Sandbox, sharing, Wardrobe, achievements.
 7. ✓ Translations, icons, README ×3, screenshot, gallery card, root SPEC / READMEs (done with session 3, kept up to date with every later one).
