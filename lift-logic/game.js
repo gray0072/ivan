@@ -3,7 +3,7 @@
 // Lift Logic — the main loop and the flow: the start menu, the buildings, the mission card, a mission (the
 // editor and the building, runs and their results), the pause menu and the cheats. Each frame it advances
 // the run (ui/runbar.js), draws the building and the HUD, moves the guide's finger and sets the hum and the
-// music's tempo. The rules live in sim/, the screens and the editor in ui/.
+// music's tempo. The rules live in sim/, the screens and the editor in ui/; the cloud save starts here too.
 
 const $ = (id) => document.getElementById(id);
 let mission = null;
@@ -225,6 +225,18 @@ I18N.onChange(() => {
   document.documentElement.style.setProperty('--split', String(s.split || 0.45));
 }
 layoutMode();
+// the cloud save (core/cloud.js): the account row follows the sync; progress from another device redraws
+// the screen that shows it (the stars, the open buildings and missions, the Museum), keeping its scroll
+Cloud.onChange = (progressChanged) => {
+  const c = Screens.current;
+  if (progressChanged && (c === 'menu' || c === 'map' || c === 'building' || c === 'museum')) {
+    const panel = document.querySelector('#overlay > .panel:not([hidden])');
+    const top = panel ? panel.scrollTop : 0;
+    Screens.show(c);
+    if (panel) panel.scrollTop = top;
+  } else if (c === 'menu') Screens.renderAccount();
+};
+Cloud.init();
 Screens.show('menu');
 AppUpdate.watch(() => Screens.current === 'menu' || Screens.current === 'map' || Screens.current === 'building');
 requestAnimationFrame(frame);

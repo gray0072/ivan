@@ -2,12 +2,16 @@
 
 // Lift Logic — what the browser remembers, through one small helper that never throws (a private window or
 // blocked storage just forgets). Every key starts with "liftLogic." (the origin is shared with the other
-// games): progress.v1, programs.v1, records.v1, settings.v1, sound, music, lang, difficulty. Used by
-// progress.js, core/audio.js and the screens.
+// games): progress.v1, programs.v1, programTimes.v1, records.v1, settings.v1, sound, music, lang,
+// difficulty, cloud (the Google account the progress syncs with) and auth (its session, kept by
+// supabase-js). Used by progress.js, core/audio.js, core/cloud.js and the screens.
 
 const KEYS = {
   progress: 'liftLogic.progress.v1',
   programs: 'liftLogic.programs.v1',
+  programTimes: 'liftLogic.programTimes.v1',
+  cloud: 'liftLogic.cloud',
+  auth: 'liftLogic.auth',
   records: 'liftLogic.records.v1',
   settings: 'liftLogic.settings.v1',
   sound: 'liftLogic.sound',

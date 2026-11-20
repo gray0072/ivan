@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#1b2a3a">
-<link rel="stylesheet" href="styles.css?v=3">
+<link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
 
@@ -81,6 +81,7 @@
       <button class="btn big" id="mapBtn"><span data-i18n>Buildings</span> <span id="totalStars" class="starsSmall"></span></button>
       <button class="btn" id="museumBtn" data-i18n>🏛️ Lift Museum</button>
     </div>
+    <div class="account" id="accountRow" hidden></div>
     <p class="label" data-i18n>Difficulty</p>
     <div class="btnRow" id="menuDiff"></div>
     <p class="fine" id="menuDiffText"></p>
@@ -210,6 +211,7 @@
 
 <canvas id="fx"></canvas>
 
+<script src="lib/supabase.min.js?v=1"></script>
 <script src="data/icons.js?v=2"></script>
 <script src="core/icons.js?v=1"></script>
 <script src="constants.js?v=3"></script>
@@ -236,15 +238,16 @@
 <script src="data/solutions/empire.js?v=1"></script>
 <script src="data/facts.js?v=3"></script>
 <script src="data/jokes.js?v=3"></script>
-<script src="data/lang-ru.js?v=3"></script>
-<script src="data/lang-sv.js?v=3"></script>
+<script src="data/lang-ru.js?v=4"></script>
+<script src="data/lang-sv.js?v=4"></script>
 <script src="core/i18n.js?v=1"></script>
 <script src="core/utils.js?v=1"></script>
 <script src="core/events.js?v=1"></script>
-<script src="core/storage.js?v=1"></script>
+<script src="core/storage.js?v=2"></script>
 <script src="core/audio.js?v=1"></script>
 <script src="core/cursor.js?v=1"></script>
 <script src="core/update.js?v=1"></script>
+<script src="core/cloud.js?v=1"></script>
 <script src="sim/state.js?v=1"></script>
 <script src="sim/building.js?v=3"></script>
 <script src="sim/lift.js?v=3"></script>
@@ -255,7 +258,7 @@
 <script src="sim/run.js?v=3"></script>
 <script src="sim/stats.js?v=3"></script>
 <script src="sim/inspector.js?v=1"></script>
-<script src="progress.js?v=1"></script>
+<script src="progress.js?v=2"></script>
 <script src="art/people.js?v=2"></script>
 <script src="art/cabins.js?v=1"></script>
 <script src="art/interiors.js?v=3"></script>
@@ -274,9 +277,9 @@
 <script src="ui/jokes.js?v=3"></script>
 <script src="ui/results.js?v=1"></script>
 <script src="ui/museum.js?v=1"></script>
-<script src="ui/screens.js?v=2"></script>
+<script src="ui/screens.js?v=3"></script>
 <script src="ui/sounds.js?v=2"></script>
 <script src="ui/fireworks.js?v=1"></script>
-<script src="game.js?v=3"></script>
+<script src="game.js?v=4"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@ Developer/agent spec for the `lift-logic` project. Repo-wide conventions live in
 
 ## What is built
 
-- **Done:** the simulation and the VM with every block of chapters 1–8 (lists and `for each`, own blocks with inputs, the weather and the building's messages, tickets, zones and express trips too; the palette shows a block from its chapter on); lifts of a zone (a bank) that stop only at their floors, people who change lifts on the way; the tap-first editor on a phone (palette sheet, select / move / copy / wrap / delete, drag from the palette and inside the canvas, long press moves one block, slots with the number pad, dropdowns, conditions, "use a block", undo / redo, pinch and pan, copy / paste with the keyboard, variables and lists "for this lift only" or "for all lifts"), the Text view; the building view with the HUD, several lifts side by side, the plan flags, monitors, floating words, person and cabin cards, the Lift's eyes, a lift out of order, the minimap of a tall building; the run bar (run, pause, step, speeds, skip, resize); the start menu, the buildings map, the building screen, the mission card with Grandpa Gears' concept card and the new blocks, the pause menu; the results with stars, the Engineer's record and 🏅, the wait chart, the Inspector's notes with "Show me", the comic lines, the Museum card, the newspaper after an exam; hints 1–3 and the guided finger of the first missions; the Lift Museum (cards and concept cards); sounds and the lift music; the cheats; English, Russian and Swedish.
+- **Done:** the simulation and the VM with every block of chapters 1–8 (lists and `for each`, own blocks with inputs, the weather and the building's messages, tickets, zones and express trips too; the palette shows a block from its chapter on); lifts of a zone (a bank) that stop only at their floors, people who change lifts on the way; the tap-first editor on a phone (palette sheet, select / move / copy / wrap / delete, drag from the palette and inside the canvas, long press moves one block, slots with the number pad, dropdowns, conditions, "use a block", undo / redo, pinch and pan, copy / paste with the keyboard, variables and lists "for this lift only" or "for all lifts"), the Text view; the building view with the HUD, several lifts side by side, the plan flags, monitors, floating words, person and cabin cards, the Lift's eyes, a lift out of order, the minimap of a tall building; the run bar (run, pause, step, speeds, skip, resize); the start menu, the buildings map, the building screen, the mission card with Grandpa Gears' concept card and the new blocks, the pause menu; the results with stars, the Engineer's record and 🏅, the wait chart, the Inspector's notes with "Show me", the comic lines, the Museum card, the newspaper after an exam; hints 1–3 and the guided finger of the first missions; the Lift Museum (cards and concept cards); sounds and the lift music; the cheats; English, Russian and Swedish; the cloud save of the progress with a Google sign-in.
 - **Missions:** chapters 1–8 with reference solutions in `data/solutions/`, balanced by the checker (the reference gets ★★★ on Easy and Medium in every mission; the previous chapter's exam solution never gets ★★★; a fix mission's buggy program never gets ★★★).
 - **Not yet (later sessions):** chapters 9–10 and the World Tour, double-deck cars, destination dispatch, Endless, Daily challenge, Sandbox, sharing programs (`core/share.js`), Wardrobe, Achievements, "Different day", saved named versions of a program, the start screen's demo lift.
 
@@ -464,7 +464,18 @@ Every mission has a reference solution in `data/solutions/` (also used by Hint 3
 
 ## Saved in the browser
 
-`liftLogic.progress.v1` (stars per mission per difficulty, hint 3 used, medals, achievements, museum cards, the wardrobe), `liftLogic.programs.v1` (each mission's last program, up to 5 named versions per mission, the sandbox programs), `liftLogic.records.v1` (Endless, daily, sandbox bests), `liftLogic.settings.v1` (difficulty, speed, wardrobe choice, split position), `liftLogic.sound`, `liftLogic.music`, `liftLogic.lang`, `liftLogic.difficulty`. A run itself is not saved. A program larger than `PROGRAM_MAX_BLOCKS` (400) is refused with a message.
+`liftLogic.progress.v1` (stars per mission per difficulty, hint 3 used, medals, achievements, museum cards, the wardrobe), `liftLogic.programs.v1` (each mission's last program, up to 5 named versions per mission, the sandbox programs), `liftLogic.records.v1` (Endless, daily, sandbox bests), `liftLogic.settings.v1` (difficulty, speed, wardrobe choice, split position), `liftLogic.sound`, `liftLogic.music`, `liftLogic.lang`, `liftLogic.difficulty`. A run itself is not saved. Each mission program's save time: `liftLogic.programTimes.v1` (for the cloud's merge). The cloud save: `liftLogic.cloud` (the Google account the progress syncs with) and `liftLogic.auth` (its session, kept by supabase-js). A program larger than `PROGRAM_MAX_BLOCKS` (400) is refused with a message.
+
+## Cloud save
+
+Optional, on top of `localStorage`: signed in with Google, the progress is kept in the cloud, so the same player goes on with the same stars and programs on a phone and a computer. Without signing in nothing changes and no network call is made. Built like `world-aviation`'s (Supabase Auth + Postgres), as plain scripts, but simpler: one account per device, since the game has one player's progress, not careers.
+
+- **Where it lives.** The Supabase project `world-aviation` uses: its URL and publishable key are in `core/cloud.js` (`CLOUD_URL`, `CLOUD_KEY`), not secrets — what guards the rows is the table's row-level security. `supabase/schema.sql` (run in the Supabase SQL editor; running it again is safe) makes `liftlogic_progress (user_id → auth.users, data jsonb, updated_at)`, a row per account, with policies prefixed `liftlogic:` letting a signed-in user read, insert, update and delete only their own row. The page's address must be in the project's Auth → URL Configuration → Redirect URLs (`https://gray0072.github.io/ivan/lift-logic/`, and `http://localhost:…/lift-logic/` for testing).
+- **The library.** `lib/supabase.min.js` is supabase-js 2.109 (UMD, global `supabase`), vendored, the same file as `world-aviation`'s. The sign-in uses the **PKCE** flow: Google's answer comes back as `?code=…`, which the library swaps for the session and strips from the address. The session is kept under `liftLogic.auth` (never the library's default `sb-<project>-auth-token`, which the `swedish` app on the same origin uses). From `file://` or without the library the game has no cloud and shows none of it.
+- **What travels** (`Progress.snapshot`): `liftLogic.progress.v1`, `programs.v1` and `programTimes.v1`. The settings, the difficulty, the sound, the music and the language stay this device's.
+- **Sync** (`Cloud.syncNow`): the account's copy is read, merged into the progress here, and the result is written back — on the sign-in, at start when signed in, on every return to the foreground, 10 s after the last change (`CLOUD_PUSH_MS`: a finished run, a program edited, the last mission played) and when the page goes to the background. A failed request never writes over the cloud's copy; the status says so and the next change or return tries again. New progress from the cloud redraws the start menu, the map, a building or the Museum if one is open.
+- **The merge** (`Progress.merge`): what only ever grows is kept from both — the stars per mission and difficulty (the larger), the medals, the Museum and concept cards, the newspapers, hint 3 used, the missions passed by the cheat, everything open (`Shift+9`); the last mission played is the later one (`lastAt`); each mission's program is the one saved last (`programTimes`). Merging the same copy again changes nothing.
+- **On screen** (`ui/screens.js`): the start menu's account row, under the Lift Museum: **Sign in with Google** with a line on what it is for; signed in, the sync's status (a dot: green synced, blue syncing, amber failed or signed out), **Sign out** and the account's e-mail. Sign out sends the last changes first and keeps the progress on this device.
 
 ## Languages
 
@@ -504,7 +515,11 @@ lift-logic/
 ├── styles.css
 ├── constants.js        tuning: sim step, doors, boarding, energy, patience, VM limits, editor sizes, difficulty table
 ├── game.js             main loop and the flow (start, buildings, mission card, editor, run, results, pause, cheats)
-├── progress.js         stars, medals, achievements, museum cards, wardrobe, unlocks
+├── progress.js         stars, medals, achievements, museum cards, wardrobe, unlocks; the cloud copy's snapshot and merge
+├── lib/
+│   └── supabase.min.js supabase-js 2.109 (UMD), vendored: the cloud save
+├── supabase/
+│   └── schema.sql      the cloud save's table (a row per account) and its row-level security, run in Supabase
 ├── data/
 │   ├── blocks.js       every block: category, shape, template, slots, the chapter that opens it, the text view; blockDef and the own blocks (define / call)
 │   ├── buildings.js    the buildings: floors, groups of lifts, interiors, client, colours
@@ -522,6 +537,7 @@ lift-logic/
 │   ├── audio.js        Web Audio engine, sound recipes, the muzak loops
 │   ├── share.js        program ⇄ share code (later)
 │   ├── cursor.js, icons.js, update.js
+│   ├── cloud.js        the cloud save: a Google sign-in (Supabase), sync and merge of the progress
 ├── sim/                no drawing, no DOM, no sound — runs in Node
 │   ├── state.js        the run's shared state
 │   ├── building.js     floors, hall calls, groups, zones
@@ -587,10 +603,10 @@ Prefix for storage and events: `liftLogic.`; manifest `short_name`: "Lift Logic"
 - **Hint 3** caps a mission at ★★ until ★★★ is earned with an own program.
 - **Floor 1 is the ground floor;** basements are −1, −2…
 - **Music** is on by default; the results are lively, with comic lines and the building's newspaper.
-- **Pro mode, cloud save, online leaderboards:** later, see "Later".
+- **Pro mode, online leaderboards:** later, see "Later".
+- **Cloud save:** one Google account per device (the progress is one player's), merged with the account's copy; see "Cloud save".
 
 ## Later
 
 - **Pro mode:** edit the Text view as real JavaScript (run sandboxed, with the same sensors and commands), for adults.
-- **Cloud save of the progress** with a Google sign-in, like `world-aviation`: Supabase Auth (PKCE) + Postgres on the shared project, `lib/supabase.min.js` vendored, a table `liftlogic_progress` (a row per account: progress, programs, records) with row-level security and policies prefixed `liftlogic_`, its schema in `supabase/schema.sql`; the session kept under `liftLogic.auth.<user id>`; without signing in nothing changes and no network call is made.
 - **Online leaderboards** of the Engineer's challenges, Endless and the daily challenge, on the same project (`liftlogic_scores`).

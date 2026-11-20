@@ -1316,5 +1316,12 @@ const TEXT_RU = {
   "Does \"{b}\" need inputs?": "Нужны ли «{b}» входы?",
   "Name of the input": "Имя входа",
   "There is already a block \"{b}\".": "Блок «{b}» уже есть.",
-  "my block": "мой блок"
+  "my block": "мой блок",
+  "Sign in with Google": "Войти через Google",
+  "Sign out": "Выйти",
+  "Syncing…": "Синхронизация…",
+  "Synced": "Синхронизировано",
+  "Sync failed — it tries again later": "Синхронизация не удалась — попробую позже",
+  "Signed out — sign in again to sync": "Вход сброшен — войдите снова для синхронизации",
+  "Keep your stars and programs in the cloud and play on any device.": "Храни звёзды и программы в облаке и играй на любом устройстве."
 };

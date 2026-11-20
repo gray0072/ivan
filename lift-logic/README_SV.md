@@ -60,3 +60,7 @@ Välj den på startskärmen, i menyn eller på resultatskärmen; den sparas. Stj
 ## Ljud och musik
 
 Alla ljud gör spelet själv: ankomstsignalen (en gång uppåt, två gånger neråt — som riktiga hissar), dörrarna, motorns brum, knapparna, ett "+1" för varje ankomst, ett muttrande när någon tar trapporna, överlastsummern, stjärnklingande och fanfarer. Hissmusiken spelar lugnt medan du bygger och livligare under en körning. **Ljud** och **Musik** kan stängas av var för sig på startskärmen och i menyn; valet sparas.
+
+## Framsteg och molnet
+
+Dina stjärnor, kort och program sparas i webbläsaren. För att fortsätta med samma framsteg på en telefon och en dator, tryck **Logga in med Google** på startskärmen: framstegen sparas då i molnet och synkas — när spelet startar, när du kommer tillbaka till det och några sekunder efter varje ändring. Framsteg från två enheter slås ihop: stjärnorna, medaljerna och korten från båda behålls, och varje uppdrag behåller programmet du ändrade senast. **Logga ut** lämnar framstegen på den här enheten. Molnsparningen fungerar i onlineversionen, inte från en fil som öppnats på datorn.

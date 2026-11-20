@@ -60,3 +60,7 @@ Pick it on the start screen, in the pause menu or on the results screen; it is r
 ## Sound and music
 
 All sounds are made by the game itself: the arrival chime (once going up, twice going down — like real lifts), the doors, the motor's hum, the buttons, a "+1" for every arrival, a grumble when someone takes the stairs, the overload buzzer, star clinks and fanfares. The lift music plays softly while you build and livelier during a run. **Sound** and **Music** can each be switched off on the start screen and in the menu; the choice is remembered.
+
+## Progress and the cloud
+
+Your stars, cards and programs are saved in the browser. To go on with the same progress on a phone and a computer, press **Sign in with Google** on the start screen: your progress is then kept in the cloud and synced — when the game starts, when you come back to it and a few seconds after every change. Progress made on two devices is merged: the stars, medals and cards of both are kept, and each mission keeps the program you changed last. **Sign out** leaves the progress on this device. The cloud save works on the online version, not from a file opened on your computer.

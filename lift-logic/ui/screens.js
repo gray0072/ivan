@@ -1,7 +1,7 @@
 'use strict';
 
-// Lift Logic — the screens over the game: the start menu (Continue, Buildings, the Lift Museum, difficulty,
-// sound, music, how to play), the campaign map of buildings, a building's path of missions, the mission
+// Lift Logic — the screens over the game: the start menu (Continue, Buildings, the Lift Museum, the cloud
+// save's account row, difficulty, sound, music, how to play), the campaign map of buildings, a building's path of missions, the mission
 // card (the client's lines, the goal, the stars, the new blocks, Grandpa Gears' card), the pause menu,
 // the results' panel and the newspaper. game.js wires their buttons to the flow; arrow keys move the focus
 // between the visible buttons, Space / Enter press the focused or the default one.
@@ -80,7 +80,31 @@ const Screens = (() => {
     $('continueName').textContent = n ? (n.id + ' · ' + tr(n.name)) : '';
     $('totalStars').textContent = '★ ' + Progress.total();
     Art.logo($('logo'));
+    renderAccount();
   }
+  // the cloud save (core/cloud.js): Sign in with Google, or how the sync goes, the account and Sign out
+  function renderAccount() {
+    const row = $('accountRow'), st = Cloud.status;
+    row.hidden = st === 'unavailable';
+    if (row.hidden) return;
+    const signIn = '<button class="btn small cloudIn" data-cloud="in">' + GOOGLE_G_SVG + escapeHtml(tr('Sign in with Google')) + '</button>';
+    if (st === 'off') {
+      row.innerHTML = signIn + '<p class="fine">' + escapeHtml(tr('Keep your stars and programs in the cloud and play on any device.')) + '</p>';
+      return;
+    }
+    const text = { syncing: tr('Syncing…'), synced: tr('Synced'), error: tr('Sync failed — it tries again later'),
+      signedOut: tr('Signed out — sign in again to sync') }[st];
+    row.innerHTML = '<span class="cloudState ' + st + '">' + escapeHtml(text) + '</span>' +
+      (st === 'signedOut' ? signIn : '<button class="btn small secondary" data-cloud="out">' + escapeHtml(tr('Sign out')) + '</button>') +
+      (Cloud.email ? '<p class="fine">☁ ' + escapeHtml(Cloud.email) + '</p>' : '');
+  }
+  $('accountRow').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-cloud]');
+    if (!b) return;
+    Sfx.tap();
+    if (b.dataset.cloud === 'in') Cloud.signIn();
+    else { Cloud.signOut(); renderAccount(); }
+  });
   $('continueBtn').addEventListener('click', () => { ensureAudio(); const n = Progress.next(); if (n) openBrief(n); });
   $('mapBtn').addEventListener('click', () => { ensureAudio(); show('map'); });
   $('museumBtn').addEventListener('click', () => { ensureAudio(); show('museum'); });
@@ -222,8 +246,15 @@ const Screens = (() => {
     if (d) d.click();
   }
 
-  return { show, hide, on, openBrief, renderMenu, moveFocus, pressDefault, diffRows,
+  return { show, hide, on, openBrief, renderMenu, renderAccount, moveFocus, pressDefault, diffRows,
     get current() { return current; }, get difficulty() { return difficulty; }, get brief() { return brief; }, set buildingId(v) { buildingId = v; } };
 })();
+
+// Google's "G", on the sign-in button
+const GOOGLE_G_SVG = '<svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true">' +
+  '<path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/>' +
+  '<path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.5 5.8c4.4-4 6.8-10 6.8-17.3z"/>' +
+  '<path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6.1z"/>' +
+  '<path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
 
 const KIND_NAMES = { build: 'Build', fill: 'Fill the gaps', fix: 'Fix the bug', tiny: 'Tiny program', beat: 'Beat the number', exam: 'Exam' };

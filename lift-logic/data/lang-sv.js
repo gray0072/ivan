@@ -1316,5 +1316,12 @@ const TEXT_SV = {
   "Does \"{b}\" need inputs?": "Behöver ”{b}” indata?",
   "Name of the input": "Namn på indatan",
   "There is already a block \"{b}\".": "Det finns redan ett block ”{b}”.",
-  "my block": "mitt block"
+  "my block": "mitt block",
+  "Sign in with Google": "Logga in med Google",
+  "Sign out": "Logga ut",
+  "Syncing…": "Synkar…",
+  "Synced": "Synkad",
+  "Sync failed — it tries again later": "Synken misslyckades — försöker igen senare",
+  "Signed out — sign in again to sync": "Utloggad — logga in igen för att synka",
+  "Keep your stars and programs in the cloud and play on any device.": "Spara dina stjärnor och program i molnet och spela på vilken enhet som helst."
 };

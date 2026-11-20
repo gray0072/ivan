@@ -2,8 +2,9 @@
 
 // Lift Logic — the player's progress: stars per mission per difficulty, hint 3 used, the Engineer's medals,
 // the Museum cards and concept cards won, the last mission played, and which buildings and missions are
-// open; plus each mission's last program and the settings (speed, the split of the screen). Saved in the
-// browser under liftLogic.progress.v1 / programs.v1 / settings.v1. Used by game.js and the screens.
+// open; plus each mission's last program (and when it was saved) and the settings (speed, the split of
+// the screen). Saved in the browser under liftLogic.progress.v1 / programs.v1 / programTimes.v1 /
+// settings.v1. Used by game.js, the screens and core/cloud.js (snapshot, merge, onSave).
 
 const Progress = (() => {
   let p = null;
@@ -17,7 +18,8 @@ const Progress = (() => {
     p.papers = p.papers || {};
     return p;
   }
-  function save() { Store.setJson(KEYS.progress, p); }
+  let onSave = null;   // core/cloud.js: something changed, send it to the cloud a little later
+  function save() { Store.setJson(KEYS.progress, p); if (onSave) onSave(); }
   load();
 
   function stars(id, d) { return ((p.stars[id] || {})[d]) || 0; }
@@ -63,7 +65,7 @@ const Progress = (() => {
   }
   function usedHint3(id, d) { return !!((p.hint3[id] || {})[d]); }
   function markHint3(id, d) { (p.hint3[id] = p.hint3[id] || {})[d] = true; save(); }
-  function setLast(id) { p.last = id; save(); }
+  function setLast(id) { p.last = id; p.lastAt = Date.now(); save(); }
   function openAll() { p.open = true; save(); }
   function hasPaper(id) { return !!p.papers[id]; }
   function addPaper(id, data) { p.papers[id] = data; save(); }
@@ -74,6 +76,47 @@ const Progress = (() => {
     const all = Store.json(KEYS.programs, {});
     all[id] = prog;
     Store.setJson(KEYS.programs, all);
+    const times = Store.json(KEYS.programTimes, {});
+    times[id] = Date.now();
+    Store.setJson(KEYS.programTimes, times);
+    if (onSave) onSave();
+  }
+
+  // ---------- the cloud copy (core/cloud.js) ----------
+  // everything that travels between devices: the progress and the programs; the settings, the difficulty,
+  // the sound and the language stay this device's
+  function snapshot() {
+    return { v: 1, progress: p, programs: Store.json(KEYS.programs, {}), programTimes: Store.json(KEYS.programTimes, {}) };
+  }
+  // another device's copy merged into this one: what only ever grows is kept from both (the stars per
+  // difficulty, the larger of each; the medals, the cards, the papers, hint 3 used, the missions passed
+  // by the cheat, everything open), the last mission played is the later one, and each mission's program
+  // is the one saved last. Merging the same copy again changes nothing. Returns whether anything changed.
+  function merge(remote) {
+    if (!remote || typeof remote !== 'object') return false;
+    const before = JSON.stringify(snapshot());
+    const r = remote.progress || {};
+    for (const id in r.stars || {}) {
+      const mine = p.stars[id] = p.stars[id] || {};
+      for (const d in r.stars[id]) mine[d] = Math.max(mine[d] || 0, r.stars[id][d] || 0);
+    }
+    for (const id in r.hint3 || {}) Object.assign(p.hint3[id] = p.hint3[id] || {}, r.hint3[id]);
+    for (const k of ['medals', 'museum', 'concepts', 'cheatPassed']) {
+      for (const id in r[k] || {}) if (r[k][id]) (p[k] = p[k] || {})[id] = true;
+    }
+    for (const id in r.papers || {}) if (!p.papers[id]) p.papers[id] = r.papers[id];
+    if (r.open) p.open = true;
+    if (r.last && (!p.last || (r.lastAt || 0) > (p.lastAt || 0))) { p.last = r.last; p.lastAt = r.lastAt || 0; }
+    const progs = Store.json(KEYS.programs, {}), times = Store.json(KEYS.programTimes, {});
+    const rp = remote.programs || {}, rt = remote.programTimes || {};
+    for (const id in rp) {
+      if (rp[id] && (!progs[id] || (rt[id] || 0) > (times[id] || 0))) { progs[id] = rp[id]; times[id] = rt[id] || 0; }
+    }
+    if (JSON.stringify({ v: 1, progress: p, programs: progs, programTimes: times }) === before) return false;
+    Store.setJson(KEYS.progress, p);
+    Store.setJson(KEYS.programs, progs);
+    Store.setJson(KEYS.programTimes, times);
+    return true;
   }
 
   // ---------- settings ----------
@@ -81,5 +124,6 @@ const Progress = (() => {
   function saveSettings(s) { Store.setJson(KEYS.settings, s); }
 
   return { load, stars, best, passed, buildingOpen, missionOpen, next, total, buildingStars, record, usedHint3, markHint3,
-    setLast, openAll, cheatPass, program, saveProgram, settings, saveSettings, hasPaper, addPaper, get data() { return p; } };
+    setLast, openAll, cheatPass, program, saveProgram, settings, saveSettings, hasPaper, addPaper, snapshot, merge,
+    set onSave(fn) { onSave = fn; }, get data() { return p; } };
 })();

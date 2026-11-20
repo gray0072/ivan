@@ -201,6 +201,17 @@ button { font-family: inherit; touch-action: manipulation; }
 .btn.small { min-height: 32px; font-size: 13px; padding: 0 12px; }
 .btn.toggle { min-height: 34px; padding: 0 12px; font-size: 13px; background: transparent; }
 .btn.toggle.on, .btn.on { background: #ffb300; border-color: #ffb300; color: #1b2733; }
+
+/* the start menu's account row: the cloud copy of the progress (core/cloud.js) */
+.account { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 10px; margin: 12px auto 0; max-width: 420px; }
+.account .fine { flex-basis: 100%; margin: 0; }
+.btn.cloudIn { display: inline-flex; align-items: center; gap: 8px; }
+.gLogo { width: 16px; height: 16px; flex: none; }
+.cloudState { display: inline-flex; align-items: center; gap: 7px; color: #c3d1de; font-size: 13px; }
+.cloudState::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #6f8193; flex: none; }
+.cloudState.synced::before { background: #7de08a; }
+.cloudState.syncing::before { background: #6fb1e8; }
+.cloudState.error::before, .cloudState.signedOut::before { background: #f0c36a; }
 .btn.key { background: #2b3f54; }
 #continueBtn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 6px 20px; }
 #continueBtn small { font-size: 12px; font-weight: 600; opacity: 0.8; }

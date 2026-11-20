@@ -49,7 +49,7 @@ Turn-based artillery game in the genre of Worms (original simple graphics): two 
 
 ### lift-logic
 
-Programming puzzle game: the player is the brain of a lift and builds its program from Scratch-like blocks (own look, a tap-first editor for phones), then watches a cut-away building live by it — people press the hall and cabin buttons, ride, get impatient and take the stairs; the program only reads what a real lift senses. A deterministic simulation and a block VM (events, threads, the lift's plan); missions with three stars, hints in three steps, an Inspector with "Show me" replays, the Engineer's record, comic lines and a Lift Museum of checked facts; the first chapters are Grandma's House, Maple School, the Grand Sunrise Hotel, St. Hope Hospital, the Glass Tower (several lifts running one program), the Mega Mall, the Eiffel Tower (own blocks with inputs, changing lifts) and the Empire State Building (zones, express trips, SCAN) — 72 missions, more buildings are planned up to a space elevator; playable in English, Russian or Swedish. Full spec: [`lift-logic/SPEC.md`](lift-logic/SPEC.md).
+Programming puzzle game: the player is the brain of a lift and builds its program from Scratch-like blocks (own look, a tap-first editor for phones), then watches a cut-away building live by it — people press the hall and cabin buttons, ride, get impatient and take the stairs; the program only reads what a real lift senses. A deterministic simulation and a block VM (events, threads, the lift's plan); missions with three stars, hints in three steps, an Inspector with "Show me" replays, the Engineer's record, comic lines and a Lift Museum of checked facts; the first chapters are Grandma's House, Maple School, the Grand Sunrise Hotel, St. Hope Hospital, the Glass Tower (several lifts running one program), the Mega Mall, the Eiffel Tower (own blocks with inputs, changing lifts) and the Empire State Building (zones, express trips, SCAN) — 72 missions, more buildings are planned up to a space elevator; playable in English, Russian or Swedish, the progress synced through Google. Full spec: [`lift-logic/SPEC.md`](lift-logic/SPEC.md).
 
 ## Project structure
 
@@ -189,9 +189,11 @@ Programming puzzle game: the player is the brain of a lift and builds its progra
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html            # markup only, links versioned CSS/JS
 │   ├── styles.css
-│   ├── constants.js, game.js, progress.js # tuning, the flow (menu, buildings, mission card, editor, runs, results, pause, cheats), stars and unlocks
+│   ├── constants.js, game.js, progress.js # tuning, the flow (menu, buildings, mission card, editor, runs, results, pause, cheats), stars and unlocks (and the cloud copy's merge)
+│   ├── lib/                  # supabase.min.js — supabase-js (the cloud save), vendored
+│   ├── supabase/             # schema.sql — the cloud save's table (liftlogic_progress, a row per account), run in Supabase
 │   ├── data/                 # blocks (the language), buildings, lifts, people, missions/ and solutions/ (per building), facts (Museum, concept cards), jokes, lang-ru / lang-sv
-│   ├── core/                 # i18n, utils, events, storage, audio (sounds and the lift music), cursor, update, icons
+│   ├── core/                 # i18n, utils, events, storage, audio (sounds and the lift music), cursor, update, icons, cloud (the cloud save: a Google sign-in, sync)
 │   ├── sim/                  # state, building (hall calls), lift (motion, doors, plan), people, sensors, program (blocks tree, text notation, Text view), vm (threads, events), run, stats (stars), inspector
 │   ├── art/                  # people, cabins, interiors, buildings (silhouettes, logo), flag-gb / flag-ru / flag-se.svg
 │   ├── render/               # view (camera, layout, taps), building (the cut-away building)
