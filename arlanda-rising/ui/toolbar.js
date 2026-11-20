@@ -1,0 +1,84 @@
+'use strict';
+
+// Arlanda Rising — the bar at the bottom of the game view: the check-in desks open (− / +), the ploughs to send when
+// there is snow, the runway direction when the wind is calm (01 lands over Märsta, 19 takes off over it), and the
+// small builds of the era (a remote stand, a fuel truck, a plough, a desk; in plan time with the airport open also
+// a kiosk, a café and car parks). A buy asks for a second tap with its price first. Used by game.js.
+
+const BUILD_ICONS = { stand: '🅿️', fuelTruck: '⛽', plough: '🚜', desk: '🧳', kiosk: '🏪', cafe: '☕', parkingSmall: '🚗', parkingBig: '🚙' };
+
+const Toolbar = (() => {
+  const box = document.getElementById('toolbar');
+  let key = '', armed = null, armedAt = 0;
+
+  function buys() {
+    const m = Missions.def(), hands = S.mission.hands, y = Calendar.year(), out = [];
+    const ok = (k) => BUILDINGS[k] && BUILDINGS[k].small && (!BUILDINGS[k].from || y >= BUILDINGS[k].from);
+    if (S.ops) {
+      if (S.airport.stands.length) out.push('stand');
+      if (hands.indexOf('fuel') >= 0) out.push('fuelTruck');
+      if (hands.indexOf('plough') >= 0 || Airport.ploughs() > 0) out.push('plough');
+      if (Airport.has('terminal')) out.push('desk');
+    } else if (S.plan && S.airport.open) {
+      out.push('kiosk', 'cafe', 'parkingSmall', 'parkingBig', 'desk', 'stand');
+    }
+    void m;
+    return out.filter(ok);
+  }
+
+  function render() {
+    if (!S || !S.mission || (!S.ops && !S.plan)) { box.hidden = true; key = ''; return; }
+    const parts = [];
+    if (S.ops) {
+      if (S.airport.desks > 0) parts.push(['desks', S.ops.desksOpen, S.airport.desks]);
+      for (const id of Runways.surfaces()) {
+        const s = Runways.surface(id);
+        if (s.snow >= 0.8 || s.plough) parts.push(['plough', id, !!s.plough || S.ops.ploughQueue.indexOf(id) >= 0, Airport.ploughs() > 0]);
+      }
+      const rw = Runways.main();
+      if (rw) { const w = Weather.now(); parts.push(['dir', Runways.direction(rw), w.wind < CALM_WIND]); }
+    }
+    const b = buys();
+    const k = JSON.stringify(parts) + b.join() + armed + I18N.lang + (Settings.short() ? 1 : 0) + Math.floor(S.money / 1e5);
+    box.hidden = false;
+    if (k === key) return;
+    key = k;
+    let html = '';
+    for (const p of parts) {
+      if (p[0] === 'desks') html += '<div class="tgroup"><span class="tl">🧳 ' + Text.esc(tr('Desks open')) + ' <b>' + p[1] + '/' + p[2] + '</b></span>' +
+        '<button class="tb small" data-act="deskMinus"' + (p[1] <= 0 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="deskPlus"' + (p[1] >= p[2] ? ' disabled' : '') + '>+</button></div>';
+      else if (p[0] === 'plough') html += '<button class="tb' + (p[2] ? ' busy' : '') + '" data-act="plough" data-s="' + p[1] + '"' + (p[2] || !p[3] ? ' disabled' : '') + '>🚜 ' +
+        Text.esc(p[2] ? tr('Ploughing') : tr('Plough')) + '<small>' + Text.esc(Text.surface(p[1])) + '</small></button>';
+      else if (p[0] === 'dir') html += '<div class="tgroup"><span class="tl" title="' + Text.esc(p[2] ? tr('Calm wind: you choose the direction') : tr('Into the wind')) + '">🛫 ' + Text.esc(tr('Runway')) + '</span>' +
+        ['01', '19'].map((d) => '<button class="tb small' + (p[1] === d ? ' on' : '') + '" data-act="dir" data-d="' + d + '"' + (p[2] ? '' : ' disabled') + '>' + d + '</button>').join('') + '</div>';
+    }
+    for (const kind of b) {
+      const bd = BUILDINGS[kind], conf = armed === kind;
+      html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (S.money < bd.price && !conf ? ' data-poor="1"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
+        Text.esc(conf ? tr('Buy?') : tr(bd.name)) + '<small>' + sek(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '') + '</small></button>';
+    }
+    box.innerHTML = html;
+  }
+
+  box.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn || btn.disabled || !S || !S.mission) return;
+    Sfx.play('click');
+    const act = btn.dataset.act;
+    if (act === 'deskPlus') Actions.desks(S.ops.desksOpen + 1);
+    else if (act === 'deskMinus') Actions.desks(S.ops.desksOpen - 1);
+    else if (act === 'plough') Actions.plough(btn.dataset.s);
+    else if (act === 'dir') Actions.dir(btn.dataset.d);
+    else if (btn.dataset.buy) {
+      const kind = btn.dataset.buy;
+      if (armed === kind && performance.now() - armedAt < BUY_CONFIRM_MS) {
+        armed = null;
+        if (Actions.buy(kind)) { Game.banner(tr('Bought: {what}', { what: tr(BUILDINGS[kind].name) })); Sfx.play('coins'); }
+      } else { armed = kind; armedAt = performance.now(); setTimeout(() => { if (armed === kind) { armed = null; key = ''; } }, BUY_CONFIRM_MS); }
+    }
+    Game.acted();
+    key = '';
+  });
+
+  return { render, reset() { key = ''; armed = null; } };
+})();

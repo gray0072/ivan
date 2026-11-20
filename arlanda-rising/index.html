@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Run Stockholm Arlanda from the forest of 1958: build the runway, the tower and the terminal, pick stands, fuel the jets, plough the snow and make the airport pay.">
+<title>Arlanda Rising</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
+<link rel="manifest" href="manifest.webmanifest?v=1">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
+<meta name="theme-color" content="#203445">
+<link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+<canvas id="map"></canvas>
+
+<div id="hud" hidden>
+  <div class="hudRow">
+    <button class="chip money" id="moneyChip" data-i18n-title="Money"><span class="ico">💰</span><b id="money"></b></button>
+    <div class="chip"><span class="ico">📅</span><b id="date"></b></div>
+    <div class="chip" id="wxChip"><b id="wx"></b></div>
+  </div>
+  <div class="hudRow" id="meters"></div>
+  <div class="hudRow right">
+    <div class="speeds" role="group">
+      <button data-speed="0" data-i18n-title="Stop the time (Space)">⏸</button>
+      <button data-speed="1" data-i18n-title="Normal speed">▶</button>
+      <button data-speed="2" data-i18n-title="Fast">▶▶</button>
+      <button data-speed="3" data-i18n-title="Fastest">▶▶▶</button>
+    </div>
+    <button class="round" id="skipBtn" data-i18n-title="Skip to the next task (N)">⏭️</button>
+    <button class="round" id="pauseBtn" data-i18n-title="Pause (Esc)">☰</button>
+  </div>
+</div>
+
+<div id="goalsBox" hidden></div>
+<div id="tray" hidden></div>
+<div id="planPanel" hidden></div>
+<div id="toolbar" hidden></div>
+<div id="flightCard" class="card" hidden></div>
+<div id="decision" class="card" hidden></div>
+<div id="hint" hidden></div>
+<div id="finger" hidden>👆</div>
+<div id="banner"></div>
+
+<div id="overlay" hidden>
+  <div id="menu" class="panel" hidden></div>
+  <div id="help" class="panel" hidden></div>
+  <div id="settings" class="panel" hidden></div>
+  <div id="confirm" class="panel" hidden></div>
+  <div id="timeline" class="panel wide" hidden></div>
+  <div id="missionCard" class="panel" hidden></div>
+  <div id="stageIntro" class="panel" hidden></div>
+  <div id="stageCard" class="panel" hidden></div>
+  <div id="results" class="panel" hidden></div>
+  <div id="pause" class="panel" hidden></div>
+  <div id="office" class="panel wide" hidden></div>
+</div>
+
+<script src="data/icons.js?v=1"></script>
+<script src="core/icons.js?v=1"></script>
+<script src="constants.js?v=1"></script>
+<script src="data/aircraft.js?v=1"></script>
+<script src="data/airlines.js?v=1"></script>
+<script src="data/buildings.js?v=1"></script>
+<script src="data/masterplan.js?v=1"></script>
+<script src="data/layout.js?v=1"></script>
+<script src="data/domains.js?v=1"></script>
+<script src="data/missions/missions.js?v=1"></script>
+<script src="data/missions/ch1.js?v=1"></script>
+<script src="data/strategies/strategies.js?v=1"></script>
+<script src="data/strategies/ch1.js?v=1"></script>
+<script src="data/lang-ru.js?v=1"></script>
+<script src="data/lang-sv.js?v=1"></script>
+<script src="core/utils.js?v=1"></script>
+<script src="core/events.js?v=1"></script>
+<script src="core/storage.js?v=1"></script>
+<script src="core/i18n.js?v=1"></script>
+<script src="core/settings.js?v=1"></script>
+<script src="core/audio.js?v=1"></script>
+<script src="core/input.js?v=1"></script>
+<script src="core/cursor.js?v=1"></script>
+<script src="core/update.js?v=1"></script>
+<script src="sim/state.js?v=1"></script>
+<script src="sim/calendar.js?v=1"></script>
+<script src="sim/weather.js?v=1"></script>
+<script src="sim/finance.js?v=1"></script>
+<script src="sim/meters.js?v=1"></script>
+<script src="sim/airport.js?v=1"></script>
+<script src="sim/stands.js?v=1"></script>
+<script src="sim/schedule.js?v=1"></script>
+<script src="sim/runways.js?v=1"></script>
+<script src="sim/passengers.js?v=1"></script>
+<script src="sim/turnaround.js?v=1"></script>
+<script src="sim/flights.js?v=1"></script>
+<script src="sim/tasks.js?v=1"></script>
+<script src="sim/construction.js?v=1"></script>
+<script src="sim/summary.js?v=1"></script>
+<script src="sim/plan.js?v=1"></script>
+<script src="sim/ops.js?v=1"></script>
+<script src="sim/goals.js?v=1"></script>
+<script src="sim/missions.js?v=1"></script>
+<script src="sim/actions.js?v=1"></script>
+<script src="sim/sim.js?v=1"></script>
+<script src="sim/strategy.js?v=1"></script>
+<script src="sim/cheats.js?v=1"></script>
+<script src="progress.js?v=1"></script>
+<script src="art/emblems.js?v=1"></script>
+<script src="render/palette.js?v=1"></script>
+<script src="render/iso.js?v=1"></script>
+<script src="render/ground.js?v=1"></script>
+<script src="render/airport.js?v=1"></script>
+<script src="render/aircraft.js?v=1"></script>
+<script src="render/traffic.js?v=1"></script>
+<script src="render/sky.js?v=1"></script>
+<script src="render/map.js?v=1"></script>
+<script src="ui/text.js?v=1"></script>
+<script src="ui/screens.js?v=1"></script>
+<script src="ui/hud.js?v=1"></script>
+<script src="ui/tray.js?v=1"></script>
+<script src="ui/toolbar.js?v=1"></script>
+<script src="ui/plan.js?v=1"></script>
+<script src="ui/cards.js?v=1"></script>
+<script src="ui/timeline.js?v=1"></script>
+<script src="ui/missioncard.js?v=1"></script>
+<script src="ui/results.js?v=1"></script>
+<script src="ui/office.js?v=1"></script>
+<script src="ui/hints.js?v=1"></script>
+<script src="ui/sounds.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body>
+</html>

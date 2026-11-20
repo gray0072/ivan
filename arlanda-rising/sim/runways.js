@@ -83,6 +83,7 @@ const Runways = {
     const kind = id === 'apron' ? 'apron' : 'runway';
     const dur = PLOUGH_MIN[kind] * (kind === 'apron' ? 1 : Math.max(1, PLOUGH_CONVOY / Airport.ploughs()));
     s.plough = S.clock + dur;
+    s.ploughFrom = S.clock;           // for the map: where the convoy is
     if (kind === 'runway') S.ops.convoy = s.plough;
     S.mission.st.ploughRuns++;
     Finance.book('snow', -PLOUGH_RUN_COST);

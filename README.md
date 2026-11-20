@@ -79,6 +79,15 @@
       <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Play</b></a> · <a href="lift-logic/">Source</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/screenshot.png" alt="Arlanda Rising screenshot"></a>
+      <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
+      <p>Run Stockholm Arlanda through its real history: clear the forest in 1958, build the tower and the terminal, pick stands for SAS jets, fuel them, plough the snow and make the young airport pay — an isometric airport, short autosaved missions with stars.</p>
+      <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Play</b></a> · <a href="arlanda-rising/">Source</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Highlights
@@ -121,7 +130,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── SPEC.md                  # repo-wide spec and conventions
 ├── AGENTS.md                # instructions for AI coding agents (CLAUDE.md points here)
 ├── docs/                    # the agents' rules by area: languages, mobile, PWA and offline, icons, code layout, new project, cloud save, testing
-└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
+└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic, arlanda-rising
     ├── SPEC.md              # spec of this game
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # the code, by role

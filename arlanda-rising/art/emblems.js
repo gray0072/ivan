@@ -1,0 +1,37 @@
+'use strict';
+
+// Arlanda Rising — the airlines' emblems, simplified drawings made for the game (never copied images): on the fin
+// of an aircraft on the map (render/aircraft.js) and as a small square logo on the screens (the task tray, the
+// cards). An emblem is data in the airline's livery (data/airlines.js): ['text', letters, colour]. Taken from
+// world-aviation/art/emblems.js in spirit; more kinds come with the later chapters' airlines.
+
+const Emblems = {
+  // on a fin: the canvas is already turned into the fin's plane, centred on the emblem; size in metres
+  drawOnFin(c, e, size) {
+    if (e[0] === 'text') {
+      c.fillStyle = e[2];
+      c.font = 'italic 900 ' + size + 'px Arial, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      const w = c.measureText(e[1]).width, max = size * 2.2;
+      if (w > max) c.scale(max / w, 1);
+      c.fillText(e[1], 0, 0);
+    }
+  },
+  cache: {},
+  // a square logo as an image URL: the fin's colour with the emblem
+  url(code, year) {
+    const key = code + ':' + year;
+    if (this.cache[key]) return this.cache[key];
+    const liv = liveryOf(code, year), n = 64;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = n;
+    const g = cv.getContext('2d');
+    g.beginPath(); g.moveTo(12, 0); g.arcTo(n, 0, n, n, 12); g.arcTo(n, n, 0, n, 12); g.arcTo(0, n, 0, 0, 12); g.arcTo(0, 0, n, 0, 12);
+    g.fillStyle = liv.tail; g.fill();
+    g.strokeStyle = 'rgba(0,0,0,0.2)'; g.lineWidth = 2; g.stroke();
+    // the cheatline under the emblem
+    g.fillStyle = liv.line; g.fillRect(0, n * 0.72, n, n * 0.1);
+    if (liv.emblem) { g.translate(n / 2, n * 0.42); this.drawOnFin(g, liv.emblem, n * 0.36); }
+    return (this.cache[key] = cv.toDataURL());
+  }
+};

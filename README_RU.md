@@ -79,6 +79,15 @@
       <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Играть</b></a> · <a href="lift-logic/">Исходники</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/screenshot.png" alt="Скриншот Arlanda Rising"></a>
+      <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
+      <p>Управляй стокгольмской Арландой по её настоящей истории: расчисти лес в 1958 году, построй вышку и терминал, ставь самолёты SAS на стоянки, заправляй их, чисти снег и сделай молодой аэропорт прибыльным — изометрический аэропорт, короткие миссии со звёздами, которые всё время сохраняются.</p>
+      <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Играть</b></a> · <a href="arlanda-rising/">Исходники</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Особенности
@@ -121,7 +130,7 @@ npx serve .        # или просто открой любой index.html в �
 ├── SPEC.md                  # спецификация и правила всего репозитория
 ├── AGENTS.md                # инструкции для AI-агентов (CLAUDE.md ссылается сюда)
 ├── docs/                    # правила для агентов по областям: языки, мобильные, PWA и офлайн, значки, структура кода, новый проект, облачное сохранение, тесты
-└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
+└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic, arlanda-rising
     ├── SPEC.md              # спецификация этой игры
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # код, разложенный по ролям

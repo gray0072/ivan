@@ -2,7 +2,7 @@
 
 Developer/agent spec for the `arlanda-rising` project. Repo-wide conventions live in the root `SPEC.md` and `AGENTS.md`; this file only describes this game. Keep it in sync with the code.
 
-> **Status: session 1 of the build order done — the core sim runs headless, chapter 1 is balanced; nothing to play in a browser yet.** In code: the simulation (`sim/`), its data (`data/`), the plumbing it needs (`core/utils.js`, `core/events.js`, `core/storage.js` with the mission autosave), the 11 missions of chapter 1 with their reference strategies, and `tools/missions-check.js` (see "Testing and balancing"). Not yet: `index.html` and everything drawn or shown (session 2), the translations (`core/i18n.js`, `data/lang-*.js`; the sim emits events and data, no texts of its own), the people and systems (session 3), the cloud save, the PWA files. Settled with the user: the name *Arlanda Rising* (folder `arlanda-rising`); **real airlines with their emblems and real brands** (Swedavia, Arlanda Express, Flygbussarna and the like); **isometric** graphics; **short missions** (at most about 10 minutes, split into stages, never lost when interrupted) for a child with a 40-minute phone limit; **at least 20 hours** of campaign; **one airport through the whole campaign that grows by the historical master plan** — freedom within each mission's frame, full freedom only in small things (adverts, banners, which airlines to court), the architecture and the look of the buildings follow the historical checkpoints (see "The master plan"). The game is not in the gallery, the root `SPEC.md` or the root READMEs until session 2 ships something playable (see "Build order"). The settled decisions are listed at the end ("Decisions").
+> **Status: sessions 1 and 2 of the build order done — chapter 1 is playable end to end in a browser, on a phone and a desktop, in English, Russian and Swedish; installable and offline; in the gallery.** In code: the simulation (`sim/`) and its data (`data/`), the isometric map (`render/`), the screens (`ui/`), the flow and the autosave (`game.js`, `progress.js`), the translations, the icons, the manifest and the offline worker, and `tools/missions-check.js` (see "Testing and balancing"); what session 2 built is summed up in "The game in the browser (session 2)". Not yet: the people and systems, the Ops Center, managers and unions (session 3), the cloud save (session 3), the Terminal view, brands, Finance with payback and NPV, offers (session 4), the hints 💡 1–3 and the Debrief, the Archive and the Album, Free Play and Challenge Days. Settled with the user: the name *Arlanda Rising* (folder `arlanda-rising`); **real airlines with their emblems and real brands** (Swedavia, Arlanda Express, Flygbussarna and the like); **isometric** graphics; **short missions** (at most about 10 minutes, split into stages, never lost when interrupted) for a child with a 40-minute phone limit; **at least 20 hours** of campaign; **one airport through the whole campaign that grows by the historical master plan** — freedom within each mission's frame, full freedom only in small things (adverts, banners, which airlines to court), the architecture and the look of the buildings follow the historical checkpoints (see "The master plan"). The settled decisions are listed at the end ("Decisions").
 
 ## Idea
 
@@ -39,7 +39,7 @@ The game must **look and feel like Arlanda** in every session. Before drawing or
 ### Geography and layout
 
 - **Setting:** Sigtuna municipality, about 40 km north of Stockholm. Flat land of **pine and spruce forest with birch edges, granite outcrops, small lakes** (Halmsjön lies north of runway 3), fields, red wooden farmhouses (Falu red). **Märsta** town to the south-west, the **E4** motorway to the west, the **East Coast railway** (Ostkustbanan) to the east, road 273 through the airport area.
-- **Runways** (real, final state): **runway 1 = 01L/19R, 3 300 m** (the long one); **runway 3 = 01R/19L, 2 500 m**, parallel, opened 2003, away from the terminals and reached over **taxiway bridges**, with its own remote **de-icing area** near it; **runway 2 = 08/26, 2 500 m**, the crosswind runway. Runways 1 and 3 can be used independently. High-speed exits on all but 08/26. *Exact positions, the taxiway system and the terminal area's place between them are taken from the official aerodrome chart (Swedish AIP, ESSA AD 2) before the map is drawn — not guessed.*
+- **Runways** (real, final state): **runway 1 = 01L/19R, 3 300 m** (the long one); **runway 3 = 01R/19L, 2 500 m**, parallel, opened 2003, away from the terminals and reached over **taxiway bridges**, with its own remote **de-icing area** near it; **runway 2 = 08/26, 2 500 m**, the crosswind runway. Runways 1 and 3 can be used independently. High-speed exits on all but 08/26. *Exact positions, the taxiway system and the terminal area's place between them are taken from the official aerodrome chart (Swedish AIP, ESSA AD 2) before the map is drawn — not guessed.* In code (`data/layout.js`): the three runways' real ends from OurAirports' `runways.csv` (the AIP's data): runway 1 from 59.637298° N 17.913200° E (01L) to 59.666401° N 17.923800° E (19R), 3 301 × 45 m, true heading 10°; runway 3 about 2 km east of it, runway 2 to the north-east. The map's origin is the 01L threshold, x east and y north in metres. The first apron, its stands, the first terminal and tower, the 1960s taxiways and the road are the game's drawing in the right place (east of runway 1, where the terminals still are), marked to be checked against a chart of the era; so are Halmsjön's outline and place.
 - **Terminals** (final state): **Terminal 5** (international, piers **D, E, F**; **Arlanda North / Pier F** opened 2003; the former **Terminal 4** domestic terminal joined to it airside in 2022), **Terminal 2**, **Terminal 3** (regional), **Sky City** between the terminals (shops, hotel, the station hall). The original 1960s terminal and later ones appear in their era; what became of each is checked in the sources.
 - **Towers:** the **old control tower** (1960s) and the **new tower of 2001 by Wingårdh** — a slender concrete sculpture (European Award for Excellence in Concrete 2002; heights given differently by sources, about 74 m to the balcony and about 83 m in all — check before using).
 - **Rail:** **Arlanda Express** (opened 1999, a concession) in a tunnel with underground stations (Arlanda South, Arlanda North) and **Arlanda C** for SJ, SL commuter and Upptåget trains. The trains in their real livery (check the current one).
@@ -295,6 +295,20 @@ What `sim/` does today, with its numbers in `constants.js`; later sessions add t
 - **Plan time** (`sim/plan.js`, `sim/construction.js`): a stage of a project starts when the stages before it are done and a crew is free; it is paid day by day as it progresses (a fast pace: `PACE`), at half speed in December–February unless a mod says otherwise. An optional stage has its own effect. A stage with `endEarly` ends once its goal is met and no work is still going on. The open airport's traffic runs in summary (`sim/summary.js`): flights a day from the airlines' routes, fees, shops and parking, less `SUMMARY_LOSS` for every domain still done by hand.
 - **Between missions** the calendar jumps in summary; the owner builds the historical projects a mission `requires` (free), and a campaign that comes in below zero gets the owner's loan for the gap, so it never gets stuck.
 
+## The game in the browser (session 2)
+
+What `render/`, `ui/`, `game.js` and `progress.js` do today; the screens of "Screens" not listed here come with the later sessions.
+
+- **The map** (`render/`): isometric 2:1, north to the upper right, the viewer in the south-east; one world in metres (`data/layout.js`), drawn live every frame with no cached layer but the forest's texture. The forest is a texture from afar and single pines, spruces and birches from `ZOOM_TREES` on (bare birches in winter and April); fields, lakes (ice in winter), granite, Märsta's red and white houses and its church, the E4. The site project shows as it goes: the runway strip cleared from the south, the bog drying, the apron plot cleared from the west, the road in as gravel. Runway 1 with its markings, designators, snow (swept behind the convoy), cables being laid, edge, threshold and approach lights; the parallel taxiway and its links; the apron with its stands (lit green or red while a stand is picked, red when closed) and the remote stands bought later, each paved on its own (`LAYOUT.remote`). Buildings rise by their stages: the terminal's slab and walls, the waiting room, the kiosk; the tower's foundations, shaft, cab and antenna; cranes over the stages being built. Aircraft are drawn to scale from `data/aircraft.js` with the shape of each type (`AIRCRAFT_SHAPE`: sweep, jet pods or propellers, rear engines), a layered fuselage that shows the cheatline, the fin with the airline's emblem (`art/emblems.js`, the livery of the year from `data/airlines.js`), a shadow that fades as they climb, and their lights. `render/traffic.js` turns the sim's times into motion: the approach (a holding circle when the runway is not free), the flare and the rollout, the taxi to the stand, the turnaround (stairs, passengers walking, catering, baggage carts, the fuel truck from its depot and back, the tug), the pushback, the taxi out, the take-off roll and the climb; the plough convoy in echelon; trucks and ploughs at their depots. Over each aircraft its flight number and, at a stand, a little Gantt bar (off · services · fuel · boarding). The light follows `Calendar.sunElevation`: dawn and dusk tint, the dark, fog, falling snow, then the lamps glowing through the dark (sodium floodlights, lit windows, the tower's cab, beacons).
+- **Five small additions to the sim for the map** (none changes a result): a flight keeps `rdir` (the runway direction it used), `airborne` (when it rolled) and `divertedAt`; a surface keeps `ploughFrom`; a turnaround keeps `fuelFrom`.
+- **Play**: the HUD (money, the date and clock, the weather, the five meters, ⏸ ▶ ▶▶ ▶▶▶, Skip, pause), the stage's goals live (in the plan panel in plan time), the task tray (a ring for each deadline; a tap does the obvious, **Pick** or a drag chooses the stand on the map), the toolbar (desks open, ploughs, the runway direction when calm, the small builds with a second tap to confirm), the plan panel (each project's stages with Start / Fast, progress and what they wait for, its options, cash / loan / the owner's grant, the fee level, loans), the decision card (the option's effects worked out from its data: money, days, a crew, the meters), the flight card. Panels below the HUD start under its real height (`--hudH`), so a phone in portrait works too.
+- **Help**: Kaj's live hints (`ui/hints.js`, at most one per `HINT_GAP`, each `HINT_REPEAT` times; Settings: Full / Short / Off) and the guiding finger in `GUIDED_MISSIONS` until the player has acted twice. The mission hints 💡 1–3, the concept cards and the Debrief come later.
+- **The flow** (`game.js`): start screen (over the airport of 1962, or the campaign's own) → timeline → mission card → the card before each stage (the first one with "Meanwhile…": the months skipped, the flights in summary, the money, the owner's loan) → play → the stage card (Continue, or Retry stage / Restart mission) → the results (stars, the goals with their values, the meters, the work done by hand and by others, a line from Astrid or Kaj; after the exam the front page of *Arlanda-Bladet*, a fictional local paper) → the Office (the campaign's money and loans — borrow or repay there —, the last six months' books, what the airport has, the meters) → the next mission. The "Meanwhile…" report sits on the first stage's card rather than in the Office, as the skipped time is simulated when the mission starts.
+- **The campaign and the stars** (`progress.js`): `Progress` keeps the best stars per mission and difficulty (a cheated run saves none); `Campaign` keeps the airport after the last mission passed in it, its difficulty (the mission card's choice becomes it) and the next mission; the world a campaign mission started from is kept in `arlandaRising.snapshots.v1` (plain JSON for now, a few kB a mission in chapter 1) for replays, which never touch the campaign. A mission opened with no snapshot (after a new campaign) starts from the forest with the owner building what it requires.
+- **The autosave**: `{ run, data: Missions.save() }` under `arlandaRising.mission.v1`, every `AUTOSAVE_SECONDS` of play, at every stage's end, in the pause menu and on `visibilitychange` / `pagehide`; **Continue mission** resumes it paused at that very moment with a line on the aim, or on the stage card when it was saved there.
+- **Keys and cheats** as in "Controls" and "Cheats" (Shift+2…8 say the chapter is not in the game yet; Shift+K and Shift+F that strikes and failures come later).
+- **Texts**: every text through `tr()`; the tables `data/lang-ru.js` and `data/lang-sv.js` hold the screens' texts and the data's (mission names, briefings, aims, stages, news, decisions, projects, buildings), Astrid's and Kaj's lines and the help. A mission's data gained `aim` (its one line, which used to clash with the goal list `goal`), `news` and, for each decision, `icon`, `title`, `text` and each option's `label`.
+
 ## Events
 
 Each mission has scripted events; between them random events come by season and difficulty: snowstorms, freezing rain, fog, thunderstorms, a heatwave, the flu, a power cut, a bad software update, a cyber attack (later chapters), a baggage system jam, a strike notice, a VIP flight, a lost child at security (kids love the happy end), a fuel shortage, a medical diversion, a moose. Big historical ones are missions of their own: the **ash cloud of April 2010** (European airspace closed for days — stranded passengers to feed and house), the **pandemic** (traffic near zero for months — mothball terminals, furlough or lay off, keep the cash alive), the **summer of queues 2022**, a **global IT outage** (July 2024). Cultural events bring peaks: **Nobel week** in December, **Midsummer**, Christmas charters to Lapland, a royal wedding (2010), **Eurovision in Stockholm (2016)**, world-famous concerts, ice-hockey championships.
@@ -336,7 +350,7 @@ The chapter follows the checked dates, so its order differs from the first plan:
 | 1-10 | Opening Day (1 Apr 1962) | ops 07–10, 11–14 | stand 1 closed for the ceremony 11–13; a remote stand built in a hurry | airport-caused delay ≤ 2 min · Passengers ≥ 72 |
 | 1-11 | Exam: The First Winter (Jan 1963) | ops 07–10, 11–14, 14:30–17:30 | everything by hand in one snowy, dark day | airport-caused delay ≤ 2 min · no close call |
 
-`tools/missions-check.js` measures them at ▶: 4.2–6.7 minutes, the exam 9.6.
+`tools/missions-check.js` measures them at ▶: 4.2–6.7 minutes, the exam 9.6. Each mission also has `aim`, `news` and the decisions' texts for the screens (see "The game in the browser").
 
 ### Mission kinds
 
@@ -435,7 +449,7 @@ Synthesized with Web Audio, through one master gain (Sound On / Off on the start
 
 ## Cheats (keyboard only, Shift + key, for testing)
 
-Each shows a banner and marks the run as cheated (no stars, no 🏅, no records): `Shift+1…8` jump to that chapter's first mission with the real Arlanda of that year; `Shift+M` +100 MSEK; `Shift+S` a snowstorm now; `Shift+K` a strike notice; `Shift+F` a system failure; `Shift+A` every domain one level up; `Shift+W` win the current stage; `Shift+D` skip to the end of the stage. Their effects are in `sim/cheats.js` (money, snowstorm, domains up, win and skip the stage; the strike and the failure come with session 3); the keys and banners with `game.js` in session 2. The cheated mark (`S.cheated`) belongs to the mission being played and is cleared at every mission's start; its result says `cheated`, and the progress saves nothing for it.
+Each shows a banner and marks the run as cheated (no stars, no 🏅, no records): `Shift+1…8` jump to that chapter's first mission with the real Arlanda of that year; `Shift+M` +100 MSEK; `Shift+S` a snowstorm now; `Shift+K` a strike notice; `Shift+F` a system failure; `Shift+A` every domain one level up; `Shift+W` win the current stage; `Shift+D` skip to the end of the stage. Their effects are in `sim/cheats.js` (money, snowstorm, domains up, win and skip the stage; the strike and the failure come with session 3); the keys and banners are in `game.js`. The cheated mark (`S.cheated`) belongs to the mission being played and is cleared at every mission's start; its result says `cheated`, and the progress saves nothing for it.
 
 ## Testing and balancing
 
@@ -445,26 +459,34 @@ Each shows a banner and marks the run as cheated (no stars, no 🏅, no records)
   - It also fails when the reference does not pass on Hard, when a stage is longer than `STAGE_MINUTES_MAX`, and when the mission played with a save, a throw-away and a resume in the middle of every stage (`Missions.save` / `Missions.resume`, as the autosave does) does not end in exactly the same state as one played straight through. The strategy of the mission before getting ★★★ too is a warning (`?`), not a failure: an exam reuses the chapter's moves.
   - `--verbose` shows every stage's goals with their values, the stars and why doing nothing fails. To see one stage flight by flight, load the same files in a `vm` context (the list at the top of the checker) and print `S.ops.flights` at the stage's end: each flight keeps its planned and real times, its stand, its check-in and its turnaround's steps.
   - A stage, an option or a rule changed: run the checker, then tune the mission's goals and stars to the reference's numbers with a margin, so the reference keeps ★★★ and doing nothing fails.
-- Browser checks with `tools/cdp.js` (see `docs/testing.md`), short and one at a time; one check locks the page mid-stage (`visibilitychange`) and reloads it to see the mission continue.
+- Browser checks with `tools/cdp.js` (see `docs/testing.md`), short and one at a time; one check locks the page mid-stage (`visibilitychange`) and reloads it to see the mission continue. Recipes for a steps file (after `page('arlanda-rising')`):
+  - English first: `I18N.set('en')`; a clean start: `localStorage.clear(); Progress.load(); Campaign.load()` (only in the test's own Chrome profile).
+  - A mission at once: `Game.startMission('1-5', 'medium'); Game.play(); Game.speed = 3`; a moment of it: `Cam.centerOn(800, 1250, 3)`, `S.clock = 22 * 60` (the night), `FlightCard.open(S.ops.flights[0])`.
+  - The campaign played by the reference strategies through the game's own flow (a few seconds): for each mission `Game.startMission(id, d)`, then `Strategy.act(r); Sim.step()` in a loop (`Missions.next()` on `stageDone`) with `GameEvents.mute(true)`, then `Game.missionEnd()`.
+  - The resume: `Game.save(); location.reload()`, then `Game.continueMission()` and compare `S.clock` and `S.money`.
+  - The screenshot: 1280 × 720, the campaign played to Opening Day, `S.clock` 08:25 by the reference strategy, `Cam.centerOn(760, 1240, 1.55)`.
 
 ## Files
 
-Those in code (session 1) are listed by name; the rest are planned.
+Those in code are listed by name; the rest are planned.
 
 ```
 arlanda-rising/
 ├── SPEC.md
-├── constants.js (every tuning value, the difficulty table)
-├── index.html, styles.css, game.js (thin main loop) — planned
+├── index.html, styles.css, constants.js (every tuning value, the difficulty table, the screen's and the hints' numbers)
+├── game.js (the main loop, the flow, the gestures, the keys and the cheats, the autosave), progress.js (stars, the campaign, snapshots)
 ├── data/        aircraft.js (the types of the era, with sources), airlines.js (real airlines: years at Arlanda, kind, temper,
-│                sources), buildings.js (what the airport owns: price, jobs, shops, car parks), masterplan.js (the historical
-│                projects: year, plot, stages, mods, effects, sources), domains.js (the automation ladder; levels 0–1 so far),
-│                missions/missions.js (the chapters, the list of missions and the fields) + missions/ch1.js,
-│                strategies/strategies.js (the list) + strategies/ch1.js (the reference strategies);
-│                planned: brands.js, people.js, events.js, archive.js, album.js, hints.js, lang-ru.js, lang-sv.js, icons.js
+│                liveries by era, sources), buildings.js (what the airport owns: price, jobs, shops, car parks), masterplan.js (the
+│                historical projects: year, plot, stages, mods, effects, sources), layout.js (the map: the real runways, the apron
+│                and stands, buildings, roads, Märsta, fields, lakes, the site's clearings), domains.js (the automation ladder; levels
+│                0–1 so far), missions/missions.js (the chapters, the list of missions and the fields) + missions/ch1.js,
+│                strategies/strategies.js (the list) + strategies/ch1.js (the reference strategies), lang-ru.js, lang-sv.js,
+│                icons.js (generated by tools/icons-build.js); planned: brands.js, people.js, events.js, archive.js, album.js, hints.js
 ├── core/        utils.js (math, the generator kept in the save, clock times, money()), events.js (the bus), storage.js (the keys
-│                and the mission autosave); planned: i18n, audio, input, save (snapshot and merge for the cloud), cloud (from
-│                lift-logic), cursor, icons, update (new deploys at idle moments)
+│                and the mission autosave), i18n.js (tr(), the language switcher, dates), settings.js (hints, quality, sums, the
+│                difficulty; sek()), audio.js (Sfx: the synthesized sounds, one master gain), input.js (map gestures: tap, long
+│                press, drag, pan, pinch, wheel, keys; fullscreen), cursor.js, update.js (new deploys at idle moments, the
+│                offline worker), icons.js (generated); planned: save (snapshot and merge for the cloud), cloud (from lift-logic)
 ├── lib/         supabase.min.js (vendored supabase-js, the same file as lift-logic's) — planned
 ├── supabase/    schema.sql (the arlandarising_saves table and its row-level security) — planned
 ├── sim/         state (S, the generator, the log), calendar (dates, the sun), weather, finance, meters, airport (what is built,
@@ -475,13 +497,20 @@ arlanda-rising/
 │                sim (the clock), strategy (a player made of a reference strategy), cheats;
 │                planned: taxi, terminal, baggage, deicing, wildlife, domains (failures, readiness), people, unions, airlines,
 │                offers, permit, debrief
-├── art/         emblems.js (airline fin art and logos, from world-aviation), brands.js (brand signs and vehicle titles), flags
-├── render/      palette, iso, sprites (buildings, aircraft with liveries, vehicles, people, trees), map, terminal, sky (sun, seasons,
-│                white nights), effects
-├── ui/          screens, timeline, office, missioncard, hud, tray, toolbar, cards, opscenter, people, airlines, offers,
-│                finance (charts), stagecard, results, newspaper, archive, album, hints, sounds
+├── art/         emblems.js (airline fin art and square logos), flag-gb / flag-ru / flag-se.svg (the language switcher);
+│                planned: brands.js (brand signs and vehicle titles)
+├── render/      palette.js (the Arlanda palette, the land by season), iso.js (projection, camera, boxes), ground.js (forest,
+│                fields, lakes, the bog, clearings, roads, Märsta, single trees), airport.js (runway, taxiways, apron, stands,
+│                buildings by stage, cranes, lamps), aircraft.js (types to scale in their liveries), traffic.js (where every
+│                flight is, vehicles, people, the plough convoy, labels and turnaround bars, taps), sky.js (light, fog, snow,
+│                lamps), map.js (the scene, a frame, what a tap hit, the camera's framings); planned: terminal (the cut-away view)
+├── ui/          text.js (goals, tasks, meters, minutes, effects), screens.js (overlay panels, the start screen, help, settings,
+│                pause, confirm, the difficulty picker), hud.js, tray.js, toolbar.js, plan.js (the plan panel, decisions),
+│                cards.js (the flight card), timeline.js, missioncard.js (and the card before each stage), results.js (the stage
+│                card, the results, the newspaper), office.js, hints.js (Kaj, the finger), sounds.js;
+│                planned: opscenter, people, airlines, offers, finance (charts), archive, album
 ├── tools/       missions-check.js
-├── README.md, README_RU.md, README_SV.md (with the not-affiliated note, how to install, the cloud save)
+├── README.md, README_RU.md, README_SV.md (with the not-affiliated note, how to install)
 ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png (tools/pwa-icons.sh)
 ├── manifest.webmanifest, sw.js (generated by tools/sw-build.js), screenshot.png
 ```
@@ -489,12 +518,12 @@ arlanda-rising/
 ## Build order (sessions)
 
 1. **Core sim headless** *(done)*: calendar, weather, schedule, runways, stands, turnaround, passengers as flows, finance, stages and the autosave/resume; chapter 1 missions with reference strategies; `missions-check.js`.
-2. **Map and look:** isometric renderer with the Arlanda palette, seasons and light, aircraft with real liveries and emblems, vehicles, build tools, the task tray, the Office; chapter 1 playable end to end on a phone; **installable and offline** (manifest, icons, `update.js`, `sw.js`); gallery card, root `SPEC.md` and READMEs.
+2. **Map and look** *(done)*: isometric renderer with the Arlanda palette, seasons and light, aircraft with real liveries and emblems, vehicles, build tools, the task tray, the Office; chapter 1 playable end to end on a phone; **installable and offline** (manifest, icons, `update.js`, `sw.js`); gallery card, root `SPEC.md` and READMEs.
 3. **People and the ladder:** departments, managers in pairs, absence, unions and strikes, the Ops Center, systems and failures; chapters 2–3, Free Play; **the cloud save through Google** (the table, the sync, the states, tested with `tools/cloud-mock.js`).
 4. **Terminal view, brands and the economy screens:** passenger flow, real shops and ground transport, finance with payback and NPV, offers, airlines' tempers; chapter 4, Challenge Days.
 5. Chapters 5–6: border, security, parallel runways, real estate, green rating and the permit, events.
 6. Chapters 7–8: crises, fallback readiness, the future tech, the final exam.
-7. Translations, icons, READMEs, screenshot (from session 2 on, kept up to date with every later one).
+7. Translations, icons, READMEs, screenshot (from session 2 on, kept up to date with every later one; done for chapter 1).
 
 ## Decisions
 

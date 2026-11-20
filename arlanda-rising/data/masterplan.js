@@ -4,8 +4,8 @@
 // decides what each one is, where it stands and what it looks like; the player decides the order of its
 // stages, the pace, the money and the optional extras (see SPEC.md "The master plan"). Each project has:
 //   name, year   as shown; the year it was built in reality (or the best known one)
-//   plot         where it stands: x east, y north, w × h, in metres from the south end of runway 1 —
-//                to be taken from the aerodrome chart (Swedish AIP, ESSA AD 2) in session 2 (`check`)
+//   plot         where it stands: x east, y north, w × h, in metres from the south end of runway 1 (the drawing's
+//                own shapes and the real runway ends are in data/layout.js)
 //   stages       { id: { name, days, price, after: [stage ids first], optional } } — a project is finished when
 //                every stage that is not optional is; an optional stage may be built later and has its own effect
 //   mods         switches bought with the project: { id: { name, price, ... } } — noWinter (works on at full
@@ -28,14 +28,14 @@ const PROJECTS = {
     check: 'which clearing works were done in which year'
   },
   runway1: {
-    name: 'Runway 1 (01/19)', year: 1959, plot: { x: 0, y: 0, w: 45, h: 3300 },
+    name: 'Runway 1 (01/19)', year: 1959, plot: { x: 0, y: 0, w: 596, h: 3236 },
     stages: { pave: { name: 'Pave the runway', days: 240, price: 420e6 } },
     effect: 'runway1', len: 3300,
     src: 'sv.wikipedia Arlanda: the 1957 plan had runway 1 at 3.3 km; the first landing was on runway 1 on 14 December 1959',
     check: 'the length as built in 1959'
   },
   apron1: {
-    name: 'The first apron', year: 1959, plot: { x: 350, y: 1200, w: 300, h: 250 },
+    name: 'The first apron', year: 1959, plot: { x: 640, y: 1120, w: 240, h: 260 },
     stages: { pave: { name: 'Pave the apron', days: 90, price: 60e6 } },
     effect: 'apron1',
     stands: [
@@ -47,7 +47,7 @@ const PROJECTS = {
     check: 'the first apron\'s place and stands'
   },
   tower1: {
-    name: 'The control tower', year: 1960, plot: { x: 700, y: 1250, w: 30, h: 30 },
+    name: 'The control tower', year: 1960, plot: { x: 903, y: 1356, w: 18, h: 18 },
     stages: {
       found: { name: 'Foundations', days: 25, price: 8e6 },
       shaft: { name: 'The shaft', days: 35, price: 14e6, after: ['found'] },
@@ -62,7 +62,7 @@ const PROJECTS = {
     check: 'the year, place and look of the first control tower'
   },
   terminal1: {
-    name: 'The first terminal', year: 1960, plot: { x: 650, y: 1300, w: 120, h: 50 },
+    name: 'The first terminal', year: 1960, plot: { x: 880, y: 1180, w: 45, h: 120 },
     stages: {
       hall: { name: 'The hall', days: 30, price: 18e6 },
       desks: { name: 'Four check-in desks', days: 12, price: 3e6, after: ['hall'] },
@@ -77,7 +77,7 @@ const PROJECTS = {
     check: 'what the first buildings were and where they stood'
   },
   lights1: {
-    name: 'Runway lights', year: 1961, plot: { x: 0, y: 0, w: 45, h: 3300 },
+    name: 'Runway lights', year: 1961, plot: { x: 0, y: 0, w: 596, h: 3236 },
     stages: {
       cables: { name: 'Lay the cables', days: 14, price: 4e6 },
       lamps: { name: 'Edge lights', days: 10, price: 5e6, after: ['cables'] },

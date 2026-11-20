@@ -79,6 +79,15 @@
       <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Spela</b></a> · <a href="lift-logic/">Källkod</a></p>
     </td>
   </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/screenshot.png" alt="Skärmbild från Arlanda Rising"></a>
+      <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
+      <p>Driv Stockholm Arlanda genom dess riktiga historia: röj skogen 1958, bygg tornet och terminalen, ställ SAS-jetplan på sina platser, tanka dem, ploga snön och få den unga flygplatsen att bära sig — en isometrisk flygplats, korta uppdrag med stjärnor som sparas hela tiden.</p>
+      <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Spela</b></a> · <a href="arlanda-rising/">Källkod</a></p>
+    </td>
+    <td width="50%" valign="top"></td>
+  </tr>
 </table>
 
 ## ✨ Det bästa
@@ -121,7 +130,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 ├── SPEC.md                  # specifikation och regler för hela repot
 ├── AGENTS.md                # instruktioner för AI-agenter (CLAUDE.md pekar hit)
 ├── docs/                    # agenternas regler per område: språk, mobil, PWA och offline, ikoner, kodstruktur, nytt projekt, molnsparning, tester
-└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
+└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic, arlanda-rising
     ├── SPEC.md              # spelets specifikation
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # koden, ordnad efter roll

@@ -116,3 +116,18 @@ const DIFFICULTY = {
   medium: { money: 1, jitter: 8, patience: 1, failures: 1, weather: 1, deadline: 1 },
   hard: { money: 0.75, jitter: 14, patience: 0.7, failures: 1.4, weather: 1.3, deadline: 0.75 }
 };
+
+// ---------- the screen, the controls and the hints (session 2) ----------
+const CURSOR_HIDE_MS = 2000;       // ms the mouse must be still in fullscreen before the cursor hides
+const TAP_SLOP = 9;                // px a finger may move and still tap
+const LONG_PRESS_MS = 550;         // ms of a press that opens a card
+const ZOOM_MIN = 0.05;             // screen px per metre, zoomed out (the whole airport and more)
+const ZOOM_MAX = 6;                // … zoomed in (one stand fills a phone)
+const ZOOM_OPS = 0.9;              // where an ops stage starts: the apron and a stretch of runway
+const ZOOM_TREES = 1.3;            // from this zoom single trees are drawn over the forest
+const KEY_PAN = 700;               // screen px per second the arrow keys pan
+const HINT_GAP = 25;               // real s at least between two of Kaj's hints
+const HINT_REPEAT = 3;             // times one hint is shown at most (Settings: Short shows each once)
+const BANNER_MS = 2600;            // ms a banner stays
+const BUY_CONFIRM_MS = 2500;       // ms a buy button waits for its second tap
+const GUIDED_MISSIONS = ['1-1', '1-2', '1-3']; // missions with the guiding finger

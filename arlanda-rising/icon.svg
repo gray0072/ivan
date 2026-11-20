@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16324f"/>
+      <stop offset="0.62" stop-color="#3b6a8f"/>
+      <stop offset="1" stop-color="#f0a85a"/>
+    </linearGradient>
+    <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#sky)"/>
+    <circle cx="140" cy="300" r="46" fill="#ffd27a" opacity="0.9"/>
+    <path d="M0 330 L512 250 L512 512 L0 512 Z" fill="#2E4A33"/>
+    <path d="M-20 520 L250 300 L330 300 L130 540 Z" fill="#3A3D41"/>
+    <path d="M232 318 L246 318 L212 352 L198 352 Z M186 366 L200 366 L162 404 L148 404 Z M135 418 L150 418 L108 460 L93 460 Z" fill="#F4F7FA"/>
+    <g fill="#1F3326">
+      <path d="M380 300 L405 230 L430 300 Z"/><path d="M420 305 L450 215 L480 305 Z"/><path d="M465 300 L490 240 L515 300 Z"/>
+      <path d="M330 310 L350 260 L370 310 Z"/>
+      <path d="M0 360 L22 300 L44 360 Z"/><path d="M30 355 L56 285 L82 355 Z"/>
+    </g>
+    <g transform="translate(300 150) rotate(-22)">
+      <path d="M-120 0 C-120 -12 -100 -16 -80 -16 L90 -16 C112 -16 132 -8 140 0 C132 8 112 16 90 16 L-80 16 C-100 16 -120 12 -120 0 Z" fill="#F4F7FA"/>
+      <path d="M-104 4 L118 4 L112 10 L-100 10 Z" fill="#1f3f8f"/>
+      <path d="M10 -8 L-40 -110 L-12 -110 L52 -10 Z" fill="#E6EBEF"/>
+      <path d="M10 8 L-40 110 L-12 110 L52 10 Z" fill="#C9CED3"/>
+      <path d="M-92 -10 L-124 -62 L-104 -62 L-70 -12 Z" fill="#1f3f8f"/>
+      <path d="M-96 6 L-118 34 L-104 34 L-80 8 Z" fill="#C9CED3"/>
+    </g>
+  </g>
+</svg>

@@ -47,6 +47,7 @@ const Turnaround = {
         const ft = this.fuelTime(f.type) * this.slow();
         S.ops.trucks[i] = t + FUEL_DRIVE + ft;
         tr.fuelEnd = t + FUEL_DRIVE / 2 + ft;
+        tr.fuelFrom = t;                // for the map: the truck sets off
         tr.fuel = 'going';
         logEvent('fuelling', { flight: f.no });
       }

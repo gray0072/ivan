@@ -47,6 +47,7 @@ const Flights = {
   land(f, rw) {
     Runways.use(rw, f, true);
     f.landed = S.clock;
+    f.rdir = S.ops.dir;
     f.st = 'taxiIn';
     f.at = S.clock + this.taxiTime(f) + f.extraTaxi;
     f.extraTaxi = 0;
@@ -88,9 +89,13 @@ const Flights = {
   takeOff(f, rw) {
     Runways.use(rw, f, false);
     f.st = 'gone';
+    // for the map: when it rolled and which way
+    f.airborne = S.clock;
+    f.rdir = S.ops.dir;
   },
   divert(f, rw) {
     f.st = 'diverted';
+    f.divertedAt = S.clock;
     Stands.release(f);
     Tasks.drop(f.id);
     Passengers.drop(f);

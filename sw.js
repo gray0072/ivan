@@ -16,15 +16,17 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "cb5784d0e559";
+const VERSION = "b816c6a16f8f";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
+  "arlanda-rising/icon.svg",
+  "arlanda-rising/screenshot.png",
   "assets/apple-touch-icon.png?v=1",
   "assets/flag-gb.svg",
   "assets/flag-ru.svg",
   "assets/flag-se.svg",
-  "assets/gallery-lang.js?v=9",
+  "assets/gallery-lang.js?v=10",
   "assets/gallery.css?v=1",
   "assets/gallery.js?v=3",
   "assets/icon-192.png?v=1",

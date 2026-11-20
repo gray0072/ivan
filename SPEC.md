@@ -51,6 +51,10 @@ Turn-based artillery game in the genre of Worms (original simple graphics): two 
 
 Programming puzzle game: the player is the brain of a lift and builds its program from Scratch-like blocks (own look, a tap-first editor for phones), then watches a cut-away building live by it — people press the hall and cabin buttons, ride, get impatient and take the stairs; the program only reads what a real lift senses. A deterministic simulation and a block VM (events, threads, the lift's plan); missions with three stars, hints in three steps, an Inspector with "Show me" replays, the Engineer's record, comic lines and a Lift Museum of checked facts; the first chapters are Grandma's House, Maple School, the Grand Sunrise Hotel, St. Hope Hospital, the Glass Tower (several lifts running one program), the Mega Mall, the Eiffel Tower (own blocks with inputs, changing lifts) and the Empire State Building (zones, express trips, SCAN) — 72 missions, more buildings are planned up to a space elevator; playable in English, Russian or Swedish, the progress synced through Google. Full spec: [`lift-logic/SPEC.md`](lift-logic/SPEC.md).
 
+### arlanda-rising
+
+Management and strategy game about running Stockholm Arlanda through its real history, from the pine forest of 1958 to an Arlanda of 2040: an isometric Canvas 2D airport on the real runway geometry (seasons, the sun at 59.65° N, night lights, snow), real airlines in their liveries (simplified drawings), a deterministic headless simulation (flights, stands, turnarounds, check-in queues, snow and ploughs, money, five meters, plan-time construction by the historical master plan, decisions) with a task tray the player works by hand and a duty manager for what is missed; short missions in stages, autosaved every few seconds and resumed exactly, three stars each, balanced by a headless checker with reference strategies; the Office between missions; chapter 1 (1958–1963, 11 missions) playable, the later chapters (people and systems, the train, runway 3, crises, 2040) planned; playable in English, Russian or Swedish. Full spec: [`arlanda-rising/SPEC.md`](arlanda-rising/SPEC.md).
+
 ## Project structure
 
 ```
@@ -210,6 +214,23 @@ Programming puzzle game: the player is the brain of a lift and builds its progra
 │   ├── render/               # view (camera, layout, taps), building (the cut-away building)
 │   ├── ui/                   # blockview, editor, palette, slots, runbar, hud, hints (and the guide), textview, results, jokes (and the newspaper), museum, screens, sounds, fireworks
 │   ├── tools/                # missions-check (runs every reference solution), texts-check (every text translated)
+│   ├── README.md, README_RU.md, README_SV.md
+│   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
+│   ├── manifest.webmanifest  # PWA manifest
+│   ├── sw.js                # offline service worker (tools/sw-build.js)
+│   └── screenshot.png
+├── arlanda-rising/
+│   ├── SPEC.md               # the game's own spec
+│   ├── index.html            # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── constants.js, game.js, progress.js # tuning, the flow (menu, timeline, mission card, play, stage cards, results, Office, cheats, autosave), stars and the campaign
+│   ├── data/                 # aircraft, airlines (liveries by era), buildings, masterplan (historical projects), layout (the map: real runway geometry, apron, roads, Märsta), domains, missions/ and strategies/ (per chapter), lang-ru / lang-sv, icons
+│   ├── core/                 # utils (money()), events, storage (keys, mission autosave), i18n, settings, audio, input (map gestures), cursor, update, icons
+│   ├── sim/                  # state, calendar (the sun), weather, finance, meters, airport, stands, schedule, runways (snow, ploughs, noise), passengers, turnaround, flights, tasks (the tray, the duty manager), construction, summary, plan, ops, goals, missions, actions, sim (the clock), strategy, cheats
+│   ├── art/                  # emblems (airline fin art), flag-gb / flag-ru / flag-se.svg
+│   ├── render/               # palette, iso (camera, projection), ground (forest, fields, lakes, clearings, Märsta), airport (runway, apron, buildings by stage), aircraft, traffic (aircraft paths, vehicles, people, turnaround bars), sky (light, fog, snow, lamps), map (a frame, taps)
+│   ├── ui/                   # text, screens, hud, tray, toolbar, plan (projects, decisions), cards (the flight card), timeline, missioncard, results, office, hints (Kaj, the guiding finger), sounds
+│   ├── tools/                # missions-check (plays every mission with its reference strategy, balances the chapter)
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest

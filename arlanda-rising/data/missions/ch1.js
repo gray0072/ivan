@@ -22,7 +22,12 @@ addMissions(1, [
       'First the forest has to go. Clear the strip for the runway, drain the bog, then the apron and the road in.',
       'Two crews can work at a time, and in winter they go at half speed. Plan the order well!'
     ],
-    goal: 'Clear the site: the runway strip and the bog by autumn, the apron and the road by spring.',
+    aim: 'Clear the site: the runway strip and the bog by autumn, the apron and the road by spring.',
+    news: [
+      { icon: '📅', text: 'Plan time: a day goes by every second. Start the jobs, then let the time run.' },
+      { icon: '👷', text: 'Two crews: at most two jobs at once. In winter they go at half speed.' },
+      { icon: '❓', text: 'Choices: the time stops until you pick one.' }
+    ],
     facts: [
       { text: 'The Riksdag decided on the airport at Halmsjön in December 1957: 153 million kronor, two runways.', src: SRC_SV },
       { text: 'The name Arlanda came from a contest in the magazine Året Runt in 1958, after Ärlinghundra hundred.', src: SRC_SV }
@@ -30,16 +35,20 @@ addMissions(1, [
     stages: [
       { name: 'Summer: the strip', mode: 'plan', days: 180, crews: 2, endEarly: true,
         goal: [{ k: 'project', id: 'site', stages: ['strip', 'drain'] }],
-        choices: [{ id: 'timber', at: 12, default: 'burn', options: [
-          { id: 'sell', money: 6e6, extraDays: ['site', 'strip', 10] },
-          { id: 'burn', meters: { neighbours: -8 } }
-        ] }] },
+        choices: [{ id: 'timber', at: 12, default: 'burn', icon: '🪵', title: 'The timber',
+          text: 'The felled pines are worth money. A sawmill will buy them, but carting the logs away slows the work on the strip. Burning them on the spot is quick — and the smoke drifts over Märsta.',
+          options: [
+            { id: 'sell', money: 6e6, extraDays: ['site', 'strip', 10], label: 'Sell to the sawmill' },
+            { id: 'burn', meters: { neighbours: -8 }, label: 'Burn it on the spot' }
+          ] }] },
       { name: 'Winter: the apron and the road', mode: 'plan', days: 150, crews: 2, endEarly: true,
         goal: [{ k: 'project', id: 'site' }],
-        choices: [{ id: 'treeBelt', at: 5, default: 'clear', options: [
-          { id: 'keep', money: -3e6, neighboursBase: 8, meters: { neighbours: 8 } },
-          { id: 'clear' }
-        ] }] }
+        choices: [{ id: 'treeBelt', at: 5, default: 'clear', icon: '🌲', title: 'Trees toward Märsta',
+          text: 'Märsta asks you to keep a belt of forest between the runway and the town. It takes planting and care, and it softens the noise for years to come.',
+          options: [
+            { id: 'keep', money: -3e6, neighboursBase: 8, meters: { neighbours: 8 }, label: 'Keep the trees' },
+            { id: 'clear', label: 'Clear it all' }
+          ] }] }
     ],
     goal: [],
     stars: [{ k: 'money', min: 10e6 }, { k: 'neighbours', min: 75 }]
@@ -52,7 +61,12 @@ addMissions(1, [
       'All day the crews practise landings. After each one the aircraft stops on a stand for a new crew. You pick the stand — tap the task, or drag the aircraft.',
       'The days are short in December. After about half past three it is dark, and the runway has no lights yet.'
     ],
-    goal: 'Give every training flight a stand in time, so they all fly on time.',
+    aim: 'Give every training flight a stand in time, so they all fly on time.',
+    news: [
+      { icon: '🛬', text: 'The task tray: tap a task to do the obvious thing, or drag it to a stand.' },
+      { icon: '🅿️', text: 'Stands: a big aircraft needs a big stand.' },
+      { icon: '🌙', text: 'The dark: without lights the runway closes at dusk.' }
+    ],
     facts: [{ text: 'Arlanda was first used on 14 December 1959, for school flying only; the first landing was an SAS Caravelle from Bromma, on runway 1.', src: SRC_SV }],
     stages: [
       { name: 'Morning lessons', mode: 'ops', from: '09:00', to: '12:00', weather: { temp: -3, wind: [10, 8] },
@@ -74,7 +88,11 @@ addMissions(1, [
       'It is January: work goes at half speed in the cold. Heated tents keep the crews going, or a fast pace makes up for the time — which is cheaper?',
       'When the tower is ready, show what it can do: a morning of training flights twice as close.'
     ],
-    goal: 'Build the control tower, then run a busy morning of training flights.',
+    aim: 'Build the control tower, then run a busy morning of training flights.',
+    news: [
+      { icon: '🗼', text: 'The control tower: aircraft can come twice as close together.' },
+      { icon: '⛺', text: 'Options: heated tents, a backup radio.' }
+    ],
     stages: [
       { name: 'Foundations and shaft', mode: 'plan', days: 75, crews: 1, endEarly: true,
         goal: [{ k: 'project', id: 'tower1', stages: ['found', 'shaft'] }] },
@@ -96,7 +114,11 @@ addMissions(1, [
       'One building firm, one crew. Work out the order, and how to fit in a kiosk for the waiting passengers.',
       'On 26 June 1960 the first regular flight leaves Arlanda: an SAS DC-8 to New York. Your desks check in its passengers!'
     ],
-    goal: 'Open the terminal by 26 June, then check in the first passengers.',
+    aim: 'Open the terminal by 26 June, then check in the first passengers.',
+    news: [
+      { icon: '🏢', text: 'The first terminal: a hall, check-in desks and a waiting room.' },
+      { icon: '🧳', text: 'Check-in: open desks before the queue grows.' }
+    ],
     facts: [
       { text: 'At first Arlanda used very primitive buildings.', src: SRC_SV },
       { text: 'The first regular flight was an SAS DC-8 to New York on 26 June 1960.', src: SRC_SV }
@@ -104,7 +126,9 @@ addMissions(1, [
     stages: [
       { name: 'The hall', mode: 'plan', days: 42, crews: 1, endEarly: true,
         goal: [{ k: 'project', id: 'terminal1', stages: ['hall'] }],
-        choices: [{ id: 'secondCrew', at: 3, default: 'one', options: [{ id: 'hire', money: -3e6, crews: 1 }, { id: 'one' }] }] },
+        choices: [{ id: 'secondCrew', at: 3, default: 'one', icon: '👷', title: 'A second crew?',
+          text: 'Another building firm could send a second crew to work beside the first, so two parts of the terminal go up at once.',
+          options: [{ id: 'hire', money: -3e6, crews: 1, label: 'Hire a second crew' }, { id: 'one', label: 'One crew is enough' }] }] },
       { name: 'Desks and the waiting room', mode: 'plan', days: 40, crews: 1, endEarly: false,
         goal: [{ k: 'project', id: 'terminal1' }] },
       { name: '26 June 1960', mode: 'ops', date: '1960-06-26', from: '08:00', to: '11:00', weather: { temp: 18, wind: [200, 8] }, desks: 1,
@@ -126,7 +150,10 @@ addMissions(1, [
       'A DC-8 only fits stands 1 and 2. Put a Caravelle there, and the DC-8 has to wait on the taxiway.',
       'Keep an eye on the check-in queue too: open a desk before it gets long.'
     ],
-    goal: 'A busy summer day of jets: keep them on time and the queues short.',
+    aim: 'A busy summer day of jets: keep them on time and the queues short.',
+    news: [
+      { icon: '✈️', text: 'The DC-8: a big jet that fits only stands 1 and 2.' }
+    ],
     stages: [
       { name: 'Morning wave', mode: 'ops', from: '07:00', to: '10:00', weather: { temp: 16, wind: [220, 9] }, desks: 1,
         flights: [SK('CRVL', 5, '07:10', '09:10', 40), SK('DC8', 2, '07:35', '08:40', 65, { base: 900 })],
@@ -147,7 +174,11 @@ addMissions(1, [
       'A DC-8 takes a long time to fill. While the truck is there, the next aircraft waits.',
       'A second truck costs money — but so do delays. You decide.'
     ],
-    goal: 'Fuel every aircraft in time: no departures late because of the fuel.',
+    aim: 'Fuel every aircraft in time: no departures late because of the fuel.',
+    news: [
+      { icon: '⛽', text: 'Fuel by hand: send the truck when the passengers are off.' },
+      { icon: '🛒', text: 'Buy a second truck from the toolbar.' }
+    ],
     stages: [
       { name: 'Morning', mode: 'ops', from: '07:00', to: '10:00', weather: { temp: 8, wind: [240, 12] }, desks: 2,
         flights: [SK('CRVL', 6, '07:05', '09:20', 40), SK('DC8', 3, '07:30', '09:00', 65, { base: 900 })],
@@ -168,7 +199,11 @@ addMissions(1, [
       'Send the ploughs in time — while they sweep, nothing can land. Two ploughs are slow; a full convoy has four.',
       'And it gets dark early: the runway has no lights yet.'
     ],
-    goal: 'Keep the runway clear and open through two snowfalls.',
+    aim: 'Keep the runway clear and open through two snowfalls.',
+    news: [
+      { icon: '❄️', text: 'Snow: it builds up on the runway and the apron.' },
+      { icon: '🚜', text: 'Ploughs: send the convoy; while it sweeps, the runway is closed.' }
+    ],
     stages: [
       { name: 'Snow at dawn', mode: 'ops', from: '07:00', to: '10:00', weather: { temp: -4, wind: [20, 8], snow: [['07:20', '09:20', 2.6]] }, desks: 2,
         flights: [SK('CRVL', 5, '07:20', '09:20', 40), SK('DC8', 1, '08:00', '08:00', 65, { base: 900 })],
@@ -188,17 +223,27 @@ addMissions(1, [
       'Fees, a café, a car park, a new airline — every choice has a price. Raise the fees and SAS grumbles; build a car park and it pays back only slowly.',
       'Make the airport pay for itself by the end of the year.'
     ],
-    goal: 'End the nine months with a profit.',
+    aim: 'End the nine months with a profit.',
+    news: [
+      { icon: '💰', text: 'Fees: higher fees earn more, but the airlines grumble.' },
+      { icon: '☕', text: 'Shops and car parks: income from every passenger.' }
+    ],
     stages: [
       { name: 'Spring', mode: 'plan', days: 80, goal: [],
-        choices: [{ id: 'cafe', at: 6, default: 'no', options: [{ id: 'cafe', build: 'cafe' }, { id: 'kiosk', build: 'kiosk' }, { id: 'no' }] }] },
+        choices: [{ id: 'cafe', at: 6, default: 'no', icon: '☕', title: 'Something to eat',
+          text: 'The passengers wait in the hall with nothing to buy. A café earns more from each of them; a kiosk is cheaper and opens sooner.',
+          options: [{ id: 'cafe', build: 'cafe', label: 'Build a café' }, { id: 'kiosk', build: 'kiosk', label: 'A kiosk' }, { id: 'no', label: 'Not now' }] }] },
       { name: 'Summer', mode: 'plan', days: 80, goal: [],
-        choices: [{ id: 'charter', at: 4, default: 'no', options: [
-          { id: 'yes', airline: { code: 'TRANSAIR', routes: [{ type: 'DC6B', perDay: 3, load: 0.85, months: [6, 7, 8, 9] }], mood: 70 } },
-          { id: 'no' }
-        ] }] },
+        choices: [{ id: 'charter', at: 4, default: 'no', icon: '🏖️', title: 'Summer charters',
+          text: 'Transair Sweden would like to fly holidaymakers to the sun from Arlanda this summer: three DC-6 flights a day, June to September.',
+          options: [
+            { id: 'yes', airline: { code: 'TRANSAIR', routes: [{ type: 'DC6B', perDay: 3, load: 0.85, months: [6, 7, 8, 9] }], mood: 70 }, label: 'Welcome them' },
+            { id: 'no', label: 'No, thank you' }
+          ] }] },
       { name: 'Autumn', mode: 'plan', days: 80, goal: [],
-        choices: [{ id: 'parking', at: 4, default: 'no', options: [{ id: 'big', build: 'parkingBig' }, { id: 'small', build: 'parkingSmall' }, { id: 'no' }] }] }
+        choices: [{ id: 'parking', at: 4, default: 'no', icon: '🚗', title: 'A car park',
+          text: 'More and more passengers drive to the airport. A car park earns a little every day — but it takes years to pay back what it costs.',
+          options: [{ id: 'big', build: 'parkingBig', label: 'A big one' }, { id: 'small', build: 'parkingSmall', label: 'A small one' }, { id: 'no', label: 'Not now' }] }] }
     ],
     goal: [{ k: 'profit', min: 0 }],
     stars: [{ k: 'profit', min: 6e6 }, { k: 'airlines', min: 65 }]
@@ -212,7 +257,11 @@ addMissions(1, [
       'Approach lights help the pilots in fog — the evenings are often misty now.',
       'Night flights are loud over Märsta. When the wind is calm, you choose the runway direction: which way spares the town?'
     ],
-    goal: 'Light the runway, then run a dark evening and a late night without sending anyone away.',
+    aim: 'Light the runway, then run a dark evening and a late night without sending anyone away.',
+    news: [
+      { icon: '💡', text: 'Runway lights: flights in the dark. Approach lights: in fog too.' },
+      { icon: '🏡', text: 'Noise: when the wind is calm, pick the runway direction that spares Märsta.' }
+    ],
     stages: [
       { name: 'Lights', mode: 'plan', days: 45, crews: 2, endEarly: true, goal: [{ k: 'project', id: 'lights1' }] },
       { name: 'Dark evening', mode: 'ops', date: '1962-01-08', from: '15:00', to: '18:00',
@@ -235,7 +284,11 @@ addMissions(1, [
       'The ceremony is by the terminal: stand 1 is closed while it lasts. Four stands left, and the busiest day yet.',
       'A remote stand can be built in a hurry — at a price.'
     ],
-    goal: 'Run the opening day on time, with the ceremony on stand 1.',
+    aim: 'Run the opening day on time, with the ceremony on stand 1.',
+    news: [
+      { icon: '👑', text: 'The ceremony closes stand 1 from 11 to 13.' },
+      { icon: '🅿️', text: 'A remote stand can be built at once from the toolbar.' }
+    ],
     facts: [
       { text: 'King Gustaf VI Adolf officially opened Arlanda on 1 April 1962.', src: SRC_EN },
       { text: 'On that day all international traffic moved from Bromma to Arlanda.', src: SRC_SV }
@@ -261,7 +314,10 @@ addMissions(1, [
       'Snow in the morning, a busy middle of the day, a dark snowy afternoon. Stands, desks, fuel and ploughs — all by hand.',
       'If it gets too much, think about what you could buy before it starts.'
     ],
-    goal: 'Get through a whole winter day: no flight sent away, most of them on time.',
+    aim: 'Get through a whole winter day: no flight sent away, most of them on time.',
+    news: [
+      { icon: '🎓', text: 'The exam: everything of the chapter, in three stages.' }
+    ],
     stages: [
       { name: 'Snowy morning', mode: 'ops', from: '07:00', to: '10:00', weather: { temp: -8, wind: [10, 7], snow: [['07:30', '09:15', 2.8]], showers: 1 }, desks: 2,
         flights: [SK('CRVL', 6, '07:10', '09:30', 40), SK('DC8', 2, '07:45', '08:45', 65, { base: 900 })],
