@@ -120,6 +120,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # repo-wide spec and conventions
 ├── AGENTS.md                # instructions for AI coding agents (CLAUDE.md points here)
+├── docs/                    # the agents' rules by area: languages, mobile, PWA and offline, icons, code layout, new project, cloud save, testing
 └── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
     ├── SPEC.md              # spec of this game
     ├── index.html, styles.css, constants.js, game.js

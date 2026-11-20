@@ -1,6 +1,6 @@
 # Icons
 
-Arrows, symbols and emoji are drawn the same on every device, see "Arrows and icons are drawn" in `AGENTS.md`.
+Arrows, symbols and emoji are drawn the same on every device, see `docs/icons.md` at the repo root.
 
 - `engine.js`: the runtime, copied into each project by `tools/icons-build.js`.
 - `mono.js`: the one-colour drawings (arrows, ticks, triangles), shown in the colour of the text. The aeroplane is reshaped from Google's Material Icons (Apache 2.0).

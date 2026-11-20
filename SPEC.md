@@ -71,7 +71,7 @@ Programming puzzle game: the player is the brain of a lift and builds its progra
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
 ├── tools/cdp.js              # drives a page in headless Chrome (phone or desktop) from a steps file: screenshots, page errors
 ├── tools/cloud-mock.js       # for testing a cloud save with tools/cdp.js: the repo over http, a fake Supabase session, a mock of its REST (offline, error, hang, ok)
-├── docs/cloud-save.md        # guide shared by every project: the cloud save's rules, recipe, typical mistakes and tests
+├── docs/                    # the rules by area, for agents (AGENTS.md links each and sums it up): languages.md, mobile.md, pwa.md (icons, manifest, updates, offline), icons.md (arrows and emoji drawn), code-layout.md, new-project.md, cloud-save.md (rules, recipe, typical mistakes, tests), testing.md
 ├── .gitattributes            # every text file stored with LF line endings
 ├── assets/                  # gallery.css, gallery-lang.js (the gallery's texts in English, Russian and Swedish), gallery.js (the language switcher, remembered as ivanGallery.lang; picks up a new deploy via update.js; installs every game's offline worker), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image), showcase.gif (the animated preview at the top of the root READMEs: 800 × 450 slides of the games, English UI, about 4.5 MB)
 ├── flight-simulator/
@@ -231,9 +231,9 @@ Programming puzzle game: the player is the brain of a lift and builds its progra
 2. **Spec first:** write `<name>/SPEC.md` (idea, screens, rules, controls incl. touch, difficulty levels, cheats, files) and agree on it before writing any game code.
 3. Put a self-contained `index.html` inside it (plus any assets it needs), implementing the spec.
 4. Add a `README.md` (English), a `README_RU.md` (Russian) and a `README_SV.md` (Swedish), each written for players and linking to the other two (same pattern as this repo's root READMEs).
-5. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog, and a Sound On / Off switch on the start screen and in the pause (see `AGENTS.md`).
+5. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog, and a Sound On / Off switch on the start screen and in the pause (see `AGENTS.md`; the whole procedure: `docs/new-project.md`).
 6. Add a `screenshot.png` preview image showing the English UI.
-7. Make it an installable PWA: `icon-maskable.svg`, the PNGs from `tools/pwa-icons.sh <name>`, a `manifest.webmanifest`, the `<head>` links and its offline `sw.js` from `node tools/sw-build.js <name>` (see `AGENTS.md`).
+7. Make it an installable PWA: `icon-maskable.svg`, the PNGs from `tools/pwa-icons.sh <name>`, a `manifest.webmanifest`, the `<head>` links and its offline `sw.js` from `node tools/sw-build.js <name>` (see `docs/pwa.md`).
 8. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md` / `README_SV.md`.
 9. List it in the `Projects` section above with a one-line summary and a link to its `SPEC.md`.
 

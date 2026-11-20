@@ -120,6 +120,7 @@ npx serve .        # или просто открой любой index.html в �
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # спецификация и правила всего репозитория
 ├── AGENTS.md                # инструкции для AI-агентов (CLAUDE.md ссылается сюда)
+├── docs/                    # правила для агентов по областям: языки, мобильные, PWA и офлайн, значки, структура кода, новый проект, облачное сохранение, тесты
 └── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
     ├── SPEC.md              # спецификация этой игры
     ├── index.html, styles.css, constants.js, game.js

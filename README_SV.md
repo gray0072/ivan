@@ -120,6 +120,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # specifikation och regler för hela repot
 ├── AGENTS.md                # instruktioner för AI-agenter (CLAUDE.md pekar hit)
+├── docs/                    # agenternas regler per område: språk, mobil, PWA och offline, ikoner, kodstruktur, nytt projekt, molnsparning, tester
 └── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
     ├── SPEC.md              # spelets specifikation
     ├── index.html, styles.css, constants.js, game.js

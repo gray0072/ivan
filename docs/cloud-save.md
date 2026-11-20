@@ -1,6 +1,6 @@
 # Cloud save: rules, recipe and typical mistakes
 
-How a game (or any app on `gray0072.github.io`: this repo, `swedish`, `tanks`) keeps its progress in the shared Supabase project and syncs it between a phone and a computer, without ever losing progress and without ever making the player wait for the network. `AGENTS.md` points here; read this before adding or changing a cloud save.
+How a game (or any app on `gray0072.github.io`: this repo, `swedish`, `tanks`) keeps its progress in the shared Supabase project and syncs it between a phone and a computer, without ever losing progress and without ever making the player wait for the network. `AGENTS.md` points here; read it in full before adding or changing a cloud save, a sign-in, a sync or anything that talks to Supabase.
 
 Reference implementations, plain scripts, no build step:
 
@@ -21,7 +21,9 @@ Reference implementations, plain scripts, no build step:
 9. **Deleting or resetting is explicit.** A deletion or a reset must not be undone by another device merging its copy back in. Either remember which items were in the cloud and treat one missing as deleted (World Aviation: the career stays on the other device, unlinked), or write the reset as an explicit overwrite of the cloud, not a merge.
 10. **Describe the states.** The game's `SPEC.md` lists its cloud states and what each shows; the READMEs tell the player in all three languages; every new text is translated.
 
-Repo-wide rules that go with it (`AGENTS.md`): the table and its policies start with the project's prefix (`liftlogic_progress`), the schema lives in `supabase/schema.sql` and is safe to run again, the session is kept under the project's own `localStorage` key (`auth.storageKey`), never the library's default, and the URL and publishable key are written in the code.
+## The shared Supabase project
+
+**One Supabase project is shared with the other apps** (the `swedish` and `tanks` repos and any project here with a cloud save, like `world-aviation`). Every table a project adds starts with its own prefix, the `localStorage` one in snake case (`worldaviation_careers`, `swedish_saves`, `tanks_custom_maps`), and so do its policies — never a bare `saves` or `maps` another app may own. Its schema lives in the project's own `supabase/schema.sql`, safe to run again. A Supabase session is kept under the project's own `localStorage` key (`auth.storageKey`, e.g. `worldaviation.auth.<user id>`), never the library's default `sb-<project-ref>-auth-token`, which `/swedish/` uses. The project's URL and publishable key are not secrets (row-level security guards the rows) and are written in the project's code — there is no build step to read them from GitHub secrets.
 
 ## Recipe
 
