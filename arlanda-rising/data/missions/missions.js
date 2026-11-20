@@ -20,6 +20,14 @@
 //   goal, stars    the mission's own goals for ★ (besides every stage passed), and the two for ★★ and ★★★
 //   real           (optional) the Real Arlanda medal: a goal with the real airport's number, its year and source
 //   facts          the history the briefing tells, with its source (checked before it is shown)
+//   paper          an exam's front page of the local paper: { head, text }
+// Session 3 adds to setup: opens (domains made part of the game at level 0), domains ({ domain: level } the owner
+// has arranged), unlock ({ domain: level } the Office may buy from now on), it (IT people at least), managers,
+// strike ({ dept, from }: a strike notice the mission starts with); to an option of a decision: hire, manager,
+// union ({ dept, how, offer }), system ({ dom, how }), it, temps, train, summer, project, unlock, airline2; to an ops
+// stage: sick ({ dept: share } more away), events strike, fail, power, sick, emergency; to a flight series: when
+// ([decision, options…]: flown only after that choice) and waiver; `requires` may name one optional stage
+// ("apron2.bigStand").
 // Each mission's minutes at ▶ are measured by tools/missions-check.js.
 
 const CHAPTERS = [

@@ -16,16 +16,29 @@ const Tasks = {
       S.ops.later.some((k) => k.kind === kind && k.target === target);
   },
   need(kind, target) {
-    const st = S.mission.st, dom = TASK_DOMAIN[kind], lv = S.domains[dom] || 0;
-    if (S.mission.hands.indexOf(kind) < 0 && !lv) {
+    const st = S.mission.st, dom = TASK_DOMAIN[kind], installed = S.domains[dom] || 0, lv = Systems.working(dom);
+    if (S.mission.hands.indexOf(kind) < 0 && !installed) {
       this.execute(kind, target, this.obvious(kind, target), 'auto');
       st.tasksAuto++;
       return;
     }
-    if (lv > 0) {
+    if (lv >= 2) {
       const L = DOMAINS[dom].levels[lv];
-      S.ops.later.push({ kind, target, at: S.clock + L.delay, by: 'people', right: L.right });
+      S.ops.later.push({ kind, target, at: S.clock + L.delay, by: 'system', right: L.right });
       return;
+    }
+    if (lv === 1) {
+      // the team does it unless it is short (absence, a strike): then it comes to the tray
+      const cap = People.capacity(dom);
+      if (cap >= 1 || rand() < cap) {
+        const w = People.work(dom, DOMAINS[dom].levels[1]);
+        let delay = w.delay, right = w.right;
+        // the team that stands in for a system that is down: as good as it still knows the manual way
+        if (installed >= 2) { const r = Systems.readiness(dom); delay *= 2 - r; right *= 0.5 + 0.5 * r; }
+        S.ops.later.push({ kind, target, at: S.clock + delay, by: 'people', right });
+        return;
+      }
+      st.short++;
     }
     const task = { id: nextId(), kind, target, t0: S.clock, due: S.clock + TASK_DEADLINE[kind] * diff().deadline };
     if (S.ops.tasks.length >= TRAY_MAX) { st.overflow++; this.toDuty(task); return; }
@@ -45,6 +58,8 @@ const Tasks = {
     if (kind === 'fuel') { const f = Flights.get(target); return !!f && f.tr && f.tr.fuel === 'asked'; }
     if (kind === 'checkin') return S.ops.desksOpen < S.airport.desks;
     if (kind === 'plough') { const s = Runways.surface(target); return !!s && !s.plough && s.snow >= 1 && S.ops.ploughQueue.indexOf(target) < 0; }
+    if (kind === 'bags') { const f = Flights.get(target); return !!f && f.tr && f.tr.bags === 'asked'; }
+    if (kind === 'announce') { const f = Flights.get(target); return !!f && f.ann === 'asked' && !Flights.over(f); }
     return false;
   },
   // what one tap does
@@ -62,6 +77,8 @@ const Tasks = {
       case 'fuel': Flights.get(target).tr.fuel = 'queued'; return true;
       case 'checkin': S.ops.desksOpen++; logEvent('desk', { open: S.ops.desksOpen }); return true;
       case 'plough': return Runways.plough(choice || target);
+      case 'bags': return Turnaround.bags(Flights.get(target), choice === 'lost');
+      case 'announce': { const f = Flights.get(target); f.ann = 'done'; f.annAt = S.clock; logEvent('announced', { flight: f.no }); return true; }
     }
     return false;
   },
@@ -79,16 +96,17 @@ const Tasks = {
     for (const k of S.ops.later) {
       if (t < k.at) { later.push(k); continue; }
       if (!this.valid(k.kind, k.target)) continue;
-      const right = rand() < k.right;
+      const right = k.right >= 1 || rand() < k.right;
       let choice = this.obvious(k.kind, k.target);
       if (k.kind === 'stand' && !right) {
         const f = Flights.get(k.target), poor = Stands.poor(f);
         choice = poor ? poor.id : choice;
         f.extraTaxi += WRONG_STAND_DELAY;
       }
+      if (k.kind === 'bags' && !right) choice = 'lost';
       // a convoy busy elsewhere, no stand at all: try again in a minute
       if (!this.execute(k.kind, k.target, choice, k.by)) { k.at = t + 1; later.push(k); continue; }
-      if (k.by === 'duty') st.tasksDuty++; else st.tasksPeople++;
+      if (k.by === 'duty') st.tasksDuty++; else if (k.by === 'system') st.tasksSys++; else st.tasksPeople++;
     }
     S.ops.later = later;
   },

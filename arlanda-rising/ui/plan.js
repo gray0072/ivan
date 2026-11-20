@@ -37,10 +37,10 @@ const PlanUI = (() => {
 
   function render() {
     if (!S || !S.plan || !S.mission) { box.hidden = true; key = ''; return; }
-    const m = Missions.def();
-    const ids = (m.setup && m.setup.projects) || [];
+    const ids = S.mission.projects || [];
     const goals = Goals.all(Missions.stage().goal, S.mission.st);
-    const k = JSON.stringify(goals) + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys);
+    const k = JSON.stringify(goals) + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
+      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + (S.people ? S.people.it : 0);
     box.hidden = false;
     if (k === key) return;
     key = k;
@@ -63,6 +63,7 @@ const PlanUI = (() => {
         '<button class="tb small' + (p.finance === h ? ' on' : '') + '" data-fin="' + h + '" data-p="' + pid + '">' + Text.esc(tr({ cash: 'Cash', loan: 'A loan', grant: "The owner's grant" }[h])) + '</button>').join('') + '</div>';
       html += '</div>';
     }
+    html += teams();
     for (const b of S.plan.buys) html += '<div class="buyRow">' + BUILD_ICONS[b.kind] + ' ' + Text.esc(tr(BUILDINGS[b.kind].name)) + ' — ' + Text.esc(tr('ready in {n} days', { n: b.done - S.day })) + '</div>';
     if (S.airport.open) {
       html += '<div class="fin"><span>' + Text.esc(tr('Fees')) + '</span>' + ['low', 'normal', 'high'].map((f) =>
@@ -75,12 +76,43 @@ const PlanUI = (() => {
     box.innerHTML = html;
   }
 
+  // the teams and systems the mission lets the player add now: hire a team (ready in two weeks), put in a system
+  // (keep the team as the fallback, or let it go), IT people
+  function teams() {
+    const unlock = S.unlock || {};
+    let html = '';
+    for (const d of Object.keys(S.domains)) {
+      const lv = S.domains[d] || 0, next = lv + 1, L = DOMAINS[d].levels[next];
+      if (!L || (unlock[d] || 0) < next) continue;
+      const hiring = S.people && S.people.hiring.find((h) => h.dom === d), inst = S.sys && S.sys[d] && S.sys[d].installAt;
+      const why = Systems.cannot(d);
+      let right;
+      if (hiring || inst) right = '<span class="wait">' + Text.esc(tr('ready in {n} days', { n: (hiring ? hiring.at : inst) - S.day })) + '</span>';
+      else if (why === 'room') right = '<span class="wait">' + Text.esc(tr('Needs the computer room')) + '</span>';
+      else if (why === 'hall') right = '<span class="wait">' + Text.esc(tr('Needs the baggage hall')) + '</span>';
+      else if (why) right = '';
+      else if (next === 1) right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire')) + '<small>' + sek(Systems.price(d)) + '</small></button>';
+      else right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Keep the team')) + '<small>' + sek(Systems.price(d, 'keep')) + '</small></button>' +
+        '<button class="tb small" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('Let it go')) + '<small>' + sek(Systems.price(d, 'layoff')) + '</small></button>';
+      html += '<div class="stageRow"><div class="sn"><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.level(d, next)) + '</b><small>' + Text.esc(Text.dom(d)) +
+        (L.staff ? ' · ' + Text.esc(tr('{n} jobs', { n: L.staff })) : '') + (L.month ? ' · ' + Text.esc(tr('{m} a month', { m: sek(L.month) })) : '') + (L.it ? ' · ' + Text.esc(tr('{n} IT people', { n: L.it })) : '') + '</small></div><div class="sr">' + right + '</div></div>';
+    }
+    const need = Systems.itNeed();
+    if (need || (S.people && S.people.it)) {
+      html += '<div class="fin"><span>💻 ' + Text.esc(tr('IT people: {a} of {n} needed', { a: S.people ? S.people.it : 0, n: need })) + '</span>' +
+        '<button class="tb small" data-it="1">+1</button><button class="tb small" data-it="-1"' + (!S.people || !S.people.it ? ' disabled' : '') + '>−1</button></div>';
+    }
+    return html ? '<div class="pHead"><b>' + Text.esc(tr('Teams and systems')) + '</b></div>' + html : '';
+  }
+
   box.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b || b.disabled) return;
     Sfx.play('click');
     const pid = b.dataset.p, sid = b.dataset.s;
-    if (b.dataset.start) Actions.start(pid, sid, b.dataset.start);
+    if (b.dataset.up) Actions.upgrade(b.dataset.up, b.dataset.how);
+    else if (b.dataset.it) Actions.hireIT(+b.dataset.it);
+    else if (b.dataset.start) Actions.start(pid, sid, b.dataset.start);
     else if (b.dataset.pace) Actions.pace(pid, sid, b.dataset.pace);
     else if (b.dataset.mod) Actions.mod(pid, b.dataset.mod);
     else if (b.dataset.fin) Actions.finance(pid, b.dataset.fin);
@@ -98,9 +130,19 @@ const PlanUI = (() => {
     const k = def.id + I18N.lang + Settings.short();
     if (k === decKey) return;
     decKey = k;
-    dec.innerHTML = '<div class="decIcon">' + (def.icon || '❓') + '</div><h2>' + Text.esc(tr(def.title || def.id)) + '</h2>' +
-      '<p>' + Text.esc(tr(def.text || '')) + '</p><div class="opts">' + def.options.map((o) =>
-        '<button class="opt" data-opt="' + o.id + '"><b>' + Text.esc(tr(o.label || o.id)) + '</b><small>' + Text.esc(Text.effects(o)) + '</small></button>').join('') + '</div>';
+    // params: names filled into an offer made by Free Play (translated where they are data)
+    const p = {};
+    for (const key of Object.keys(def.params || {})) p[key] = typeof def.params[key] === 'string' ? tr(def.params[key]) : def.params[key];
+    let extra = '';
+    if (def.kind === 'union' && People.has(def.dept)) {
+      const u = S.people.depts[def.dept].union;
+      extra = '<p class="fine">✊ ' + Text.esc(tr("The union's mood: {m} of 100", { m: Math.round(u.mood) })) + (People.manager(def.dept) ? ' · ' + Text.esc(Text.manager(People.manager(def.dept).id)) : '') + '</p>';
+    }
+    dec.innerHTML = '<div class="decIcon">' + (def.icon || '❓') + '</div><h2>' + Text.esc(tr(def.title || def.id, p)) + '</h2>' +
+      '<p>' + Text.esc(tr(def.text || '', p)) + '</p>' + extra + '<div class="opts">' + def.options.map((o) => {
+        const lines = o.manager ? '<span class="mgr">' + Text.managerLines(o.manager).map((l) => Text.esc(l)).join('<br>') + '</span>' : '';
+        return '<button class="opt" data-opt="' + o.id + '"><b>' + Text.esc(o.manager ? Text.manager(o.manager) : tr(o.label || o.id)) + '</b>' + lines + '<small>' + Text.esc(Text.effects(o)) + '</small></button>';
+      }).join('') + '</div>';
     dec.hidden = false;
   }
   dec.addEventListener('click', (e) => {

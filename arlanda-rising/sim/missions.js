@@ -11,26 +11,33 @@ const Missions = {
   checkpoint: null,   // S as JSON at the current stage's start (Retry stage)
   startWorld: null,   // S as JSON at the mission's start, before its first stage (Restart mission)
 
-  def() { return MISSION[S.mission.id]; },
+  // the mission's definition: from the list, or the one Free Play made (kept in the state)
+  def() { return S.mission.def || MISSION[S.mission.id]; },
   stage() { return this.def().stages[S.mission.stage]; },
 
   // `world`: the campaign's airport to go on from (null: a new campaign, the forest of 1958)
-  start(id, difficulty, world) {
-    const m = MISSION[id];
+  start(id, difficulty, world, def) {
+    const m = def || MISSION[id];
     if (!m) throw new Error('no mission ' + id);
     S = world ? JSON.parse(JSON.stringify(world)) : newWorld(hashOf('arlanda', id), difficulty);
     S.difficulty = difficulty;
     S.cheated = false;          // a cheat marks this run only
     S.mission = null; S.ops = null; S.plan = null;
     const day0 = Calendar.parse(m.date);
+    const log0 = S.log.length;
     const meanwhile = S.day < day0 ? Summary.skip(day0) : null;
     S.day = Math.max(S.day, day0);
-    for (const p of m.requires || []) Construction.ownerBuilds(p);
+    // what the people did meanwhile: rounds settled, strikes, managers poached or retired, raises asked
+    if (meanwhile) meanwhile.news = S.log.slice(log0).filter((e) => MEANWHILE_NEWS.indexOf(e.type) >= 0).slice(-6);
+    People.settleAsks();
+    for (const p of m.requires || []) { const [pid, sid] = p.split('.'); if (sid) Construction.ownerStage(pid, sid); else Construction.ownerBuilds(pid); }
     this.setup(m.setup || {});
     // a campaign that comes in below zero gets the owner's loan, so it never gets stuck
     if (S.money < 0) { const gap = -S.money; S.loans += gap; Finance.book('owner loan', gap); S.debtMonths = 0; if (meanwhile) meanwhile.ownerLoan = gap; }
     S.mission = { id, stage: -1, status: 'running', results: [], hands: [], st: null, total: Goals.newStats(),
-      money0: S.money, choices: {}, grants: m.grants || [], meanwhile, acc: 0, stars: 0, medal: false, judged: null };
+      money0: S.money, choices: {}, grants: m.grants || [], meanwhile, acc: 0, stars: 0, medal: false, judged: null,
+      projects: ((m.setup || {}).projects || []).slice() };
+    if (def) S.mission.def = def;
     this.startWorld = JSON.stringify(S);
     this.beginStage(0);
   },
@@ -38,13 +45,34 @@ const Missions = {
   // and desks, the airlines' planned routes, whether the airport is open to traffic
   setup(u) {
     if (u.budget) Finance.book('owner', u.budget * diff().money);
-    if (u.loanLimit !== undefined) S.loanLimit = u.loanLimit * diff().money;
+    // the room the owner gives for new loans, on top of what is owed already
+    if (u.loanLimit !== undefined) S.loanLimit = S.loans + u.loanLimit * diff().money;
     if (u.open !== undefined) S.airport.open = u.open;
     for (const p of u.projects || []) Construction.open(p);
     for (const kind of Object.keys(u.items || {})) while (Airport.count(kind) < u.items[kind]) Airport.addItem(kind);
     if (u.desks) S.airport.desks = Math.max(S.airport.desks, u.desks);
     for (const code of Object.keys(u.airlines || {})) Meters.airline(code).routes = u.airlines[code].map((r) => Object.assign({}, r));
     Meters.updateAirlines();
+    // session 3: the domains the mission opens (at least at a level: the owner's arrangement), the levels it
+    // lets the Office buy, IT people
+    for (const d of u.opens || []) if (S.domains[d] === undefined) S.domains[d] = 0;
+    for (const d of Object.keys(u.domains || {})) {
+      while ((S.domains[d] || 0) < u.domains[d]) {
+        if (!S.domains[d]) { S.domains[d] = 1; People.dept(d); } else { Systems.rec(d).kept = true; Systems.installed(d); }
+      }
+    }
+    for (const d of Object.keys(u.unlock || {})) this.unlock(d, u.unlock[d]);
+    // a strike notice the mission starts with
+    if (u.strike) { People.ensure(); People.dept(u.strike.dept); const from = Calendar.parse(u.strike.from); S.people.strike = { dept: u.strike.dept, from, to: from + STRIKE_DAYS, settle: WAGE_DEMAND }; }
+    for (const id of u.managers || []) if (!S.people || !Object.values(S.people.managers).some((m) => m.id === id)) People.hireManager(id);
+    if (u.it && (!S.people || S.people.it < u.it)) People.hireIT(u.it - (S.people ? S.people.it : 0));
+    People.updateMeter();
+  },
+  // a level the Office may buy from now on
+  unlock(d, lv) {
+    S.unlock = S.unlock || {};
+    S.unlock[d] = Math.max(S.unlock[d] || 0, lv);
+    if (S.domains[d] === undefined) S.domains[d] = 0;
   },
   beginStage(i) {
     const m = this.def(), stage = m.stages[i];
@@ -118,3 +146,6 @@ const Missions = {
     return (st.minutes * OPS_HOUR_SECONDS / 60 + st.days * PLAN_DAY_SECONDS + st.decisions * DECISION_SECONDS) / 60;
   }
 };
+
+// the kinds of log entries the "Meanwhile…" card tells
+const MEANWHILE_NEWS = ['settled', 'strikeNotice', 'strikeOver', 'poached', 'retired', 'raiseAsk', 'teamReady', 'systemLive'];

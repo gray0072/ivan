@@ -9,7 +9,10 @@ const Results = (() => {
   const $ = (id) => document.getElementById(id);
 
   function work(st) {
-    return '<p class="work">' + Text.esc(tr('You did {a} tasks; the duty manager did {b}; others did {c}.', { a: st.tasksPlayer, b: st.tasksDuty, c: st.tasksAuto + st.tasksPeople })) + '</p>';
+    let html = '<p class="work">' + Text.esc(tr('You did {a} tasks; the duty manager did {b}; others did {c}.', { a: st.tasksPlayer, b: st.tasksDuty, c: (st.tasksAuto || 0) + (st.tasksPeople || 0) + (st.tasksSys || 0) })) + '</p>';
+    if (st.tasksPeople || st.tasksSys) html += '<p class="work">' + Text.esc(tr('Your teams did {a} tasks, your systems {b}.', { a: st.tasksPeople || 0, b: st.tasksSys || 0 })) +
+      (st.failures ? ' ' + Text.esc(tr('{n} failures.', { n: st.failures })) : '') + (st.short ? ' ' + Text.esc(tr('{n} tasks came to you because a team was short.', { n: st.short })) : '') + '</p>';
+    return html;
   }
 
   function stage() {
@@ -35,14 +38,30 @@ const Results = (() => {
     0: ['Kaj: “The owner is on the phone. Shall I say you’re out?”', 'Astrid: “Every airport has days like this. Try again.”']
   };
 
+  // the front page after a chapter's exam (the mission's own `paper`)
   function newspaper(m, stars) {
-    if (m.kind !== 'exam' || !stars) return '';
+    if (m.kind !== 'exam' || !stars || !m.paper) return '';
     return '<div class="paper"><div class="mast">ARLANDA-BLADET <small>' + Text.esc(fmtDate(S.day)) + '</small></div>' +
-      '<h2>' + Text.esc(tr('THE FIRST WINTER: ARLANDA KEEPS FLYING')) + '</h2>' +
-      '<p>' + Text.esc(tr('Snow, dark afternoons and a full day of jets — and the new airport in the forest kept its flights going. "We cleared the runway by hand and by heart," says the director.')) + '</p></div>';
+      '<h2>' + Text.esc(tr(m.paper.head)) + '</h2><p>' + Text.esc(tr(m.paper.text)) + '</p></div>';
+  }
+
+  // a round of Free Play: no stars, the round's goal, the work, the next round
+  function free() {
+    const m = Missions.def(), tot = S.mission.total, p = $('results'), pass = S.mission.status === 'done';
+    let html = '<h1>' + Text.esc(pass ? tr('Round {n} done!', { n: m.round }) : tr('Round {n} missed', { n: m.round })) + '</h1><p class="chap">' + Text.esc(tr('Free Play')) + '</p>';
+    html += '<div class="meterRow">' + METERS.map((x) => '<span>' + x.icon + ' ' + (x.k === 'passengers' ? Text.paxStars(S.meters[x.k]) + '★' : Math.round(S.meters[x.k])) + '</span>').join('') + '</div>';
+    html += work(tot) + '<p class="work">' + Text.esc(tr('Money in the round: {a} in, {b} out.', { a: sek(tot.income), b: sek(tot.cost) })) + '</p>';
+    p.innerHTML = html;
+    p.appendChild(Screens.row(
+      Screens.btn(tr('Office'), 'secondary', () => Game.toOffice(true)),
+      Screens.btn(tr('Next round'), 'default big', () => Game.freeRound())
+    ));
+    Screens.show('results');
+    Sfx.play(pass ? 'chord' : 'sad');
   }
 
   function mission(info) {
+    if (info.free) { free(); return; }
     const m = Missions.def(), j = S.mission.judged, stars = S.mission.stars, tot = S.mission.total, p = $('results');
     const pass = S.mission.status === 'done';
     const lines = LINES[pass ? stars : 0];
@@ -58,7 +77,8 @@ const Results = (() => {
     html += '<p class="quote">' + Text.esc(tr(lines[(S.mission.stage + stars) % lines.length])) + '</p>';
     const nx = info.next;
     if (nx) html += '<p class="label">' + Text.esc(tr('Next: {name} · ~{n} min', { name: tr(nx.name), n: Text.minutes(nx) })) + '</p>';
-    else if (pass && m.chapter === 1 && m.n === 11) html += '<p class="fine">' + Text.esc(tr('That was the last mission of chapter 1. The Jet Age comes in a later version of the game.')) + '</p>';
+    else if (pass && !nx) html += '<p class="fine">' + Text.esc(tr('That was the last mission of chapter {n}. {next} comes in a later version of the game.', { n: m.chapter, next: tr((CHAPTERS[m.chapter] || {}).name || '') })) + '</p>';
+    if (pass && m.id === FREE_OPENS && !info.replayed) html += '<p class="fine">🛫 ' + Text.esc(tr('Free Play is open: an endless airport, from the start screen.')) + '</p>';
     p.innerHTML = html;
     let d = S.difficulty;
     p.appendChild(Screens.diffPicker(d, (x) => { d = x; }));

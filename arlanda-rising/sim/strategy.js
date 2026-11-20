@@ -7,7 +7,8 @@
 //     choices: { decision id: option id } — the rest take their `default`,
 //     moves: [{ stage, at, after, do, ... }] — `stage` the mission's stage (0 first), `at` a clock time in ops
 //            time or days into a plan stage, `after` [project, part] finished first; `do`: start (project, part, pace), pace, mod (project,
-//            mod), finance (project, how), buy (kind, n), desks (n), dir, fees (level), borrow / repay (sum) }
+//            mod), finance (project, how), buy (kind, n), desks (n), dir, fees (level), borrow / repay (sum),
+//            act (fn: any of sim/actions.js, args) }
 // A move is done once, as soon as it is due and works. The runner's own state is { done } (saved with the
 // mission in the resume test).
 
@@ -50,6 +51,8 @@ const Strategy = {
       case 'fees': return Actions.fees(mv.level);
       case 'borrow': Actions.borrow(mv.sum); return true;
       case 'repay': Actions.repay(mv.sum); return true;
+      // any other action by its name: { do: 'act', fn: 'overtime', args: ['stands'] }
+      case 'act': return !!Actions[mv.fn](...(mv.args || []));
     }
     throw new Error('unknown move ' + mv.do);
   }

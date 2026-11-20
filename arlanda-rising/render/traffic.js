@@ -15,23 +15,42 @@ const Traffic = (() => {
   let drawn = [];   // { f, x, y, z } this frame
 
   const ease = (u) => u * u * (3 - 2 * u);
-  const runwayHdg = (dir) => (dir === '01' ? 10.4 : 190.4);
+  // runway 2 (08/26): its ends, length and the way from it to the aprons (session 3)
+  const R2 = LAYOUT.runway2, L2 = Math.hypot(R2.to[0] - R2.from[0], R2.to[1] - R2.from[1]);
+  const isR2 = (dir) => dir === '08' || dir === '26';
+  const H2 = Math.atan2(R2.to[0] - R2.from[0], R2.to[1] - R2.from[1]) * 180 / Math.PI;
+  const runwayHdg = (dir) => (dir === '01' ? 10.4 : dir === '19' ? 190.4 : dir === '08' ? H2 : H2 + 180);
+  // from the runway's exit to the apron's entry
+  function exitPath(dir) {
+    if (isR2(dir)) return [rwFrom(dir, R2.exit), R2.from].concat(LAYOUT.taxi2.slice(0, 3).reverse());
+    return [rp(EXIT, 0), rp(EXIT, LAYOUT.taxi.offset), APRON_IN];
+  }
   function along(pts, u) { return alongPoly(pts, polyLength(pts) * clamp(u, 0, 1)); }
 
   // the stand's centre for an aircraft of length len, and the way in from the runway exit
   function standCentre(i, len) { const p = AirportArt.standPos(i); return [p.x - 4 - len / 2, p.y]; }
-  function wayIn(i, len) {
-    const e = AirportArt.standEntry(i), c = standCentre(i, len);
-    return [rp(EXIT, 0), rp(EXIT, LAYOUT.taxi.offset), APRON_IN, [e[0], APRON_IN[1]], [e[0], c[1]], c];
+  function wayIn(i, len, dir) {
+    const e = AirportArt.standEntry(i), c = standCentre(i, len), ex = exitPath(dir), last = ex[ex.length - 1];
+    return ex.concat([[e[0], last[1]], [e[0], c[1]], c]);
   }
   function wayOut(i, len, dir) {
     const e = AirportArt.standEntry(i), c = standCentre(i, len);
+    if (isR2(dir)) {
+      const tw = LAYOUT.taxi2;
+      return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], tw[0][1]]].concat(tw).concat(dir === '26' ? [R2.to] : []);
+    }
     const end = dir === '01' ? 0 : 1;
     return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], APRON_IN[1]], APRON_IN, rp(EXIT, LAYOUT.taxi.offset), rp(end, LAYOUT.taxi.offset), rp(end, 70)];
   }
-  function dirNow() { const rw = Runways.main(); return rw && S.ops ? Runways.direction(rw) : '19'; }
+  function dirNow() { const rw = Runways.inUse(); return rw && S.ops ? Runways.direction(rw) : '19'; }
   // the runway point at a distance (m) from the threshold of a direction, before it (−) or after it (+)
-  function rwFrom(dir, d) { return dir === '01' ? rp(d / L, 0) : rp(1 - d / L, 0); }
+  function rwFrom(dir, d) {
+    if (isR2(dir)) {
+      const a = dir === '08' ? R2.from : R2.to, b = dir === '08' ? R2.to : R2.from;
+      return [a[0] + (b[0] - a[0]) / L2 * d, a[1] + (b[1] - a[1]) / L2 * d];
+    }
+    return dir === '01' ? rp(d / L, 0) : rp(1 - d / L, 0);
+  }
 
   // where a flight is now: { x, y, z, hdg, moving, landing } or null when it is not on the map
   function pos(f, t) {
@@ -56,17 +75,17 @@ const Traffic = (() => {
         const u = tt / 0.3, p0 = rwFrom(dir, -1200), p1 = rwFrom(dir, 300);
         return { x: lerp(p0[0], p1[0], u), y: lerp(p0[1], p1[1], u), z: 62 * (1 - u) * (1 - u), hdg: h, moving: true, landing: true };
       }
-      const td = rwFrom(dir, 300), ex = rp(EXIT, 0);
+      const td = rwFrom(dir, 300), ex = exitPath(dir)[0];
       if (tt < 1.2) {
         const u = 1 - Math.pow(1 - (tt - 0.3) / 0.9, 2);
         return { x: lerp(td[0], ex[0], u), y: lerp(td[1], ex[1], u), z: 0, hdg: h, moving: true };
       }
       if (si < 0 || f.st === 'waitStand') {
-        const p = along([ex, rp(EXIT, LAYOUT.taxi.offset), [APRON_IN[0] - 40, APRON_IN[1]]], f.st === 'waitStand' ? 1 : clamp((tt - 1.2) / 2, 0, 1));
+        const p = along(exitPath(dir), f.st === 'waitStand' ? 1 : clamp((tt - 1.2) / 2, 0, 1));
         return { x: p.x, y: p.y, z: 0, hdg: p.hdg, moving: true };
       }
       const dur = Math.max(0.5, f.at - f.landed - 1.2);
-      const p = along(wayIn(si, len), (tt - 1.2) / dur);
+      const p = along(wayIn(si, len, dir), (tt - 1.2) / dur);
       return { x: p.x, y: p.y, z: 0, hdg: p.hdg, moving: true };
     }
     if ((f.st === 'turn' || f.st === 'parked') && si >= 0) {
@@ -74,7 +93,7 @@ const Traffic = (() => {
       return { x: c[0], y: c[1], z: 0, hdg: 90, moving: false, atStand: true };
     }
     if (f.st === 'taxiOut') {
-      const i = si >= 0 ? si : f.lastStand || 0, dir = dirNow(), c = standCentre(i, len), tt = t - f.offBlock;
+      const i = si >= 0 ? si : f.lastStand || 0, dir = f.tdir || dirNow(), c = standCentre(i, len), tt = t - f.offBlock;
       if (tt < 0.8) return { x: c[0] - 30 * ease(tt / 0.8), y: c[1], z: 0, hdg: 90, moving: true, push: true };
       const way = wayOut(i, len, dir), dur = Math.max(0.5, f.at - f.offBlock - 0.8);
       const p = along(way, (tt - 0.8) / dur);

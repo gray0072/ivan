@@ -35,12 +35,28 @@ const LAYOUT = {
     { x: 680, y: 1075, hdg: 90 }, { x: 740, y: 1430, hdg: 90 }
   ],
 
+  // session 3: runway 2 (08/26) from the AIP's ends (59.658419 N 17.936133 E, 59.663897 N 17.979153 E), its taxiway
+  // from the jet apron's north end; the jet apron (1965), the domestic apron (1983); where the aircraft on runway 2
+  // leave it (m from its threshold)
+  runway2: { from: [1290, 2349], to: [3709, 2958], w: 45, exit: 1500 },
+  taxi2: [[760, 1650], [800, 1700], [1150, 2250], [1290, 2349]],
+  apron2: { x0: 640, y0: 1380, x1: 890, y1: 1650 },
+  apron3: { x0: 700, y0: 935, x1: 890, y1: 1110 },
+
   // buildings: [x0, y0, x1, y1] on the ground and a height in metres
   terminal1: { box: [880, 1180, 925, 1300], h: 9, waiting: [880, 1300, 915, 1335], kiosk: [884, 1165, 896, 1177] },
   tower1: { x: 912, y: 1365, base: 9, h: 28 },
   fireStation: { box: [455, 1470, 505, 1500], h: 8 },
   siteOffice: { x: 720, y: 880 },
   cafe: { box: [880, 1140, 905, 1162], h: 5 },
+  intlTerminal: { box: [890, 1390, 965, 1645], h: 14 },
+  domTerminal: { box: [895, 955, 975, 1112], h: 10 },
+  bagHall: { box: [925, 1180, 955, 1265], h: 6 },
+  computerRoom: { box: [925, 1300, 947, 1326], h: 5 },
+  generator: { box: [950, 1300, 960, 1312], h: 3 },
+  busStop: { x: 1010, y: 1180 },
+  restaurant: { box: [905, 1140, 925, 1162], h: 5 },
+  dutyFree: { box: [965, 1450, 990, 1520], h: 6 },
   fuelDepot: { x: 690, y: 1400 },      // where the fuel trucks wait
   snowDepot: { x: 560, y: 1430 },      // the ploughs' shed
   parkingSmall: { box: [960, 1180, 1040, 1250] },

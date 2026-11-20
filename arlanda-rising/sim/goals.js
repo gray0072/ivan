@@ -6,7 +6,11 @@
 //   checkinWait (max average minutes), maxWait, profit (min SEK in the stage), money (min SEK of its own now: less the loans),
 //   closeCalls (max), noise (max units), dutyTasks (max tasks the duty manager did), playerTasks (min),
 //   airlines / passengers / neighbours / staff / safety (min meter), project (id, stages: finished),
-//   flag (id: a decision taken), built (kind, n: at least n of it), spent (max SEK on construction).
+//   flag (id: a decision taken), built (kind, n: at least n of it), spent (max SEK on construction);
+//   session 3: level (dom, min: the domain at least at that level), manager (dept: one hired), noStrike (no strike
+//   called or running), lostBags (max), unannounced (max late flights not told), fireCat (min), systems (max
+//   domains run by a system), handsOff (min tasks done by teams and systems), handTasks (max tasks the player did),
+//   lastMonth (min result of the last month closed, without one-off sums).
 // A mission's ★ is every stage passed and its own `goal`; ★★ and ★★★ one each of its two `stars`.
 // Used by sim/missions.js, the stage card and the results.
 
@@ -14,7 +18,8 @@ const Goals = {
   newStats() {
     return { arr: 0, dep: 0, onTime: 0, delaySum: 0, adelaySum: 0, diverted: 0, cancelled: 0, paxServed: 0, paxWaitSum: 0,
       maxWait: 0, missed: 0, tasksPlayer: 0, tasksDuty: 0, tasksAuto: 0, tasksPeople: 0, overflow: 0, closeCalls: 0,
-      noise: 0, nightMoves: 0, income: 0, cost: 0, built: 0, ploughRuns: 0, closedMin: 0, minutes: 0, days: 0, decisions: 0 };
+      noise: 0, nightMoves: 0, income: 0, cost: 0, built: 0, ploughRuns: 0, closedMin: 0, minutes: 0, days: 0, decisions: 0,
+      tasksSys: 0, short: 0, struck: 0, failures: 0, lostBags: 0, unannounced: 0, emergencies: 0 };
   },
   // the mission's counters: the stages' added up (the longest wait the longest)
   add(total, st) {
@@ -41,6 +46,27 @@ const Goals = {
         return (c.stages || []).length ? c.stages.every((s) => Construction.stageDone(c.id, s)) : Construction.done(c.id);
       case 'flag': return !!S.flags[c.id];
       case 'built': return Airport.count(c.kind) >= (c.n || 1);
+      // session 3
+      case 'level': return (S.domains[c.dom] || 0) >= c.min;
+      case 'manager': return !!(S.people && S.people.managers[c.dept]);
+      case 'noStrike': return !(S.people && S.people.strike) && !st.struck;
+      case 'lostBags': return st.lostBags;
+      case 'unannounced': return st.unannounced;
+      case 'fireCat': return Airport.fireCat() >= c.min;
+      case 'systems': { let n = 0; for (const d of Object.keys(S.domains)) if (S.domains[d] >= 2) n++; return n; }
+      case 'handsOff': return st.tasksPeople + st.tasksSys;
+      case 'handTasks': return st.tasksPlayer;
+      // the result of the last month closed: what the airport earns now, investments' payback included
+      // (the one-off sums left out: loans taken or repaid, the owner's money, building and buying)
+      case 'lastMonth': {
+        const h = S.finance.history[S.finance.history.length - 1];
+        if (!h) return 0;
+        const oneOff = ['loans', 'owner', 'owner loan', 'construction', 'build', 'deals', 'hiring', 'training', 'drills'];
+        let r = 0;
+        for (const k of Object.keys(h.in)) if (oneOff.indexOf(k) < 0) r += h.in[k];
+        for (const k of Object.keys(h.out)) if (oneOff.indexOf(k) < 0) r -= h.out[k];
+        return r;
+      }
     }
     throw new Error('unknown goal ' + c.k);
   },

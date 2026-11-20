@@ -6,13 +6,13 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="Run Stockholm Arlanda from the forest of 1958: build the runway, the tower and the terminal, pick stands, fuel the jets, plough the snow and make the airport pay.">
+<meta name="description" content="Run Stockholm Arlanda from the forest of 1958 to the busy 1980s: build runways and terminals, hire teams and managers, put in the first computers, survive strikes, fog and snowstorms, and make the airport pay.">
 <title>Arlanda Rising</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#203445">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
 <canvas id="map"></canvas>
@@ -58,78 +58,94 @@
   <div id="results" class="panel" hidden></div>
   <div id="pause" class="panel" hidden></div>
   <div id="office" class="panel wide" hidden></div>
+  <div id="people" class="panel wide" hidden></div>
+  <div id="opsCenter" class="panel wide" hidden></div>
+  <div id="freePlay" class="panel" hidden></div>
 </div>
 
-<script src="data/icons.js?v=1"></script>
+<script src="data/icons.js?v=2"></script>
 <script src="core/icons.js?v=1"></script>
-<script src="constants.js?v=1"></script>
-<script src="data/aircraft.js?v=1"></script>
-<script src="data/airlines.js?v=1"></script>
-<script src="data/buildings.js?v=1"></script>
-<script src="data/masterplan.js?v=1"></script>
-<script src="data/layout.js?v=1"></script>
-<script src="data/domains.js?v=1"></script>
-<script src="data/missions/missions.js?v=1"></script>
-<script src="data/missions/ch1.js?v=1"></script>
+<script src="constants.js?v=2"></script>
+<script src="data/aircraft.js?v=2"></script>
+<script src="data/airlines.js?v=2"></script>
+<script src="data/buildings.js?v=2"></script>
+<script src="data/masterplan.js?v=2"></script>
+<script src="data/layout.js?v=2"></script>
+<script src="data/domains.js?v=2"></script>
+<script src="data/people.js?v=1"></script>
+<script src="data/missions/missions.js?v=2"></script>
+<script src="data/missions/ch1.js?v=2"></script>
+<script src="data/missions/ch2.js?v=1"></script>
+<script src="data/missions/ch3.js?v=1"></script>
 <script src="data/strategies/strategies.js?v=1"></script>
 <script src="data/strategies/ch1.js?v=1"></script>
-<script src="data/lang-ru.js?v=1"></script>
-<script src="data/lang-sv.js?v=1"></script>
+<script src="data/strategies/ch2.js?v=1"></script>
+<script src="data/strategies/ch3.js?v=1"></script>
+<script src="data/lang-ru.js?v=2"></script>
+<script src="data/lang-sv.js?v=2"></script>
 <script src="core/utils.js?v=1"></script>
 <script src="core/events.js?v=1"></script>
-<script src="core/storage.js?v=1"></script>
+<script src="core/storage.js?v=2"></script>
+<script src="core/save.js?v=1"></script>
 <script src="core/i18n.js?v=1"></script>
 <script src="core/settings.js?v=1"></script>
 <script src="core/audio.js?v=1"></script>
 <script src="core/input.js?v=1"></script>
 <script src="core/cursor.js?v=1"></script>
 <script src="core/update.js?v=1"></script>
+<script src="lib/supabase.min.js?v=1"></script>
+<script src="core/cloud.js?v=1"></script>
 <script src="sim/state.js?v=1"></script>
 <script src="sim/calendar.js?v=1"></script>
 <script src="sim/weather.js?v=1"></script>
-<script src="sim/finance.js?v=1"></script>
-<script src="sim/meters.js?v=1"></script>
-<script src="sim/airport.js?v=1"></script>
+<script src="sim/finance.js?v=2"></script>
+<script src="sim/meters.js?v=2"></script>
+<script src="sim/people.js?v=1"></script>
+<script src="sim/systems.js?v=1"></script>
+<script src="sim/airport.js?v=2"></script>
 <script src="sim/stands.js?v=1"></script>
-<script src="sim/schedule.js?v=1"></script>
-<script src="sim/runways.js?v=1"></script>
-<script src="sim/passengers.js?v=1"></script>
-<script src="sim/turnaround.js?v=1"></script>
-<script src="sim/flights.js?v=1"></script>
-<script src="sim/tasks.js?v=1"></script>
-<script src="sim/construction.js?v=1"></script>
-<script src="sim/summary.js?v=1"></script>
-<script src="sim/plan.js?v=1"></script>
-<script src="sim/ops.js?v=1"></script>
-<script src="sim/goals.js?v=1"></script>
-<script src="sim/missions.js?v=1"></script>
-<script src="sim/actions.js?v=1"></script>
+<script src="sim/schedule.js?v=2"></script>
+<script src="sim/runways.js?v=2"></script>
+<script src="sim/passengers.js?v=2"></script>
+<script src="sim/turnaround.js?v=2"></script>
+<script src="sim/flights.js?v=2"></script>
+<script src="sim/tasks.js?v=2"></script>
+<script src="sim/construction.js?v=2"></script>
+<script src="sim/summary.js?v=2"></script>
+<script src="sim/plan.js?v=2"></script>
+<script src="sim/ops.js?v=2"></script>
+<script src="sim/goals.js?v=2"></script>
+<script src="sim/missions.js?v=2"></script>
+<script src="sim/actions.js?v=2"></script>
 <script src="sim/sim.js?v=1"></script>
-<script src="sim/strategy.js?v=1"></script>
-<script src="sim/cheats.js?v=1"></script>
-<script src="progress.js?v=1"></script>
-<script src="art/emblems.js?v=1"></script>
+<script src="sim/strategy.js?v=2"></script>
+<script src="sim/cheats.js?v=2"></script>
+<script src="sim/freeplay.js?v=1"></script>
+<script src="progress.js?v=2"></script>
+<script src="art/emblems.js?v=2"></script>
 <script src="render/palette.js?v=1"></script>
 <script src="render/iso.js?v=1"></script>
 <script src="render/ground.js?v=1"></script>
-<script src="render/airport.js?v=1"></script>
-<script src="render/aircraft.js?v=1"></script>
-<script src="render/traffic.js?v=1"></script>
+<script src="render/airport.js?v=2"></script>
+<script src="render/aircraft.js?v=2"></script>
+<script src="render/traffic.js?v=2"></script>
 <script src="render/sky.js?v=1"></script>
-<script src="render/map.js?v=1"></script>
-<script src="ui/text.js?v=1"></script>
-<script src="ui/screens.js?v=1"></script>
+<script src="render/map.js?v=2"></script>
+<script src="ui/text.js?v=2"></script>
+<script src="ui/screens.js?v=2"></script>
 <script src="ui/hud.js?v=1"></script>
 <script src="ui/tray.js?v=1"></script>
-<script src="ui/toolbar.js?v=1"></script>
-<script src="ui/plan.js?v=1"></script>
-<script src="ui/cards.js?v=1"></script>
+<script src="ui/toolbar.js?v=2"></script>
+<script src="ui/plan.js?v=2"></script>
+<script src="ui/cards.js?v=2"></script>
 <script src="ui/timeline.js?v=1"></script>
-<script src="ui/missioncard.js?v=1"></script>
-<script src="ui/results.js?v=1"></script>
-<script src="ui/office.js?v=1"></script>
-<script src="ui/hints.js?v=1"></script>
+<script src="ui/missioncard.js?v=2"></script>
+<script src="ui/results.js?v=2"></script>
+<script src="ui/office.js?v=2"></script>
+<script src="ui/people.js?v=1"></script>
+<script src="ui/opscenter.js?v=1"></script>
+<script src="ui/hints.js?v=2"></script>
 <script src="ui/sounds.js?v=1"></script>
-<script src="game.js?v=1"></script>
+<script src="game.js?v=2"></script>
 </body>
 </html>

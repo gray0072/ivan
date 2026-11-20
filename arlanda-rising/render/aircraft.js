@@ -12,7 +12,13 @@ const AIRCRAFT_SHAPE = {
   CV44: { sweep: 2, engines: [0.2], props: true, fin: 0.2, fus: 0.055 },
   DC6B: { sweep: 2, engines: [0.17, 0.33], props: true, fin: 0.2, fus: 0.05 },
   CRVL: { sweep: 20, rear: true, fin: 0.2, fus: 0.045 },
-  DC8: { sweep: 30, engines: [0.2, 0.37], fin: 0.17, fus: 0.04 }
+  DC8: { sweep: 30, engines: [0.2, 0.37], fin: 0.17, fus: 0.04 },
+  DC9: { sweep: 24, rear: true, fin: 0.2, fus: 0.04 },
+  B727: { sweep: 32, rear: true, fin: 0.2, fus: 0.04 },
+  B747: { sweep: 37, engines: [0.21, 0.4], fin: 0.17, fus: 0.045 },
+  DC10: { sweep: 35, engines: [0.3], fin: 0.17, fus: 0.05 },
+  F28: { sweep: 16, rear: true, fin: 0.2, fus: 0.05 },
+  MD81: { sweep: 24, rear: true, fin: 0.18, fus: 0.035 }
 };
 
 const AircraftArt = (() => {

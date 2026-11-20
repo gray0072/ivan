@@ -21,6 +21,7 @@ const Finance = {
     const m = Airport.monthlyCost(), k = minutes / (30 * 1440);
     this.book('wages', -m.wages * k);
     this.book('upkeep', -m.upkeep * k);
+    this.book('systems', -m.systems * k);
     this.book('interest', -m.interest * k);
   },
   // at a new month: the month's books kept, the months in debt counted, the airlines' feelings about the fees
@@ -34,6 +35,8 @@ const Finance = {
     f.month = key;
     S.debtMonths = S.money < 0 ? S.debtMonths + 1 : 0;
     Meters.feesMonth();
+    People.month();
+    Systems.month();
   },
   borrow(amount) {
     const room = Math.max(0, (S.loanLimit || 0) - S.loans);

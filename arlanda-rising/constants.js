@@ -20,12 +20,12 @@ const EPOCH_YEAR = 1950;           // day 0 of the calendar is 1 January of this
 // ---------- the task tray and the duty manager ----------
 const TRAY_MAX = 6;                // tasks the tray holds; more go to the duty manager at once
 // game minutes a task waits for the player before the duty manager takes it
-const TASK_DEADLINE = { stand: 5, fuel: 6, checkin: 8, plough: 10 };
+const TASK_DEADLINE = { stand: 5, fuel: 6, checkin: 8, plough: 10, bags: 6, announce: 4 };
 // game minutes the duty manager is late on top of that (and right only MANUAL_SUMMARY_EFF of the time)
-const DUTY_LATE = { stand: 15, fuel: 15, checkin: 20, plough: 25 };
+const DUTY_LATE = { stand: 15, fuel: 15, checkin: 20, plough: 25, bags: 15, announce: 12 };
 const MANUAL_SUMMARY_EFF = 0.6;    // the duty manager's efficiency, also for the skipped time between missions
 // share of the income lost in summary (plan time, the skipped time) per domain still done by hand at that efficiency
-const SUMMARY_LOSS = { stands: 0.04, turnaround: 0.03, checkin: 0.04, snow: 0.06 };
+const SUMMARY_LOSS = { stands: 0.04, turnaround: 0.03, checkin: 0.04, snow: 0.06, baggage: 0.03, info: 0.02 };
 const STAND_TASK_LEAD = 6;         // game minutes before the landing that "pick a stand" appears
 
 // ---------- runways ----------
@@ -81,7 +81,7 @@ const LANDING_FEE_PER_T = 60;      // SEK per tonne of MTOW
 const PAX_FEE = 110;               // SEK per departing passenger (international)
 const PAX_FEE_DOMESTIC = 70;       // … domestic
 const SHOP_SPEND = 25;             // SEK the airport gets per departing passenger from a café with full free time
-const SHOP_MAX = 1.5;              // the shops' shares (data/buildings.js `shop`) add up to at most this
+const SHOP_MAX = 3;                // the shops' shares (data/buildings.js `shop`) add up to at most this
 const PARKING_PER_PAX = 14;        // SEK of parking per departing passenger when the car parks take them all
 const STAND_FREE_MIN = 60;         // minutes on a stand included in the landing fee
 const STAND_FEE_HOUR = 800;        // SEK per hour beyond it
@@ -131,3 +131,65 @@ const HINT_REPEAT = 3;             // times one hint is shown at most (Settings:
 const BANNER_MS = 2600;            // ms a banner stays
 const BUY_CONFIRM_MS = 2500;       // ms a buy button waits for its second tap
 const GUIDED_MISSIONS = ['1-1', '1-2', '1-3']; // missions with the guiding finger
+
+// ---------- people, unions and managers (session 3, sim/people.js) ----------
+const ABSENCE_BASE = 0.04;         // share of a team away on an ordinary day
+const FLU = { 12: 1.3, 1: 2.2, 2: 3, 3: 1.4 }; // × the absence by month: the flu season
+const SUMMER_AWAY = 0.3;           // extra share away in July (the Swedish summer holiday) unless it was spread out
+const ABSENCE_SLACK = 0.05;        // a team covers this much absence itself
+const SHORT_K = 3;                 // each point of absence above the slack sends this share of the team's tasks to the tray
+const STRIKE_CAPACITY = 0.15;      // a team on strike does this share of its work
+const OVERTIME_FATIGUE = 15;       // fatigue points a stage of overtime adds to a team
+const OVERTIME_STAGE = 0.35;       // × a team's monthly wages / 30 (a day) a stage of overtime costs
+const TEMPS_COVER = 0.15;          // absence the seasonal temps cover
+const TEMPS_DAYS = 90;             // days the temps stay
+const TEMPS_JOB = 30000;           // SEK per temp job a month (a temp for every job of the team × TEMPS_COVER)
+const SPREAD_COST = 15000;         // SEK per job for spreading the summer holidays (the holiday-move bonus)
+const HIRE_DAYS = 14;              // days from hiring a team to its first shift (plan time)
+const CLEARANCE_DAYS = 42;         // … for a job that needs a security clearance
+const HIRE_COST = 40000;           // SEK per job to recruit and train a new team
+const TRAIN_COST = 25000;          // SEK per job for a course
+const TRAIN_SKILL = 15;            // skill points a course adds
+const SKILL_START = 45, SKILL_MAX = 85, SKILL_MONTH = 2; // a new team's skill, the most, what a month of work adds
+const MORALE_START = 65;           // a new team's morale
+const MORALE_BASE = 62;            // the morale a team drifts toward with a fair wage and no trouble
+const MORALE_DRIFT = 0.3;          // share of the way to it a month goes
+const FATIGUE_DECAY = 0.5;         // share of the fatigue left after a month
+const LAYOFF_MORALE = 12;          // morale points every team loses at a lay-off
+const MANAGER_SALARY = 90000;      // SEK a month, a manager's base salary (× the candidate's own)
+const MANAGER_POACH = 0.1;         // chance a month that an unhappy manager (mood under 40) leaves for a rival airport
+const MANAGER_RAISE_MONTHS = 24;   // months between a manager's raise requests
+const MANAGER_YEARS = 14;          // years before a manager retires
+const WAGE_ROUND_MONTHS = 18;      // months between two wage rounds of a team
+const WAGE_DEMAND = 0.06;          // the union's demand in a mission's wage round (a raise of the wages)
+const WAGE_DRIFT = 0.015;          // the raise of a round settled between missions (no inflation in the game)
+const MORALE_BONUS_KEEP = 0.92;    // share of a wage deal's morale bonus left after a month
+const STRIKE_NOTICE_DAYS = 7;      // a strike starts a week after its notice (as in Sweden)
+const STRIKE_DAYS = 3;             // days a strike lasts
+const STRIKE_LOSS = 2;             // × the summary loss of a domain on strike days
+
+// ---------- systems and their failures (session 3, sim/systems.js) ----------
+const IT_JOB = 55000;              // SEK a month per IT job
+const READINESS_DECAY = 0.1;       // fallback readiness lost a month without a drill
+const READINESS_MIN = 0.2;
+const CHECKIN_SYSTEM_X = 1.5;      // × the passengers a desk checks in with check-in computers working
+const DRILL_COST = 150000;         // SEK for a drill day
+const RETRAIN_COST = 30000;        // SEK per job to retrain the team a system replaces
+const POWER_CUT_MIN = 40;          // game minutes a power cut takes the systems without backup power down
+const SUMMARY_DOWN = 0.5;          // × a system's share of the summary loss while it is down
+
+// ---------- the airfield (session 3) ----------
+const CROSSWIND_MAX = 20;          // kt of crosswind a runway takes; more and the other runway (or none) is used
+const FOG_VIS_ILS = 120;           // m: the landing minimum with an instrument landing system
+const LVP_SEP_X = 1.6;             // × the separation in low visibility (under FOG_VIS_APPROACH, with the ILS)
+const FIRE_CAT_BASE = 7;           // the fire service's category with the first fire station; + 1 per crash tender
+const FIRE_CAT_MAX = 10;
+const EMERGENCY_CLOSE = 12;        // game minutes the runway stays closed after an emergency landing
+const EMERGENCY_CLOSE_LOW = 25;    // … when the fire category is too low for the aircraft
+const BAG_CART_MIN = 6;            // game minutes the carts take to unload and load the bags
+const LOST_BAG_SHARE = 0.04;       // share of the bags lost when the duty manager sends the carts wrong
+const LOST_BAG_MOOD = 6;           // Passengers points per flight with lost bags
+const ANNOUNCE_LEAD = 2;           // minutes past its departure time a late flight's delay must be announced
+const ANNOUNCE_OK = 6;             // minutes the announcement may take before the passengers count it as none
+const ANNOUNCE_MOOD = 14;          // Passengers points lost for a late flight nobody told them about
+const BUS_PARKING = 0.3;           // share of the car parks' takings the airport coaches take away

@@ -13,15 +13,23 @@ const Ops = {
     const from = clockMin(stage.from), to = clockMin(stage.to);
     S.clock = from;
     for (const st of S.airport.stands) { st.occ = null; st.res = null; st.closed = false; }
-    for (const r of S.airport.runways) { r.busyUntil = 0; r.plough = null; r.snow = (stage.snowStart || 0); }
+    for (const r of S.airport.runways) { r.busyUntil = 0; r.plough = null; r.closedUntil = 0; r.snow = (stage.snowStart || 0); }
     S.airport.apron.snow = stage.snowStart || 0;
     S.airport.apron.plough = null;
     S.ops = {
       from, to, weather: null, flights: [], tasks: [], later: [], queue: [],
       desksOpen: Math.min(S.airport.desks, stage.desks !== undefined ? stage.desks : 1),
       trucks: new Array(Airport.fuelTrucks()).fill(0), convoy: 0, ploughQueue: [], dir: null,
-      events: (stage.events || []).map((e, i) => ({ i, at: clockMin(e.at), done: false }))
+      events: (stage.events || []).map((e, i) => ({ i, at: clockMin(e.at), done: false })),
+      down: {}, overtime: {}, absence: {}, strike: null
     };
+    // the people of the day: who is away, who is on strike
+    if (S.people) {
+      for (const d of Object.keys(S.people.depts)) S.ops.absence[d] = People.absence(d) + ((stage.sick || {})[d] || 0);
+      const s = S.people.strike;
+      if (s && S.day >= s.from && S.day < s.to) S.ops.strike = s.dept;
+    }
+    if (S.ops.strike) S.mission.st.struck = 1;
     S.ops.weather = Weather.make(stage.weather, from, to);
     S.ops.flights = Schedule.make(stage);
     // the aircraft parked overnight stand on the best stands that fit
@@ -35,6 +43,7 @@ const Ops = {
   step() {
     const dt = OPS_STEP_MIN, stage = Missions.stage();
     for (const e of S.ops.events) if (!e.done && S.clock >= e.at) { e.done = true; this.event(stage.events[e.i]); }
+    Systems.step(dt);
     Runways.step(dt);
     Flights.step();
     Passengers.step(dt);
@@ -52,6 +61,17 @@ const Ops = {
     } else if (e.do === 'openStand') {
       const st = S.airport.stands.find((s) => s.name === e.stand);
       if (st) st.closed = false;
+    } else if (e.do === 'strike') {
+      // a strike called this morning: the team works at STRIKE_CAPACITY for the rest of the stage
+      if (People.has(e.dept)) { S.ops.strike = e.dept; S.mission.st.struck = 1; logEvent('strikeNow', { dept: e.dept }); }
+    } else if (e.do === 'fail') Systems.fail(e.dom, e.min);
+    else if (e.do === 'power') Systems.powerCut(e.min);
+    else if (e.do === 'sick') { if (People.has(e.dept)) S.ops.absence[e.dept] = (S.ops.absence[e.dept] || 0) + e.share; }
+    else if (e.do === 'emergency') {
+      // the next aircraft to land declares an emergency: it goes first, and the fire service meets it
+      const f = S.ops.flights.filter((x) => (x.st === 'sched' || x.st === 'inbound' || x.st === 'approach') && x.eta !== null && x.eta >= S.clock - 5)
+        .sort((a, b) => a.eta - b.eta)[0];
+      if (f) { f.mayday = true; logEvent('mayday', { flight: f.no }); }
     }
     logEvent('script', { what: e.do, text: e.text || null });
   },

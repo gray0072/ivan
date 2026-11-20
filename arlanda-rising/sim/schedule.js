@@ -5,7 +5,8 @@
 //   n flights of an airline's type arriving between `from` and `to`, each leaving `turn` minutes after its
 //   planned arrival; `parked` ones stand on the apron at the start and only leave (their departures spread
 //   between `from` and `to`); `training` flights carry no passengers (school flying). Arrivals come early
-//   or late by the difficulty's randomness.
+//   or late by the difficulty's randomness. `waiver`: the flight may land although the fire category is too low
+//   (a one-off permission).
 // Used by sim/ops.js; the flights live in S.ops.flights.
 
 const Schedule = {
@@ -13,6 +14,8 @@ const Schedule = {
     const out = [];
     let num = 0;
     for (const line of stage.flights || []) {
+      // a series that flies only after a choice: when: [decision id, option id…]
+      if (line.when && line.when.slice(1).indexOf(S.mission.choices[line.when[0]]) < 0) continue;
       const from = clockMin(line.from), to = clockMin(line.to);
       for (let i = 0; i < line.n; i++) {
         const at = line.n === 1 ? from : from + (to - from) * i / (line.n - 1);
@@ -33,6 +36,7 @@ const Schedule = {
       sta: null, eta: null, std: null, st: 'sched', stand: null, landed: null, inBlock: null, offBlock: null,
       checked: 0, waitSum: 0, paxServed: 0, missed: 0, delay: 0, adelay: 0, extraTaxi: 0, tr: null
     };
+    if (line.waiver) f.waiver = true;
     if (line.parked) {
       f.std = at;
       f.st = 'parked';

@@ -2,7 +2,8 @@
 
 // Arlanda Rising — the airlines' emblems, simplified drawings made for the game (never copied images): on the fin
 // of an aircraft on the map (render/aircraft.js) and as a small square logo on the screens (the task tray, the
-// cards). An emblem is data in the airline's livery (data/airlines.js): ['text', letters, colour]. Taken from
+// cards). An emblem is data in the airline's livery (data/airlines.js): ['text', letters, colour] or ['circle', disc colour,
+// letters, letters' colour]. Taken from
 // world-aviation/art/emblems.js in spirit; more kinds come with the later chapters' airlines.
 
 const Emblems = {
@@ -15,6 +16,14 @@ const Emblems = {
       const w = c.measureText(e[1]).width, max = size * 2.2;
       if (w > max) c.scale(max / w, 1);
       c.fillText(e[1], 0, 0);
+    } else if (e[0] === 'circle') {
+      // ['circle', disc colour, letters, letters' colour]: a disc with letters in it
+      c.fillStyle = e[1];
+      c.beginPath(); c.arc(0, 0, size * 0.7, 0, Math.PI * 2); c.fill();
+      c.fillStyle = e[3];
+      c.font = '900 ' + size * 0.62 + 'px Arial, sans-serif';
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(e[2], 0, size * 0.04);
     }
   },
   cache: {},

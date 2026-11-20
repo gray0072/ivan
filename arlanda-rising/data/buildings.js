@@ -27,5 +27,18 @@ const BUILDINGS = {
   kiosk: { name: 'Kiosk', price: 0.6e6, staff: 0, small: true, days: 10, from: 1960, shop: 0.5 },
   cafe: { name: 'Café', price: 2.5e6, staff: 0, small: true, days: 25, from: 1960, shop: 1 },
   parkingSmall: { name: 'Car park (300 places)', price: 6e6, staff: 1, small: true, days: 20, from: 1960, parking: 0.4 },
-  parkingBig: { name: 'Car park (1 200 places)', price: 18e6, staff: 3, small: true, days: 40, from: 1960, parking: 1 }
+  parkingBig: { name: 'Car park (1 200 places)', price: 18e6, staff: 3, small: true, days: 40, from: 1960, parking: 1 },
+  // session 3: chapters 2 and 3
+  crashTender: { name: 'Crash tender', price: 3.5e6, staff: 3, small: true, days: 30, from: 1963 },
+  generator: { name: 'Backup generator', price: 6e6, staff: 1, small: true, days: 20, from: 1970 },
+  dutyFree: { name: 'Duty-free shop', price: 30e6, staff: 0, small: true, days: 60, from: 1976, shop: 1.2 },
+  restaurant: { name: 'Restaurant', price: 8e6, staff: 0, small: true, days: 40, from: 1965, shop: 0.6 },
+  busStop: { name: 'Airport coach stops', price: 8e6, staff: 0, small: true, days: 30, from: 1989, bus: true },
+  apron2: { name: 'The jet apron', price: 0, staff: 4 },
+  runway2: { name: 'Runway 2', price: 0, staff: 4 },
+  ils: { name: 'Instrument landing system', price: 0, staff: 2 },
+  intlTerminal: { name: 'The international terminal', price: 0, staff: 40 },
+  domTerminal: { name: 'The domestic terminal', price: 0, staff: 26 },
+  bagHall: { name: 'The baggage hall', price: 0, staff: 2 },
+  computerRoom: { name: 'The computer room', price: 0, staff: 0 }
 };

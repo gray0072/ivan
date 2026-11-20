@@ -17,9 +17,12 @@ const Summary = {
     // the share lost to the duty manager's work on the domains still done by hand
     let loss = 0;
     for (const d of Object.keys(SUMMARY_LOSS)) {
-      if (S.domains[d] > 0) continue;
+      // a domain the game has not opened yet costs nothing; a team or a system loses only what its absence,
+      // strikes or failures cost (sim/systems.js)
+      if (S.domains[d] === undefined) continue;
       if (d === 'snow' && !Calendar.winter(S.day)) continue;
-      loss += SUMMARY_LOSS[d] * (1 - MANUAL_SUMMARY_EFF) / 0.4;
+      const share = S.domains[d] > 0 ? Systems.summaryLoss(d) : 1;
+      if (share > 0) loss += SUMMARY_LOSS[d] * (1 - MANUAL_SUMMARY_EFF) / 0.4 * share;
     }
     const keep = 1 - loss;
     for (const code of Object.keys(S.airlines)) {
@@ -45,6 +48,8 @@ const Summary = {
       r.flights += d.flights; r.pax += d.pax;
       Finance.running(1440);
       S.day++;
+      People.day();
+      Systems.day();
       Finance.checkMonth();
     }
     r.money1 = S.money;

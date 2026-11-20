@@ -330,6 +330,8 @@ addMissions(1, [
         goal: [{ k: 'lost', max: 0 }, { k: 'airportDelay', max: 6 }] }
     ],
     goal: [],
-    stars: [{ k: 'airportDelay', max: 2 }, { k: 'closeCalls', max: 0 }]
+    stars: [{ k: 'airportDelay', max: 2 }, { k: 'closeCalls', max: 0 }],
+    paper: { head: 'THE FIRST WINTER: ARLANDA KEEPS FLYING',
+      text: 'Snow, dark afternoons and a full day of jets — and the new airport in the forest kept its flights going. "We cleared the runway by hand and by heart," says the director.' }
   }
 ]);

@@ -6,7 +6,8 @@
 //   Campaign (arlandaRising.campaign.v1): the airport after the last mission played in the campaign (the world
 //     without a mission), its difficulty, the next mission and the missions passed in it;
 //   the snapshots (arlandaRising.snapshots.v1): the world each mission started from, so a mission can be
-//     replayed for stars without touching the campaign.
+//     replayed for stars without touching the campaign;
+//   FreeSave (arlandaRising.freeplay.v1): the Free Play airport.
 // A cheated run saves nothing here. Used by game.js and the screens.
 
 const Progress = {
@@ -38,7 +39,7 @@ const Campaign = {
   exists() { return !!this.data; },
   // a new campaign: the forest of 1958, the first mission next; stars and medals stay
   start(difficulty) {
-    this.data = { campaignId: Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), difficulty, world: null, next: MISSIONS[0].id, done: {} };
+    this.data = { campaignId: Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36), startedAt: Date.now(), difficulty, world: null, next: MISSIONS[0].id, done: {} };
     Store.remove(KEYS.snapshots);
     this.save();
   },
@@ -64,4 +65,13 @@ const Campaign = {
     this.save();
   },
   nextMission() { return this.data && this.data.next ? MISSION[this.data.next] : null; }
+};
+
+// Free Play (arlandaRising.freeplay.v1): { era, difficulty, round, world, startedAt, savedAt } — the endless airport
+// carried over from round to round (sim/freeplay.js). A round being played is in the mission autosave like any other.
+const FreeSave = {
+  data: null,
+  load() { this.data = Store.json(KEYS.freeplay, null); },
+  save() { if (this.data) { this.data.savedAt = Date.now(); Store.setJson(KEYS.freeplay, this.data); } },
+  exists() { return !!(this.data && this.data.world); }
 };

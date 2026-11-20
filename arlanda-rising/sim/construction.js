@@ -104,5 +104,14 @@ const Construction = {
     p.owner = true;
     Airport.complete(def.effect, id, price);
     return true;
+  },
+  // … or one optional stage of it ("apron2.bigStand" in a mission's `requires`)
+  ownerStage(id, sid) {
+    this.ownerBuilds(id);
+    const s = this.state(id).stages[sid], sd = PROJECTS[id].stages[sid];
+    if (!s || s.done) return false;
+    s.p = 1; s.done = true; s.on = false;
+    if (sd.effect) Airport.complete(sd.effect, id);
+    return true;
   }
 };

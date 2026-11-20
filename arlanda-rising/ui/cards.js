@@ -28,8 +28,11 @@ const FlightCard = (() => {
     if (tr0) {
       const fuel = { wait: tr('later'), asked: tr('waiting for a truck'), queued: tr('the truck is coming'), going: tr('fuelling'), done: tr('done') }[tr0.fuel];
       html += row(tr('Fuel'), fuel || '');
+      if (tr0.bags) html += row(tr('Bags'), { asked: tr('waiting for the carts'), going: tr('the carts are there'), done: tr('done') }[tr0.bags] || '');
       html += row(tr('Boarding'), tr0.ready !== null ? tr('done') : tr0.board !== null ? tr('now') : tr('later'));
     }
+    if (f.mayday) html += row('🆘', tr('An emergency: it lands first'));
+    if (AIRCRAFT[f.type].cat > Airport.fireCat() && !f.waiver) html += row('🚒', tr('Needs fire category {n}', { n: AIRCRAFT[f.type].cat }));
     html += '</table>';
     if (S.ops.tasks.some((k) => k.kind === 'stand' && k.target === f.id)) html += '<p class="hintLine">' + Text.esc(tr('Tap a stand on the map for this aircraft.')) + '</p>';
     if (box.dataset.html !== html) { box.innerHTML = html; box.dataset.html = html; }

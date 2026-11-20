@@ -2,7 +2,7 @@
 
 Developer/agent spec for the `arlanda-rising` project. Repo-wide conventions live in the root `SPEC.md` and `AGENTS.md`; this file only describes this game. Keep it in sync with the code.
 
-> **Status: sessions 1 and 2 of the build order done — chapter 1 is playable end to end in a browser, on a phone and a desktop, in English, Russian and Swedish; installable and offline; in the gallery.** In code: the simulation (`sim/`) and its data (`data/`), the isometric map (`render/`), the screens (`ui/`), the flow and the autosave (`game.js`, `progress.js`), the translations, the icons, the manifest and the offline worker, and `tools/missions-check.js` (see "Testing and balancing"); what session 2 built is summed up in "The game in the browser (session 2)". Not yet: the people and systems, the Ops Center, managers and unions (session 3), the cloud save (session 3), the Terminal view, brands, Finance with payback and NPV, offers (session 4), the hints 💡 1–3 and the Debrief, the Archive and the Album, Free Play and Challenge Days. Settled with the user: the name *Arlanda Rising* (folder `arlanda-rising`); **real airlines with their emblems and real brands** (Swedavia, Arlanda Express, Flygbussarna and the like); **isometric** graphics; **short missions** (at most about 10 minutes, split into stages, never lost when interrupted) for a child with a 40-minute phone limit; **at least 20 hours** of campaign; **one airport through the whole campaign that grows by the historical master plan** — freedom within each mission's frame, full freedom only in small things (adverts, banners, which airlines to court), the architecture and the look of the buildings follow the historical checkpoints (see "The master plan"). The settled decisions are listed at the end ("Decisions").
+> **Status: sessions 1–3 of the build order done — chapters 1–3 (1958–1989, 33 missions) are playable end to end in a browser, on a phone and a desktop, in English, Russian and Swedish; installable and offline; Free Play; the cloud save through Google; in the gallery.** In code: the simulation (`sim/`) and its data (`data/`), the isometric map (`render/`), the screens (`ui/`), the flow and the autosave (`game.js`, `progress.js`), the cloud save (`core/save.js`, `core/cloud.js`, `supabase/schema.sql`), the translations, the icons, the manifest and the offline worker, and `tools/missions-check.js` (see "Testing and balancing"); what session 2 built is summed up in "The game in the browser (session 2)", what session 3 built in "People, systems, chapters 2–3, Free Play and the cloud (session 3)". Not yet: the Terminal view, brands, Finance with payback and NPV, the Airlines screen and its Offers board, route incentives (session 4), the hints 💡 1–3 and the Debrief, the Archive and the Album, Challenge Days, Keep the shift going, de-icing and wildlife, the security and border domains. Settled with the user: the name *Arlanda Rising* (folder `arlanda-rising`); **real airlines with their emblems and real brands** (Swedavia, Arlanda Express, Flygbussarna and the like); **isometric** graphics; **short missions** (at most about 10 minutes, split into stages, never lost when interrupted) for a child with a 40-minute phone limit; **at least 20 hours** of campaign; **one airport through the whole campaign that grows by the historical master plan** — freedom within each mission's frame, full freedom only in small things (adverts, banners, which airlines to court), the architecture and the look of the buildings follow the historical checkpoints (see "The master plan"). The settled decisions are listed at the end ("Decisions").
 
 ## Idea
 
@@ -306,8 +306,66 @@ What `render/`, `ui/`, `game.js` and `progress.js` do today; the screens of "Scr
 - **The flow** (`game.js`): start screen (over the airport of 1962, or the campaign's own) → timeline → mission card → the card before each stage (the first one with "Meanwhile…": the months skipped, the flights in summary, the money, the owner's loan) → play → the stage card (Continue, or Retry stage / Restart mission) → the results (stars, the goals with their values, the meters, the work done by hand and by others, a line from Astrid or Kaj; after the exam the front page of *Arlanda-Bladet*, a fictional local paper) → the Office (the campaign's money and loans — borrow or repay there —, the last six months' books, what the airport has, the meters) → the next mission. The "Meanwhile…" report sits on the first stage's card rather than in the Office, as the skipped time is simulated when the mission starts.
 - **The campaign and the stars** (`progress.js`): `Progress` keeps the best stars per mission and difficulty (a cheated run saves none); `Campaign` keeps the airport after the last mission passed in it, its difficulty (the mission card's choice becomes it) and the next mission; the world a campaign mission started from is kept in `arlandaRising.snapshots.v1` (plain JSON for now, a few kB a mission in chapter 1) for replays, which never touch the campaign. A mission opened with no snapshot (after a new campaign) starts from the forest with the owner building what it requires.
 - **The autosave**: `{ run, data: Missions.save() }` under `arlandaRising.mission.v1`, every `AUTOSAVE_SECONDS` of play, at every stage's end, in the pause menu and on `visibilitychange` / `pagehide`; **Continue mission** resumes it paused at that very moment with a line on the aim, or on the stage card when it was saved there.
-- **Keys and cheats** as in "Controls" and "Cheats" (Shift+2…8 say the chapter is not in the game yet; Shift+K and Shift+F that strikes and failures come later).
+- **Keys and cheats** as in "Controls" and "Cheats" (in session 2 Shift+2…8 said the chapter was not in the game yet; session 3 opened chapters 2 and 3, the strike and the failure).
 - **Texts**: every text through `tr()`; the tables `data/lang-ru.js` and `data/lang-sv.js` hold the screens' texts and the data's (mission names, briefings, aims, stages, news, decisions, projects, buildings), Astrid's and Kaj's lines and the help. A mission's data gained `aim` (its one line, which used to clash with the goal list `goal`), `news` and, for each decision, `icon`, `title`, `text` and each option's `label`.
+
+## People, systems, chapters 2–3, Free Play and the cloud (session 3)
+
+What session 3 added; its numbers are in `constants.js` (the people, the systems, the airfield), the data in `data/domains.js`, `data/people.js`, `data/masterplan.js`, `data/missions/ch2.js` and `ch3.js`.
+
+- **The ladder** (`data/domains.js`, `sim/tasks.js`, `sim/systems.js`): six domains — stands, turnaround (fuel), check-in, snow, baggage (bags) and information (announcements); each level has its staff, price, monthly cost, delay and share of good choices, a system (level 2) also its IT jobs, mean time between failures, fix time and days to install. A domain is part of the game once a mission opens it (`setup.opens`), so chapter 1's worlds are untouched. A task goes to the level that works now: a system (`by: 'system'`), a team (its skill and its manager change its delay and choices; when it is short or on strike, the task falls to the player's tray — `st.short`), or the player's hands. A system that fails hands its work to the team kept beside it (worse with a low readiness: delay × (2 − readiness)) or, laid off, to the tray. The Office may buy a level once a mission has unlocked it (`S.unlock`, `setup.unlock`); systems need the computer room (the belts the baggage hall).
+- **Systems** (`sim/systems.js`): random failures in ops time at the system's MTBF × the IT factor (too few IT people: more often, longer), scripted ones (`events: fail`), a power cut (every system without a backup generator); the readiness falls READINESS_DECAY a month without a drill (DRILL_COST); in summary a system loses its share of SUMMARY_LOSS by its downtime and fallback. Buying: `keep` (retrain the team, RETRAIN_COST a job; its wages go on; morale up) or `layoff` (every team's morale −LAYOFF_MORALE, the unions' mood down, Neighbours −3, no fallback).
+- **People** (`sim/people.js`): a department per domain with a team (and IT): morale (drifts to MORALE_BASE + the manager + a wage deal's fading bonus − fatigue), fatigue (overtime; halves every month), skill (SKILL_START, +SKILL_MONTH, a course +TRAIN_SKILL; check-in desks work at 0.8 + 0.4 × skill, ×CHECKIN_SYSTEM_X with the computers), absence (ABSENCE_BASE × the flu season FLU × morale and fatigue × the difficulty, + SUMMER_AWAY in July unless spread, − the temps); a team's capacity is 1 − (absence − ABSENCE_SLACK) × SHORT_K, STRIKE_CAPACITY on strike, 1 with overtime (OVERTIME_STAGE of a day's wages × OVERTIME_X, +OVERTIME_FATIGUE). Hiring takes HIRE_DAYS in plan time (CLEARANCE_DAYS where a department needs a clearance — none before chapter 5), at once between missions. The Staff meter is the departments' morale weighted by their jobs.
+- **Unions**: a mission's wage round is a decision (`kind: 'union'`): accept (WAGE_DEMAND), a counter-offer the union takes when 0.15 + 0.6 × offer / demand + (mood − 50) / 100 + the manager's `strike` perk ≥ 0.6 (deterministic, its likely outcome shown), the mediator (¾ of the demand), refuse — a strike notice, the strike STRIKE_NOTICE_DAYS later for STRIKE_DAYS, ending with the demand met. A deal calls a notice off. A round that falls due between missions is settled at WAGE_DRIFT (no inflation in the game).
+- **Managers** (`data/people.js`): ten fictional people for five departments, each with a salary, two strengths and a flaw as numbers the sim reads (`perk`); candidates in pairs (a decision, the People screen, Free Play's offers); their mood, a raise asked every MANAGER_RAISE_MONTHS (answered in People, or "not now" at the next mission), poaching (MANAGER_POACH a month under 40) and retiring (MANAGER_YEARS).
+- **The airfield**: the fire category (FIRE_CAT_BASE + a crash tender each, up to FIRE_CAT_MAX; an arrival needing more is sent elsewhere unless it has a `waiver`), emergencies (`events: emergency`: the next arrival lands first, the runway closed EMERGENCY_CLOSE, longer and a close call with too low a category), runway 2 (08/26, the AIP's ends; used when runway 1 cannot take movements: a crosswind over CROSSWIND_MAX, snow, a convoy), the instrument landing system (FOG_VIS_ILS, LVP_SEP_X), bags (BAG_CART_MIN; boarding waits; a wrong cart loses LOST_BAG_SHARE), announcements (a flight ANNOUNCE_LEAD minutes late must be told within ANNOUNCE_OK, or ANNOUNCE_MOOD off the Passengers).
+- **New goals**: level, manager, noStrike, lostBags, unannounced, fireCat, systems, handsOff, handTasks, lastMonth (the last month's result without one-off sums: the payback of an investment).
+- **Free Play** (`sim/freeplay.js`): opens with 2-11; three eras (1963 always, 1976 after 2-11, 1990 after 3-11), each built by the owner; then rounds made from the airport (a seed and the round's number): a plan stage of FREE_PLAN_DAYS with two offers of different groups (an airline's slots, a shop or a car park, a manager pair, a team or a system, a wage round, a crash tender) and an ops peak flown from the airlines' routes, its goal FREE_GOAL_ONTIME on time; no stars. Kept in `arlandaRising.freeplay.v1`; a round being played is in the mission autosave (its definition in `S.mission.def`). Between rounds the Office works on Free Play's airport.
+- **Screens**: the People screen and the Ops Center (from the Office, keys P and O, at once; during play to look only, the game paused), the plan panel's Teams and systems, the toolbar's short teams with Overtime and the systems down, the decision card with the managers' lines and the union's mood, "Meanwhile…" with the people's news, the stage card with who is away or on strike, the results with the teams' and systems' work, the exams' front pages (`paper`), Kaj's new hints, the flight card's bags and emergency, the Free Play screen and its results.
+- **The map**: runway 2 with its taxiway, the jet apron, the domestic apron, the international terminal (hall and pier), the domestic terminal, the baggage hall, the computer room, the generator, a restaurant, duty free, crash tenders, the airport coaches, the localizer; stands placed by their project (`at`); aircraft on runway 2 land, roll out and taxi by its own way; the DC-9, 727, 747, DC-10, F28 and MD-81 drawn to scale.
+- **Cheats**: Shift+2 and Shift+3 the chapter's first mission (with the owner's arrangement of its year), Shift+K a strike of the first team, Shift+F a failure of the first system.
+
+### Chapter 2 as built (`data/missions/ch2.js`)
+
+Checked and told: the 1957 plan's two runways (runway 2 of 2.5 km; its building year was not found, so the briefing does not give one), SAS's first 747 (1971), the international terminal of 1976 (today Terminal 5), Transair Sweden (1950–1981) and Sterling Airways (1962–1993). The game's own story: the jet apron, the charter slots, the people and the deals; runway 2's ends are the AIP's.
+
+| # | Mission | Stages | The idea | ★★ / ★★★ |
+|---|---|---|---|---|
+| 2-1 | Room for the Jets (1965) | plan 75 days, ops 07–10 | pave the jet apron; haul the earth or a noise bank | airport delay ≤ 2 · spent ≤ 75 MSEK |
+| 2-2 | Charter Summer (1967) | plan 80 days, ops 06–09 | Transair, Sterling, both or none; two more desks | profit ≥ 4.5 MSEK · check-in wait ≤ 6 |
+| 2-3 | Hire a Hand (1968) | plan 25 days, ops 07–10 | the first teams take whole kinds of tasks | airport delay ≤ 2 · teams do ≥ 30 tasks |
+| 2-4 | Two Managers (1969) | plan 20 days, ops 07–10 | an operations head and a snow chief with a team, in pairs | an operations head · on time ≥ 90 % |
+| 2-5 | Jumbo! (1971) | plan 50 days, ops 10–13 | the E stand for the 747 (a one-off fire waiver) | check-in wait ≤ 9 · Airlines ≥ 72 |
+| 2-6 | Fire Category (1971) | plan 40 days, ops 08–11 | two crash tenders for category 9; an emergency | Safety ≥ 82 · on time ≥ 85 % |
+| 2-7 | The Wage Round (1972) | plan 30 days, ops 07–10 | accept, counter, the mediator or a strike on the day | no strike · Staff ≥ 62 |
+| 2-8 | The Bag Belt (1973) | ops, plan 60 days, ops | bags by hand, then handlers and belts; a jam | ≤ 6 bags lost · Passengers ≥ 70 |
+| 2-9 | Fog Morning (1974) | plan 40 days, ops 06–09 | the instrument landing system | nothing sent away · on time ≥ 70 % |
+| 2-10 | Crosswind (1975) | plan 160 days, ops 07–10 | runway 2 with the owner's grant; a westerly gale | on time ≥ 85 % · Neighbours ≥ 66 |
+| 2-11 | Exam: The International Terminal (1976) | plan 100 days, ops 07–10, 16–19 | the terminal, then a day with an emergency, a jam and a gale | airport delay ≤ 2 · Passengers ≥ 72 |
+
+### Chapter 3 as built (`data/missions/ch3.js`)
+
+Checked and told: the Riksdag's decision of 17 December 1980 to move the jets from Bromma, the domestic terminal (today Terminal 4) opened on 1 October 1983 and Linjeflyg's move that month, Linjeflyg's F28s, SL's airport coaches under the name Flygbussarna from 1989. Reordered by the checked dates: Flygbussarna is the 10th mission. The MD-81's and the DC-10's years at Arlanda are marked to check in `data/aircraft.js`.
+
+| # | Mission | Stages | The idea | ★★ / ★★★ |
+|---|---|---|---|---|
+| 3-1 | Linjeflyg Moves In (1983) | plan 110 days, ops 06:30–09:30 | the domestic terminal and its apron; Linjeflyg's terms | airport delay ≤ 2 · Airlines ≥ 75 |
+| 3-2 | Morning Peak (1984) | plan 20 days, ops 06–09, 09–12 | a head of terminal service; desks open before the peak | check-in wait ≤ 3 · on time ≥ 90 % |
+| 3-3 | The Computer Room (1984) | plan 50 days, ops 07–10 | an IT department, the room, the stand computer (keep or lay off); it fails | airport delay ≤ 2 · Passengers ≥ 78 |
+| 3-4 | Screens (1985) | ops, plan 40 days, ops | announcements by hand, then a PA operator and screens | ≤ 1 not announced · Passengers ≥ 74 |
+| 3-5 | Flu Season (1986) | plan 14 days, ops 06:30–09:30 | temps and overtime against the absence | ≤ 3 tasks by hand · on time ≥ 85 % |
+| 3-6 | Strike Notice (1986) | plan 7 days, ops 07–10 | pay, the mediator or ride out the strike | no strike · airport delay ≤ 3 |
+| 3-7 | The Big Freeze (1987) | plan 20 days, ops 06–09, 12–15 | the weather-based clearing plan; it fails in the cold | no close call · on time ≥ 85 % |
+| 3-8 | Planner or Computer? (1987) | plan 30 days, ops 06–09, 16–19 | check-in computers, or a course and four desks | check-in wait ≤ 2 · on time ≥ 90 % |
+| 3-9 | Payback (1988) | plan 3 × 70 days | duty free, a car park, restaurants: what the last month earns | last month ≥ 20 MSEK · Airlines ≥ 70 |
+| 3-10 | Flygbussarna (1989) | plan 40 days, ops 16–19 | coach stops (Neighbours) or another car park | Passengers ≥ 92 · on time ≥ 90 % |
+| 3-11 | Exam: Domestic Rush (1989) | ops 06–08:30, 11–13:30, 15–17:30 | snow and the flu, a power cut, a failing computer and an emergency | airport delay ≤ 2 · Passengers ≥ 74 |
+
+`tools/missions-check.js` measures them at ▶: chapter 2 3.9–8.2 minutes, chapter 3 3.6–9.7; the reference strategies are in `data/strategies/ch2.js` and `ch3.js`. The choice missions (2-2, 2-4, 2-7, 3-6, 3-8, 3-10) were also played with their other options: each passes, with other stars.
+
+### The cloud save as built
+
+As "Cloud save" below, with these specifics: the snapshot is `{ v, progress, campaign, mission, freeplay, challenges }` in the `data` column, the replays' snapshots in a `snaps` column sent only at idle moments and while the page is in view; idle moments are the start screen, the timeline, the Office and the Free Play screen (not the stage card: the running mission is in memory there); a mission that ended leaves a `{ cleared, savedAt }` mark so another device's older copy of it is not merged back; a campaign mission's autosave carries its campaign's id (`run.cid`) and is dropped when another campaign wins; the body is not compressed — a keepalive upload goes when it is under CLOUD_KEEPALIVE_MAX characters, else as an ordinary request. Tested with `tools/cloud-mock.js`: a merge (stars from both, the newer campaign, a newer version's field kept and sent back, the same copy merged again changes nothing), offline (`loadFailed` with the choice), a hanging request (the timeout), and a copy changed by another device while a stage runs (the upload waits; at the start screen it merges and goes up).
 
 ## Events
 
@@ -387,7 +445,7 @@ A first pass is therefore **≈ 20 hours** with ★ or ★★ on most missions; 
 
 ## Free Play and Challenge Days
 
-- **Free Play** (opens after chapter 2): any era as a start (the forest, 1983, 2003, today), any difficulty, the campaign's unlocked tech; an endless calendar with rolling goals and the Offers board; saved like the campaign; the Album and the Archive keep filling. A **Today's Arlanda** start gives the real airport of the latest chapter to run.
+- **Free Play** (opens after chapter 2): any era as a start (the forest, 1983, 2003, today), any difficulty, the campaign's unlocked tech; an endless calendar with rolling goals and the Offers board; saved like the campaign; the Album and the Archive keep filling. A **Today's Arlanda** start gives the real airport of the latest chapter to run. *As built in session 3:* three eras (1963, 1976, 1990), rounds of a month of offers and a peak, no stars — see "People, systems, chapters 2–3, Free Play and the cloud (session 3)".
 - **Challenge Days** (open after chapter 3): longer fixed scenarios (20–60 min) with a score and three stars — a whole record day, Christmas week, the ash cloud week, the blackout — saved at any moment.
 
 ## Difficulty
@@ -414,7 +472,7 @@ Picked on the start screen, the mission card, the pause menu and the results (pr
 
 ## Saved in the browser
 
-`arlandaRising.campaign.v1` (the airport, calendar, people, airlines, money), `arlandaRising.mission.v1` (the running mission's full state and its stage checkpoints — written every `AUTOSAVE_SECONDS`, at each stage's end and on `visibilitychange` / `pagehide`; cleared when the mission ends), `arlandaRising.snapshots.v1` (each mission's starting state, compressed), `arlandaRising.progress.v1` (stars per mission per difficulty, hint 3 used, 🏅, Archive cards, Album), `arlandaRising.freeplay.v1`, `arlandaRising.challenges.v1`, `arlandaRising.settings.v1` (hints, quality, sums in full or short), `arlandaRising.difficulty`, `arlandaRising.sound`, `arlandaRising.lang`; for the cloud save `arlandaRising.cloud` (the Google account the progress syncs with) and `arlandaRising.auth` (its session, kept by supabase-js). Every key starts with `arlandaRising.`; the game never clears anything else on the origin.
+`arlandaRising.campaign.v1` (the airport, calendar, people, airlines, money), `arlandaRising.mission.v1` (the running mission's full state and its stage checkpoints — written every `AUTOSAVE_SECONDS`, at each stage's end and on `visibilitychange` / `pagehide`; cleared when the mission ends), `arlandaRising.snapshots.v1` (each mission's starting state, compressed), `arlandaRising.progress.v1` (stars per mission per difficulty, hint 3 used, 🏅, Archive cards, Album), `arlandaRising.freeplay.v1` (Free Play's airport, its era and round), `arlandaRising.challenges.v1`, `arlandaRising.settings.v1` (hints, quality, sums in full or short), `arlandaRising.difficulty`, `arlandaRising.sound`, `arlandaRising.lang`; for the cloud save `arlandaRising.cloud` (the Google account the progress syncs with) and `arlandaRising.auth` (its session, kept by supabase-js). Every key starts with `arlandaRising.`; the game never clears anything else on the origin.
 
 ## Cloud save (sync through Google)
 
@@ -424,7 +482,7 @@ Optional, on top of `localStorage`, built like `lift-logic`'s (start from `lift-
 - **The library.** `lib/supabase.min.js`, the same vendored supabase-js file as `lift-logic`'s (UMD, global `supabase`); the **PKCE** sign-in; the session under `arlandaRising.auth` (never the library's default key, shared by the whole origin). From `file://` or without the library the game has no cloud and shows none of it.
 - **What travels** (`Save.snapshot`): `arlandaRising.progress.v1`, `campaign.v1`, `mission.v1` (the running mission, so a stage started on the phone goes on at the computer), `freeplay.v1`, `challenges.v1`; the mission snapshots for replays (`snapshots.v1`) go in the same row but only at idle moments, as they are big. The settings, the difficulty, the sound and the language stay this device's.
 - **Sync** (`Cloud.syncNow`): read the account's copy, merge it into the save here, write the result back — never a write without a read and a merge first. It runs on the sign-in, at start, on every return to the foreground or to the network (`online`), 10 s after the last change (`CLOUD_PUSH_MS`: a stage or a mission finished, a decision in the Office) and at once when the page goes to the background (`keepalive`, so it outlives a phone that locks or a time limit that closes the app; the body kept under 64 KB, compressed, `CLOUD_KEEPALIVE_MAX`). A failed sync is tried again every 30 s while the page is in view (`CLOUD_RETRY_MS`), on the next change and on every return. Reads with `.retry(false)`. Every request ends by a timeout (`CLOUD_REQUEST_MS` 10 s, a whole sync `CLOUD_SYNC_MS` 25 s).
-- **Never under the player.** A merge runs only at idle moments — the start screen, the timeline, the Office, a stage card — never in a running stage. While a stage runs, an upload is **deferred**: it reads the copy's `updated_at` again and uploads only if it is still the one this device last read or wrote (nobody changed it meanwhile); otherwise it waits for the stage's end to merge first. The merge never schedules another upload by itself (`Cloud.quietly`).
+- **Never under the player.** A merge runs only at idle moments — the start screen, the timeline, the Office, the Free Play screen — never in a running stage. While a stage runs, an upload is **deferred**: it reads the copy's `updated_at` again and uploads only if it is still the one this device last read or wrote (nobody changed it meanwhile); otherwise it waits for the stage's end to merge first. The merge never schedules another upload by itself (`Cloud.quietly`).
 - **The merge** (`Save.merge`): what only grows is kept from both — the stars per mission and difficulty (the larger), the 🏅, the Archive and concept cards, the Album, the newspapers, hint 3 used, the Challenge Days' bests, what is open. What is a current state comes from the copy saved last (`savedAt`): the campaign (the airport, the money — never the larger balance — the people, the airlines, the calendar), Free Play and the running mission; the start screen then says where it came from (**Continue mission — saved on another device at 18:42**). What this version does not know (a newer version's field or part of the copy) is kept as it came and sent back. Merging the same copy again changes nothing; the local save is never replaced, only merged.
 - **A new campaign is explicit:** **New Campaign** (after its confirm) gives the campaign a new `campaignId` and writes it as an explicit overwrite of the cloud's campaign, so another device's old campaign is never merged back in; stars, 🏅, the Album and the Archive stay.
 - **On screen:** the start screen's account row: **Sign in with Google** with a line on what it is for; signed in, the status dot (green synced, blue syncing, amber failed or signed out), the account's e-mail and **Sign out** (which merges and sends the last changes first, and keeps everything on this device).
@@ -449,7 +507,7 @@ Synthesized with Web Audio, through one master gain (Sound On / Off on the start
 
 ## Cheats (keyboard only, Shift + key, for testing)
 
-Each shows a banner and marks the run as cheated (no stars, no 🏅, no records): `Shift+1…8` jump to that chapter's first mission with the real Arlanda of that year; `Shift+M` +100 MSEK; `Shift+S` a snowstorm now; `Shift+K` a strike notice; `Shift+F` a system failure; `Shift+A` every domain one level up; `Shift+W` win the current stage; `Shift+D` skip to the end of the stage. Their effects are in `sim/cheats.js` (money, snowstorm, domains up, win and skip the stage; the strike and the failure come with session 3); the keys and banners are in `game.js`. The cheated mark (`S.cheated`) belongs to the mission being played and is cleared at every mission's start; its result says `cheated`, and the progress saves nothing for it.
+Each shows a banner and marks the run as cheated (no stars, no 🏅, no records): `Shift+1…8` jump to that chapter's first mission with the real Arlanda of that year; `Shift+M` +100 MSEK; `Shift+S` a snowstorm now; `Shift+K` a strike notice; `Shift+F` a system failure; `Shift+A` every domain one level up; `Shift+W` win the current stage; `Shift+D` skip to the end of the stage. Their effects are in `sim/cheats.js` (money, snowstorm, domains up, win and skip the stage, a strike of the first team, a failure of the first system); the keys and banners are in `game.js`; Shift+4…8 say the chapter is not in the game yet. The cheated mark (`S.cheated`) belongs to the mission being played and is cleared at every mission's start; its result says `cheated`, and the progress saves nothing for it.
 
 ## Testing and balancing
 
@@ -479,36 +537,38 @@ arlanda-rising/
 │                liveries by era, sources), buildings.js (what the airport owns: price, jobs, shops, car parks), masterplan.js (the
 │                historical projects: year, plot, stages, mods, effects, sources), layout.js (the map: the real runways, the apron
 │                and stands, buildings, roads, Märsta, fields, lakes, the site's clearings), domains.js (the automation ladder; levels
-│                0–1 so far), missions/missions.js (the chapters, the list of missions and the fields) + missions/ch1.js,
-│                strategies/strategies.js (the list) + strategies/ch1.js (the reference strategies), lang-ru.js, lang-sv.js,
-│                icons.js (generated by tools/icons-build.js); planned: brands.js, people.js, events.js, archive.js, album.js, hints.js
+│                0–2), people.js (departments, unions, managers), missions/missions.js (the chapters, the list of missions and the
+│                fields) + missions/ch1.js, ch2.js, ch3.js, strategies/strategies.js (the list) + strategies/ch1.js, ch2.js, ch3.js
+│                (the reference strategies), lang-ru.js, lang-sv.js, icons.js (generated by tools/icons-build.js);
+│                planned: brands.js, events.js, archive.js, album.js, hints.js
 ├── core/        utils.js (math, the generator kept in the save, clock times, money()), events.js (the bus), storage.js (the keys
 │                and the mission autosave), i18n.js (tr(), the language switcher, dates), settings.js (hints, quality, sums, the
 │                difficulty; sek()), audio.js (Sfx: the synthesized sounds, one master gain), input.js (map gestures: tap, long
 │                press, drag, pan, pinch, wheel, keys; fullscreen), cursor.js, update.js (new deploys at idle moments, the
-│                offline worker), icons.js (generated); planned: save (snapshot and merge for the cloud), cloud (from lift-logic)
-├── lib/         supabase.min.js (vendored supabase-js, the same file as lift-logic's) — planned
-├── supabase/    schema.sql (the arlandarising_saves table and its row-level security) — planned
+│                offline worker), icons.js (generated), save.js (the cloud's snapshot and merge), cloud.js (the sign-in and the
+│                sync, from lift-logic)
+├── lib/         supabase.min.js (vendored supabase-js, the same file as lift-logic's)
+├── supabase/    schema.sql (the arlandarising_saves table and its row-level security)
 ├── sim/         state (S, the generator, the log), calendar (dates, the sun), weather, finance, meters, airport (what is built,
 │                projects' effects, small builds, running costs), stands, schedule, runways (direction, closures, noise, snow,
 │                ploughs), passengers (check-in), turnaround, flights, tasks (the tray, the duty manager), construction, summary
 │                (traffic in summary, the skipped time), plan (plan time, decisions), ops (ops time), goals (counters, goals,
 │                stars), missions (start, stages, checkpoints, results, save / resume), actions (everything the player can do),
-│                sim (the clock), strategy (a player made of a reference strategy), cheats;
-│                planned: taxi, terminal, baggage, deicing, wildlife, domains (failures, readiness), people, unions, airlines,
-│                offers, permit, debrief
+│                sim (the clock), strategy (a player made of a reference strategy), cheats, people (departments, absence,
+│                hiring, overtime, unions, managers), systems (levels, failures, IT, readiness, drills), freeplay (eras, rounds,
+│                offers); planned: taxi, terminal, deicing, wildlife, airlines, offers, permit, debrief
 ├── art/         emblems.js (airline fin art and square logos), flag-gb / flag-ru / flag-se.svg (the language switcher);
 │                planned: brands.js (brand signs and vehicle titles)
 ├── render/      palette.js (the Arlanda palette, the land by season), iso.js (projection, camera, boxes), ground.js (forest,
-│                fields, lakes, the bog, clearings, roads, Märsta, single trees), airport.js (runway, taxiways, apron, stands,
-│                buildings by stage, cranes, lamps), aircraft.js (types to scale in their liveries), traffic.js (where every
+│                fields, lakes, the bog, clearings, roads, Märsta, single trees), airport.js (runways 1 and 2, taxiways, aprons,
+│                stands, the terminals and buildings by stage, cranes, lamps), aircraft.js (types to scale in their liveries), traffic.js (where every
 │                flight is, vehicles, people, the plough convoy, labels and turnaround bars, taps), sky.js (light, fog, snow,
 │                lamps), map.js (the scene, a frame, what a tap hit, the camera's framings); planned: terminal (the cut-away view)
 ├── ui/          text.js (goals, tasks, meters, minutes, effects), screens.js (overlay panels, the start screen, help, settings,
 │                pause, confirm, the difficulty picker), hud.js, tray.js, toolbar.js, plan.js (the plan panel, decisions),
 │                cards.js (the flight card), timeline.js, missioncard.js (and the card before each stage), results.js (the stage
-│                card, the results, the newspaper), office.js, hints.js (Kaj, the finger), sounds.js;
-│                planned: opscenter, people, airlines, offers, finance (charts), archive, album
+│                card, the results, the newspaper), office.js, people.js (the People screen), opscenter.js (the Ops Center),
+│                hints.js (Kaj, the finger), sounds.js; planned: airlines, offers, finance (charts), archive, album
 ├── tools/       missions-check.js
 ├── README.md, README_RU.md, README_SV.md (with the not-affiliated note, how to install)
 ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png (tools/pwa-icons.sh)
@@ -519,11 +579,11 @@ arlanda-rising/
 
 1. **Core sim headless** *(done)*: calendar, weather, schedule, runways, stands, turnaround, passengers as flows, finance, stages and the autosave/resume; chapter 1 missions with reference strategies; `missions-check.js`.
 2. **Map and look** *(done)*: isometric renderer with the Arlanda palette, seasons and light, aircraft with real liveries and emblems, vehicles, build tools, the task tray, the Office; chapter 1 playable end to end on a phone; **installable and offline** (manifest, icons, `update.js`, `sw.js`); gallery card, root `SPEC.md` and READMEs.
-3. **People and the ladder:** departments, managers in pairs, absence, unions and strikes, the Ops Center, systems and failures; chapters 2–3, Free Play; **the cloud save through Google** (the table, the sync, the states, tested with `tools/cloud-mock.js`).
+3. **People and the ladder** *(done)*: departments, managers in pairs, absence, unions and strikes, the Ops Center, systems and failures; chapters 2–3, Free Play; **the cloud save through Google** (the table, the sync, the states, tested with `tools/cloud-mock.js`).
 4. **Terminal view, brands and the economy screens:** passenger flow, real shops and ground transport, finance with payback and NPV, offers, airlines' tempers; chapter 4, Challenge Days.
 5. Chapters 5–6: border, security, parallel runways, real estate, green rating and the permit, events.
 6. Chapters 7–8: crises, fallback readiness, the future tech, the final exam.
-7. Translations, icons, READMEs, screenshot (from session 2 on, kept up to date with every later one; done for chapter 1).
+7. Translations, icons, READMEs, screenshot (from session 2 on, kept up to date with every later one; done for chapters 1–3).
 
 ## Decisions
 

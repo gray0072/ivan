@@ -11,7 +11,7 @@ const Passengers = {
   wait() {
     const q = S.ops.queue.reduce((s, c) => s + c[1], 0);
     if (q < 0.5) return 0;
-    return S.ops.desksOpen > 0 ? q / (S.ops.desksOpen * DESK_RATE) : 999;
+    return S.ops.desksOpen > 0 ? q / (S.ops.desksOpen * DESK_RATE * People.deskRate()) : 999;
   },
   queued(f) { return S.ops.queue.some((c) => c[0] === f.id); },
   // a flight that will not leave from here: its passengers leave the queue
@@ -32,7 +32,7 @@ const Passengers = {
       else o.queue.push([f.id, n, t]);
     }
     // the desks work through the queue
-    let cap = o.desksOpen * DESK_RATE * dt;
+    let cap = o.desksOpen * DESK_RATE * People.deskRate() * dt;
     const st = S.mission.st;
     while (cap > 1e-9 && o.queue.length) {
       const c = o.queue[0], x = Math.min(cap, c[1]);

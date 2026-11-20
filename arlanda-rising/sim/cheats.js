@@ -4,8 +4,8 @@
 // by game.js in session 2). Each marks the run as cheated: no stars, no medal, no records. Shift+M money,
 // Shift+S a snowstorm now, Shift+A every domain one level up, Shift+W win the current stage, Shift+D skip to
 // the stage's end; Shift+1…8 (a chapter's first mission with the real Arlanda of that year) is
-// Missions.start with the mission's `requires`; Shift+K (a strike) and Shift+F (a system failure) come with
-// the people and the systems in session 3.
+// Missions.start with the mission's `requires`; Shift+K a strike of the first team, Shift+F a failure of the
+// first system.
 
 const Cheats = {
   mark() { S.cheated = true; },
@@ -19,8 +19,30 @@ const Cheats = {
   },
   domainsUp() {
     this.mark();
-    for (const d of Object.keys(S.domains)) S.domains[d] = Math.min(DOMAINS[d].levels.length - 1, S.domains[d] + 1);
+    for (const d of Object.keys(S.domains)) {
+      const lv = S.domains[d];
+      if (lv >= DOMAINS[d].levels.length - 1) continue;
+      if (lv === 0) { S.domains[d] = 1; People.dept(d); } else { Systems.rec(d).kept = true; Systems.installed(d); }
+    }
+    People.updateMeter();
     return true;
+  },
+  // a strike: the first team there is walks out (now in ops time, for STRIKE_DAYS from today in plan time)
+  strike() {
+    const d = S.people && Object.keys(S.people.depts).find((x) => People.jobs(x) > 0);
+    if (!d) return false;
+    this.mark();
+    if (S.ops) { S.ops.strike = d; S.mission.st.struck = 1; } else S.people.strike = { dept: d, from: S.day, to: S.day + STRIKE_DAYS, settle: WAGE_DEMAND };
+    return d;
+  },
+  // a system failure: the first system there is goes down
+  failure() {
+    if (!S.ops) return false;
+    const d = Object.keys(S.domains).find((x) => S.domains[x] >= 2 && !Systems.down(x));
+    if (!d) return false;
+    this.mark();
+    Systems.fail(d);
+    return d;
   },
   winStage() {
     if (!S.mission || S.mission.status !== 'running') return false;

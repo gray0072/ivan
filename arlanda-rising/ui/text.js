@@ -44,6 +44,16 @@ const Text = {
       }
       case 'flag': return tr(c.id);
       case 'built': return tr('Build: {what}', { what: tr(BUILDINGS[c.kind].name) });
+      case 'level': return tr('{dom}: {level}', { dom: tr(DOMAINS[c.dom].name), level: tr(DOMAINS[c.dom].levels[c.min].name) });
+      case 'manager': return tr('A head of {dept}', { dept: tr(DEPTS[c.dept].name) });
+      case 'noStrike': return tr('No strike');
+      case 'lostBags': return n ? tr('At most {n} bags lost', { n }) : tr('No bag lost');
+      case 'unannounced': return n ? tr('At most {n} delays not announced', { n }) : tr('Every delay announced');
+      case 'fireCat': return tr('Fire category at least {n}', { n });
+      case 'systems': return tr('At most {n} systems', { n });
+      case 'handsOff': return tr('Teams and systems do at least {n} tasks', { n });
+      case 'handTasks': return tr('At most {n} tasks by hand', { n });
+      case 'lastMonth': return tr('The last month earns at least {m}', { m: sek(n) });
     }
     return c.k;
   },
@@ -54,7 +64,7 @@ const Text = {
     switch (c.k) {
       case 'onTime': return Math.round(v * 100) + ' %';
       case 'avgDelay': case 'airportDelay': case 'checkinWait': case 'maxWait': return this.num(v, 1) + ' ' + tr('min');
-      case 'profit': case 'money': case 'spent': return sek(v);
+      case 'profit': case 'money': case 'spent': case 'lastMonth': return sek(v);
       default: return this.num(v, 0);
     }
   },
@@ -78,10 +88,20 @@ const Text = {
       }
       case 'checkin': return tr('Check-in queue {n} min — open a desk', { n: Math.round(Passengers.wait()) });
       case 'plough': { const s = Runways.surface(k.target); return tr('{surface}: {mm} mm of snow — send the ploughs', { surface: this.surface(k.target), mm: this.num(s ? s.snow : 0, 1) }); }
+      case 'bags': { const st = f && Airport.stand(f.stand); return tr('Bags of {no} on stand {stand} — send the carts', { no: f ? f.no : '', stand: st ? st.name : '' }); }
+      case 'announce': return tr('{no} is late — announce the delay', { no: f ? f.no : '' });
     }
     return k.kind;
   },
-  taskIcon(kind) { return { stand: '🛬', fuel: '⛽', checkin: '🧳', plough: '❄️' }[kind] || '❗'; },
+  taskIcon(kind) { return { stand: '🛬', fuel: '⛽', checkin: '🧳', plough: '❄️', bags: '🛄', announce: '📢' }[kind] || '❗'; },
+  // a department's and a domain's names, a domain's level as shown
+  dept(id) { return tr((DEPTS[id] || {}).name || id); },
+  dom(id) { return tr((DOMAINS[id] || {}).name || id); },
+  level(d, lv) { const L = DOMAINS[d] && DOMAINS[d].levels[lv]; return L ? tr(L.name) : ''; },
+  manager(id) { const m = MANAGERS[id]; return m ? m.face + ' ' + m.name : id; },
+  // a manager's two strengths and the flaw, as lines
+  managerLines(id) { const m = MANAGERS[id]; return m ? m.good.map((g) => '＋ ' + tr(g)).concat(['− ' + tr(m.bad)]) : []; },
+  pct(v) { return Math.round(v * 100) + ' %'; },
 
   flightState(f) {
     switch (f.st) {
@@ -115,12 +135,37 @@ const Text = {
   effects(o) {
     const out = [];
     if (o.money) out.push((o.money > 0 ? '+' : '−') + sek(Math.abs(o.money)));
-    if (o.build) { const b = BUILDINGS[o.build]; out.push('−' + sek(b.price)); if (b.days) out.push(tr('ready in {n} days', { n: b.days })); }
+    const builds = [].concat(o.build || []);
+    if (builds.length) {
+      const b = BUILDINGS[builds[0]], sum = builds.reduce((s, k) => s + BUILDINGS[k].price, 0);
+      out.push('−' + sek(sum));
+      if (b.days) out.push(tr('ready in {n} days', { n: b.days }));
+    }
     if (o.extraDays) out.push(tr('+{n} days of work', { n: o.extraDays[2] }));
     if (o.crews) out.push(tr('+{n} crew', { n: o.crews }));
     for (const k of Object.keys(o.meters || {})) out.push(this.meterName(k) + ' ' + (o.meters[k] > 0 ? '+' : '−') + Math.abs(o.meters[k]));
     if (o.neighboursBase) out.push(tr('quieter for years'));
-    if (o.airline) out.push(tr('{n} flights a day in summer', { n: o.airline.routes.reduce((s, r) => s + r.perDay, 0) }));
+    for (const a of [o.airline, o.airline2]) {
+      if (!a) continue;
+      const n = a.routes.reduce((s, r) => s + r.perDay, 0);
+      out.push(a.routes.some((r) => r.months) ? tr('{n} flights a day in summer', { n }) : tr('{n} flights a day', { n }));
+    }
+    if (o.hire) out.push(tr('a team for {dom}', { dom: this.dom(o.hire) }) + ' · −' + sek(HIRE_COST * DOMAINS[o.hire].levels[1].staff) + ' · ' + tr('wages every month'));
+    if (o.manager) out.push(tr('salary {m} a month', { m: sek(MANAGER_SALARY * MANAGERS[o.manager].salary) }));
+    if (o.it) out.push(tr('+{n} IT people', { n: o.it }));
+    if (o.system) {
+      const lv = (S.domains[o.system.dom] || 0) + 1, L = DOMAINS[o.system.dom].levels[lv];
+      if (L) out.push('−' + sek(Systems.price(o.system.dom, o.system.how)) + ' · ' + tr('{m} a month', { m: sek(L.month) }) + (L.days ? ' · ' + tr('ready in {n} days', { n: L.days }) : ''));
+      if (o.system.how === 'layoff') out.push(tr('morale down, no fallback'));
+      else out.push(tr('the team stays as the fallback'));
+    }
+    if (o.union) {
+      const r = People.roundOutcome(o.union.dept, o.union.how, o.union.offer);
+      if (r.raise) out.push(tr('wages +{p}', { p: this.num(r.raise * 100, 1) + ' %' }));
+      out.push(r.strike ? tr('strike notice: a strike in a week') : tr('no strike'));
+    }
+    if (o.temps) out.push(tr('temps for {dept} for three months', { dept: this.dept(o.temps) }));
+    if (o.train) out.push(tr('a course for {dept}', { dept: this.dept(o.train) }) + ' · −' + sek(TRAIN_COST * Math.max(1, People.jobs(o.train))));
     if (!out.length) out.push(tr('nothing changes'));
     return out.join(' · ');
   },

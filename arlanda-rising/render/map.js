@@ -48,7 +48,7 @@ const MapView = (() => {
       siteDone: ready, strip: ready ? 1 : p('site', 'strip'), drain: ready ? 1 : p('site', 'drain'),
       apronClear: ready ? 1 : p('site', 'apron'), road: roadP, roadPts: polyPart(LAYOUT.road, roadP),
       siteWork: !!a.projects.site && !items.terminal,
-      runway: a.runways[0] || null, apron: a.stands.length > 0, items, p,
+      runway: a.runways[0] || null, runway2: a.runways.find((r) => r.id === 'r2') || null, apron: a.stands.length > 0, items, p,
       planning: !!S.plan, lights: [], standMark: view.standMark
     };
   }

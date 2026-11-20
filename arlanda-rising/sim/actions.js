@@ -47,5 +47,16 @@ const Actions = {
   finance(project, how) { return Construction.finance(project, how); },
   choose(option) { return Plan.choose(option); },
   borrow(amount) { return Finance.borrow(amount) > 0; },
-  repay(amount) { return Finance.repay(amount) > 0; }
+  repay(amount) { return Finance.repay(amount) > 0; },
+  // session 3: people and systems (in plan time and between missions; overtime in ops time)
+  hire(dom) { return People.hire(dom); },
+  upgrade(dom, how) { return Systems.upgrade(dom, how); },
+  hireIT(n) { return People.hireIT(n); },
+  train(dept) { return People.train(dept); },
+  temps(dept) { return People.temps(dept); },
+  summer(how) { return People.summer(how); },
+  overtime(dept) { return People.overtime(dept); },
+  drill(dom) { return Systems.drill(dom); },
+  manager(id) { return People.hireManager(id); },
+  raise(dept, give) { return People.raise(dept, give); }
 };

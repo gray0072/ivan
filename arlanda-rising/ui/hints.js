@@ -18,7 +18,14 @@ const Hints = (() => {
     { id: 'dark', when: () => S.ops && Runways.main() && !Runways.main().lit && Calendar.sunElevation(S.day, S.clock + 30) < -6 && !Weather.now().dark, text: () => tr('It will be dark in half an hour. Without lights the runway closes.') },
     { id: 'bigJet', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'stand' && Flights.get(k.target) && Stands.codeOf(Flights.get(k.target).type) === 'D'), text: () => tr('A DC-8 is coming. Only the big stands, 1 and 2, fit it.') },
     { id: 'crew', when: () => S.plan && !S.plan.pending && Construction.active() < S.plan.crews && S.day - S.plan.day0 > 3 && hasStartable(), text: () => tr('A crew is free. Start the next job in the panel!') },
-    { id: 'debt', when: () => S.money < 0, text: () => tr('Money is below zero. A loan helps, but months in debt make the owner angry.') }
+    { id: 'debt', when: () => S.money < 0, text: () => tr('Money is below zero. A loan helps, but months in debt make the owner angry.') },
+    { id: 'down', when: () => S.ops && Object.keys(S.domains).some((d) => Systems.down(d)), text: () => { const d = Object.keys(S.domains).find((x) => Systems.down(x)); return tr('{sys} is down! Its work goes to the team kept beside it — or to you.', { sys: Text.level(d, S.domains[d]) }); } },
+    { id: 'short', when: () => S.ops && Object.keys(S.domains).some((d) => Systems.working(d) === 1 && People.capacity(d) < 0.8 && !People.striking(d)), text: () => tr('A team is short today. Overtime in the bar below brings everybody in — at a price.') },
+    { id: 'strike', when: () => S.ops && S.ops.strike, text: () => tr('A strike: the team does only a sixth of its work. The rest is yours today.') },
+    { id: 'hire', when: () => S.plan && S.unlock && Object.keys(S.unlock).some((d) => (S.domains[d] || 0) === 0 && S.unlock[d] >= 1) && !(S.people && S.people.hiring.length), text: () => tr('You can hire a team in the panel. It needs two weeks before its first shift.') },
+    { id: 'fire', when: () => S.ops && S.ops.flights.some((f) => !Flights.over(f) && !f.waiver && AIRCRAFT[f.type].cat > Airport.fireCat()), text: () => tr('An aircraft is coming that your fire service is too small for. It will be sent elsewhere.') },
+    { id: 'bags', when: () => S.ops && S.ops.tasks.filter((k) => k.kind === 'bags').length >= 2, text: () => tr('Bags are waiting! Boarding cannot start before the carts have been.') },
+    { id: 'announce', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'announce'), text: () => tr('A flight is late. Tell its passengers — they wait at the gate without knowing why.') }
   ];
   function hasStartable() {
     for (const id of Object.keys(S.airport.projects)) for (const sid of Object.keys(S.airport.projects[id].stages)) if (!Construction.cannot(id, sid)) return true;

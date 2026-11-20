@@ -13,7 +13,7 @@ const Flights = {
   taxiTime(f) { const st = f.stand && Airport.stand(f.stand); return TAXI_BASE + (st ? st.dist : 2); },
 
   step() {
-    const t = S.clock, rw = Runways.main();
+    const t = S.clock, rw = Runways.inUse();
     // arrivals first, in the order they came to the field, then departures in the order they are ready
     const arr = [], dep = [];
     for (const f of S.ops.flights) {
@@ -33,8 +33,11 @@ const Flights = {
         case 'taxiOut': if (t >= f.at) dep.push(f); break;
       }
     }
-    arr.sort((a, b) => a.holdFrom - b.holdFrom);
+    // an aircraft in an emergency goes first
+    arr.sort((a, b) => (b.mayday ? 1 : 0) - (a.mayday ? 1 : 0) || a.holdFrom - b.holdFrom);
     for (const f of arr) {
+      // the fire service must fit the aircraft: a bigger one is sent to another airport
+      if (AIRCRAFT[f.type].cat > Airport.fireCat() && !f.mayday && !f.waiver) { this.divert(f, rw, 'fire'); continue; }
       if (Runways.canUse(rw)) this.land(f, rw);
       else if (t - f.holdFrom >= HOLD_MAX) this.divert(f, rw);
     }
@@ -52,6 +55,15 @@ const Flights = {
     f.at = S.clock + this.taxiTime(f) + f.extraTaxi;
     f.extraTaxi = 0;
     S.mission.st.arr++;
+    // after an emergency landing the runway stays closed while the fire service checks it (longer, and a close
+    // call, when the fire category is too low for the aircraft)
+    if (f.mayday) {
+      const low = AIRCRAFT[f.type].cat > Airport.fireCat();
+      rw.closedUntil = S.clock + (low ? EMERGENCY_CLOSE_LOW : EMERGENCY_CLOSE);
+      if (low) Meters.closeCall();
+      S.mission.st.emergencies++;
+      logEvent('emergencyLanded', { flight: f.no, low });
+    }
   },
   toStand(f) {
     const st = f.stand && Airport.stand(f.stand);
@@ -93,7 +105,7 @@ const Flights = {
     f.airborne = S.clock;
     f.rdir = S.ops.dir;
   },
-  divert(f, rw) {
+  divert(f, rw, why) {
     f.st = 'diverted';
     f.divertedAt = S.clock;
     Stands.release(f);
@@ -101,9 +113,10 @@ const Flights = {
     Passengers.drop(f);
     S.mission.st.diverted++;
     // the airport pays when it caused it (snow, the dark without lights, Safety), not for fog
-    if (Runways.closedWhy(rw) !== 'fog') Finance.book('penalties', -DIVERT_PENALTY);
+    const cause = why || Runways.closedWhy(rw);
+    if (cause !== 'fog' && cause !== 'wind') Finance.book('penalties', -DIVERT_PENALTY);
     Meters.lost(f);
-    logEvent('diverted', { flight: f.no, why: Runways.closedWhy(rw) });
+    logEvent('diverted', { flight: f.no, why: cause });
   },
   cancel(f) {
     f.st = 'cancelled';

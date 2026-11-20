@@ -83,7 +83,7 @@
     <td width="50%" valign="top">
       <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/screenshot.png" alt="Arlanda Rising screenshot"></a>
       <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
-      <p>Run Stockholm Arlanda through its real history: clear the forest in 1958, build the tower and the terminal, pick stands for SAS jets, fuel them, plough the snow and make the young airport pay — an isometric airport, short autosaved missions with stars.</p>
+      <p>Run Stockholm Arlanda through its real history: clear the forest in 1958, pick stands and plough the snow by hand, then grow with the jets and hand the work to teams, managers and the first computers — an isometric airport, short autosaved missions with stars, Free Play and a cloud save.</p>
       <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Play</b></a> · <a href="arlanda-rising/">Source</a></p>
     </td>
     <td width="50%" valign="top"></td>

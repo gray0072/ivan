@@ -11,7 +11,14 @@ const AirportArt = (() => {
   const rp = (s, t) => Ground.rwPoint(s, t);
 
   // a stand's place on the map: the apron's in order, then the remote slots
-  function standPos(i) { return i < LAYOUT.stands.length ? LAYOUT.stands[i] : LAYOUT.remote[(i - LAYOUT.stands.length) % LAYOUT.remote.length]; }
+  // (a stand a project placed keeps its own place, `at`; session 3)
+  function standPos(i) {
+    const st = S.airport.stands[i];
+    if (st && st.at) return { x: st.at[0], y: st.at[1], hdg: 90 };
+    let k = 0;
+    for (let j = 0; j < i; j++) if (!S.airport.stands[j].at) k++;
+    return k < LAYOUT.stands.length ? LAYOUT.stands[k] : LAYOUT.remote[(k - LAYOUT.stands.length) % LAYOUT.remote.length];
+  }
   function standIndex(id) { return S.airport.stands.findIndex((s) => s.id === id); }
   // the point the stand's lead-in line starts at (the aircraft taxis there, then in)
   function standEntry(i) { const p = standPos(i); return [p.x - 75, p.y]; }
@@ -94,6 +101,16 @@ const AirportArt = (() => {
         }
       }
     }
+    runway2(c, sc);
+    // the jet apron and the domestic apron, as far as they are paved
+    for (const [key, pid, sid] of [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron']]) {
+      const q = sc.p(pid, sid);
+      if (q <= 0) continue;
+      const B = LAYOUT[key];
+      c.fillStyle = q < 1 ? '#a39a88' : sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
+      c.fillRect(B.x0, B.y0, (B.x1 - B.x0) * Math.min(1, q * 1.2), B.y1 - B.y0);
+    }
+    if (sc.p('apron2', 'pave') >= 1) line(c, LAYOUT.taxi2.slice(0, sc.runway2 ? 4 : 2), TX.w, sc.season === 'winter' ? '#5a5f64' : '#4b4f54');
     if (sc.apron) {
       const A = LAYOUT.apron1;
       c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
@@ -112,7 +129,7 @@ const AirportArt = (() => {
     // the stands' markings (and the remote stands' own paving)
     S.airport.stands.forEach((st, i) => {
       const p = standPos(i), A = LAYOUT.apron1;
-      const onApron = p.x >= A.x0 && p.x <= A.x1 && p.y >= A.y0 && p.y <= A.y1;
+      const onApron = !!st.at || (p.x >= A.x0 && p.x <= A.x1 && p.y >= A.y0 && p.y <= A.y1);
       if (!onApron) {
         c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
         c.fillRect(p.x - 70, p.y - 26, 78, 52);
@@ -141,12 +158,35 @@ const AirportArt = (() => {
     plots(c, sc);
   }
 
+  // runway 2 (08/26): the strip cleared, the runway paved as far as it is, its markings, snow and lights
+  function runway2(c, sc) {
+    const R2 = LAYOUT.runway2, strip = sc.p('runway2', 'strip'), pave = sc.p('runway2', 'pave');
+    if (strip <= 0) return;
+    const L2 = Math.hypot(R2.to[0] - R2.from[0], R2.to[1] - R2.from[1]);
+    const u = [(R2.to[0] - R2.from[0]) / L2, (R2.to[1] - R2.from[1]) / L2], n = [u[1], -u[0]];
+    const pt = (s, t) => [R2.from[0] + u[0] * L2 * s + n[0] * t, R2.from[1] + u[1] * L2 * s + n[1] * t];
+    const bandR = (s0, s1, t0, t1, fill) => quad(c, pt(s0, t0), pt(s1, t0), pt(s1, t1), pt(s0, t1), fill);
+    const sn = sc.season === 'winter', w = R2.w / 2;
+    bandR(0, strip, -120, 120, sn ? '#e8edf1' : '#8a8f6a');
+    if (pave <= 0) return;
+    bandR(-0.004, pave + 0.004, -w - 2, w + 2, sn ? '#c4cbd1' : '#6b6f63');
+    bandR(0, pave, -w, w, PAL.asphalt);
+    if (pave < 1) return;
+    for (const [s, dir] of [[0.004, 1], [0.996, -1]]) for (let i = 0; i < 8; i++) { const t0 = -w + 2 + i * 5.2 + (i >= 4 ? 3 : 0); bandR(s, s + dir * 45 / L2, t0, t0 + 3.2, '#e9ecef'); }
+    groundText(c, '08', ...pt(70 / L2, 0), u, 15, '#e9ecef');
+    groundText(c, '26', ...pt(1 - 70 / L2, 0), [-u[0], -u[1]], 15, '#e9ecef');
+    line(c, [pt(100 / L2, 0), pt(1 - 100 / L2, 0)], 0.9, '#e9ecef', [30, 20]);
+    const r = sc.runway2;
+    if (r && (r.snow > 0.2 || r.plough)) bandR(0, 1, -w, w, 'rgba(244,247,250,' + (clamp(r.snow / SNOW_CLOSE_MM, 0, 1) * 0.9 + 0.08) + ')');
+    if (r && r.lit) for (let d = 0; d <= L2; d += 60) for (const t of [-w - 1.5, w + 1.5]) { const p = pt(d / L2, t); sc.lights.push({ x: p[0], y: p[1], z: 0.5, col: '255,236,180', r: 3 }); }
+  }
+
   // the master plan's projects open in this mission and not finished: their plot outlined
   function plots(c, sc) {
     if (!sc.planning) return;
     for (const id of Object.keys(S.airport.projects)) {
       const p = S.airport.projects[id], def = PROJECTS[id];
-      if (p.done || id === 'site' || id === 'lights1') continue;
+      if (p.done || id === 'site' || id === 'lights1' || id === 'ils1') continue;
       const b = def.plot;
       c.strokeStyle = 'rgba(255,214,90,0.95)'; c.lineWidth = 2 / (Cam.zoom * ISO_K); c.setLineDash([6, 4]);
       c.strokeRect(b.x - 6, b.y - 6, b.w + 12, b.h + 12); c.setLineDash([]);
@@ -245,6 +285,27 @@ const AirportArt = (() => {
     for (let i = 0; i < 3; i++) Iso.poly(c, [[x0 + 4 + i * 15, y0 - 0.05, 0], [x0 + 15 + i * 15, y0 - 0.05, 0], [x0 + 15 + i * 15, y0 - 0.05, 5], [x0 + 4 + i * 15, y0 - 0.05, 5]], '#b8322a');
   }
 
+  // the buildings of chapters 2 and 3, as far as they are built: a slab, walls going up, then the finished house
+  function block(c, sc, box, h, q, wall, glassRows) {
+    const [x0, y0, x1, y1] = box, warm = sc.dark > 0.3 ? mix(PAL.glass, '#ffd27a', clamp(sc.dark, 0, 1)) : PAL.glass;
+    const roof = sc.season === 'winter' ? '#f4f7fa' : '#8f969c';
+    if (q < 1) {
+      Iso.box(c, x0, y0, x1, y1, 0, 0.6, '#9a9a96');
+      if (q > 0.2) Iso.box(c, x0, y0, x1, y1, 0.6, 0.6 + (h - 0.6) * (q - 0.2) / 0.8, '#b8b4ac', 'rgba(0,0,0,0)');
+      return;
+    }
+    Iso.box(c, x0, y0, x1, y1, 0, h, wall, roof);
+    if (glassRows) { Iso.winSouth(c, x0, x1, y0, 1.6, h - 1.4, Math.max(2, Math.round((x1 - x0) / 8)), warm); Iso.winEast(c, y0, y1, x1, 1.6, h - 1.4, Math.max(3, Math.round((y1 - y0) / 9)), warm); }
+  }
+  function intlTerminal(c, sc) {
+    const T = LAYOUT.intlTerminal, f = sc.p('intlTerminal', 'frame'), hall = sc.p('intlTerminal', 'hall'), pier = sc.p('intlTerminal', 'pier');
+    const done = sc.items.intlTerminal ? 1 : null;
+    const [x0, y0, x1, y1] = T.box;
+    // the departure hall on the landside, the pier along the gates
+    block(c, sc, [x0 + 25, y0, x1, y1], T.h, done || Math.min(f, 0.5) + hall * 0.5, '#e6e2d8', true);
+    block(c, sc, [x0, y0 + 10, x0 + 25, y1 - 10], 7, done || Math.min(f, 0.5) + pier * 0.5, '#d9d5cc', true);
+    if ((done || hall >= 1) && sc.dark > 0.3) sc.lights.push({ x: x1 + 2, y: (y0 + y1) / 2, z: T.h + 2, col: '255,255,255', r: 8 });
+  }
   function cafe(c, sc) {
     const [x0, y0, x1, y1] = LAYOUT.cafe.box;
     Iso.box(c, x0, y0, x1, y1, 0, 5, '#efe6d2', sc.season === 'winter' ? '#f4f7fa' : '#8a5a3a');
@@ -259,12 +320,38 @@ const AirportArt = (() => {
     if (sc.p('tower1', 'found') > 0 || sc.items.tower) add(LAYOUT.tower1.x + 5, LAYOUT.tower1.y - 5, (c) => tower(c, sc));
     if (sc.items.fireStation) add(LAYOUT.fireStation.box[2], LAYOUT.fireStation.box[1], (c) => fireStation(c, sc));
     if (sc.items.cafe) add(LAYOUT.cafe.box[2], LAYOUT.cafe.box[1], (c) => cafe(c, sc));
+    // session 3
+    const I = LAYOUT.intlTerminal.box;
+    if (sc.p('intlTerminal', 'frame') > 0 || sc.items.intlTerminal) add(I[2], I[1], (c) => intlTerminal(c, sc));
+    const D = LAYOUT.domTerminal.box;
+    if (sc.p('domTerminal', 'hall') > 0 || sc.items.domTerminal) add(D[2], D[1], (c) => block(c, sc, D, LAYOUT.domTerminal.h, sc.items.domTerminal ? 1 : sc.p('domTerminal', 'hall'), '#ece6da', true));
+    const B = LAYOUT.bagHall.box;
+    if (sc.p('bagHall', 'hall') > 0 || sc.items.bagHall) add(B[2], B[1], (c) => block(c, sc, B, LAYOUT.bagHall.h, sc.items.bagHall ? 1 : sc.p('bagHall', 'hall'), '#c9c4b8', false));
+    const K = LAYOUT.computerRoom.box;
+    if (sc.p('computerRoom', 'room') > 0 || sc.items.computerRoom) add(K[2], K[1], (c) => block(c, sc, K, LAYOUT.computerRoom.h, sc.items.computerRoom ? 1 : sc.p('computerRoom', 'room'), '#d5d8dc', true));
+    for (const k of ['generator', 'restaurant', 'dutyFree']) {
+      const g = LAYOUT[k];
+      if (sc.items[k]) add(g.box[2], g.box[1], (c) => block(c, sc, g.box, g.h, 1, k === 'generator' ? '#7d8a6a' : '#efe6d2', k !== 'generator'));
+    }
+    // the crash tenders by the fire station, the airport coaches at the kerb
+    for (let i = 0; i < Math.min(4, sc.items.crashTender || 0); i++) {
+      const x = LAYOUT.fireStation.box[0] + 6 + i * 12, y = LAYOUT.fireStation.box[1] - 8;
+      add(x, y, (c) => Iso.obox(c, x, y, 9, 3, 0, 3.2, 90, '#c8322a'));
+    }
+    if (sc.items.busStop) for (let i = 0; i < 2; i++) { const x = LAYOUT.busStop.x, y = LAYOUT.busStop.y + i * 18; add(x, y, (c) => Iso.obox(c, x, y, 12, 2.5, 0, 3.2, 0, '#e8e8e8')); }
+    // the instrument landing system's localizer beyond the 19 end
+    if (sc.items.ils || sc.p('ils1', 'antennas') >= 1) {
+      const p0 = Ground.rwPoint(1 + 300 / Ground.LEN, 0);
+      add(p0[0], p0[1], (c) => { for (let i = -3; i <= 3; i++) { const q = Ground.rwPoint(1 + 300 / Ground.LEN, i * 6); Iso.obox(c, q[0], q[1], 1, 1, 0, 3, 0, '#c9c9c9'); } });
+    }
     if (sc.siteWork) add(LAYOUT.siteOffice.x + 40, LAYOUT.siteOffice.y, (c) => siteOffice(c, sc));
     // cranes at the stages being built
     for (const id of Object.keys(S.airport.projects)) {
       const p = S.airport.projects[id];
       if (!Object.values(p.stages).some((s) => s.on && !s.done)) continue;
-      const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28] : null;
+      const pl = PROJECTS[id] && PROJECTS[id].plot;
+      const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28] :
+        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34] : null;
       if (pos) add(pos[0], pos[1], (c) => crane(c, pos[0], pos[1], pos[2], sc.anim));
     }
     // floodlight masts round the apron

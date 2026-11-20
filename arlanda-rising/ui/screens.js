@@ -2,8 +2,17 @@
 
 // Arlanda Rising — the overlay screens and what they share: showing one panel at a time, the difficulty picker
 // (start screen, mission card, pause, results — pre-selected), the Sound On / Off switch, and the start screen,
-// the pause menu, the settings and the confirm dialog. The other screens have their own files (timeline,
-// missioncard, results, office). Buttons call game.js; Space / Enter press the panel's default button.
+// the pause menu, the settings, the confirm dialog, the cloud save's account row and the Free Play screen. The
+// other screens have their own files (timeline, missioncard, results, office, people, opscenter). Buttons call
+// game.js; Space / Enter press the panel's default button.
+
+// Google's "G", on the sign-in button
+const GOOGLE_G_SVG = '<svg class="gLogo" viewBox="0 0 48 48" aria-hidden="true">' +
+  '<path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/>' +
+  '<path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.5 5.8c4.4-4 6.8-10 6.8-17.3z"/>' +
+  '<path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6.1z"/>' +
+  '<path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>';
+
 
 const DIFF_TEXT = {
   easy: 'More money, calmer weather, patient airlines and longer deadlines.',
@@ -78,24 +87,93 @@ const Screens = (() => {
       '<p class="tagline">' + Text.esc(tr('Run Stockholm Arlanda, from the forest of 1958 to the airport of tomorrow.')) + '</p>';
     const saved = Autosave.read();
     const m = saved && saved.run && MISSION[saved.run.id];
-    if (m && saved.data && saved.data.state && saved.data.state.mission) {
-      const st = saved.data.state.mission;
+    const free = saved && saved.run && saved.run.free && saved.data && saved.data.state && saved.data.state.mission;
+    if ((m || free) && saved.data && saved.data.state && saved.data.state.mission) {
+      const st = saved.data.state.mission, def = free ? st.def : m;
       p.appendChild(row(btn(tr('Continue mission'), 'default big', () => Game.continueMission())));
-      p.appendChild(el('p', 'saveInfo', Text.esc(tr('{name} — stage {i} of {n}', { name: tr(m.name), i: st.stage + 1, n: m.stages.length }))));
+      p.appendChild(el('p', 'saveInfo', Text.esc(tr('{name} — stage {i} of {n}', { name: free ? tr('Free Play') + ' · ' + tr('round {n}', { n: def.round }) : tr(m.name), i: st.stage + 1, n: def.stages.length })) +
+        (saved.from ? ' · ' + Text.esc(tr('saved on another device at {t}', { t: new Date(saved.savedAt).toLocaleTimeString(I18N.lang, { hour: '2-digit', minute: '2-digit' }) })) : '')));
     }
     if (Campaign.exists()) {
       const nm = Campaign.nextMission();
-      p.appendChild(row(btn(tr('Continue'), m ? '' : 'default big', () => Game.toTimeline())));
-      p.appendChild(el('p', 'saveInfo', Text.esc(nm ? tr('Chapter {n}: {name} · next: {mission}', { n: nm.chapter, name: tr(CHAPTERS[nm.chapter - 1].name), mission: tr(nm.name) }) : tr('Chapter 1 is done — more chapters are coming.'))));
+      p.appendChild(row(btn(tr('Continue'), m || free ? '' : 'default big', () => Game.toTimeline())));
+      const last = MISSIONS[MISSIONS.length - 1];
+      p.appendChild(el('p', 'saveInfo', Text.esc(nm ? tr('Chapter {n}: {name} · next: {mission}', { n: nm.chapter, name: tr(CHAPTERS[nm.chapter - 1].name), mission: tr(nm.name) }) : tr('Chapter {n} is done — more chapters are coming.', { n: last.chapter }))));
     }
-    p.appendChild(row(btn(tr('New Campaign'), Campaign.exists() || m ? 'secondary' : 'default big', () => Game.askNewCampaign())));
+    p.appendChild(row(btn(tr('New Campaign'), Campaign.exists() || m || free ? 'secondary' : 'default big', () => Game.askNewCampaign()),
+      FreePlay.any() || FreeSave.exists() ? btn(tr('Free Play'), 'secondary', () => Game.toFree()) : null));
     p.appendChild(diffPicker(Settings.difficulty(), (d) => Settings.setDifficulty(d)));
     p.appendChild(soundRow());
     p.appendChild(row(btn(tr('Settings'), 'secondary', () => settings('menu')), btn(tr('How to play'), 'secondary', () => help())));
+    const acct = el('div', 'account');
+    acct.id = 'accountRow';
+    p.appendChild(acct);
+    renderAccount();
     p.appendChild(el('p', 'fine about', Text.esc(tr('A free, non-commercial fan game; not affiliated with or endorsed by Swedavia or any company shown. Names and logos belong to their owners.'))));
     I18N.buildPickers();
     I18N.applyDom();
     show('menu');
+  }
+
+  // ---------- the cloud save's row on the start screen (core/cloud.js) ----------
+  function renderAccount() {
+    const row = $('accountRow');
+    if (!row) return;
+    const st = Cloud.status;
+    row.hidden = st === 'unavailable';
+    if (row.hidden) return;
+    const signIn = '<button class="btn small cloudIn" data-cloud="in">' + GOOGLE_G_SVG + Text.esc(tr('Sign in with Google')) + '</button>';
+    const notice = Cloud.notice ? '<p class="fine cloudNotice">' + Text.esc(Cloud.notice === 'offline' ? tr('No network — sign in once you are online.') : tr('The sign-in did not finish — try again.')) + '</p>' : '';
+    if (st === 'off') {
+      row.innerHTML = signIn + '<p class="fine">' + Text.esc(tr('Keep your campaign and stars in the cloud and play on any device.')) + '</p>' + notice;
+      return;
+    }
+    const email = Cloud.email ? '<p class="fine">☁ ' + Text.esc(Cloud.email) + '</p>' : '';
+    if (st === 'loadFailed') {
+      row.innerHTML = '<span class="cloudState loadFailed">' + Text.esc(tr("Couldn't load your cloud progress")) + '</span>' +
+        '<div class="cloudChoice"><button class="btn small" data-cloud="retry">' + Text.esc(tr('Try again')) + '</button>' +
+        '<button class="btn small secondary" data-cloud="local">' + Text.esc(tr('Play with the progress on this device')) + '</button></div>' + email;
+      return;
+    }
+    const text = { syncing: tr('Syncing…'), synced: tr('Synced'), error: tr('Sync failed — it tries again later'),
+      local: tr('Playing with the progress on this device — it syncs once the network is back'),
+      signedOut: tr('Signed out — sign in again to sync') }[st];
+    row.innerHTML = '<span class="cloudState ' + st + '">' + Text.esc(text) + '</span>' +
+      (st === 'signedOut' ? signIn : '<button class="btn small secondary" data-cloud="out">' + Text.esc(tr('Sign out')) + '</button>') + email + notice;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('#accountRow [data-cloud]');
+    if (!b) return;
+    Sfx.play('click');
+    if (b.dataset.cloud === 'in') Cloud.signIn();
+    else if (b.dataset.cloud === 'retry') Cloud.retry();
+    else if (b.dataset.cloud === 'local') Cloud.playLocal();
+    else { Cloud.signOut(); renderAccount(); }
+  });
+
+  // ---------- Free Play: go on with the airport, or start one from an era the campaign has opened ----------
+  function freePlay() {
+    const p = $('freePlay');
+    p.innerHTML = '<h1>🛫 ' + Text.esc(tr('Free Play')) + '</h1><p class="fine">' + Text.esc(tr('An endless airport: offers to answer, peaks to fly, no stars and no frame. Every round is a month of business and a busy peak.')) + '</p>';
+    const fp = FreeSave.data;
+    if (FreeSave.exists()) {
+      const era = FREE_ERAS.find((x) => x.id === fp.era);
+      p.appendChild(row(btn(tr('Continue Free Play'), 'default big', () => Game.toOffice(true))));
+      p.appendChild(el('p', 'saveInfo', Text.esc(tr('{era} · round {n} · {date}', { era: tr(era ? era.name : ''), n: fp.round, date: fmtDate(fp.world.day) }))));
+    }
+    p.appendChild(el('p', 'label', Text.esc(tr('Start from'))));
+    let d = Settings.difficulty();
+    const eras = el('div', 'btnCol');
+    for (const era of FREE_ERAS) {
+      const ok = FreePlay.open(era.id);
+      const b = btn((ok ? '' : '🔒 ') + tr(era.name), FreeSave.exists() ? 'secondary' : 'default', () => { if (ok) Game.startFree(era.id, d); });
+      b.disabled = !ok;
+      eras.appendChild(b);
+    }
+    p.appendChild(eras);
+    p.appendChild(diffPicker(d, (x) => { d = x; }));
+    p.appendChild(row(btn(tr('Back'), 'secondary', () => Game.toMenu())));
+    show('freePlay');
   }
 
   function help() {
@@ -106,6 +184,7 @@ const Screens = (() => {
       'In an operations stage, one hour takes about a minute. The task tray on the left fills with jobs: tap a task to do the obvious thing, or drag a landing aircraft onto a stand. A task you miss goes to the duty manager, who does it late and not always well.',
       'The bar at the bottom opens check-in desks, sends the ploughs, picks the runway direction when the wind is calm and buys small things: a remote stand, a fuel truck, a plough.',
       'Mouse: click and drag, the wheel zooms, right drag or the arrow keys move the map. Keys: Space pause, 1–4 speed, N skip to the next task, Q do the oldest task, Esc pause menu.',
+      'From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. In the Office, People (P) and the Ops Center (O) hire them, train them and hold drills; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.',
       'Phone and tablet: the game goes fullscreen. Drag with one finger to move the map, pinch with two to zoom, tap a task or drag it to a stand, hold a finger on an aircraft to see its card.'
     ].map((t) => '<p>' + Text.esc(tr(t)) + '</p>').join('');
     p.appendChild(row(btn(tr('Back'), 'default', () => menu())));
@@ -168,5 +247,5 @@ const Screens = (() => {
     return false;
   }
 
-  return { show, hide, menu, pause, settings, confirm, diffPicker, soundRow, btn, row, el, pressDefault, get current() { return current; } };
+  return { show, hide, menu, pause, settings, confirm, diffPicker, soundRow, btn, row, el, pressDefault, renderAccount, freePlay, get current() { return current; } };
 })();
