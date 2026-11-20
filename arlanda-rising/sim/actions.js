@@ -1,0 +1,51 @@
+'use strict';
+
+// Arlanda Rising — everything the player can do, as one list of calls: the tray's tasks, dragging an aircraft
+// to a stand, opening and closing check-in desks, sending the ploughs, the runway direction when it is
+// calm, the fee level, the small builds, the projects' stages, pace, mods and money, the decisions,
+// loans. The screens call these, and so do the reference strategies (sim/strategy.js). Each returns true
+// when it did something.
+
+const Actions = {
+  task(id, choice) { return !!S.ops && Tasks.doTask(id, choice); },
+  // done on the map instead of the tray: the matching task leaves the tray as done by the player
+  doneByHand(kind, target) {
+    const n = S.ops.tasks.length;
+    S.ops.tasks = S.ops.tasks.filter((k) => !(k.kind === kind && k.target === target));
+    if (S.ops.tasks.length < n) S.mission.st.tasksPlayer++;
+  },
+  stand(flightId, standId) {
+    const f = S.ops && Flights.get(flightId), st = Airport.stand(standId);
+    if (!f || !st || !Stands.fits(st, f.type) || f.inBlock !== null || Flights.over(f)) return false;
+    if (!Stands.assign(f, st)) return false;
+    this.doneByHand('stand', f.id);
+    return true;
+  },
+  desks(n) {
+    if (!S.ops) return false;
+    const was = S.ops.desksOpen;
+    S.ops.desksOpen = clamp(Math.round(n), 0, S.airport.desks);
+    if (S.ops.desksOpen > was) this.doneByHand('checkin', 'desks');
+    return S.ops.desksOpen !== was;
+  },
+  plough(surface) {
+    if (!S.ops || !Runways.plough(surface)) return false;
+    this.doneByHand('plough', surface);
+    return true;
+  },
+  dir(d) { if (['01', '19'].indexOf(d) < 0) return false; S.airport.prefDir = d; return true; },
+  fees(level) { if (!FEE_LEVELS[level]) return false; S.airport.fees = level; return true; },
+  buy(kind) {
+    if (!Airport.buy(kind)) return false;
+    // a vehicle bought in ops time joins at once
+    if (S.ops && kind === 'fuelTruck') S.ops.trucks.push(0);
+    return true;
+  },
+  start(project, stage, pace) { return !!S.plan && Construction.start(project, stage, pace); },
+  pace(project, stage, pace) { return Construction.pace(project, stage, pace); },
+  mod(project, mod) { return Construction.mod(project, mod); },
+  finance(project, how) { return Construction.finance(project, how); },
+  choose(option) { return Plan.choose(option); },
+  borrow(amount) { return Finance.borrow(amount) > 0; },
+  repay(amount) { return Finance.repay(amount) > 0; }
+};
