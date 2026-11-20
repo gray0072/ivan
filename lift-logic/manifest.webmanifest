@@ -1,7 +1,7 @@
 {
   "name": "Lift Logic",
   "short_name": "Lift Logic",
-  "description": "Be the brain of a lift: program it from blocks and watch a building live by your code — from Grandma's three-storey house to a school, a grand hotel, a hospital, an office tower and a shopping mall.",
+  "description": "Be the brain of a lift: program it from blocks and watch a building live by your code — from Grandma's three-storey house to a school, a grand hotel, a hospital, an office tower, a shopping mall, the Eiffel Tower and the Empire State Building.",
   "id": "/ivan/lift-logic/",
   "start_url": "./",
   "scope": "./",

@@ -1,6 +1,7 @@
 'use strict';
 
-// Lift Logic — draws a block as DOM from its definition (data/blocks.js): the shape by CSS class (hat, stack,
+// Lift Logic — draws a block as DOM from its definition (data/blocks.js, blockDef for an own block: its define
+// hat with the inputs as small fixed blocks, its call with a slot per input): the shape by CSS class (hat, stack,
 // C, cap, reporter pill, boolean hexagon), the category colour, the translated template with its slots —
 // a number or a word in a white pill, a dropdown, an empty hexagon, the hat's inputs as small fixed blocks,
 // or the reporter placed in it — and the C block's mouths. Every element keeps a link to its data
@@ -11,7 +12,7 @@ const BlockView = (() => {
   // the words of a dropdown value as the player sees them
   function dropText(kind, v) {
     if (v === null || v === undefined || v === '') return kind === 'var' || kind === 'list' ? tr('(pick)') : '…';
-    if (kind === 'dir3' || kind === 'arrow' || kind === 'stop') return tr(String(v));
+    if (kind === 'dir3' || kind === 'arrow' || kind === 'stop' || kind === 'bmsg') return tr(String(v));
     return String(v);
   }
   function valText(v) {
@@ -21,7 +22,7 @@ const BlockView = (() => {
 
   // el(block, { palette, ghost }) — a block element and everything inside it
   function el(b, opts = {}) {
-    const d = BLOCK[b.op];
+    const d = blockDef(b);
     const e = document.createElement('div');
     const shape = d.shape === 'c2' ? 'c c2' : d.shape;
     e.className = 'blk s-' + shape.replace(' ', ' s-') + ' k-' + d.cat + (d.cap || (d.capIf && b.args[0] === d.capIf) ? ' cap' : '') + (b.locked ? ' locked' : '');
@@ -30,6 +31,7 @@ const BlockView = (() => {
     const row = document.createElement('div');
     row.className = 'row';
     e.appendChild(row);
+    if (d.prefix) { const w = document.createElement('span'); w.className = 'w'; w.textContent = tr(d.prefix); row.appendChild(w); }
     fillRow(row, b, d.text, d, opts);
     if (d.shape === 'c' || d.shape === 'c2') {
       e.appendChild(mouth(b, 'body', opts));
@@ -72,7 +74,7 @@ const BlockView = (() => {
 
   // the template's words and slots
   function fillRow(row, b, text, d, opts) {
-    const parts = tr(text).split(/(%\d)/);
+    const parts = (d.raw ? text : tr(text)).split(/(%\d)/);
     for (const part of parts) {
       const m = part.match(/^%(\d)$/);
       if (!m) {
@@ -92,12 +94,14 @@ const BlockView = (() => {
 
   function slot(b, k, kind, opts) {
     const v = b.args[k];
-    // a hat's input: a small fixed block
-    if (kind.startsWith('param:')) {
+    // a hat's input (an own block's input): a small fixed block
+    if (kind.startsWith('param:') || kind.startsWith('paramb:')) {
+      const own = b.op === 'define', name = kind.slice(kind.indexOf(':') + 1);
       const p = document.createElement('span');
-      p.className = 'blk s-reporter k-events param';
-      p.textContent = tr(PARAM_NAMES[kind.slice(6)] || kind.slice(6));
-      p._param = kind.slice(6);
+      p.className = 'blk ' + (kind.startsWith('paramb:') ? 's-boolean' : 's-reporter') + (own ? ' k-myblocks' : ' k-events') + ' param';
+      p.textContent = PARAM_NAMES[name] ? tr(PARAM_NAMES[name]) : name;
+      p._param = name;
+      p._own = own;
       p._slot = { block: b, k, kind };
       return p;
     }
@@ -105,7 +109,7 @@ const BlockView = (() => {
     if (kind === 'name') {
       const t = document.createElement('span');
       t.className = 'w name';
-      t.textContent = b.op === 'param' ? tr(PARAM_NAMES[v] || v) : String(v);
+      t.textContent = (b.op === 'param' || b.op === 'paramB') && PARAM_NAMES[v] ? tr(PARAM_NAMES[v]) : String(v);
       return t;
     }
     if (v && typeof v === 'object' && v.op) {
@@ -134,6 +138,8 @@ const BlockView = (() => {
   // a new block of an op with its default values (a fresh id)
   function make(op, extra) {
     const d = BLOCK[op];
+    // an own block's call: its name and inputs, empty slots
+    if (op === 'call') return Object.assign({ id: Prog.newId(), op, args: extra.kinds.map(() => null) }, extra);
     const b = { id: Prog.newId(), op, args: (d.slots || []).map((s, k) => {
       if (s.startsWith('param:')) return { id: Prog.newId(), op: 'param', args: [s.slice(6)] };
       const def = (d.def || [])[k];

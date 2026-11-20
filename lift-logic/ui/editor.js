@@ -84,9 +84,9 @@ const Editor = (() => {
     return hit;
   }
 
-  function isCap(b) { const d = BLOCK[b.op]; return !!(d.cap || (d.capIf && b.args[0] === d.capIf)); }
-  function isHat(b) { return BLOCK[b.op].shape === 'hat'; }
-  function isStackish(b) { const s = BLOCK[b.op].shape; return s !== 'reporter' && s !== 'boolean'; }
+  function isCap(b) { const d = blockDef(b); return !!(d.cap || (d.capIf && b.args[0] === d.capIf)); }
+  function isHat(b) { return blockDef(b).shape === 'hat'; }
+  function isStackish(b) { const s = blockDef(b).shape; return s !== 'reporter' && s !== 'boolean'; }
 
   // can `blocks` go into `list` at `index`
   function canInsert(list, index, blocks) {
@@ -111,7 +111,7 @@ const Editor = (() => {
 
   // ---------- inserting from the palette ----------
   function insert(b) {
-    const d = BLOCK[b.op];
+    const d = blockDef(b);
     if (d.shape === 'reporter' || d.shape === 'boolean') {
       const target = st.pendingSlot || firstEmptySlot(d.shape);
       if (!target) { Hud.toast(tr('Tap an empty slot of a block first, then pick this.')); Sfx.error(); return false; }
@@ -142,7 +142,7 @@ const Editor = (() => {
     if (!st.sel) return null;
     const at = locate(st.sel);
     if (!at) return null;
-    const d = BLOCK[at.block.op];
+    const d = blockDef(at.block);
     const k = (d.slots || []).findIndex((kind, i) => {
       const v = at.block.args[i];
       return BlockView.fits(kind, shape) && (v === null || v === '' || (kind === 'bool' && !v));
@@ -155,7 +155,7 @@ const Editor = (() => {
     const at = locate(id);
     if (!at || at.block.locked) return;
     change(() => {
-      if (at.slot) at.slot.block.args[at.slot.k] = BLOCK[at.slot.block.op].slots[at.slot.k] === 'bool' ? null : '';
+      if (at.slot) at.slot.block.args[at.slot.k] = blockDef(at.slot.block).slots[at.slot.k] === 'bool' ? null : '';
       else at.list.splice(at.index, 1);
       cleanScripts();
       st.sel = null; st.ins = null;
@@ -283,7 +283,7 @@ const Editor = (() => {
     const el = byId(st.sel);
     const at = locate(st.sel);
     if (!el || !at) { bar.hidden = true; return; }
-    const d = BLOCK[at.block.op];
+    const d = blockDef(at.block);
     const locked = at.block.locked;
     const btn = (act, label) => '<button type="button" data-act="' + act + '">' + label + '</button>';
     let html = '';
@@ -436,7 +436,12 @@ const Editor = (() => {
       st.moving = null; render(); return;
     }
     const param = target.closest && target.closest('.param');
-    if (param) { Hud.toast(tr('This is the {name} of the event. Tap a slot in this script and pick it there.', { name: tr(PARAM_NAMES[param._param] || param._param) })); return; }
+    if (param) {
+      const name = PARAM_NAMES[param._param] ? tr(PARAM_NAMES[param._param]) : param._param;
+      Hud.toast(param._own ? tr('This is the input "{name}" of your block. Tap a slot in this script and pick it there.', { name })
+        : tr('This is the {name} of the event. Tap a slot in this script and pick it there.', { name }));
+      return;
+    }
     const slot = target.closest && target.closest('.slot');
     if (slot && slot._slot) {
       const blk = slot.closest('.blk');
@@ -450,7 +455,7 @@ const Editor = (() => {
       Sfx.tap();
       if (long && !blk._b.locked && isStackish(blk._b) && !blk.classList.contains('inslot')) { st.sel = blk._b.id; startMove(blk._b.id, true); return; }
       st.sel = blk._b.id;
-      const d = BLOCK[blk._b.op];
+      const d = blockDef(blk._b);
       // a C block with an empty mouth: the next block goes inside it
       if ((d.shape === 'c' || d.shape === 'c2') && !blk._b.body.length && target.closest('.mouth')) st.ins = { list: blk._b.body, index: 0 };
       else if ((d.shape === 'c' || d.shape === 'c2') && target.closest('.mouth') && target.closest('.mouth').parentNode === blk) {
@@ -477,7 +482,7 @@ const Editor = (() => {
     let blocks;
     if (at.slot) {
       blocks = [at.block];
-      at.slot.block.args[at.slot.k] = BLOCK[at.slot.block.op].slots[at.slot.k] === 'bool' ? null : '';
+      at.slot.block.args[at.slot.k] = blockDef(at.slot.block).slots[at.slot.k] === 'bool' ? null : '';
     } else {
       const n = single || isHat(at.block) && single ? 1 : at.list.length - at.index;
       blocks = at.list.splice(at.index, single && !isHat(at.block) ? 1 : n);
@@ -520,7 +525,7 @@ const Editor = (() => {
       const a = area.getBoundingClientRect();
       const inside = cx >= a.left && cx <= a.right && cy >= a.top && cy <= a.bottom && !overPalette(cx, cy);
       if (!inside) return null;
-      const shape = BLOCK[d.blocks[0].op].shape;
+      const shape = blockDef(d.blocks[0]).shape;
       if (shape === 'reporter' || shape === 'boolean') {
         d.ghost.style.display = 'none';
         const under = document.elementFromPoint(cx, cy);
@@ -624,9 +629,17 @@ const Editor = (() => {
     return true;
   }
   function addMsg(name) { if (name && st.prog.msgs.indexOf(name) < 0) st.prog.msgs.push(name); }
+  // a new own block: its define hat goes under the other scripts; false when the name is taken
+  function makeBlock(words, inputs) {
+    const hat = ownDefine(words, inputs);
+    if (ownBlocks(st.prog).some((o) => o.name.replace(/%\d+/g, '%') === hat.name.replace(/%\d+/g, '%'))) return false;
+    const b = Prog.renew(hat);
+    change(() => { newScript([b]); st.sel = b.id; st.ins = afterOf(b); });
+    return true;
+  }
 
   return { load, render, insert, undo, redo, onChange, applyGlow, setMarks, clearMarks, key, zoomBy, dragNew, paletteDrag,
-    count, setPendingSlot, setValue, makeVar, makeList, addMsg, locate, change,
+    count, setPendingSlot, setValue, makeVar, makeList, makeBlock, addMsg, locate, change,
     get prog() { return st.prog; }, get mission() { return st.mission; }, get sel() { return st.sel; },
     get canUndo() { return st.undo.length > 0; }, get canRedo() { return st.redo.length > 0; }, get dragging() { return !!dragging; } };
 })();

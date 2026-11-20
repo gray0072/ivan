@@ -4,7 +4,8 @@
 // run's most notable trait (someone gave up, a long wait, empty trips, the full lift, the prankster, rides
 // the wrong way first, a chatty lift, an energy record), measured against JOKE in constants.js; with nothing
 // rough, a good-run or a ★★★ line. The second is about a moment of the day (the cake, an emergency, a lift
-// out of order, a bed, lunch, Tommy's buttons cancelled…) or the building. The pick is a
+// out of order, a bed, lunch, Tommy's buttons cancelled, the wind, an announcement, changing lifts…) or the
+// building. The pick is a
 // hash of the mission and the run's numbers, so the same run always shows the same lines (also after a
 // language switch). Texts in data/jokes.js. Used by ui/results.js.
 
@@ -53,6 +54,9 @@ const Jokes = (() => {
     else if (has('bed')) moment = JOKES_MOMENT('bed', h);
     else if (has('cook')) moment = JOKES_MOMENT('lunch', h);
     else if (r.counters.cancels > 0) moment = JOKES_MOMENT('prankster', h);
+    else if (r.log.some((e) => e.type === 'weather')) moment = JOKES_MOMENT('wind', h);
+    else if (r.log.some((e) => e.type === 'buildingMsg')) moment = JOKES_MOMENT('closing', h);
+    else if (r.people.some((p) => p.legs > 0 && p.state === 'done')) { moment = JOKES_MOMENT('transfer', h); params = { n: r.people.filter((p) => p.legs > 0).length }; }
     if (moment) out.push(line(moment, params, m));
     else if (BUILDING_LINES[m.building]) out.push(line(pick(BUILDING_LINES[m.building], h >>> 3), {}, m));
     return out;

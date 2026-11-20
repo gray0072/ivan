@@ -9,7 +9,7 @@
 const Building = {
   // the landings of a new run
   init() {
-    run.hall = run.floors.map(() => ({ up: false, upT: 0, down: false, downT: 0, emergency: false, presses: 0 }));
+    run.hall = run.floors.map(() => ({ up: false, upT: 0, upSeq: 0, down: false, downT: 0, downSeq: 0, emergency: false, presses: 0 }));
   },
 
   // a person presses ▲ (dir 'up') or ▼ ('down') on floor index i
@@ -19,6 +19,7 @@ const Building = {
     if (h[dir]) return false;
     h[dir] = true;
     h[dir + 'T'] = run.t;
+    h[dir + 'Seq']++;
     logEvent('call', { floor: run.floors[i], dir });
     if (!run.bellBroken) VM.event('onCall', null, { floor: run.floors[i], direction: dir });
     GameEvents.emit('callPressed', { floor: run.floors[i], dir });

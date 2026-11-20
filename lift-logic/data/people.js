@@ -8,12 +8,14 @@
 // board: × BOARD_TIME per getting on or off; size: places taken; prank: presses every button inside;
 // walk: s a slow walker needs from the bench to the doors once a lift opens on their floor
 // look: body colour, hair colour, 'kid' for a small figure, an item carried (box, suitcase, bed, cart,
-// pizza, bag, cat, cake, flowers, case, clipboard)
+// pizza, bag, cat, cake, flowers, case, clipboard, camera)
 
 const KID_NAMES = ['Mia', 'Noah', 'Emma', 'Liam', 'Ava', 'Leo', 'Ella', 'Oscar', 'Nora', 'Hugo', 'Alva', 'Sasha', 'Ivan', 'Zoe', 'Max', 'Lily'];
 const ADULT_NAMES = ['Mr. Brown', 'Mrs. Lee', 'Ms. Garcia', 'Mr. Novak', 'Mrs. Svensson', 'Mr. Petrov', 'Ms. Kim', 'Mr. Okafor',
   'Mrs. Rossi', 'Mr. Dubois', 'Ms. Lindqvist', 'Mr. Tanaka', 'Mrs. Kowalski', 'Mr. Haddad', 'Ms. Moreau', 'Mr. Jensen',
   'Mrs. Ortega', 'Mr. Becker', 'Ms. Nyberg', 'Mr. Silva'];
+const TOURIST_NAMES = ['Yuki', 'Marie', 'Pierre', 'Sofia', 'Ahmed', 'Olga', 'Jonas', 'Priya', 'Carlos', 'Mei', 'Lukas', 'Amara',
+  'Diego', 'Hanna', 'Kenji', 'Fatima', 'Tom', 'Elif', 'Ravi', 'Ingrid'];
 
 const PEOPLE = {
   rosa: { name: 'Grandma Rosa', patience: 90, board: 2.5, size: 1, look: { body: '#9b6bc4', hair: '#e9e4f0', item: 'cat' },
@@ -65,5 +67,11 @@ const PEOPLE = {
   shopper: { names: ADULT_NAMES, patience: 70, board: 1.2, size: 2, look: { body: '#ef6c00', hair: '#4e342e', item: 'cart' },
     line: 'My car is on minus two. Or was it minus three?', happy: 'Found my car!', angry: "I'll push the cart up the ramp!" },
   teen: { names: KID_NAMES, patience: 50, board: 0.8, size: 1, look: { body: '#8e24aa', hair: '#1b1b1b', kid: true, item: 'bag' },
-    line: 'The cinema starts in five minutes!', happy: 'Made it!', angry: 'Escalator it is.' }
+    line: 'The cinema starts in five minutes!', happy: 'Made it!', angry: 'Escalator it is.' },
+  tourist: { names: TOURIST_NAMES, patience: 70, board: 1, size: 1, look: { body: '#1e88e5', hair: '#5d4037', item: 'camera' },
+    line: 'One photo from the top and I can go home happy!', happy: 'What a view!', angry: 'I\'ll take the stairs. All of them.' },
+  director: { name: 'Madame Durand', patience: 50, board: 1, size: 1, look: { body: '#283593', hair: '#9e9e9e', item: 'clipboard' },
+    line: 'Every visitor should leave with a smile — and a photo.', happy: 'Parfait!', angry: 'Mon Dieu, this lift!' },
+  super: { name: 'Mr. Russo', patience: 45, board: 1, size: 1, look: { body: '#4e342e', hair: '#212121', item: 'case' },
+    line: 'In New York nobody waits. Nobody.', happy: 'Not bad, kid.', angry: 'I\'m taking the stairs! All hundred and two!' }
 };

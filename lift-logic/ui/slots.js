@@ -35,8 +35,12 @@ const Slots = (() => {
     const ch = Palette.chapter;
     const out = [];
     const shapeOk = (d) => (kind === 'bool' ? d.shape === 'boolean' : d.shape === 'reporter' || (kind === 'any' && d.shape === 'boolean'));
-    const hat = script && script.blocks[0] && BLOCK[script.blocks[0].op].shape === 'hat' ? script.blocks[0] : null;
-    if (hat && kind !== 'bool') for (const s of BLOCK[hat.op].slots || []) if (s.startsWith('param:')) out.push({ op: 'param', args: [s.slice(6)] });
+    const hat = script && script.blocks[0] && blockDef(script.blocks[0]).shape === 'hat' ? script.blocks[0] : null;
+    // the inputs of the script's event (of its own block): round ones for values, yes / no ones for conditions
+    if (hat) for (const s of blockDef(hat).slots || []) {
+      if (s.startsWith('param:') && kind !== 'bool') out.push({ op: 'param', args: [s.slice(6)] });
+      if (s.startsWith('paramb:') && (kind === 'bool' || kind === 'any')) out.push({ op: 'paramB', args: [s.slice(7)] });
+    }
     if (kind !== 'bool') for (const v of Editor.prog.vars) out.push({ op: 'var', args: [v.name] });
     if (kind !== 'bool') for (const l of Editor.prog.lists) out.push({ op: 'list', args: [l.name] });
     for (const d of BLOCKS) {
@@ -73,13 +77,13 @@ const Slots = (() => {
       if (o) body.appendChild(o);
       return;
     }
-    if (kind === 'dir3' || kind === 'arrow' || kind === 'stop') {
+    if (kind === 'dir3' || kind === 'arrow' || kind === 'stop' || kind === 'bmsg') {
       show(tr('Pick one'));
       const row = document.createElement('div');
       row.className = 'choices';
       for (const v of DROPDOWNS[kind]) row.appendChild(button(tr(v), cur === v ? 'on' : 'toggle', () => { hide(); Editor.setValue(slot, v); }));
       body.appendChild(row);
-      const o = kind === 'stop' ? null : offerList(slot, script, tr('or a block:'));
+      const o = kind === 'stop' || kind === 'bmsg' ? null : offerList(slot, script, tr('or a block:'));
       if (o) body.appendChild(o);
       return;
     }
@@ -124,7 +128,7 @@ const Slots = (() => {
       const row = document.createElement('div');
       row.className = 'choices';
       const names = new Set(Editor.prog.msgs || []);
-      Prog.walk(Editor.prog, (b) => { (BLOCK[b.op].slots || []).forEach((s, k) => { if (s === 'msg' && b.args[k]) names.add(String(b.args[k])); }); });
+      Prog.walk(Editor.prog, (b) => { (blockDef(b).slots || []).forEach((s, k) => { if (s === 'msg' && b.args[k]) names.add(String(b.args[k])); }); });
       if (!names.size) names.add('message1');
       for (const n of names) row.appendChild(button(escapeHtml(n), cur === n ? 'on' : 'toggle', () => { hide(); Editor.setValue(slot, n); }));
       row.appendChild(button(tr('New message'), 'secondary', () => { hide(); ask(tr('Name of the new message'), '', (n) => { n = String(n || '').trim().slice(0, 20); if (n) { Editor.addMsg(n); Editor.setValue(slot, n); } }); }));
@@ -188,7 +192,8 @@ const Slots = (() => {
     if (kind === 'any') {
       const row = document.createElement('div');
       row.className = 'choices';
-      for (const w of ['up', 'down', 'stopped']) row.appendChild(button(tr(w), 'toggle', () => { hide(); done(w); }));
+      const words = ['up', 'down', 'stopped'].concat(Palette.chapter >= 7 || Palette.allOpen() ? DROPDOWNS.weather : []);
+      for (const w of words) row.appendChild(button(tr(w), 'toggle', () => { hide(); done(w); }));
       row.appendChild(button(tr('Type a word…'), 'secondary', () => { body.innerHTML = ''; textInput(isNaN(Number(v)) ? v : '', done); }));
       body.appendChild(row);
     }

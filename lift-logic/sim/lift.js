@@ -4,8 +4,9 @@
 // and acceleration; the braking point of a floor), the doors (open, dwell, boarding, close, re-open),
 // the plan (the ordered floors it will stop at), the arrow lamps, the cabin buttons, the load and the
 // energy. A lift drives towards the first floor of its plan; arriving it opens and removes that floor;
-// with the plan empty and the doors closed it is idle. Used by sim/run.js each step; the program
-// changes the plan through sim/vm.js.
+// with the plan empty and the doors closed it is idle. A lift of a zone stops only at its floors; an express
+// trip goes straight to its floor at the express speed. Used by sim/run.js each step; the program changes
+// the plan through sim/vm.js.
 
 const Lift = {
   create(n, spec) {
@@ -20,7 +21,7 @@ const Lift = {
       idle: true, arrivals: {}, stops: 0, arrowOverride: null, callDir: null, holdUntil: 0, closeAsap: false,
       busyUntil: 0, openSince: 0, curStop: null, trip: null, tripId: 0, passFired: '',
       say: null, energy: 0, emptyTrips: 0, vars: {}, threads: [], every: {}, working: true, failing: 0, prankFloors: new Set(),
-      zone: null
+      zone: null, zoneLobby: -1, express: null, expressSpeed: spec.express || type.express || spec.speed || type.speed, litSeen: null
     };
   },
 
@@ -29,12 +30,12 @@ const Lift = {
   load(L) { let s = 0; for (const p of L.riders) s += p.size; return s; },
   loadPct(L) { return Math.round(100 * Lift.load(L) / L.cap); },
   direction(L) { return L.moving ? (L.heading > 0 ? 'up' : 'down') : 'stopped'; },
-  // a lift of a zone stops only at the floors of its zone
+  // a lift of a zone stops only at the floors of its zone (and at the lobby when its zone has it)
   canStopAt(L, label) {
     if (!hasFloor(label)) return false;
     if (!L.zone) return true;
     const i = floorIndex(label);
-    return i >= L.zone[0] && i <= L.zone[1];
+    return (i >= L.zone[0] && i <= L.zone[1]) || i === L.zoneLobby;
   },
 
   // the arrow lamps: set by the program for this stop; an empty lift answering a call of one direction
@@ -90,6 +91,7 @@ const Lift = {
     switch (L.doorPhase) {
       case 'closed':
         if (L.moving) { Lift.move(L, dt); break; }
+        if (L.express !== null && floorIndex(L.express) !== Lift.here(L)) { L.idle = false; Lift.startMove(L); Lift.move(L, dt); break; }
         if (L.plan.length) {
           while (L.plan.length && !hasFloor(L.plan[0])) L.plan.shift();
           if (!L.plan.length) break;
@@ -103,9 +105,10 @@ const Lift = {
             logEvent('idle', { lift: L.n, floor: Lift.floor(L) });
             VM.event('onIdle', L, {});
           }
-          // a real lift standing still opens for a call at its own floor
+          // a real lift standing still opens for a call at its own floor — but not again and again for a call it
+          // just left lit (people there wait for a lift of another zone)
           const here = Lift.here(L);
-          if (Building.isLit(here, 'any') || L.cabin.has(floorLabel(here))) Lift.arrive(L, true);
+          if ((Building.isLit(here, 'any') && !Lift.seenLit(L, here)) || L.cabin.has(floorLabel(here))) Lift.arrive(L, true);
         }
         break;
       case 'opening':
@@ -135,10 +138,20 @@ const Lift = {
     }
   },
 
+  // the calls lit at floor i when the doors last closed there, still the same presses
+  seenLit(L, i) {
+    const s = L.litSeen, h = run.hall[i];
+    if (!s || s.i !== i) return false;
+    return (!h.up || h.upSeq === s.up) && (!h.down || h.downSeq === s.down);
+  },
+
+  // where the lift drives: an express trip's floor, else the first floor of the plan
+  target(L) { return L.express !== null ? L.express : L.plan[0]; },
+
   startMove(L) {
     L.moving = true;
     L.late = false;
-    L.heading = Math.sign(floorIndex(L.plan[0]) - L.pos) || 1;
+    L.heading = Math.sign(floorIndex(Lift.target(L)) - L.pos) || 1;
     L.energy += ENERGY_PER_START;
     run.energy += ENERGY_PER_START;
     L.tripId++;
@@ -152,13 +165,15 @@ const Lift = {
   },
 
   move(L, dt) {
-    if (!L.plan.length || !hasFloor(L.plan[0])) {
+    if (L.express === null && (!L.plan.length || !hasFloor(L.plan[0]))) {
       // the plan was emptied on the way: stop at the next floor ahead
       const ahead = L.v > 0 ? Math.ceil(L.pos - 1e-6) : Math.floor(L.pos + 1e-6);
       const brakeTo = L.v > 0 ? Math.ceil(L.pos + L.v * L.v / (2 * L.accel) - 1e-6) : Math.floor(L.pos - L.v * L.v / (2 * L.accel) + 1e-6);
       L.plan = [floorLabel(clamp(L.v === 0 ? ahead : brakeTo, 0, run.floors.length - 1))];
     }
-    const ti = floorIndex(L.plan[0]);
+    // an express trip goes to its floor at the express speed, whatever the plan says meanwhile
+    const ti = floorIndex(Lift.target(L));
+    const top = L.express !== null ? L.expressSpeed : L.speed;
     const a = L.accel, d = ti - L.pos, s = Math.sign(d) || L.heading || 1;
     let v = L.v;
     if (v * s < 0) {
@@ -167,7 +182,7 @@ const Lift = {
       const stopV = Math.sqrt(2 * a * Math.abs(d));
       let sp = Math.abs(v);
       if (sp > stopV + a * dt * 1.01) { sp = Math.max(0, sp - a * dt); L.late = true; }
-      else { sp = Math.min(L.speed, sp + a * dt, stopV); L.late = false; }
+      else { sp = Math.min(top, sp + a * dt, stopV); L.late = false; }
       v = s * sp;
     }
     const old = L.pos;
@@ -188,8 +203,8 @@ const Lift = {
     if (arrived) { L.v = 0; Lift.arrive(L, false); return; }
     L.v = v;
     // the braking point of the nearest floor ahead the lift can still stop at (a fast lift needs more than
-    // one floor to brake), when it is not the target: `when I'm about to pass floor`
-    if (v !== 0) {
+    // one floor to brake), when it is not the target: `when I'm about to pass floor` (never on an express trip)
+    if (v !== 0 && L.express === null) {
       const dir = Math.sign(v), brake = v * v / (2 * a);
       let nf = dir > 0 ? Math.floor(L.pos + 1e-6) + 1 : Math.ceil(L.pos - 1e-6) - 1;
       while (nf >= 0 && nf < run.floors.length && Math.abs(nf - L.pos) < brake - 0.02) nf += dir;
@@ -212,6 +227,7 @@ const Lift = {
     const label = Lift.floor(L), i = Lift.here(L);
     L.plan = L.plan.filter((f) => f !== label);
     L.arrivals[label] = (L.arrivals[label] || 0) + 1;
+    L.express = null;
     L.idle = false;
     L.doorPhase = 'opening';
     L.doorT = L.doors * DOOR_TIME;
@@ -280,12 +296,14 @@ const Lift = {
     GameEvents.emit('reopen', { lift: L });
   },
 
-  // the hall call goes off when the lift opens with a matching arrow (both with no arrow); slow walkers
-  // waiting there start walking to the doors
+  // the hall call goes off when the lift opens with a matching arrow (both with no arrow) — but stays lit while
+  // someone of that direction waits for a floor this lift doesn't stop at (another zone, another bank); slow
+  // walkers waiting there start walking to the doors
   serveCalls(L) {
     const i = Lift.here(L), a = Lift.arrow(L);
-    if (a !== 'down') Building.clear(i, 'up');
-    if (a !== 'up') Building.clear(i, 'down');
+    const stays = (dir) => !!L.zone && People.waitingAt(i).some((p) => p.dir === dir && !Lift.canStopAt(L, p.to));
+    if (a !== 'down' && !stays('up')) Building.clear(i, 'up');
+    if (a !== 'up' && !stays('down')) Building.clear(i, 'down');
     for (const p of People.waitingAt(i)) if (p.walk && p.reach === null) p.reach = run.t + p.walk;
   },
   // a slow walker who has not reached the doors yet
@@ -368,7 +386,10 @@ const Lift = {
     const pressed = {};
     for (const p of People.waitingAt(i)) if (!Building.isLit(i, p.dir) && Building.press(i, p.dir)) pressed[p.dir] = true;
     const h = run.hall[i];
-    if (!run.bellBroken) for (const dir of ['up', 'down']) if (h[dir] && !pressed[dir]) VM.event('onCall', null, { floor: run.floors[i], direction: dir });
+    // (only to the other lifts when nobody waiting there can ride this one — they wait for a lift of another zone)
+    const others = (dir) => !!L.zone && !People.waitingAt(i).some((p) => p.dir === dir && Lift.canStopAt(L, p.to));
+    if (!run.bellBroken) for (const dir of ['up', 'down']) if (h[dir] && !pressed[dir]) VM.event('onCall', null, { floor: run.floors[i], direction: dir }, others(dir) ? L.n : 0);
+    L.litSeen = { i, up: h.up ? h.upSeq : -1, down: h.down ? h.downSeq : -1 };
     logEvent('doorsClosed', { lift: L.n, floor: Lift.floor(L) });
     VM.event('onDoorsClose', L, {});
     GameEvents.emit('doorsClosed', { lift: L });

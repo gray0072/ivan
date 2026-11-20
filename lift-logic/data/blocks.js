@@ -8,7 +8,12 @@
 // shapes: hat (starts a script), stack, c (holds blocks), c2 (if / else), cap (nothing below),
 //         reporter (a value), boolean (yes / no)
 // slots:  num, text, any (a number or a word), bool (a hexagon), dir3 (up/down/any), arrow (up/down/none),
-//         var, list, msg, stop (this script/all), clock ("10:00"), param:<name> (a hat's input)
+//         var, list, msg, stop (this script/all), clock ("10:00"), bmsg (a message from the building),
+//         param:<name> (a hat's input), paramb:<name> (a yes / no input of an own block)
+//
+// Own blocks (chapter 7) are not in this table: a `define` hat carries its block's name (the words with %1,
+// %2… where its inputs go), the inputs' kinds (num, bool, text) and names; a `call` block carries the name
+// and the kinds. blockDef(b) builds the definition of such a block from the block itself.
 
 const CATEGORIES = [
   { id: 'lift', name: 'Lift', color: '#3d7be0' },
@@ -17,17 +22,21 @@ const CATEGORIES = [
   { id: 'control', name: 'Control', color: '#ec7d1a' },
   { id: 'operators', name: 'Operators', color: '#3aa64f' },
   { id: 'variables', name: 'Variables', color: '#e8573a' },
-  { id: 'lists', name: 'Lists', color: '#c0432b' }
+  { id: 'lists', name: 'Lists', color: '#c0432b' },
+  { id: 'myblocks', name: 'My Blocks', color: '#d6458f' }
 ];
 
 const DROPDOWNS = {
   dir3: ['up', 'down', 'any'],
   arrow: ['up', 'down', 'none'],
-  stop: ['this script', 'all']
+  stop: ['this script', 'all'],
+  bmsg: ['wind warning', 'closing soon', 'fireworks'],
+  // the values of `when weather changes`'s input, offered in a slot that takes a word
+  weather: ['windy', 'calm']
 };
 
 // the names a hat gives its inputs, shown as small blocks inside it
-const PARAM_NAMES = { floor: 'floor', direction: 'direction', from: 'from', to: 'to' };
+const PARAM_NAMES = { floor: 'floor', direction: 'direction', from: 'from', to: 'to', weather: 'weather' };
 
 const BLOCKS = [
   // ---------- chapter 1 ----------
@@ -131,10 +140,64 @@ const BLOCKS = [
   { op: 'listIndex', cat: 'lists', shape: 'reporter', text: 'item # of %1 in %2', slots: ['any', 'list'], def: [1, null], ch: 6, js: '(%2.indexOf(%1) + 1)' },
   { op: 'listLength', cat: 'lists', shape: 'reporter', text: 'length of %1', slots: ['list'], ch: 6, js: '%1.length' },
   { op: 'listHas', cat: 'lists', shape: 'boolean', text: '%1 contains %2?', slots: ['list', 'any'], def: [null, 1], ch: 6, js: '%1.includes(%2)' },
-  { op: 'list', cat: 'lists', shape: 'reporter', text: '%1', slots: ['name'], ch: 6, js: '%1', hidden: true }
+  { op: 'list', cat: 'lists', shape: 'reporter', text: '%1', slots: ['name'], ch: 6, js: '%1', hidden: true },
+
+  // ---------- chapter 7 ----------
+  { op: 'define', cat: 'myblocks', shape: 'hat', text: 'define', ch: 7, hidden: true },
+  { op: 'call', cat: 'myblocks', shape: 'stack', text: '', ch: 7, hidden: true },
+  { op: 'paramB', cat: 'myblocks', shape: 'boolean', text: '%1', slots: ['name'], ch: 7, js: '%1', hidden: true },
+  { op: 'tickets', cat: 'sensing', shape: 'reporter', text: 'tickets to %1', slots: ['num'], def: [4], ch: 7, js: 'entrance.tickets(%1)' },
+  { op: 'onWeather', cat: 'events', shape: 'hat', text: 'when weather changes %1', slots: ['param:weather'], ch: 7, js: 'when.weatherChanges(async (weather) => {' },
+  { op: 'onBuildingMsg', cat: 'events', shape: 'hat', text: 'when message from building %1', slots: ['bmsg'], def: ['wind warning'], ch: 7, js: 'when.buildingMessage(%1, async () => {' },
+
+  // ---------- chapter 8 ----------
+  { op: 'goExpress', cat: 'lift', shape: 'stack', text: 'go express to floor %1', slots: ['num'], def: [2], ch: 8, js: 'await lift.goExpress(%1);', waits: true },
+  { op: 'zoneLow', cat: 'sensing', shape: 'reporter', text: 'my zone lowest', ch: 8, js: 'lift.zone.lowest' },
+  { op: 'zoneHigh', cat: 'sensing', shape: 'reporter', text: 'my zone highest', ch: 8, js: 'lift.zone.highest' },
+  { op: 'canStop', cat: 'sensing', shape: 'boolean', text: 'can I stop at %1?', slots: ['num'], def: [2], ch: 8, js: 'lift.canStopAt(%1)' }
 ];
 
 const BLOCK = {};
 for (const b of BLOCKS) BLOCK[b.op] = b;
 const CATEGORY = {};
 for (const c of CATEGORIES) CATEGORY[c.id] = c;
+
+// the function name of an own block in the Text view: its words joined by _
+function ownIdent(name) {
+  const s = String(name || 'block').replace(/%\d/g, ' ').trim().replace(/[^\w$]+/g, '_') || 'block';
+  return /^\d/.test(s) ? '_' + s : s;
+}
+
+// the definition of a block: the table's entry, or for an own block one built from the block itself
+function blockDef(b) {
+  if (b.op === 'call') {
+    const kinds = b.kinds || [];
+    return { op: 'call', cat: 'myblocks', shape: 'stack', text: b.name || '', raw: true, slots: kinds, ch: 7,
+      js: 'await ' + ownIdent(b.name) + '(' + kinds.map((k, i) => '%' + (i + 1)).join(', ') + ');' };
+  }
+  if (b.op === 'define') {
+    const kinds = b.kinds || [], names = b.params || [];
+    return { op: 'define', cat: 'myblocks', shape: 'hat', text: b.name || '', raw: true, prefix: 'define', ch: 7,
+      slots: kinds.map((k, i) => (k === 'bool' ? 'paramb:' : 'param:') + names[i]),
+      js: 'async function ' + ownIdent(b.name) + '(' + names.join(', ') + ') {' };
+  }
+  return BLOCK[b.op];
+}
+
+// a new own block: its define hat and the name a call uses; inputs = [{ name, kind }]
+function ownDefine(words, inputs) {
+  const name = [String(words).trim()].concat(inputs.map((x, i) => '%' + (i + 1))).join(' ');
+  return {
+    op: 'define', name, kinds: inputs.map((x) => x.kind), params: inputs.map((x) => x.name),
+    args: inputs.map((x) => ({ op: x.kind === 'bool' ? 'paramB' : 'param', args: [x.name] }))
+  };
+}
+// the own blocks a program defines: [{ name, kinds }]
+function ownBlocks(prog) {
+  const out = [];
+  for (const s of prog.scripts || []) {
+    const h = s.blocks[0];
+    if (h && h.op === 'define' && !out.some((o) => o.name === h.name)) out.push({ name: h.name, kinds: (h.kinds || []).slice() });
+  }
+  return out;
+}

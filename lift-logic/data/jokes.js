@@ -85,7 +85,10 @@ const MOMENTS = {
   bed: [['bed', 'Straight up to the ward, not a single stop. Best ride of my life.'], ['nurse', 'The bed went up so smoothly, the patient slept through it.']],
   lunch: [['cook', 'Three hundred lunches up to the canteen. The soup is still warm!'], ['office', 'I got to lunch before the queue. A miracle.']],
   broken: [['gears', 'Lift {l} broke down, and the others covered for it. That\'s teamwork.'], ['manager', 'One lift out of order and nobody noticed. Perfect.']],
-  prankster: [['prankster', 'I pressed ALL the buttons and the lift just… ignored me. Not fair!'], ['gears', 'Tommy has met his match: a lift that can count.']]
+  prankster: [['prankster', 'I pressed ALL the buttons and the lift just… ignored me. Not fair!'], ['gears', 'Tommy has met his match: a lift that can count.']],
+  wind: [['tourist', 'The wind blew my hat off at the top. The lift was faster than the hat.'], ['gears', 'A storm at the top, and every visitor came down dry. Well done.']],
+  closing: [['client', 'Everybody down in time for the show. Bravo, Lifty!'], ['tourist', 'They closed the top, and the lift was already waiting for us. Magic!']],
+  transfer: [['tourist', 'I changed lifts halfway up, and the second one was already there.'], ['gears', '{n} people changed lifts today. Nobody got lost. Mostly.']]
 };
 
 // lines that belong to a building (its people and places)
@@ -95,7 +98,9 @@ const BUILDING_LINES = {
   hotel: [['hotelGuest', 'Five stars for the lift. The breakfast gets three.'], ['bellboy', 'Fastest luggage service in town!'], ['client', 'Darling, our guests are delighted.']],
   hospital: [['doctor', 'The lift made it to surgery before the coffee went cold.'], ['nurse', 'Even the patients are smiling.'], ['patient', 'The doors waited for me. Like a gentleman.'], ['visitor', 'I brought flowers and they arrived fresh.']],
   office: [['boss', 'Time is money, and the lift just saved both.'], ['office', 'I made it to the meeting. Sadly.'], ['office', 'Two lifts and no race. Even the lifts are better at teamwork than my team.'], ['boss', 'I\'m giving the lifts a raise.']],
-  mall: [['manager', 'Shoppers are smiling. Shoppers who smile buy more.'], ['shopper', 'I found my car on the first try. Minus two!'], ['teen', 'Made the movie with time for popcorn.'], ['manager', 'Not one cart stuck in a door today.']]
+  mall: [['manager', 'Shoppers are smiling. Shoppers who smile buy more.'], ['shopper', 'I found my car on the first try. Minus two!'], ['teen', 'Made the movie with time for popcorn.'], ['manager', 'Not one cart stuck in a door today.']],
+  eiffel: [['director', 'Not one visitor complained. In Paris! That never happens.'], ['tourist', 'I took four hundred photos. The lift is in most of them.'], ['tourist', 'The view was magnifique, and the lift was even better.'], ['gears', 'Gustave Eiffel would have liked your lifts. He liked clever iron things.']],
+  empire: [['super', 'A hundred and two floors and nobody yelled at me. A miracle.'], ['office', 'Lobby to the 70th before my coffee cooled down.'], ['tourist', 'I saw all of New York from the top. Then I saw it again on the way down.'], ['super', 'Even the pigeons on 86 say the lifts are fast today.']]
 };
 
 // the newspaper's headlines: {n} delivered, {b} the building

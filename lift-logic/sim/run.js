@@ -2,7 +2,8 @@
 
 // Lift Logic — a run: one day of a mission's building lived by the player's program. Run.start builds the
 // shared state (sim/state.js) from the mission, Run.step advances it by SIM_DT (people appear and get
-// moods, the lifts move and open, then the program's threads run), Run.finish runs the rest of the day at
+// moods, the day's events happen — the weather, the building's messages —, the lifts move and open, then the
+// program's threads run), Run.finish runs the rest of the day at
 // once. Deterministic from the mission's seed: the same program on the same mission always gives the same
 // day, which is what "Show me" and the reference checks rely on. Used by game.js and tools/missions-check.js.
 
@@ -14,6 +15,7 @@ const Run = {
     let day = m.day || 0;
     for (const e of m.schedule || []) if (!e.after) day = Math.max(day, e.t || 0);
     for (const f of m.flows || []) day = Math.max(day, f.t1);
+    for (const e of m.events || []) day = Math.max(day, e.t);
     run = {
       mission: m, building: b, difficulty, diff: DIFFICULTY[difficulty] || DIFFICULTY.medium, seed,
       t: 0, steps: 0, over: false, endReason: null, tEnd: null, day, lastSpawn: 0,
@@ -30,9 +32,15 @@ const Run = {
     Building.init();
     run.lifts = (m.lifts || [{ type: b.lift }]).map((s, k) => Lift.create(k + 1, s));
     run.lifts.forEach((L, k) => {
-      const z = (m.lifts || [])[k] && m.lifts[k].zone;
-      if (z) L.zone = [floorIndex(z[0]), floorIndex(z[1])];
+      const spec = (m.lifts || [])[k] || {};
+      if (spec.zone) {
+        L.zone = [floorIndex(spec.zone[0]), floorIndex(spec.zone[1])];
+        L.zoneLobby = spec.lobby ? floorIndex(run.lobby) : -1;
+      }
     });
+    // what happens to the building during the day: the weather changes, the building sends a message
+    run.weather = 'calm';
+    run.timeline = (m.events || []).map((e) => Object.assign({}, e)).sort((a, b) => a.t - b.t);
     People.init();
     VM.init();
     return run;
@@ -51,13 +59,14 @@ const Run = {
       const L = run.lifts[b.lift - 1];
       if (L && L.working) { L.failing = run.t; logEvent('failing', { lift: L.n }); GameEvents.emit('failing', { lift: L }); }
     }
+    while (run.timeline.length && run.timeline[0].t <= run.t + 1e-9) Run.happen(run.timeline.shift());
     for (const L of run.lifts) Lift.update(L, SIM_DT);
     VM.step();
     run.t = Math.round((run.t + SIM_DT) * 1000) / 1000;
     run.steps++;
     // everyone is done: the run ends once the lifts stand still with the doors closed (a last `say`
     // still runs), or after END_GRACE s when a program keeps them going
-    if (!run.pending.length && !run.chains.length && !People.active()) {
+    if (!run.pending.length && !run.chains.length && !run.timeline.length && !People.active()) {
       if (run.quietSince === null) run.quietSince = run.t;
       const still = run.lifts.every((L) => !L.moving && L.doorPhase === 'closed');
       if (still || run.t - run.quietSince >= END_GRACE) Run.end('done');
@@ -65,6 +74,21 @@ const Run = {
       run.quietSince = null;
       if (run.t >= Math.max(run.day, run.lastSpawn) + OVERTIME_MAX) Run.end('time');
     }
+  },
+
+  // an event of the building's day: { t, weather } fires `when weather changes`, { t, msg } fires
+  // `when message from building`; `text` is what the banner says
+  happen(e) {
+    if (e.weather && e.weather !== run.weather) {
+      run.weather = e.weather;
+      logEvent('weather', { weather: e.weather });
+      VM.event('onWeather', null, { weather: e.weather });
+    }
+    if (e.msg) {
+      logEvent('buildingMsg', { msg: e.msg });
+      VM.event('onBuildingMsg', null, { msg: e.msg });
+    }
+    GameEvents.emit('happening', e);
   },
 
   end(reason) {

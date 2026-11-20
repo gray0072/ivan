@@ -41,7 +41,9 @@ for (const m of data.MISSIONS) {
   add(m.name, w); add(m.goal, w);
   (m.brief || []).forEach((l) => add(l, w)); (m.hints || []).forEach((l) => add(l, w));
   for (const c of m.stars) for (const t of (Array.isArray(c) ? c : [c])) if (t.text) add(t.text, w + ': star');
+  for (const e of m.events || []) if (e.text) add(e.text, w + ': event');
 }
+add('define', 'blocks: an own block\'s hat');
 for (const k in data.FACTS) { add(data.FACTS[k].title, 'fact ' + k); add(data.FACTS[k].text, 'fact ' + k); }
 for (const k in data.CONCEPTS) for (const f of ['title', 'text', 'like']) add(data.CONCEPTS[k][f], 'concept ' + k);
 for (const group of [data.JOKES, data.MOMENTS, data.BUILDING_LINES]) for (const k in group) for (const l of group[k]) add(l[1], 'jokes: ' + k);

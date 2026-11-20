@@ -94,6 +94,7 @@ button { font-family: inherit; touch-action: manipulation; }
 .k-operators { --c: #3aa64f; --d: #287a38; }
 .k-variables { --c: #e8573a; --d: #b43c23; }
 .k-lists { --c: #c0432b; --d: #8e2e1c; }
+.k-myblocks { --c: #d6458f; --d: #a32a68; }
 .blk { position: relative; font-size: 15px; font-weight: 600; color: #fff; line-height: 1.1; }
 .blk .row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap; }
 .blk .w { text-shadow: 0 1px 0 rgba(0,0,0,0.15); }

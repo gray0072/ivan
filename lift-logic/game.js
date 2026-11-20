@@ -50,6 +50,8 @@ function resume() {
 
 // a lift goes out of order: everybody should know
 GameEvents.on('broken', (e) => { if (run && !run.preview) Hud.banner(tr('Lift {l} is out of order!', { l: e.lift.letter }), 2600); });
+// the building's news: the weather changes, an announcement
+GameEvents.on('happening', (e) => { if (run && !run.preview && e.text) Hud.banner(tr(e.text), 3200); });
 
 Screens.on('start', startMission);
 Screens.on('inMission', () => !!mission && !$('app').hidden);

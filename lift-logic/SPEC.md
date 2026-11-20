@@ -2,13 +2,13 @@
 
 Developer/agent spec for the `lift-logic` project. Repo-wide conventions live in the root `SPEC.md` and `AGENTS.md`; this file only describes this game. Keep it in sync with the code.
 
-> **Status: build sessions 1–4 done** (see "Build order" and "What is built"). Chapters 1–6 (Grandma's House, Maple School, Grand Sunrise Hotel, St. Hope Hospital, Glass Tower, Mega Mall, 54 missions) are playable end to end; the later buildings show on the map as under construction. Numbers come from `tools/missions-check.js` (see "Balancing").
+> **Status: build sessions 1–5 done** (see "Build order" and "What is built"). Chapters 1–8 (Grandma's House, Maple School, Grand Sunrise Hotel, St. Hope Hospital, Glass Tower, Mega Mall, Eiffel Tower, Empire State Building, 72 missions) are playable end to end; the later buildings show on the map as under construction. Numbers come from `tools/missions-check.js` (see "Balancing").
 
 ## What is built
 
-- **Done:** the simulation and the VM with every block of chapters 1–6 (lists and `for each` too; the palette shows a block from its chapter on); the tap-first editor on a phone (palette sheet, select / move / copy / wrap / delete, drag from the palette and inside the canvas, long press moves one block, slots with the number pad, dropdowns, conditions, "use a block", undo / redo, pinch and pan, copy / paste with the keyboard, variables and lists "for this lift only" or "for all lifts"), the Text view; the building view with the HUD, several lifts side by side, the plan flags, monitors, floating words, person and cabin cards, the Lift's eyes, a lift out of order, the minimap of a tall building; the run bar (run, pause, step, speeds, skip, resize); the start menu, the buildings map, the building screen, the mission card with Grandpa Gears' concept card and the new blocks, the pause menu; the results with stars, the Engineer's record and 🏅, the wait chart, the Inspector's notes with "Show me", the comic lines, the Museum card, the newspaper after an exam; hints 1–3 and the guided finger of the first missions; the Lift Museum (cards and concept cards); sounds and the lift music; the cheats; English, Russian and Swedish.
-- **Missions:** chapters 1–6 with reference solutions in `data/solutions/`, balanced by the checker (the reference gets ★★★ on Easy and Medium in every mission; the previous chapter's exam solution never gets ★★★; a fix mission's buggy program never gets ★★★).
-- **Not yet (later sessions):** chapters 7–10 and the World Tour, own blocks (chapter 7), zones / express, double-deck cars, Endless, Daily challenge, Sandbox, sharing programs (`core/share.js`), Wardrobe, Achievements, "Different day", saved named versions of a program, the start screen's demo lift.
+- **Done:** the simulation and the VM with every block of chapters 1–8 (lists and `for each`, own blocks with inputs, the weather and the building's messages, tickets, zones and express trips too; the palette shows a block from its chapter on); lifts of a zone (a bank) that stop only at their floors, people who change lifts on the way; the tap-first editor on a phone (palette sheet, select / move / copy / wrap / delete, drag from the palette and inside the canvas, long press moves one block, slots with the number pad, dropdowns, conditions, "use a block", undo / redo, pinch and pan, copy / paste with the keyboard, variables and lists "for this lift only" or "for all lifts"), the Text view; the building view with the HUD, several lifts side by side, the plan flags, monitors, floating words, person and cabin cards, the Lift's eyes, a lift out of order, the minimap of a tall building; the run bar (run, pause, step, speeds, skip, resize); the start menu, the buildings map, the building screen, the mission card with Grandpa Gears' concept card and the new blocks, the pause menu; the results with stars, the Engineer's record and 🏅, the wait chart, the Inspector's notes with "Show me", the comic lines, the Museum card, the newspaper after an exam; hints 1–3 and the guided finger of the first missions; the Lift Museum (cards and concept cards); sounds and the lift music; the cheats; English, Russian and Swedish.
+- **Missions:** chapters 1–8 with reference solutions in `data/solutions/`, balanced by the checker (the reference gets ★★★ on Easy and Medium in every mission; the previous chapter's exam solution never gets ★★★; a fix mission's buggy program never gets ★★★).
+- **Not yet (later sessions):** chapters 9–10 and the World Tour, double-deck cars, destination dispatch, Endless, Daily challenge, Sandbox, sharing programs (`core/share.js`), Wardrobe, Achievements, "Different day", saved named versions of a program, the start screen's demo lift.
 
 ### Rules settled while building
 
@@ -29,6 +29,12 @@ Developer/agent spec for the `lift-logic` project. Repo-wide conventions live in
 - **`cancel buttons inside`** (chapter 6, Lift): every lit cabin button goes off, and whoever is inside presses their own floor again (real anti-nuisance). Stops for nobody at a floor only the prankster pressed are counted for The Prankster's star.
 - Star tests added: `rideMax` (a character's longest ride), `leftBehindMax`, `nobodyStopsMax` (stops where nobody gets on or off — two lifts running to one call), `prankStopsMax`, and the hospital's `emergencies` (every emergency reached in time). Busy missions use "deliver at least 90 %" as the goal, so one unlucky give-up doesn't fail a good program.
 - The solution notation has `#shared a b` (a line of its own): those variables and lists are for all lifts.
+- **Own blocks (chapter 7, My Blocks, pink):** "Make a block" asks for the words of the name, then for inputs one by one (a number, yes / no or a word, each with a name, at most 3), and puts a `define` hat under the scripts. A `define` block carries the name (the words with `%1`, `%2`… where the inputs go), the inputs' kinds and names; a `call` block carries the name and the kinds — both are built into a definition by `blockDef(b)` (`data/blocks.js`), not kept in the table. A call runs the define script in the same thread with the inputs' values (a yes / no input as true / false); inside, the inputs are small blocks (`param`, `paramB`) that read the nearest call's values, never the event's. A block may call itself up to `CALL_DEPTH_MAX` (100) deep; deeper, the block is marked "called itself n times and never stopped" and its script ends (The Sightseer Loop). The notation: `define check floor (f) <ok> [word]`, a call `check floor (3) <full?> "hi"`.
+- **Banks and zones:** a lift of a mission may have `zone: [lo, hi]` (floor labels) and `lobby: true` (the lobby too); it stops only there (`can I stop at`), the floors it passes are dark in its shaft. `bottom floor` / `top floor` give its whole range (with the lobby), `my zone lowest` / `highest` the zone without it. The hall buttons stay shared; a call stays lit when the lift that opened there can't take someone of that direction to their floor (they wait for another bank), and a lift standing at a floor doesn't open again and again for such a call. When the doors close on a call still lit, the call is announced again to the other lifts only, if nobody waiting there can ride this one.
+- **Changing lifts:** a person of a flow or a schedule may have `via` (a floor, or a rule `(from, to) → floor`): they ride to it, get off, wait again on that landing (a new wait, the first one kept: both count in the stats) and ride on. `tickets to (f)` counts the people waiting in the lobby whose final floor is f.
+- **Express:** `go express to floor (n)` goes there at the lift type's `express` speed (8 floors/s for the skyscraper lift, else its normal speed), ignores plan changes on the way, and fires no `when I'm about to pass floor`; it waits like `go to floor`.
+- **The day's events:** a mission's `events: [{ t, weather, msg, text }]` — a new `weather` (`windy` / `calm`) fires `when weather changes` with the input `weather`, a `msg` fires `when message from building [msg]` (the messages: `wind warning`, `closing soon`, `fireworks`); `text` is shown as a banner. While windy, white streaks blow across the sky.
+- Star tests added: `noErrors` (no block got a red mark), `uses` (the lesson's block is in the program: tickets, the weather, express, a call of an own block), `ownInput` (an own block with an input, used).
 
 ## Idea
 
@@ -104,7 +110,7 @@ Fixed step `SIM_DT` (0.05 s of game time). Everything is deterministic from the 
 
 ### Lift
 
-- Moves along the shaft with a top speed `speed` (floors/s) and an acceleration `accel` (floors/s²) per lift type (`data/lifts.js`): Old (0.5 / 0.5), Standard (1 / 1), Bed (1.5 / 1.2, 12 places), Glass (1.5 / 1, 10 places, the mall), Fast (2.5 / 1.5), Express (6 / 2), Space climber (its own scale). A trip is a trapezoid of speed; the **braking point** for a floor is where it must start to slow down to stop there.
+- Moves along the shaft with a top speed `speed` (floors/s) and an acceleration `accel` (floors/s²) per lift type (`data/lifts.js`): Old (0.5 / 0.5), Standard (1 / 1), Bed (1.5 / 1.2, 12 places), Glass (1.5 / 1, 10 places, the mall), Fast (2.5 / 1.5), Express (6 / 2), Pillar (0.22 / 0.12, 20 places) and Summit (0.09 / 0.05, 12 places) at the Eiffel Tower — slow, since its levels are far apart, Skyscraper (3 / 1.2, 16 places, 8 on an express trip), Space climber (its own scale). A trip is a trapezoid of speed; the **braking point** for a floor is where it must start to slow down to stop there.
 - **Doors**: open `DOOR_TIME` (1.2 s), stay open at least `DWELL_MIN` (2.5 s) plus `BOARD_TIME` (0.8 s) per person getting on or off, close `DOOR_TIME`; someone in the doorway re-opens them (`someone in the doorway?` sensor). `hold doors (s)` adds time; `close doors` closes as soon as nobody is in the doorway (latecomers stay behind). The lift never moves with the doors open.
 - **Plan**: an ordered list of floors the lift will stop at. The lift always drives towards the first floor of the plan; arriving there it stops, removes that floor from the plan (and any other entry of the same floor), opens the doors. With the plan empty and the doors closed it is **idle** and stands still.
 - **Arrow** (the direction lamps over the doors and on the display): automatic by default — the direction towards the next floor of the plan after this stop, none when the plan is empty; `set arrow to (up/down/none)` overrides it for the current stop.
@@ -141,7 +147,7 @@ The program never reads a person; only these. Each opens at its chapter (the pal
 | `floor of lift (n)`, `direction of lift (n)`, `plan length of lift (n)`, `load % of lift (n)` | the others in the group | 5 |
 | `lift (n) working?` | out of service or not | 6 |
 | `buttons pressed inside` | how many cabin calls are lit (anti-prank) | 6 |
-| `tickets to (f)` | people who scanned a ticket at the entrance for floor f (Eiffel Tower) | 7 |
+| `tickets to (f)` | people waiting in the lobby whose final floor is f (they scanned a ticket at the entrance) | 7 |
 | `my zone lowest`, `my zone highest`, `can I stop at (f)?` | zoning | 8 |
 | `waiting from (f) to (g)`, `deck` | destination dispatch kiosks; which deck of a double-deck car | 9 |
 | `sunlight %`, `battery %` | the space elevator's power | 10 |
@@ -176,8 +182,10 @@ Same visual grammar as the Scratch family, own drawing: **hat** (starts a script
 | Lift | `cancel buttons inside` (the riders press their own floor again) | 6 |
 | Operators | `( ) mod ( )`, `round ( )`, `join ( ) ( )` | 6 |
 | My Blocks | `define (name) (inputs…)` and the custom block itself; inputs: number, boolean, text | 7 |
-| Events | `when weather changes`, `when message from building [msg]` | 7 |
+| Events | `when weather changes (weather)`, `when message from building [msg]` | 7 |
+| Sensing | `tickets to (f)` | 7 |
 | Lift | `go express to floor (n)` (stops nowhere on the way) | 8 |
+| Sensing | `my zone lowest`, `my zone highest`, `can I stop at (f)?` | 8 |
 | Events / Sensing | `when destination entered (from) (to)`, the double-deck sensors | 9 |
 
 Each hat with inputs (floor, direction…) carries them as small reporter blocks that can be dragged out of it and used inside its script, like the inputs of a custom block.
@@ -328,33 +336,33 @@ Stars are kept per difficulty; the building's next mission opens when one is pas
 | 8 | Out of Order | Build | Lift B breaks down: skip the lifts that are not `working?` when looking for the nearest. |
 | 9 | Black Friday | Exam | Everything at once: the sale, carts, Tommy and lift C breaking down. |
 
-**7. Eiffel Tower, Paris** — ground, 1st, 2nd floor and the top; lifts in the pillars up to the 2nd floor, a second bank from the 2nd floor to the top. *Own blocks with inputs, transfers, events from outside.*
+**7. Eiffel Tower, Paris** — the ground (1), the brasserie (2), the viewing deck (3) and the summit (4), drawn as floors of equal height; slow pillar lifts (1–3) in the legs, summit lifts (3–4) from the deck to the top; summit visitors change lifts on floor 3. The client: Madame Durand. *Own blocks with inputs, changing lifts, events from outside.*
 
 | # | Name | Kind | What it is about |
 |---|---|---|---|
-| 1 | Bonjour, Paris! | Build | Long trips, few stops: how long to wait for more people? |
-| 2 | Change at the Second | Build | Two banks: visitors to the top change lifts. |
-| 3 | My First Block | Build | `define serve calls`: one block used by both banks. |
-| 4 | Tickets, Please | Build | `tickets to (f)`: the scanners say how many go where. |
-| 5 | Wind at the Top | Build | `when weather changes`: the top closes, the visitors come down. |
-| 6 | Blocks With Inputs | Tiny | A custom block with a floor input. |
-| 7 | The Sightseer Loop | Fix | A custom block that calls itself forever. |
-| 8 | Engineer's Challenge | Beat | Beat the engineer's average wait. |
-| 9 | Bastille Day | Exam | The evening crowd before the fireworks of 14 July. |
+| 1 | Bonjour, Paris! | Build | One pillar lift on three floors, long trips: hold the doors on the ground to fill the cabin; energy counts. |
+| 2 | Change at the Second | Build | A pillar lift and a summit lift with one program: each takes only calls in its range (`bottom floor` / `top floor`), not ▲ at its top nor ▼ at its bottom; no block may go wrong. |
+| 3 | My First Block | Build | The bells ring in the ticket office (`bellBroken`), four lifts: `define look for calls`, used in a loop and in `when doors close`. |
+| 4 | Tickets, Please | Build | `tickets to (4)`: the summit lift waits on the deck while summit visitors are coming, else at the top. |
+| 5 | Wind at the Top | Build | `when weather changes`: the summit closes, a crowd walks to the summit lifts 20 s later — be there first. |
+| 6 | Blocks With Inputs | Tiny | The bells again: `check floor (f)`, a block with an input, in at most 28 blocks. |
+| 7 | The Sightseer Loop | Fix | `wait for a full cabin` calls itself until the cabin is half full — never on a quiet evening: give it a way out. |
+| 8 | Engineer's Challenge | Beat | A full day, 2 + 2 lifts, the same traffic on every difficulty: the nearer lift of each bank takes the call. |
+| 9 | Bastille Day | Exam | The evening crowd; `when message from building [closing soon]`: everybody down before the fireworks. |
 
-**8. Empire State Building, New York** — 102 floors, banks of lifts by zones, an express to the observatory on 86, then 102. *Zoning, express, sorting, SCAN.*
+**8. Empire State Building, New York** — up to 102 floors (a mission may use the first 20–80), fast skyscraper lifts (express 8 floors/s) in banks by zones, the observatory on 86 and the top deck on 102. The client: Mr. Russo. Long trips are never walked: people who lose patience stay and get furious. Office traffic between floors stays inside a zone. *Zoning, express, sorting, SCAN.*
 
 | # | Name | Kind | What it is about |
 |---|---|---|---|
-| 1 | Too Many Floors | Build | One lift for 30 floors: why it can't keep up. |
-| 2 | Zones | Build | Three lifts, each for the lobby and its own range of floors. |
-| 3 | Express to 80 | Build | `go express`: no stops on the way. |
-| 4 | Sort the Plan | Build | Insert each floor at its place in the list (sorting). |
-| 5 | SCAN | Beat | The classic lift algorithm: up serving everything, then down. |
-| 6 | Observatory | Build | Tourists to 86, some change for 102. |
-| 7 | Overlapping Zones | Fix | Two zones fight for the same floors. |
-| 8 | Engineer's Challenge | Beat | Beat the engineer. |
-| 9 | New Year's Eve | Exam | Offices and tourists, a busy evening. |
+| 1 | Too Many Floors | Build | One lift for 30 floors in the morning: stop on the way, wait in the lobby — and see why it can't keep up. |
+| 2 | Zones | Build | 60 floors, three lifts, each for the lobby and its zone: `can I stop at`; no block may go wrong. |
+| 3 | Express to the Top | Build | 80 floors: `go express` from the lobby to the lowest floor pressed (an own block) and back home express. |
+| 4 | Sort the Plan | Build | The freight lift remembers one floor (`planMax`): keep an own list sorted (insert each floor before the first bigger one). |
+| 5 | SCAN | Beat | The freight lift on 20 floors with calls everywhere: go one way while there is something ahead, then turn. |
+| 6 | Observatory | Build | Two express lifts lobby ⇄ 86, a small lift 86 ⇄ 102; visitors to 102 change on 86; the top lift reads the tickets. |
+| 7 | Overlapping Zones | Fix | A: 2–40, B: 20–60; the nearer lift takes an overlap call — but at a tie (both in the lobby) nobody goes. |
+| 8 | Engineer's Challenge | Beat | 60 floors, three zones, a whole day in, between and out. |
+| 9 | New Year's Eve | Exam | Two office zones going home, tourists to 86 and 102, and the observatory closing (`closing soon`). |
 
 **9. Burj Khalifa, Dubai** — 160 floors with sky lobbies, double-deck lifts, destination kiosks. *Double-deck, destination dispatch, energy.*
 
@@ -498,11 +506,11 @@ lift-logic/
 ├── game.js             main loop and the flow (start, buildings, mission card, editor, run, results, pause, cheats)
 ├── progress.js         stars, medals, achievements, museum cards, wardrobe, unlocks
 ├── data/
-│   ├── blocks.js       every block: category, shape, template, slots, the chapter that opens it, the text view
+│   ├── blocks.js       every block: category, shape, template, slots, the chapter that opens it, the text view; blockDef and the own blocks (define / call)
 │   ├── buildings.js    the buildings: floors, groups of lifts, interiors, client, colours
-│   ├── lifts.js        lift types: speed, acceleration, capacity, look
+│   ├── lifts.js        lift types: speed, acceleration, capacity, express speed, look
 │   ├── people.js       characters: names, looks, patience, places taken, lines
-│   ├── missions/       missions.js (the list, addMissions) and one file per building (grandma.js, school.js, hotel.js, hospital.js, office.js, mall.js, …, tour.js): briefing, schedule, stars, hints, starting program, new blocks
+│   ├── missions/       missions.js (the list, addMissions) and one file per building (grandma.js, school.js, hotel.js, hospital.js, office.js, mall.js, eiffel.js, empire.js, …, tour.js): briefing, schedule, flows (with `via` for a change of lifts), events of the day, lifts and their zones, stars, hints, starting program, new blocks
 │   ├── solutions/      the reference solution of every mission (one file per building), in the text notation
 │   ├── jokes.js        the comic lines of the results and the newspaper's headlines, by trait, moment and building
 │   ├── facts.js        Lift Museum cards and Grandpa Gears' concept cards, with sources
@@ -568,7 +576,7 @@ Prefix for storage and events: `liftLogic.`; manifest `short_name`: "Lift Logic"
 2. ✓ **Editor on a phone:** blocks drawn, palette sheet, select / move / wrap / delete, slots, undo, the text view; the building view with the HUD and the run bar.
 3. ✓ **Chapters 1–3 playable end to end:** mission card, hints, results with the Inspector, progress, the first Museum cards, sounds, the guided start. Play-test with a ten-year-old here before going on.
 4. ✓ Chapters 4–6 (priorities, several lifts, lists), the Lift's eyes, the minimap.
-5. Chapters 7–8 (own blocks, zones, express, tall buildings).
+5. ✓ Chapters 7–8 (own blocks, changing lifts, the weather and the building's messages, zones, express, tall buildings).
 6. Chapters 9–10, World Tour, Endless, Daily, Sandbox, sharing, Wardrobe, achievements.
 7. ✓ Translations, icons, README ×3, screenshot, gallery card, root SPEC / READMEs (done with session 3, kept up to date with every later one).
 

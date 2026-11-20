@@ -4,8 +4,9 @@
 // numbers, each landing's call buttons and its queue (moods and, small, where each person is going), the
 // shafts with the cabins, their displays and say bubbles, the plan as numbered flags next to the shaft, the
 // people walking away, the floating words, the variables shown with `show variable`, and the Lift's eyes
-// (what the lift can't sense goes grey), a lift out of order, and the minimap of a tall building
-// (render/minimap.js). Reads `run`, never changes it. Used by game.js every frame.
+// (what the lift can't sense goes grey), a lift out of order, the floors a lift of a zone passes by (dark in
+// its shaft), the wind, and the minimap of a tall building (render/minimap.js). Reads `run`, never changes it.
+// Used by game.js every frame.
 
 const BuildingView = (() => {
   const { ctx, st } = View;
@@ -24,6 +25,14 @@ const BuildingView = (() => {
     sky.addColorStop(1, shade(b.sky || '#cfe6f5', 0.4));
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, st.w, st.h);
+    // wind: white streaks blowing across the sky
+    if (run.weather === 'windy') {
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      for (let k = 0; k < 9; k++) {
+        const y = (k * 97) % Math.max(60, st.h * 0.8) + 10, x = ((run.t * 160 + k * 211) % (st.w + 120)) - 60;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + 25, y - 6, x + 50, y); ctx.stroke();
+      }
+    }
     ctx.fillStyle = '#7cb342';
     ctx.fillRect(0, g.baseY, st.w, st.h - g.baseY + 2);
     ctx.fillStyle = '#9e9e9e';
@@ -62,6 +71,15 @@ const BuildingView = (() => {
       ctx.fillRect(x, roofY, g.sw, g.baseY - roofY);
       ctx.fillStyle = '#3a4452';
       ctx.fillRect(x + g.sw / 2 - 1, roofY, 2, g.baseY - roofY);
+      // the floors a lift of a zone passes without doors
+      if (L.zone) {
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        for (let i = 0; i < g.n; i++) {
+          const y = g.floorY(i);
+          if (y > st.h || y + g.fh < 0 || Lift.canStopAt(L, run.floors[i])) continue;
+          ctx.fillRect(x, y, g.sw, g.fh);
+        }
+      }
     }
 
     drawQueues(g, dt);
@@ -95,10 +113,7 @@ const BuildingView = (() => {
   function outOfOrder(x, y, g, still) {
     const cx = x + g.sw / 2, cy = y + g.fh / 2;
     if (still) {
-      ctx.font = 'bold ' + Math.round(clamp(g.fh * 0.36, 11, 18)) + 'px ' + FONT;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#ffd23f';
-      ctx.fillText('⚠', cx, y + g.fh * 0.22);
+      Icons.draw(ctx, '⚠', cx, y + g.fh * 0.22, Math.round(clamp(g.fh * 0.36, 11, 18)), '#ffd23f');
       return;
     }
     ctx.save();
@@ -260,6 +275,11 @@ const BuildingView = (() => {
     const w = st.words[st.words.length - 1];
     w.floor = e.person.from;
     w.x = View.layout().shaftX - 30;
+  });
+  GameEvents.on('transfer', (e) => {
+    View.word(tr('Change lifts!'), 0, 0, '#b3e5fc');
+    const w = st.words[st.words.length - 1];
+    w.floor = e.person.from; w.lift = e.lift.n;
   });
   GameEvents.on('furious', (e) => {
     View.word(tr('Grr!'), 0, 0, '#ff5252');

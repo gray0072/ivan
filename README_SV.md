@@ -75,7 +75,7 @@
     <td width="50%" valign="top">
       <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/screenshot.png" alt="Skärmbild från Lift Logic"></a>
       <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
-      <p>Var hissens hjärna: bygg dess program av block och se ett hus leva efter det — från mormors hus till en skola, ett hotell, ett sjukhus, ett kontorstorn och en galleria, 54 uppdrag med stjärnor, tips och skämt.</p>
+      <p>Var hissens hjärna: bygg dess program av block och se ett hus leva efter det — från mormors hus till en skola, ett hotell, ett sjukhus, ett kontorstorn, en galleria, Eiffeltornet och Empire State Building, 72 uppdrag med stjärnor, tips och skämt.</p>
       <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Spela</b></a> · <a href="lift-logic/">Källkod</a></p>
     </td>
   </tr>

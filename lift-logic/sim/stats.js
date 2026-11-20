@@ -13,6 +13,8 @@ const Stats = {
     const waits = r.people.map((p) => {
       let w = (p.tBoard !== null ? p.tBoard : p.state === 'gaveup' ? p.tOff : end) - p.t0;
       if (p.furious) w += Math.max(0, w - p.patience);
+      // a trip with a change of lifts: the waits on both landings
+      w += p.waitAcc || 0;
       return { id: p.id, name: p.name, who: p.who, from: p.from, to: p.to, t0: p.t0, wait: w, state: p.state, furious: p.furious };
     });
     const sum = waits.reduce((s, w) => s + w.wait, 0);
@@ -77,6 +79,18 @@ const Stats = {
     nobodyStopsMax(r, c) { return { ok: r.counters.nobodyStops <= c.n, value: String(r.counters.nobodyStops) }; },
     // stops for nobody at floors only the prankster pressed
     prankStopsMax(r, c) { return { ok: r.counters.prankStops <= c.n, value: String(r.counters.prankStops) }; },
+    // no block went wrong during the day (a floor out of the lift's range, a missing list item…)
+    noErrors(r) {
+      const n = Object.values(r.errors || {}).filter((e) => !e.flash).length;
+      return { ok: n === 0, value: String(n) };
+    },
+    // the program defines an own block with at least one input, and uses it
+    ownInput(r) {
+      const own = ownBlocks(r.program).filter((o) => o.kinds.length > 0);
+      let used = false;
+      Prog.walk(r.program, (b) => { if (b.op === 'call' && own.some((o) => o.name === b.name)) used = true; });
+      return { ok: used, value: used ? '✓' : '✗' };
+    },
     // the program uses one of the given blocks (the lesson of the mission)
     uses(r, c) {
       const ops = Prog.ops(r.program);

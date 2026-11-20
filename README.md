@@ -75,7 +75,7 @@
     <td width="50%" valign="top">
       <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/screenshot.png" alt="Lift Logic screenshot"></a>
       <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
-      <p>Be the brain of a lift: build its program from blocks and watch a building live by it — from Grandma's house to a school, a hotel, a hospital, an office tower and a shopping mall, 54 missions with stars, hints and jokes.</p>
+      <p>Be the brain of a lift: build its program from blocks and watch a building live by it — from Grandma's house to a school, a hotel, a hospital, an office tower, a shopping mall, the Eiffel Tower and the Empire State Building, 72 missions with stars, hints and jokes.</p>
       <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Play</b></a> · <a href="lift-logic/">Source</a></p>
     </td>
   </tr>

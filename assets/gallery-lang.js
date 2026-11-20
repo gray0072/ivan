@@ -28,7 +28,7 @@ const GALLERY_LANG = {
     wwAlt: 'Wiggle Wars screenshot',
     wwDesc: 'A turn-based artillery game with worms, in the spirit of Worms: bazookas, grenades, air strikes, a jetpack and a dozen more weapons on a land that blows apart, with wind, crates, mines and oil barrels. One against one on one phone or tablet, against the computer, or a twelve-mission campaign with stars. Pick the worms per team, the weapons and the map; English, Russian and Swedish.',
     llAlt: 'Lift Logic screenshot',
-    llDesc: 'A programming puzzle game: be the brain of a lift. Build its program from colourful blocks, Scratch-style, and watch a building live by it — people press the buttons, ride, and give up and take the stairs if your lift is slow. From Grandma\'s three-storey house to a school, a grand hotel, a hospital, an office tower with three lifts and a shopping mall: 54 missions with three stars, hints, an Inspector that shows what went wrong, jokes and a Lift Museum. English, Russian and Swedish.'
+    llDesc: 'A programming puzzle game: be the brain of a lift. Build its program from colourful blocks, Scratch-style, and watch a building live by it — people press the buttons, ride, and give up and take the stairs if your lift is slow. From Grandma\'s three-storey house to a school, a grand hotel, a hospital, an office tower with three lifts, a shopping mall, the Eiffel Tower and the 102 floors of the Empire State Building: 72 missions with three stars, hints, an Inspector that shows what went wrong, jokes and a Lift Museum. English, Russian and Swedish.'
   },
   ru: {
     name: 'Русский',
@@ -55,7 +55,7 @@ const GALLERY_LANG = {
     wwAlt: 'Скриншот Wiggle Wars',
     wwDesc: 'Пошаговая артиллерия с червяками в духе Worms: базуки, гранаты, авиаудары, реактивный ранец и ещё десяток видов оружия на разрушаемой земле, с ветром, ящиками, минами и бочками с нефтью. Один на один на одном телефоне или планшете, против компьютера или кампания из двенадцати миссий со звёздами. Число червей в команде, оружие и карта — на выбор; английский, русский и шведский языки.',
     llAlt: 'Скриншот Lift Logic',
-    llDesc: 'Головоломка о программировании: стань мозгом лифта. Собирай его программу из цветных блоков, как в Scratch, и смотри, как по ней живёт целый дом: люди нажимают кнопки, едут, а если лифт медленный — уходят пешком по лестнице. От бабушкиного трёхэтажного дома до школы, большого отеля, больницы, офисной башни с тремя лифтами и торгового центра: 54 задания по три звезды, подсказки, Инспектор, который показывает, что пошло не так, шутки и Музей лифтов. Английский, русский и шведский языки.'
+    llDesc: 'Головоломка о программировании: стань мозгом лифта. Собирай его программу из цветных блоков, как в Scratch, и смотри, как по ней живёт целый дом: люди нажимают кнопки, едут, а если лифт медленный — уходят пешком по лестнице. От бабушкиного трёхэтажного дома до школы, большого отеля, больницы, офисной башни с тремя лифтами, торгового центра, Эйфелевой башни и 102 этажей Эмпайр-стейт-билдинг: 72 задания по три звезды, подсказки, Инспектор, который показывает, что пошло не так, шутки и Музей лифтов. Английский, русский и шведский языки.'
   },
   sv: {
     name: 'Svenska',
@@ -82,6 +82,6 @@ const GALLERY_LANG = {
     wwAlt: 'Skärmbild från Wiggle Wars',
     wwDesc: 'Ett turbaserat artillerispel med maskar i Worms anda: bazookor, granater, flyganfall, raketryggsäck och ett dussin vapen till på en mark som sprängs i bitar, med vind, lådor, minor och oljefat. En mot en på en telefon eller surfplatta, mot datorn eller en kampanj med tolv uppdrag och stjärnor. Välj antal maskar per lag, vapnen och kartan; engelska, ryska och svenska.',
     llAlt: 'Skärmbild från Lift Logic',
-    llDesc: 'Ett programmeringspussel: var hissens hjärna. Bygg dess program av färgglada block, som i Scratch, och se ett helt hus leva efter det — människor trycker på knapparna, åker, och ger upp och tar trapporna om din hiss är långsam. Från mormors trevåningshus till en skola, ett stort hotell, ett sjukhus, ett kontorstorn med tre hissar och en galleria: 54 uppdrag med tre stjärnor, tips, en inspektör som visar vad som gick fel, skämt och ett hissmuseum. Engelska, ryska och svenska.'
+    llDesc: 'Ett programmeringspussel: var hissens hjärna. Bygg dess program av färgglada block, som i Scratch, och se ett helt hus leva efter det — människor trycker på knapparna, åker, och ger upp och tar trapporna om din hiss är långsam. Från mormors trevåningshus till en skola, ett stort hotell, ett sjukhus, ett kontorstorn med tre hissar, en galleria, Eiffeltornet och Empire State Buildings 102 våningar: 72 uppdrag med tre stjärnor, tips, en inspektör som visar vad som gick fel, skämt och ett hissmuseum. Engelska, ryska och svenska.'
   }
 };

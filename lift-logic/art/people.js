@@ -79,6 +79,7 @@ Art.item = function (ctx, item, x, y, s, grey) {
     case 'cake': ctx.fillStyle = g('#fff3e0'); ctx.fillRect(-s * 0.02, -s * 0.3, s * 0.24, s * 0.12); ctx.fillRect(s * 0.02, -s * 0.4, s * 0.16, s * 0.1); ctx.fillStyle = g('#e91e63'); ctx.fillRect(s * 0.08, -s * 0.46, s * 0.04, s * 0.06); break;
     case 'flowers': ctx.fillStyle = g('#4caf50'); ctx.fillRect(s * 0.04, -s * 0.15, s * 0.03, s * 0.16); ctx.fillStyle = g('#ff4081'); ctx.beginPath(); ctx.arc(s * 0.055, -s * 0.18, s * 0.06, 0, Math.PI * 2); ctx.fill(); break;
     case 'case': ctx.fillStyle = g('#4e342e'); ctx.fillRect(0, -s * 0.02, s * 0.2, s * 0.14); break;
+    case 'camera': ctx.fillStyle = g('#263238'); roundRect(ctx, -s * 0.02, -s * 0.12, s * 0.2, s * 0.13, 2); ctx.fill(); ctx.fillStyle = g('#90caf9'); ctx.beginPath(); ctx.arc(s * 0.08, -s * 0.055, s * 0.04, 0, Math.PI * 2); ctx.fill(); break;
     case 'clipboard': ctx.fillStyle = g('#a1887f'); ctx.fillRect(-s * 0.02, -s * 0.16, s * 0.14, s * 0.18); ctx.fillStyle = g('#fff'); ctx.fillRect(0, -s * 0.13, s * 0.1, s * 0.12); break;
   }
   ctx.restore();

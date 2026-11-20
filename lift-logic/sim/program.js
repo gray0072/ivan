@@ -15,6 +15,8 @@
 //   set [stops] to 0           [ ] a dropdown or a variable, ( ) a value or a reporter, < > a boolean,
 //   say "Hello there"          "…" a text with spaces, _ an empty slot, a line ending in #lock is locked
 //   #shared taken              (a line of its own) these variables and lists are for all lifts
+//   define serve (f) <ok>      an own block: its words, ( ) a number input, < > a yes / no input, [ ] a text
+//   serve (3) <full?>          input; a call is its words with values where the inputs go
 
 const Prog = (() => {
   let seq = 0;
@@ -48,7 +50,7 @@ const Prog = (() => {
   }
   function count(p) {
     let n = 0;
-    walk(p, (b) => { if (b.op !== 'param') n++; });
+    walk(p, (b) => { if (b.op !== 'param' && b.op !== 'paramB') n++; });
     return n;
   }
   function find(p, id) {
@@ -65,7 +67,7 @@ const Prog = (() => {
   // how many blocks differ between two programs (a multiset of block signatures)
   function signature(b) {
     const args = (b.args || []).map((v) => (v && typeof v === 'object' ? '#' : String(v))).join(',');
-    return b.op + '(' + args + ')';
+    return b.op + (b.name ? ':' + b.name : '') + '(' + args + ')';
   }
   function diff(a, b) {
     const bag = {};
@@ -128,8 +130,37 @@ const Prog = (() => {
     return shapes;
   }
 
+  // a call of an own block: the words of its name, values where its inputs go
+  function parseCall(toks, ctx) {
+    for (const o of ctx.own || []) {
+      const parts = o.name.split(' ').filter(Boolean);
+      if (parts.length !== toks.length) continue;
+      let ok = true;
+      for (let k = 0; k < parts.length && ok; k++) if (!/^%\d+$/.test(parts[k])) ok = toks[k].kind === 'word' && toks[k].v.toLowerCase() === parts[k].toLowerCase();
+      if (!ok) continue;
+      const b = { id: newId(), op: 'call', name: o.name, kinds: o.kinds.slice(), args: o.kinds.map(() => null) };
+      parts.forEach((w, k) => { if (/^%\d+$/.test(w)) { const s = +w.slice(1) - 1; b.args[s] = slotValue(o.kinds[s], toks[k], ctx); } });
+      return b;
+    }
+    return null;
+  }
+  // `define go to (f) now <ok>`: the words are the name, ( ) a number input, < > a yes / no one, [ ] a text one
+  function parseDefine(line) {
+    const toks = tokens(line).slice(1);
+    const words = [], inputs = [];
+    for (const t of toks) {
+      if (t.kind === 'word') words.push(t.v);
+      else { inputs.push({ name: t.v, kind: t.kind === '<' ? 'bool' : t.kind === '[' ? 'text' : 'num' }); words.push('%' + inputs.length); }
+    }
+    return {
+      id: newId(), op: 'define', name: words.join(' '), kinds: inputs.map((x) => x.kind), params: inputs.map((x) => x.name),
+      args: inputs.map((x) => ({ id: newId(), op: x.kind === 'bool' ? 'paramB' : 'param', args: [x.name] }))
+    };
+  }
+
   function parseLine(line, want, ctx) {
     const toks = tokens(line);
+    if (want === 'stack') { const c = parseCall(toks, ctx); if (c) return c; }
     for (const t of templates()) {
       if (want === 'stack' && (t.d.shape === 'reporter' || t.d.shape === 'boolean')) continue;
       if (want === 'reporter' && t.d.shape !== 'reporter') continue;
@@ -179,6 +210,8 @@ const Prog = (() => {
     if (tok.kind === '(' && isNum(v)) return Number(v);
     if (tok.kind === '(' && /^"[^"]*"$/.test(v)) return v.slice(1, -1);
     if (tok.kind === '(' && v === '') return null;
+    // a yes / no input of an own block
+    if (tok.kind === '<' && ctx.boolParams && ctx.boolParams.indexOf(v) >= 0) return { id: newId(), op: 'paramB', args: [v] };
     try {
       return parseLine(v, tok.kind === '<' ? 'boolean' : 'value', ctx);
     } catch (e) {
@@ -202,11 +235,15 @@ const Prog = (() => {
     shared = (shared || []).slice();
     src = String(src).replace(/\r/g, '').replace(/^#shared (.+)$/gm, (all, names) => { shared.push(...names.trim().split(/[\s,]+/)); return ''; });
     const scripts = src.split(/\n\s*\n/);
+    // the own blocks first, so a call can come before its definition
+    ctx.own = [];
+    for (const line of src.split('\n')) if (/^define /.test(line)) { const d = parseDefine(line.trim()); ctx.own.push({ name: d.name, kinds: d.kinds }); }
     let y = 20;
     for (const chunk of scripts) {
       const lines = chunk.split('\n').filter((l) => l.trim() && !l.trim().startsWith('//'));
       if (!lines.length) continue;
       ctx.params = [];
+      ctx.boolParams = [];
       const root = [];
       const stack = [{ indent: -1, list: root, block: null }];
       for (const raw of lines) {
@@ -227,9 +264,14 @@ const Prog = (() => {
           stack.push({ indent, list: ifb.body2, block: owner });
           continue;
         }
-        const b = parseLine(text, 'stack', ctx);
+        let b;
+        if (/^define /.test(text) && top === stack[0] && !root.length) {
+          b = parseDefine(text);
+          ctx.params = b.params.filter((n, k) => b.kinds[k] !== 'bool');
+          ctx.boolParams = b.params.filter((n, k) => b.kinds[k] === 'bool');
+        } else b = parseLine(text, 'stack', ctx);
         if (locked) b.locked = true;
-        const d = BLOCK[b.op];
+        const d = blockDef(b);
         if (d.shape === 'c' || d.shape === 'c2') b.body = [];
         if (d.shape === 'c2') b.body2 = [];
         top.list.push(b);
@@ -251,8 +293,8 @@ const Prog = (() => {
     return jsExpr(v);
   }
   function jsExpr(b) {
-    const d = BLOCK[b.op];
-    if (b.op === 'var' || b.op === 'param' || b.op === 'list') return ident(b.args[0]);
+    const d = blockDef(b);
+    if (b.op === 'var' || b.op === 'param' || b.op === 'paramB' || b.op === 'list') return ident(b.args[0]);
     return fillJs(d.js, b);
   }
   function ident(name) {
@@ -260,12 +302,12 @@ const Prog = (() => {
     return /^\d/.test(s) ? '_' + s : s;
   }
   function fillJs(tpl, b) {
-    const d = BLOCK[b.op];
+    const d = blockDef(b);
     return tpl.replace(/%(\d)/g, (all, k) => {
       const kind = (d.slots || [])[k - 1] || '';
       const v = b.args[k - 1];
       if (kind === 'var' || kind === 'list') return ident(v);
-      if (kind === 'msg' || kind === 'dir3' || kind === 'arrow' || kind === 'stop' || kind === 'clock') return typeof v === 'object' && v ? jsExpr(v) : JSON.stringify(v || '');
+      if (kind === 'msg' || kind === 'bmsg' || kind === 'dir3' || kind === 'arrow' || kind === 'stop' || kind === 'clock') return typeof v === 'object' && v ? jsExpr(v) : JSON.stringify(v || '');
       return jsValue(v);
     });
   }
@@ -275,7 +317,7 @@ const Prog = (() => {
     const add = (text, id, depth) => lines.push({ text: '  '.repeat(depth) + text, id });
     const stack = (list, depth) => {
       for (const b of list) {
-        const d = BLOCK[b.op];
+        const d = blockDef(b);
         add(fillJs(d.js, b), b.id, depth);
         if (d.shape === 'c' || d.shape === 'c2') {
           stack(b.body || [], depth + 1);
@@ -288,11 +330,12 @@ const Prog = (() => {
     for (const l of p.lists) add('let ' + ident(l.name) + ' = [];' + (l.all ? '  // for all lifts' : ''), null, 0);
     if (p.vars.length || p.lists.length) add('', null, 0);
     for (const s of p.scripts) {
-      const hat = s.blocks[0] && BLOCK[s.blocks[0].op].shape === 'hat';
+      const hat = s.blocks[0] && blockDef(s.blocks[0]).shape === 'hat';
       if (hat) {
-        add(fillJs(BLOCK[s.blocks[0].op].js, s.blocks[0]), s.blocks[0].id, 0);
+        const own = s.blocks[0].op === 'define';
+        add(own ? blockDef(s.blocks[0]).js : fillJs(BLOCK[s.blocks[0].op].js, s.blocks[0]), s.blocks[0].id, 0);
         stack(s.blocks.slice(1), 1);
-        add('});', s.blocks[0].id, 0);
+        add(own ? '}' : '});', s.blocks[0].id, 0);
       } else {
         add('// not started by any event:', null, 0);
         stack(s.blocks, 0);

@@ -26,6 +26,7 @@ const BREAK_WAIT_MAX = 25;      // s a lift due to break down still serves its p
 const VM_STEPS_MAX = 2000;      // blocks one thread may run in one step before it is paused
 const THREADS_MAX = 32;         // threads per lift; more are dropped with a warning
 const SPIN_NOTE = 400;          // loop turns in a row without waiting that the Inspector calls a busy loop
+const CALL_DEPTH_MAX = 100;     // own blocks running inside each other (a block calling itself) before it is stopped
 const PROGRAM_MAX_BLOCKS = 400; // a bigger program is refused
 
 // ---------- the editor ----------

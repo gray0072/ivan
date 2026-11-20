@@ -159,14 +159,20 @@ const Screens = (() => {
     // the new blocks of this mission
     const nb = $('briefNew');
     nb.innerHTML = '';
-    if (m.newBlocks && m.newBlocks.length) {
+    if ((m.newBlocks && m.newBlocks.length) || m.ownBlocks) {
       const t = document.createElement('p');
       t.className = 'label';
       t.textContent = tr('New blocks');
       nb.appendChild(t);
       const row = document.createElement('div');
       row.className = 'newBlocks';
-      for (const op of m.newBlocks) row.appendChild(BlockView.el(BlockView.make(op)));
+      for (const op of m.newBlocks || []) row.appendChild(BlockView.el(BlockView.make(op)));
+      // My Blocks: an example of an own block, its define hat and its use
+      if (m.ownBlocks) {
+        const hat = Prog.renew(ownDefine(tr('my block'), []));
+        row.appendChild(BlockView.el(hat));
+        row.appendChild(BlockView.el(BlockView.make('call', { name: hat.name, kinds: [] })));
+      }
       nb.appendChild(row);
     }
     const c = CONCEPTS[m.concept];

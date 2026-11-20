@@ -3,7 +3,8 @@
 // Lift Logic — the VM: runs the program, a copy per lift. Every step the events of the step are delivered
 // (each starts a thread of its hat's script, with the hat's inputs), then every thread runs until it
 // yields: at `wait`, `wait until` (false), `go to floor` (until it stopped there and the doors closed),
-// `say … for`, `broadcast and wait`, and at the end of each turn of a loop. A thread that runs
+// `say … for`, `broadcast and wait`, and at the end of each turn of a loop. An own block's call runs its
+// define script in the same thread, with the inputs' values in its frame. A thread that runs
 // VM_STEPS_MAX blocks without yielding is paused until the next step. A mistake never stops the run: the
 // block gets a red mark with the reason (run.errors) and the value used is 0 or nothing. Used by
 // sim/run.js; the editor reads which blocks glow (VM.active) and the marks.
@@ -25,9 +26,12 @@ const VM = (() => {
     run.varsSet = {};
     run.threadSeq = 0;
     run.hats = {};
+    run.procs = {};
     p.scripts.forEach((s, k) => {
       const hat = s.blocks[0];
-      if (!hat || BLOCK[hat.op].shape !== 'hat') return;
+      if (!hat || blockDef(hat).shape !== 'hat') return;
+      // an own block's definition is not started by an event: a `call` runs it
+      if (hat.op === 'define') { run.procs[hat.name] = s; return; }
       (run.hats[hat.op] = run.hats[hat.op] || []).push({ script: s, k });
     });
     for (const v of p.vars) if (v.all) run.vars[v.name] = 0;
@@ -43,9 +47,10 @@ const VM = (() => {
     event('start', null, {});
   }
 
-  function event(type, L, params) {
+  // an event for one lift, or (L null) for every lift of the group but `except` (a lift number)
+  function event(type, L, params, except) {
     if (!run.queue) return;
-    run.queue.push({ type, lift: L ? L.n : 0, params: params || {} });
+    run.queue.push({ type, lift: L ? L.n : 0, params: params || {}, except: except || 0 });
   }
 
   function startThread(L, entry, params, ev) {
@@ -66,9 +71,9 @@ const VM = (() => {
     if (!entries) return;
     const lifts = ev.lift ? [run.lifts[ev.lift - 1]] : run.lifts;
     for (const L of lifts) {
-      if (!L.working) continue;
+      if (!L.working || L.n === ev.except) continue;
       for (const e of entries) {
-        if (ev.type === 'onReceive' && msgName(e.script.blocks[0].args[0]) !== ev.params.msg) continue;
+        if ((ev.type === 'onReceive' || ev.type === 'onBuildingMsg') && msgName(e.script.blocks[0].args[0]) !== ev.params.msg) continue;
         startThread(L, e, ev.params, ev);
       }
     }
@@ -181,12 +186,29 @@ const VM = (() => {
   function exec(th, b) {
     const L = th.lift, a = b.args || [];
     switch (b.op) {
-      case 'goto': {
+      case 'goto': case 'goExpress': {
         const f = floorArg(th, b, 0);
         if (f === null) return;
         if (!Lift.canStopAt(L, f)) { fail(th, b, 'This lift doesn\'t stop at floor {n}', { n: f }); return; }
         Lift.planFirst(L, f);
+        // an express trip: straight there at the express speed, no stops on the way
+        if (b.op === 'goExpress' && floorIndex(f) !== Lift.here(L)) L.express = f;
         th.wait = { type: 'goto', floor: f, count: L.arrivals[f] || 0 };
+        return;
+      }
+      // an own block: its define script runs here, with the inputs' values, then the script goes on
+      case 'call': {
+        const s = run.procs[b.name];
+        if (!s) { fail(th, b, 'This block has no "define" script'); return; }
+        let depth = 0;
+        for (const fr of th.frames) if (fr.args) depth++;
+        if (depth >= CALL_DEPTH_MAX) { fail(th, b, 'This block called itself {n} times and never stopped', { n: depth }); th.done = true; return; }
+        const hat = s.blocks[0], args = {};
+        (hat.params || []).forEach((name, k) => {
+          const v = evalValue(th, a[k]);
+          args[name] = (hat.kinds || [])[k] === 'bool' ? toBool(v) : v;
+        });
+        th.frames.push({ list: s.blocks, i: 1, loop: null, block: b, args });
         return;
       }
       case 'say': case 'sayFor': {
@@ -281,8 +303,10 @@ const VM = (() => {
         if (b.op === 'broadcastWait') th.wait = { type: 'bcast', ev };
         return;
       }
-      default:
-        if (BLOCK[b.op] && (BLOCK[b.op].shape === 'reporter' || BLOCK[b.op].shape === 'boolean')) evalValue(th, b);
+      default: {
+        const d = blockDef(b);
+        if (d && (d.shape === 'reporter' || d.shape === 'boolean')) evalValue(th, b);
+      }
     }
   }
 
@@ -430,10 +454,22 @@ const VM = (() => {
       case 'listHas': { const l = listOf(th, v, a[0]); if (!l) return false; const x = val(1); return l.some((y) => compare(y, x) === 0); }
       case 'list': { const l = listOf(th, v, a[0]); return l ? l.map(toStr).join(' ') : ''; }
       case 'var': return getVar(th, a[0]);
-      case 'param': {
-        if (!th || !(a[0] in th.params)) { fail(th, v, '"{name}" is only known inside its own event script', { name: a[0] }); return ''; }
+      case 'param': case 'paramB': {
+        // inside an own block: the inputs of the nearest call; elsewhere the event's inputs
+        if (th) for (let k = th.frames.length - 1; k >= 0; k--) {
+          const f = th.frames[k];
+          if (!f.args) continue;
+          if (Object.prototype.hasOwnProperty.call(f.args, a[0])) return f.args[a[0]];
+          fail(th, v, '"{name}" is only known inside its own script', { name: a[0] });
+          return '';
+        }
+        if (!th || !(a[0] in th.params)) { fail(th, v, '"{name}" is only known inside its own script', { name: a[0] }); return ''; }
         return th.params[a[0]];
       }
+      case 'tickets': return Sensors.tickets(n(0));
+      case 'zoneLow': return Sensors.zoneLow(L);
+      case 'zoneHigh': return Sensors.zoneHigh(L);
+      case 'canStop': return Lift.canStopAt(L, n(0));
       default: return '';
     }
   }

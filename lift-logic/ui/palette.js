@@ -3,7 +3,8 @@
 // Lift Logic — the block palette: the category chips (only categories with opened blocks) and the sheet with
 // that category's blocks drawn in their real shapes. A tap puts the block at the editor's insert point; a
 // drag takes it to any place. Variables have "Make a variable" and a block per variable, lists "Make a list"
-// and a block per list. On a phone the
+// and a block per list, My Blocks "Make a block" (a name and its inputs: a define hat in the scripts) and a
+// block per own block. On a phone the
 // sheet slides up over the scripts and closes after a block is placed; on a wide screen it stays open as
 // the middle column. Hint 2 lights up the blocks the engineer used. Used by game.js and ui/editor.js.
 
@@ -17,7 +18,8 @@ const Palette = (() => {
   function wide() { return document.body.classList.contains('wide'); }
   function opened(d) { return !d.hidden && (all || d.ch <= chapter); }
   function cats() {
-    return CATEGORIES.filter((c) => BLOCKS.some((d) => d.cat === c.id && opened(d)) || (c.id === 'variables' && chapter >= 3));
+    return CATEGORIES.filter((c) => BLOCKS.some((d) => d.cat === c.id && opened(d)) || (c.id === 'variables' && chapter >= 3) ||
+      (c.id === 'myblocks' && (chapter >= 7 || all)));
   }
 
   function setup(mission) {
@@ -66,6 +68,15 @@ const Palette = (() => {
       list.appendChild(mk);
       for (const l of Editor.prog.lists) add({ id: 'p', op: 'list', args: [l.name] }, l.all ? tr('for all lifts') : '');
     }
+    if (id === 'myblocks') {
+      const mk = document.createElement('button');
+      mk.type = 'button';
+      mk.className = 'btn small makeVar';
+      mk.textContent = tr('Make a block');
+      mk.addEventListener('click', makeBlock);
+      list.appendChild(mk);
+      for (const o of ownBlocks(Editor.prog)) add(BlockView.make('call', { name: o.name, kinds: o.kinds }));
+    }
     for (const d of BLOCKS) {
       if (d.cat !== id || !opened(d)) continue;
       const b = BlockView.make(d.op);
@@ -112,6 +123,32 @@ const Palette = (() => {
     });
   }
 
+  // an own block: its words, then its inputs one by one (a number, yes / no or a word, each with a name)
+  function makeBlock() {
+    Slots.ask(tr('Name of the new block'), '', (words) => {
+      words = String(words || '').replace(/%/g, '').trim().slice(0, 30);
+      if (!words) return;
+      const inputs = [];
+      const more = () => {
+        const opts = [{ label: tr('Add a number input'), value: 'num' }, { label: tr('Add a yes / no input'), value: 'bool' },
+          { label: tr('Add a word input'), value: 'text' }, { label: tr('Done'), value: null }];
+        Slots.choose(inputs.length ? tr('Inputs of "{b}": {n}. Another one?', { b: words, n: inputs.length }) : tr('Does "{b}" need inputs?', { b: words }), inputs.length >= 3 ? opts.slice(3) : opts, (kind) => {
+          if (!kind) { finish(); return; }
+          Slots.ask(tr('Name of the input'), kind === 'num' ? 'n' : kind === 'bool' ? 'yes' : 'word', (name) => {
+            name = String(name || '').replace(/[%()<>[\]"]/g, '').trim().slice(0, 16);
+            if (name && !inputs.some((x) => x.name === name)) inputs.push({ name, kind });
+            more();
+          });
+        });
+      };
+      const finish = () => {
+        if (!Editor.makeBlock(words, inputs)) Hud.toast(tr('There is already a block "{b}".', { b: words }));
+        open('myblocks');
+      };
+      more();
+    });
+  }
+
   // ---------- tap and drag from the sheet ----------
   let press = null;
   list.addEventListener('pointerdown', (e) => {
@@ -138,7 +175,7 @@ const Palette = (() => {
     if (e.type === 'pointerup') {
       ensureAudio();
       const b = fresh(press.w._b);
-      const shape = BLOCK[b.op].shape;
+      const shape = blockDef(b).shape;
       if (Editor.insert(b) && !wide() && shape !== 'reporter' && shape !== 'boolean') close();
       else if (!wide() && (shape === 'reporter' || shape === 'boolean')) close();
     }

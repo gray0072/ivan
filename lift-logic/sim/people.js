@@ -2,7 +2,8 @@
 
 // Lift Logic — the passengers of a run: who comes when (the mission's fixed schedule, the flows drawn
 // from the seeded random, and people who come back a while after an earlier ride), the queue on every
-// landing, getting on and off, the cabin buttons they press, their mood as they wait and giving up.
+// landing, getting on and off (and changing lifts on the way: off at `via`, a new wait there), the cabin
+// buttons they press, their mood as they wait and giving up.
 // The program never reads a person — only the buttons they press. Used by sim/run.js and sim/lift.js.
 
 const People = {
@@ -31,7 +32,9 @@ const People = {
         const to = People.pickFloor(f.to, from, rnd);
         if (from === null || to === null || from === to) continue;
         const who = People.pickWho(f.who, rnd);
-        run.pending.push({ seq: seq++, t, from, to, who, emergency: !!f.emergency });
+        // a trip that changes lifts on the way: `via` a floor (or a rule: via(from, to) → floor or null)
+        const via = typeof f.via === 'function' ? f.via(from, to) : f.via;
+        run.pending.push({ seq: seq++, t, from, to, who, emergency: !!f.emergency, via: via !== undefined && via !== null && via !== from && via !== to ? via : undefined });
       }
     }
     run.pending.sort((a, b) => a.t - b.t || a.seq - b.seq);
@@ -78,11 +81,13 @@ const People = {
 
   spawn(e) {
     const c = PEOPLE[e.who] || PEOPLE.neighbour;
-    const fi = floorIndex(e.from), ti = floorIndex(e.to);
-    if (fi < 0 || ti < 0 || fi === ti) return;
+    // someone who changes lifts rides to the transfer floor first (p.to), then on to the end (p.dest)
+    const leg = e.via !== undefined ? e.via : e.to;
+    const fi = floorIndex(e.from), ti = floorIndex(leg);
+    if (fi < 0 || ti < 0 || fi === ti || floorIndex(e.to) < 0) return;
     const p = {
       id: run.people.length + 1, key: e.id || null, who: e.who, name: e.name || People.pickName(e.who),
-      from: e.from, to: e.to, fi, ti, dir: ti > fi ? 'up' : 'down',
+      from: e.from, to: leg, dest: e.to, fi, ti, dir: ti > fi ? 'up' : 'down', waitAcc: 0, legs: 0,
       t0: run.t, size: e.size || c.size, board: c.board, prank: !!c.prank,
       patience: (e.patience || c.patience) * run.diff.patience * (run.cheatPatience ? 1e6 : 1),
       state: 'waiting', mood: 0, lift: 0, tBoard: null, tOff: null, furious: false, emergency: !!e.emergency,
@@ -118,6 +123,7 @@ const People = {
 
   alight(p, L) {
     L.riders.splice(L.riders.indexOf(p), 1);
+    if (p.to !== p.dest) { People.transfer(p, L); return; }
     p.state = 'done';
     p.tOff = run.t;
     run.delivered++;
@@ -125,6 +131,27 @@ const People = {
     logEvent('delivered', { id: p.id, lift: L.n, floor: p.to, wait: p.tBoard - p.t0, trip: run.t - p.t0 });
     GameEvents.emit('delivered', { person: p, lift: L });
     People.release(p);
+  },
+
+  // off at the transfer floor: the wait so far is kept, a new wait starts on this landing for the next lift
+  transfer(p, L) {
+    p.waitAcc += p.tBoard - p.t0;
+    p.legs++;
+    p.from = p.to;
+    p.fi = floorIndex(p.from);
+    p.to = p.dest;
+    p.ti = floorIndex(p.to);
+    p.dir = p.ti > p.fi ? 'up' : 'down';
+    p.t0 = run.t;
+    p.tBoard = null;
+    p.state = 'waiting';
+    p.mood = 0;
+    p.lift = 0;
+    p.firstMove = 0;
+    run.queues[p.fi].push(p);
+    logEvent('transfer', { id: p.id, lift: L.n, floor: p.from, to: p.to });
+    GameEvents.emit('transfer', { person: p, lift: L });
+    Building.press(p.fi, p.dir);
   },
 
   // the people who come back a while after this one got off (Grandma back from the bakery)

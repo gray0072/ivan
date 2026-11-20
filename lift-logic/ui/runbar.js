@@ -23,7 +23,7 @@ const Runner = (() => {
     enterFullscreen();
     Hud.closeCard();
     Progress.saveProgram(st.mission.id, Editor.prog);
-    const hasHat = Editor.prog.scripts.some((s) => s.blocks[0] && BLOCK[s.blocks[0].op].shape === 'hat');
+    const hasHat = Editor.prog.scripts.some((s) => s.blocks[0] && blockDef(s.blocks[0]).shape === 'hat');
     if (!hasHat) Hud.toast(tr('Your program needs an event block like "when ▶ clicked" on top, or it won\'t start.'), 3600);
     Run.start(st.mission, Editor.prog, Screens.difficulty, { cheated: st.cheated, seed: opts.seed });
     st.state = 'running';

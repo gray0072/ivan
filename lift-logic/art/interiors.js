@@ -2,8 +2,9 @@
 
 // Lift Logic — each building's floors, drawn from a few shapes: the house's flats, the school's classrooms,
 // the hotel's corridor with numbered doors, the hospital's wards, the office's desks, the mall's shops and its
-// car park with parked cars, the lobby on the ground floor and the ballroom, gym, canteen, food court or
-// cinema where a building has one. Used by render/building.js.
+// car park with parked cars, the Eiffel Tower's iron lattice, brasserie, viewing deck and summit, the Empire
+// State Building's art deco offices and observatories, the lobby on the ground floor and the ballroom, gym,
+// canteen, food court or cinema where a building has one. Used by render/building.js.
 
 Art.interior = function (ctx, b, label, top, x, y, w, h) {
   const style = b.style;
@@ -16,7 +17,9 @@ Art.interior = function (ctx, b, label, top, x, y, w, h) {
   ctx.fillRect(x, y + h - 4, w, 4);
   const room = (b.rooms || {})[label];
   const u = h / 44;
-  if (label === 1 || room === 'Lobby' || room === 'Hall' || room === 'Entrance') Art.lobby(ctx, style, x, y, w, h, u, b);
+  if (b.id === 'eiffel') Art.eiffelFloor(ctx, label, room, x, y, w, h, u);
+  else if (b.id === 'empire' && label !== 1) Art.empireFloor(ctx, label, room, x, y, w, h, u, b);
+  else if (label === 1 || room === 'Lobby' || room === 'Hall' || room === 'Entrance') Art.lobby(ctx, style, x, y, w, h, u, b);
   else if (style === 'house') {
     for (let k = 0; k < Math.floor(w / (70 * u)); k++) {
       const wx = x + 14 * u + k * 70 * u;
@@ -108,13 +111,79 @@ Art.interior = function (ctx, b, label, top, x, y, w, h) {
       }
     }
   }
-  if (room && label !== 1) {
-    ctx.fillStyle = room === 'Car park' || room === 'Cinema' ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.45)';
+  if (room && (label !== 1 || b.id === 'eiffel')) {
+    ctx.fillStyle = room === 'Car park' || room === 'Cinema' || room === 'Observatory' || room === 'Top deck' ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.45)';
     ctx.font = 'bold ' + Math.round(clamp(9 * u, 9, 13)) + 'px "Segoe UI", Arial, sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.fillText(tr(room), x + 6, y + 4);
   }
   ctx.restore();
+};
+
+// the Eiffel Tower: sky seen through the brown iron lattice; the ground with the ticket booth, the brasserie's
+// tables, the viewing deck's telescopes, the summit's flag
+Art.eiffelFloor = function (ctx, label, room, x, y, w, h, u) {
+  ctx.fillStyle = label === 1 ? '#a5d6a7' : '#b9def5';
+  ctx.fillRect(x, y, w, h - 4 * u);
+  // the lattice: crossed iron beams
+  ctx.strokeStyle = 'rgba(122,78,40,0.55)'; ctx.lineWidth = Math.max(1, 1.6 * u);
+  const step = 26 * u;
+  ctx.beginPath();
+  for (let k = -1; k * step < w + step; k++) {
+    const bx = x + k * step;
+    ctx.moveTo(bx, y); ctx.lineTo(bx + step, y + h - 4 * u);
+    ctx.moveTo(bx + step, y); ctx.lineTo(bx, y + h - 4 * u);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#7a4e28'; ctx.fillRect(x, y + h - 6 * u, w, 4 * u);
+  if (label === 1) {
+    // the ticket booth and a tree
+    ctx.fillStyle = '#5d4037'; ctx.fillRect(x + w - 46 * u, y + 14 * u, 30 * u, 24 * u);
+    ctx.fillStyle = '#ffe082'; ctx.fillRect(x + w - 42 * u, y + 18 * u, 22 * u, 9 * u);
+    ctx.fillStyle = '#2e7d32'; ctx.beginPath(); ctx.arc(x + w - 80 * u, y + 20 * u, 10 * u, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6d4c41'; ctx.fillRect(x + w - 82 * u, y + 28 * u, 4 * u, 10 * u);
+  } else if (room === 'Brasserie') {
+    for (let k = 0; k < Math.floor(w / (54 * u)); k++) {
+      const tx = x + 30 * u + k * 54 * u;
+      ctx.fillStyle = k % 2 ? '#c62828' : '#f5f5f5';
+      ctx.beginPath(); ctx.moveTo(tx - 14 * u, y + 18 * u); ctx.lineTo(tx, y + 9 * u); ctx.lineTo(tx + 14 * u, y + 18 * u); ctx.fill();
+      ctx.fillStyle = '#4e342e'; ctx.fillRect(tx - 1 * u, y + 18 * u, 2 * u, 14 * u); ctx.fillRect(tx - 10 * u, y + 30 * u, 20 * u, 3 * u);
+    }
+  } else if (room === 'Viewing deck') {
+    for (let k = 0; k < Math.floor(w / (70 * u)); k++) {
+      const tx = x + 34 * u + k * 70 * u;
+      ctx.fillStyle = '#455a64'; ctx.fillRect(tx - 2 * u, y + 22 * u, 4 * u, 14 * u);
+      ctx.save(); ctx.translate(tx, y + 20 * u); ctx.rotate(-0.3); ctx.fillRect(-8 * u, -3 * u, 16 * u, 6 * u); ctx.restore();
+    }
+  } else if (room === 'Summit') {
+    ctx.fillStyle = '#5d4037'; ctx.fillRect(x + 40 * u, y + 6 * u, 2 * u, 30 * u);
+    ctx.fillStyle = '#1e40a0'; ctx.fillRect(x + 42 * u, y + 6 * u, 6 * u, 10 * u);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x + 48 * u, y + 6 * u, 6 * u, 10 * u);
+    ctx.fillStyle = '#d32f2f'; ctx.fillRect(x + 54 * u, y + 6 * u, 6 * u, 10 * u);
+  }
+};
+
+// the Empire State Building: art deco offices with golden trim, the observatories on 86 and 102 with telescopes
+Art.empireFloor = function (ctx, label, room, x, y, w, h, u, b) {
+  if (room === 'Observatory' || room === 'Top deck') {
+    ctx.fillStyle = '#4a6fa5'; ctx.fillRect(x, y, w, h - 4 * u);
+    ctx.fillStyle = '#9fb8d9';
+    for (let k = 0; k < Math.floor(w / (18 * u)); k++) ctx.fillRect(x + k * 18 * u, y + 26 * u - ((k * 7) % 5) * 3 * u, 12 * u, 14 * u + ((k * 7) % 5) * 3 * u);
+    for (let k = 0; k < Math.floor(w / (80 * u)); k++) {
+      const tx = x + 40 * u + k * 80 * u;
+      ctx.fillStyle = '#263238'; ctx.fillRect(tx - 2 * u, y + 22 * u, 4 * u, 16 * u);
+      ctx.save(); ctx.translate(tx, y + 20 * u); ctx.rotate(-0.25); ctx.fillRect(-9 * u, -3 * u, 18 * u, 6 * u); ctx.restore();
+    }
+    return;
+  }
+  // windows with a golden frame, a desk now and then
+  for (let k = 0; k < Math.floor(w / (34 * u)); k++) {
+    const wx = x + 10 * u + k * 34 * u;
+    ctx.fillStyle = '#c9a54a'; ctx.fillRect(wx - 1.5 * u, y + 7 * u, 21 * u, 23 * u);
+    ctx.fillStyle = (label + k) % 5 === 0 ? '#ffe9a8' : '#cfe3f3'; ctx.fillRect(wx, y + 8.5 * u, 18 * u, 20 * u);
+    if ((label * 3 + k) % 4 === 0) { ctx.fillStyle = '#5d4037'; ctx.fillRect(wx - 2 * u, y + 32 * u, 22 * u, 4 * u); }
+  }
+  ctx.fillStyle = shade(b.trim, 0.1); ctx.fillRect(x, y, w, 2 * u);
 };
 
 Art.lobby = function (ctx, style, x, y, w, h, u, b) {

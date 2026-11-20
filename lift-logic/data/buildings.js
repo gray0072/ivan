@@ -29,8 +29,14 @@ const BUILDINGS = [
     client: { name: 'Ms. Sterling', look: 'manager', line: 'Three car park levels, five shop floors, three lifts. Make it shine.' },
     idea: 'Lists, for each, negative numbers', wall: '#fbeee6', trim: '#d0643a', sky: '#ffe0c2', paper: 'The Mega Mall Weekly',
     rooms: { '-3': 'Car park', '-2': 'Car park', '-1': 'Car park', 1: 'Entrance', 4: 'Food court', 5: 'Cinema' } },
-  { id: 'eiffel', chapter: 7, ready: false, name: 'Eiffel Tower, Paris', floors: 4, idea: 'Own blocks with inputs', style: 'tower' },
-  { id: 'empire', chapter: 8, ready: false, name: 'Empire State Building, New York', floors: 102, idea: 'Zoning, express, SCAN', style: 'tower' },
+  { id: 'eiffel', chapter: 7, ready: true, name: 'Eiffel Tower, Paris', floors: 4, lift: 'pillar', style: 'tower',
+    client: { name: 'Madame Durand', look: 'director', line: 'Millions of visitors a year, and every one of them wants to see Paris from the top!' },
+    idea: 'Own blocks with inputs, changing lifts, news from outside', wall: '#efe3cc', trim: '#8a5a2b', sky: '#a9d4f0', paper: 'Le Petit Ascenseur',
+    rooms: { 1: 'Ground', 2: 'Brasserie', 3: 'Viewing deck', 4: 'Summit' } },
+  { id: 'empire', chapter: 8, ready: true, name: 'Empire State Building, New York', floors: 102, lift: 'sky', style: 'tower',
+    client: { name: 'Mr. Russo', look: 'super', line: 'A hundred and two floors, and every New Yorker is in a hurry.' },
+    idea: 'Zones, express trips, sorting, SCAN', wall: '#e9e0cf', trim: '#6d5a3f', sky: '#bcd7ee', paper: 'The Empire Express',
+    rooms: { 1: 'Lobby', 86: 'Observatory', 102: 'Top deck' } },
   { id: 'burj', chapter: 9, ready: false, name: 'Burj Khalifa, Dubai', floors: 160, idea: 'Double-deck, destination dispatch', style: 'tower' },
   { id: 'skyhook', chapter: 10, ready: false, name: 'Skyhook, the space elevator', floors: 5, idea: 'Everything together', style: 'space' }
 ];
