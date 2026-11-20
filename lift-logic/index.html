@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Be the brain of a lift: program it from blocks and watch a building live by your code — from Grandma's three-storey house to a school and a grand hotel.">
+<title>Lift Logic</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg?v=1">
+<link rel="manifest" href="manifest.webmanifest?v=1">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
+<meta name="theme-color" content="#1b2a3a">
+<link rel="stylesheet" href="styles.css?v=1">
+</head>
+<body>
+
+<div id="app" hidden>
+  <div id="topbar">
+    <button class="tbtn" id="menuBtn" data-i18n-title="Menu (Esc)">☰</button>
+    <div class="ttl"><b id="missionName"></b><span id="targets"></span></div>
+    <button class="tbtn" id="hintBtn" data-i18n-title="Hints">💡</button>
+  </div>
+  <div id="stage">
+    <canvas id="view"></canvas>
+    <div id="chipsHud">
+      <span class="hchip" id="hClock" data-i18n-title="Clock"></span>
+      <span class="hchip" id="hDone" data-i18n-title="Delivered"></span>
+      <span class="hchip" id="hWait" data-i18n-title="Waiting now"></span>
+      <span class="hchip bad" id="hGone" data-i18n-title="Gave up" hidden></span>
+      <span class="hchip" id="hEnergy" data-i18n-title="Energy"></span>
+    </div>
+    <div id="card" hidden></div>
+  </div>
+  <div id="runbar">
+    <button class="rb run" id="runBtn"><span class="ico">▶</span><span class="lbl" data-i18n>Run</span></button>
+    <button class="rb" id="pauseBtn" data-i18n-title="Pause (P)">⏸</button>
+    <button class="rb" id="stepBtn" data-i18n-title="Step (S)">⏭</button>
+    <button class="rb speed" id="speedBtn" data-i18n-title="Speed (1–4)">×1</button>
+    <button class="rb" id="skipBtn" data-i18n-title="Skip to the end">⏩</button>
+    <button class="rb" id="eyesBtn" data-i18n-title="Lift's eyes (E)">👁</button>
+    <span class="grip" id="grip" data-i18n-title="Drag to resize"></span>
+  </div>
+  <div id="code">
+    <div id="chips"></div>
+    <div id="codeMain">
+      <div id="sheet" hidden>
+        <div class="sheetHead"><b id="sheetTitle"></b><button class="x" id="sheetClose" data-i18n-title="Close">✖</button></div>
+        <div id="sheetList" class="palette"></div>
+      </div>
+      <div id="scripts">
+        <div id="world"></div>
+        <div id="blockBar" hidden></div>
+      </div>
+    </div>
+    <div id="codeTools">
+      <button class="cbtn" id="undoBtn" data-i18n-title="Undo (Ctrl+Z)">↶</button>
+      <button class="cbtn" id="redoBtn" data-i18n-title="Redo (Ctrl+Y)">↷</button>
+      <button class="cbtn" id="zoomOut" data-i18n-title="Smaller">−</button>
+      <button class="cbtn" id="zoomIn" data-i18n-title="Bigger">+</button>
+      <span id="blockCount"></span>
+      <button class="cbtn wide" id="textBtn" data-i18n>Text</button>
+    </div>
+  </div>
+</div>
+
+<div id="dragLayer"></div>
+<div id="toast" hidden></div>
+<div id="banner" hidden></div>
+<div id="finger" hidden></div>
+
+<div id="overlay">
+  <div id="menu" class="panel" hidden>
+    <div class="langPick" role="group" aria-label="Language"></div>
+    <canvas id="logo" width="240" height="200"></canvas>
+    <h1 class="logoText">Lift Logic</h1>
+    <p class="tagline" data-i18n>Be the brain of a lift! Build its program from blocks and watch a whole building live by it.</p>
+    <div class="btnCol">
+      <button class="btn default big" id="continueBtn"><span data-i18n>Continue</span><small id="continueName"></small></button>
+      <button class="btn big" id="mapBtn"><span data-i18n>Buildings</span> <span id="totalStars" class="starsSmall"></span></button>
+      <button class="btn" id="museumBtn" data-i18n>🏛️ Lift Museum</button>
+    </div>
+    <p class="label" data-i18n>Difficulty</p>
+    <div class="btnRow" id="menuDiff"></div>
+    <p class="fine" id="menuDiffText"></p>
+    <div class="btnRow small">
+      <span data-i18n>Sound</span>
+      <button class="btn toggle" data-sound="on" data-i18n>On</button>
+      <button class="btn toggle" data-sound="off" data-i18n>Off</button>
+      <span class="sep"></span>
+      <span data-i18n>Music</span>
+      <button class="btn toggle" data-music="on" data-i18n>On</button>
+      <button class="btn toggle" data-music="off" data-i18n>Off</button>
+    </div>
+    <div class="btnRow small"><button class="btn secondary" id="helpBtn" data-i18n>How to play</button></div>
+    <div id="help" hidden>
+      <p data-i18n>You are Lifty, the brain of a lift. People come, press the call buttons ▲ ▼ and ride. Your program decides where the lift goes. It knows only what a real lift knows — its buttons, its floor, its load — it doesn't see the people.</p>
+      <p data-i18n><b>Building a program:</b> tap a colour chip to see its blocks, tap a block to add it under the selected one. Tap a block in your program to move, copy, wrap or delete it; tap a white slot to type a number or to put a sensor block in it. ▶ Run starts the day.</p>
+      <p data-i18n><b>Phone and tablet:</b> everything is a tap; you can also drag blocks. Drag the empty canvas to look around, pinch to zoom, drag the bar with ▶ to give more room to the building or to the code.</p>
+      <p data-i18n><b>Keyboard:</b> Space run / stop, P pause, S step, 1–4 the speed, E the Lift's eyes, Delete deletes the selected block, Ctrl+Z / Ctrl+Y undo / redo, Ctrl+C / Ctrl+V copy / paste, Esc the menu.</p>
+      <p data-i18n>Every mission has three stars: the goal, and two aims like short waits, little energy or few blocks. Stuck? Tap 💡 for a hint.</p>
+    </div>
+  </div>
+
+  <div id="mapPanel" class="panel wide" hidden>
+    <h1 data-i18n>Buildings</h1>
+    <p class="fine" id="mapTotal"></p>
+    <div class="buildings" id="buildingList"></div>
+    <div class="btnRow"><button class="btn secondary" id="mapBack" data-i18n>Back</button></div>
+  </div>
+
+  <div id="buildingPanel" class="panel wide" hidden>
+    <div class="clientRow"><canvas id="clientFace" width="84" height="84"></canvas><div><h1 id="bName"></h1><p class="quote" id="bLine"></p><p class="fine" id="bIdea"></p></div></div>
+    <div class="missionPath" id="missionPath"></div>
+    <div class="btnRow"><button class="btn secondary" id="buildingBack" data-i18n>Back</button></div>
+  </div>
+
+  <div id="briefPanel" class="panel" hidden>
+    <p class="label" id="briefNum"></p>
+    <h1 id="briefName"></h1>
+    <div class="clientRow"><canvas id="briefFace" width="64" height="64"></canvas><div class="speech" id="briefText"></div></div>
+    <p class="goal" id="briefGoal"></p>
+    <div class="starList" id="briefStars"></div>
+    <div id="briefNew"></div>
+    <div id="briefConcept"></div>
+    <div id="briefChoice" class="btnRow small" hidden>
+      <button class="btn toggle on" id="startLast" data-i18n>Start from your last program</button>
+      <button class="btn toggle" id="startEmpty" data-i18n>Start empty</button>
+    </div>
+    <div class="btnRow">
+      <button class="btn default big" id="briefStart" data-i18n>Start</button>
+      <button class="btn secondary" id="briefBack" data-i18n>Back</button>
+    </div>
+  </div>
+
+  <div id="pausePanel" class="panel" hidden>
+    <h1 data-i18n>Menu</h1>
+    <div class="btnCol">
+      <button class="btn default" id="resumeBtn" data-i18n>Continue</button>
+      <button class="btn secondary" id="restartBtn" data-i18n>Restart run</button>
+      <button class="btn secondary" id="cardBtn" data-i18n>Mission card</button>
+      <button class="btn secondary" id="pauseMapBtn" data-i18n>Buildings</button>
+      <button class="btn secondary" id="pauseMenuBtn" data-i18n>Main Menu</button>
+      <button class="btn secondary" id="clearBtn" data-i18n>Clear program</button>
+    </div>
+    <p class="label" data-i18n>Difficulty</p>
+    <div class="btnRow" id="pauseDiff"></div>
+    <div class="btnRow small">
+      <span data-i18n>Sound</span>
+      <button class="btn toggle" data-sound="on" data-i18n>On</button>
+      <button class="btn toggle" data-sound="off" data-i18n>Off</button>
+      <span class="sep"></span>
+      <span data-i18n>Music</span>
+      <button class="btn toggle" data-music="on" data-i18n>On</button>
+      <button class="btn toggle" data-music="off" data-i18n>Off</button>
+    </div>
+  </div>
+
+  <div id="resultPanel" class="panel" hidden>
+    <h1 id="resultTitle"></h1>
+    <div class="bigStars" id="resultStars"></div>
+    <div class="record" id="resultBest" hidden data-i18n>🏆 New best!</div>
+    <div class="starLines" id="resultLines"></div>
+    <table class="resultTable" id="resultTable"></table>
+    <div class="chart" id="resultChart"></div>
+    <div class="notes" id="resultNotes"></div>
+    <div class="jokes" id="resultJokes"></div>
+    <div id="resultCard"></div>
+    <p class="fine" id="resultCheat" hidden data-i18n>Cheats were used — nothing is saved.</p>
+    <p class="fine" id="resultHint" hidden data-i18n>💡 With the engineer's solution a mission gets at most ★★ — change it into your own for ★★★.</p>
+    <p class="label" data-i18n>Difficulty</p>
+    <div class="btnRow" id="resultDiff"></div>
+    <div class="btnRow">
+      <button class="btn" id="nextBtn" data-i18n>Next</button>
+      <button class="btn" id="editBtn" data-i18n>Edit</button>
+      <button class="btn secondary" id="retryBtn" data-i18n>Retry</button>
+      <button class="btn secondary" id="resultMapBtn" data-i18n>Buildings</button>
+    </div>
+  </div>
+
+  <div id="museumPanel" class="panel wide" hidden>
+    <h1 data-i18n>🏛️ Lift Museum</h1>
+    <p class="fine" id="museumCount"></p>
+    <div class="museum" id="museumGrid"></div>
+    <h2 data-i18n>Grandpa Gears' cards</h2>
+    <div class="museum" id="conceptGrid"></div>
+    <div class="btnRow"><button class="btn secondary" id="museumBack" data-i18n>Back</button></div>
+  </div>
+
+  <div id="paperPanel" class="panel" hidden>
+    <div class="paper" id="paper"></div>
+    <div class="btnRow"><button class="btn default" id="paperBack" data-i18n>Continue</button></div>
+  </div>
+</div>
+
+<div id="slotSheet" class="sheetModal" hidden>
+  <div class="slotBox">
+    <div class="sheetHead"><b id="slotTitle"></b><button class="x" id="slotClose" data-i18n-title="Close">✖</button></div>
+    <div id="slotBody"></div>
+  </div>
+</div>
+
+<div id="textPanel" class="sheetModal" hidden>
+  <div class="slotBox textBox">
+    <div class="sheetHead"><b data-i18n>Your program as text</b><button class="x" id="textClose" data-i18n-title="Close">✖</button></div>
+    <pre id="textCode"></pre>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+
+<script src="data/icons.js?v=1"></script>
+<script src="core/icons.js?v=1"></script>
+<script src="constants.js?v=1"></script>
+<script src="data/blocks.js?v=1"></script>
+<script src="data/lifts.js?v=1"></script>
+<script src="data/people.js?v=1"></script>
+<script src="data/buildings.js?v=1"></script>
+<script src="data/missions/missions.js?v=1"></script>
+<script src="data/missions/grandma.js?v=1"></script>
+<script src="data/missions/school.js?v=1"></script>
+<script src="data/missions/hotel.js?v=1"></script>
+<script src="data/solutions/grandma.js?v=1"></script>
+<script src="data/solutions/school.js?v=1"></script>
+<script src="data/solutions/hotel.js?v=1"></script>
+<script src="data/facts.js?v=1"></script>
+<script src="data/jokes.js?v=1"></script>
+<script src="data/lang-ru.js?v=1"></script>
+<script src="data/lang-sv.js?v=1"></script>
+<script src="core/i18n.js?v=1"></script>
+<script src="core/utils.js?v=1"></script>
+<script src="core/events.js?v=1"></script>
+<script src="core/storage.js?v=1"></script>
+<script src="core/audio.js?v=1"></script>
+<script src="core/cursor.js?v=1"></script>
+<script src="core/update.js?v=1"></script>
+<script src="sim/state.js?v=1"></script>
+<script src="sim/building.js?v=1"></script>
+<script src="sim/lift.js?v=1"></script>
+<script src="sim/people.js?v=1"></script>
+<script src="sim/sensors.js?v=1"></script>
+<script src="sim/program.js?v=1"></script>
+<script src="sim/vm.js?v=1"></script>
+<script src="sim/run.js?v=1"></script>
+<script src="sim/stats.js?v=1"></script>
+<script src="sim/inspector.js?v=1"></script>
+<script src="progress.js?v=1"></script>
+<script src="art/people.js?v=1"></script>
+<script src="art/cabins.js?v=1"></script>
+<script src="art/interiors.js?v=1"></script>
+<script src="art/buildings.js?v=1"></script>
+<script src="render/view.js?v=1"></script>
+<script src="render/building.js?v=1"></script>
+<script src="ui/blockview.js?v=1"></script>
+<script src="ui/hud.js?v=1"></script>
+<script src="ui/slots.js?v=1"></script>
+<script src="ui/editor.js?v=1"></script>
+<script src="ui/palette.js?v=1"></script>
+<script src="ui/textview.js?v=1"></script>
+<script src="ui/hints.js?v=1"></script>
+<script src="ui/runbar.js?v=1"></script>
+<script src="ui/jokes.js?v=1"></script>
+<script src="ui/results.js?v=1"></script>
+<script src="ui/museum.js?v=1"></script>
+<script src="ui/screens.js?v=1"></script>
+<script src="ui/sounds.js?v=1"></script>
+<script src="ui/fireworks.js?v=1"></script>
+<script src="game.js?v=1"></script>
+</body>
+</html>

@@ -72,7 +72,12 @@
       <p>Turbaserat artilleri med maskar: bazookor, granater, flyganfall och lådor på en mark som sprängs i bitar — en mot en på en telefon, mot datorn eller en kampanj med tolv uppdrag.</p>
       <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Spela</b></a> · <a href="wiggle-wars/">Källkod</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/screenshot.png" alt="Skärmbild från Lift Logic"></a>
+      <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
+      <p>Var hissens hjärna: bygg dess program av block och se ett hus leva efter det — från mormors hus till en skola och ett hotell, 27 uppdrag med stjärnor, tips och skämt.</p>
+      <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Spela</b></a> · <a href="lift-logic/">Källkod</a></p>
+    </td>
   </tr>
 </table>
 
@@ -115,7 +120,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # specifikation och regler för hela repot
 ├── AGENTS.md                # instruktioner för AI-agenter (CLAUDE.md pekar hit)
-└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars
+└── <spel>/                  # en mapp per spel: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
     ├── SPEC.md              # spelets specifikation
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # koden, ordnad efter roll

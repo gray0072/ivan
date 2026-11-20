@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c5576"/>
+      <stop offset="1" stop-color="#1b2a3a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- the display: arrow up and a floor number -->
+  <rect x="176" y="58" width="160" height="62" rx="14" fill="#0d1620"/>
+  <path d="M214 104 238 72 262 104z" fill="#7CFC9A"/>
+  <rect x="282" y="74" width="14" height="30" rx="3" fill="#ffb547"/>
+  <!-- the cabin -->
+  <rect x="104" y="136" width="304" height="318" rx="26" fill="#8fa3b8"/>
+  <rect x="124" y="156" width="264" height="278" rx="14" fill="#2c3440"/>
+  <!-- the doors: two puzzle blocks -->
+  <path d="M134 166h116v104a26 26 0 0 0 0 52v102h-116z" fill="#3d7be0"/>
+  <path d="M262 166h116v258h-116v-102a26 26 0 0 1 0-52z" fill="#e0a800"/>
+  <circle cx="250" cy="296" r="26" fill="#3d7be0"/>
+</svg>

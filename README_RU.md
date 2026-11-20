@@ -72,7 +72,12 @@
       <p>Пошаговая артиллерия с червяками: базуки, гранаты, авиаудары и ящики на разрушаемой земле — один на один на одном телефоне, против компьютера или кампания из двенадцати миссий.</p>
       <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Играть</b></a> · <a href="wiggle-wars/">Исходники</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/screenshot.png" alt="Скриншот Lift Logic"></a>
+      <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
+      <p>Стань мозгом лифта: собери его программу из блоков и смотри, как по ней живёт дом, — от бабушкиного дома до школы и отеля, 27 заданий со звёздами, подсказками и шутками.</p>
+      <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Играть</b></a> · <a href="lift-logic/">Исходники</a></p>
+    </td>
   </tr>
 </table>
 
@@ -115,7 +120,7 @@ npx serve .        # или просто открой любой index.html в �
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # спецификация и правила всего репозитория
 ├── AGENTS.md                # инструкции для AI-агентов (CLAUDE.md ссылается сюда)
-└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars
+└── <игра>/                  # по папке на игру: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
     ├── SPEC.md              # спецификация этой игры
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # код, разложенный по ролям

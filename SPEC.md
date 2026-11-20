@@ -47,6 +47,10 @@ The dice game Yacht (Yahtzee, dice poker) by the rules and score sheet of a fami
 
 Turn-based artillery game in the genre of Worms (original simple graphics): two teams of worms on a destructible 2D land over the water, a dozen weapons and tools (bazooka, homing missile, grenades, shotgun, bat, dynamite, mines, air strike, drill, jetpack, teleport, plank), wind, parachuted crates, mines, oil barrels, sudden death with rising water; one against one hot seat on one phone or tablet, against a computer that aims with the game's own physics, or a twelve-mission campaign with three stars each; worms per team, health, weapons, map kind and theme (a low-gravity Moon among them) are set before a match; playable in English, Russian or Swedish. Full spec: [`wiggle-wars/SPEC.md`](wiggle-wars/SPEC.md).
 
+### lift-logic
+
+Programming puzzle game: the player is the brain of a lift and builds its program from Scratch-like blocks (own look, a tap-first editor for phones), then watches a cut-away building live by it — people press the hall and cabin buttons, ride, get impatient and take the stairs; the program only reads what a real lift senses. A deterministic simulation and a block VM (events, threads, the lift's plan); missions with three stars, hints in three steps, an Inspector with "Show me" replays, the Engineer's record, comic lines and a Lift Museum of checked facts; the first chapters are Grandma's House, Maple School and the Grand Sunrise Hotel (27 missions), more buildings are planned up to a space elevator; playable in English, Russian or Swedish. Full spec: [`lift-logic/SPEC.md`](lift-logic/SPEC.md).
+
 ## Project structure
 
 ```
@@ -177,6 +181,22 @@ Turn-based artillery game in the genre of Worms (original simple graphics): two 
 │   ├── art/                  # weapons (the weapons' pictures), flag-gb / flag-ru / flag-se.svg (the language switcher)
 │   ├── render/               # camera, terrainview (the land canvas, craters), backdrop (sky, parallax, water), render (worms, objects, shots, effects, aim)
 │   ├── ui/                   # screens, setup (the versus setup), hud, arsenal (the weapon panel), sounds, fireworks
+│   ├── README.md, README_RU.md, README_SV.md
+│   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
+│   ├── manifest.webmanifest  # PWA manifest
+│   └── screenshot.png
+├── lift-logic/
+│   ├── SPEC.md               # the game's own spec
+│   ├── index.html            # markup only, links versioned CSS/JS
+│   ├── styles.css
+│   ├── constants.js, game.js, progress.js # tuning, the flow (menu, buildings, mission card, editor, runs, results, pause, cheats), stars and unlocks
+│   ├── data/                 # blocks (the language), buildings, lifts, people, missions/ and solutions/ (per building), facts (Museum, concept cards), jokes, lang-ru / lang-sv
+│   ├── core/                 # i18n, utils, events, storage, audio (sounds and the lift music), cursor, update, icons
+│   ├── sim/                  # state, building (hall calls), lift (motion, doors, plan), people, sensors, program (blocks tree, text notation, Text view), vm (threads, events), run, stats (stars), inspector
+│   ├── art/                  # people, cabins, interiors, buildings (silhouettes, logo), flag-gb / flag-ru / flag-se.svg
+│   ├── render/               # view (camera, layout, taps), building (the cut-away building)
+│   ├── ui/                   # blockview, editor, palette, slots, runbar, hud, hints (and the guide), textview, results, jokes (and the newspaper), museum, screens, sounds, fireworks
+│   ├── tools/                # missions-check (runs every reference solution), texts-check (every text translated)
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest

@@ -2,7 +2,23 @@
 
 Developer/agent spec for the `lift-logic` project. Repo-wide conventions live in the root `SPEC.md` and `AGENTS.md`; this file only describes this game. Keep it in sync with the code.
 
-> **Status: agreed, no code yet** (see "Decisions"). Numbers are first guesses; the final ones come from `tools/missions-check.js` (see "Balancing").
+> **Status: first release — build sessions 1–3 done** (see "Build order" and "What is built"). Chapters 1–3 (Grandma's House, Maple School, Grand Sunrise Hotel, 27 missions) are playable end to end; the later buildings show on the map as under construction. Numbers come from `tools/missions-check.js` (see "Balancing").
+
+## What is built
+
+- **Done:** the simulation and the VM with every block of chapters 1–6 (lists and `for each` too; the palette shows a block from its chapter on); the tap-first editor on a phone (palette sheet, select / move / copy / wrap / delete, drag from the palette and inside the canvas, long press moves one block, slots with the number pad, dropdowns, conditions, "use a block", undo / redo, pinch and pan, copy / paste with the keyboard), the Text view; the building view with the HUD, the plan flags, monitors, floating words, person and cabin cards, the Lift's eyes; the run bar (run, pause, step, speeds, skip, resize); the start menu, the buildings map, the building screen, the mission card with Grandpa Gears' concept card and the new blocks, the pause menu; the results with stars, the Engineer's record and 🏅, the wait chart, the Inspector's notes with "Show me", the comic lines, the Museum card, the newspaper after an exam; hints 1–3 and the guided finger of the first missions; the Lift Museum (cards and concept cards); sounds and the lift music; the cheats; English, Russian and Swedish.
+- **Missions:** chapters 1–3 with reference solutions in `data/solutions/`, balanced by the checker (the reference gets ★★★ on Easy and Medium in every mission).
+- **Not yet (later sessions):** chapters 4–10 and the World Tour (the hospital and the office have their building data; their missions, emergencies in play, several lifts on screen side by side are the next session), own blocks (chapter 7), zones / express, double-deck cars, Endless, Daily challenge, Sandbox, sharing programs (`core/share.js`), Wardrobe, Achievements, the minimap of tall buildings, "Different day", saved named versions of a program, the start screen's demo lift.
+
+### Rules settled while building
+
+- A lift standing idle with its doors closed opens for a call at its own floor (or a cabin button for it), as real lifts do; that stop does not fire `when I arrive at floor` and does not count as a stop.
+- The arrow: set by the program for the stop; else an **empty lift answering a call of one direction shows that direction for the whole stop**; else the way to the next floor of the plan; none with an empty plan (then everyone gets on).
+- When the doors close, whoever was left behind presses again, and **a call still lit at that floor is announced again** (`when call button pressed` fires once more), so an event-driven program never loses a call it was told about while it could not take it.
+- A run ends when everyone is delivered or gone and the lifts stand still with the doors closed (a last `say` still runs), or `END_GRACE` s later when a program keeps a lift moving.
+- On Hard the energy limits of the stars don't get stricter (the engineer's energy is often the least possible); waits do.
+- Missions and solutions are written in a small text notation (`Prog.parse`, see `sim/program.js`): one block per line, two spaces of indent inside a C block, `( )` values and reporters, `< >` conditions, `[ ]` dropdowns and variables, `_` an empty slot, `#lock` a locked block.
+- Changes to the first mission list: Tiny Lift is The Forever Lift on four floors in at most 6 blocks; The Patrol takes everyone up to the gym; Up First, Then Down and No Zig-Zag judge rides the wrong way first; Suitcases judges stops of a full lift for nothing.
 
 ## Idea
 
@@ -409,7 +425,7 @@ A first pass is therefore ≈ 20–23 h for a ten-year-old with some ★★★ h
 | | Easy (default) | Medium | Hard |
 |---|---|---|---|
 | Patience | × 1.5 | × 1 | × 0.7 |
-| Star limits (wait, energy) | × 1.25 looser | × 1 | × 0.9 stricter |
+| Star limits (wait; energy only looser) | × 1.25 looser | × 1 | × 0.9 stricter (waits) |
 | Passengers in flows | × 0.8 | × 1 | × 1.2 |
 | Hint 2 / Hint 3 | after 1 / 2 runs that did not pass | after 2 / 3 | after 3 / 4 |
 | Inspector | names the block that helps | the idea | the moment only |
@@ -456,8 +472,9 @@ Each shows a banner and marks the run as cheated (no stars, records or achieveme
 
 ## Testing recipes
 
-- **Headless:** load `constants.js`, `data/*.js` (but `icons.js`), `data/missions/*.js`, `data/solutions/*.js`, `core/utils.js`, `core/events.js` and every `sim/` file into a `vm` context; `Run.start(missionId, program, difficulty)` and `Run.step()` in a loop until `run.over`; `run.stats` and `Stars.judge(run)` give the result. A whole mission takes well under a second. `tools/missions-check.js` does this for every mission.
-- **In the browser** (`tools/cdp.js`): `localStorage.clear(); I18N.set('en')`, `Screens.openMission('3-6')`, `Editor.load(Solutions['3-6'])`, `Run.go()`, `Run.speed(16)`.
+- **Headless:** load `constants.js`, `data/blocks.js`, `lifts.js`, `people.js`, `buildings.js`, `data/missions/missions.js`, `data/missions/*.js`, `data/solutions/*.js`, `core/utils.js`, `core/events.js` and every `sim/` file into a `vm` context; `simulate('3-6', Prog.parse(SOLUTIONS['3-6']), 'medium')` gives `{ run, stats, judged }` (or `Run.start(mission, program, difficulty)` and `Run.step()` in a loop until `run.over`, then `Stars.judge(run)`). A whole mission takes well under a second. `node lift-logic/tools/missions-check.js [ids] [--verbose]` does this for every mission and difficulty; run it after changing a mission, a solution or the sim.
+- **Texts:** `node lift-logic/tools/texts-check.js` lists every text the player sees (also those from data/ and index.html, which `tools/i18n-check.js` can't see) missing in `lang-ru.js` / `lang-sv.js`, translations that lost a `{param}` or a `%1` slot, and keys no longer used; `--json` prints them all.
+- **In the browser** (`tools/cdp.js`): `localStorage.clear(); Progress.load(); I18N.set('en')`, `Screens.openBrief(MISSION['3-6'])`, `document.getElementById('briefStart').click()`, `Editor.load(Prog.parse(SOLUTIONS['3-6']), MISSION['3-6'])`, `Runner.go()`, `Runner.cycleSpeed(16)`, `Runner.skip()`; `Progress.openAll()` opens everything.
 
 ## Files
 
@@ -474,19 +491,17 @@ lift-logic/
 │   ├── buildings.js    the buildings: floors, groups of lifts, interiors, client, colours
 │   ├── lifts.js        lift types: speed, acceleration, capacity, look
 │   ├── people.js       characters: names, looks, patience, places taken, lines
-│   ├── missions/       one file per building (grandma.js, school.js, hotel.js, …, tour.js): briefing, schedule, stars, hints, starting program, new blocks
-│   ├── solutions/      the reference solution of every mission (one file per building)
-│   ├── inspector.js    the Inspector's notes (patterns and texts)
+│   ├── missions/       missions.js (the list, addMissions) and one file per building (grandma.js, school.js, hotel.js, …, tour.js): briefing, schedule, stars, hints, starting program, new blocks
+│   ├── solutions/      the reference solution of every mission (one file per building), in the text notation
 │   ├── jokes.js        the comic lines of the results and the newspaper's headlines, by trait, moment and building
 │   ├── facts.js        Lift Museum cards and Grandpa Gears' concept cards, with sources
-│   ├── wardrobe.js     skins, faces, chimes, music and what opens them
-│   ├── achievements.js
+│   ├── wardrobe.js, achievements.js   (later)
 │   ├── icons.js        (tools/icons-build.js)
 │   └── lang-ru.js, lang-sv.js
 ├── core/
 │   ├── i18n.js, utils.js (seeded random, math), events.js (bus), storage.js
 │   ├── audio.js        Web Audio engine, sound recipes, the muzak loops
-│   ├── share.js        program ⇄ share code
+│   ├── share.js        program ⇄ share code (later)
 │   ├── cursor.js, icons.js, update.js
 ├── sim/                no drawing, no DOM, no sound — runs in Node
 │   ├── state.js        the run's shared state
@@ -494,11 +509,11 @@ lift-logic/
 │   ├── lift.js         motion, braking points, doors, plan, arrow, energy
 │   ├── people.js       schedule and flows, boarding, moods, giving up
 │   ├── sensors.js      what a lift can read
-│   ├── program.js      the program's structure: blocks tree, validate, count, clone, to text
+│   ├── program.js      the program's structure: blocks tree, count, clone, diff, the text notation (parse), the Text view
 │   ├── vm.js           threads, events, scheduler, executing each block
 │   ├── run.js          a run: start, step, fast-forward, replay to a time
 │   ├── stats.js        the numbers of a run and the stars
-│   └── inspector.js    the notes after a run
+│   └── inspector.js    the notes after a run (patterns and texts)
 ├── art/
 │   ├── interiors.js    each building's floors
 │   ├── people.js       the figures, faces, moods
@@ -508,24 +523,25 @@ lift-logic/
 ├── render/
 │   ├── view.js         camera, scroll, zoom, follow
 │   ├── building.js     floors, landings, shafts, cabins, plan flags, monitors, Lift's eyes
-│   └── minimap.js
+│   └── minimap.js      (later)
 ├── ui/
 │   ├── screens.js      start, buildings map, building screen, mission card, results, pause
 │   ├── editor.js       the scripts canvas: select, move, wrap, undo, insert point
 │   ├── blockview.js    drawing a block (DOM + SVG shapes) from its definition
 │   ├── palette.js      categories, the bottom sheet, drag from it
 │   ├── slots.js        number pad, dropdowns, text input
-│   ├── runbar.js       run, stop, step, speed, skip
+│   ├── runbar.js       run, stop, step, speed, skip, the split; Runner drives the run, Show me
 │   ├── hud.js          the chips over the building, the star targets, banners
-│   ├── hints.js        hints 1–3, the guided finger
+│   ├── hints.js        hints 1–3, the guided finger (Guide)
 │   ├── results.js      stars, chart, inspector notes, record
 │   ├── jokes.js        picks a run's comic lines; the building's newspaper
 │   ├── textview.js     the program as text
-│   ├── museum.js, wardrobe.js, achievements.js, sandbox.js
+│   ├── museum.js       the Lift Museum (wardrobe.js, achievements.js, sandbox.js later)
 │   ├── sounds.js       game events → sounds
 │   └── fireworks.js
 ├── tools/
-│   └── missions-check.js   runs every reference solution, checks the stars, proposes limits
+│   ├── missions-check.js   runs every reference solution, checks the stars, proposes limits
+│   └── texts-check.js      every text the player sees, checked against lang-ru / lang-sv
 ├── README.md / README_RU.md / README_SV.md
 ├── icon.svg / icon-maskable.svg
 ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
@@ -537,13 +553,13 @@ Prefix for storage and events: `liftLogic.`; manifest `short_name`: "Lift Logic"
 
 ## Build order (sessions)
 
-1. **Core loop:** `sim/` (building, lift, people, plan, sensors) + `vm.js` with the chapter 1–3 blocks, headless; the checker with the first 9 missions and their solutions.
-2. **Editor on a phone:** blocks drawn, palette sheet, select / move / wrap / delete, slots, undo, the text view; the building view with the HUD and the run bar.
-3. **Chapters 1–3 playable end to end:** mission card, hints, results with the Inspector, progress, the first Museum cards, sounds, the guided start. Play-test with a ten-year-old here before going on.
+1. ✓ **Core loop:** `sim/` (building, lift, people, plan, sensors) + `vm.js` with the chapter 1–3 blocks, headless; the checker with the first 9 missions and their solutions.
+2. ✓ **Editor on a phone:** blocks drawn, palette sheet, select / move / wrap / delete, slots, undo, the text view; the building view with the HUD and the run bar.
+3. ✓ **Chapters 1–3 playable end to end:** mission card, hints, results with the Inspector, progress, the first Museum cards, sounds, the guided start. Play-test with a ten-year-old here before going on.
 4. Chapters 4–6 (priorities, several lifts, lists), the Lift's eyes, the minimap.
 5. Chapters 7–8 (own blocks, zones, express, tall buildings).
 6. Chapters 9–10, World Tour, Endless, Daily, Sandbox, sharing, Wardrobe, achievements.
-7. Translations, icons, README ×3, screenshot, gallery card, root SPEC / READMEs.
+7. ✓ Translations, icons, README ×3, screenshot, gallery card, root SPEC / READMEs (done with session 3, kept up to date with every later one).
 
 ## Decisions
 

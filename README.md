@@ -72,7 +72,12 @@
       <p>Turn-based artillery with worms: bazookas, grenades, air strikes and crates on a land that blows apart — one against one on one phone, against the computer, or a twelve-mission campaign.</p>
       <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Play</b></a> · <a href="wiggle-wars/">Source</a></p>
     </td>
-    <td width="50%" valign="top"></td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/screenshot.png" alt="Lift Logic screenshot"></a>
+      <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
+      <p>Be the brain of a lift: build its program from blocks and watch a building live by it — from Grandma's house to a school and a hotel, 27 missions with stars, hints and jokes.</p>
+      <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Play</b></a> · <a href="lift-logic/">Source</a></p>
+    </td>
   </tr>
 </table>
 
@@ -115,7 +120,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # repo-wide spec and conventions
 ├── AGENTS.md                # instructions for AI coding agents (CLAUDE.md points here)
-└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars
+└── <game>/                  # one folder per game: world-aviation, fish-frenzy, fun-training, flight-simulator, city-builder, yacht, wiggle-wars, lift-logic
     ├── SPEC.md              # spec of this game
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # the code, by role
