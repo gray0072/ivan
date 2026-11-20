@@ -93,7 +93,7 @@ const Flights = {
   },
   // the fees of a departure, paid at pushback
   pay(f) {
-    const fees = Finance.departureFees(f.type, f.booked - f.missed, f.intl);
+    const fees = Finance.departureFees(f.type, f.booked - f.missed, f.intl, f.al);
     Finance.book('landing', fees.landing);
     Finance.book('passenger', fees.pax);
     if (f.inBlock !== null && f.offBlock - f.inBlock > STAND_FREE_MIN) Finance.book('stands', (f.offBlock - f.inBlock - STAND_FREE_MIN) / 60 * STAND_FEE_HOUR);

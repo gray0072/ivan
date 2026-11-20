@@ -35,9 +35,16 @@ const Missions = {
     // a campaign that comes in below zero gets the owner's loan, so it never gets stuck
     if (S.money < 0) { const gap = -S.money; S.loans += gap; Finance.book('owner loan', gap); S.debtMonths = 0; if (meanwhile) meanwhile.ownerLoan = gap; }
     S.mission = { id, stage: -1, status: 'running', results: [], hands: [], st: null, total: Goals.newStats(),
-      money0: S.money, choices: {}, grants: m.grants || [], meanwhile, acc: 0, stars: 0, medal: false, judged: null,
+      money0: S.money, choices: {}, grants: m.grants || [], partners: m.partners || [], meanwhile, acc: 0, stars: 0, medal: false, judged: null,
       projects: ((m.setup || {}).projects || []).slice() };
     if (def) S.mission.def = def;
+    // a Challenge Day starts from the owner's airport of its year: no "Meanwhile…" of the decades before
+    if (m.challenge) S.mission.meanwhile = null;
+    // session 4: a concession's partner builds the train with its own money
+    if (S.airport.trainDeal === 'concession' && Construction.state('arlandaExpress') && !Construction.done('arlandaExpress')) {
+      S.mission.partners.push('arlandaExpress');
+      Construction.state('arlandaExpress').finance = 'partner';
+    }
     this.startWorld = JSON.stringify(S);
     this.beginStage(0);
   },
@@ -45,14 +52,34 @@ const Missions = {
   // and desks, the airlines' planned routes, whether the airport is open to traffic
   setup(u) {
     if (u.budget) Finance.book('owner', u.budget * diff().money);
+    // session 4: the owner tops the money up to this (a mission opened without the campaign, after a cheat's jump)
+    if (u.minMoney && S.money < u.minMoney * diff().money) Finance.book('owner', u.minMoney * diff().money - S.money);
     // the room the owner gives for new loans, on top of what is owed already
     if (u.loanLimit !== undefined) S.loanLimit = S.loans + u.loanLimit * diff().money;
     if (u.open !== undefined) S.airport.open = u.open;
     for (const p of u.projects || []) Construction.open(p);
     for (const kind of Object.keys(u.items || {})) while (Airport.count(kind) < u.items[kind]) Airport.addItem(kind);
     if (u.desks) S.airport.desks = Math.max(S.airport.desks, u.desks);
-    for (const code of Object.keys(u.airlines || {})) Meters.airline(code).routes = u.airlines[code].map((r) => Object.assign({}, r));
+    // session 4: from chapter 4 (openSkies) the routes the player won stay, and the flights moved to rivals stay away
+    if (u.openSkies) S.airport.openSkies = true;
+    for (const code of Object.keys(u.airlines || {})) {
+      const al = Meters.airline(code), own = S.airport.openSkies ? (al.routes || []).filter((r) => r.own) : [];
+      al.routes = u.airlines[code].map((r) => Object.assign({}, r)).concat(own);
+      if (S.airport.openSkies) Airlines.applyCut(code);
+    }
+    // the real endings: an airline after its last year at Arlanda flies no more (a merger, a bankruptcy)
+    if (S.airport.openSkies) {
+      const y = Calendar.year();
+      for (const code of Object.keys(S.airlines)) { const yy = (AIRLINES[code] || {}).years; if (yy && yy[1] && yy[1] < y && (S.airlines[code].routes || []).length) { S.airlines[code].routes = []; logEvent('airlineEnded', { al: code }); } }
+    }
+    for (const code of Object.keys(u.terms || {})) Meters.airline(code).term = u.terms[code];
     Meters.updateAirlines();
+    if (u.units && !S.airport.units) S.airport.units = [];
+    Terminal.ensure();
+    if (u.lanes) S.airport.lanes = Math.max(S.airport.lanes || 0, u.lanes);
+    if (u.rivals) S.airport.rivals = Object.assign({}, u.rivals);
+    if (u.trainDeal && !S.airport.trainDeal) S.airport.trainDeal = u.trainDeal;
+    if (u.brands) for (const b of u.brands) if (!Terminal.units(b[0]).some((x) => x.brand === b[1])) { const free = Terminal.units(b[0]).find((x) => !x.brand && Terminal.fits(x, b[1])); if (free) { free.brand = b[1]; free.since = S.day; free.price = UNIT_FIT[free.size]; } }
     // session 3: the domains the mission opens (at least at a level: the owner's arrangement), the levels it
     // lets the Office buy, IT people
     for (const d of u.opens || []) if (S.domains[d] === undefined) S.domains[d] = 0;
@@ -148,4 +175,4 @@ const Missions = {
 };
 
 // the kinds of log entries the "Meanwhile…" card tells
-const MEANWHILE_NEWS = ['settled', 'strikeNotice', 'strikeOver', 'poached', 'retired', 'raiseAsk', 'teamReady', 'systemLive'];
+const MEANWHILE_NEWS = ['settled', 'strikeNotice', 'strikeOver', 'poached', 'retired', 'raiseAsk', 'teamReady', 'systemLive', 'routeCut', 'incentiveEnd'];

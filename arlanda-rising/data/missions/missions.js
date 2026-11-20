@@ -28,6 +28,11 @@
 // stage: sick ({ dept: share } more away), events strike, fail, power, sick, emergency; to a flight series: when
 // ([decision, options…]: flown only after that choice) and waiver; `requires` may name one optional stage
 // ("apron2.bigStand").
+// Session 4 adds to setup: minMoney (the owner tops the money up to it), openSkies, units, lanes, rivals ({ pull, months }), terms ({ code: terminal }), brands
+// ([terminal, brand] the owner has let), trainDeal; to a mission: partners (projects a partner may build); to an option:
+// brand ({ term, id }), court ({ code, share }), incentive ({ code, share }), term ({ code, term }), train ('own' |
+// 'concession'); to an ops stage's events: lanesShut ({ n }: lanes closed for the stage) and `unless` (a flag that
+// prevents the event).
 // Each mission's minutes at ▶ are measured by tools/missions-check.js.
 
 const CHAPTERS = [

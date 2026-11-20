@@ -65,7 +65,9 @@ const Plan = {
     for (const a of [o.airline, o.airline2]) {
       if (!a) continue;
       const al = Meters.airline(a.code);
-      al.routes = (al.routes || []).concat(a.routes);
+      // from chapter 4 the routes won in a deal are the player's own: they stay from mission to mission
+      al.routes = (al.routes || []).concat(S.airport.openSkies ? a.routes.map((r) => Object.assign({ own: true }, r)) : a.routes);
+      if (S.airport.openSkies) al.cut = 0;
       if (a.mood !== undefined) al.mood = a.mood;
       Meters.updateAirlines();
     }
@@ -85,5 +87,16 @@ const Plan = {
     if (o.project) { Construction.open(o.project); if (S.mission.projects.indexOf(o.project) < 0) S.mission.projects.push(o.project); }
     if (o.unlock) for (const d of Object.keys(o.unlock)) Missions.unlock(d, o.unlock[d]);
     if (o.routesOff) { const al = S.airlines[o.routesOff]; if (al) { al.routes = []; Meters.updateAirlines(); } }
+    // session 4: a brand in a terminal, a route incentive (to court a new airline, or for one flying), a terminal for an
+    // airline, the train's deal
+    if (o.brand) Terminal.placeAny(o.brand.term, o.brand.id);
+    if (o.court) Airlines.court(o.court.code, o.court.share);
+    if (o.incentive) Airlines.incentive(o.incentive.code, o.incentive.share);
+    if (o.term) Meters.airline(o.term.code).term = o.term.term;
+    if (o.train) {
+      S.airport.trainDeal = o.train;
+      if (o.train === 'concession' && S.mission) { S.mission.partners = (S.mission.partners || []).concat(['arlandaExpress']); const p = Construction.state('arlandaExpress'); if (p) p.finance = 'partner'; }
+    }
+    if (o.rivalPull !== undefined && S.airport.rivals) S.airport.rivals.pull = o.rivalPull;
   }
 };

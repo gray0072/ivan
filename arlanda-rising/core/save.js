@@ -62,7 +62,9 @@ const Save = {
     if (mis && mis === rm && rm !== lm && !mis.cleared) mis = Object.assign({}, mis, { from: 'cloud' });
     // Free Play: a newer one wins, then the copy saved last
     const fp = this.later(Store.json(KEYS.freeplay, null), remote.freeplay || null, 'startedAt');
-    const ch = Store.json(KEYS.challenges, null) || remote.challenges || null;
+    // the Challenge Days' bests: the larger of each
+    const lch = Store.json(KEYS.challenges, null), rch = remote.challenges || null;
+    const ch = lch && rch ? ChallengeSave.merge(lch, rch) : lch || rch;
     // the replays' snapshots: those of the campaign that won; otherwise both, this device's first
     let snaps = this.snaps();
     if (remoteSnaps && typeof remoteSnaps === 'object') {

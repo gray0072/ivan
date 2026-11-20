@@ -79,6 +79,7 @@ const Results = (() => {
     if (nx) html += '<p class="label">' + Text.esc(tr('Next: {name} · ~{n} min', { name: tr(nx.name), n: Text.minutes(nx) })) + '</p>';
     else if (pass && !nx) html += '<p class="fine">' + Text.esc(tr('That was the last mission of chapter {n}. {next} comes in a later version of the game.', { n: m.chapter, next: tr((CHAPTERS[m.chapter] || {}).name || '') })) + '</p>';
     if (pass && m.id === FREE_OPENS && !info.replayed) html += '<p class="fine">🛫 ' + Text.esc(tr('Free Play is open: an endless airport, from the start screen.')) + '</p>';
+    if (pass && CHALLENGES.some((c) => c.opens === m.id)) html += '<p class="fine">🏆 ' + Text.esc(tr('A Challenge Day is open: a longer day with a score, from the start screen.')) + '</p>';
     p.innerHTML = html;
     let d = S.difficulty;
     p.appendChild(Screens.diffPicker(d, (x) => { d = x; }));

@@ -193,3 +193,36 @@ const ANNOUNCE_LEAD = 2;           // minutes past its departure time a late fli
 const ANNOUNCE_OK = 6;             // minutes the announcement may take before the passengers count it as none
 const ANNOUNCE_MOOD = 14;          // Passengers points lost for a late flight nobody told them about
 const BUS_PARKING = 0.3;           // share of the car parks' takings the airport coaches take away
+
+// ---------- the terminal's flow, brands and ground transport (session 4, sim/terminal.js) ----------
+const LANE_RATE = 2.5;             // passengers through one security lane per game minute
+const LANE_COST_HOUR = 500;        // SEK per hour per security lane (the screeners), in ops time
+const LANE_MONTH = 60000;          // SEK a month per security lane, in summary
+const UNIT_FIT = { kiosk: 0.6e6, unit: 2.5e6, big: 9e6, desk: 0.3e6 }; // SEK to fit out a unit for a brand
+const BRAND_SAME_KIND = 0.6;       // × the spend of each further brand of the same kind in one terminal
+const BRAND_PAX_MAX = 6;           // Passengers points a terminal's brands give at most
+const FAMILY_MONTHS = [6, 7, 8, 12]; // months when families fly: the kids' brands draw more
+const TRAIN_SHARE = 0.22;          // share of the departing passengers who come by train once it runs
+const TRAIN_TICKET = 45;           // SEK per train passenger the airport gets when it owns the line
+const TRAIN_STATION_FEE = 6;       // … with a concession: the station fee
+const TRAIN_PARKING = 0.35;        // share of the car parks' takings the train takes away
+const TRAIN_PAX = 5;               // Passengers points the train gives
+const TRAIN_NEIGHBOURS = 4;        // + the Neighbours' base once the trains run (fewer cars)
+const TRAIN_FIRST_DAY = '1999-11-24';   // the first Arlanda Express train (sv.wikipedia Arlandabanan; en.wikipedia says the 25th)
+
+// ---------- airlines, incentives, rivals and offers (session 4, sim/airlines.js, sim/offers.js) ----------
+const INCENTIVE_MONTHS = 24;       // months a route incentive's discount lasts
+const INCENTIVE_MOOD = 20;         // airline mood points for a whole discount (× the share)
+const LEAVE_MOOD = 45;             // an airline under this mood may move flights to a rival airport
+const LEAVE_CHANCE = 0.3;          // chance a month that it does (× the difficulty's patience)
+const RIVAL_PULL = 3;              // mood points a month a rival takes off the home and network airlines (× its pull)
+const RIVAL_FLOOR = 55;            // … but never below this: only bad service drives an airline lower
+const RIVAL_LATER = 0.25;          // × the pull once the rival's news is old (after the mission's `months`)
+const NPV_RATE = 0.06;             // a year: the discount rate of the net present value
+const NPV_YEARS = 20;              // years an investment is counted over
+const TRAFFIC_DAYS = 30;           // days of traffic kept for the payback estimates
+
+// ---------- Challenge Days (session 4, sim/challenges.js) ----------
+// points of a Challenge Day: per departure on time and late, × the Passengers meter at the end, per flight lost, close
+// call, delay not announced and bag lost, per minute of delay the airport caused, per departure × its average wait
+const CHALLENGE_POINTS = { onTime: 10, late: 3, paxMeter: 10, lost: -120, closeCall: -200, unannounced: -15, lostBag: -10, adelay: -2, wait: -3 };

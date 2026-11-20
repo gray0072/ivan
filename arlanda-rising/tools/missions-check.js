@@ -25,12 +25,13 @@ const load = (f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'),
 const chapterFiles = (dir) => fs.readdirSync(path.join(root, dir)).filter((f) => /^ch\d+\.js$/.test(f))
   .sort((a, b) => parseInt(a.slice(2), 10) - parseInt(b.slice(2), 10)).map((f) => dir + '/' + f);
 ['constants.js', 'data/aircraft.js', 'data/airlines.js', 'data/buildings.js', 'data/masterplan.js', 'data/domains.js', 'data/people.js',
+  'data/terminals.js', 'data/brands.js',
   'data/missions/missions.js', ...chapterFiles('data/missions'), 'data/strategies/strategies.js', ...chapterFiles('data/strategies'),
   'core/utils.js', 'core/events.js', 'core/storage.js',
-  'sim/state.js', 'sim/calendar.js', 'sim/weather.js', 'sim/finance.js', 'sim/meters.js', 'sim/people.js', 'sim/systems.js', 'sim/airport.js', 'sim/stands.js',
+  'sim/state.js', 'sim/calendar.js', 'sim/weather.js', 'sim/finance.js', 'sim/meters.js', 'sim/terminal.js', 'sim/airlines.js', 'sim/people.js', 'sim/systems.js', 'sim/airport.js', 'sim/stands.js',
   'sim/schedule.js', 'sim/runways.js', 'sim/passengers.js', 'sim/turnaround.js', 'sim/flights.js', 'sim/tasks.js',
   'sim/construction.js', 'sim/summary.js', 'sim/plan.js', 'sim/ops.js', 'sim/goals.js', 'sim/missions.js', 'sim/actions.js',
-  'sim/sim.js', 'sim/strategy.js', 'sim/cheats.js'].forEach(load);
+  'sim/sim.js', 'sim/strategy.js', 'sim/cheats.js', 'sim/offers.js', 'sim/invest.js', 'data/challenges.js', 'sim/challenges.js'].forEach(load);
 
 const args = process.argv.slice(2);
 const verbose = args.includes('--verbose');
@@ -39,8 +40,8 @@ const only = args.filter((a) => !a.startsWith('--'));
 const out = vm.runInContext(`(() => {
   // plays a mission from a world with a strategy; cutAt: [steps…] after which the game is saved, thrown away
   // and resumed from the save (the autosave's test)
-  function play(id, d, world, strat, cutAt) {
-    Missions.start(id, d, world);
+  function play(id, d, world, strat, cutAt, def) {
+    Missions.start(id, d, world, def);
     let r = Strategy.runner(strat), steps = 0, stageSteps = 0, cuts = 0;
     const stageMin = [];
     for (;;) {
@@ -75,7 +76,8 @@ const out = vm.runInContext(`(() => {
       delay: tot.dep ? +(tot.delaySum / tot.dep).toFixed(1) : null, wait: tot.paxServed ? +(tot.paxWaitSum / tot.paxServed).toFixed(1) : null,
       lost: tot.diverted + tot.cancelled, tasks: tot.tasksPlayer + '/' + tot.tasksDuty, closeCalls: tot.closeCalls,
       meters: Object.keys(S.meters).map((k) => k[0].toUpperCase() + Math.round(S.meters[k])).join(' '),
-      world: m.status === 'done' ? Missions.world() : null
+      world: m.status === 'done' ? Missions.world() : null,
+      score: CHALLENGE[id] ? Challenges.score(tot) : null
     };
   }
   const only = ${JSON.stringify(only)};
@@ -133,6 +135,28 @@ const out = vm.runInContext(`(() => {
     if (resumed.state !== md.state) r.problems.push('a resumed mission ends differently (' + resumed.cuts + ' resumes)');
     for (const d of DIFFICULTY_ORDER) delete r.diffs[d].state;
   }
+  // the Challenge Days: each from its own airport, with its reference strategy
+  for (const c of CHALLENGES) {
+    if (only.length && !only.includes(c.id)) continue;
+    const r = { id: c.id, name: c.name, problems: [], warnings: [], diffs: {}, challenge: true };
+    report.push(r);
+    if (!STRATEGIES[c.id]) { r.problems.push('no reference strategy'); continue; }
+    for (const d of DIFFICULTY_ORDER) {
+      const res = play(c.id, d, null, STRATEGIES[c.id], null, Challenges.def(c.id));
+      r.diffs[d] = res;
+      if (res.status !== 'done') r.problems.push(d + ': the reference fails' + (res.failedStage !== null ? ' stage ' + (res.failedStage + 1) + ' (' + res.failed.join(', ') + ')' : ' (score ' + res.score + ')'));
+      else if (d !== 'hard' && res.stars < 3) r.problems.push(d + ': the reference gets ' + res.stars + ' stars (score ' + res.score + ')');
+    }
+    const idle = play(c.id, 'medium', null, {}, null, Challenges.def(c.id));
+    r.idle = idle.status === 'done' ? idle.stars : 0;
+    r.idleWhy = 'score ' + idle.score;
+    if (idle.stars >= 3) r.problems.push('doing nothing gets ★★★ (' + idle.score + ')');
+    const cut = c.stages.map((s, k) => 7 + ((k * 37 + 11) % 50));
+    const resumed = play(c.id, 'medium', null, STRATEGIES[c.id], cut, Challenges.def(c.id));
+    r.resumes = resumed.cuts;
+    if (resumed.state !== r.diffs.medium.state) r.problems.push('a resumed challenge ends differently');
+    for (const d of DIFFICULTY_ORDER) { delete r.diffs[d].state; delete r.diffs[d].world; }
+  }
   return JSON.stringify(report);
 })()`, ctx);
 
@@ -140,7 +164,7 @@ let bad = 0;
 for (const r of JSON.parse(out)) {
   const m = r.diffs.medium;
   const stars = ['easy', 'medium', 'hard'].map((d) => (r.diffs[d] ? r.diffs[d].stars : '-')).join('/');
-  console.log(`${r.id.padEnd(5)} ${r.name.padEnd(24)} ★ ${stars}` + (m ? `  ${m.minutes} min [${m.stageMin.join(' ')}]  ${m.money} MSEK  on time ${m.onTime === null ? '-' : m.onTime + '%'}` +
+  console.log(`${r.id.padEnd(5)} ${r.name.padEnd(24)} ★ ${stars}` + (r.challenge ? '  score ' + ['easy', 'medium', 'hard'].map((d) => r.diffs[d] ? r.diffs[d].score : '-').join('/') + ' idle ' + r.idleWhy : '') + (m ? `  ${m.minutes} min [${m.stageMin.join(' ')}]  ${m.money} MSEK  on time ${m.onTime === null ? '-' : m.onTime + '%'}` +
     ` delay ${m.delay === null ? '-' : m.delay} wait ${m.wait === null ? '-' : m.wait} lost ${m.lost} tasks ${m.tasks} cc ${m.closeCalls}  ${m.meters}` +
     `  idle ★${r.idle}${r.prev !== undefined ? ' prev ★' + r.prev : ''}  resumed ×${r.resumes}` : ''));
   if (verbose && m) {

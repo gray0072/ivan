@@ -346,3 +346,25 @@ table.ops .btn small, .ocard .btn small { opacity: 0.75; font-size: 11px; }
 .account .cloudChoice { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; }
 .account .cloudNotice { color: #f0c36a; }
 .account .btn.small { padding: 6px 12px; font-size: 13px; }
+
+/* ---------- session 4: the Terminal view, Finance, Airlines, the Challenge Days ---------- */
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+#termCanvas, #cashChart { width: 100%; border-radius: 10px; touch-action: manipulation; }
+#termCanvas { cursor: pointer; }
+#termInfo { margin: 6px 0; }
+.brandList { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; margin-top: 6px; }
+.brandOpt { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; text-align: left; padding: 6px 8px; border-radius: 10px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.06); cursor: pointer; }
+.brandOpt:hover, .brandOpt:focus { border-color: var(--accent); }
+.brandOpt:disabled { cursor: default; opacity: 0.75; }
+.brandOpt small { color: #c8d4df; font-size: 11.5px; }
+img.brandImg { width: 128px; height: 32px; vertical-align: middle; }
+.ocard h3 img.brandImg { width: 96px; height: 24px; }
+img.emb { width: 26px; height: 26px; border-radius: 6px; vertical-align: middle; }
+table.inv td small { display: block; }
+table.books tr.sum td { border-top: 1px solid var(--line); font-weight: 700; padding-top: 4px; }
+.btn.details { margin: 6px 0; }
+.score { text-align: center; font-size: 26px; font-weight: 700; margin: 0 0 6px; color: var(--accent); }
+table.parts { max-width: 420px; margin: 6px auto; }
+@media (max-width: 640px) { table.inv th:nth-child(2), table.inv td:nth-child(2) { display: none; } }
+.cvWrap { width: 100%; }

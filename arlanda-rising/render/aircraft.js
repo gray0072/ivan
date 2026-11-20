@@ -18,7 +18,16 @@ const AIRCRAFT_SHAPE = {
   B747: { sweep: 37, engines: [0.21, 0.4], fin: 0.17, fus: 0.045 },
   DC10: { sweep: 35, engines: [0.3], fin: 0.17, fus: 0.05 },
   F28: { sweep: 16, rear: true, fin: 0.2, fus: 0.05 },
-  MD81: { sweep: 24, rear: true, fin: 0.18, fus: 0.035 }
+  MD81: { sweep: 24, rear: true, fin: 0.18, fus: 0.035 },
+  // session 4
+  B737: { sweep: 25, engines: [0.17], fin: 0.2, fus: 0.045 },
+  B767: { sweep: 31, engines: [0.24], fin: 0.18, fus: 0.05 },
+  MD87: { sweep: 24, rear: true, fin: 0.2, fus: 0.037 },
+  F100: { sweep: 17, rear: true, fin: 0.2, fus: 0.045 },
+  F50: { sweep: 2, engines: [0.2], props: true, fin: 0.21, fus: 0.06 },
+  BA46: { sweep: 15, engines: [0.13, 0.26], fin: 0.24, fus: 0.06 },
+  A320: { sweep: 25, engines: [0.2], fin: 0.2, fus: 0.045 },
+  B757: { sweep: 25, engines: [0.19], fin: 0.18, fus: 0.04 }
 };
 
 const AircraftArt = (() => {

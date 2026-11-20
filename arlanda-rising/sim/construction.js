@@ -58,12 +58,16 @@ const Construction = {
   },
   finance(id, how) {
     const p = this.state(id);
-    if (!p || ['cash', 'loan', 'grant'].indexOf(how) < 0) return false;
+    if (!p || ['cash', 'loan', 'grant', 'partner'].indexOf(how) < 0) return false;
     if (how === 'grant' && !(S.mission && S.mission.grants && S.mission.grants.indexOf(id) >= 0)) return false;
+    // a partner builds it with its own money (a concession: the train's ticket income is the partner's)
+    if (how === 'partner' && !(S.mission && (S.mission.partners || []).indexOf(id) >= 0)) return false;
+    if (p.finance === 'partner' && how !== 'partner') return false;
     p.finance = how;
     return true;
   },
   pay(p, sum) {
+    if (p.finance === 'partner') return;
     p.spent += sum;
     if (S.mission && S.mission.st) S.mission.st.built += sum;
     if (p.finance === 'loan') { S.loans += sum; return; }

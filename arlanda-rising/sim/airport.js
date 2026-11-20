@@ -73,6 +73,16 @@ const Airport = {
       case 'domTerminal': for (const s of p.stands) this.addStand(s); this.addItem('domTerminal', { price }); a.desks += p.desks || 8; break;
       case 'computerRoom': this.addItem('computerRoom', { price }); break;
       case 'backupPower': this.addItem('generator'); break;
+      // session 4
+      case 'terminal2': for (const s of p.stands) this.addStand(s); this.addItem('terminal2', { price }); a.desks += p.desks || 10; Terminal.ensure(); break;
+      case 'units': if (!a.units) a.units = []; Terminal.ensure(); break;
+      case 'arlandaExpress':
+        a.train = a.trainDeal || 'concession';
+        a.trainFrom = Calendar.parse(TRAIN_FIRST_DAY);
+        a.neighboursBase = (a.neighboursBase || 72) + TRAIN_NEIGHBOURS;
+        this.addItem('railStation', { price });
+        break;
+      case 'sorterHall': this.addItem('sorterHall', { price }); break;
       default: throw new Error('unknown effect ' + effect);
     }
     logEvent('built', { what: effect, project });
@@ -91,6 +101,7 @@ const Airport = {
   finishBuy(kind) {
     if (kind === 'stand') this.addStand({ name: String(S.airport.stands.length + 1), code: 'C', contact: false, dist: 4 });
     else if (kind === 'desk') S.airport.desks++;
+    else if (kind === 'lane') Terminal.addLane();
     this.addItem(kind);
     logEvent('bought', { kind });
   },
@@ -103,6 +114,7 @@ const Airport = {
       upkeep += (it.price || 0) * UPKEEP_YEAR / 12;
     }
     // the teams (sim/people.js: their wage levels, IT, the managers, the temps) and the systems' licences
-    return { wages: jobs * STAFF_MONTH + People.wages(), upkeep, systems: Systems.monthly(), interest: S.loans * LOAN_RATE / 12 };
+    return { wages: jobs * STAFF_MONTH + People.wages(), upkeep, systems: Systems.monthly(), interest: S.loans * LOAN_RATE / 12,
+      security: Terminal.lanes() * LANE_MONTH };
   }
 };

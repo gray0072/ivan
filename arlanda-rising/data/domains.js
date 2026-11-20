@@ -10,6 +10,7 @@
 //            spare parts), delay (game minutes before a task is done), right (share of good choices),
 //            from (first year); a system (level 2) also: it (IT jobs it needs), mtbf (game hours between
 //            failures on average), fix (game minutes a failure takes to mend), days (to install in plan time)
+// Level 3 (integrated) comes with chapter 4 for the bags only: a system that fails falls to the level below it.
 // Chapter 1 is worked by hand only; the people level comes with chapter 2, the first machines and systems with
 // chapters 2 and 3. A domain is part of the game once a mission opens it (S.domains has its key), so the
 // baggage and information domains cost nothing in summary before their chapters.
@@ -41,7 +42,10 @@ const DOMAINS = {
     { name: 'By hand' },
     { name: 'Baggage handlers', staff: 8, price: 0, month: 0, delay: 1.5, right: 0.92, from: 1963 },
     { name: 'Conveyor belts', staff: 4, price: 30e6, month: 100000, delay: 0.5, right: 0.98, from: 1973,
-      it: 0, mtbf: 18, fix: 35, days: 25 }
+      it: 0, mtbf: 18, fix: 35, days: 25 },
+    // session 4: bar-code tags read by the sorter; it needs the sorting hall, and when it fails the belts take over
+    { name: 'Bar-code sorting system', staff: 2, price: 80e6, month: 250000, delay: 0.25, right: 0.995, from: 1990,
+      it: 3, mtbf: 40, fix: 45, days: 30 }
   ] },
   info: { name: 'Information', icon: '📢', tasks: ['announce'], levels: [
     { name: 'By hand' },

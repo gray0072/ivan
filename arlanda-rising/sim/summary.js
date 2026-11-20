@@ -10,8 +10,8 @@
 const Summary = {
   // the traffic of one day; returns its numbers
   day() {
-    const out = { flights: 0, pax: 0, income: 0 };
-    if (!S.airport.open || !S.airport.runways.length) return out;
+    const out = { flights: 0, pax: 0, income: 0, intl: 0, leisure: 0 };
+    if (!S.airport.open || !S.airport.runways.length) { this.record(out); return out; }
     const m = Calendar.date(S.day).m;
     const season = m >= 6 && m <= 8 ? 1.2 : (m === 12 || m <= 2) ? 0.9 : 1;
     // the share lost to the duty manager's work on the domains still done by hand
@@ -30,15 +30,34 @@ const Summary = {
       for (const r of al.routes || []) {
         if (r.months && r.months.indexOf(m) < 0) continue;
         const n = r.perDay * season, pax = AIRCRAFT[r.type].seats * (r.load || 0.7);
-        const fees = Finance.departureFees(r.type, pax, intl);
+        const fees = Finance.departureFees(r.type, pax, intl, code);
         const aero = n * (fees.landing + fees.pax) * keep;
         const shops = n * pax * (SHOP_SPEND * Airport.shopShare() * 0.7 + PARKING_PER_PAX * Airport.parkingShare()) * keep;
         Finance.book('fees', aero);
         Finance.book('shops', shops);
-        out.flights += n; out.pax += n * pax; out.income += aero + shops;
+        // session 4: the brands of its terminal, the train
+        let more = 0;
+        if (S.airport.units) {
+          const brands = n * pax * Terminal.spend(Terminal.of(code, intl), intl, Terminal.leisure(code), m) * 0.7 * keep;
+          Finance.book('shops', brands);
+          if (S.mission && S.mission.st) S.mission.st.brandsIn += brands;
+          more += brands;
+        }
+        const rail = n * pax * Terminal.trainIncome() * keep;
+        if (rail) { Finance.book('rail', rail); more += rail; }
+        out.flights += n; out.pax += n * pax; out.income += aero + shops + more;
+        if (intl) out.intl += n * pax;
+        if (Terminal.leisure(code)) out.leisure += n * pax;
       }
     }
+    this.record(out);
     return out;
+  },
+  // the last TRAFFIC_DAYS days of traffic, for the payback estimates (sim/invest.js)
+  record(out) {
+    const t = S.traffic = S.traffic || [];
+    t.push({ pax: Math.round(out.pax), intl: Math.round(out.intl), leisure: Math.round(out.leisure), flights: Math.round(out.flights * 10) / 10, income: Math.round(out.income) });
+    if (t.length > TRAFFIC_DAYS) t.splice(0, t.length - TRAFFIC_DAYS);
   },
   // the calendar jumps to `toDay`: every day in summary, the running costs, the months closed
   skip(toDay) {

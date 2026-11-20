@@ -43,6 +43,9 @@ const MissionCard = (() => {
       case 'raiseAsk': return tr('{name} asks for a raise.', { name: mg(e.id) });
       case 'teamReady': return tr('A new team works on {dom}.', { dom: Text.dom(e.dom) });
       case 'systemLive': return tr('{sys} is live.', { sys: Text.level(e.dom, S.domains[e.dom]) });
+      // session 4
+      case 'routeCut': return tr('{al} has moved a daily flight to {rival}.', { al: (AIRLINES[e.al] || {}).name || e.al, rival: tr(e.rival) });
+      case 'incentiveEnd': return tr('The route incentive of {al} has ended: it pays its full fees again.', { al: (AIRLINES[e.al] || {}).name || e.al });
     }
     return '';
   }
@@ -52,6 +55,8 @@ const MissionCard = (() => {
     const m = Missions.def(), st = Missions.stage(), i = S.mission.stage, p = $('stageIntro');
     let html = '<p class="chap">' + Text.esc(tr(m.name)) + ' · ' + Text.esc(tr('Stage {i} of {n}', { i: i + 1, n: m.stages.length })) + '</p>' +
       '<h1>' + (st.mode === 'ops' ? '🛬 ' : '🏗️ ') + Text.esc(tr(st.name)) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + ' · ' + Text.esc(Text.stageWhen(st)) + '</p>';
+    // a Challenge Day has no mission card: its briefing comes with its first stage
+    if (i === 0 && m.challenge && m.brief) html += '<div class="astrid"><div class="face">👵</div><div class="bubbles">' + m.brief.map((b) => '<p class="bubble">' + Text.esc(tr(b)) + '</p>').join('') + '</div></div>';
     const mw = S.mission.meanwhile;
     if (i === 0 && mw && mw.to - mw.from > 3) {
       const months = Math.max(1, Math.round((mw.to - mw.from) / 30.4));

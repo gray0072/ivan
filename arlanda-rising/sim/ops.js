@@ -19,7 +19,7 @@ const Ops = {
     S.ops = {
       from, to, weather: null, flights: [], tasks: [], later: [], queue: [],
       desksOpen: Math.min(S.airport.desks, stage.desks !== undefined ? stage.desks : 1),
-      trucks: new Array(Airport.fuelTrucks()).fill(0), convoy: 0, ploughQueue: [], dir: null,
+      trucks: new Array(Airport.fuelTrucks()).fill(0), convoy: 0, ploughQueue: [], dir: null, sec: [],
       events: (stage.events || []).map((e, i) => ({ i, at: clockMin(e.at), done: false })),
       down: {}, overtime: {}, absence: {}, strike: null
     };
@@ -55,6 +55,8 @@ const Ops = {
   },
   // a scripted event of the stage
   event(e) {
+    // a scripted event the player prevented (session 4: a flag set by a decision)
+    if (e.unless && S.flags[e.unless]) { logEvent('script', { what: 'prevented', text: null }); return; }
     if (e.do === 'closeStand') {
       const st = S.airport.stands.find((s) => s.name === e.stand);
       if (st) st.closed = true;
@@ -66,6 +68,7 @@ const Ops = {
       if (People.has(e.dept)) { S.ops.strike = e.dept; S.mission.st.struck = 1; logEvent('strikeNow', { dept: e.dept }); }
     } else if (e.do === 'fail') Systems.fail(e.dom, e.min);
     else if (e.do === 'power') Systems.powerCut(e.min);
+    else if (e.do === 'lanesShut') S.ops.lanesShut = e.n;
     else if (e.do === 'sick') { if (People.has(e.dept)) S.ops.absence[e.dept] = (S.ops.absence[e.dept] || 0) + e.share; }
     else if (e.do === 'emergency') {
       // the next aircraft to land declares an emergency: it goes first, and the fire service meets it

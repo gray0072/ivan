@@ -25,7 +25,11 @@ const Hints = (() => {
     { id: 'hire', when: () => S.plan && S.unlock && Object.keys(S.unlock).some((d) => (S.domains[d] || 0) === 0 && S.unlock[d] >= 1) && !(S.people && S.people.hiring.length), text: () => tr('You can hire a team in the panel. It needs two weeks before its first shift.') },
     { id: 'fire', when: () => S.ops && S.ops.flights.some((f) => !Flights.over(f) && !f.waiver && AIRCRAFT[f.type].cat > Airport.fireCat()), text: () => tr('An aircraft is coming that your fire service is too small for. It will be sent elsewhere.') },
     { id: 'bags', when: () => S.ops && S.ops.tasks.filter((k) => k.kind === 'bags').length >= 2, text: () => tr('Bags are waiting! Boarding cannot start before the carts have been.') },
-    { id: 'announce', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'announce'), text: () => tr('A flight is late. Tell its passengers — they wait at the gate without knowing why.') }
+    { id: 'announce', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'announce'), text: () => tr('A flight is late. Tell its passengers — they wait at the gate without knowing why.') },
+    // session 4
+    { id: 'security', when: () => S.ops && Terminal.lanes() && Passengers.secWait() > 10, text: () => tr('The security queue is {n} minutes. Every minute there is a minute less in the shops — a lane in the bar below helps.', { n: Math.round(Passengers.secWait()) }) },
+    { id: 'units', when: () => S.plan && S.airport.units && S.airport.units.some((u) => !u.brand && u.term !== 'kerb'), text: () => tr('Empty shop units earn nothing. Press T to choose real brands for them.') },
+    { id: 'leaving', when: () => S.airport.rivals && Object.keys(S.airlines).some((c) => S.airlines[c].mood < LEAVE_MOOD + 5 && Airlines.perDay(c) > 0), text: () => tr('An airline is unhappy and could move flights to a rival airport. Look in Airlines (A).') }
   ];
   function hasStartable() {
     for (const id of Object.keys(S.airport.projects)) for (const sid of Object.keys(S.airport.projects[id].stages)) if (!Construction.cannot(id, sid)) return true;

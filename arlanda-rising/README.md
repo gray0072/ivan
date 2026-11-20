@@ -12,11 +12,11 @@
 
 </div>
 
-A management game about running a real airport, **Stockholm Arlanda**, told through its real history. You are the director: in the pine forest north of Stockholm in 1958 you clear the site, then you build the control tower and the first terminal, pick a stand for every SAS Caravelle and DC-8, open check-in desks, fuel the jets, plough the snow on dark winter afternoons, light the runway and make the young airport pay. Then the jet age comes — the jumbo, runway 2 for the crosswinds, the international terminal of 1976, the domestic flights moving in from Bromma in 1983 — and the work grows too big for your hands: you hire teams and their managers, put in the first computers, and learn that machines break and unions strike.
+A management game about running a real airport, **Stockholm Arlanda**, told through its real history. You are the director: in the pine forest north of Stockholm in 1958 you clear the site, then you build the control tower and the first terminal, pick a stand for every SAS Caravelle and DC-8, open check-in desks, fuel the jets, plough the snow on dark winter afternoons, light the runway and make the young airport pay. Then the jet age comes — the jumbo, runway 2 for the crosswinds, the international terminal of 1976, the domestic flights moving in from Bromma in 1983 — and the work grows too big for your hands: you hire teams and their managers, put in the first computers, and learn that machines break and unions strike. In the 1990s the skies open: new airlines want slots, real shops and cafés want units in your terminals, Copenhagen wants your transfer passengers, and a train has to be dug in under the terminals.
 
 The airport is drawn in isometric view and lives in front of you: aircraft in their airline's colours land, taxi, turn round at their stands with stairs, catering, baggage carts and fuel trucks, and take off again; plough convoys sweep the runway with amber beacons; the sun follows the real latitude, so December afternoons are dark and summer nights are bright.
 
-Three chapters are ready — **The Forest Field** (1958–1963), **The Jet Age** (1965–1976) and **Everyone Comes to Arlanda** (1983–1989): 33 missions of about 4–9 minutes each (an exam about 10), split into stages and saved all the time, and **Free Play** after chapter 2. The next chapters — Arlanda Express, runway 3, the ash cloud, the pandemic and an Arlanda of 2040 that you design — come in later versions.
+Four chapters are ready — **The Forest Field** (1958–1963), **The Jet Age** (1965–1976), **Everyone Comes to Arlanda** (1983–1989) and **Open Skies** (1990–1999): 44 missions of about 2–9 minutes each (an exam about 10), split into stages and saved all the time, **Free Play** after chapter 2 and three **Challenge Days** after chapter 3. The next chapters — runway 3, the ash cloud, the pandemic and an Arlanda of 2040 that you design — come in later versions.
 
 Playable in English, Russian or Swedish: pick the language at the top of the start screen.
 
@@ -45,9 +45,19 @@ Open [index.html](index.html) in a browser. There is no build step and no server
 - New jobs on the airfield: **bags** (send the carts to every arrival — boarding waits for them), **announcements** (tell the passengers of a late flight), the **fire category** (an aircraft too big for your fire service is sent elsewhere), emergencies, fog with an instrument landing system, and crosswinds that close runway 1 while runway 2 stays open.
 - In the Office, **People** (P) shows every team's morale, skill, fatigue, absence and wages, the unions and the managers' candidates; the **Ops Center** (O) shows every domain's level, uptime, monthly cost and readiness, and puts in the next level or holds a drill.
 
-### Free Play
+### Shops, airlines and money (from chapter 4)
 
-After chapter 2 the start screen offers **Free Play**: an endless airport from an era the campaign has opened (1963, 1976, 1990). Every round is a month of business — two offers from airlines, shops, managers, unions and suppliers — and a busy peak flown from your airlines' own routes, with no stars and no frame.
+- **The Terminal view** (T) is a cut-away plan of each terminal: the kerb, the check-in queue, **security** with its lanes and queue, the airside walk with its **shop units**, and the gates. In an operations stage you watch your own passengers in the queues, with the wait over each one.
+- **Real brands** want the units — Pressbyrån, Max, McDonald's, O'Learys, Espresso House, Clas Ohlson, BRIO, FOREX and many more, each only from the year it existed in Sweden. Each pays rent and a share of what the passengers spend: more when they have time to spare airside, so a short security queue earns money twice. Some draw business travellers, some holidaymakers, the children's favourites families in summer and at Christmas. Choose them in the Office or in a build stage; each card shows what the brand earns and when its fit-out pays back.
+- **Airlines** (A) shows every airline's mood, flights, fees, on-time share and temper (Ryanair watches every krona; SAS wants its stands next to the terminal). A **route incentive** — a share of the fees off for two years — wins a new route if it is what the airline needs. From chapter 4 an unhappy airline can move flights to a rival airport (Copenhagen, Oslo, Bromma, Skavsta). Between missions the **Offers board** brings two offers at a time: an airline, a brand, a manager, a system.
+- **Finance** (F, or tap the money) shows the books by line, a chart of the money month by month and every investment with its **payback** worked out from your own traffic; under **Details**, the **net present value** and what-ifs before you buy.
+- **Arlanda Express:** build the line with your own money (and keep the tickets) or as a concession (free now, a small station fee) — the trains run from November 1999.
+
+### Free Play and Challenge Days
+
+After chapter 2 the start screen offers **Free Play**: an endless airport from an era the campaign has opened (1963, 1976, 1990, 2000). Every round is a month of business — two offers from airlines, shops, managers, unions and suppliers — and a busy peak flown from your airlines' own routes, with no stars and no frame.
+
+After chapter 3 come the **Challenge Days**: longer days of about twenty minutes with a score — points for every flight on time and for happy passengers, fewer for delays, queues and lost bags — and three stars: **Christmas Week, 1989**, **The Great Snow, 1987** and (after chapter 4) **Record Day, 1999**. They are saved at any moment, like a mission.
 
 ### Missions
 
@@ -57,6 +67,8 @@ After chapter 2 the start screen offers **Free Play**: an endless airport from a
 
 **Chapter 3, Everyone Comes to Arlanda:** Linjeflyg Moves In (October 1983) · Morning Peak · The Computer Room · Screens · Flu Season · Strike Notice · The Big Freeze · Planner or Computer? · Payback · Flygbussarna (1989) · *Exam: Domestic Rush*.
 
+**Chapter 4, Open Skies:** Terminal 2 (1990) · Deregulation (1992) · The Train Question · Duty Free · Building the Tunnel · Route Incentive (Braathens' Oslo route, 1996) · Bags by Machine · The Low-Fare Question · Hub Wars · Christmas Rush · *Exam: Millennium Night* (31 December 1999).
+
 ## Never lost
 
 A mission is saved every few seconds and the moment the page is hidden — a phone that locks, a time limit that closes the app. Open the game again and **Continue mission** goes on from that very moment, paused. A failed stage is retried, not the whole mission.
@@ -65,7 +77,7 @@ A mission is saved every few seconds and the moment the page is hidden — a pho
 
 **Phone and tablet:** the game goes fullscreen. Drag with one finger to move the map, pinch with two fingers to zoom. Tap a task, or drag it — or a landing aircraft — onto a stand. Hold a finger on an aircraft to see its card.
 
-**Keyboard and mouse:** click and drag; the wheel zooms, right drag or the arrow keys move the map. **Space** pause / play, **1–4** the speed, **N** skip to the next task, **Q** do the oldest task, **P** People, **O** the Ops Center, **Esc** the pause menu. In the menus Space or Enter presses the highlighted button.
+**Keyboard and mouse:** click and drag; the wheel zooms, right drag or the arrow keys move the map. **Space** pause / play, **1–4** the speed, **N** skip to the next task, **Q** do the oldest task, **T** the Terminal view, **A** Airlines, **F** Finance, **P** People, **O** the Ops Center, **Esc** the pause menu. In the menus Space or Enter presses the highlighted button.
 
 ## Difficulty
 
@@ -85,6 +97,6 @@ In the browser's menu choose **Add to Home screen** (or **Install app**): the ga
 
 ## Saved in the browser
 
-The campaign, the stars, the running mission, Free Play and the settings are kept in this browser.
+The campaign, the stars, the running mission, Free Play, the Challenge Days' best scores and the settings are kept in this browser.
 
-**Sync through Google (optional):** **Sign in with Google** on the start screen keeps the campaign, the stars, Free Play and even the mission you are in the middle of in the cloud, so you can play on the phone and go on at the computer — "Continue mission — saved on another device". Nothing is ever replaced: the two copies are merged (the stars from both, the campaign and the mission from the one saved last; a new campaign wins over an older one). A sync never runs in the middle of a stage. Without a network the game plays as usual and syncs once the network is back; if your cloud copy cannot be loaded, the start screen says so and offers **Try again** or **Play with the progress on this device**. Without signing in, nothing leaves the browser.
+**Sync through Google (optional):** **Sign in with Google** on the start screen keeps the campaign, the stars, Free Play, the Challenge Days' best scores and even the mission you are in the middle of in the cloud, so you can play on the phone and go on at the computer — "Continue mission — saved on another device". Nothing is ever replaced: the two copies are merged (the stars from both, the campaign and the mission from the one saved last; a new campaign wins over an older one). A sync never runs in the middle of a stage. Without a network the game plays as usual and syncs once the network is back; if your cloud copy cannot be loaded, the start screen says so and offers **Try again** or **Play with the progress on this device**. Without signing in, nothing leaves the browser.

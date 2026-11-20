@@ -6,7 +6,7 @@
 // a kiosk, a café and car parks). A buy asks for a second tap with its price first. Used by game.js.
 
 const BUILD_ICONS = { stand: '🅿️', fuelTruck: '⛽', plough: '🚜', desk: '🧳', kiosk: '🏪', cafe: '☕', parkingSmall: '🚗', parkingBig: '🚙',
-  crashTender: '🚒', generator: '🔋', dutyFree: '🛍️', restaurant: '🍽️', busStop: '🚌' };
+  crashTender: '🚒', generator: '🔋', dutyFree: '🛍️', restaurant: '🍽️', busStop: '🚌', lane: '🛂' };
 
 const Toolbar = (() => {
   const box = document.getElementById('toolbar');
@@ -21,7 +21,9 @@ const Toolbar = (() => {
       if (hands.indexOf('plough') >= 0 || Airport.ploughs() > 0) out.push('plough');
       if (Airport.has('terminal')) out.push('desk');
       if (Object.keys(S.domains).some((d) => S.domains[d] >= 2) && !Airport.has('generator')) out.push('generator');
+      if (S.airport.lanes) out.push('lane');
     } else if (S.plan && S.airport.open) {
+      if (S.airport.lanes) out.push('lane');
       out.push('kiosk', 'cafe', 'parkingSmall', 'parkingBig', 'desk', 'stand');
       if (y >= 1963) out.push('crashTender', 'restaurant');
       if (Object.keys(S.domains).some((d) => S.domains[d] >= 2) && !Airport.has('generator')) out.push('generator');
@@ -41,6 +43,7 @@ const Toolbar = (() => {
         const s = Runways.surface(id);
         if (s.snow >= 0.8 || s.plough) parts.push(['plough', id, !!s.plough || S.ops.ploughQueue.indexOf(id) >= 0, Airport.ploughs() > 0]);
       }
+      if (Terminal.lanes()) parts.push(['sec', Passengers.secWait(), Terminal.lanes()]);
       const rw = Runways.main();
       if (rw) { const w = Weather.now(); parts.push(['dir', Runways.direction(rw), w.wind < CALM_WIND]); }
       // the teams that are short or on strike today (overtime brings everybody in), the systems that are down
@@ -62,6 +65,8 @@ const Toolbar = (() => {
         Text.esc(p[2] ? tr('Ploughing') : tr('Plough')) + '<small>' + Text.esc(Text.surface(p[1])) + '</small></button>';
       else if (p[0] === 'dir') html += '<div class="tgroup"><span class="tl" title="' + Text.esc(p[2] ? tr('Calm wind: you choose the direction') : tr('Into the wind')) + '">🛫 ' + Text.esc(tr('Runway')) + '</span>' +
         ['01', '19'].map((d) => '<button class="tb small' + (p[1] === d ? ' on' : '') + '" data-act="dir" data-d="' + d + '"' + (p[2] ? '' : ' disabled') + '>' + d + '</button>').join('') + '</div>';
+      else if (p[0] === 'sec') html += '<div class="tgroup' + (p[1] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛂 ' + Text.esc(tr('Security {n} min · {l} lanes', { n: Math.round(p[1]), l: p[2] })) + '</span>' +
+        '<button class="tb small" data-act="tview" title="' + Text.esc(tr('Terminal view (T)')) + '">🏪</button></div>';
       else if (p[0] === 'down') html += '<div class="tgroup warnGroup"><span class="tl">⚠️ ' + Text.esc(tr('{sys} is down: {n} min', { sys: Text.level(p[1], S.domains[p[1]]), n: p[2] })) + '</span></div>';
       else if (p[0] === 'short') html += '<div class="tgroup warnGroup"><span class="tl">' + (p[3] ? '✊ ' : '🤒 ') + Text.esc(p[3] ? tr('{dept} on strike', { dept: Text.dept(p[1]) }) : tr('{dept}: {p} at work', { dept: Text.dept(p[1]), p: Math.round(p[2] * 100) + ' %' })) + '</span>' +
         (p[3] ? '' : '<button class="tb small" data-act="overtime" data-d="' + p[1] + '" title="' + Text.esc(tr('Everybody in, at overtime pay')) + '">⏱️ ' + Text.esc(tr('Overtime')) + '</button>') + '</div>';
@@ -83,6 +88,7 @@ const Toolbar = (() => {
     else if (act === 'deskMinus') Actions.desks(S.ops.desksOpen - 1);
     else if (act === 'plough') Actions.plough(btn.dataset.s);
     else if (act === 'dir') Actions.dir(btn.dataset.d);
+    else if (act === 'tview') Game.openPanel('terminal');
     else if (act === 'overtime') { if (Actions.overtime(btn.dataset.d)) Game.banner(tr('Overtime: everybody in for {dept}', { dept: Text.dept(btn.dataset.d) })); }
     else if (btn.dataset.buy) {
       const kind = btn.dataset.buy;

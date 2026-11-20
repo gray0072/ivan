@@ -5,10 +5,12 @@
 // the HUD, the tray, the toolbar, the plan panel), the stage card, the results and the Office. It wires the map's
 // gestures (tap a task or an aircraft, drag one to a stand, pan, pinch), the keys and the cheats, keeps the running
 // mission saved (every AUTOSAVE_SECONDS, at each stage's end and when the page is hidden) and records the stars;
-// Free Play's rounds, the People screen and the Ops Center (keys P and O), and the cloud save's idle moments.
+// Free Play's rounds, the People screen and the Ops Center (keys P and O), and the cloud save's idle moments; session 4:
+// the Terminal view (T: live in an ops stage, the stage runs on behind it), the Airlines screen (A), Finance (F, or the
+// money in the HUD) and the Challenge Days.
 
 const Game = {
-  screen: 'menu',     // menu, timeline, card, office, free, intro, play, pause, panel, stageCard, results
+  screen: 'menu',     // menu, timeline, card, office, free, challenges, intro, play, tview, pause, panel, stageCard, results
   speed: 0, lastSpeed: 1,
   run: null,          // { id, campaign, difficulty } of the mission being played
   pick: null,         // a flight whose stand the player is choosing on the map
@@ -95,15 +97,41 @@ const Game = {
     this.save();
     this.intro();
   },
-  // the People screen or the Ops Center: from the Office to work in, during play to look at (the game pauses)
+  // the People screen, the Ops Center, the Terminal view, Airlines and Finance: from the Office to work in, during play
+  // to look at (the game pauses) — the Terminal view in an ops stage is live, and in a plan stage its shops can be chosen
   openPanel(which) {
     if (this.screen === 'office') { Office.open(which); return; }
     if (this.screen !== 'play' || !S || !S.mission) return;
+    const back = () => this.resume();
+    if (which === 'terminal' && S.ops) { this.screen = 'tview'; TermView.show({ back }); return; }
     if (this.speed) this.lastSpeed = this.speed;
     this.speed = 0;
     this.screen = 'panel';
-    const back = () => this.resume();
-    if (which === 'people') PeopleUI.show({ back }); else OpsCenter.show({ back });
+    if (which === 'people') PeopleUI.show({ back });
+    else if (which === 'ops') OpsCenter.show({ back });
+    else if (which === 'terminal') TermView.show({ back, edit: !!S.plan });
+    else if (which === 'airlines') AirlinesUI.show({ back });
+    else if (which === 'finance') FinanceUI.show({ back });
+  },
+  // ---------- the Challenge Days ----------
+  toChallenges() {
+    if (S && S.mission && this.run) this.save();
+    this.leaveMission();
+    this.screen = 'challenges';
+    this.showWorld();
+    ChallengesUI.show();
+    Cloud.idleNow();
+  },
+  startChallenge(id, diff) {
+    enterFullscreen();
+    this.leaveMission();
+    Settings.setDifficulty(diff);
+    Missions.start(id, diff, null, Challenges.def(id));
+    this.run = { id, challenge: true, campaign: false, difficulty: diff };
+    this.actions = 0;
+    Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close();
+    this.save();
+    this.intro();
   },
   openMission(id) {
     this.leaveMission();
@@ -171,7 +199,12 @@ const Game = {
     this.save();
     Screens.pause();
   },
-  resume() { Screens.hide(); this.screen = 'play'; this.speed = this.lastSpeed || 1; },
+  resume() {
+    Screens.hide();
+    const live = this.screen === 'tview';
+    this.screen = 'play';
+    if (!live) this.speed = this.lastSpeed || 1;
+  },
   nextStage() { Missions.next(); this.save(); this.intro(); },
   retryStage() { Missions.retry(); FlightCard.close(); this.pick = null; this.save(); this.intro(); },
   restartMission(diff) {
@@ -202,6 +235,17 @@ const Game = {
   },
   // the mission is over: stars into the progress, the campaign goes on, the results
   missionEnd() {
+    if (this.run.challenge) {
+      const pass = S.mission.status === 'done';
+      let newBest = false;
+      if (pass && !S.mission.cheated) newBest = ChallengeSave.record(this.run.id, this.run.difficulty, Challenges.score(S.mission.total), S.mission.stars);
+      Autosave.clear();
+      this.screen = 'results';
+      this.speed = 0;
+      this.panels(false);
+      ChallengesUI.results({ newBest });
+      return;
+    }
     if (this.run.free) {
       const pass = S.mission.status === 'done';
       if (pass && FreeSave.data) { FreePlay.passed(FreeSave.data, Missions.world()); FreeSave.save(); }
@@ -259,18 +303,21 @@ const Game = {
       if (K.ArrowDown) Cam.panBy(0, -k);
     }
     if (S && S.mission && this.run) {
-      if (this.screen === 'play' && this.speed > 0) Sim.advance(dt, SPEEDS[this.speed]);
-      if (this.screen === 'play' && Autosave.due(dt)) this.save();
+      // the Terminal view of an ops stage is live: the stage runs on behind it
+      const running = this.screen === 'play' || this.screen === 'tview';
+      if (running && this.speed > 0) Sim.advance(dt, SPEEDS[this.speed]);
+      if (running && Autosave.due(dt)) this.save();
+      if (this.screen === 'tview') TermView.frame(dt);
       const st = S.mission.status;
-      if (this.screen === 'play' && (st === 'stageDone' || st === 'stageFailed')) {
+      if (running && (st === 'stageDone' || st === 'stageFailed')) {
         this.speed = 0; this.save(); FlightCard.close(); this.pick = null;
         this.screen = 'stageCard'; this.panels(false); Results.stage();
-      } else if (this.screen === 'play' && (st === 'done' || st === 'failed')) {
+      } else if (running && (st === 'done' || st === 'failed')) {
         FlightCard.close(); this.pick = null;
         this.missionEnd();
       }
       if (S.mission) {
-        const live = this.screen === 'play' || this.screen === 'intro' || this.screen === 'pause' || this.screen === 'panel';
+        const live = this.screen === 'play' || this.screen === 'intro' || this.screen === 'pause' || this.screen === 'panel' || this.screen === 'tview';
         if (live) {
           Hud.update();
           Tray.render();
@@ -290,6 +337,7 @@ const Game = {
         MapView.view.selected = FlightCard.id && S.ops ? Flights.get(FlightCard.id) : null;
       }
     } else MapView.view.standMark = null;
+    if (this.screen !== 'tview' && TermView.open) TermView.frame(dt);
     MapView.draw(dt);
     requestAnimationFrame((t) => this.frame(t));
   },
@@ -302,11 +350,12 @@ const Game = {
     if (e.code === 'Escape') {
       if (this.screen === 'play') this.pauseMenu();
       else if (this.screen === 'pause') this.resume();
-      else if (this.screen === 'panel') this.resume();
-      else if (this.screen === 'timeline' || this.screen === 'office' || this.screen === 'card' || this.screen === 'free') this.toMenu();
+      else if (this.screen === 'panel' || this.screen === 'tview') this.resume();
+      else if (this.screen === 'timeline' || this.screen === 'office' || this.screen === 'card' || this.screen === 'free' || this.screen === 'challenges') this.toMenu();
       return;
     }
-    if ((e.code === 'KeyP' || e.code === 'KeyO') && (this.screen === 'office' || this.screen === 'play')) { this.openPanel(e.code === 'KeyP' ? 'people' : 'ops'); return; }
+    const PANEL_KEYS = { KeyP: 'people', KeyO: 'ops', KeyT: 'terminal', KeyA: 'airlines', KeyF: 'finance' };
+    if (PANEL_KEYS[e.code] && (this.screen === 'office' || this.screen === 'play')) { this.openPanel(PANEL_KEYS[e.code]); return; }
     if (overlay && (e.code === 'Enter' || e.code === 'Space' || e.code === 'NumpadEnter')) { if (Screens.pressDefault()) e.preventDefault(); return; }
     if (this.screen !== 'play' || !S || !S.mission) return;
     if (e.code === 'Space') { e.preventDefault(); if (this.speed) { this.lastSpeed = this.speed; this.speed = 0; } else this.speed = this.lastSpeed || 1; return; }
@@ -382,11 +431,13 @@ const Game = {
     Progress.load();
     Campaign.load();
     FreeSave.load();
+    ChallengeSave.load();
     I18N.onChange(() => {
       if (this.screen === 'menu') Screens.menu();
       else if (this.screen === 'timeline') Timeline.show();
       else if (this.screen === 'office') Office.show();
       else if (this.screen === 'free') Screens.freePlay();
+      else if (this.screen === 'challenges') ChallengesUI.show();
       Tray.reset(); Toolbar.reset(); PlanUI.reset();
     });
     this.wireInput();
@@ -398,24 +449,23 @@ const Game = {
     }));
     document.getElementById('skipBtn').addEventListener('click', () => { if (Sim.skip()) this.banner(tr('Skipped to the next task')); });
     document.getElementById('pauseBtn').addEventListener('click', () => this.pauseMenu());
-    document.getElementById('moneyChip').addEventListener('click', () => {
-      if (S && S.mission) this.banner(tr('Money {m} · loans {l} · the owner allows {k}', { m: sek(S.money), l: sek(S.loans), k: sek(S.loanLimit || 0) }), 4000);
-    });
+    document.getElementById('moneyChip').addEventListener('click', () => { if (S && S.mission) this.openPanel('finance'); });
     // the mission is saved the moment the page goes away (a phone that locks, a time limit, a call)
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.save(); });
     window.addEventListener('pagehide', () => this.save());
     // the cloud save (core/cloud.js): merges only on the screens with no mission in memory; a save from another
     // device redraws the screen that shows it
-    Cloud.idle = () => ['menu', 'timeline', 'office', 'free'].indexOf(this.screen) >= 0;
+    Cloud.idle = () => ['menu', 'timeline', 'office', 'free', 'challenges'].indexOf(this.screen) >= 0;
     Cloud.onChange = (changed) => {
-      if (changed) { Progress.load(); Campaign.load(); FreeSave.load(); }
+      if (changed) { Progress.load(); Campaign.load(); FreeSave.load(); ChallengeSave.load(); }
       if (this.screen === 'menu') Screens.menu();
       else if (changed && this.screen === 'timeline') Timeline.show();
       else if (changed && this.screen === 'office') Office.show();
       else if (changed && this.screen === 'free') Screens.freePlay();
+      else if (changed && this.screen === 'challenges') ChallengesUI.show();
     };
     Cloud.init();
-    AppUpdate.watch(() => this.screen === 'menu' || this.screen === 'timeline' || this.screen === 'office' || this.screen === 'free');
+    AppUpdate.watch(() => this.screen === 'menu' || this.screen === 'timeline' || this.screen === 'office' || this.screen === 'free' || this.screen === 'challenges');
     this.toMenu();
     requestAnimationFrame((t) => this.frame(t));
   }

@@ -18,7 +18,13 @@ const Office = (() => {
     let html = '<h1>🏢 ' + Text.esc(tr(h.free ? 'Free Play' : 'The Office')) + '</h1><p class="when">' + Text.esc(fmtDate(w.day)) + ' · ' +
       Text.esc(w.owner === 'Swedavia' ? tr('Owner: Swedavia') : tr('Owner: Luftfartsverket (LFV)')) + '</p>';
     html += '<div class="btnRow"><button class="btn secondary" data-go="people">👥 ' + Text.esc(tr('People')) + '</button>' +
-      '<button class="btn secondary" data-go="ops">🛠️ ' + Text.esc(tr('Ops Center')) + '</button></div>';
+      '<button class="btn secondary" data-go="ops">🛠️ ' + Text.esc(tr('Ops Center')) + '</button>' +
+      '<button class="btn secondary" data-go="finance">📊 ' + Text.esc(tr('Finance')) + '</button>' +
+      '<button class="btn secondary" data-go="airlines">✈️ ' + Text.esc(tr('Airlines')) + '</button>' +
+      (w.airport.units ? '<button class="btn secondary" data-go="terminal">🏪 ' + Text.esc(tr('Terminal view')) + '</button>' : '') + '</div>';
+    // the Offers board waiting (chapter 4 on)
+    const bd = Offers.board();
+    if (bd && bd.cards.length && Object.keys(bd.taken).length < bd.cards.length) html += '<p class="warn">📋 ' + Text.esc(tr('The Offers board has {n} offers — see Airlines.', { n: bd.cards.length - Object.keys(bd.taken).length })) + '</p>';
     // what waits for an answer
     const asks = (w.people && w.people.asks) || [];
     for (const d of asks) {
@@ -74,6 +80,9 @@ const Office = (() => {
   function open(which) {
     const back = () => show();
     if (which === 'people') PeopleUI.show({ back, edit: true });
+    else if (which === 'terminal') TermView.show({ back, edit: true });
+    else if (which === 'airlines') AirlinesUI.show({ back, edit: true });
+    else if (which === 'finance') FinanceUI.show({ back, edit: true });
     else OpsCenter.show({ back, edit: true });
   }
   return { show, open };

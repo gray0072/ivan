@@ -170,5 +170,43 @@ const PROJECTS = {
     },
     effect: 'computerRoom',
     check: 'the game\'s own story: where the first computers of Arlanda stood is not known'
+  },
+
+  // ---------- chapter 4: open skies ----------
+  terminal2: {
+    name: 'Terminal 2', year: 1990, plot: { x: 890, y: 760, w: 90, h: 170 },
+    stages: {
+      hall: { name: 'The terminal hall', days: 50, price: 140e6 },
+      gates: { name: 'The gates and their apron', days: 35, price: 70e6 },
+      desks: { name: 'Check-in desks', days: 12, price: 10e6, after: ['hall'] },
+      units: { name: 'Shop units', days: 15, price: 12e6, after: ['hall'], optional: true, effect: 'units' }
+    },
+    mods: { tents: { name: 'Heated winter tents', price: 6e6, noWinter: true } },
+    effect: 'terminal2', desks: 10,
+    stands: [
+      { name: '12', code: 'C', contact: true, dist: 1, at: [880, 905] },
+      { name: '13', code: 'C', contact: true, dist: 1, at: [880, 850] },
+      { name: '14', code: 'D', contact: true, dist: 2, at: [880, 795] }
+    ],
+    src: 'swedavia.com About the airport; sv.wikipedia Stockholm-Arlanda flygplats: Inrikes 2, today Terminal 2, opened in 1990 for SAS\'s domestic flights; in 1992 it was rebuilt for domestic and international flights and the terminals were numbered 2–5',
+    check: 'its opening day (en.wikipedia alone gives 12 December 1990); its look and its apron'
+  },
+  arlandaExpress: {
+    name: 'Arlanda Express', year: 1999, plot: { x: 1020, y: 700, w: 140, h: 1000 },
+    stages: {
+      tunnel: { name: 'The tunnel under the airport', days: 110, price: 1500e6 },
+      line: { name: 'The line to the East Coast railway', days: 110, price: 1700e6 },
+      south: { name: 'Arlanda South station', days: 50, price: 350e6, after: ['tunnel'] },
+      north: { name: 'Arlanda North station', days: 50, price: 350e6, after: ['tunnel'] }
+    },
+    effect: 'arlandaExpress',
+    src: 'sv.wikipedia Arlandabanan; arlandabananinfrastructure.se: the consortium picked in August 1994 (NCC, SIAB, Vattenfall, GEC Alsthom and John Mowlem, as A-Train AB), building from 1995, the first train on 24 November 1999 (en.wikipedia says the 25th), a concession to 2040, about 6 billion SEK; stations Arlanda South (Terminals 2–4) and Arlanda North (Terminal 5)',
+    check: 'the tunnel\'s course on the map (the game\'s drawing)'
+  },
+  sorterHall: {
+    name: 'The sorting hall', year: 1997, plot: { x: 960, y: 1330, w: 40, h: 50 },
+    stages: { hall: { name: 'The hall and its belts', days: 30, price: 40e6 } },
+    effect: 'sorterHall',
+    check: 'the game\'s own story: the first documented tilt-tray sorter at Arlanda came in 2002 (Crisplant)'
   }
 };

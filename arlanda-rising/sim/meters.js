@@ -25,13 +25,14 @@ const Meters = {
   // a departure has left: how its passengers and its airline feel about it
   departed(f) {
     const al = this.airline(f.al), t = (AIRLINES[f.al] || {}).temper || {};
-    const wait = f.paxServed ? f.waitSum / f.paxServed : 0;
+    const wait = (f.paxServed ? f.waitSum / f.paxServed : 0) + (f.secServed ? f.secWait / f.secServed : 0);
     const walk = !Stands.contact(f.stand) && f.booked > 0 ? REMOTE_WALK_MOOD * (S.airport.apron.snow > 1 ? 2 : 1) : 0;
     const missed = f.booked ? f.missed / f.booked : 0;
     // session 3: lost bags, and a late flight nobody told the passengers about
     const unann = (f.ann === 'asked' && S.clock - f.annAsk > ANNOUNCE_OK) || (f.ann === 'done' && f.annAt - f.annAsk > ANNOUNCE_OK);
     if (unann) S.mission.st.unannounced++;
-    const extra = (f.lostBags ? LOST_BAG_MOOD : 0) + (unann ? ANNOUNCE_MOOD : 0) - (Airport.has('busStop') ? 4 : 0);
+    // session 4: the brands of its terminal and the way to the airport (the coaches, the train)
+    const extra = (f.lostBags ? LOST_BAG_MOOD : 0) + (unann ? ANNOUNCE_MOOD : 0) - Terminal.groundPax() - Terminal.paxBonus(Terminal.of(f.al, f.intl));
     if (f.booked > 0) this.pull('passengers', 92 - wait * 1.2 - Math.max(0, f.delay - 5) * 0.8 - walk * 4 - missed * 80 - extra, METER_EMA.passengers);
     const impatience = (t.patience || 1) / diff().patience;
     let target = 92 - Math.max(0, f.adelay - 5) * 1.5 * impatience - (t.contact && !Stands.contact(f.stand) ? 8 : 0) - missed * 40;
@@ -39,6 +40,7 @@ const Meters = {
     const calm = People.perk('stands', 'mood');
     if (calm && target < al.mood) target = al.mood + (target - al.mood) * (1 - calm);
     al.mood = clamp(al.mood + (clamp(target, 0, 100) - al.mood) * METER_EMA.airlines, 0, 100);
+    Airlines.departed(f);
     this.updateAirlines();
   },
   // an arrival sent to another airport, or a departure cancelled

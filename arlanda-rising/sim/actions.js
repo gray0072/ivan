@@ -58,5 +58,12 @@ const Actions = {
   overtime(dept) { return People.overtime(dept); },
   drill(dom) { return Systems.drill(dom); },
   manager(id) { return People.hireManager(id); },
-  raise(dept, give) { return People.raise(dept, give); }
+  raise(dept, give) { return People.raise(dept, give); },
+  // session 4: a brand in a unit (and closing one), a route incentive to court an airline or for one flying, an offer
+  // of the Office's board
+  brand(unitId, brandId) { return Terminal.place(unitId, brandId); },
+  closeBrand(unitId) { return Terminal.close(unitId); },
+  court(code, share) { return Airlines.court(code, share); },
+  incentive(code, share) { return Airlines.incentive(code, share); },
+  offer(i, optionId) { return Offers.take(i, optionId); }
 };

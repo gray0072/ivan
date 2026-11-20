@@ -12,11 +12,11 @@
 
 </div>
 
-Ett strategispel om att driva en riktig flygplats, **Stockholm Arlanda**, berättat genom dess riktiga historia. Du är chef: i tallskogen norr om Stockholm 1958 röjer du tomten, sedan bygger du flygledartornet och den första terminalen, väljer plats åt varje SAS Caravelle och DC-8, öppnar incheckningsdiskar, tankar jetplanen, plogar snön mörka vintereftermiddagar, tänder banljusen och får den unga flygplatsen att bära sig. Sedan kommer jeteran — jumbon, bana 2 för sidvindarna, utrikesterminalen 1976, inrikesflygen som flyttar in från Bromma 1983 — och arbetet blir för stort för dina händer: du anställer lag och deras chefer, sätter in de första datorerna och lär dig att maskiner går sönder och att fack strejkar.
+Ett strategispel om att driva en riktig flygplats, **Stockholm Arlanda**, berättat genom dess riktiga historia. Du är chef: i tallskogen norr om Stockholm 1958 röjer du tomten, sedan bygger du flygledartornet och den första terminalen, väljer plats åt varje SAS Caravelle och DC-8, öppnar incheckningsdiskar, tankar jetplanen, plogar snön mörka vintereftermiddagar, tänder banljusen och får den unga flygplatsen att bära sig. Sedan kommer jeteran — jumbon, bana 2 för sidvindarna, utrikesterminalen 1976, inrikesflygen som flyttar in från Bromma 1983 — och arbetet blir för stort för dina händer: du anställer lag och deras chefer, sätter in de första datorerna och lär dig att maskiner går sönder och att fack strejkar. På 1990-talet öppnas himlen: nya flygbolag vill ha slottider, riktiga butiker och kaféer vill ha lokaler i dina terminaler, Köpenhamn vill ta dina transferresenärer, och en tågtunnel ska grävas under terminalerna.
 
 Flygplatsen är ritad isometriskt och lever framför dig: plan i sina flygbolags färger landar, taxar, vänds på sina platser med trappor, catering, bagagevagnar och tankbilar, och lyfter igen; plogkolonner med gula blixtljus sopar banan; solen följer den riktiga breddgraden, så decembereftermiddagarna är mörka och sommarnätterna ljusa.
 
-Tre kapitel är klara — **Skogsfältet** (1958–1963), **Jetåldern** (1965–1976) och **Alla kommer till Arlanda** (1983–1989): 33 uppdrag på ungefär 4–9 minuter vardera (ett prov omkring 10), delade i etapper och sparade hela tiden, och **fritt spel** efter kapitel 2. Nästa kapitel — Arlanda Express, bana 3, askmolnet, pandemin och ett Arlanda 2040 som du själv formar — kommer i senare versioner.
+Fyra kapitel är klara — **Skogsfältet** (1958–1963), **Jetåldern** (1965–1976), **Alla kommer till Arlanda** (1983–1989) och **Öppna himlen** (1990–1999): 44 uppdrag på ungefär 2–9 minuter vardera (ett prov omkring 10), delade i etapper och sparade hela tiden, **fritt spel** efter kapitel 2 och tre **utmaningsdagar** efter kapitel 3. Nästa kapitel — bana 3, askmolnet, pandemin och ett Arlanda 2040 som du själv formar — kommer i senare versioner.
 
 Spelbart på engelska, ryska eller svenska: välj språk högst upp på startskärmen.
 
@@ -45,9 +45,19 @@ Spelbart på engelska, ryska eller svenska: välj språk högst upp på startsk�
 - Nya jobb på flygfältet: **bagage** (skicka vagnarna till varje ankomst — ombordstigningen väntar på dem), **utrop** (berätta för ett försenat flygs resenärer), **brandkategorin** (ett plan för stort för din räddningstjänst skickas någon annanstans), nödlandningar, dimma med instrumentlandningssystem och sidvind som stänger bana 1 medan bana 2 är öppen.
 - På kontoret visar **Personal** (P) varje lags moral, skicklighet, trötthet, frånvaro och löner, facken och chefskandidaterna; **Ops Center** (O) visar varje områdes nivå, drifttid, månadskostnad och beredskap, och där sätter du in nästa nivå eller håller en övning.
 
-### Fritt spel
+### Butiker, flygbolag och pengar (från kapitel 4)
 
-Efter kapitel 2 erbjuder startskärmen **fritt spel**: en ändlös flygplats från en era som kampanjen har öppnat (1963, 1976, 1990). Varje omgång är en månads affärer — två erbjudanden från flygbolag, butiker, chefer, fack och leverantörer — och en hektisk topp med dina flygbolags egna linjer, utan stjärnor och utan ram.
+- **Terminalvyn** (T) är en genomskuren plan av varje terminal: trottoaren, incheckningskön, **säkerhetskontrollen** med sina filer och sin kö, gången på luftsidan med **butikslokalerna** och utgångarna. I en driftetapp ser du dina egna resenärer i köerna, med väntetiden över var och en.
+- **Riktiga varumärken** vill ha lokalerna — Pressbyrån, Max, McDonald's, O'Learys, Espresso House, Clas Ohlson, BRIO, FOREX och många fler, vart och ett först från det år det fanns i Sverige. Varje butik betalar hyra och en del av det resenärerna handlar för: mer när de har tid över på luftsidan, så en kort säkerhetskö tjänar pengar två gånger. Några lockar affärsresenärer, några semesterfirare, barnens favoriter familjer på sommaren och vid jul. Välj dem på kontoret eller i en byggetapp; varje kort visar vad varumärket tjänar och när inredningen är återbetald.
+- **Flygbolag** (A) visar varje flygbolags humör, flygningar, avgifter, punktlighet och temperament (Ryanair räknar varje krona; SAS vill ha sina platser vid terminalen). En **ruttrabatt** — en del av avgifterna i två år — vinner en ny linje om den räcker för flygbolaget. Från kapitel 4 kan ett missnöjt flygbolag flytta flygningar till en rivaliserande flygplats (Köpenhamn, Oslo, Bromma, Skavsta). Mellan uppdragen kommer **erbjudandetavlan** med två erbjudanden åt gången: ett flygbolag, ett varumärke, en chef, ett system.
+- **Ekonomi** (F, eller tryck på pengarna) visar bokföringen rad för rad, ett diagram över pengarna månad för månad och varje investering med sin **återbetalningstid** räknad på din egen trafik; under **Detaljer** **nuvärdet** och kalkyler innan du köper.
+- **Arlanda Express:** bygg banan för egna pengar (och behåll biljetterna) eller som koncession (gratis nu, en liten stationsavgift) — tågen går från november 1999.
+
+### Fritt spel och utmaningsdagar
+
+Efter kapitel 2 erbjuder startskärmen **fritt spel**: en ändlös flygplats från en era som kampanjen har öppnat (1963, 1976, 1990, 2000). Varje omgång är en månads affärer — två erbjudanden från flygbolag, butiker, chefer, fack och leverantörer — och en hektisk topp med dina flygbolags egna linjer, utan stjärnor och utan ram.
+
+Efter kapitel 3 kommer **utmaningsdagarna**: längre dagar på ungefär tjugo minuter med poäng — poäng för varje flygning i tid och för nöjda resenärer, färre för förseningar, köer och borttappat bagage — och tre stjärnor: **Julveckan 1989**, **Det stora snöfallet, 1987** och (efter kapitel 4) **Rekorddagen 1999**. De sparas när som helst, precis som ett uppdrag.
 
 ### Uppdrag
 
@@ -57,6 +67,8 @@ Efter kapitel 2 erbjuder startskärmen **fritt spel**: en ändlös flygplats fr�
 
 **Kapitel 3, Alla kommer till Arlanda:** Linjeflyg flyttar in (oktober 1983) · Morgonrusning · Datorrummet · Skärmar · Influensasäsong · Strejkvarsel · Stora kylan · Planerare eller dator? · Återbetalning · Flygbussarna (1989) · *Prov: Inrikesrusning*.
 
+**Kapitel 4, Öppna himlen:** Terminal 2 (1990) · Avregleringen (1992) · Tågfrågan · Taxfree · Tunnelbygget · Ruttrabatt (Braathens linje till Oslo, 1996) · Bagage med maskin · Lågprisfrågan · Navkriget · Julrusningen · *Prov: Millennienatten* (31 december 1999).
+
 ## Aldrig förlorat
 
 Ett uppdrag sparas med några sekunders mellanrum och i samma ögonblick som sidan döljs — en mobil som låses, en tidsgräns som stänger appen. Öppna spelet igen så fortsätter **Fortsätt uppdraget** från exakt det ögonblicket, pausat. En misslyckad etapp spelas om, inte hela uppdraget.
@@ -65,7 +77,7 @@ Ett uppdrag sparas med några sekunders mellanrum och i samma ögonblick som sid
 
 **Mobil och surfplatta:** spelet går i helskärm. Dra med ett finger för att flytta kartan, nyp med två fingrar för att zooma. Tryck på en uppgift, eller dra den — eller ett landande plan — till en plats. Håll fingret på ett plan för att se dess kort.
 
-**Tangentbord och mus:** klicka och dra; hjulet zoomar, höger knapp eller piltangenterna flyttar kartan. **Mellanslag** paus / spela, **1–4** hastighet, **N** hoppa till nästa uppgift, **Q** gör den äldsta uppgiften, **P** personal, **O** Ops Center, **Esc** pausmenyn. I menyerna trycker mellanslag eller Enter på den markerade knappen.
+**Tangentbord och mus:** klicka och dra; hjulet zoomar, höger knapp eller piltangenterna flyttar kartan. **Mellanslag** paus / spela, **1–4** hastighet, **N** hoppa till nästa uppgift, **Q** gör den äldsta uppgiften, **T** terminalvyn, **A** flygbolag, **F** ekonomi, **P** personal, **O** Ops Center, **Esc** pausmenyn. I menyerna trycker mellanslag eller Enter på den markerade knappen.
 
 ## Svårighetsgrad
 
@@ -85,6 +97,6 @@ Välj **Lägg till på hemskärmen** (eller **Installera app**) i webbläsarens 
 
 ## Sparas i webbläsaren
 
-Kampanjen, stjärnorna, det pågående uppdraget, det fria spelet och inställningarna sparas i den här webbläsaren.
+Kampanjen, stjärnorna, det pågående uppdraget, det fria spelet, utmaningsdagarnas rekord och inställningarna sparas i den här webbläsaren.
 
-**Synk via Google (valfritt):** **Logga in med Google** på startskärmen sparar kampanjen, stjärnorna, det fria spelet och till och med uppdraget du är mitt i i molnet, så att du kan spela på mobilen och fortsätta på datorn (”Fortsätt uppdrag — sparat på en annan enhet”). Inget ersätts: de två kopiorna slås ihop (stjärnorna från båda, kampanjen och uppdraget från den som sparades senast; en ny kampanj vinner över en äldre). En synk körs aldrig mitt i en etapp. Utan nätverk spelar spelet som vanligt och synkar när nätet är tillbaka; går molnkopian inte att ladda säger startskärmen det och erbjuder **Försök igen** eller **Spela med framstegen på den här enheten**. Utan inloggning lämnar inget webbläsaren.
+**Synk via Google (valfritt):** **Logga in med Google** på startskärmen sparar kampanjen, stjärnorna, det fria spelet, utmaningsdagarnas rekord och till och med uppdraget du är mitt i i molnet, så att du kan spela på mobilen och fortsätta på datorn (”Fortsätt uppdrag — sparat på en annan enhet”). Inget ersätts: de två kopiorna slås ihop (stjärnorna från båda, kampanjen och uppdraget från den som sparades senast; en ny kampanj vinner över en äldre). En synk körs aldrig mitt i en etapp. Utan nätverk spelar spelet som vanligt och synkar när nätet är tillbaka; går molnkopian inte att ladda säger startskärmen det och erbjuder **Försök igen** eller **Spela med framstegen på den här enheten**. Utan inloggning lämnar inget webbläsaren.

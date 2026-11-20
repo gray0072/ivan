@@ -23,6 +23,9 @@ const Finance = {
     this.book('upkeep', -m.upkeep * k);
     this.book('systems', -m.systems * k);
     this.book('interest', -m.interest * k);
+    // session 4: the security lanes' screeners, the brands' rent
+    if (m.security) this.book('security', -m.security * k);
+    if (S.airport.units) this.book('rent', Terminal.rent() * k);
   },
   // at a new month: the month's books kept, the months in debt counted, the airlines' feelings about the fees
   checkMonth() {
@@ -37,6 +40,7 @@ const Finance = {
     Meters.feesMonth();
     People.month();
     Systems.month();
+    Airlines.month();
   },
   borrow(amount) {
     const room = Math.max(0, (S.loanLimit || 0) - S.loans);
@@ -56,9 +60,10 @@ const Finance = {
   // the owner replaces the director after too many months below zero
   replaced() { return S.debtMonths >= DEBT_MONTHS[S.difficulty]; },
 
-  // what one departure pays the airport in fees: landing (per tonne) and per passenger, × the fee level
-  departureFees(type, pax, intl) {
-    const a = AIRCRAFT[type], k = FEE_LEVELS[S.airport.fees] || 1;
+  // what one departure pays the airport in fees: landing (per tonne) and per passenger, × the fee level (and less
+  // while its airline's route incentive runs)
+  departureFees(type, pax, intl, code) {
+    const a = AIRCRAFT[type], k = (FEE_LEVELS[S.airport.fees] || 1) * Airlines.feeK(code);
     return { landing: a.mtow * LANDING_FEE_PER_T * k, pax: pax * (intl ? PAX_FEE : PAX_FEE_DOMESTIC) * k };
   }
 };

@@ -61,6 +61,14 @@ const LAYOUT = {
   snowDepot: { x: 560, y: 1430 },      // the ploughs' shed
   parkingSmall: { box: [960, 1180, 1040, 1250] },
   parkingBig: { box: [960, 1260, 1110, 1400] },
+  // session 4: Terminal 2 south of the domestic terminal, with its own apron; the sorting hall; Arlanda Express — the
+  // line from the East Coast railway in the north-east, the tunnel under the terminals (portals north and south) and
+  // its two stations under the landside road (the game's drawing of the course, to be checked)
+  terminal2: { box: [895, 775, 975, 930], h: 11 },
+  apron4: { x0: 700, y0: 760, x1: 890, y1: 935 },
+  sorterHall: { box: [960, 1330, 1000, 1380], h: 7 },
+  rail: { line: [[4600, 4200], [3200, 2600], [1800, 1950], [1150, 1780]], tunnel: [[1150, 1780], [1060, 1600], [1050, 1000], [1080, 640]],
+    south: [1050, 1000], north: [1055, 1500], portalN: [1150, 1780], portalS: [1080, 640], out: [[1080, 640], [1300, 200], [1700, -900], [2300, -3600]] },
 
   // the road in: from the E4 round the south end of the runway to the terminal (the clearing's line too)
   road: [[-1880, -700], [-900, -760], [200, -620], [700, -200], [1000, 400], [1030, 900], [990, 1240], [930, 1240]],

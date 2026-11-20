@@ -10,7 +10,10 @@
 //   session 3: level (dom, min: the domain at least at that level), manager (dept: one hired), noStrike (no strike
 //   called or running), lostBags (max), unannounced (max late flights not told), fireCat (min), systems (max
 //   domains run by a system), handsOff (min tasks done by teams and systems), handTasks (max tasks the player did),
-//   lastMonth (min result of the last month closed, without one-off sums).
+//   lastMonth (min result of the last month closed, without one-off sums);
+//   session 4: securityWait (max average minutes at security), brands (min units with a brand), brandsIn (min SEK the
+//   brands earned the airport in the stage), mood (code, min: an airline's mood), perDay (code, min: its flights a day),
+//   carriers (min airlines flying), train (the line built, by any deal), score (min points of a Challenge Day).
 // A mission's ★ is every stage passed and its own `goal`; ★★ and ★★★ one each of its two `stars`.
 // Used by sim/missions.js, the stage card and the results.
 
@@ -19,7 +22,7 @@ const Goals = {
     return { arr: 0, dep: 0, onTime: 0, delaySum: 0, adelaySum: 0, diverted: 0, cancelled: 0, paxServed: 0, paxWaitSum: 0,
       maxWait: 0, missed: 0, tasksPlayer: 0, tasksDuty: 0, tasksAuto: 0, tasksPeople: 0, overflow: 0, closeCalls: 0,
       noise: 0, nightMoves: 0, income: 0, cost: 0, built: 0, ploughRuns: 0, closedMin: 0, minutes: 0, days: 0, decisions: 0,
-      tasksSys: 0, short: 0, struck: 0, failures: 0, lostBags: 0, unannounced: 0, emergencies: 0 };
+      tasksSys: 0, short: 0, struck: 0, failures: 0, lostBags: 0, unannounced: 0, emergencies: 0, secServed: 0, secWaitSum: 0, brandsIn: 0 };
   },
   // the mission's counters: the stages' added up (the longest wait the longest)
   add(total, st) {
@@ -56,6 +59,15 @@ const Goals = {
       case 'systems': { let n = 0; for (const d of Object.keys(S.domains)) if (S.domains[d] >= 2) n++; return n; }
       case 'handsOff': return st.tasksPeople + st.tasksSys;
       case 'handTasks': return st.tasksPlayer;
+      // session 4
+      case 'securityWait': return st.secServed ? st.secWaitSum / st.secServed : 0;
+      case 'brands': return Terminal.brands();
+      case 'brandsIn': return st.brandsIn || 0;
+      case 'mood': return S.airlines[c.code] ? S.airlines[c.code].mood : 0;
+      case 'perDay': return Airlines.perDay(c.code);
+      case 'carriers': return Object.keys(S.airlines).filter((x) => Airlines.perDay(x) > 0).length;
+      case 'train': return !!S.airport.train;
+      case 'score': return Challenges.score(st);
       // the result of the last month closed: what the airport earns now, investments' payback included
       // (the one-off sums left out: loans taken or repaid, the owner's money, building and buying)
       case 'lastMonth': {

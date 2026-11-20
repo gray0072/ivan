@@ -26,11 +26,20 @@ const FREE_ERAS = [
       airlines: { SK: [{ type: 'DC9', perDay: 18, load: 0.72 }, { type: 'MD81', perDay: 6, load: 0.72 }, { type: 'B747', perDay: 2, load: 0.7 }],
         LF: [{ type: 'F28', perDay: 30, load: 0.74 }], LH: [{ type: 'B727', perDay: 4, load: 0.7 }], AY: [{ type: 'DC9', perDay: 4, load: 0.7 }] },
       domains: { stands: 2, turnaround: 1, checkin: 1, snow: 1, baggage: 2, info: 2 },
-      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 2, info: 2 } } }
+      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 2, info: 2 } } },
+  // session 4: the open skies of 2000, with the shops' units, the security lanes, the train and the rivals
+  { id: '1999', name: 'Open skies, 2000', date: '2000-02-07', opens: '4-11',
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal2', 'arlandaExpress', 'sorterHall'],
+    setup: { open: true, openSkies: true, units: true, lanes: 8, budget: 100e6, loanLimit: 400e6, items: { fuelTruck: 6, plough: 6, crashTender: 2, generator: 1 }, desks: 36, it: 6,
+      airlines: { SK: [{ type: 'MD87', perDay: 16, load: 0.74 }, { type: 'B737', perDay: 14, load: 0.74 }, { type: 'DC9', perDay: 8, load: 0.72 }],
+        BRAATHENS: [{ type: 'B737', perDay: 6, load: 0.72 }], LH: [{ type: 'B737', perDay: 5, load: 0.72 }], AY: [{ type: 'MD87', perDay: 5, load: 0.72 }] },
+      domains: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2 }, terms: { SK: 't2' }, rivals: { pull: 1, months: 1 },
+      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2 } } }
 ];
 
 // game minutes on the ground by type, for the flights made from the routes
-const FREE_TURN = { DC3: 30, CV44: 35, DC6B: 55, CRVL: 40, DC8: 65, DC9: 40, B727: 50, B747: 125, DC10: 75, F28: 35, MD81: 40 };
+const FREE_TURN = { DC3: 30, CV44: 35, DC6B: 55, CRVL: 40, DC8: 65, DC9: 40, B727: 50, B747: 125, DC10: 75, F28: 35, MD81: 40,
+  B737: 40, B767: 90, MD87: 40, F100: 35, F50: 25, BA46: 35, A320: 55, B757: 60 };
 const FREE_OPENS = '2-11';         // the mission whose pass opens Free Play
 const FREE_PLAN_DAYS = 40;         // days of plan time in a round
 const FREE_GOAL_ONTIME = 0.7;      // the rolling goal of a round's ops stage
@@ -105,70 +114,8 @@ const FreePlay = {
     }
     return out;
   },
-  // the Offers board: what may be offered now, by group (two offers of different groups make a round)
-  offers(w, rnd, year) {
-    const out = [], has = (k) => w.airport.items.some((i) => i.kind === k);
-    // an airline wants more flights
-    const al = Object.keys(AIRLINES).filter((c) => { const y = AIRLINES[c].years; return y[0] <= year && (!y[1] || y[1] >= year); });
-    for (const code of al) {
-      const types = { SK: year >= 1980 ? 'DC9' : year >= 1968 ? 'DC9' : 'CRVL', LF: 'F28', STERLING: year >= 1972 ? 'B727' : 'CRVL', TRANSAIR: year >= 1968 ? 'B727' : 'DC6B', AY: 'DC9', LH: 'B727' };
-      const type = types[code];
-      if (!type || !AIRCRAFT[type]) continue;
-      const n = 1 + Math.floor(rnd() * 3), kind = AIRLINES[code].kind;
-      const months = kind === 'charter' ? [6, 7, 8, 9] : null;
-      out.push({ group: 'airline', icon: '✈️', title: 'An airline asks for slots', text: '{al} would like {n} more flights a day with its {type}.',
-        params: { al: AIRLINES[code].name, n, type: AIRCRAFT[type].name }, default: 'no',
-        options: [
-          { id: 'yes', airline: { code, routes: [Object.assign({ type, perDay: n, load: 0.72 }, months ? { months } : {})] }, label: 'Welcome them' },
-          { id: 'incentive', airline: { code, routes: [Object.assign({ type, perDay: n + 1, load: 0.72 }, months ? { months } : {})] }, money: -3e6, label: 'More, with a discount' },
-          { id: 'no', meters: { airlines: -2 }, label: 'No, thank you' }
-        ] });
-    }
-    // shops and car parks
-    const shop = year >= 1976 && !has('dutyFree') ? 'dutyFree' : !has('cafe') ? 'cafe' : 'restaurant';
-    out.push({ group: 'shop', icon: '🛍️', title: 'A shop wants a unit', text: 'A company offers to open a {what} in the terminal, if you pay for the fit-out.',
-      params: { what: BUILDINGS[shop].name }, default: 'no', options: [{ id: 'yes', build: shop, label: 'Build it' }, { id: 'no', label: 'Not now' }] });
-    if (!has('parkingBig')) out.push({ group: 'shop', icon: '🚗', title: 'A car park', text: 'More passengers drive every year. A car park earns every day — and the neighbours do not love it.',
-      params: {}, default: 'no', options: [{ id: 'yes', build: 'parkingBig', meters: { neighbours: -3 }, label: 'Build it' }, { id: 'no', label: 'Not now' }] });
-    // managers, by pairs, for a team without a head
-    const depts = Object.keys(DEPTS).filter((d) => (d === 'it' ? w.people && w.people.it > 0 : (w.domains[d] || 0) > 0) && !(w.people && w.people.managers[d]));
-    for (const d of depts) {
-      const cands = Object.keys(MANAGERS).filter((id) => MANAGERS[id].dept === d && MANAGERS[id].from <= year);
-      if (cands.length < 2) continue;
-      out.push({ group: 'people', icon: '👔', title: 'A head for {dept}', text: 'Two candidates want the job. Each is good at two things and weak at one.',
-        params: { dept: DEPTS[d].name }, default: 'none',
-        options: cands.slice(0, 2).map((id) => ({ id, manager: id, label: MANAGERS[id].name })).concat([{ id: 'none', label: 'Nobody' }]) });
-    }
-    // a team or a system for a domain
-    for (const d of Object.keys(w.domains)) {
-      const lv = w.domains[d] || 0, L = DOMAINS[d] && DOMAINS[d].levels[lv + 1];
-      if (!L || year < L.from || ((w.unlock || {})[d] || 0) < lv + 1) continue;
-      if (lv === 0) out.push({ group: 'people', icon: '👷', title: 'A team for {dom}', text: 'The personnel office can hire a team that takes this work off your hands.',
-        params: { dom: DOMAINS[d].name }, default: 'no', options: [{ id: 'yes', hire: d, label: 'Hire the team' }, { id: 'no', label: 'Not now' }] });
-      else if ((L.it || 0) === 0 || has('computerRoom')) out.push({ group: 'system', icon: '💻', title: 'A system for {dom}', text: 'A supplier offers {sys}. Keep the team as the fallback, or let it go?',
-        params: { dom: DOMAINS[d].name, sys: L.name }, default: 'no',
-        options: [{ id: 'keep', system: { dom: d, how: 'keep' }, label: 'Buy it, keep the team' }, { id: 'layoff', system: { dom: d, how: 'layoff' }, label: 'Buy it, let the team go' }, { id: 'no', label: 'Not now' }] });
-    }
-    // a wage round of a team
-    const teams = Object.keys((w.people || {}).depts || {}).filter((d) => d !== 'it' && (w.domains[d] || 0) > 0);
-    if (teams.length && rnd() < 0.5) {
-      const d = teams[Math.floor(rnd() * teams.length)];
-      out.push({ group: 'union', icon: '✊', kind: 'union', dept: d, title: 'A wage round', text: '{union} asks for a raise of 6 %.', params: { union: DEPTS[d].union }, default: 'mediator',
-        options: [
-          { id: 'accept', union: { dept: d, how: 'accept' }, label: 'Accept 6 %' },
-          { id: 'counter', union: { dept: d, how: 'counter', offer: 0.045 }, label: 'Offer 4.5 %' },
-          { id: 'mediator', union: { dept: d, how: 'mediator' }, label: 'Ask the mediator' },
-          { id: 'refuse', union: { dept: d, how: 'refuse' }, label: 'Refuse' }
-        ] });
-    }
-    // the fire service for the biggest aircraft flying
-    let need = 0;
-    for (const code of Object.keys(w.airlines)) for (const r of w.airlines[code].routes || []) need = Math.max(need, AIRCRAFT[r.type].cat);
-    const cat = has('fireStation') ? Math.min(FIRE_CAT_MAX, FIRE_CAT_BASE + w.airport.items.filter((i) => i.kind === 'crashTender').length) : 0;
-    if (cat < FIRE_CAT_MAX) out.push({ group: 'safety', icon: '🚒', title: 'A crash tender', text: 'The fire chief wants another crash tender: the fire category goes up by one.',
-      params: {}, default: need > cat ? 'yes' : 'no', options: [{ id: 'yes', build: 'crashTender', label: 'Buy it' }, { id: 'no', label: 'Not now' }] });
-    return out;
-  },
+  // the Offers board: what may be offered now, by group (sim/offers.js; two offers of different groups make a round)
+  offers(w, rnd, year) { return Offers.make(w, rnd, year); },
 
   // a round passed: the airport carries over to the next one
   passed(fp, world) { fp.world = world; fp.round++; return fp; }

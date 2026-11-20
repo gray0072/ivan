@@ -40,5 +40,10 @@ const BUILDINGS = {
   intlTerminal: { name: 'The international terminal', price: 0, staff: 40 },
   domTerminal: { name: 'The domestic terminal', price: 0, staff: 26 },
   bagHall: { name: 'The baggage hall', price: 0, staff: 2 },
-  computerRoom: { name: 'The computer room', price: 0, staff: 0 }
+  computerRoom: { name: 'The computer room', price: 0, staff: 0 },
+  // session 4: chapter 4
+  lane: { name: 'Security lane', price: 2.5e6, staff: 0, small: true, days: 10, from: 1970, lane: true },
+  terminal2: { name: 'Terminal 2', price: 0, staff: 30 },
+  railStation: { name: 'The Arlanda Express stations', price: 0, staff: 4 },
+  sorterHall: { name: 'The sorting hall', price: 0, staff: 2 }
 };

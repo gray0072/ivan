@@ -87,11 +87,12 @@ const Screens = (() => {
       '<p class="tagline">' + Text.esc(tr('Run Stockholm Arlanda, from the forest of 1958 to the airport of tomorrow.')) + '</p>';
     const saved = Autosave.read();
     const m = saved && saved.run && MISSION[saved.run.id];
-    const free = saved && saved.run && saved.run.free && saved.data && saved.data.state && saved.data.state.mission;
+    const free = saved && saved.run && (saved.run.free || saved.run.challenge) && saved.data && saved.data.state && saved.data.state.mission;
     if ((m || free) && saved.data && saved.data.state && saved.data.state.mission) {
       const st = saved.data.state.mission, def = free ? st.def : m;
       p.appendChild(row(btn(tr('Continue mission'), 'default big', () => Game.continueMission())));
-      p.appendChild(el('p', 'saveInfo', Text.esc(tr('{name} — stage {i} of {n}', { name: free ? tr('Free Play') + ' · ' + tr('round {n}', { n: def.round }) : tr(m.name), i: st.stage + 1, n: def.stages.length })) +
+      const name = saved.run.challenge ? tr('Challenge Days') + ' · ' + tr(def.name) : free ? tr('Free Play') + ' · ' + tr('round {n}', { n: def.round }) : tr(m.name);
+      p.appendChild(el('p', 'saveInfo', Text.esc(tr('{name} — stage {i} of {n}', { name, i: st.stage + 1, n: def.stages.length })) +
         (saved.from ? ' · ' + Text.esc(tr('saved on another device at {t}', { t: new Date(saved.savedAt).toLocaleTimeString(I18N.lang, { hour: '2-digit', minute: '2-digit' }) })) : '')));
     }
     if (Campaign.exists()) {
@@ -101,7 +102,8 @@ const Screens = (() => {
       p.appendChild(el('p', 'saveInfo', Text.esc(nm ? tr('Chapter {n}: {name} · next: {mission}', { n: nm.chapter, name: tr(CHAPTERS[nm.chapter - 1].name), mission: tr(nm.name) }) : tr('Chapter {n} is done — more chapters are coming.', { n: last.chapter }))));
     }
     p.appendChild(row(btn(tr('New Campaign'), Campaign.exists() || m || free ? 'secondary' : 'default big', () => Game.askNewCampaign()),
-      FreePlay.any() || FreeSave.exists() ? btn(tr('Free Play'), 'secondary', () => Game.toFree()) : null));
+      FreePlay.any() || FreeSave.exists() ? btn(tr('Free Play'), 'secondary', () => Game.toFree()) : null,
+      Challenges.any() ? btn(tr('Challenge Days'), 'secondary', () => Game.toChallenges()) : null));
     p.appendChild(diffPicker(Settings.difficulty(), (d) => Settings.setDifficulty(d)));
     p.appendChild(soundRow());
     p.appendChild(row(btn(tr('Settings'), 'secondary', () => settings('menu')), btn(tr('How to play'), 'secondary', () => help())));
@@ -184,6 +186,7 @@ const Screens = (() => {
       'In an operations stage, one hour takes about a minute. The task tray on the left fills with jobs: tap a task to do the obvious thing, or drag a landing aircraft onto a stand. A task you miss goes to the duty manager, who does it late and not always well.',
       'The bar at the bottom opens check-in desks, sends the ploughs, picks the runway direction when the wind is calm and buys small things: a remote stand, a fuel truck, a plough.',
       'Mouse: click and drag, the wheel zooms, right drag or the arrow keys move the map. Keys: Space pause, 1–4 speed, N skip to the next task, Q do the oldest task, Esc pause menu.',
+      'From chapter 4 on, the Terminal view (T) shows the queues and the shop units: put real shops and cafés there — each pays rent and earns more when the queues are short. Airlines (A) shows every airline\'s mood and temper, the Offers board and route incentives; Finance (F) the books, the payback of every investment and, under Details, its net present value. Challenge Days open after chapter 3.',
       'From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. In the Office, People (P) and the Ops Center (O) hire them, train them and hold drills; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.',
       'Phone and tablet: the game goes fullscreen. Drag with one finger to move the map, pinch with two to zoom, tap a task or drag it to a stand, hold a finger on an aircraft to see its card.'
     ].map((t) => '<p>' + Text.esc(tr(t)) + '</p>').join('');

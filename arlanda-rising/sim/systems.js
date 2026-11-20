@@ -23,6 +23,7 @@ const Systems = {
   // the level that does the work now: a system that is down falls to the team kept beside it, or to the player
   working(dom) {
     const lv = this.level(dom);
+    if (lv >= 3 && this.down(dom)) return 2;
     if (lv >= 2 && this.down(dom)) return S.sys && S.sys[dom] && S.sys[dom].kept ? 1 : 0;
     return lv;
   },
@@ -38,6 +39,7 @@ const Systems = {
       if (S.sys && S.sys[dom] && S.sys[dom].installAt) return 'installing';
       if ((L.it || 0) > 0 && !Airport.has('computerRoom')) return 'room';
       if (dom === 'baggage' && !Airport.has('bagHall')) return 'hall';
+      if (lv + 1 >= 3 && dom === 'baggage' && !Airport.has('sorterHall')) return 'sorter';
     }
     if (S.people && S.people.hiring.some((h) => h.dom === dom)) return 'installing';
     return null;

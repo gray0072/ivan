@@ -54,6 +54,15 @@ const Text = {
       case 'handsOff': return tr('Teams and systems do at least {n} tasks', { n });
       case 'handTasks': return tr('At most {n} tasks by hand', { n });
       case 'lastMonth': return tr('The last month earns at least {m}', { m: sek(n) });
+      // session 4
+      case 'securityWait': return tr('Security wait: at most {n} min', { n: this.num(n, 1) });
+      case 'brands': return tr('At least {n} units with a brand', { n });
+      case 'brandsIn': return tr('The brands earn at least {m}', { m: sek(n) });
+      case 'mood': return tr('{al}: mood at least {n}', { al: (AIRLINES[c.code] || {}).name || c.code, n });
+      case 'perDay': return tr('{al}: at least {n} flights a day', { al: (AIRLINES[c.code] || {}).name || c.code, n });
+      case 'carriers': return tr('At least {n} airlines flying here', { n });
+      case 'train': return tr('The train to Arlanda is built');
+      case 'score': return tr('At least {n} points', { n });
     }
     return c.k;
   },
@@ -63,8 +72,9 @@ const Text = {
     if (typeof v === 'boolean') return v ? '✓' : '—';
     switch (c.k) {
       case 'onTime': return Math.round(v * 100) + ' %';
-      case 'avgDelay': case 'airportDelay': case 'checkinWait': case 'maxWait': return this.num(v, 1) + ' ' + tr('min');
-      case 'profit': case 'money': case 'spent': case 'lastMonth': return sek(v);
+      case 'avgDelay': case 'airportDelay': case 'checkinWait': case 'maxWait': case 'securityWait': return this.num(v, 1) + ' ' + tr('min');
+      case 'profit': case 'money': case 'spent': case 'lastMonth': case 'brandsIn': return sek(v);
+      case 'perDay': return this.num(v, 1);
       default: return this.num(v, 0);
     }
   },
@@ -140,7 +150,25 @@ const Text = {
       const b = BUILDINGS[builds[0]], sum = builds.reduce((s, k) => s + BUILDINGS[k].price, 0);
       out.push('−' + sek(sum));
       if (b.days) out.push(tr('ready in {n} days', { n: b.days }));
+      // session 4: the payback from the airport's own traffic
+      const m = Invest.whatIf(builds[0]);
+      if (m && (m.in > 0) && builds.length === 1) out.push(m.payback !== null ? tr('pays back in {n} months', { n: Math.max(1, Math.round(m.payback)) }) : tr('never pays back at today\'s traffic'));
     }
+    if (o.brand) {
+      const b = BRANDS[o.brand.id], free = Terminal.units(o.brand.term).find((u) => !u.brand && Terminal.fits(u, o.brand.id));
+      out.push(tr('{brand} in {term}', { brand: b.name, term: tr(TERMINALS[o.brand.term].name) }));
+      if (free) out.push('−' + sek(UNIT_FIT[free.size]) + ' · ' + tr('rent {r} a month', { r: sek(b.rent) }));
+      else out.push(tr('no free unit there'));
+    }
+    if (o.court) {
+      const r = Airlines.courtRoute(o.court.code), al = (AIRLINES[o.court.code] || {}).name;
+      if (r && Airlines.answer(o.court.code, o.court.share) === 'yes') out.push(tr('{al}: {n} flights a day', { al, n: r.perDay }) + ' · ' + tr('{p} off its fees for two years', { p: this.pct(o.court.share) }));
+      else out.push(tr('{al} will say no: it wants more', { al }));
+    }
+    if (o.incentive) out.push(tr('{p} off the fees of {al} for two years', { p: this.pct(o.incentive.share), al: (AIRLINES[o.incentive.code] || {}).name }));
+    if (o.term) out.push(tr('{al} moves to {term}', { al: (AIRLINES[o.term.code] || {}).name, term: tr(TERMINALS[o.term.term].name) }));
+    if (o.train === 'own') out.push(tr('you build it, half paid by the owner · {m} a train passenger', { m: sek(TRAIN_TICKET) }));
+    if (o.train === 'concession') out.push(tr('free for you · {m} a train passenger', { m: sek(TRAIN_STATION_FEE) }));
     if (o.extraDays) out.push(tr('+{n} days of work', { n: o.extraDays[2] }));
     if (o.crews) out.push(tr('+{n} crew', { n: o.crews }));
     for (const k of Object.keys(o.meters || {})) out.push(this.meterName(k) + ' ' + (o.meters[k] > 0 ? '+' : '−') + Math.abs(o.meters[k]));

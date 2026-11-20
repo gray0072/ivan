@@ -33,5 +33,22 @@ const AIRCRAFT = {
   F28: { name: 'Fokker F28 Fellowship', engines: 'jet', span: 25.1, length: 29.6, mtow: 33, seats: 85, svc: 15, cat: 6,
     src: 'en.wikipedia Linjeflyg: F28 1973–92, 65–85 seats; Linjeflyg was the largest F28 operator in 1992', check: '' },
   MD81: { name: 'McDonnell Douglas MD-81', engines: 'jet', span: 32.9, length: 45.1, mtow: 63.5, seats: 140, svc: 22, cat: 7,
-    src: 'en.wikipedia McDonnell Douglas MD-80', check: 'the year SAS flew it from Arlanda; seats' }
+    src: 'en.wikipedia McDonnell Douglas MD-80', check: 'the year SAS flew it from Arlanda; seats' },
+  // session 4: the 1990s
+  B737: { name: 'Boeing 737-300', engines: 'jet', span: 28.9, length: 33.4, mtow: 62.8, seats: 135, svc: 20, cat: 6,
+    src: 'en.wikipedia Boeing 737 Classic', check: 'which airlines flew the -300, -400 or -500 at Arlanda; seats' },
+  B767: { name: 'Boeing 767-300ER', engines: 'jet', span: 47.6, length: 54.9, mtow: 187, seats: 230, svc: 40, cat: 8,
+    src: 'en.wikipedia Boeing 767', check: 'the year SAS flew it from Arlanda; seats' },
+  MD87: { name: 'McDonnell Douglas MD-87', engines: 'jet', span: 32.9, length: 39.8, mtow: 63.5, seats: 125, svc: 20, cat: 7,
+    src: 'en.wikipedia McDonnell Douglas MD-80', check: 'SAS seats' },
+  F100: { name: 'Fokker 100', engines: 'jet', span: 28.1, length: 35.5, mtow: 45.8, seats: 107, svc: 17, cat: 6,
+    src: 'en.wikipedia Fokker 100', check: 'which Swedish domestic airlines flew it' },
+  F50: { name: 'Fokker 50', engines: 'prop', span: 29.0, length: 25.3, mtow: 20.8, seats: 50, svc: 12, cat: 5,
+    src: 'en.wikipedia Fokker 50', check: 'SAS Commuter seats' },
+  BA46: { name: 'BAe 146-200', engines: 'jet', span: 26.2, length: 28.6, mtow: 42.2, seats: 95, svc: 16, cat: 6,
+    src: 'en.wikipedia British Aerospace 146', check: 'Malmö Aviation seats' },
+  A320: { name: 'Airbus A320', engines: 'jet', span: 34.1, length: 37.6, mtow: 73.5, seats: 180, svc: 22, cat: 6,
+    src: 'en.wikipedia Airbus A320 family', check: 'seats of the charter airlines' },
+  B757: { name: 'Boeing 757-200', engines: 'jet', span: 38.1, length: 47.3, mtow: 115.7, seats: 195, svc: 28, cat: 7,
+    src: 'en.wikipedia Boeing 757', check: 'which airlines flew it to Arlanda' }
 };

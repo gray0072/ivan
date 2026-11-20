@@ -132,7 +132,7 @@ const PlanUI = (() => {
     decKey = k;
     // params: names filled into an offer made by Free Play (translated where they are data)
     const p = {};
-    for (const key of Object.keys(def.params || {})) p[key] = typeof def.params[key] === 'string' ? tr(def.params[key]) : def.params[key];
+    for (const key of Object.keys(def.params || {})) p[key] = typeof def.params[key] === 'string' ? tr(def.params[key]) : key.indexOf('sek') === 0 ? sek(def.params[key]) : def.params[key];
     let extra = '';
     if (def.kind === 'union' && People.has(def.dept)) {
       const u = S.people.depts[def.dept].union;

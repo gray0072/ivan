@@ -25,6 +25,7 @@ const AirportArt = (() => {
 
   function quad(c, a, b, cc, d, fill) { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cc[0], cc[1]); c.lineTo(d[0], d[1]); c.closePath(); c.fillStyle = fill; c.fill(); }
   function band(c, s0, s1, t0, t1, fill) { quad(c, rp(s0, t0), rp(s1, t0), rp(s1, t1), rp(s0, t1), fill); }
+  function line(c, pts, w, color, dash) { line(c, pts, w, color, dash); }
   function line(c, pts, w, color, dash) {
     c.beginPath(); pts.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])));
     c.lineWidth = w; c.strokeStyle = color; c.lineCap = 'butt'; c.lineJoin = 'round'; c.setLineDash(dash || []); c.stroke(); c.setLineDash([]);
@@ -103,7 +104,7 @@ const AirportArt = (() => {
     }
     runway2(c, sc);
     // the jet apron and the domestic apron, as far as they are paved
-    for (const [key, pid, sid] of [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron']]) {
+    for (const [key, pid, sid] of [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron'], ['apron4', 'terminal2', 'gates']]) {
       const q = sc.p(pid, sid);
       if (q <= 0) continue;
       const B = LAYOUT[key];
@@ -155,7 +156,43 @@ const AirportArt = (() => {
       c.stroke();
     }
     void land;
+    rail(c, sc);
     plots(c, sc);
+  }
+
+  // session 4: Arlanda Express — the line and its tunnel as far as they are built, the stations' entrances, the yellow
+  // train once it runs (from 24 November 1999)
+  function rail(c, sc) {
+    const R = LAYOUT.rail, lp = sc.p('arlandaExpress', 'line'), tun = sc.p('arlandaExpress', 'tunnel');
+    if (lp <= 0 && tun <= 0 && !sc.items.railStation) return;
+    const done = !!sc.items.railStation;
+    const part = (pts, q) => { const out = [pts[0]]; const n = pts.length - 1; const k = q * n; for (let i = 1; i <= n; i++) { if (i <= k) out.push(pts[i]); else { const f = k - (i - 1); if (f > 0) out.push([pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * f, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * f]); break; } } return out; };
+    const bed = sc.season === 'winter' ? '#cfd3d6' : '#8a8273';
+    const lq = done ? 1 : lp;
+    if (lq > 0) {
+      for (const pts of [R.line, R.out]) {
+        const pp = part(pts, lq);
+        line(c, pp, 12, bed);
+        line(c, pp, 2, '#5b5148');
+      }
+    }
+    // the tunnel: a works trench while it is dug, a dashed line once it is under the ground
+    const tq = done ? 1 : tun;
+    if (tq > 0) line(c, part(R.tunnel, tq), done || tq >= 1 ? 5 : 14, done || tq >= 1 ? 'rgba(70,60,50,0.6)' : '#7a5a3a', done || tq >= 1 ? [24, 16] : null);
+    for (const key of ['south', 'north']) {
+      if (!done && sc.p('arlandaExpress', key) <= 0) continue;
+      const [x, y] = R[key];
+      c.fillStyle = '#3a3d41'; c.fillRect(x - 18, y - 10, 36, 20);
+      c.fillStyle = '#f7d117'; c.fillRect(x - 15, y - 7, 30, 14);
+    }
+    // the train: out of the north portal and back, every few minutes
+    if (done && S.airport.trainFrom !== undefined && S.day >= S.airport.trainFrom) {
+      const path = R.line.slice().reverse().concat(R.tunnel.slice(1)).concat(R.out.slice(1));
+      const q = (sc.anim * 0.02) % 1, total = path.length - 1, k = q * total, i = Math.min(total - 1, Math.floor(k)), f = k - i;
+      const x = path[i][0] + (path[i + 1][0] - path[i][0]) * f, y = path[i][1] + (path[i + 1][1] - path[i][1]) * f;
+      const under = i >= R.line.length - 1 && i < R.line.length - 1 + R.tunnel.length - 1;
+      if (!under) { c.fillStyle = '#f7d117'; c.beginPath(); c.arc(x, y, 7, 0, Math.PI * 2); c.fill(); }
+    }
   }
 
   // runway 2 (08/26): the strip cleared, the runway paved as far as it is, its markings, snow and lights
@@ -186,7 +223,7 @@ const AirportArt = (() => {
     if (!sc.planning) return;
     for (const id of Object.keys(S.airport.projects)) {
       const p = S.airport.projects[id], def = PROJECTS[id];
-      if (p.done || id === 'site' || id === 'lights1' || id === 'ils1') continue;
+      if (p.done || id === 'site' || id === 'lights1' || id === 'ils1' || id === 'arlandaExpress') continue;
       const b = def.plot;
       c.strokeStyle = 'rgba(255,214,90,0.95)'; c.lineWidth = 2 / (Cam.zoom * ISO_K); c.setLineDash([6, 4]);
       c.strokeRect(b.x - 6, b.y - 6, b.w + 12, b.h + 12); c.setLineDash([]);
@@ -327,6 +364,11 @@ const AirportArt = (() => {
     if (sc.p('domTerminal', 'hall') > 0 || sc.items.domTerminal) add(D[2], D[1], (c) => block(c, sc, D, LAYOUT.domTerminal.h, sc.items.domTerminal ? 1 : sc.p('domTerminal', 'hall'), '#ece6da', true));
     const B = LAYOUT.bagHall.box;
     if (sc.p('bagHall', 'hall') > 0 || sc.items.bagHall) add(B[2], B[1], (c) => block(c, sc, B, LAYOUT.bagHall.h, sc.items.bagHall ? 1 : sc.p('bagHall', 'hall'), '#c9c4b8', false));
+    // session 4: Terminal 2, the sorting hall
+    const T2 = LAYOUT.terminal2.box;
+    if (sc.p('terminal2', 'hall') > 0 || sc.items.terminal2) add(T2[2], T2[1], (c) => block(c, sc, T2, LAYOUT.terminal2.h, sc.items.terminal2 ? 1 : sc.p('terminal2', 'hall'), '#e8ecef', true));
+    const SH = LAYOUT.sorterHall.box;
+    if (sc.p('sorterHall', 'hall') > 0 || sc.items.sorterHall) add(SH[2], SH[1], (c) => block(c, sc, SH, LAYOUT.sorterHall.h, sc.items.sorterHall ? 1 : sc.p('sorterHall', 'hall'), '#c9c4b8', false));
     const K = LAYOUT.computerRoom.box;
     if (sc.p('computerRoom', 'room') > 0 || sc.items.computerRoom) add(K[2], K[1], (c) => block(c, sc, K, LAYOUT.computerRoom.h, sc.items.computerRoom ? 1 : sc.p('computerRoom', 'room'), '#d5d8dc', true));
     for (const k of ['generator', 'restaurant', 'dutyFree']) {
@@ -351,7 +393,8 @@ const AirportArt = (() => {
       if (!Object.values(p.stages).some((s) => s.on && !s.done)) continue;
       const pl = PROJECTS[id] && PROJECTS[id].plot;
       const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28] :
-        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34] : null;
+        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'sorterHall'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34] :
+        id === 'arlandaExpress' ? [LAYOUT.rail.south[0] + 30, LAYOUT.rail.south[1], 30] : null;
       if (pos) add(pos[0], pos[1], (c) => crane(c, pos[0], pos[1], pos[2], sc.anim));
     }
     // floodlight masts round the apron
