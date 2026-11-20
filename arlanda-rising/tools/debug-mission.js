@@ -1,0 +1,61 @@
+#!/usr/bin/env node
+'use strict';
+
+// Arlanda Rising — one mission flight by flight, for balancing: plays the campaign with the reference strategies up to the
+// mission (at one difficulty), then the mission itself (or doing nothing with --idle), and prints at the end of each stage
+// its flights (planned and real times, stand, waits at check-in / security / the border, delay and the airport's part),
+// what happened (failures, random events, flights lost) and the stage's goals. Loads the same files as missions-check.js.
+// Usage: node arlanda-rising/tools/debug-mission.js <mission id> [easy|medium|hard] [--idle] [--flights]
+
+const fs = require('fs'), path = require('path'), vm = require('vm');
+const root = path.resolve(__dirname, '..');
+const src = fs.readFileSync(path.join(__dirname, 'missions-check.js'), 'utf8');
+const chapters = (d) => fs.readdirSync(path.join(root, d)).filter((f) => /^ch\d+\.js$/.test(f))
+  .sort((a, b) => parseInt(a.slice(2), 10) - parseInt(b.slice(2), 10)).map((f) => d + '/' + f);
+const listSrc = src.slice(src.indexOf("['constants.js'"), src.indexOf('].forEach(load);') + 1)
+  .replace(/\.\.\.chapterFiles\('([^']+)'\)/g, (m, d) => chapters(d).map((f) => JSON.stringify(f)).join(', '));
+const list = vm.runInNewContext(listSrc);
+const ctx = { console, Math, JSON, Object, Array, Number, String, Set, Map, Error, Date, isNaN, isFinite, parseInt, parseFloat };
+vm.createContext(ctx);
+for (const f of list) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+const args = process.argv.slice(2);
+const [id, d = 'medium'] = args.filter((a) => !a.startsWith('--'));
+vm.runInContext(`(() => {
+  const ID = ${JSON.stringify(id)}, D = ${JSON.stringify(d)}, IDLE = ${args.includes('--idle')}, FLIGHTS = ${args.includes('--flights')};
+  let target = false;
+  const end = Missions.endStage.bind(Missions);
+  Missions.endStage = function () {
+    if (target) {
+      const i = S.mission.stage, log0 = S.log.length;
+      if (S.ops && FLIGHTS) for (const f of S.ops.flights) {
+        const w = (a, b) => (b ? (a / b).toFixed(1) : '-');
+        console.log('  ' + f.no.padEnd(8) + f.type.padEnd(5) + ' sta ' + (f.sta === null ? '  -  ' : fmtClock(f.sta)) + ' eta ' + (f.eta === null ? '  -  ' : fmtClock(f.eta)) +
+          ' std ' + fmtClock(f.std) + ' off ' + (f.offBlock ? fmtClock(f.offBlock) : '  -  ') + ' ' + f.st.padEnd(9) + ' stand ' + ((Airport.stand(f.stand) || {}).name || '-').padEnd(3) +
+          ' waits ' + w(f.waitSum, f.paxServed) + '/' + w(f.secWait, f.secServed) + '/' + w(f.borderWait, f.borderServed) + ' delay ' + Math.round(f.delay) + ' (' + Math.round(f.adelay) + ')' +
+          (f.tr ? ' deice ' + (f.tr.deice || '-') : '') + (f.missed ? ' missed ' + f.missed : ''));
+      }
+      end();
+      const res = S.mission.results[i];
+      console.log('--- stage ' + (i + 1) + ' ' + res.goals.map((g) => (g.ok ? 'ok ' : 'NO ') + g.goal.k + '=' + g.value).join(' ') + '  money ' + Math.round(S.money / 1e6) +
+        ' MSEK  green ' + Green.rating() + ' perDay ' + Green.perDay().toFixed(1) + '  meters ' + Object.keys(S.meters).map((k) => k[0] + Math.round(S.meters[k])).join(' ') + '  tasks ' + res.st.tasksPlayer + '/' + res.st.tasksDuty + '/' + res.st.tasksPeople + '/' + res.st.tasksSys);
+      for (const e of S.log.filter((e) => ['randomEvent', 'failure', 'strikeNow', 'diverted', 'cancelled', 'closeCall', 'permitBroken', 'chosen', 'systemLive', 'teamReady'].indexOf(e.type) >= 0 && e.day >= S.day - 200).slice(-14))
+        console.log('    ' + e.type + ' ' + fmtClock(e.t) + ' ' + (e.id || e.dom || e.flight || '') + (e.option ? ' → ' + e.option : ''));
+    } else end();
+  };
+  let world = null;
+  for (const m of MISSIONS) {
+    target = m.id === ID;
+    Missions.start(m.id, D, world);
+    const r = Strategy.runner(target && IDLE ? {} : STRATEGIES[m.id]);
+    for (let n = 0; n < 3e6; n++) {
+      const st = S.mission.status;
+      if (st === 'stageDone') { Missions.next(); continue; }
+      if (st !== 'running') break;
+      Strategy.act(r);
+      if (S.mission.status !== 'running') continue;
+      Sim.step();
+    }
+    if (target) { console.log('mission ' + S.mission.status + ' stars ' + S.mission.stars + ' ' + JSON.stringify(S.mission.judged && S.mission.judged.stars.map((g) => g.goal.k + '=' + g.value))); break; }
+    world = Missions.world();
+  }
+})()`, ctx);

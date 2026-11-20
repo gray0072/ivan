@@ -15,6 +15,14 @@ const Runways = {
     for (const rw of list) if (!this.closedWhy(rw)) return rw;
     return list[0] || null;
   },
+  // session 5: with runway 3 the two parallel runways work independently — the arrivals on runway 1, the departures on
+  // runway 3, each taking the other's traffic when its own cannot (without runway 3 both are `inUse`)
+  pick(order) {
+    for (const id of order) { const rw = Airport.runway(id); if (rw && !this.closedWhy(rw)) return rw; }
+    return this.inUse();
+  },
+  forArr() { return Airport.runway('r3') ? this.pick(['r1', 'r3', 'r2']) : this.inUse(); },
+  forDep() { return Airport.runway('r3') ? this.pick(['r3', 'r1', 'r2']) : this.inUse(); },
   // the wind across a runway, kt
   crosswind(rw) {
     const w = Weather.now();
@@ -31,7 +39,8 @@ const Runways = {
     if (rw.plough) return 'plough';
     if (rw.snow >= SNOW_CLOSE_MM) return 'snow';
     if (S.meters.safety < SAFETY_MIN) return 'safety';
-    if (rw.closedUntil && rw.closedUntil > S.clock) return 'emergency';
+    // closed for a while: after an emergency, or (session 5) a storm, a moose, the ash cloud
+    if (rw.closedUntil && rw.closedUntil > S.clock) return rw.closedFor || 'emergency';
     const w = Weather.now();
     if (w.dark && !rw.lit) return 'dark';
     if (w.vis < (rw.ils ? FOG_VIS_ILS : rw.approach ? FOG_VIS_APPROACH : FOG_VIS_MIN)) return 'fog';
@@ -41,7 +50,7 @@ const Runways = {
   // the direction in use: into the wind, or the player's choice when it is calm
   direction(rw) {
     const w = Weather.now();
-    if (w.wind < CALM_WIND) return rw.dirs.indexOf(S.airport.prefDir) >= 0 ? S.airport.prefDir : rw.dirs[1];
+    if (w.wind < CALM_WIND) { const d = rw.dirs.find((x) => x.slice(0, 2) === S.airport.prefDir); return d || rw.dirs[1]; }
     const off = (h) => Math.abs(((w.windDir - h) % 360 + 540) % 360 - 180);
     return off(rw.hdg[0]) <= off(rw.hdg[1]) ? rw.dirs[0] : rw.dirs[1];
   },
@@ -53,8 +62,8 @@ const Runways = {
     const dir = this.direction(rw);
     S.ops.dir = dir;
     // runway 1: landing on 01 comes in from the south over Märsta, taking off on 19 climbs out over it;
-    // runway 2 lies in the forest north-east of the terminals
-    const overTown = rw.id === 'r1' && (landing ? dir === '01' : dir === '19');
+    // runway 2 lies in the forest north-east of the terminals; runway 3 (session 5) the same toward Upplands Väsby
+    const overTown = (rw.id === 'r1' && (landing ? dir === '01' : dir === '19')) || (rw.id === 'r3' && (landing ? dir === '01R' : dir === '19L'));
     let n = overTown ? (landing ? NOISE_ARR_TOWN : NOISE_DEP_TOWN) : NOISE_FOREST;
     if (AIRCRAFT[f.type].engines === 'jet') n *= 1.5;
     const night = Calendar.night(S.clock);

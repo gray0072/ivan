@@ -40,6 +40,8 @@ const Systems = {
       if ((L.it || 0) > 0 && !Airport.has('computerRoom')) return 'room';
       if (dom === 'baggage' && !Airport.has('bagHall')) return 'hall';
       if (lv + 1 >= 3 && dom === 'baggage' && !Airport.has('sorterHall')) return 'sorter';
+      // session 5: the remote de-icing pads must be paved first
+      if (dom === 'deice' && !Airport.has('deicePad')) return 'pads';
     }
     if (S.people && S.people.hiring.some((h) => h.dom === dom)) return 'installing';
     return null;

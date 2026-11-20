@@ -26,6 +26,12 @@ const Finance = {
     // session 4: the security lanes' screeners, the brands' rent
     if (m.security) this.book('security', -m.security * k);
     if (S.airport.units) this.book('rent', Terminal.rent() * k);
+    // session 5: the rents of the airport's real estate, the space of the passport booths; from chapter 6 the energy
+    // and the biofuel
+    const estate = Airport.rent();
+    if (estate) this.book('estate', estate * k);
+    if (m.border) this.book('border', -m.border * k);
+    if (Green.on()) { this.book('energy', -Green.energyMonth() * k); if (S.airport.biofuel) this.book('biofuel', -Green.biofuelMonth() * k); }
   },
   // at a new month: the month's books kept, the months in debt counted, the airlines' feelings about the fees
   checkMonth() {
@@ -41,6 +47,7 @@ const Finance = {
     People.month();
     Systems.month();
     Airlines.month();
+    Green.month();
   },
   borrow(amount) {
     const room = Math.max(0, (S.loanLimit || 0) - S.loans);

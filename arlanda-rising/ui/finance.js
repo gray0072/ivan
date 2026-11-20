@@ -14,7 +14,9 @@ const FinanceUI = (() => {
   const LINES = { fees: 'Fees (in summary)', landing: 'Landing fees', passenger: 'Passenger fees', stands: 'Stand time', shops: 'Shops and cafés',
     parking: 'Car parks', rail: 'The train', rent: 'Rent from the brands', deals: 'Deals', owner: 'From the owner', 'owner loan': "The owner's loan",
     loans: 'Loans', wages: 'Wages', upkeep: 'Upkeep', systems: 'Systems', interest: 'Interest', security: 'Security', desks: 'Check-in desks',
-    construction: 'Building', build: 'Buying', penalties: 'Penalties to airlines', hiring: 'Hiring', training: 'Training', drills: 'Drills', cheat: 'Cheat' };
+    construction: 'Building', build: 'Buying', penalties: 'Penalties to airlines', hiring: 'Hiring', training: 'Training', drills: 'Drills', cheat: 'Cheat',
+    estate: 'Real estate', border: 'Passport booths', energy: 'Energy', biofuel: 'Biofuel', permit: 'Permit fines', deicing: 'De-icing fluid',
+    stranded: 'Stranded passengers', overtime: 'Overtime' };
 
   function show(opts) {
     back = opts.back; editable = !!opts.edit;
@@ -69,7 +71,7 @@ const FinanceUI = (() => {
     html += '<button class="btn toggle details" data-details="1">' + Text.esc(details ? tr('Hide the details') : tr('Details: net present value and what-ifs')) + '</button>';
     if (details) {
       html += '<p class="fine">' + Text.esc(tr('The net present value adds up {y} years of what it earns, each year counted {r} % less than the one before — money later is worth less than money now. Above zero, it is worth more than it costs.', { y: NPV_YEARS, r: Math.round(NPV_RATE * 100) })) + '</p>';
-      const kinds = ['parkingSmall', 'parkingBig', 'cafe', 'restaurant', 'dutyFree', 'lane', 'busStop'].filter((k) => BUILDINGS[k] && (!BUILDINGS[k].from || Calendar.year() >= BUILDINGS[k].from));
+      const kinds = ['parkingSmall', 'parkingBig', 'cafe', 'restaurant', 'dutyFree', 'lane', 'busStop', 'offices', 'hotelExt', 'solar'].filter((k) => BUILDINGS[k] && (!BUILDINGS[k].from || Calendar.year() >= BUILDINGS[k].from));
       html += '<p class="label">' + Text.esc(tr('What if you built…')) + '</p><table class="ops inv"><tr><th></th><th>' + Text.esc(tr('Price')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' +
         Text.esc(tr('Pays back')) + '</th><th>' + Text.esc(tr('Net present value')) + '</th></tr>' + kinds.map((k) => {
         const m = Invest.whatIf(k);

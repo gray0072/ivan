@@ -70,6 +70,27 @@ const LAYOUT = {
   rail: { line: [[4600, 4200], [3200, 2600], [1800, 1950], [1150, 1780]], tunnel: [[1150, 1780], [1060, 1600], [1050, 1000], [1080, 640]],
     south: [1050, 1000], north: [1055, 1500], portalN: [1150, 1780], portalS: [1080, 640], out: [[1080, 640], [1300, 200], [1700, -900], [2300, -3600]] },
 
+  // session 5: runway 3 (01R/19L) from SkyVector's ends (01R 59°37.58′ N 17°57.04′ E, 19L 59°38.91′ N 17°57.52′ E), its
+  // exit (a share of its length from 01R) and the taxiway from it west over the railway and the road (the two taxiway
+  // bridges, the game's drawing of where they cross) to the south of the aprons; the new tower (83 m); Pier F and its apron
+  // north of the international terminal, the A380 gate at its end; Sky City and its hotel between the terminals; Cargo
+  // City south of the terminals; the remote de-icing pads (by the south end of runway 1, by runway 3); the aquifer's pump
+  // house; the solar parks; the free plots' offices and the hotel's wing (the game's own places)
+  runway3: { from: [2108, -1220], to: [2558, 1246], w: 45, exit: 0.576 },
+  taxi3: [[2367, 200], [1300, 200], [915, 214], [780, 330], [800, 760]],
+  bridges: [[1300, 200], [915, 214]],
+  tower2: { x: 1063, y: 1113, base: 11, h: 83 },
+  pierF: { box: [890, 1655, 935, 1990], h: 8 },
+  apron5: { x0: 700, y0: 1655, x1: 890, y1: 1990 },
+  skyCity: { box: [970, 1402, 1040, 1445], h: 12 },
+  hotel: { box: [1040, 1405, 1070, 1440], h: 36 },
+  hotelExt: { box: [1070, 1405, 1098, 1440], h: 28 },
+  offices: { box: [1112, 1180, 1150, 1240], h: 18 },
+  cargoCity: { box: [1160, 320, 1400, 470], h: 12 },
+  deicePads: [[200, 80, 330, 180], [2190, -940, 2300, -800]],
+  aquifer: { box: [1190, 1460, 1214, 1480], h: 4 },
+  solar: [[1450, 600, 1700, 760], [1450, 800, 1700, 960]],
+
   // the road in: from the E4 round the south end of the runway to the terminal (the clearing's line too)
   road: [[-1880, -700], [-900, -760], [200, -620], [700, -200], [1000, 400], [1030, 900], [990, 1240], [930, 1240]],
   // the E4 motorway, west of the airport, north–south

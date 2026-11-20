@@ -5,7 +5,8 @@
 // while the turnaround is worked by hand, else the oil company's), boarding (only once its passengers are
 // through check-in, or BOARD_WAIT_MAX past departure without the late ones), then pushback at the planned
 // time. Snow on the apron makes every step slower. Session 3: the bags (the carts sent by hand, the handlers or the
-// belts; boarding waits for them) and the announcement of a late flight. Used by sim/flights.js.
+// belts; boarding waits for them) and the announcement of a late flight. Session 5: de-icing in the cold, by a truck at
+// the stand before pushback, or at a remote pad on the way out (sim/flights.js). Used by sim/flights.js.
 
 const Turnaround = {
   slow() { return S.airport.apron.snow >= SNOW_APRON_SLOW_MM ? SNOW_APRON_SLOW : 1; },
@@ -83,6 +84,29 @@ const Turnaround = {
         tr.ready = t;
       }
     }
-    if (tr.ready !== null && t >= f.std) Flights.pushback(f);
-  }
+    // session 5: de-icing in the cold once boarding has begun — a truck at the stand (sent by hand, or by the crew), or
+    // on the way out at a remote pad
+    if (tr.board !== null && tr.deice === undefined) {
+      tr.deice = !this.deiceNeed(f) ? 'none' : Systems.working('deice') >= 2 ? 'pad' : 'asked';
+      if (tr.deice === 'asked') Tasks.need('deice', f.id);
+    }
+    if (tr.deice === 'queued') {
+      const trucks = S.ops.deicers || [];
+      const i = trucks.findIndex((busy) => busy <= t);
+      if (i >= 0 || !trucks.length) {
+        const k = this.slow() * (trucks.length ? 1 : 2);
+        if (i >= 0) trucks[i] = t + 2 + DEICE_MIN * k;
+        tr.deiceFrom = t; tr.deiceEnd = t + 1 + DEICE_MIN * k; tr.deice = 'going';
+        this.glycol();
+        logEvent('deicing', { flight: f.no });
+      }
+    }
+    if (tr.deice === 'going' && t >= tr.deiceEnd) tr.deice = 'done';
+    const iced = !tr.deice || tr.deice === 'none' || tr.deice === 'pad' || tr.deice === 'done';
+    if (tr.ready !== null && t >= f.std && iced) Flights.pushback(f);
+  },
+  // session 5: every departure needs de-icing at or below DEICE_TEMP, once a mission has opened the domain
+  deiceNeed(f) { return S.domains.deice !== undefined && !f.training && Weather.now().temp <= DEICE_TEMP; },
+  // the fluid of one de-icing (less with glycol recovery)
+  glycol() { Finance.book('deicing', -GLYCOL_COST * (Systems.working('deice') >= 3 ? 1 - GLYCOL_RECOVER : 1)); }
 };

@@ -90,6 +90,7 @@ const PlanUI = (() => {
       if (hiring || inst) right = '<span class="wait">' + Text.esc(tr('ready in {n} days', { n: (hiring ? hiring.at : inst) - S.day })) + '</span>';
       else if (why === 'room') right = '<span class="wait">' + Text.esc(tr('Needs the computer room')) + '</span>';
       else if (why === 'hall') right = '<span class="wait">' + Text.esc(tr('Needs the baggage hall')) + '</span>';
+      else if (why === 'pads') right = '<span class="wait">' + Text.esc(tr('Needs the remote de-icing pads')) + '</span>';
       else if (why) right = '';
       else if (next === 1) right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire')) + '<small>' + sek(Systems.price(d)) + '</small></button>';
       else right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Keep the team')) + '<small>' + sek(Systems.price(d, 'keep')) + '</small></button>' +

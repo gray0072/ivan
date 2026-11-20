@@ -58,6 +58,20 @@ const Office = (() => {
       (has.fireStation ? '<li>' + Text.esc(tr('Fire category {n}', { n: Airport.fireCat() })) + '</li>' : '') + '</ul></div>';
     html += '<div class="ocard"><h3>📈 ' + Text.esc(tr('The meters')) + '</h3><ul class="has">' + METERS.map((x) => '<li>' + x.icon + ' ' + Text.esc(Text.meterName(x.k)) + ': <b>' +
       (x.k === 'passengers' ? Text.paxStars(w.meters[x.k]) + '★' : Math.round(w.meters[x.k])) + '</b></li>').join('') + '</ul></div>';
+    // session 5: the rents of the real estate; from chapter 6 the green rating, the energy and the permit
+    const rent = Airport.rent();
+    if (rent || Green.on()) {
+      html += '<div class="ocard"><h3>🌿 ' + Text.esc(tr(Green.on() ? 'Green and real estate' : 'Real estate')) + '</h3><ul class="has">';
+      if (rent) html += '<li>🏬 ' + Text.esc(tr('Rents: {m} a month', { m: sek(rent) })) + '</li>';
+      if (Green.on()) {
+        const pm = Green.permit();
+        html += '<li>🌿 ' + Text.esc(tr('Green rating')) + ': <b>' + Green.rating() + '</b></li><li>🔥 ' + Text.esc(tr('Energy: {m} a month', { m: sek(Green.energyMonth()) })) + '</li>';
+        if (w.airport.biofuel) html += '<li>🌱 ' + Text.esc(tr('{p} of the fuel bio: {m} a month', { p: Text.pct(w.airport.biofuel), m: sek(Green.biofuelMonth()) })) + '</li>';
+        if (w.airport.permit) html += '<li' + (pm && pm.broken ? ' class="neg"' : '') + '>📜 ' + Text.esc(tr('Permit: {n} of {cap} flights a day', { n: Math.round(Green.perDay()), cap: w.airport.permit.perDay || '—' }) +
+          (w.airport.permit.green ? ' · ' + tr('green rating at least {g}', { g: w.airport.permit.green }) : '')) + '</li>';
+      }
+      html += '</ul></div>';
+    }
     html += '</div>';
     if (nm) html += '<p class="label">' + Text.esc(tr('Next: {name} · ~{n} min', { name: tr(nm.name), n: Text.minutes(nm) })) + '</p>';
     if (h.free) html += '<p class="label">' + Text.esc(tr('Round {n} comes next.', { n: h.round })) + '</p>';

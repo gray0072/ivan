@@ -11,7 +11,7 @@ const Summary = {
   // the traffic of one day; returns its numbers
   day() {
     const out = { flights: 0, pax: 0, income: 0, intl: 0, leisure: 0 };
-    if (!S.airport.open || !S.airport.runways.length) { this.record(out); return out; }
+    if (!S.airport.open || !S.airport.runways.length || (S.airport.skyClosed && S.day < S.airport.skyClosed)) { this.record(out); return out; }
     const m = Calendar.date(S.day).m;
     const season = m >= 6 && m <= 8 ? 1.2 : (m === 12 || m <= 2) ? 0.9 : 1;
     // the share lost to the duty manager's work on the domains still done by hand
@@ -20,7 +20,7 @@ const Summary = {
       // a domain the game has not opened yet costs nothing; a team or a system loses only what its absence,
       // strikes or failures cost (sim/systems.js)
       if (S.domains[d] === undefined) continue;
-      if (d === 'snow' && !Calendar.winter(S.day)) continue;
+      if ((d === 'snow' || d === 'deice') && !Calendar.winter(S.day)) continue;
       const share = S.domains[d] > 0 ? Systems.summaryLoss(d) : 1;
       if (share > 0) loss += SUMMARY_LOSS[d] * (1 - MANUAL_SUMMARY_EFF) / 0.4 * share;
     }
@@ -45,6 +45,10 @@ const Summary = {
         }
         const rail = n * pax * Terminal.trainIncome() * keep;
         if (rail) { Finance.book('rail', rail); more += rail; }
+        // session 5: Sky City's brands; the de-icing fluid of a winter's departures
+        const sky = S.airport.units ? n * pax * Terminal.skySpend(intl, Terminal.leisure(code), m) * keep : 0;
+        if (sky) { Finance.book('shops', sky); if (S.mission && S.mission.st) S.mission.st.brandsIn += sky; more += sky; }
+        if (S.domains.deice !== undefined && (m === 12 || m <= 3)) Finance.book('deicing', -n * DEICE_WINTER_SHARE * GLYCOL_COST * ((S.domains.deice || 0) >= 3 ? 1 - GLYCOL_RECOVER : 1));
         out.flights += n; out.pax += n * pax; out.income += aero + shops + more;
         if (intl) out.intl += n * pax;
         if (Terminal.leisure(code)) out.leisure += n * pax;

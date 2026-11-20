@@ -29,7 +29,14 @@ const Hints = (() => {
     // session 4
     { id: 'security', when: () => S.ops && Terminal.lanes() && Passengers.secWait() > 10, text: () => tr('The security queue is {n} minutes. Every minute there is a minute less in the shops — a lane in the bar below helps.', { n: Math.round(Passengers.secWait()) }) },
     { id: 'units', when: () => S.plan && S.airport.units && S.airport.units.some((u) => !u.brand && u.term !== 'kerb'), text: () => tr('Empty shop units earn nothing. Press T to choose real brands for them.') },
-    { id: 'leaving', when: () => S.airport.rivals && Object.keys(S.airlines).some((c) => S.airlines[c].mood < LEAVE_MOOD + 5 && Airlines.perDay(c) > 0), text: () => tr('An airline is unhappy and could move flights to a rival airport. Look in Airlines (A).') }
+    { id: 'leaving', when: () => S.airport.rivals && Object.keys(S.airlines).some((c) => S.airlines[c].mood < LEAVE_MOOD + 5 && Airlines.perDay(c) > 0), text: () => tr('An airline is unhappy and could move flights to a rival airport. Look in Airlines (A).') },
+    // session 5
+    { id: 'border', when: () => S.ops && Terminal.borderOn() && Passengers.borderWait() > 8, text: () => tr('A long queue at the passport booths. Open another booth with + in the bar below.') },
+    { id: 'lanes', when: () => S.ops && Terminal.secDomain() && Passengers.secWait() > 8 && Terminal.lanes() < Terminal.lanesUp(), text: () => tr('Closed lanes save wages, but the queue is growing. Open one more lane.') },
+    { id: 'deice', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'deice'), text: () => tr('Frost on the wings! No aircraft leaves without de-icing. A truck per aircraft — or pads by the runway one day?') },
+    { id: 'parallel', when: () => S.ops && Airport.runway('r3') && S.ops.flights.some((f) => f.st === 'taxiOut'), text: () => tr('Two parallel runways: the landings use runway 1, the departures runway 3. The taxi over the bridges takes a few minutes more.') },
+    { id: 'permit', when: () => S.plan && Green.on() && Green.permit() && Green.permit().broken, text: () => tr('The permit is broken: a fine every month. Raise the green rating or keep the flights under the cap.') },
+    { id: 'green', when: () => S.plan && Green.on() && Green.rating() < 60, text: () => tr('The green rating is low. A solar park, electric vehicles or biofuel raise it — a new car park lowers it.') }
   ];
   function hasStartable() {
     for (const id of Object.keys(S.airport.projects)) for (const sid of Object.keys(S.airport.projects[id].stages)) if (!Construction.cannot(id, sid)) return true;

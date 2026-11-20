@@ -79,6 +79,15 @@ const Missions = {
     if (u.lanes) S.airport.lanes = Math.max(S.airport.lanes || 0, u.lanes);
     if (u.rivals) S.airport.rivals = Object.assign({}, u.rivals);
     if (u.trainDeal && !S.airport.trainDeal) S.airport.trainDeal = u.trainDeal;
+    // session 5: the Schengen border and its booths, the security rules of the day, random events, the owner's name, the
+    // green rating and the permit
+    if (u.schengen) S.airport.schengen = true;
+    if (u.booths) S.airport.booths = Math.max(S.airport.booths || 0, u.booths);
+    if (u.secRule !== undefined) S.airport.secRule = Math.max(S.airport.secRule || 0, u.secRule);
+    if (u.events) S.airport.events = true;
+    if (u.owner) S.owner = u.owner;
+    if (u.green) S.airport.green = true;
+    if (u.permit) S.airport.permit = Object.assign({}, u.permit);
     if (u.brands) for (const b of u.brands) if (!Terminal.units(b[0]).some((x) => x.brand === b[1])) { const free = Terminal.units(b[0]).find((x) => !x.brand && Terminal.fits(x, b[1])); if (free) { free.brand = b[1]; free.since = S.day; free.price = UNIT_FIT[free.size]; } }
     // session 3: the domains the mission opens (at least at a level: the owner's arrangement), the levels it
     // lets the Office buy, IT people

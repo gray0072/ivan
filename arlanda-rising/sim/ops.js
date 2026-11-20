@@ -13,7 +13,7 @@ const Ops = {
     const from = clockMin(stage.from), to = clockMin(stage.to);
     S.clock = from;
     for (const st of S.airport.stands) { st.occ = null; st.res = null; st.closed = false; }
-    for (const r of S.airport.runways) { r.busyUntil = 0; r.plough = null; r.closedUntil = 0; r.snow = (stage.snowStart || 0); }
+    for (const r of S.airport.runways) { r.busyUntil = 0; r.plough = null; r.closedUntil = 0; r.closedFor = null; r.snow = (stage.snowStart || 0); }
     S.airport.apron.snow = stage.snowStart || 0;
     S.airport.apron.plough = null;
     S.ops = {
@@ -23,6 +23,10 @@ const Ops = {
       events: (stage.events || []).map((e, i) => ({ i, at: clockMin(e.at), done: false })),
       down: {}, overtime: {}, absence: {}, strike: null
     };
+    // session 5: the lanes opened at the start when security is a domain, the border's booths, the de-icing trucks
+    if (Terminal.secDomain() && S.airport.lanes) S.ops.lanesOpen = Math.min(S.airport.lanes, stage.lanes !== undefined ? stage.lanes : S.airport.lanes);
+    if (Terminal.borderOn()) { S.ops.border = []; S.ops.boothsOpen = Math.min(S.airport.booths, stage.booths !== undefined ? stage.booths : S.airport.booths); }
+    if (S.domains.deice !== undefined) S.ops.deicers = new Array(Airport.count('deicer')).fill(0);
     // the people of the day: who is away, who is on strike
     if (S.people) {
       for (const d of Object.keys(S.people.depts)) S.ops.absence[d] = People.absence(d) + ((stage.sick || {})[d] || 0);
@@ -32,6 +36,7 @@ const Ops = {
     if (S.ops.strike) S.mission.st.struck = 1;
     S.ops.weather = Weather.make(stage.weather, from, to);
     S.ops.flights = Schedule.make(stage);
+    Events.begin(stage);
     // the aircraft parked overnight stand on the best stands that fit
     for (const f of S.ops.flights) if (f.st === 'parked') Turnaround.park(f, Stands.best(f));
     // the passengers who came before the stage began are through check-in already
@@ -44,6 +49,7 @@ const Ops = {
     const dt = OPS_STEP_MIN, stage = Missions.stage();
     for (const e of S.ops.events) if (!e.done && S.clock >= e.at) { e.done = true; this.event(stage.events[e.i]); }
     Systems.step(dt);
+    Events.step();
     Runways.step(dt);
     Flights.step();
     Passengers.step(dt);
@@ -70,6 +76,7 @@ const Ops = {
     else if (e.do === 'power') Systems.powerCut(e.min);
     else if (e.do === 'lanesShut') S.ops.lanesShut = e.n;
     else if (e.do === 'sick') { if (People.has(e.dept)) S.ops.absence[e.dept] = (S.ops.absence[e.dept] || 0) + e.share; }
+    else if (Events.scripted(e)) { /* session 5: a VIP flight, a thunderstorm, a moose, the ash cloud… (sim/events.js) */ }
     else if (e.do === 'emergency') {
       // the next aircraft to land declares an emergency: it goes first, and the fire service meets it
       const f = S.ops.flights.filter((x) => (x.st === 'sched' || x.st === 'inbound' || x.st === 'approach') && x.eta !== null && x.eta >= S.clock - 5)
@@ -79,7 +86,7 @@ const Ops = {
     logEvent('script', { what: e.do, text: e.text || null });
   },
   ended() {
-    const all = S.ops.flights.every((f) => Flights.over(f) || f.st === 'sched' && f.eta >= S.ops.to);
+    const all = S.ops.flights.every((f) => Flights.over(f) || f.st === 'sched' && f.eta >= S.ops.to || (f.stay && f.inBlock !== null));
     return (S.clock >= S.ops.to && all) || S.clock >= S.ops.to + OPS_OVERTIME;
   },
   end() { Flights.close(); }

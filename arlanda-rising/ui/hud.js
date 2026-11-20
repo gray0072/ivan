@@ -51,6 +51,17 @@ const Hud = (() => {
       el.querySelector('b').textContent = m.k === 'passengers' ? Text.paxStars(v) + '★' : Math.round(v);
       el.title = Text.meterName(m.k);
     }
+    // session 5: the green rating, once the owner counts it (chapter 6)
+    const g = $('greenChip');
+    if (g) {
+      g.hidden = !Green.on();
+      if (Green.on()) {
+        const p = Green.permit();
+        g.querySelector('b').textContent = Green.rating();
+        g.classList.toggle('debt', !!(p && p.broken));
+        g.title = tr('Green rating') + (S.airport.permit ? ' · ' + tr('Flights a day {n} of {cap} allowed', { n: Math.round(Green.perDay()), cap: S.airport.permit.perDay || '—' }) : '');
+      }
+    }
     document.querySelectorAll('.speeds button').forEach((b) => b.classList.toggle('on', +b.dataset.speed === Game.speed));
     $('skipBtn').disabled = !(S.ops && !S.ops.tasks.length && Game.speed > 0);
     goals();

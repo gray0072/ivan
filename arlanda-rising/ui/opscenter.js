@@ -41,6 +41,7 @@ const OpsCenter = (() => {
             (lv === 1 ? '<button class="btn toggle" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('… let it go')) + ' <small>' + sek(Systems.price(d, 'layoff')) + '</small></button>' : '');
         } else if (next && unlocked && why === 'room') act += '<small class="wait">' + Text.esc(tr('Needs the computer room')) + '</small>';
         else if (next && unlocked && why === 'hall') act += '<small class="wait">' + Text.esc(tr('Needs the baggage hall')) + '</small>';
+        else if (next && unlocked && why === 'pads') act += '<small class="wait">' + Text.esc(tr('Needs the remote de-icing pads')) + '</small>';
         if (lv >= 2 && r && r.readiness < 1) act += '<button class="btn toggle" data-drill="' + d + '">' + Text.esc(tr('Drill')) + ' <small>' + sek(DRILL_COST) + '</small></button>';
       }
       html += '<tr><td><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.dom(d)) + '</b><small>' + Text.esc(who(d)) + '</small></td><td>' + Text.esc(tr(L.name)) + '</td><td>' + Text.esc(up) +

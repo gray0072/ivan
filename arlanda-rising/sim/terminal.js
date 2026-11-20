@@ -6,7 +6,10 @@
 // chapter 4: a second queue, so fast security leaves more time for the shops), and the ground transport: the
 // coaches, the car parks and the train (Arlanda Express: own line or a concession). The units are S.airport.units
 // [{ id, term, size, brand, since }], made once a mission turns them on (setup `units`); the lanes S.airport.lanes;
-// the train S.airport.train ('own' | 'concession', running from S.airport.trainFrom). Used by sim/passengers.js,
+// the train S.airport.train ('own' | 'concession', running from S.airport.trainFrom). Session 5: the lanes as a domain
+// (opened by the player, a planner or the queue sensors: S.ops.lanesOpen), the rules of the day (S.airport.secRule:
+// 1 after 2001, 2 with the liquids of 2006; CT scanners undo the liquids), the border's passport booths for the flights
+// outside Schengen (S.airport.schengen, S.airport.booths, S.ops.boothsOpen) and Sky City's brands. Used by sim/passengers.js,
 // sim/summary.js, sim/finance.js, sim/meters.js, the Terminal view and the Finance screen.
 
 const Terminal = {
@@ -17,7 +20,7 @@ const Terminal = {
     if (intl) return Airport.has('intlTerminal') ? 'intl' : 't1';
     return Airport.has('domTerminal') ? 'dom' : 't1';
   },
-  built(term) { return term === 'kerb' ? Airport.has('terminal') : Airport.has(TERMINALS[term].item); },
+  built(term) { return term === 'kerb' ? Airport.has('terminal') : !!TERMINALS[term] && Airport.has(TERMINALS[term].item); },
   // the units of every terminal that stands (once the units are on); a terminal finished later gets its own
   ensure() {
     const a = S.airport;
@@ -101,16 +104,54 @@ const Terminal = {
     if (!S.airport.units) return 0;
     const fam = FAMILY_MONTHS.indexOf(Calendar.month()) >= 0;
     let p = 0;
-    for (const u of S.airport.units) if (u.brand && (u.term === term || u.term === 'kerb')) p += BRANDS[u.brand].pax * (fam && BRANDS[u.brand].fit === 'family' ? 2 : 1);
+    for (const u of S.airport.units) if (u.brand && (u.term === term || u.term === 'kerb' || u.term === 'sky')) p += BRANDS[u.brand].pax * (fam && BRANDS[u.brand].fit === 'family' ? 2 : 1);
     return Math.min(BRAND_PAX_MAX, p);
   },
   // the rent of every brand, SEK a month
   rent() { let r = 0; for (const u of S.airport.units || []) if (u.brand) r += BRANDS[u.brand].rent; return r; },
 
   // ---------- security ----------
-  // the lanes working now (a scripted event may close some for the stage: `lanesShut`)
-  lanes() { const n = S.airport.lanes || 0; return n ? Math.max(1, n - ((S.ops && S.ops.lanesShut) || 0)) : 0; },
-  addLane() { S.airport.lanes = this.lanes() + 1; },
+  // the lanes there are now (a scripted event may close some for the stage: `lanesShut`)
+  lanesUp() { const n = S.airport.lanes || 0; return n ? Math.max(1, n - ((S.ops && S.ops.lanesShut) || 0)) : 0; },
+  // the lanes working now: all of them, or (session 5: security is a domain of its own) the ones opened
+  lanes() {
+    const up = this.lanesUp();
+    if (!up || !this.secDomain() || !S.ops || S.ops.lanesOpen === undefined) return up;
+    return clamp(S.ops.lanesOpen, 1, up);
+  },
+  addLane() { S.airport.lanes = (S.airport.lanes || 0) + 1; if (S.ops && this.secDomain() && S.ops.lanesOpen !== undefined) S.ops.lanesOpen++; },
+  // session 5: the lanes are opened and closed by the player, a planner or the queue sensors
+  secDomain() { return S.domains.security !== undefined; },
+  openLane(n) {
+    if (!S.ops || !this.secDomain()) return false;
+    const was = this.lanes();
+    S.ops.lanesOpen = clamp(Math.round(n), 1, this.lanesUp());
+    return this.lanes() !== was;
+  },
+  // passengers through one lane a game minute: the rules of the day (2001, the liquids of 2006), the CT scanners that
+  // let the liquids stay in the bag, a thorough head of security
+  laneRate() {
+    const rule = S.airport.secRule || 0;
+    let r = LANE_RATE * SEC_RULE_X[rule];
+    if (Systems.working('security') >= 3) r = LANE_RATE * SEC_RULE_X[Math.min(rule, 1)] * CT_X;
+    return r * (1 - People.perk('security', 'slow'));
+  },
+
+  // ---------- the border (session 5: from Schengen, passport control for the flights outside it) ----------
+  borderOn() { return !!S.airport.schengen && (S.airport.booths || 0) > 0; },
+  booths() { return S.ops && S.ops.boothsOpen !== undefined ? clamp(S.ops.boothsOpen, 0, S.airport.booths || 0) : S.airport.booths || 0; },
+  openBooth(n) {
+    if (!S.ops || !this.borderOn()) return false;
+    const was = this.booths();
+    S.ops.boothsOpen = clamp(Math.round(n), 0, S.airport.booths);
+    return this.booths() !== was;
+  },
+  boothRate() { return BOOTH_RATE * (Systems.working('border') >= 2 ? EGATE_X : 1); },
+  // a departure that goes through passport control: an international flight outside the Schengen area
+  nonSchengen(f) { return !!(this.borderOn() && f.intl && f.ns); },
+
+  // ---------- Sky City (session 5): its brands earn from every departing passenger, landside ----------
+  skySpend(intl, leisure, month) { return this.built('sky') ? this.spend('sky', intl, leisure, month) * SKY_SPEND : 0; },
 
   // ---------- ground transport ----------
   trainRuns() { return !!(S.airport.train && S.day >= (S.airport.trainFrom || 0)); },
@@ -120,5 +161,5 @@ const Terminal = {
     return TRAIN_SHARE * (S.airport.train === 'own' ? TRAIN_TICKET : TRAIN_STATION_FEE);
   },
   // what the passengers' way to the airport adds to their mood
-  groundPax() { return (Airport.has('busStop') ? 4 : 0) + (this.trainRuns() ? TRAIN_PAX : 0); }
+  groundPax() { return (Airport.has('busStop') ? 4 : 0) + (this.trainRuns() ? TRAIN_PAX : 0) + (Airport.has('hotel') ? 2 : 0); }
 };

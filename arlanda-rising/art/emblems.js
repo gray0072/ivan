@@ -24,6 +24,19 @@ const Emblems = {
       c.font = '900 ' + size * 0.62 + 'px Arial, sans-serif';
       c.textAlign = 'center'; c.textBaseline = 'middle';
       c.fillText(e[2], 0, size * 0.04);
+    } else if (e[0] === 'hero') {
+      // ['hero', face colour]: Norwegian's "tail hero", a portrait drawn as a simple face and shoulders
+      c.fillStyle = e[1];
+      c.beginPath(); c.ellipse(0, -size * 0.15, size * 0.32, size * 0.4, 0, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(0, size * 0.62, size * 0.62, size * 0.32, 0, Math.PI, 0); c.fill();
+      c.fillStyle = 'rgba(40,30,30,0.5)';
+      c.beginPath(); c.ellipse(0, -size * 0.45, size * 0.34, size * 0.16, 0, Math.PI, 0); c.fill();
+    } else if (e[0] === 'flag') {
+      // ['flag']: the flag of the United Arab Emirates, as Emirates wore it on the fin
+      const w = size * 1.6, h = size * 0.9;
+      c.fillStyle = '#c8102e'; c.fillRect(-w / 2, -h / 2, w * 0.26, h);
+      const st = [['#00843d', 0], ['#ffffff', 1], ['#1a1a1a', 2]];
+      for (const [col, i] of st) { c.fillStyle = col; c.fillRect(-w / 2 + w * 0.26, -h / 2 + i * h / 3, w * 0.74, h / 3 + 0.2); }
     }
   },
   cache: {},

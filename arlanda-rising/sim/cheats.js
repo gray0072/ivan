@@ -5,7 +5,7 @@
 // Shift+S a snowstorm now, Shift+A every domain one level up, Shift+W win the current stage, Shift+D skip to
 // the stage's end; Shift+1…8 (a chapter's first mission with the real Arlanda of that year) is
 // Missions.start with the mission's `requires`; Shift+K a strike of the first team, Shift+F a failure of the
-// first system.
+// first system. Session 5: Shift+E the next random event (data/events.js) now.
 
 const Cheats = {
   mark() { S.cheated = true; },
@@ -43,6 +43,15 @@ const Cheats = {
     this.mark();
     Systems.fail(d);
     return d;
+  },
+  // session 5: the next random event of data/events.js, now (in ops time)
+  event() {
+    if (!S.ops) return false;
+    this.mark();
+    const e = RANDOM_EVENTS[(S.ops.cheatEvents = (S.ops.cheatEvents || 0) + 1) % RANDOM_EVENTS.length];
+    Events.run(e.do, e.min ? e.min[1] : 0);
+    logEvent('randomEvent', { id: e.id, text: e.text });
+    return e.id;
   },
   winStage() {
     if (!S.mission || S.mission.status !== 'running') return false;

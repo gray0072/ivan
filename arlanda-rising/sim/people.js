@@ -42,7 +42,7 @@ const People = {
   // ---------- absence ----------
   // the share of a team away today: the season, morale, fatigue, the manager, the difficulty, less the temps
   absence(id) {
-    if (!this.has(id)) return 0;
+    if (!this.has(id) || (DEPTS[id] || {}).police) return 0;
     const d = S.people.depts[id], m = Calendar.month();
     let a = ABSENCE_BASE * (FLU[m] || 1);
     a *= 1 + Math.max(0, MORALE_BASE - d.morale) / 40 + d.fatigue / 100;

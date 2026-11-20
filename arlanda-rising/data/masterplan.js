@@ -208,5 +208,129 @@ const PROJECTS = {
     stages: { hall: { name: 'The hall and its belts', days: 30, price: 40e6 } },
     effect: 'sorterHall',
     check: 'the game\'s own story: the first documented tilt-tray sorter at Arlanda came in 2002 (Crisplant)'
+  },
+
+  // ---------- chapter 5: a new millennium (session 5) ----------
+  schengen: {
+    name: 'The Schengen split', year: 2001, plot: { x: 890, y: 1390, w: 75, h: 255 },
+    stages: {
+      level: { name: 'A new floor in the international terminal', days: 40, price: 140e6 },
+      booths: { name: 'The passport hall and its booths', days: 15, price: 25e6, after: ['level'] },
+      t2: { name: 'Terminal 2 for international flights', days: 20, price: 30e6, optional: true, effect: 't2intl' }
+    },
+    mods: { tents: { name: 'Heated winter tents', price: 10e6, noWinter: true } },
+    effect: 'schengen', booths: 6,
+    src: 'Council Decision 2000/777/EC: the Nordic states applied Schengen in full from 25 March 2001; swedavia.com About the airport and sv.wikipedia Stockholm-Arlanda flygplats: in 2001 Terminal 2 became international only and Terminal 5 got a fourth level to keep Schengen and non-Schengen passengers apart',
+    check: 'where the passport hall stood in the terminal (the game\'s drawing)'
+  },
+  tower2: {
+    name: 'The new control tower', year: 2001, plot: { x: 1050, y: 1100, w: 26, h: 26 },
+    // the tower itself stood by May 2001: what is left is its fitting out and the move
+    stages: {
+      systems: { name: 'Radar and radio systems', days: 35, price: 70e6 },
+      desks: { name: 'The controllers\' desks', days: 25, price: 40e6, after: ['systems'] },
+      training: { name: 'Training in the new tower', days: 25, price: 20e6, after: ['desks'] },
+      move: { name: 'The controllers move in', days: 8, price: 5e6, after: ['training'] }
+    },
+    effect: 'tower2',
+    src: 'swedavia.com About the airport; sv.wikipedia Stockholm-Arlanda flygplats: by Wingårdh Arkitektkontor, built from July 1999 to May 2001, in service on 23 December 2001; 83 m, 90 m with its mast',
+    check: 'its exact place by the terminals (the game\'s drawing); the concrete award rests on one source'
+  },
+  pierF: {
+    name: 'Pier F', year: 2002, plot: { x: 700, y: 1655, w: 270, h: 250 },
+    // the pier stood by the end of 2001: its gates and apron are fitted out for the opening
+    stages: {
+      gates: { name: 'Fit out the gates', days: 20, price: 120e6 },
+      apron: { name: 'Mark out its apron', days: 15, price: 40e6 },
+      bridges: { name: 'Jet bridges', days: 15, price: 75e6, after: ['gates'], optional: true, effect: 'jetBridges' }
+    },
+    mods: { tents: { name: 'Heated winter tents', price: 8e6, noWinter: true } },
+    effect: 'pierF',
+    stands: [
+      { name: '15', code: 'E', contact: false, dist: 2, at: [880, 1690] },
+      { name: '16', code: 'E', contact: false, dist: 2, at: [880, 1755] },
+      { name: '17', code: 'D', contact: false, dist: 3, at: [880, 1820] },
+      { name: '18', code: 'D', contact: false, dist: 3, at: [880, 1885] }
+    ],
+    src: 'swedavia.com About the airport: "January 2002: a new pier at Terminal 5 enters service"; sv.wikipedia gives Pier F with 2003, en.wikipedia its F gates with the 2003 expansion',
+    check: 'the year (2002 or 2003: Swedavia\'s 2002 is told); its stands and apron (the game\'s drawing)'
+  },
+  runway3: {
+    name: 'Runway 3 (01R/19L)', year: 2003, plot: { x: 2085, y: -1220, w: 500, h: 2470 },
+    stages: {
+      strip: { name: 'Finish the strip', days: 30, price: 200e6 },
+      pave: { name: 'Pave the runway', days: 60, price: 900e6, after: ['strip'] },
+      lights: { name: 'Lights and the landing system', days: 20, price: 160e6, after: ['pave'] }
+    },
+    effect: 'runway3', len: 2500,
+    src: 'swedavia.com About the airport; sv.wikipedia Stockholm-Arlanda flygplats: building began on 10 November 1998 and the first flight used it on 17 April 2003, later than planned because of the downturn of 2002 (newstodate.aero gives 14 April); 2 500 m; its ends from SkyVector (59°37.58′ N 17°57.04′ E, 59°38.91′ N 17°57.52′ E)',
+    check: 'its cost (not found: the game\'s figure)'
+  },
+  bridges: {
+    name: 'The taxiway bridges', year: 2003, plot: { x: 760, y: 120, w: 1620, h: 200 },
+    stages: {
+      road: { name: 'The bridge over the road', days: 35, price: 220e6 },
+      rail: { name: 'The bridge over the railway', days: 35, price: 240e6 },
+      taxi: { name: 'The taxiways to runway 3', days: 20, price: 110e6, after: ['road', 'rail'] }
+    },
+    mods: { tents: { name: 'Heated winter tents', price: 15e6, noWinter: true } },
+    effect: 'bridges',
+    src: 'en.wikipedia Stockholm Arlanda Airport and Taxiway bridge: runway 3 is reached from the terminals over taxiway bridges built for the heaviest aircraft (the AIP marks bridges on taxiways U and W); a photo shows one over county road 273',
+    check: 'the year each bridge was built; what each crosses (the game draws one over the road and one over the railway)'
+  },
+  deicePads: {
+    name: 'Remote de-icing pads', year: 2004, plot: { x: 150, y: 60, w: 260, h: 200 },
+    stages: {
+      south: { name: 'The pad by the south end of runway 1', days: 20, price: 55e6 },
+      r3: { name: 'The pad by runway 3', days: 20, price: 55e6 },
+      drains: { name: 'Glycol drains and tanks', days: 10, price: 30e6, after: ['south'] }
+    },
+    mods: { tents: { name: 'Heated winter tents', price: 12e6, noWinter: true } },
+    effect: 'deicePads',
+    src: 'en.wikipedia Stockholm Arlanda Airport; futureairport.com "The war on cold": de-icing areas near runway 3 and in the southern ramp near runway 01L; de-icing only on surfaces that drain to the glycol collection',
+    check: 'the year the pads came (not found: the game\'s 2004)'
+  },
+  skyCity: {
+    name: 'Sky City', year: 1993, plot: { x: 970, y: 1395, w: 105, h: 55 },
+    stages: {
+      hall: { name: 'The hall between the terminals', days: 60, price: 300e6 },
+      hotel: { name: 'The hotel', days: 60, price: 260e6, optional: true, effect: 'hotel' }
+    },
+    effect: 'skyCity',
+    src: 'sv.wikipedia and en.wikipedia Stockholm-Arlanda flygplats: Sky City, the landside concourse between Terminals 4 and 5 with Arlanda Central station below, was inaugurated in 1993 (van Mierop & Belaieff); the Radisson SAS SkyCity Hotel from 1993',
+    check: 'the hotel\'s year rests on hotel listings only; in the game the owner builds Sky City before chapter 5'
+  },
+  cargoCity: {
+    name: 'Cargo City', year: 2006, plot: { x: 1150, y: 300, w: 260, h: 200 },
+    stages: {
+      halls: { name: 'The cargo halls', days: 45, price: 260e6 },
+      offices: { name: 'Offices for the forwarders', days: 30, price: 80e6, after: ['halls'], optional: true, effect: 'offices' }
+    },
+    effect: 'cargoCity',
+    src: 'en.wikipedia Stockholm Arlanda Airport: Cargo City opened in 2006',
+    check: 'its place and look (the game\'s drawing)'
+  },
+
+  // ---------- chapter 6: bigger and greener ----------
+  aquifer: {
+    name: 'The aquifer energy store', year: 2009, plot: { x: 1180, y: 1450, w: 120, h: 80 },
+    stages: {
+      wells: { name: 'Wells into the esker', days: 40, price: 30e6 },
+      plant: { name: 'Pumps and heat exchangers', days: 20, price: 20e6, after: ['wells'] }
+    },
+    effect: 'aquifer',
+    src: 'swedavia.com The aquifer: in use since the summer of 2009, about 600 000 m³ of water in the esker, about 19 GWh saved a year (as much as 2 000 houses use)',
+    check: 'the esker\'s name (Brunkebergsåsen, Långåsen or Stockholmsåsen by the source)'
+  },
+  gateF: {
+    name: 'The A380 gate', year: 2018, plot: { x: 760, y: 1905, w: 210, h: 90 },
+    stages: {
+      stand: { name: 'A stand for the biggest aircraft', days: 35, price: 140e6 },
+      wing: { name: 'Over-the-wing boarding', days: 20, price: 40e6, after: ['stand'], optional: true, effect: 'overWing' }
+    },
+    effect: 'codeF',
+    stand: { name: '19', code: 'F', contact: true, dist: 3, at: [880, 1950] },
+    src: 'newstodate.aero, January 2018: a new A380 gate at Pier F with two exits, one over the wing, boards more than 500 passengers in 35 minutes; the first A380 at Arlanda was Lufthansa\'s demonstration visit on 15 September 2010',
+    check: 'its stand number (not found)'
   }
 };

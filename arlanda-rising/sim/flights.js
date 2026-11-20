@@ -13,7 +13,8 @@ const Flights = {
   taxiTime(f) { const st = f.stand && Airport.stand(f.stand); return TAXI_BASE + (st ? st.dist : 2); },
 
   step() {
-    const t = S.clock, rw = Runways.inUse();
+    // session 5: the arrivals' runway and the departures' (the same one without runway 3)
+    const t = S.clock, rw = Runways.forArr(), rwD = Runways.forDep();
     // arrivals first, in the order they came to the field, then departures in the order they are ready
     const arr = [], dep = [];
     for (const f of S.ops.flights) {
@@ -43,7 +44,7 @@ const Flights = {
     }
     dep.sort((a, b) => a.at - b.at);
     for (const f of dep) {
-      if (Runways.canUse(rw)) this.takeOff(f, rw);
+      if (Runways.canUse(rwD)) this.takeOff(f, rwD);
       else if (t - f.offBlock >= DEP_WAIT_MAX) this.cancel(f);
     }
   },
@@ -52,7 +53,7 @@ const Flights = {
     f.landed = S.clock;
     f.rdir = S.ops.dir;
     f.st = 'taxiIn';
-    f.at = S.clock + this.taxiTime(f) + f.extraTaxi;
+    f.at = S.clock + this.taxiTime(f) + f.extraTaxi + (rw.id === 'r3' ? R3_TAXI : 0);
     f.extraTaxi = 0;
     S.mission.st.arr++;
     // after an emergency landing the runway stays closed while the fire service checks it (longer, and a close
@@ -60,6 +61,7 @@ const Flights = {
     if (f.mayday) {
       const low = AIRCRAFT[f.type].cat > Airport.fireCat();
       rw.closedUntil = S.clock + (low ? EMERGENCY_CLOSE_LOW : EMERGENCY_CLOSE);
+      rw.closedFor = null;
       if (low) Meters.closeCall();
       S.mission.st.emergencies++;
       logEvent('emergencyLanded', { flight: f.no, low });
@@ -80,7 +82,11 @@ const Flights = {
     // the airport's part: later than the aircraft could have gone with everything on time here
     f.adelay = Math.max(0, S.clock - Math.max(f.std, f.earliest || f.std));
     f.st = 'taxiOut';
-    f.at = S.clock + this.taxiTime(f);
+    // session 5: start-up in sequence with A-CDM; over the bridges to runway 3; through a remote de-icing pad
+    const rwD = Runways.forDep();
+    f.tdir = rwD ? Runways.direction(rwD) : null;
+    f.at = S.clock + this.taxiTime(f) * (Systems.working('stands') >= 3 ? ACDM_TAXI_X : 1) + (rwD && rwD.id === 'r3' ? R3_TAXI : 0);
+    if (f.tr && f.tr.deice === 'pad') { f.at += DEICE_PAD_MIN; Turnaround.glycol(); }
     const st = S.mission.st;
     st.dep++;
     st.delaySum += f.delay;
@@ -114,7 +120,7 @@ const Flights = {
     S.mission.st.diverted++;
     // the airport pays when it caused it (snow, the dark without lights, Safety), not for fog
     const cause = why || Runways.closedWhy(rw);
-    if (cause !== 'fog' && cause !== 'wind') Finance.book('penalties', -DIVERT_PENALTY);
+    if (cause !== 'fog' && cause !== 'wind' && cause !== 'storm' && cause !== 'ash') Finance.book('penalties', -DIVERT_PENALTY);
     Meters.lost(f);
     logEvent('diverted', { flight: f.no, why: cause });
   },
@@ -129,6 +135,9 @@ const Flights = {
     for (const f of S.ops.flights) {
       if (this.over(f) || f.st === 'taxiOut') continue;
       if (f.st === 'sched' || f.st === 'inbound') { f.st = 'gone'; continue; }   // still far away: the next stage's
+      if (f.stay && f.inBlock !== null) continue;                                // a guest's aircraft: it leaves another day
+      // session 5: under a closed sky what could not leave is cancelled
+      if (S.ops.ash) { Stands.release(f); this.cancel(f); continue; }
       const st = S.mission.st;
       st.dep++;
       f.delay = Math.max(0, S.clock - f.std);

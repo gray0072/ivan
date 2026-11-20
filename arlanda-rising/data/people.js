@@ -16,12 +16,17 @@
 
 const DEPTS = {
   stands: { name: 'Operations', union: "The operations staff's union" },
-  turnaround: { name: 'Ground handling', union: "The ramp workers' union" },
+  turnaround: { name: 'Ground handling', union: "The ramp workers' union", clearance: 2002 },
   checkin: { name: 'Terminal service', union: "The terminal staff's union" },
   snow: { name: 'Snow and maintenance', union: "The maintenance workers' union" },
-  baggage: { name: 'Baggage', union: "The baggage handlers' union" },
+  baggage: { name: 'Baggage', union: "The baggage handlers' union", clearance: 2002 },
   info: { name: 'Information', union: "The terminal staff's union" },
-  it: { name: 'IT', union: "The engineers' union" }
+  it: { name: 'IT', union: "The engineers' union" },
+  // session 5: security (a clearance for every new screener), the border (the police: the airport pays no wages and
+  // the officers' absence is the police's own matter) and de-icing
+  security: { name: 'Security', union: "The security staff's union", clearance: 2002 },
+  border: { name: 'Border', union: "The police officers' union", police: true },
+  deice: { name: 'De-icing', union: "The ramp workers' union", clearance: 2002 }
 };
 
 const MANAGERS = {
@@ -64,5 +69,14 @@ const MANAGERS = {
   pekkaNiemi: { name: 'Pekka Niemi', dept: 'turnaround', from: 1963, salary: 0.9, face: '👷',
     perks: { strike: 0.2, absence: 0.7, slow: 0.25 },
     good: ['An old union man: a strike is less likely.', 'Fewer sick days in his team.'],
-    bad: 'Takes his time: his teams are a quarter slower.' }
+    bad: 'Takes his time: his teams are a quarter slower.' },
+  // session 5: heads of security
+  leilaNordin: { name: 'Leila Nordin', dept: 'security', from: 2001, salary: 1.35, face: '👮‍♀️',
+    perks: { fast: 0.6, right: 0.04 },
+    good: ['Reads the queue: her planners open a lane much sooner.', 'Opens the right number of lanes.'],
+    bad: 'Expensive.' },
+  goranFalk: { name: 'Göran Falk', dept: 'security', from: 2001, salary: 0.9, face: '👮',
+    perks: { strike: 0.2, absence: 0.7, slow: 0.1 },
+    good: ['The screeners trust him: a strike is less likely.', 'Fewer sick days in his team.'],
+    bad: 'Thorough: every lane is 10 % slower.' }
 };

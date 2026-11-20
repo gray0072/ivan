@@ -14,8 +14,10 @@ const Offers = {
     // an airline wants more flights
     const al = Object.keys(AIRLINES).filter((c) => { const y = AIRLINES[c].years; return y[0] <= year && (!y[1] || y[1] >= year); });
     for (const code of al) {
-      const types = { SK: year >= 1990 ? 'MD87' : year >= 1968 ? 'DC9' : 'CRVL', LF: year >= 1990 ? 'B737' : 'F28', STERLING: year >= 1972 ? 'B727' : 'CRVL', TRANSAIR: year >= 1968 ? 'B727' : 'DC6B',
-        AY: year >= 1990 ? 'MD87' : 'DC9', LH: year >= 1990 ? 'B737' : 'B727', TRANSWEDE: 'MD87', BRAATHENS: 'B737', PREMIAIR: 'A320', NOVAIR: 'A320', RYANAIR: 'B737' };
+      const types = { SK: year >= 2003 ? 'B736' : year >= 1990 ? 'MD87' : year >= 1968 ? 'DC9' : 'CRVL', LF: year >= 1990 ? 'B737' : 'F28', STERLING: year >= 1972 ? 'B727' : 'CRVL', TRANSAIR: year >= 1968 ? 'B727' : 'DC6B',
+        AY: year >= 1990 ? 'MD87' : 'DC9', LH: year >= 1990 ? 'B737' : 'B727', TRANSWEDE: 'MD87', BRAATHENS: 'B737', PREMIAIR: 'A320', NOVAIR: 'A320', RYANAIR: 'B737',
+        // session 5
+        DY: 'B738', EK: 'B77W', QR: 'A319', BA: year >= 2001 ? 'A320' : null };
       const type = types[code];
       if (!type || !AIRCRAFT[type]) continue;
       const n = 1 + Math.floor(rnd() * 3), kind = AIRLINES[code].kind;

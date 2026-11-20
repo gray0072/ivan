@@ -19,10 +19,15 @@ const Traffic = (() => {
   const R2 = LAYOUT.runway2, L2 = Math.hypot(R2.to[0] - R2.from[0], R2.to[1] - R2.from[1]);
   const isR2 = (dir) => dir === '08' || dir === '26';
   const H2 = Math.atan2(R2.to[0] - R2.from[0], R2.to[1] - R2.from[1]) * 180 / Math.PI;
-  const runwayHdg = (dir) => (dir === '01' ? 10.4 : dir === '19' ? 190.4 : dir === '08' ? H2 : H2 + 180);
+  // session 5: runway 3 (01R/19L), its exit and the taxiway over the bridges
+  const R3 = LAYOUT.runway3, L3 = Math.hypot(R3.to[0] - R3.from[0], R3.to[1] - R3.from[1]);
+  const isR3 = (dir) => dir === '01R' || dir === '19L';
+  const H3 = Math.atan2(R3.to[0] - R3.from[0], R3.to[1] - R3.from[1]) * 180 / Math.PI;
+  const runwayHdg = (dir) => (dir === '01' ? 10.4 : dir === '19' ? 190.4 : dir === '08' ? H2 : dir === '26' ? H2 + 180 : dir === '01R' ? H3 : H3 + 180);
   // from the runway's exit to the apron's entry
   function exitPath(dir) {
     if (isR2(dir)) return [rwFrom(dir, R2.exit), R2.from].concat(LAYOUT.taxi2.slice(0, 3).reverse());
+    if (isR3(dir)) return [rwFrom(dir, dir === '01R' ? R3.exit * L3 : (1 - R3.exit) * L3)].concat(LAYOUT.taxi3);
     return [rp(EXIT, 0), rp(EXIT, LAYOUT.taxi.offset), APRON_IN];
   }
   function along(pts, u) { return alongPoly(pts, polyLength(pts) * clamp(u, 0, 1)); }
@@ -39,15 +44,24 @@ const Traffic = (() => {
       const tw = LAYOUT.taxi2;
       return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], tw[0][1]]].concat(tw).concat(dir === '26' ? [R2.to] : []);
     }
+    if (isR3(dir)) {
+      const tw = LAYOUT.taxi3.slice().reverse();
+      return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], tw[0][1]]].concat(tw).concat([dir === '01R' ? R3.from : R3.to]);
+    }
     const end = dir === '01' ? 0 : 1;
     return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], APRON_IN[1]], APRON_IN, rp(EXIT, LAYOUT.taxi.offset), rp(end, LAYOUT.taxi.offset), rp(end, 70)];
   }
-  function dirNow() { const rw = Runways.inUse(); return rw && S.ops ? Runways.direction(rw) : '19'; }
+  // the arrivals' runway and its direction now (session 5: with runway 3 the landings keep to runway 1)
+  function dirNow() { const rw = S.ops ? Runways.forArr() : null; return rw ? Runways.direction(rw) : '19'; }
   // the runway point at a distance (m) from the threshold of a direction, before it (−) or after it (+)
   function rwFrom(dir, d) {
     if (isR2(dir)) {
       const a = dir === '08' ? R2.from : R2.to, b = dir === '08' ? R2.to : R2.from;
       return [a[0] + (b[0] - a[0]) / L2 * d, a[1] + (b[1] - a[1]) / L2 * d];
+    }
+    if (isR3(dir)) {
+      const a = dir === '01R' ? R3.from : R3.to, b = dir === '01R' ? R3.to : R3.from;
+      return [a[0] + (b[0] - a[0]) / L3 * d, a[1] + (b[1] - a[1]) / L3 * d];
     }
     return dir === '01' ? rp(d / L, 0) : rp(1 - d / L, 0);
   }
@@ -163,6 +177,14 @@ const Traffic = (() => {
         fuelTruck(c, sc, v.x, v.y, q.u >= 1 ? 90 : v.hdg, true);
         if (people && q.u >= 1) person(c, wingPt[0] + 4, wingPt[1] + 2, PAL.hiVis);
       }
+    }
+    // session 5: a de-icing truck at the wing, its boom up and the warm glycol steaming
+    if (tr.deice === 'going') {
+      const dx = p.x - len * 0.1, dy = p.y + A.span * 0.3;
+      Iso.obox(c, dx, dy, 6, 2.6, 0, 3, 90, PAL.hiVisOrange);
+      Iso.obox(c, dx + 1, dy - 2, 1, 1, 3, 3 + A.span * 0.12, 90, '#d0d0d0');
+      beacon(sc, dx, dy, 3.4);
+      if (sc.dark < 0.5) sc.lights.push({ x: dx, y: dy - 4, z: 5, col: '240,245,255', r: 6 });
     }
     // a hand by the nose, and the tug at pushback
     if (people && f.st !== 'taxiOut') person(c, p.x + len / 2 + 3, p.y - 3, PAL.hiVis);

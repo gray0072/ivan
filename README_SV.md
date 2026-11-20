@@ -83,7 +83,7 @@
     <td width="50%" valign="top">
       <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/screenshot.png" alt="Skärmbild från Arlanda Rising"></a>
       <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
-      <p>Driv Stockholm Arlanda genom dess riktiga historia: röj skogen 1958, välj platser och ploga snön för hand, väx sedan med jetplanen, lämna arbetet till lag, chefer och de första datorerna och öppna 1990-talets himmel med riktiga butiker, nya flygbolag och tåget – en isometrisk flygplats, korta uppdrag med stjärnor som sparas hela tiden, fritt spel, utmaningsdagar och molnsparning.</p>
+      <p>Driv Stockholm Arlanda genom dess riktiga historia: röj skogen 1958, välj platser och ploga snön för hand, väx sedan med jetplanen, lämna arbetet till lag, chefer och de första datorerna öppna 1990-talets himmel med riktiga butiker, nya flygbolag och tåget och driv flygplatsen genom 2000- och 2010-talet – Schengen, bana 3, askmolnet, ett grönt betyg – en isometrisk flygplats, korta uppdrag med stjärnor som sparas hela tiden, fritt spel, utmaningsdagar och molnsparning.</p>
       <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Spela</b></a> · <a href="arlanda-rising/">Källkod</a></p>
     </td>
     <td width="50%" valign="top"></td>

@@ -379,6 +379,7 @@ const Game = {
       else if (e.code === 'KeyD' && Cheats.endStage()) text = tr('Cheat: skipped to the end of the stage');
       else if (e.code === 'KeyK') { const d = Cheats.strike(); text = d ? tr('Cheat: {dept} on strike', { dept: Text.dept(d) }) : tr('Cheat: no team to strike yet'); }
       else if (e.code === 'KeyF') { const d = Cheats.failure(); text = d ? tr('Cheat: {sys} has failed', { sys: Text.level(d, S.domains[d]) }) : tr('Cheat: no system to fail now'); }
+      else if (e.code === 'KeyE') { const id = Cheats.event(); text = id ? tr('Cheat: a random event') : tr('Cheat: no event in plan time'); }
     }
     if (!text) return false;
     this.banner(text);
@@ -441,6 +442,10 @@ const Game = {
       Tray.reset(); Toolbar.reset(); PlanUI.reset();
     });
     this.wireInput();
+    // session 5: the line of a scripted or random event, a permit broken
+    GameEvents.on('script', (e) => { if (e.text && this.screen === 'play') this.banner(tr(e.text), 5000); });
+    GameEvents.on('randomEvent', (e) => { if (this.screen === 'play') { this.banner(tr(e.text), 5500); Sfx.play('alarm'); } });
+    GameEvents.on('permitBroken', () => { if (this.screen === 'play') this.banner(tr('The environmental permit is broken this month: a fine.'), 4500); });
     document.querySelectorAll('.speeds button').forEach((b) => b.addEventListener('click', () => {
       Sfx.unlock();
       if (this.screen !== 'play') return;

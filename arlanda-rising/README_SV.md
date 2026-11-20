@@ -12,11 +12,11 @@
 
 </div>
 
-Ett strategispel om att driva en riktig flygplats, **Stockholm Arlanda**, berättat genom dess riktiga historia. Du är chef: i tallskogen norr om Stockholm 1958 röjer du tomten, sedan bygger du flygledartornet och den första terminalen, väljer plats åt varje SAS Caravelle och DC-8, öppnar incheckningsdiskar, tankar jetplanen, plogar snön mörka vintereftermiddagar, tänder banljusen och får den unga flygplatsen att bära sig. Sedan kommer jeteran — jumbon, bana 2 för sidvindarna, utrikesterminalen 1976, inrikesflygen som flyttar in från Bromma 1983 — och arbetet blir för stort för dina händer: du anställer lag och deras chefer, sätter in de första datorerna och lär dig att maskiner går sönder och att fack strejkar. På 1990-talet öppnas himlen: nya flygbolag vill ha slottider, riktiga butiker och kaféer vill ha lokaler i dina terminaler, Köpenhamn vill ta dina transferresenärer, och en tågtunnel ska grävas under terminalerna.
+Ett strategispel om att driva en riktig flygplats, **Stockholm Arlanda**, berättat genom dess riktiga historia. Du är chef: i tallskogen norr om Stockholm 1958 röjer du tomten, sedan bygger du flygledartornet och den första terminalen, väljer plats åt varje SAS Caravelle och DC-8, öppnar incheckningsdiskar, tankar jetplanen, plogar snön mörka vintereftermiddagar, tänder banljusen och får den unga flygplatsen att bära sig. Sedan kommer jeteran — jumbon, bana 2 för sidvindarna, utrikesterminalen 1976, inrikesflygen som flyttar in från Bromma 1983 — och arbetet blir för stort för dina händer: du anställer lag och deras chefer, sätter in de första datorerna och lär dig att maskiner går sönder och att fack strejkar. På 1990-talet öppnas himlen: nya flygbolag vill ha slottider, riktiga butiker och kaféer vill ha lokaler i dina terminaler, Köpenhamn vill ta dina transferresenärer, och en tågtunnel ska grävas under terminalerna. Det nya millenniet för med sig Schengen och passbåsen, det nya flygledartornet, bana 3 bortom taxibanebroarna, säkerhetsreglerna efter 2001 och vätskorna 2006, Norwegians röda nosar och frost på varje vinge; sedan tar Swedavia över, askmolnet stänger himlen, kungar flyger in till ett kungligt bröllop, Emirates kommer med sin Boeing 777, och domstolen ger flygplatsen ett miljötillstånd att leva inom.
 
 Flygplatsen är ritad isometriskt och lever framför dig: plan i sina flygbolags färger landar, taxar, vänds på sina platser med trappor, catering, bagagevagnar och tankbilar, och lyfter igen; plogkolonner med gula blixtljus sopar banan; solen följer den riktiga breddgraden, så decembereftermiddagarna är mörka och sommarnätterna ljusa.
 
-Fyra kapitel är klara — **Skogsfältet** (1958–1963), **Jetåldern** (1965–1976), **Alla kommer till Arlanda** (1983–1989) och **Öppna himlen** (1990–1999): 44 uppdrag på ungefär 2–9 minuter vardera (ett prov omkring 10), delade i etapper och sparade hela tiden, **fritt spel** efter kapitel 2 och tre **utmaningsdagar** efter kapitel 3. Nästa kapitel — bana 3, askmolnet, pandemin och ett Arlanda 2040 som du själv formar — kommer i senare versioner.
+Sex kapitel är klara — **Skogsfältet** (1958–1963), **Jetåldern** (1965–1976), **Alla kommer till Arlanda** (1983–1989), **Öppna himlen** (1990–1999), **Ett nytt millennium** (2001–2009) och **Större och grönare** (2010–2018): 66 uppdrag på ungefär 2–9 minuter vardera (ett prov omkring 10), delade i etapper och sparade hela tiden, **fritt spel** efter kapitel 2 och tre **utmaningsdagar** efter kapitel 3. De sista kapitlen — pandemin, stormåren och ett Arlanda 2040 som du själv formar — kommer i senare versioner.
 
 Spelbart på engelska, ryska eller svenska: välj språk högst upp på startskärmen.
 
@@ -31,7 +31,7 @@ Spelbart på engelska, ryska eller svenska: välj språk högst upp på startsk�
 - **Ny kampanj** börjar i maj 1958; **Fortsätt** öppnar kampanjens tidslinje med alla uppdrag och deras stjärnor. Ett uppdragskort har Astrids genomgång, målet, de två målen för fler stjärnor, etapperna och vad som är nytt.
 - **Byggetapper** (en dag går varje sekund): starta jobben i panelen till höger — varje jobb tar dagar och pengar, och bara så många åt gången som du har arbetslag. Välj normalt eller snabbt tempo, köp tillval som uppvärmda vintertält, betala kontant eller med lån. Ett val (sälja timret eller bränna det? ett kafé eller en kiosk?) stoppar tiden tills du bestämt dig.
 - **Driftetapper** (en timme tar ungefär en minut): **uppgiftslistan** till vänster fylls med jobb — ”SK 104 landar om 4 min — välj plats”, ”Incheckningskö 12 min — öppna en disk”, ”SK 908 behöver bränsle — skicka en tankbil”, ”Snö på banan — skicka plogarna”. Tryck på en uppgift för att göra det självklara, eller dra ett landande plan till en plats du väljer (**Välj** tänder de platser som passar). En uppgift du missar går till vakthavande chef, som gör den sent och inte alltid bra.
-- Raden längst ner öppnar och stänger incheckningsdiskar, skickar plogarna, väljer banriktning vid svag vind (på 01 landar man över Märsta, från 19 lyfter man över staden — vilket skonar den på natten?) och köper små saker: en fjärrplats, en tankbil, en snöplog.
+- Raden längst ner öppnar och stänger incheckningsdiskar (senare också säkerhetskontrollens filer och passbåsen), skickar plogarna, väljer banriktning vid svag vind (på 01 landar man över Märsta, från 19 lyfter man över staden — vilket skonar den på natten?) och köper små saker: en fjärrplats, en tankbil, en snöplog.
 - Överst syns pengarna, datum och klocka, vädret och de fem mätarna: **Flygbolag**, **Passagerare** (som stjärnor), **Grannar**, **Personal** och **Säkerhet**. Tryck på ett plan för att se dess kort och dess vändning.
 - Efter varje etapp visar ett kort hur det gick; efter uppdraget får du upp till tre stjärnor. Mellan uppdragen visar **Kontoret** pengarna, lånen och de senaste månadernas bokslut.
 
@@ -53,9 +53,20 @@ Spelbart på engelska, ryska eller svenska: välj språk högst upp på startsk�
 - **Ekonomi** (F, eller tryck på pengarna) visar bokföringen rad för rad, ett diagram över pengarna månad för månad och varje investering med sin **återbetalningstid** räknad på din egen trafik; under **Detaljer** **nuvärdet** och kalkyler innan du köper.
 - **Arlanda Express:** bygg banan för egna pengar (och behåll biljetterna) eller som koncession (gratis nu, en liten stationsavgift) — tågen går från november 1999.
 
+### Gränsen, två banor och en grönare flygplats (kapitel 5 och 6)
+
+- **Schengen:** från den 25 mars 2001 lämnar flyg till London, New York eller Dubai Schengenområdet, och deras resenärer köar vid **passbåsen** efter säkerhetskontrollen. Öppna bås med − / + i raden längst ner (eller låt polisens bemanningsplanerare göra det); senare läser **e-grindar** passen själva.
+- **Säkerhetskontrollen är din:** efter 2001 tar varje resenär längre tid, och från den 6 november 2006 gör vätskorna varje fil ännu långsammare. Öppna och stäng **filerna** i raden längst ner — varje öppen fil kostar sina säkerhetskontrollanters löner — anställ en bemanningsplanerare (nya kontrollanter behöver sex veckors säkerhetsprövning) eller sätt in **kösensorer** som öppnar en fil innan kön växer.
+- **Två parallella banor:** när bana 3 och taxibanebroarna är byggda landar planen på bana 1 och lyfter från bana 3 — dubbelt så mycket plats, några minuter längre taxning.
+- **Avisning:** under noll grader måste varje avgång avisas innan den får lyfta — med en bil vid platsen, som du eller ett lag skickar — tills **avisningsplattorna** gör det på väg till banan och **glykolåtervinningen** tar vara på vätskan.
+- **Fastigheter:** Sky Citys butiker och hotell, Cargo City, kontor och en hotellflygel betalar hyra varje månad, vare sig dagen är full eller lugn. Sky Citys varumärken tjänar på alla som går förbi.
+- **Det oväntade:** ett åskväder, en älg på banan, gäss, ett vilset barn i säkerhetskontrollen, ett statsbesök, en misslyckad programuppdatering — högst en per etapp. Och **askmolnet**, som stänger himlen i flera dagar och lämnar tusentals människor att ta hand om.
+- **Miljöbetyget och tillståndet** (från 2010): nu betalar flygplatsen för sin energi; tåget, bussarna, akviferen, en solcellspark, eldrivna fordon på plattan, biobränsle och glykolåtervinning höjer 🌿 miljöbetyget i översta raden, stora parkeringar sänker det. **Miljötillståndet** begränsar antalet flyg om dagen och kräver ett miljöbetyg; varje månad över en gräns kostar böter.
+- **Nya system:** A-CDM delar flygplatsens, flygbolagens och tornets tider, så att varje plan startar motorerna i tur och ordning; med självincheckat bagage lämnar resenärerna sina väskor själva.
+
 ### Fritt spel och utmaningsdagar
 
-Efter kapitel 2 erbjuder startskärmen **fritt spel**: en ändlös flygplats från en era som kampanjen har öppnat (1963, 1976, 1990, 2000). Varje omgång är en månads affärer — två erbjudanden från flygbolag, butiker, chefer, fack och leverantörer — och en hektisk topp med dina flygbolags egna linjer, utan stjärnor och utan ram.
+Efter kapitel 2 erbjuder startskärmen **fritt spel**: en ändlös flygplats från en era som kampanjen har öppnat (1963, 1976, 1990, 2000, och 2009 efter kapitel 5). Varje omgång är en månads affärer — två erbjudanden från flygbolag, butiker, chefer, fack och leverantörer — och en hektisk topp med dina flygbolags egna linjer, utan stjärnor och utan ram.
 
 Efter kapitel 3 kommer **utmaningsdagarna**: längre dagar på ungefär tjugo minuter med poäng — poäng för varje flygning i tid och för nöjda resenärer, färre för förseningar, köer och borttappat bagage — och tre stjärnor: **Julveckan 1989**, **Det stora snöfallet, 1987** och (efter kapitel 4) **Rekorddagen 1999**. De sparas när som helst, precis som ett uppdrag.
 
@@ -68,6 +79,10 @@ Efter kapitel 3 kommer **utmaningsdagarna**: längre dagar på ungefär tjugo mi
 **Kapitel 3, Alla kommer till Arlanda:** Linjeflyg flyttar in (oktober 1983) · Morgonrusning · Datorrummet · Skärmar · Influensasäsong · Strejkvarsel · Stora kylan · Planerare eller dator? · Återbetalning · Flygbussarna (1989) · *Prov: Inrikesrusning*.
 
 **Kapitel 4, Öppna himlen:** Terminal 2 (1990) · Avregleringen (1992) · Tågfrågan · Taxfree · Tunnelbygget · Ruttrabatt (Braathens linje till Oslo, 1996) · Bagage med maskin · Lågprisfrågan · Navkriget · Julrusningen · *Prov: Millennienatten* (31 december 1999).
+
+**Kapitel 5, Ett nytt millennium:** Schengen (25 mars 2001) · Det nya tornet (i drift från 23 december 2001) · Pir F · Bana tre · Säkerhet efter 2001 · Taxibanebroarna (bana 3:s första dag, 17 april 2003) · Norwegian kommer (1 september 2003) · Fjärravisning · Stadiga hyror (Cargo City, 2006) · Vätskor i påsar (6 november 2006) · *Prov: Snörusningen* (2009).
+
+**Kapitel 6, Större och grönare:** Swedavia (1 april 2010) · Askmolnet (15–21 april 2010) · Ett kungligt bröllop (juni 2010) · Lämna bagaget själv (2012) · Emirates (5 september 2013) · Tillståndet (2013) · Nobelveckan · Eurovisionveckan (2016) · Flyg grönt (2017) · A-CDM (2017) · *Prov: Rekordsommaren* (2018).
 
 ## Aldrig förlorat
 

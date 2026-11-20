@@ -33,6 +33,12 @@
 // brand ({ term, id }), court ({ code, share }), incentive ({ code, share }), term ({ code, term }), train ('own' |
 // 'concession'); to an ops stage's events: lanesShut ({ n }: lanes closed for the stage) and `unless` (a flag that
 // prevents the event).
+// Session 5 adds to setup: schengen (passport control for the flights outside it), booths, secRule (1: the rules after
+// 2001, 2: the liquids of 2006), events (random events in ops time), owner ('Swedavia'), green (the green rating, energy
+// and biofuel), permit ({ perDay, green }); to an option: booths, lanes (n bought), biofuel (a share), stranded (SEK spent
+// on stranded passengers), permit; to an ops stage: lanes and booths (open at the start), calm (no random event), and the
+// events storm, wildlife, secPause, vipStand, update, ash (data/events.js, sim/events.js); to a flight series: ns
+// (outside Schengen).
 // Each mission's minutes at ▶ are measured by tools/missions-check.js.
 
 const CHAPTERS = [

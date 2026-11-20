@@ -71,7 +71,7 @@ const TermArt = (() => {
   function draw(c, W, H, term, sel, t) {
     hits = [];
     c.clearRect(0, 0, W, H);
-    if (term === 'kerb') { kerb(c, W, H, sel, t); return; }
+    if (term === 'kerb' || term === 'sky') { kerb(c, W, H, sel, t, term); return; }
     const cr = crowd(term), def = TERMINALS[term];
     const X = [0, W * 0.13, W * 0.33, W * 0.44, W * 0.84, W];
     const top = 34, bot = H - 8, fs = Math.max(8.5, Math.min(12, W / 70));
@@ -116,6 +116,16 @@ const TermArt = (() => {
       if (S.ops) waitTag(c, Passengers.secWait(), (X[2] + X[3]) / 2 - 10, top + 24);
       label(c, tr('{n} lanes', { n: lanes }), (X[2] + X[3]) / 2, bot - 4, C.dim, 10);
     } else label(c, tr('No security check yet'), (X[2] + X[3]) / 2, (top + bot) / 2, C.dim, 10);
+    // session 5: the passport booths after security, for the flights outside Schengen
+    if (Terminal.borderOn() && (term === 'intl' || term === 't2')) {
+      const nb = Math.min(8, S.airport.booths), open = Terminal.booths(), by = bot - 96;
+      for (let i = 0; i < nb; i++) {
+        c.fillStyle = i < open ? '#2f5f8f' : '#a9b3bd';
+        c.fillRect(X[3] + 12 + i * 16, by, 12, 14);
+      }
+      label(c, 'Passkontroll · ' + tr('Passport control'), X[3] + 12 + nb * 8, by - 8, C.dim, 9);
+      if (S.ops) waitTag(c, Passengers.borderWait() > 99 ? 99 : Passengers.borderWait(), X[3] + 24 + nb * 16, by + 7);
+    }
     // airside: the shop units above and below the walk
     const units = Terminal.units(term);
     const rows = [units.filter((u, i) => i % 2 === 0), units.filter((u, i) => i % 2 === 1)];
@@ -149,16 +159,19 @@ const TermArt = (() => {
     if (!list.length) for (let i = 0; i < 4; i++) { const y = top + 20 + i * 80; c.fillStyle = C.gate; c.fillRect(X[4] + 6, y, W - X[4] - 12, 60); label(c, String(i + 1), X[4] + 16, y + 10, C.dim, 11); }
   }
 
-  // the kerb's tab: the road, the stops, the train, and the desks for car rental and taxis
-  function kerb(c, W, H, sel, t) {
+  // the kerb's tab: the road, the stops, the train, and the desks for car rental and taxis (session 5: Sky City's hall
+  // has the same plan, with its shops in units of their sizes)
+  function kerb(c, W, H, sel, t, term) {
     c.fillStyle = C.land; c.fillRect(0, 0, W, H);
     c.fillStyle = C.road; c.fillRect(0, H * 0.55, W, H * 0.25);
     c.fillStyle = C.floor; c.fillRect(0, 22, W, H * 0.5);
     c.strokeStyle = C.wall; c.lineWidth = 3; c.strokeRect(0, 22, W, H * 0.5);
-    label(c, 'Ankomsthall · Arrivals hall', W / 2, 12, C.text, 12);
-    const units = Terminal.units('kerb'), w = (W - 20) / Math.max(1, units.length) - 8;
-    units.forEach((u, i) => {
-      const x = 10 + i * (w + 8), y = 40, h = 40;
+    label(c, term === 'sky' ? 'Sky City · ' + tr('Shops, the hotel and the station') : 'Ankomsthall · Arrivals hall', W / 2, 12, C.text, 12);
+    const units = Terminal.units(term || 'kerb'), sum = units.reduce((s, u) => s + UW[u.size], 0) || 1, avail = W - 20 - 8 * units.length;
+    let ux = 10;
+    units.forEach((u) => {
+      const w = avail * UW[u.size] / sum, x = ux, y = 40, h = 40;
+      ux += w + 8;
       if (u.brand) BrandArt.sign(c, u.brand, x, y, w, h);
       else { c.setLineDash([4, 3]); c.strokeStyle = C.dim; c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); c.setLineDash([]); label(c, 'Ledig · ' + tr('To let'), x + w / 2, y + h / 2, C.dim, 10); }
       if (sel === u.id) { c.strokeStyle = '#ffd65a'; c.lineWidth = 3; c.strokeRect(x - 2, y - 2, w + 4, h + 4); }

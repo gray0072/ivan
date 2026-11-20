@@ -45,5 +45,26 @@ const BUILDINGS = {
   lane: { name: 'Security lane', price: 2.5e6, staff: 0, small: true, days: 10, from: 1970, lane: true },
   terminal2: { name: 'Terminal 2', price: 0, staff: 30 },
   railStation: { name: 'The Arlanda Express stations', price: 0, staff: 4 },
-  sorterHall: { name: 'The sorting hall', price: 0, staff: 2 }
+  sorterHall: { name: 'The sorting hall', price: 0, staff: 2 },
+  // session 5: chapters 5 and 6 — `rent`: SEK a month the airport earns from it (real estate), `booth`: a passport booth
+  deicer: { name: 'De-icing truck', price: 2.5e6, staff: 2, small: true, days: 0, from: 1960 },
+  booth: { name: 'Passport booth', price: 1.5e6, staff: 0, small: true, days: 10, from: 2001, booth: true },
+  offices: { name: 'Office building', price: 90e6, staff: 0, small: true, days: 60, from: 2000, rent: 0.75e6 },
+  hotelExt: { name: 'Hotel extension', price: 120e6, staff: 0, small: true, days: 60, from: 2000, rent: 1.0e6 },
+  solar: { name: 'Solar park', price: 40e6, staff: 0, small: true, days: 50, from: 2008 },
+  evehicles: { name: 'Electric apron vehicles', price: 35e6, staff: 0, small: true, days: 30, from: 2012 },
+  passportHall: { name: 'The passport hall', price: 0, staff: 2 },
+  t2intl: { name: 'Terminal 2 for international flights', price: 0, staff: 4 },
+  tower2: { name: 'The new control tower', price: 0, staff: 4 },
+  pierF: { name: 'Pier F', price: 0, staff: 20 },
+  jetBridges: { name: 'Jet bridges', price: 0, staff: 4 },
+  runway3: { name: 'Runway 3', price: 0, staff: 4 },
+  bridges: { name: 'The taxiway bridges', price: 0, staff: 2 },
+  deicePad: { name: 'Remote de-icing pads', price: 0, staff: 2 },
+  skyCity: { name: 'Sky City', price: 0, staff: 10, rent: 0.8e6 },
+  hotel: { name: 'The Sky City hotel', price: 0, staff: 0, rent: 1.4e6 },
+  cargoCity: { name: 'Cargo City', price: 0, staff: 6, rent: 2.2e6 },
+  aquifer: { name: 'The aquifer energy store', price: 0, staff: 1 },
+  codeF: { name: 'The A380 gate', price: 0, staff: 2 },
+  overWing: { name: 'Over-the-wing boarding', price: 0, staff: 1 }
 };

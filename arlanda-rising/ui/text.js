@@ -12,6 +12,13 @@ const METERS = [
   { k: 'safety', icon: '🛡️', name: 'Safety' }
 ];
 
+// the decisions a flag goal waits for, as shown (data/missions: `{ k: 'flag', id }`)
+const FLAG_NAMES = {
+  trainChosen: 'Decide who builds the train', lowFareAnswered: 'Answer the low-fare question',
+  targetSet: 'Answer the owner\'s target', strandedHelped: 'Look after the stranded passengers',
+  guestsPlanned: 'Plan the guests\' stands', jetsReady: 'Make room for the business jets'
+};
+
 const Text = {
   esc(s) { return String(s).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); },
   meterName(k) { const m = METERS.find((x) => x.k === k); return m ? tr(m.name) : k; },
@@ -42,7 +49,7 @@ const Text = {
         const what = (c.stages || []).length ? c.stages.map((s) => tr(def.stages[s].name)).join(', ') : tr(def.name);
         return tr('Build: {what}', { what });
       }
-      case 'flag': return tr(c.id);
+      case 'flag': return tr(FLAG_NAMES[c.id] || c.id);
       case 'built': return tr('Build: {what}', { what: tr(BUILDINGS[c.kind].name) });
       case 'level': return tr('{dom}: {level}', { dom: tr(DOMAINS[c.dom].name), level: tr(DOMAINS[c.dom].levels[c.min].name) });
       case 'manager': return tr('A head of {dept}', { dept: tr(DEPTS[c.dept].name) });
@@ -63,6 +70,13 @@ const Text = {
       case 'carriers': return tr('At least {n} airlines flying here', { n });
       case 'train': return tr('The train to Arlanda is built');
       case 'score': return tr('At least {n} points', { n });
+      // session 5
+      case 'borderWait': return tr('Border wait: at most {n} min', { n: this.num(n, 1) });
+      case 'estate': return tr('Real estate rents at least {m} a month', { m: sek(n) });
+      case 'green': return tr('Green rating: at least {n}', { n });
+      case 'permitOk': return tr('Keep within the environmental permit');
+      case 'runways': return tr('{n} runways in use', { n });
+      case 'owner': return tr('Arlanda run by {owner}', { owner: c.id });
     }
     return c.k;
   },
@@ -72,8 +86,8 @@ const Text = {
     if (typeof v === 'boolean') return v ? '✓' : '—';
     switch (c.k) {
       case 'onTime': return Math.round(v * 100) + ' %';
-      case 'avgDelay': case 'airportDelay': case 'checkinWait': case 'maxWait': case 'securityWait': return this.num(v, 1) + ' ' + tr('min');
-      case 'profit': case 'money': case 'spent': case 'lastMonth': case 'brandsIn': return sek(v);
+      case 'avgDelay': case 'airportDelay': case 'checkinWait': case 'maxWait': case 'securityWait': case 'borderWait': return this.num(v, 1) + ' ' + tr('min');
+      case 'profit': case 'money': case 'spent': case 'lastMonth': case 'brandsIn': case 'estate': return sek(v);
       case 'perDay': return this.num(v, 1);
       default: return this.num(v, 0);
     }
@@ -100,10 +114,14 @@ const Text = {
       case 'plough': { const s = Runways.surface(k.target); return tr('{surface}: {mm} mm of snow — send the ploughs', { surface: this.surface(k.target), mm: this.num(s ? s.snow : 0, 1) }); }
       case 'bags': { const st = f && Airport.stand(f.stand); return tr('Bags of {no} on stand {stand} — send the carts', { no: f ? f.no : '', stand: st ? st.name : '' }); }
       case 'announce': return tr('{no} is late — announce the delay', { no: f ? f.no : '' });
+      // session 5
+      case 'lane': return tr('Security queue {n} min — open a lane', { n: Math.round(Passengers.secWait()) });
+      case 'booth': return tr('Passport queue {n} min — open a booth', { n: Math.round(Math.min(99, Passengers.borderWait())) });
+      case 'deice': { const st = f && Airport.stand(f.stand); return tr('{no} on stand {stand} needs de-icing — send a truck', { no: f ? f.no : '', stand: st ? st.name : '' }); }
     }
     return k.kind;
   },
-  taskIcon(kind) { return { stand: '🛬', fuel: '⛽', checkin: '🧳', plough: '❄️', bags: '🛄', announce: '📢' }[kind] || '❗'; },
+  taskIcon(kind) { return { stand: '🛬', fuel: '⛽', checkin: '🧳', plough: '❄️', bags: '🛄', announce: '📢', lane: '🛂', booth: '🛃', deice: '🧊' }[kind] || '❗'; },
   // a department's and a domain's names, a domain's level as shown
   dept(id) { return tr((DEPTS[id] || {}).name || id); },
   dom(id) { return tr((DOMAINS[id] || {}).name || id); },
@@ -119,7 +137,10 @@ const Text = {
       case 'approach': return f.eta !== null && S.clock > f.eta + 0.5 ? tr('Holding — the runway is not free') : tr('On final approach');
       case 'taxiIn': return tr('Taxiing to its stand');
       case 'waitStand': return tr('Waiting for a free stand');
-      case 'turn': return f.tr && f.tr.ready !== null ? tr('Ready to go') : f.tr && f.tr.board !== null ? tr('Boarding') : f.tr && (f.tr.fuel === 'asked' || f.tr.fuel === 'queued') ? tr('Waiting for fuel') : tr('Turnaround');
+      case 'turn':
+        if (f.tr && (f.tr.deice === 'asked' || f.tr.deice === 'queued')) return tr('Waiting for de-icing');
+        if (f.tr && f.tr.deice === 'going') return tr('Being de-iced');
+        return f.tr && f.tr.ready !== null ? tr('Ready to go') : f.tr && f.tr.board !== null ? tr('Boarding') : f.tr && (f.tr.fuel === 'asked' || f.tr.fuel === 'queued') ? tr('Waiting for fuel') : tr('Turnaround');
       case 'parked': return tr('Parked, getting ready');
       case 'taxiOut': return tr('Taxiing out');
       case 'gone': return tr('Departed');
@@ -193,7 +214,13 @@ const Text = {
       out.push(r.strike ? tr('strike notice: a strike in a week') : tr('no strike'));
     }
     if (o.temps) out.push(tr('temps for {dept} for three months', { dept: this.dept(o.temps) }));
-    if (o.train) out.push(tr('a course for {dept}', { dept: this.dept(o.train) }) + ' · −' + sek(TRAIN_COST * Math.max(1, People.jobs(o.train))));
+    if (o.train && o.train !== 'own' && o.train !== 'concession') out.push(tr('a course for {dept}', { dept: this.dept(o.train) }) + ' · −' + sek(TRAIN_COST * Math.max(1, People.jobs(o.train))));
+    // session 5
+    if (o.booths) out.push(tr('+{n} passport booths', { n: o.booths }) + ' · −' + sek(BUILDINGS.booth.price * o.booths));
+    if (o.lanes) out.push(tr('+{n} security lanes', { n: o.lanes }) + ' · −' + sek(BUILDINGS.lane.price * o.lanes));
+    if (o.biofuel !== undefined) out.push(tr('{p} of the fuel bio', { p: this.pct(o.biofuel) }) + ' · ' + tr('{m} a month', { m: sek(BIOFUEL_MONTH * o.biofuel) }) + ' · ' + tr('green rating +{n}', { n: Math.round(o.biofuel * 100 * GREEN_PTS.biofuel) }));
+    if (o.stranded) out.push('−' + sek(o.stranded));
+    if (o.flag && !out.length) out.push(tr('a decision taken'));
     if (!out.length) out.push(tr('nothing changes'));
     return out.join(' · ');
   },

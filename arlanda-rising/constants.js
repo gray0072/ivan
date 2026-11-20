@@ -20,17 +20,18 @@ const EPOCH_YEAR = 1950;           // day 0 of the calendar is 1 January of this
 // ---------- the task tray and the duty manager ----------
 const TRAY_MAX = 6;                // tasks the tray holds; more go to the duty manager at once
 // game minutes a task waits for the player before the duty manager takes it
-const TASK_DEADLINE = { stand: 5, fuel: 6, checkin: 8, plough: 10, bags: 6, announce: 4 };
+const TASK_DEADLINE = { stand: 5, fuel: 6, checkin: 8, plough: 10, bags: 6, announce: 4, lane: 6, booth: 6, deice: 6 };
 // game minutes the duty manager is late on top of that (and right only MANUAL_SUMMARY_EFF of the time)
-const DUTY_LATE = { stand: 15, fuel: 15, checkin: 20, plough: 25, bags: 15, announce: 12 };
+const DUTY_LATE = { stand: 15, fuel: 15, checkin: 20, plough: 25, bags: 15, announce: 12, lane: 15, booth: 15, deice: 15 };
 const MANUAL_SUMMARY_EFF = 0.6;    // the duty manager's efficiency, also for the skipped time between missions
 // share of the income lost in summary (plan time, the skipped time) per domain still done by hand at that efficiency
-const SUMMARY_LOSS = { stands: 0.04, turnaround: 0.03, checkin: 0.04, snow: 0.06, baggage: 0.03, info: 0.02 };
+const SUMMARY_LOSS = { stands: 0.04, turnaround: 0.03, checkin: 0.04, snow: 0.06, baggage: 0.03, info: 0.02, security: 0.03, border: 0.02, deice: 0.04 };
 const STAND_TASK_LEAD = 6;         // game minutes before the landing that "pick a stand" appears
 
 // ---------- runways ----------
 const RWY_SEP = 3;                 // game minutes between two movements on one runway with a tower
 const RWY_SEP_NO_TOWER = 6;        // … without a control tower
+const RWY_SEP_NEW = 2.5;           // … from the new tower of 2001 (its radar and its view of every runway)
 const HOLD_MAX = 30;               // game minutes an arrival holds before it diverts
 const DEP_WAIT_MAX = 90;           // game minutes a departure waits for a usable runway before it is cancelled
 const TAXI_BASE = 3;               // game minutes of taxiing, plus the stand's own distance
@@ -226,3 +227,39 @@ const TRAFFIC_DAYS = 30;           // days of traffic kept for the payback estim
 // points of a Challenge Day: per departure on time and late, × the Passengers meter at the end, per flight lost, close
 // call, delay not announced and bag lost, per minute of delay the airport caused, per departure × its average wait
 const CHALLENGE_POINTS = { onTime: 10, late: 3, paxMeter: 10, lost: -120, closeCall: -200, unannounced: -15, lostBag: -10, adelay: -2, wait: -3 };
+
+// ---------- the border, security rules, runway 3, de-icing, real estate (session 5, chapter 5) ----------
+const SCHENGEN_DAY = '2001-03-25'; // Sweden's first day in the Schengen area: passport control only for non-Schengen flights
+const BOOTH_RATE = 2.2;            // passengers through one passport booth a game minute
+const BORDER_TASK_WAIT = 8;        // minutes of queue at the border that make the "open a booth" task
+const BOOTH_MONTH = 15000;         // SEK a month per booth: the airport pays the space, Polisen the officers
+const EGATE_X = 1.8;               // × a booth's passengers with the e-gates working
+const SEC_RULE_X = [1, 0.78, 0.68]; // × LANE_RATE by the rules of the day: before 2001, after 2001, liquids in bags (2006)
+const CT_X = 1.45;                 // × the lane's rate with CT scanners (liquids and laptops stay in the bag), from the 2001 rules
+const SEC_TASK_WAIT = 8;           // minutes at security that make the "open a lane" task (the security domain)
+const SEC_SENSOR_WAIT = 3;         // … with the queue sensors working: they open a lane before the queue builds
+const R3_TAXI = 5;                 // game minutes more taxiing to or from runway 3 over the taxiway bridges
+const DEICE_TEMP = 0;              // °C: at or below it every departure needs de-icing (once the domain is open)
+const DEICE_MIN = 7;               // game minutes a de-icing truck works on an aircraft at its stand
+const DEICE_PAD_MIN = 3;           // game minutes more taxiing out through a remote de-icing pad
+const GLYCOL_COST = 12000;         // SEK of de-icing fluid per aircraft (a few hundred to a few thousand litres)
+const GLYCOL_RECOVER = 0.3;        // share of the fluid bought less with glycol recovery
+const DEICE_WINTER_SHARE = 0.5;    // share of the winter departures de-iced, in summary
+const SKY_SPEND = 0.35;            // × the spend of the brands in Sky City for every departing passenger (landside, no free-time rule)
+
+// ---------- A-CDM, self bag drop, the green rating, the permit, events (session 5, chapter 6) ----------
+const ACDM_TAXI_X = 0.7;           // × the taxi-out minutes with A-CDM working (start-up given in sequence)
+const SBD_X = 1.6;                 // × a desk's passengers with self bag drop working
+const ENERGY_MONTH = 5e6;          // SEK a month of heating and power for the terminals (from chapter 6), × 1.5 in winter
+const ENERGY_SAVE = { aquifer: 0.2, solar: 0.05 }; // share of the energy bill each saves
+const BIOFUEL_MONTH = 40e6;        // SEK a month the airport pays for a whole share of biofuel (× the share)
+const GREEN_BASE = 30;             // the green rating of an airport that does nothing
+// green rating points: the train, the coaches, the aquifer, the solar park, glycol recovery, biofuel (× the share ×
+// 100), electric apron vehicles; minus each big car park
+const GREEN_PTS = { train: 10, bus: 4, aquifer: 14, solar: 7, glycol: 10, biofuel: 0.6, electric: 8, carPark: -3 };
+const PERMIT_FINE = 3e6;           // SEK a month the environmental permit is broken
+const PERMIT_NEIGHBOURS = 2;       // Neighbours points lost each month it is broken
+const EVENT_CHANCE = 0.4;          // chance an ops stage gets a random event (once a mission turns them on)
+const EVENT_GAP = 60;              // game minutes from the stage's start before a random event may come
+const VIP_STAND_MIN = 75;          // game minutes a stand is kept for a VIP or state flight
+const ASH_HOTEL = 900;             // SEK a night per stranded passenger the airport helps with (cots, food, hotels)

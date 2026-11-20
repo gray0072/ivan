@@ -6,7 +6,8 @@
 //   planned arrival; `parked` ones stand on the apron at the start and only leave (their departures spread
 //   between `from` and `to`); `training` flights carry no passengers (school flying). Arrivals come early
 //   or late by the difficulty's randomness. `waiver`: the flight may land although the fire category is too low
-//   (a one-off permission).
+//   (a one-off permission). Session 5: `ns` — a flight outside the Schengen area (else its airline's own `ns`), `vip` — a
+//   state or VIP flight kept apart on its own stand.
 // Used by sim/ops.js; the flights live in S.ops.flights.
 
 const Schedule = {
@@ -30,6 +31,8 @@ const Schedule = {
     const booked = line.training ? 0 : Math.round(a.seats * (line.load || 0.7) * randRange(0.85, 1.1));
     const f = {
       id: 'f' + nextId(), al: line.al, type: line.type, intl: line.intl !== undefined ? line.intl : (AIRLINES[line.al] || {}).intl,
+      // session 5: outside the Schengen area (passport control once it is on): the line's own, else its airline's
+      ns: line.ns !== undefined ? !!line.ns : !!(AIRLINES[line.al] || {}).ns,
       no: line.al.slice(0, 2) + ' ' + (line.training ? 'T' + num : String((line.base || 100) + num)),
       route: line.route ? line.route[num % line.route.length] : null,
       training: !!line.training, booked, paxArr: line.training ? 0 : Math.round(a.seats * (line.load || 0.7) * randRange(0.8, 1.05)),
@@ -37,6 +40,8 @@ const Schedule = {
       checked: 0, waitSum: 0, paxServed: 0, missed: 0, delay: 0, adelay: 0, extraTaxi: 0, tr: null
     };
     if (line.waiver) f.waiver = true;
+    // session 5: an aircraft that stays for days (a guest's): it lands and keeps its stand; its departure is not this stage's
+    if (line.stay) f.stay = true;
     if (line.parked) {
       f.std = at;
       f.st = 'parked';

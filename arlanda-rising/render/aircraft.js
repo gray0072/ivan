@@ -27,7 +27,20 @@ const AIRCRAFT_SHAPE = {
   F50: { sweep: 2, engines: [0.2], props: true, fin: 0.21, fus: 0.06 },
   BA46: { sweep: 15, engines: [0.13, 0.26], fin: 0.24, fus: 0.06 },
   A320: { sweep: 25, engines: [0.2], fin: 0.2, fus: 0.045 },
-  B757: { sweep: 25, engines: [0.19], fin: 0.18, fus: 0.04 }
+  B757: { sweep: 25, engines: [0.19], fin: 0.18, fus: 0.04 },
+  // session 5
+  B736: { sweep: 25, engines: [0.17], fin: 0.21, fus: 0.05 },
+  B738: { sweep: 25, engines: [0.17], fin: 0.19, fus: 0.042 },
+  A321: { sweep: 25, engines: [0.2], fin: 0.18, fus: 0.038 },
+  A319: { sweep: 25, engines: [0.2], fin: 0.21, fus: 0.048 },
+  CRJ9: { sweep: 26, rear: true, fin: 0.2, fus: 0.036 },
+  AT72: { sweep: 2, engines: [0.2], props: true, fin: 0.21, fus: 0.055 },
+  A333: { sweep: 30, engines: [0.24], fin: 0.17, fus: 0.045 },
+  A343: { sweep: 30, engines: [0.2, 0.38], fin: 0.17, fus: 0.045 },
+  B77W: { sweep: 31, engines: [0.25], fin: 0.16, fus: 0.043 },
+  B789: { sweep: 32, engines: [0.25], fin: 0.17, fus: 0.046 },
+  A388: { sweep: 33, engines: [0.22, 0.4], fin: 0.17, fus: 0.05 },
+  G550: { sweep: 27, rear: true, fin: 0.22, fus: 0.05 }
 };
 
 const AircraftArt = (() => {
@@ -102,6 +115,8 @@ const AircraftArt = (() => {
       const col = f < 0.3 ? (liv.belly || METAL) : f < 0.5 ? liv.line : f < 0.58 && liv.line2 ? liv.line2 : liv.top;
       polyL(full, z, i === layers ? shade(liv.top, 0.06) : shade(col, -0.1 + f * 0.1));
     }
+    // session 5: a painted nose (Norwegian's red)
+    if (liv.nose) polyL([[-fw, L / 2 - fw * 1.2], [fw, L / 2 - fw * 1.2], [fw * 0.6, L / 2 - fw * 0.1], [-fw * 0.6, L / 2 - fw * 0.1]], zh + 0.01, liv.nose);
     // cockpit windows
     polyL([[-fw * 0.6, L / 2 - fw * 0.9], [fw * 0.6, L / 2 - fw * 0.9], [fw * 0.7, L / 2 - fw * 1.6], [-fw * 0.7, L / 2 - fw * 1.6]], zh + 0.02, '#2a3540');
     polyL(wing(nearSide), wingZ, METAL);

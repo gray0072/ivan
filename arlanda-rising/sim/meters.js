@@ -25,7 +25,7 @@ const Meters = {
   // a departure has left: how its passengers and its airline feel about it
   departed(f) {
     const al = this.airline(f.al), t = (AIRLINES[f.al] || {}).temper || {};
-    const wait = (f.paxServed ? f.waitSum / f.paxServed : 0) + (f.secServed ? f.secWait / f.secServed : 0);
+    const wait = (f.paxServed ? f.waitSum / f.paxServed : 0) + (f.secServed ? f.secWait / f.secServed : 0) + (f.borderServed ? f.borderWait / f.borderServed : 0);
     const walk = !Stands.contact(f.stand) && f.booked > 0 ? REMOTE_WALK_MOOD * (S.airport.apron.snow > 1 ? 2 : 1) : 0;
     const missed = f.booked ? f.missed / f.booked : 0;
     // session 3: lost bags, and a late flight nobody told the passengers about

@@ -34,12 +34,25 @@ const FREE_ERAS = [
       airlines: { SK: [{ type: 'MD87', perDay: 16, load: 0.74 }, { type: 'B737', perDay: 14, load: 0.74 }, { type: 'DC9', perDay: 8, load: 0.72 }],
         BRAATHENS: [{ type: 'B737', perDay: 6, load: 0.72 }], LH: [{ type: 'B737', perDay: 5, load: 0.72 }], AY: [{ type: 'MD87', perDay: 5, load: 0.72 }] },
       domains: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2 }, terms: { SK: 't2' }, rivals: { pull: 1, months: 1 },
-      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2 } } }
+      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2 } } },
+  // session 5: the airport of 2009 — Schengen and the border, two parallel runways, the de-icing pads, Sky City and
+  // Cargo City, the security rules of 2006
+  { id: '2009', name: 'A new millennium, 2009', date: '2009-04-06', opens: '5-11',
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal2', 'arlandaExpress', 'sorterHall',
+      'skyCity', 'skyCity.hotel', 'schengen', 'schengen.t2', 'tower2', 'pierF', 'pierF.bridges', 'runway3', 'bridges', 'deicePads', 'cargoCity'],
+    setup: { open: true, openSkies: true, units: true, lanes: 14, budget: 150e6, loanLimit: 800e6, items: { fuelTruck: 6, plough: 7, crashTender: 3, generator: 1, deicer: 3 }, desks: 40, it: 8,
+      airlines: { SK: [{ type: 'B736', perDay: 16, load: 0.74 }, { type: 'A321', perDay: 6, load: 0.76 }, { type: 'CRJ9', perDay: 6, load: 0.72 }, { type: 'A343', perDay: 2, load: 0.8 }],
+        DY: [{ type: 'B738', perDay: 8, load: 0.8 }], LH: [{ type: 'A320', perDay: 5, load: 0.74 }], AY: [{ type: 'A320', perDay: 5, load: 0.74 }], BA: [{ type: 'A320', perDay: 4, load: 0.76 }],
+        QR: [{ type: 'A319', perDay: 1, load: 0.78 }] },
+      domains: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2, border: 1, security: 2, deice: 2 }, terms: { SK: 'intl', BA: 't2', AY: 't2', DY: 't2' },
+      booths: 6, secRule: 2, events: true, rivals: { pull: 1, months: 1 },
+      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2, border: 1, security: 2, deice: 3 } } }
 ];
 
 // game minutes on the ground by type, for the flights made from the routes
 const FREE_TURN = { DC3: 30, CV44: 35, DC6B: 55, CRVL: 40, DC8: 65, DC9: 40, B727: 50, B747: 125, DC10: 75, F28: 35, MD81: 40,
-  B737: 40, B767: 90, MD87: 40, F100: 35, F50: 25, BA46: 35, A320: 55, B757: 60 };
+  B737: 40, B767: 90, MD87: 40, F100: 35, F50: 25, BA46: 35, A320: 55, B757: 60,
+  B736: 45, B738: 50, A321: 55, A319: 50, CRJ9: 40, AT72: 35, A333: 110, A343: 110, B77W: 120, B789: 110, A388: 140, G550: 60 };
 const FREE_OPENS = '2-11';         // the mission whose pass opens Free Play
 const FREE_PLAN_DAYS = 40;         // days of plan time in a round
 const FREE_GOAL_ONTIME = 0.7;      // the rolling goal of a round's ops stage

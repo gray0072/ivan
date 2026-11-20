@@ -12,11 +12,11 @@
 
 </div>
 
-A management game about running a real airport, **Stockholm Arlanda**, told through its real history. You are the director: in the pine forest north of Stockholm in 1958 you clear the site, then you build the control tower and the first terminal, pick a stand for every SAS Caravelle and DC-8, open check-in desks, fuel the jets, plough the snow on dark winter afternoons, light the runway and make the young airport pay. Then the jet age comes — the jumbo, runway 2 for the crosswinds, the international terminal of 1976, the domestic flights moving in from Bromma in 1983 — and the work grows too big for your hands: you hire teams and their managers, put in the first computers, and learn that machines break and unions strike. In the 1990s the skies open: new airlines want slots, real shops and cafés want units in your terminals, Copenhagen wants your transfer passengers, and a train has to be dug in under the terminals.
+A management game about running a real airport, **Stockholm Arlanda**, told through its real history. You are the director: in the pine forest north of Stockholm in 1958 you clear the site, then you build the control tower and the first terminal, pick a stand for every SAS Caravelle and DC-8, open check-in desks, fuel the jets, plough the snow on dark winter afternoons, light the runway and make the young airport pay. Then the jet age comes — the jumbo, runway 2 for the crosswinds, the international terminal of 1976, the domestic flights moving in from Bromma in 1983 — and the work grows too big for your hands: you hire teams and their managers, put in the first computers, and learn that machines break and unions strike. In the 1990s the skies open: new airlines want slots, real shops and cafés want units in your terminals, Copenhagen wants your transfer passengers, and a train has to be dug in under the terminals. The new millennium brings Schengen and the passport booths, the new control tower, runway 3 beyond its taxiway bridges, the security rules after 2001 and the liquids of 2006, Norwegian's red noses and frost on every wing; then Swedavia takes over, the ash cloud closes the sky, kings fly in for a royal wedding, Emirates comes with its Boeing 777, and the court gives the airport an environmental permit to live within.
 
 The airport is drawn in isometric view and lives in front of you: aircraft in their airline's colours land, taxi, turn round at their stands with stairs, catering, baggage carts and fuel trucks, and take off again; plough convoys sweep the runway with amber beacons; the sun follows the real latitude, so December afternoons are dark and summer nights are bright.
 
-Four chapters are ready — **The Forest Field** (1958–1963), **The Jet Age** (1965–1976), **Everyone Comes to Arlanda** (1983–1989) and **Open Skies** (1990–1999): 44 missions of about 2–9 minutes each (an exam about 10), split into stages and saved all the time, **Free Play** after chapter 2 and three **Challenge Days** after chapter 3. The next chapters — runway 3, the ash cloud, the pandemic and an Arlanda of 2040 that you design — come in later versions.
+Six chapters are ready — **The Forest Field** (1958–1963), **The Jet Age** (1965–1976), **Everyone Comes to Arlanda** (1983–1989), **Open Skies** (1990–1999), **A New Millennium** (2001–2009) and **Bigger and Greener** (2010–2018): 66 missions of about 2–9 minutes each (an exam about 10), split into stages and saved all the time, **Free Play** after chapter 2 and three **Challenge Days** after chapter 3. The last chapters — the pandemic, the storm years and an Arlanda of 2040 that you design — come in later versions.
 
 Playable in English, Russian or Swedish: pick the language at the top of the start screen.
 
@@ -31,7 +31,7 @@ Open [index.html](index.html) in a browser. There is no build step and no server
 - **New Campaign** starts in May 1958; **Continue** opens the campaign's timeline with every mission and its stars. A mission card has Astrid's briefing, the goal, the two goals for more stars, the stages and what is new.
 - **Build stages** (a day passes every second): start the jobs in the panel on the right — each takes days and money, and only as many run at once as you have crews. Pick a normal or a fast pace, buy options like heated winter tents, pay with cash or a loan. A choice (sell the timber or burn it? a café or a kiosk?) stops the time until you pick.
 - **Operations stages** (an hour takes about a minute): the **task tray** on the left fills with jobs — "SK 104 lands in 4 min — pick a stand", "Check-in queue 12 min — open a desk", "SK 908 needs fuel — send a truck", "Snow on the runway — send the ploughs". Tap a task to do the obvious thing, or drag a landing aircraft onto a stand of your choice (**Pick** lights up the stands that fit). A task you miss goes to the duty manager, who does it late and not always well.
-- The bar at the bottom opens and closes check-in desks, sends the ploughs, picks the runway direction when the wind is calm (01 lands over Märsta, 19 takes off over it — which spares the town at night?) and buys small things: a remote stand, a fuel truck, a snowplough.
+- The bar at the bottom opens and closes check-in desks (later also security lanes and passport booths), sends the ploughs, picks the runway direction when the wind is calm (01 lands over Märsta, 19 takes off over it — which spares the town at night?) and buys small things: a remote stand, a fuel truck, a snowplough.
 - The HUD shows the money, the date and the clock, the weather, and the five meters: **Airlines**, **Passengers** (as stars), **Neighbours**, **Staff** and **Safety**. Tap an aircraft to see its card and its turnaround.
 - After each stage a card shows how it went; after the mission you get up to three stars. Between missions the **Office** shows the money, the loans and the last months' books.
 
@@ -53,9 +53,20 @@ Open [index.html](index.html) in a browser. There is no build step and no server
 - **Finance** (F, or tap the money) shows the books by line, a chart of the money month by month and every investment with its **payback** worked out from your own traffic; under **Details**, the **net present value** and what-ifs before you buy.
 - **Arlanda Express:** build the line with your own money (and keep the tickets) or as a concession (free now, a small station fee) — the trains run from November 1999.
 
+### The border, two runways and a greener airport (chapters 5 and 6)
+
+- **Schengen:** from 25 March 2001 flights to London, New York or Dubai leave the Schengen area, and their passengers queue at the **passport booths** after security. Open booths with − / + in the bar below (or let the police's shift planner do it); later **e-gates** read the passports by themselves.
+- **Security is yours to run:** after 2001 each passenger takes longer, and from 6 November 2006 the liquids make every lane slower still. Open and close the **lanes** in the bar below — each open lane costs its screeners' wages — hire a shift planner (new screeners need a six-week security clearance), or put in **queue sensors** that open a lane before the queue builds.
+- **Two parallel runways:** once runway 3 and its taxiway bridges are built, the landings use runway 1 and the departures runway 3 — twice the room, a few minutes more to taxi.
+- **De-icing:** below zero every departure must be de-iced before it may leave — a truck at the stand, sent by you or a crew — until the **remote de-icing pads** do it on the way to the runway, and **glycol recovery** catches the fluid to use again.
+- **Real estate:** Sky City's shops and hotel, Cargo City, offices and a hotel wing pay rent every month, busy day or quiet. Sky City's brands earn from everybody who passes.
+- **The unexpected:** a thunderstorm, a moose on the runway, geese, a lost child at security, a state visit, a bad software update — at most one in a stage. And the **ash cloud**, which closes the sky for days and leaves thousands to look after.
+- **Green rating and the permit** (from 2010): the airport now pays for its energy; the train, the coaches, the aquifer, a solar park, electric apron vehicles, biofuel and glycol recovery raise the 🌿 green rating in the HUD, big car parks lower it. The **environmental permit** caps the flights a day and asks for a green rating; a month above a cap costs a fine.
+- **New systems:** A-CDM shares the times of the airport, the airlines and the tower, so every aircraft starts up in its turn; self bag drop lets the passengers drop their own bags.
+
 ### Free Play and Challenge Days
 
-After chapter 2 the start screen offers **Free Play**: an endless airport from an era the campaign has opened (1963, 1976, 1990, 2000). Every round is a month of business — two offers from airlines, shops, managers, unions and suppliers — and a busy peak flown from your airlines' own routes, with no stars and no frame.
+After chapter 2 the start screen offers **Free Play**: an endless airport from an era the campaign has opened (1963, 1976, 1990, 2000, and 2009 after chapter 5). Every round is a month of business — two offers from airlines, shops, managers, unions and suppliers — and a busy peak flown from your airlines' own routes, with no stars and no frame.
 
 After chapter 3 come the **Challenge Days**: longer days of about twenty minutes with a score — points for every flight on time and for happy passengers, fewer for delays, queues and lost bags — and three stars: **Christmas Week, 1989**, **The Great Snow, 1987** and (after chapter 4) **Record Day, 1999**. They are saved at any moment, like a mission.
 
@@ -68,6 +79,10 @@ After chapter 3 come the **Challenge Days**: longer days of about twenty minutes
 **Chapter 3, Everyone Comes to Arlanda:** Linjeflyg Moves In (October 1983) · Morning Peak · The Computer Room · Screens · Flu Season · Strike Notice · The Big Freeze · Planner or Computer? · Payback · Flygbussarna (1989) · *Exam: Domestic Rush*.
 
 **Chapter 4, Open Skies:** Terminal 2 (1990) · Deregulation (1992) · The Train Question · Duty Free · Building the Tunnel · Route Incentive (Braathens' Oslo route, 1996) · Bags by Machine · The Low-Fare Question · Hub Wars · Christmas Rush · *Exam: Millennium Night* (31 December 1999).
+
+**Chapter 5, A New Millennium:** Schengen (25 March 2001) · The New Tower (in service 23 December 2001) · Pier F · Runway Three · Security After 2001 · Taxiway Bridges (runway 3's first day, 17 April 2003) · Norwegian Arrives (1 September 2003) · Remote De-icing · Rent Is Steady (Cargo City, 2006) · Liquids in Bags (6 November 2006) · *Exam: The Snowy Peak* (2009).
+
+**Chapter 6, Bigger and Greener:** Swedavia (1 April 2010) · The Ash Cloud (15–21 April 2010) · A Royal Wedding (June 2010) · Self Bag Drop (2012) · Emirates (5 September 2013) · The Permit (2013) · Nobel Week · Eurovision Week (2016) · Fly Green (2017) · A-CDM (2017) · *Exam: Record Summer* (2018).
 
 ## Never lost
 

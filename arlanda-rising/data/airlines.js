@@ -118,7 +118,51 @@ const AIRLINES = {
     ],
     court: [{ from: 1997, type: 'B737', perDay: 4, load: 0.85, need: 0.5 }], rival: 'Skavsta',
     src: 'en.wikipedia Stockholm Skavsta Airport: Ryanair\'s first Stockholm route, Skavsta–London Stansted, in June 1997',
-    check: 'in reality Ryanair flew to Skavsta in the 1990s: at Arlanda it is the game\'s what-if, a choice of the player; its colours (drawn after the 1990s blue and yellow)' }
+    check: 'in reality Ryanair flew to Skavsta in the 1990s: at Arlanda it is the game\'s what-if, a choice of the player; its colours (drawn after the 1990s blue and yellow)' },
+  // ---------- session 5: the 2000s and 2010s (`ns`: its flights leave the Schengen area — passport control) ----------
+  DY: { name: 'Norwegian', kind: 'lowcost', years: [2003, null], intl: true,
+    temper: { patience: 1.2, contact: false, fees: 2 },
+    liveries: [
+      { from: 2002, to: 2030, top: '#f6f6f3', belly: '#f6f6f3', line: '#f6f6f3', tail: '#d81939', nose: '#d81939',
+        titles: 'norwegian.com', emblem: ['hero', '#f3d9c4'] }
+    ],
+    court: [{ from: 2003, type: 'B738', perDay: 4, load: 0.8, need: 0.3 }], rival: 'Skavsta',
+    src: 'swedavia.com (Mynewsdesk, 2023): Norwegian\'s first flight from Arlanda, to Oslo Gardermoen, on 1 September 2003; its Arlanda base from 2007; en.wikipedia FlyNordic: bought from Finnair in 2007; en.wikipedia Norwegian Air Shuttle: white with a red nose and "tail heroes" on the fin',
+    check: 'the fin\'s portraits are drawn as a pale face shape on the red fin' },
+  EK: { name: 'Emirates', kind: 'longhaul', years: [2013, null], intl: true, ns: true,
+    temper: { patience: 0.7, contact: true, fees: 0.8 },
+    liveries: [
+      { from: 1999, to: 2022, top: '#f7f7f5', belly: '#e9e9e6', line: '#f7f7f5', tail: '#f7f7f5',
+        titles: 'Emirates', emblem: ['flag'] }
+    ],
+    court: [{ from: 2013, type: 'B77W', perDay: 1, load: 0.85, need: 0.25 }], rival: 'Copenhagen',
+    src: 'swedavia.com: Emirates started Dubai–Stockholm on 5 September 2013 with a Boeing 777; en.wikipedia Emirates: white with gold titles and the UAE flag on the fin until 2023',
+    check: 'the titles are drawn in plain gold letters' },
+  QR: { name: 'Qatar Airways', kind: 'longhaul', years: [2007, null], intl: true, ns: true,
+    temper: { patience: 0.75, contact: true, fees: 0.9 },
+    liveries: [
+      { from: 2006, to: 2030, top: '#eceef0', belly: '#dcdfe2', line: '#eceef0', tail: '#5c0632',
+        titles: 'QATAR', emblem: ['text', 'QR', '#c8c8c8'] }
+    ],
+    court: [{ from: 2007, type: 'A319', perDay: 1, load: 0.8, need: 0.2 }], rival: 'Copenhagen',
+    src: 'Qatar Airways (press release, 28 November 2007): Doha–Stockholm from 27 November 2007 with an A319; en.wikipedia Qatar Airways: the oryx livery from 2006',
+    check: 'the oryx is drawn as the letters QR on the burgundy fin' },
+  BA: { name: 'British Airways', kind: 'network', years: [1974, null], intl: true, ns: true,
+    temper: { patience: 0.9, contact: true, fees: 1 },
+    liveries: [
+      { from: 1997, to: 2030, top: '#f4f5f6', belly: '#1c2a52', line: '#c8102e', line2: '#f4f5f6', tail: '#1c2a52',
+        titles: 'BRITISH AIRWAYS', emblem: ['text', 'BA', '#c8102e'] }
+    ], rival: 'Copenhagen',
+    src: 'en.wikipedia British Airways (formed in 1974); the United Kingdom stayed outside Schengen',
+    check: 'its first year at Arlanda; the fin drawn plain navy with BA instead of the flag' },
+  VIP: { name: 'Business jets and state flights', kind: 'business', years: [1960, null], intl: true, ns: true,
+    temper: { patience: 0.8, contact: true, fees: 0.5 },
+    liveries: [
+      { from: 1950, to: 2050, top: '#f6f6f3', belly: '#d8dbde', line: '#8a8f94', tail: '#f6f6f3',
+        titles: '', emblem: ['text', 'VIP', '#8a8f94'] }
+    ],
+    src: 'the game\'s own: no real operator is named',
+    check: '' }
 };
 
 // the livery an airline wore in a year (the last one when none fits)

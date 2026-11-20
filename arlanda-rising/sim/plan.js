@@ -13,6 +13,8 @@ const Plan = {
       day0: S.day, end: S.day + stage.days, crews: (stage.crews || 2) + (S.mission.crews || 0), buys: [], pending: null,
       choices: (stage.choices || []).map((c) => ({ id: c.id, day: S.day + (c.at || 0), done: null })), extra: []
     };
+    // session 5: the sky closed for days (the ash cloud): no traffic in summary until then
+    if (stage.skyClosed) S.airport.skyClosed = S.day + stage.skyClosed;
   },
   // a decision made on the way (Free Play's offers): its whole definition is kept in the state
   offer(def, inDays) {
@@ -98,5 +100,12 @@ const Plan = {
       if (o.train === 'concession' && S.mission) { S.mission.partners = (S.mission.partners || []).concat(['arlandaExpress']); const p = Construction.state('arlandaExpress'); if (p) p.finance = 'partner'; }
     }
     if (o.rivalPull !== undefined && S.airport.rivals) S.airport.rivals.pull = o.rivalPull;
+    // session 5: passport booths, security lanes, biofuel, the passengers stranded by the ash cloud (helped at a price),
+    // the permit's caps (an appeal), random events turned on
+    for (let i = 0; i < (o.booths || 0); i++) Airport.buy('booth');
+    for (let i = 0; i < (o.lanes || 0); i++) Airport.buy('lane');
+    if (o.biofuel !== undefined) Green.biofuel(o.biofuel);
+    if (o.stranded) Finance.book('stranded', -o.stranded);
+    if (o.permit) S.airport.permit = Object.assign({}, S.airport.permit || {}, o.permit);
   }
 };

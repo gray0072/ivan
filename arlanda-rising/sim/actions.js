@@ -39,6 +39,7 @@ const Actions = {
     if (!Airport.buy(kind)) return false;
     // a vehicle bought in ops time joins at once
     if (S.ops && kind === 'fuelTruck') S.ops.trucks.push(0);
+    if (S.ops && kind === 'deicer' && S.ops.deicers) S.ops.deicers.push(0);
     return true;
   },
   start(project, stage, pace) { return !!S.plan && Construction.start(project, stage, pace); },
@@ -65,5 +66,24 @@ const Actions = {
   closeBrand(unitId) { return Terminal.close(unitId); },
   court(code, share) { return Airlines.court(code, share); },
   incentive(code, share) { return Airlines.incentive(code, share); },
-  offer(i, optionId) { return Offers.take(i, optionId); }
+  offer(i, optionId) { return Offers.take(i, optionId); },
+  // session 5: security lanes and passport booths open (in ops time), biofuel, the drill of a domain
+  lanes(n) {
+    if (!S.ops || !Terminal.openLane(n)) return false;
+    this.doneByHand('lane', 'lanes');
+    return true;
+  },
+  booths(n) {
+    if (!S.ops || !Terminal.openBooth(n)) return false;
+    this.doneByHand('booth', 'booths');
+    return true;
+  },
+  biofuel(share) { return Green.biofuel(share); },
+  deice(flightId) {
+    const f = S.ops && Flights.get(flightId);
+    if (!f || !Tasks.valid('deice', flightId)) return false;
+    f.tr.deice = 'queued';
+    this.doneByHand('deice', flightId);
+    return true;
+  }
 };

@@ -60,6 +60,10 @@ const Tasks = {
     if (kind === 'plough') { const s = Runways.surface(target); return !!s && !s.plough && s.snow >= 1 && S.ops.ploughQueue.indexOf(target) < 0; }
     if (kind === 'bags') { const f = Flights.get(target); return !!f && f.tr && f.tr.bags === 'asked'; }
     if (kind === 'announce') { const f = Flights.get(target); return !!f && f.ann === 'asked' && !Flights.over(f); }
+    // session 5
+    if (kind === 'lane') return Terminal.lanes() < Terminal.lanesUp();
+    if (kind === 'booth') return Terminal.booths() < (S.airport.booths || 0);
+    if (kind === 'deice') { const f = Flights.get(target); return !!f && f.tr && f.tr.deice === 'asked'; }
     return false;
   },
   // what one tap does
@@ -79,6 +83,9 @@ const Tasks = {
       case 'plough': return Runways.plough(choice || target);
       case 'bags': return Turnaround.bags(Flights.get(target), choice === 'lost');
       case 'announce': { const f = Flights.get(target); f.ann = 'done'; f.annAt = S.clock; logEvent('announced', { flight: f.no }); return true; }
+      case 'lane': Terminal.openLane(Terminal.lanes() + 1); logEvent('lane', { open: Terminal.lanes() }); return true;
+      case 'booth': Terminal.openBooth(Terminal.booths() + 1); logEvent('booth', { open: Terminal.booths() }); return true;
+      case 'deice': Flights.get(target).tr.deice = 'queued'; return true;
     }
     return false;
   },

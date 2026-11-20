@@ -22,6 +22,7 @@ const Invest = {
   termPax(term) {
     const intl = this.share('intl'), pax = this.paxDay();
     if (term === 'kerb') return pax;
+    if (term === 'sky') return pax * SKY_SPEND;
     if (term === 'intl') return pax * intl;
     if (term === 'dom') return pax * (1 - intl) * (Airport.has('terminal2') ? 0.6 : 1);
     if (term === 't2') return pax * 0.3;
@@ -32,6 +33,9 @@ const Invest = {
     const b = BUILDINGS[kind] || {}, pax = this.paxDay() * 30;
     let inn = 0;
     if (b.shop) inn += pax * SHOP_SPEND * b.shop * 0.7;
+    if (b.rent) inn += b.rent;
+    // session 5: a solar park saves a share of the energy bill (chapter 6)
+    if (kind === 'solar' && Green.on()) inn += ENERGY_MONTH * 1.25 * ENERGY_SAVE.solar;
     if (b.parking) inn += pax * PARKING_PER_PAX * Math.min(1, b.parking) * (Airport.has('busStop') ? 1 - BUS_PARKING : 1) * (Terminal.trainRuns() ? 1 - TRAIN_PARKING : 1);
     const out = (b.staff || 0) * STAFF_MONTH + (b.price || 0) * UPKEEP_YEAR / 12 + (kind === 'lane' ? LANE_MONTH : 0);
     return { in: inn, out };
@@ -69,7 +73,7 @@ const Invest = {
     const seen = {};
     for (const it of S.airport.items) {
       const b = BUILDINGS[it.kind] || {};
-      if (!(b.shop || b.parking || b.bus || b.lane)) continue;
+      if (!(b.shop || b.parking || b.bus || b.lane || b.rent)) continue;
       seen[it.kind] = (seen[it.kind] || 0) + 1;
       out.push(Object.assign({ key: it.kind, name: b.name, n: seen[it.kind] }, this.money(it.price || b.price || 0, this.building(it.kind))));
     }

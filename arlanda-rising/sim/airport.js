@@ -16,7 +16,7 @@ const Airport = {
   runway(id) { return S.airport.runways.find((r) => r.id === id) || null; },
   stand(id) { return S.airport.stands.find((s) => s.id === id) || null; },
   // minutes between two movements on a runway
-  sep() { return this.has('tower') ? RWY_SEP : RWY_SEP_NO_TOWER; },
+  sep() { return this.has('tower2') ? RWY_SEP_NEW : this.has('tower') ? RWY_SEP : RWY_SEP_NO_TOWER; },
   fuelTrucks() { return this.count('fuelTruck'); },
   ploughs() { return this.count('plough'); },
   shopShare() {
@@ -83,6 +83,28 @@ const Airport = {
         this.addItem('railStation', { price });
         break;
       case 'sorterHall': this.addItem('sorterHall', { price }); break;
+      // session 5: chapter 5
+      case 'schengen': a.schengen = true; a.booths = Math.max(a.booths || 0, p.booths || 6); this.addItem('passportHall', { price }); break;
+      case 't2intl': this.addItem('t2intl'); break;
+      case 'tower2': this.addItem('tower2', { price }); a.safetyBase += 3; break;
+      case 'pierF': for (const s of p.stands) this.addStand(s); this.addItem('pierF', { price }); a.desks += p.desks || 0; break;
+      // the pier's stands get their bridges: they count as next to the terminal from now on
+      case 'jetBridges': for (const st of a.stands) if ((p.stands || []).some((s) => s.name === st.name)) st.contact = true; this.addItem('jetBridges'); break;
+      case 'runway3': this.addItem('runway3', { price }); break;
+      case 'bridges':
+        a.runways.push({ id: 'r3', name: '01R/19L', dirs: ['01R', '19L'], hdg: [10, 190], len: 2500, lit: true, approach: true, ils: true,
+          snow: 0, plough: null, busyUntil: 0 });
+        this.addItem('bridges', { price });
+        break;
+      case 'deicePads': this.addItem('deicePad', { price }); break;
+      case 'skyCity': this.addItem('skyCity', { price }); Terminal.ensure(); break;
+      case 'hotel': this.addItem('hotel'); break;
+      case 'cargoCity': this.addItem('cargoCity', { price }); break;
+      case 'offices': this.addItem('offices'); break;
+      // chapter 6
+      case 'aquifer': this.addItem('aquifer', { price }); break;
+      case 'codeF': this.addStand(p.stand); this.addItem('codeF', { price }); break;
+      case 'overWing': this.addItem('overWing'); break;
       default: throw new Error('unknown effect ' + effect);
     }
     logEvent('built', { what: effect, project });
@@ -102,6 +124,7 @@ const Airport = {
     if (kind === 'stand') this.addStand({ name: String(S.airport.stands.length + 1), code: 'C', contact: false, dist: 4 });
     else if (kind === 'desk') S.airport.desks++;
     else if (kind === 'lane') Terminal.addLane();
+    else if (kind === 'booth') { S.airport.booths = (S.airport.booths || 0) + 1; if (S.ops && S.ops.boothsOpen !== undefined) S.ops.boothsOpen++; }
     this.addItem(kind);
     logEvent('bought', { kind });
   },
@@ -115,6 +138,12 @@ const Airport = {
     }
     // the teams (sim/people.js: their wage levels, IT, the managers, the temps) and the systems' licences
     return { wages: jobs * STAFF_MONTH + People.wages(), upkeep, systems: Systems.monthly(), interest: S.loans * LOAN_RATE / 12,
-      security: Terminal.lanes() * LANE_MONTH };
+      security: Terminal.lanes() * LANE_MONTH, border: (S.airport.schengen ? S.airport.booths || 0 : 0) * BOOTH_MONTH };
+  },
+  // session 5: SEK a month the airport's real estate brings in rent (Sky City, the hotels, offices, Cargo City)
+  rent() {
+    let r = 0;
+    for (const it of S.airport.items) r += (BUILDINGS[it.kind] || {}).rent || 0;
+    return r;
   }
 };
