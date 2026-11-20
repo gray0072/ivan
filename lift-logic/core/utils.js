@@ -85,3 +85,20 @@ function enterFullscreen() {
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+
+// A tap handled on pointerup opens or changes what is under the finger; the click the browser sends right after
+// it would land on that new thing — a key of the number pad, the backdrop of a dialog, a button of the block
+// toolbar. Every pointerup tap calls this, and the one click that follows it is dropped.
+let clickSwallowTimer = 0;
+function swallowClick(e) {
+  window.removeEventListener('click', swallowClick, true);
+  clearTimeout(clickSwallowTimer);
+  e.preventDefault();
+  e.stopPropagation();
+}
+function swallowNextClick() {
+  window.removeEventListener('click', swallowClick, true);
+  window.addEventListener('click', swallowClick, true);
+  clearTimeout(clickSwallowTimer);
+  clickSwallowTimer = setTimeout(() => window.removeEventListener('click', swallowClick, true), CLICK_SWALLOW_MS);
+}

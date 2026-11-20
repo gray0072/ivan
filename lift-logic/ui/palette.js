@@ -171,6 +171,7 @@ const Palette = (() => {
   });
   const up = (e) => {
     if (!press) return;
+    swallowNextClick();
     if (press.drag) { Editor.paletteDrag(e); sheet.classList.remove('dragging'); press = null; close(); return; }
     if (e.type === 'pointerup') {
       ensureAudio();

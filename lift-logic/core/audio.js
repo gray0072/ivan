@@ -2,7 +2,8 @@
 
 // Lift Logic — the Web Audio engine: the sound recipes (all synthesized, no audio files) and the lift music,
 // a few short procedural loops. Every sound goes through one master gain, 0 while the sound is off; the
-// music has its own gain under it, 0 while the music is off. Played only by ui/sounds.js and the screens.
+// music has its own gain under it, 0 while the music is off; everything stops while the page is hidden. Played
+// only by ui/sounds.js and the screens.
 
 let audioCtx = null;
 let audioOut = null;
@@ -22,8 +23,15 @@ function ensureAudio() {
     musicOut.gain.value = musicOn ? 0.5 : 0;
     musicOut.connect(audioOut);
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state !== 'running' && !document.hidden) audioCtx.resume();
 }
+// a game in the background is silent: the whole audio (the music, the hum, a chime on its way) is suspended
+// while the page is hidden — another app, another tab, the phone locked — and goes on where it stopped
+document.addEventListener('visibilitychange', () => {
+  if (!audioCtx) return;
+  if (document.hidden) audioCtx.suspend();
+  else audioCtx.resume();
+});
 function setSound(on) {
   soundOn = on;
   if (audioOut) audioOut.gain.value = on ? 1 : 0;

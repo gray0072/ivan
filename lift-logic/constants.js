@@ -35,6 +35,7 @@ const EDITOR_ZOOM_MIN = 0.6;
 const EDITOR_ZOOM_MAX = 1.6;
 const DRAG_START_PX = 8;        // px a pointer moves before a press becomes a drag
 const LONG_PRESS_MS = 480;      // ms: a long press moves just one block
+const CLICK_SWALLOW_MS = 500;   // ms: after a tap handled on pointerup, the click the browser sends next is ignored
 const DROP_SNAP_PX = 46;        // px from a drop point that still snaps there
 const SCRIPT_GAP = 28;          // px between scripts placed one under another
 

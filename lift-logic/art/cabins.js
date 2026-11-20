@@ -16,6 +16,7 @@ Art.cabin = function (ctx, x, y, w, h, L, opts = {}) {
   const riders = L.riders || [];
   const per = Math.max(3, Math.floor((w - 6) / (h * 0.32)));
   riders.forEach((p, k) => {
+    if (opts.hide && opts.hide.has(p.id)) return; // still walking in (render/walkers.js)
     const col = k % per, row = Math.floor(k / per);
     const px = x + 6 + (col + 0.5) * ((w - 12) / per) + (row % 2) * 3;
     Art.person(ctx, px, y + h - 3 - row * h * 0.12, h * 0.62, p, { grey: opts.grey, mood: 0 });

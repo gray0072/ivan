@@ -8,7 +8,10 @@
 // board: × BOARD_TIME per getting on or off; size: places taken; prank: presses every button inside;
 // walk: s a slow walker needs from the bench to the doors once a lift opens on their floor
 // look: body colour, hair colour, 'kid' for a small figure, an item carried (box, suitcase, bed, cart,
-// pizza, bag, cat, cake, flowers, case, clipboard, camera)
+// pizza, bag, mailbag, cat, cake, flowers, case, clipboard, camera)
+// errand: what someone who rides again straight away does on the landing in between (render/walkers.js):
+// 'mail' — walks to the mailbox by the lift and drops a letter in; 'boxes' — carries a box from the pile on
+// the floor they start from up to a pile on the floor they go to, and rides back down empty-handed
 
 const KID_NAMES = ['Mia', 'Noah', 'Emma', 'Liam', 'Ava', 'Leo', 'Ella', 'Oscar', 'Nora', 'Hugo', 'Alva', 'Sasha', 'Ivan', 'Zoe', 'Max', 'Lily'];
 const ADULT_NAMES = ['Mr. Brown', 'Mrs. Lee', 'Ms. Garcia', 'Mr. Novak', 'Mrs. Svensson', 'Mr. Petrov', 'Ms. Kim', 'Mr. Okafor',
@@ -20,9 +23,9 @@ const TOURIST_NAMES = ['Yuki', 'Marie', 'Pierre', 'Sofia', 'Ahmed', 'Olga', 'Jon
 const PEOPLE = {
   rosa: { name: 'Grandma Rosa', patience: 90, board: 2.5, size: 1, look: { body: '#9b6bc4', hair: '#e9e4f0', item: 'cat' },
     line: 'My cat Biscuit and I are in no hurry. Well, a little.', happy: 'Finally! Thank you, dear.', angry: 'In my day we had stairs. Oh wait.' },
-  postman: { name: 'Pete the Postman', patience: 60, board: 1, size: 1, look: { body: '#2f5fa8', hair: '#5a3a22', item: 'bag' },
+  postman: { name: 'Pete the Postman', patience: 60, board: 1, size: 1, errand: 'mail', look: { body: '#2f5fa8', hair: '#5a3a22', item: 'mailbag' },
     line: 'Letters for every floor!', happy: 'Mail delivered!', angry: 'I\'ll walk. Postmen always walk.' },
-  grandson: { name: 'Leo', patience: 50, board: 1.2, size: 2, look: { body: '#d0573b', hair: '#3a2a1a', item: 'box' },
+  grandson: { name: 'Leo', patience: 50, board: 1.2, size: 2, errand: 'boxes', look: { body: '#d0573b', hair: '#3a2a1a', item: 'box' },
     line: 'These boxes are heavier than they look.', happy: 'One more box up!', angry: 'Fine, I\'ll carry it up the stairs!' },
   neighbour: { names: ADULT_NAMES, patience: 60, board: 1, size: 1, look: { body: '#5f8f6a', hair: '#4a3420' },
     line: 'Just popping home.', happy: 'Lovely, thanks!', angry: 'I\'m taking the stairs!' },

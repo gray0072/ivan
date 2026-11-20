@@ -392,8 +392,8 @@ const Editor = (() => {
     clearTimeout(longTimer);
     pointers.delete(e.pointerId);
     if (pointers.size < 2) pinch = null;
-    if (dragging) { Drag.drop(e.clientX, e.clientY); dragging = null; press = null; return; }
-    if (press && !press.moved && e.type === 'pointerup') tap(press.target, e.clientX, e.clientY, press.long);
+    if (dragging) { Drag.drop(e.clientX, e.clientY); dragging = null; press = null; swallowNextClick(); return; }
+    if (press && !press.moved && e.type === 'pointerup') { swallowNextClick(); tap(press.target, e.clientX, e.clientY, press.long); }
     if (pointers.size === 0) press = null;
   };
   area.addEventListener('pointerup', end);

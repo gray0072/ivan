@@ -2,7 +2,8 @@
 
 // Lift Logic — the people, drawn in code: a round head with a face whose mood goes 🙂 → 😐 → 😟 → 😠 as they
 // wait, a body in the character's colour, a smaller figure for kids, and what they carry (a box, a suitcase,
-// a bed, a pizza, a cat…). Grey and faceless in the Lift's eyes. Used by render/building.js and the screens.
+// a bed, a pizza, a postman's bag full of letters, a cat…). Grey and faceless in the Lift's eyes. Used by
+// render/building.js, render/walkers.js and the screens.
 
 const Art = {};
 
@@ -36,7 +37,9 @@ Art.person = function (ctx, x, y, h, p, opts = {}) {
   ctx.beginPath(); ctx.arc(0, hy - r * 0.15, r * 1.02, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
   if (!grey) Art.face(ctx, 0, hy, r, opts.mood || 0);
   // what they carry
-  if (look.item) Art.item(ctx, look.item, bw * 0.55, -s * 0.3, s, grey);
+  // (opts.item overrides it: null for empty hands; Leo carries his boxes only on the way up)
+  const item = opts.item !== undefined ? opts.item : c.errand === 'boxes' && p.ti < p.fi ? null : look.item;
+  if (item) Art.item(ctx, item, bw * 0.55, -s * 0.3, s, grey);
   ctx.restore();
 };
 
@@ -75,6 +78,12 @@ Art.item = function (ctx, item, x, y, s, grey) {
     case 'cart': ctx.strokeStyle = g('#555'); ctx.lineWidth = 2; ctx.strokeRect(0, -s * 0.05, s * 0.3, s * 0.22); ctx.fillStyle = g('#4aa3df'); ctx.fillRect(s * 0.02, -s * 0.02, s * 0.26, s * 0.08); break;
     case 'pizza': ctx.fillStyle = g('#e8b04a'); ctx.fillRect(-s * 0.02, -s * 0.12, s * 0.32, s * 0.05); ctx.fillStyle = g('#c0392b'); ctx.fillRect(s * 0.02, -s * 0.12, s * 0.24, s * 0.02); break;
     case 'bag': ctx.fillStyle = g('#8d6e45'); roundRect(ctx, -s * 0.02, -s * 0.12, s * 0.18, s * 0.16, 3); ctx.fill(); break;
+    case 'mailbag':
+      ctx.fillStyle = g('#fdfdfd'); ctx.fillRect(s * 0.01, -s * 0.19, s * 0.08, s * 0.1); ctx.fillRect(s * 0.07, -s * 0.21, s * 0.08, s * 0.1);
+      ctx.strokeStyle = g('#9aa7b4'); ctx.lineWidth = 0.8; ctx.strokeRect(s * 0.07, -s * 0.21, s * 0.08, s * 0.1);
+      ctx.fillStyle = g('#8d6e45'); roundRect(ctx, -s * 0.03, -s * 0.12, s * 0.21, s * 0.17, 3); ctx.fill();
+      ctx.fillStyle = g('#ffd23f'); ctx.fillRect(s * 0.05, -s * 0.06, s * 0.05, s * 0.04);
+      break;
     case 'cat': ctx.fillStyle = g('#e08a3c'); ctx.beginPath(); ctx.ellipse(s * 0.08, -s * 0.1, s * 0.11, s * 0.07, 0, 0, Math.PI * 2); ctx.fill(); ctx.beginPath(); ctx.arc(s * 0.18, -s * 0.16, s * 0.05, 0, Math.PI * 2); ctx.fill(); break;
     case 'cake': ctx.fillStyle = g('#fff3e0'); ctx.fillRect(-s * 0.02, -s * 0.3, s * 0.24, s * 0.12); ctx.fillRect(s * 0.02, -s * 0.4, s * 0.16, s * 0.1); ctx.fillStyle = g('#e91e63'); ctx.fillRect(s * 0.08, -s * 0.46, s * 0.04, s * 0.06); break;
     case 'flowers': ctx.fillStyle = g('#4caf50'); ctx.fillRect(s * 0.04, -s * 0.15, s * 0.03, s * 0.16); ctx.fillStyle = g('#ff4081'); ctx.beginPath(); ctx.arc(s * 0.055, -s * 0.18, s * 0.06, 0, Math.PI * 2); ctx.fill(); break;

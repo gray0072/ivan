@@ -3,10 +3,10 @@
 // Lift Logic — draws the building of the run as a cut-away doll's house: the floors with their interiors and
 // numbers, each landing's call buttons and its queue (moods and, small, where each person is going), the
 // shafts with the cabins, their displays and say bubbles, the plan as numbered flags next to the shaft, the
-// people walking away, the floating words, the variables shown with `show variable`, and the Lift's eyes
-// (what the lift can't sense goes grey), a lift out of order, the floors a lift of a zone passes by (dark in
-// its shaft), the wind, and the minimap of a tall building (render/minimap.js). Reads `run`, never changes it.
-// Used by game.js every frame.
+// people walking away (walking in and the errands: render/walkers.js), the floating words, the variables shown
+// with `show variable`, and the Lift's eyes (what the lift can't sense goes grey), a lift out of order, the
+// floors a lift of a zone passes by (dark in its shaft), the wind, and the minimap of a tall building
+// (render/minimap.js). Reads `run`, never changes it. Used by game.js every frame.
 
 const BuildingView = (() => {
   const { ctx, st } = View;
@@ -82,14 +82,16 @@ const BuildingView = (() => {
       }
     }
 
+    Walkers.drawBack(g);
     drawQueues(g, dt);
 
-    // the cabins
+    // the cabins (without the riders still walking in)
+    const walkingIn = Walkers.inside();
     for (const L of run.lifts) {
       const x = g.shaftLeft(L.n - 1), y = g.baseY - (L.pos + 1) * g.fh;
       ctx.strokeStyle = '#7d8a99'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x + g.sw / 2, roofY); ctx.lineTo(x + g.sw / 2, y + 2); ctx.stroke();
-      Art.cabin(ctx, x + 3, y + 4, g.sw - 6, g.fh - 6, L, { grey: st.eyes || !L.working });
+      Art.cabin(ctx, x + 3, y + 4, g.sw - 6, g.fh - 6, L, { grey: st.eyes || !L.working, hide: walkingIn });
       if (!L.working || L.failing) outOfOrder(x, y, g, L.working);
       if (run.lifts.length > 1 && st.follow === L.n) { ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, y + 2, g.sw - 2, g.fh - 2); }
       Art.display(ctx, x + g.sw / 2, y + 3, Lift.floor(L), L.moving ? Lift.direction(L) : arrowShown(L), clamp(g.fh * 0.22, 8, 13), run.lifts.length > 1 ? L.letter : '');
@@ -97,6 +99,7 @@ const BuildingView = (() => {
       if (L.say) bubble(x + g.sw / 2, y - clamp(g.fh * 0.3, 12, 20), L.say.text);
     }
 
+    Walkers.drawFront(g, dt);
     drawLeaving(g, dt);
     drawWords(g, dt);
     drawMonitors();
@@ -206,9 +209,9 @@ const BuildingView = (() => {
     for (const l of st.leaving) {
       const i = floorIndex(l.floor);
       const y = g.floorY(i) + g.fh - 3;
-      const x0 = l.toStairs ? g.shaftX - 24 : g.shaftLeft(l.lift - 1) + g.sw / 2;
+      const x0 = l.x0 !== undefined ? l.x0 : l.toStairs ? g.shaftX - 24 : g.shaftLeft(l.lift - 1) + g.sw / 2;
       const x = x0 + l.dir * l.t * g.fh * 1.6;
-      Art.person(ctx, x, y, g.fh * 0.78, l.person, { grey: st.eyes, mood: l.toStairs ? 3 : 0, alpha: clamp(1.6 - l.t, 0, 1), walk: l.t * 14 });
+      Art.person(ctx, x, y, g.fh * 0.78, l.person, { grey: st.eyes, mood: l.toStairs ? 3 : 0, alpha: clamp(1.6 - l.t, 0, 1), walk: l.t * 14, item: l.item });
     }
   }
 
@@ -248,7 +251,8 @@ const BuildingView = (() => {
 
   // floating words and walking people from the run's events
   GameEvents.on('delivered', (e) => {
-    st.leaving.push({ person: e.person, floor: e.person.to, lift: e.lift.n, dir: 1, t: 0 });
+    // someone on an errand walks to the mailbox / the pile instead (render/walkers.js)
+    if (!Walkers.takes(e.person)) st.leaving.push({ person: e.person, floor: e.person.to, lift: e.lift.n, dir: 1, t: 0 });
     View.word('+1', 0, 0, '#7CFC9A');
     st.words[st.words.length - 1].floor = e.person.to;
     st.words[st.words.length - 1].lift = e.lift.n;

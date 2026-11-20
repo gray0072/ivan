@@ -120,7 +120,7 @@ Fixed step `SIM_DT` (0.05 s of game time). Everything is deterministic from the 
 ### Passengers
 
 - Come from the mission's **schedule** (`data/missions/*.js`): fixed people at fixed times (early missions, so a story works out exactly), and **flows** (from, to, rate per minute, time window, the character mix) drawn from the seeded random. Traffic patterns: up-peak (lobby → upper floors), down-peak (→ lobby), lunch (to and from the canteen floor), inter-floor, mixed.
-- A person appears on the landing, presses ▲ or ▼ if it isn't lit (the hall call), waits. When a lift of the group opens there: the people for this floor get off first, then those waiting get on if the lift's arrow matches their direction (or shows none) and there are places left, in queue order; each presses their floor's button inside (cabin call). The hall call goes off when a lift opens there with a matching arrow (both go off with no arrow); someone left behind presses it again.
+- A person appears on the landing, presses ▲ or ▼ if it isn't lit (the hall call), waits. When a lift of the group opens there: the people for this floor get off first, then those waiting get on if the lift's arrow matches their direction (or shows none) and there are places left, in queue order; each presses their floor's button inside (cabin call). On screen nobody pops in or out: whoever gets on walks from their place in the queue into the cabin (in the run's time, so it keeps up at every speed), whoever gets off walks into the rooms, and someone changing lifts walks from the cabin back to the queue. The hall call goes off when a lift opens there with a matching arrow (both go off with no arrow); someone left behind presses it again.
 - **Patience** per character (`data/people.js`, × the difficulty): the face changes at 25 / 50 / 75 % of it; at 100 % the person **gives up** — walks to the stairs (a counted "gave up"), or, when the trip is longer than `STAIRS_MAX` (4) floors, stays furious (every second after that counts double in the stats).
 - Wait = from appearing to getting on; trip = from appearing to getting off at the destination.
 - Characters (examples, with patience in s at Medium): Grandma Rosa (90, slow: boards in 2 s), the Postman (60, visits several floors in a row), the Pizza Courier (25), Kids (40; the Prankster: presses every button inside), the Bellboy (80, a suitcase), a Doctor (45), a patient on a bed (60, 6 places), Patients from physiotherapy (90, walk 6 s to the doors), Nurses (60), Visitors (70), Office workers (60), Mr. Bigwig (45), Shoppers (70, a cart: 2 places), Teenagers (50), Tourists (in groups that board together or not at all), the Firefighter (ignores the queue in a drill).
@@ -212,7 +212,7 @@ Drag and drop of small blocks is hard with a finger, so the editor is **tap firs
 
 - **Adding**: tap a category chip → a bottom sheet with that category's blocks (big, real shapes, scrollable); tap a block → it is placed at the **insert point**: below the selected block, or at the end of the selected script, or as a new script when nothing is selected. The insert point is shown as a blinking white notch. Drag from the sheet works too (and is the main way with a mouse).
 - **Selecting**: tap a block → it is outlined and a small toolbar appears above it: **Edit**, **Move**, **Copy**, **Wrap** (put it inside a new `if` / `repeat` / `forever`), **Delete**. Move: then tap where it should go (the possible places light up), or drag it. A block moves with everything below it, like in Scratch; a long press moves just this one.
-- **Inputs**: tap a number slot → a big number pad (with − / + steppers and "use a sensor…" which opens the reporter blocks that fit); a dropdown slot → a short list; a hexagonal slot → the boolean blocks; a text slot → the keyboard.
+- **Inputs**: tap a number slot → a big number pad (with − / + steppers and "use a sensor…" which opens the reporter blocks that fit); a dropdown slot → a short list; a hexagonal slot → the boolean blocks; a text slot → the keyboard. A tap on the canvas or the palette acts on `pointerup`; the click the browser sends right after it is dropped (`swallowNextClick` in `core/utils.js`), so it can't land on what has just opened under the finger — a key of the pad, the backdrop of the dialog.
 - **Undo / redo** for every change (`EDITOR_UNDO_MAX` 100).
 - Every block at least 40 px high, text 15 px; the whole scripts canvas pinch-zooms 0.6–1.6.
 - Starting programs: a mission may come with blocks already placed (fill-the-gaps and fix-the-bug missions), some of them **locked** (a padlock, can't be moved or deleted).
@@ -258,10 +258,10 @@ Stars are kept per difficulty; the building's next mission opens when one is pas
 |---|---|---|---|
 | 1 | Hello, Lift! | Fill (guided) | Grandma on 3 wants to go down to 1: `go to floor 3`, `go to floor 1`. |
 | 2 | Morning Bread | Build | Down to the bakery and back up after 20 s: `wait`. |
-| 3 | The Postman | Build | He rides 1 → 2 → 3 → 1: a longer sequence. |
+| 3 | The Postman | Build | He rides 1 → 2 → 3 → 1: a longer sequence. On every floor he walks to the mailbox by the lift, drops a letter in (its flag goes up) and waits there for the next ride. |
 | 4 | Oops! | Fix | The floors are in the wrong order; the cat Biscuit misses the vet. |
 | 5 | Talking Lift | Build | Say the floor at every stop: `say`. |
-| 6 | Moving Day | Build | The grandson carries 5 boxes up: `repeat`. |
+| 6 | Moving Day | Build | The grandson carries 5 boxes up: `repeat`. The boxes wait in a pile on the street; he takes one, rides up, puts it on the pile upstairs and rides back down empty-handed. |
 | 7 | The Forever Lift | Build | Neighbours come at any time: go up and down `forever`. |
 | 8 | Tiny Lift | Tiny | Mission 7 in at most 4 blocks. |
 | 9 | Grandma's Birthday | Exam | 12 guests arrive, some leave early; 4 floors. |
@@ -483,7 +483,7 @@ English (default), Russian and Swedish like `wiggle-wars`: `tr()` (`core/i18n.js
 
 ## Sound
 
-Synthesized with Web Audio (`core/audio.js`, played only by `ui/sounds.js`): the arrival chime (once going up, twice going down — as real lifts do), the doors, a soft motor hum while moving (pitch by speed), a button's click, the "+1" of an arrival, a grumble when someone gives up, the overload buzzer, the run start and stop, star clinks on the results, fanfare on a pass, fireworks after an exam, the UI taps of the editor (block placed, block deleted, error). **Music** (on by default — the game should feel lively): lift muzak, a few short procedural loops (bossa nova, lounge, chiptune, a calmer one for the editor) chosen in the Wardrobe; the calm loop plays softly while editing, a livelier one during the run, speeding up a little in a rush hour and when someone is about to give up, a short jingle on a pass. Sound On / Off (master gain) and Music On / Off on the start screen and in the pause menu (`liftLogic.sound`, `liftLogic.music`). At ×4 and faster only the chimes and the results sounds play.
+Synthesized with Web Audio (`core/audio.js`, played only by `ui/sounds.js`): the arrival chime (once going up, twice going down — as real lifts do), the doors, a soft motor hum while moving (pitch by speed), a button's click, the "+1" of an arrival, a grumble when someone gives up, the overload buzzer, the run start and stop, star clinks on the results, fanfare on a pass, fireworks after an exam, the UI taps of the editor (block placed, block deleted, error). **Music** (on by default — the game should feel lively): lift muzak, a few short procedural loops (bossa nova, lounge, chiptune, a calmer one for the editor) chosen in the Wardrobe; the calm loop plays softly while editing, a livelier one during the run, speeding up a little in a rush hour and when someone is about to give up, a short jingle on a pass. Sound On / Off (master gain) and Music On / Off on the start screen and in the pause menu (`liftLogic.sound`, `liftLogic.music`). At ×4 and faster only the chimes and the results sounds play. While the page is hidden (another app or tab, the phone locked) the whole audio is suspended — the music stops and goes on from where it was when the game comes back.
 
 ## Cheats (keyboard only, Shift + digit, for testing)
 
@@ -524,7 +524,7 @@ lift-logic/
 │   ├── blocks.js       every block: category, shape, template, slots, the chapter that opens it, the text view; blockDef and the own blocks (define / call)
 │   ├── buildings.js    the buildings: floors, groups of lifts, interiors, client, colours
 │   ├── lifts.js        lift types: speed, acceleration, capacity, express speed, look
-│   ├── people.js       characters: names, looks, patience, places taken, lines
+│   ├── people.js       characters: names, looks, patience, places taken, errands, lines
 │   ├── missions/       missions.js (the list, addMissions) and one file per building (grandma.js, school.js, hotel.js, hospital.js, office.js, mall.js, eiffel.js, empire.js, …, tour.js): briefing, schedule, flows (with `via` for a change of lifts), events of the day, lifts and their zones, stars, hints, starting program, new blocks
 │   ├── solutions/      the reference solution of every mission (one file per building), in the text notation
 │   ├── jokes.js        the comic lines of the results and the newspaper's headlines, by trait, moment and building
@@ -558,6 +558,7 @@ lift-logic/
 ├── render/
 │   ├── view.js         camera, scroll, zoom, follow
 │   ├── building.js     floors, landings, shafts, cabins, plan flags, monitors, Lift's eyes
+│   ├── walkers.js      people walking into a cabin and back to the queue; the postman's mailboxes, Leo's box piles
 │   └── minimap.js      the strip of a tall building: calls, lifts, the part on screen; tap to scroll
 ├── ui/
 │   ├── screens.js      start, buildings map, building screen, mission card, results, pause

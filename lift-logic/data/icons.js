@@ -16,6 +16,7 @@ const ICONS = {
     "▶": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#000\" d=\"M6 3.5 20 12 6 20.5z\"/></svg>",
     "▼": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#000\" d=\"M12 19 3 5h18z\"/></svg>",
     "▾": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#000\" d=\"M6.5 8h11L12 17z\"/></svg>",
+    "☁": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#000\" d=\"M7 19a4.5 4.5 0 0 1-.6-9 6 6 0 0 1 11.5-1.2A5 5 0 0 1 17.5 19z\"/></svg>",
     "★": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"#000\" d=\"M12 2.5l2.9 6.1 6.7.8-4.9 4.6 1.3 6.6-6-3.3-6 3.3 1.3-6.6-4.9-4.6 6.7-.8z\"/></svg>",
     "☰": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"none\" stroke=\"#000\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M4 6.5h16M4 12h16M4 17.5h16\"/></svg>",
     "✓": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path fill=\"none\" stroke=\"#000\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2.8\" d=\"M4.5 12.5 9.8 18 19.5 6.5\"/></svg>",
