@@ -45,5 +45,21 @@ const GalleryLang = (() => {
   return { init };
 })();
 
+// Offline copies of the games: once the gallery is open on a network (not in data-saver mode),
+// every game's own service worker (<game>/sw.js) is installed too, so a game started from the
+// gallery works without a network later even if it was never opened before.
+function installGamesOffline() {
+  if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  if (navigator.connection && navigator.connection.saveData) return;
+  for (const card of document.querySelectorAll('a.card')) {
+    const folder = card.getAttribute('href');
+    if (!/^[a-z0-9-]+\/$/.test(folder)) continue;
+    navigator.serviceWorker.register(folder + 'sw.js', { scope: folder, updateViaCache: 'none' })
+      .catch(() => { /* that game simply stays online-only until it is opened */ });
+  }
+}
+
 GalleryLang.init();
 AppUpdate.watch(() => true);
+// a few seconds after the load, so the gallery's own pictures come first
+window.addEventListener('load', () => setTimeout(installGamesOffline, 3000));

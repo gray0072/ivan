@@ -83,7 +83,7 @@
 
 ## ✨ Det bästa
 
-- **Ingen installation** — spelen körs direkt i webbläsaren, på datorn och i mobilen, och kan läggas på hemskärmen som en app.
+- **Ingen installation** — spelen körs direkt i webbläsaren, på datorn och i mobilen, och kan läggas på hemskärmen som en app som fungerar även utan internet.
 - **Pekskärmsstyrning** — joystickar och knappar på skärmen i telefoner och surfplattor, tangentbord och mus på datorn.
 - **Ren webbplattform** — Canvas 2D och WebGL för grafiken, Web Audio för syntetiserat ljud. Inga ramverk, inget byggsteg.
 - **Fristående** — varje spel ligger i sin egen mapp och fungerar även om det kopieras ut ur repot.
@@ -116,7 +116,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
 /
 ├── index.html, manifest.webmanifest   # gallerisidan (installerbar som PWA)
 ├── assets/                  # galleriets stilar och skript, ikoner, flaggor, showcase.gif, bild för sociala medier
-├── tools/                   # cdp.js (headless Chrome), i18n-check.js, pwa-icons.sh
+├── tools/                   # cdp.js (headless Chrome), i18n-check.js, pwa-icons.sh, sw-build.js
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # specifikation och regler för hela repot
 ├── AGENTS.md                # instruktioner för AI-agenter (CLAUDE.md pekar hit)
@@ -125,7 +125,7 @@ Det finns inget byggsteg. GitHub Pages serverar roten av grenen `main` direkt
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # koden, ordnad efter roll
     ├── README.md / README_RU.md (/ README_SV.md)
-    ├── icon.svg, manifest.webmanifest, PWA-ikoner
+    ├── icon.svg, manifest.webmanifest, sw.js (offline), PWA-ikoner
     └── screenshot.png
 ```
 

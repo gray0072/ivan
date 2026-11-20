@@ -83,7 +83,7 @@
 
 ## ✨ Highlights
 
-- **Zero install** — runs straight in the browser on desktop and mobile, and installs to the home screen as an app.
+- **Zero install** — runs straight in the browser on desktop and mobile, and installs to the home screen as an app that also works offline.
 - **Touch controls** — on-screen joysticks and buttons on phones and tablets, keyboard and mouse on desktop.
 - **Pure web platform** — Canvas 2D and WebGL for graphics, Web Audio for synthesized sound. No frameworks, no build step.
 - **Self-contained** — each game lives in its own folder and still works when copied out of the repo.
@@ -116,7 +116,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
 /
 ├── index.html, manifest.webmanifest   # the gallery page (an installable PWA)
 ├── assets/                  # gallery styles and scripts, icons, flags, showcase.gif, social preview
-├── tools/                   # cdp.js (headless Chrome), i18n-check.js, pwa-icons.sh
+├── tools/                   # cdp.js (headless Chrome), i18n-check.js, pwa-icons.sh, sw-build.js
 ├── README.md / README_RU.md / README_SV.md
 ├── SPEC.md                  # repo-wide spec and conventions
 ├── AGENTS.md                # instructions for AI coding agents (CLAUDE.md points here)
@@ -125,7 +125,7 @@ There is no build step. GitHub Pages serves the `main` branch root directly
     ├── index.html, styles.css, constants.js, game.js
     ├── core/, data/, sim/, render/, ui/, …   # the code, by role
     ├── README.md / README_RU.md (/ README_SV.md)
-    ├── icon.svg, manifest.webmanifest, PWA icons
+    ├── icon.svg, manifest.webmanifest, sw.js (offline), PWA icons
     └── screenshot.png
 ```
 
