@@ -40,21 +40,25 @@ const LAYOUT = {
   // session 3: runway 2 (08/26) from the AIP's ends (59.658419 N 17.936133 E, 59.663897 N 17.979153 E), its taxiway
   // from the jet apron's north end: west along the gap between the jet apron and the aprons of 2002 and later, north
   // along their west edge (x 688, clear of the aprons that start at x 700), east past the north end of the piers and the
-  // second arm and up to the 08 threshold — never across an apron or a pier; the jet apron (1965), the domestic apron
-  // (1983); where the aircraft on runway 2 leave it (m from its threshold)
-  runway2: { from: [1290, 2349], to: [3709, 2958], w: 45, exit: 1500 },
-  taxi2: [[760, 1650], [688, 1650], [688, 2450], [1200, 2450], [1290, 2349]],
+  // second arm (y 2450, north of the runway's line), then a curve of 40 m right into a straight entry square to the
+  // runway, from its north side, onto its centreline 12 m inside the 08 end (its last point; the holding line across it
+  // `hold` m from the centreline) — never across an apron or a pier; the jet apron (1965), the domestic apron (1983);
+  // where the aircraft on runway 2 leave it (m from its threshold)
+  runway2: { from: [1290, 2349], to: [3709, 2958], w: 45, exit: 1500, hold: 60 },
+  taxi2: [[760, 1650], [688, 1650], [688, 2450], [1246, 2450], [1259, 2448], [1270, 2442], [1279, 2432], [1285, 2420], [1302, 2352]],
   apron2: { x0: 640, y0: 1380, x1: 890, y1: 1650 },
   apron3: { x0: 700, y0: 935, x1: 890, y1: 1110 },
 
-  // buildings: [x0, y0, x1, y1] on the ground and a height in metres
+  // buildings: [x0, y0, x1, y1] on the ground and a height in metres. A terminal's landside face (east) is its kerb and
+  // its door: nothing is built in front of it (tools/layout-check.js) — the baggage hall (1973) is joined to the first
+  // terminal's south end, as wide as the terminal, its west face on the apron's edge where the baggage trains come in
   terminal1: { box: [880, 1180, 925, 1300], h: 9, waiting: [880, 1300, 915, 1335] },
   tower1: { x: 912, y: 1365, base: 9, h: 28 },
   fireStation: { box: [482, 1470, 532, 1500], h: 8 },   // east of the parallel taxiway (its edge at x ≈ 468 here)
   siteOffice: { x: 720, y: 880 },
   intlTerminal: { box: [890, 1390, 965, 1645], h: 14 },
   domTerminal: { box: [895, 955, 975, 1112], h: 10 },
-  bagHall: { box: [925, 1180, 955, 1265], h: 6 },
+  bagHall: { box: [880, 1124, 925, 1180], h: 6 },
   computerRoom: { box: [925, 1300, 947, 1326], h: 5 },
   generator: { box: [950, 1300, 960, 1312], h: 3 },
   busStop: { x: 1010, y: 1180 },
@@ -118,13 +122,16 @@ const LAYOUT = {
   apron7: { x0: 700, y0: 2260, x1: 890, y1: 2425 },
 
   // the road in: from the E4 round the south end of the runway to the terminal (the clearing's line too)
-  // (under the taxiway bridge at [915, 214]); once the baggage hall stands in front of the first terminal's door the road
-  // stops at the hall's east face (`roadEnd`, its x)
-  road: [[-1880, -700], [-900, -760], [200, -620], [700, -200], [1000, 400], [1030, 900], [990, 1240], [930, 1240]],
-  roadEnd: 958,
+  // (under the taxiway bridge at [915, 214]), north past the bus stop, then a curve of about 35 m west onto the first
+  // terminal's kerb, its door in the middle of its east face (the last point) — in every year
+  road: [[-1880, -700], [-900, -760], [200, -620], [700, -200], [1000, 400], [1030, 900], [994, 1205], [990, 1220], [982, 1231],
+    [971, 1238], [955, 1240], [930, 1240]],
   // the landside road on from the road in, north along the terminals' kerb to the international terminal and Pier F
-  // (from the international terminal's year): west of it the terminals, east of it the car parks, Sky City and the hotel
-  landside: [[990, 1240], [1006, 1290], [1006, 1660]],
+  // (from the international terminal's year): a fork off the road in before its curve to the first terminal (its first
+  // point on the road's line), bending gently right onto x 1006 and on north; west of it the terminals, east of it the
+  // car parks, Sky City and the hotel (render/ground.js paints every road's verge before any road's carriageway, so
+  // the fork shows no verge across the road)
+  landside: [[998, 1175], [998, 1195], [1001, 1217], [1004, 1242], [1006, 1270], [1006, 1660]],
   // the E4 motorway, west of the airport, north–south, on past the map's edge at both ends (south to Stockholm, north to
   // Uppsala) so that it runs out of sight instead of stopping in the forest
   e4: [[-1100, -32000], [-1560, -6500], [-1700, -3600], [-1820, -1500], [-1880, -700], [-1860, 800], [-1950, 2600], [-2100, 5200],
@@ -143,7 +150,7 @@ const LAYOUT = {
   // railway's south leg), a road, the railway, a car park or Cargo City's yard — except over the two taxiway bridges;
   // the walls of the buildings on the terminal line (`line`) are the fence where they stand, their landside faces outside
   fence: {
-    belt: [[943, 285], [1000, 400], [1030, 900], [990, 1240], [1006, 1290], [1006, 1700], [1330, 1700], [1330, 285]],
+    belt: [[943, 285], [1000, 400], [1030, 900], [998, 1175], [1001, 1217], [1004, 1242], [1006, 1270], [1006, 1700], [1330, 1700], [1330, 285]],
     line: ['terminal1', 'bagHall', 'computerRoom', 'generator', 'sorterHall', 'intlTerminal', 'domTerminal', 'terminal2',
       'cargoCity']
   },

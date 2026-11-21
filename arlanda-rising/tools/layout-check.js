@@ -10,6 +10,9 @@
 //   - the ground the biggest aircraft a stand takes covers (its length behind the stop bar, its span across) on a
 //     building, a road, the railway, a runway, a taxiway or another stand's aircraft — stands of the player's pier are
 //     checked once for each of its designs (finger, satellite, green), never one design against another;
+//   - a building on the 40 m in front of a terminal's landside face (its kerb and door), the road in ending away from
+//     the first terminal's door, and taxiway 2 joining runway 2 badly (a turn sharper than a right angle, an entry not
+//     square to the runway, off its centreline or away from its 08 end, shorter than its holding line's distance);
 //   - the airside fence (render/fence.js, loaded too) with everything built and in five eras from 1960 to 2040 across a
 //     road or the railway away from the taxiway bridges, or across a runway, a taxiway, an apron, a stand, an aircraft
 //     at its stand, a car park or a building (a run ends a hand short of the wall it joins).
@@ -102,8 +105,7 @@ for (const p of stands) {
 }
 
 // lines
-line('road in', 'road', Lo.road.slice(0, -1).concat([[Lo.roadEnd, Lo.road[Lo.road.length - 1][1]]]), 26);
-line('road in (before the baggage hall)', 'road', Lo.road.slice(-2), 26, { early: 'bagHall' });
+line('road in', 'road', Lo.road, 26);
 line('landside road', 'road', Lo.landside, 26);
 line('E4', 'road', Lo.e4, 30);
 line('road west to Märsta', 'road', Lo.e4Exit.west, 26);
@@ -184,8 +186,6 @@ for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
   if (!r) continue;
   // a stand's pad and its own aircraft
   if (kinds === 'plane/stand' && (a.stand || b.stand) && (a.name.startsWith((a.stand || b.stand).name) && b.name.startsWith((a.stand || b.stand).name))) continue;
-  // the early road end only clashes with what stands before the baggage hall: nothing does
-  if ((a.early || b.early) && (a.name === 'bagHall' || b.name === 'bagHall')) continue;
   let ok = ALLOWED[kinds];
   if (kinds === 'apron/bld' && (a.onApron || b.onApron)) ok = true;
   if (typeof ok === 'function') ok = ok(a, b, r);
@@ -193,6 +193,35 @@ for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
   if (kinds === 'plane/plane') ok = false;
   const line = (kinds + '            ').slice(0, 13) + a.name + '  ×  ' + b.name + '   ' + r.text + ' at x ' + r.x0.toFixed(0) + '..' + r.x1.toFixed(0) + ', y ' + r.y0.toFixed(0) + '..' + r.y1.toFixed(0);
   (ok ? allowed : problems).push({ line, a, b, r });
+}
+// a terminal's landside face (east) is its kerb and its door: no building on the ground KERB m in front of it
+const KERB = 40;
+const flag = (text, r) => problems.push({ line: text + ' at x ' + r.x0.toFixed(0) + '..' + r.x1.toFixed(0) + ', y ' + r.y0.toFixed(0) + '..' + r.y1.toFixed(0), r });
+for (const k of ['terminal1', 'intlTerminal', 'domTerminal', 'terminal2']) {
+  const b = box(k), kerb = { name: k + ' kerb', kind: 'kerb', rect: [b[2], b[1], b[2] + KERB, b[3]] };
+  for (const sh of S) if (sh.kind === 'bld' && sh.name !== k) { const r = overlap(kerb, sh); if (r) flag('kerb         ' + sh.name + ' in front of ' + k + '\'s landside face   ' + r.text, r); }
+}
+// the road in ends at the first terminal's door: its last point at the middle of the terminal's east face, a few m out
+{
+  const b = box('terminal1'), e = Lo.road[Lo.road.length - 1];
+  if (!(e[0] >= b[2] && e[0] <= b[2] + 8 && e[1] > b[1] + 20 && e[1] < b[3] - 20)) flag('road in      ends away from terminal1\'s door', { x0: e[0], y0: e[1], x1: e[0], y1: e[1] });
+}
+// taxiway 2 joins runway 2 cleanly: no turn sharper than a right angle (no kink or doubling back), its last leg square to
+// the runway (within 3°), longer than the holding line's distance, and ending on the centreline near the 08 end
+{
+  const T = Lo.taxi2, R2 = Lo.runway2, L2 = Math.hypot(R2.to[0] - R2.from[0], R2.to[1] - R2.from[1]);
+  const u = [(R2.to[0] - R2.from[0]) / L2, (R2.to[1] - R2.from[1]) / L2], dir = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+  const at = (p) => ({ x0: p[0], y0: p[1], x1: p[0], y1: p[1] });
+  for (let i = 1; i < T.length - 1; i++) {
+    const turn = Math.abs(((dir(T[i], T[i + 1]) - dir(T[i - 1], T[i]) + 540) % 360) - 180);
+    if (turn > 91) flag('taxiway 2    turns ' + turn.toFixed(0) + '° at point ' + i, at(T[i]));
+  }
+  const e = T[T.length - 1], q = T[T.length - 2], s = (e[0] - R2.from[0]) * u[0] + (e[1] - R2.from[1]) * u[1];
+  const off = Math.abs((e[0] - R2.from[0]) * u[1] - (e[1] - R2.from[1]) * u[0]), leg = Math.hypot(e[0] - q[0], e[1] - q[1]);
+  const square = Math.abs(((dir(q, e) - Math.atan2(u[1], u[0]) * 180 / Math.PI + 540) % 360) - 180);
+  if (off > 2 || s < 0 || s > 60) flag('taxiway 2    ends ' + off.toFixed(0) + ' m off runway 2\'s centreline, ' + s.toFixed(0) + ' m from its 08 end', at(e));
+  if (Math.abs(square - 90) > 3) flag('taxiway 2    its last leg meets runway 2 at ' + square.toFixed(0) + '°, not square', at(e));
+  if (leg < R2.hold + 10) flag('taxiway 2    its last leg (' + leg.toFixed(0) + ' m) is shorter than the holding line\'s distance', at(e));
 }
 // the fence in the eras between (what each adds, roughly as the master plan builds it; every remote stand bought): it
 // must cross no road or railway away from the bridges, no runway, taxiway or apron of its own era
@@ -238,7 +267,7 @@ if (svgOut) {
   const style = { field: ['#c9cfb0', '#9aa080'], park: ['#9aa0a6', null], apron: ['#d6d3cb', '#a8a49a'], stand: ['#d6d3cb', '#a8a49a'], bld: ['#e9a86b', '#7a4a20'], plane: ['none', '#2f6fb3'] };
   const lineCol = { rwy: '#3a3d41', taxi: '#6b6f73', way: '#c8c5bd', road: '#8a6e4c', rail: '#7a2e8e', fence: '#1f8a3a' };
   for (const kind of order) for (const sh of S) {
-    if (sh.kind !== kind || sh.early) continue;
+    if (sh.kind !== kind) continue;
     if (sh.rect) {
       const [fill, stroke] = style[kind];
       const dash = kind === 'plane' ? 'stroke-dasharray="3 2" stroke-width="0.8"' : sh.design === 'satellite' ? 'stroke-dasharray="4 3" fill-opacity="0.55"' : 'stroke-width="0.6"';

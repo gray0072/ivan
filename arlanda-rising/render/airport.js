@@ -151,8 +151,20 @@ const AirportArt = (() => {
     }
     runway2(c, sc);
     runway3(c, sc);
-    // runway 2's taxiway, under the aprons it runs into (a stub from the jet apron until the runway is built)
-    if (sc.p('apron2', 'pave') >= 1) line(c, LAYOUT.taxi2.slice(0, sc.runway2 ? LAYOUT.taxi2.length : 2), TX.w, sc.season === 'winter' ? '#5a5f64' : '#4b4f54');
+    // runway 2's taxiway, under the aprons it runs into (a stub from the jet apron until the runway is built); its
+    // straight entry square to the runway ends flush with the runway's edge (the aircraft go on to its last point on
+    // the centreline), the holding line across it (solid on the taxiway's side, dashed on the runway's)
+    if (sc.p('apron2', 'pave') >= 1) {
+      const T2 = LAYOUT.taxi2, R2 = LAYOUT.runway2, asph = sc.season === 'winter' ? '#5a5f64' : '#4b4f54';
+      if (!sc.runway2) line(c, T2.slice(0, 2), TX.w, asph);
+      else {
+        const e = T2[T2.length - 1], q = T2[T2.length - 2], l = Math.hypot(q[0] - e[0], q[1] - e[1]), v = [(q[0] - e[0]) / l, (q[1] - e[1]) / l];
+        const at = (d, t) => [e[0] + v[0] * d - v[1] * t, e[1] + v[1] * d + v[0] * t], hw = TX.w / 2 - 1.5;
+        line(c, T2.slice(0, -1).concat([at(R2.w / 2, 0)]), TX.w, asph);
+        line(c, [at(R2.hold + 1.2, -hw), at(R2.hold + 1.2, hw)], 0.6, PAL.taxiLine);
+        line(c, [at(R2.hold, -hw), at(R2.hold, hw)], 0.6, PAL.taxiLine, [2, 1.5]);
+      }
+    }
     // the ploughs' standing (asphalt) and the fuel trucks' yard with its bays and its lane onto the jet apron
     const winter = sc.season === 'winter';
     if (sc.items.plough) { const b = LAYOUT.snowDepot.box; c.fillStyle = winter ? '#9aa1a7' : '#5d6166'; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]); }
@@ -327,8 +339,9 @@ const AirportArt = (() => {
     const u = [(R2.to[0] - R2.from[0]) / L2, (R2.to[1] - R2.from[1]) / L2], n = [u[1], -u[0]];
     const pt = (s, t) => [R2.from[0] + u[0] * L2 * s + n[0] * t, R2.from[1] + u[1] * L2 * s + n[1] * t];
     const bandR = (s0, s1, t0, t1, fill) => quad(c, pt(s0, t0), pt(s1, t0), pt(s1, t1), pt(s0, t1), fill);
-    const sn = sc.season === 'winter', w = R2.w / 2;
-    bandR(0, strip, -120, 120, sn ? '#e8edf1' : '#8a8f6a');
+    const sn = sc.season === 'winter', w = R2.w / 2, e = 60 / L2;
+    // the strip, 60 m past each end (render/map.js clears the forest to its square ends)
+    bandR(-e, strip * (1 + e), -120, 120, sn ? '#e8edf1' : '#8a8f6a');
     if (pave <= 0) return;
     bandR(-0.004, pave + 0.004, -w - 2, w + 2, sn ? '#c4cbd1' : '#6b6f63');
     bandR(0, pave, -w, w, PAL.asphalt);
@@ -503,9 +516,11 @@ const AirportArt = (() => {
     const T = LAYOUT.intlTerminal, f = sc.p('intlTerminal', 'frame'), hall = sc.p('intlTerminal', 'hall'), pier = sc.p('intlTerminal', 'pier');
     const done = sc.items.intlTerminal ? 1 : null;
     const [x0, y0, x1, y1] = T.box;
-    // the departure hall on the landside, the pier along the gates
-    block(c, sc, [x0 + 25, y0, x1, y1], T.h, done || Math.min(f, 0.5) + hall * 0.5, '#e6e2d8', true);
+    // the pier along the gates, then the departure hall on the landside: the pier stands west of the hall, behind it as
+    // the map is seen, so it is drawn first and the taller hall hides its east wall (drawn after the hall, the pier's
+    // wall and roof were painted over the hall's roof, as if one part hung over the other)
     block(c, sc, [x0, y0 + 10, x0 + 25, y1 - 10], 7, done || Math.min(f, 0.5) + pier * 0.5, '#d9d5cc', true);
+    block(c, sc, [x0 + 25, y0, x1, y1], T.h, done || Math.min(f, 0.5) + hall * 0.5, '#e6e2d8', true);
     if (done) awnings(c, 'intl', T.box);
     if ((done || hall >= 1) && sc.dark > 0.3) sc.lights.push({ x: x1 + 2, y: (y0 + y1) / 2, z: T.h + 2, col: '255,255,255', r: 8 });
   }

@@ -125,7 +125,7 @@ const PROJECTS = {
     check: 'the year runway 2 was built'
   },
   bagHall: {
-    name: 'The baggage hall', year: 1973, plot: { x: 925, y: 1180, w: 30, h: 85 },
+    name: 'The baggage hall', year: 1973, plot: { x: 880, y: 1124, w: 45, h: 56 },
     stages: { hall: { name: 'The hall under the terminal', days: 25, price: 15e6 } },
     effect: 'bagHall',
     check: 'when the first baggage conveyors came to Arlanda'

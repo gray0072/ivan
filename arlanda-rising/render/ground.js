@@ -75,6 +75,7 @@ const Ground = (() => {
     // what is built outside the first clearing: its plot and its way to the apron (render/map.js `scene`)
     for (const r of sc.pads || []) if (x > r[0] && x < r[2] && y > r[1] && y < r[3]) return true;
     for (const l of sc.ways || []) if (nearLine(x, y, l.pts, l.d)) return true;
+    for (const q of sc.polys || []) if (pointInPoly(x, y, q)) return true;
     return false;
   }
   function nearLine(x, y, pts, d) {
@@ -197,6 +198,7 @@ const Ground = (() => {
     c.fillStyle = raw;
     for (const r of sc.pads || []) c.fillRect(r[0], r[1], r[2] - r[0], r[3] - r[1]);
     for (const l of sc.ways || []) strokeLine(c, l.pts, l.d * 2, raw);
+    for (const q of sc.polys || []) fillPoly(c, q, raw);
     // roads: the road in (gravel while it is built), the landside road along the terminals, the E4 over them; once the
     // road in is finished the junction: the road on west under the E4, the slip roads, the E4 on its bridge
     const X = LAYOUT.e4Exit, paved = sc.season === 'winter' ? '#8d949a' : '#4a4d51', verge = shade(land.road, -0.15);
@@ -205,14 +207,12 @@ const Ground = (() => {
       for (const r of X.ramps) { strokeLine(c, r, 16, verge); strokeLine(c, r, 8, paved); }
       strokeLine(c, X.west, 26, verge); strokeLine(c, X.west, 12, paved);
     }
-    if (sc.road > 0) {
-      strokeLine(c, sc.roadPts, 26, verge);
-      strokeLine(c, sc.roadPts, 12, sc.road >= 1 ? paved : land.road);
-    }
-    if (sc.landsidePts) {
-      strokeLine(c, sc.landsidePts, 26, verge);
-      strokeLine(c, sc.landsidePts, 12, paved);
-    }
+    // every verge before any carriageway: where the landside road forks off the road in, its verge (and the round end
+    // of it) stays under the road in's asphalt instead of a strip across it
+    if (sc.road > 0) strokeLine(c, sc.roadPts, 26, verge);
+    if (sc.landsidePts) strokeLine(c, sc.landsidePts, 26, verge);
+    if (sc.road > 0) strokeLine(c, sc.roadPts, 12, sc.road >= 1 ? paved : land.road);
+    if (sc.landsidePts) strokeLine(c, sc.landsidePts, 12, paved);
     strokeLine(c, LAYOUT.e4, 30, sc.season === 'winter' ? '#9aa0a6' : PAL.asphalt);
     strokeLine(c, LAYOUT.e4, 1.2, 'rgba(255,255,255,0.6)', [14, 14]);
     if (sc.road >= 1) overpass(c, sc, land, verge, paved);

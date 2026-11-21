@@ -45,10 +45,8 @@ const MapView = (() => {
     const p = (pid, sid) => { const pr = a.projects[pid]; return pr && pr.stages[sid] ? pr.stages[sid].p : 0; };
     const ready = !!a.siteReady;
     const roadP = ready ? 1 : p('site', 'road');
-    // the road in stops at the baggage hall's door once it stands in front of the first terminal (data/layout.js roadEnd);
-    // the landside road along the terminals from the international terminal's year
+    // the road in to the first terminal's kerb; the landside road along the terminals from the international terminal's year
     const roadPts = polyPart(LAYOUT.road, roadP);
-    if (roadP >= 1 && (items.bagHall || p('bagHall', 'hall') > 0)) roadPts[roadPts.length - 1] = [LAYOUT.roadEnd, roadPts[roadPts.length - 1][1]];
     const landside = items.intlTerminal || p('intlTerminal', 'frame') > 0;
     const t = S.ops ? Sim.clockNow() : 12 * 60;   // between the sim's steps, so that what moves moves smoothly
     const sun = Calendar.sunElevation(S.day, t);
@@ -113,6 +111,7 @@ const MapView = (() => {
   // Cargo City's yard and the solar parks, each from the moment its work starts
   const PAD = 14;   // m of open ground round a plot
   const STRIP_HALF = 120;   // m: half the cleared strip of runways 2 and 3, as render/airport.js draws it
+  const RW2_END = 60;       // m: runway 2's strip past each of its ends, as render/airport.js draws it
   function clearings(a, items, apronDone, p) {
     const pads = [], ways = [];
     if (apronDone) {
@@ -147,8 +146,15 @@ const MapView = (() => {
       const B = LAYOUT[key];
       if ((item && items[item]) || p(pid, sid) > 0) plot([B.x0, B.y0, B.x1, B.y1]);
     }
-    const R2 = LAYOUT.runway2, s2 = p('runway2', 'strip');
-    if (s2 > 0) ways.push({ pts: [R2.from, [R2.from[0] + (R2.to[0] - R2.from[0]) * s2, R2.from[1] + (R2.to[1] - R2.from[1]) * s2]], d: STRIP_HALF + PAD });
+    // runway 2's strip, square-ended RW2_END m past each end as render/airport.js draws it (not a round clearing round
+    // its ends, where its taxiway comes in), as far as it is cleared
+    const R2 = LAYOUT.runway2, s2 = p('runway2', 'strip'), polys = [];
+    if (s2 > 0) {
+      const L2 = Math.hypot(R2.to[0] - R2.from[0], R2.to[1] - R2.from[1]), u = [(R2.to[0] - R2.from[0]) / L2, (R2.to[1] - R2.from[1]) / L2];
+      const e = RW2_END + PAD, h = STRIP_HALF + PAD, pt = (d, t) => [R2.from[0] + u[0] * d + u[1] * t, R2.from[1] + u[1] * d - u[0] * t];
+      const d1 = s2 * (L2 + RW2_END) + PAD;
+      polys.push([pt(-e, -h), pt(d1, -h), pt(d1, h), pt(-e, h)]);
+    }
     const R3 = LAYOUT.runway3, s3 = items.runway3 ? 1 : p('runway3', 'strip');
     if (s3 > 0) ways.push({ pts: [R3.from, R3.to], d: STRIP_HALF * s3 + PAD });
     if (p('apron2', 'pave') >= 1) ways.push({ pts: LAYOUT.taxi2.slice(0, a.runways.some((r) => r.id === 'r2') ? LAYOUT.taxi2.length : 2), d: LAYOUT.taxi.w / 2 + PAD });
@@ -158,7 +164,7 @@ const MapView = (() => {
     if (items.cargoCity || p('cargoCity', 'halls') > 0) plot(LAYOUT.cargoCity.yard);
     if (items.cargoStand) { const b = LAYOUT.cargoApron; plot([b.x0, b.y0, b.x1, b.y1]); }
     for (let i = 0; i < Math.min(2, items.solar || 0); i++) plot(LAYOUT.solar[i]);
-    return { pads, ways };
+    return { pads, ways, polys };
   }
 
   function draw(realDt) {
