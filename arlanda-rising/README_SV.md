@@ -8,7 +8,7 @@
 
 *[Read in English](README.md)* · *[Читать на русском](README_RU.md)*
 
-<a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="screenshot.png" alt="Skärmbild från Arlanda Rising" width="800"></a>
+<a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="docs/showcase.gif" alt="Arlanda Rising i rörelse: flygplatsen genom epokerna, från tallskogen 1958 och de första jetplanen till vintrarna och nätterna, bana 3, rekordsommaren 2018, den tomma plattan 2020 och den gröna piren 2040" width="800"></a>
 
 </div>
 

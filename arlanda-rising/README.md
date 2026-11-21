@@ -8,7 +8,7 @@
 
 *[Читать на русском](README_RU.md)* · *[Läs på svenska](README_SV.md)*
 
-<a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="screenshot.png" alt="Arlanda Rising screenshot" width="800"></a>
+<a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="docs/showcase.gif" alt="Arlanda Rising in motion: the airport through the eras, from the pine forest of 1958 and the first jets to the winters and nights, runway 3, the record summer of 2018, the empty apron of 2020 and the green pier of 2040" width="800"></a>
 
 </div>
 

@@ -8,7 +8,7 @@
 
 *[Read in English](README.md)* · *[Läs på svenska](README_SV.md)*
 
-<a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="screenshot.png" alt="Скриншот Arlanda Rising" width="800"></a>
+<a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="docs/showcase.gif" alt="Arlanda Rising в движении: аэропорт сквозь эпохи — от соснового леса 1958 года и первых реактивных самолётов к зимам и ночам, третьей полосе, рекордному лету 2018 года, пустому перрону 2020-го и зелёному пирсу 2040-го" width="800"></a>
 
 </div>
 

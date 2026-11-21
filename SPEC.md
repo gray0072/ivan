@@ -232,6 +232,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── render/               # palette, iso (camera, projection), ground (forest, fields, lakes, clearings, Märsta), airport (runway, apron, buildings by stage), aircraft, traffic (aircraft paths, vehicles, people, turnaround bars), sky (light, fog, snow, lamps), map (a frame, taps)
 │   ├── ui/                   # text, screens, hud, tray, toolbar, plan (projects, decisions), cards (the flight card), timeline, missioncard, results, office, hints (Kaj, the guiding finger), sounds
 │   ├── tools/                # missions-check (plays every mission with its reference strategy, balances the chapter)
+│   ├── docs/                 # showcase.gif (the eras from 1958 to 2040, English UI) used by the READMEs
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest
