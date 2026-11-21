@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#203445">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
 <canvas id="map"></canvas>
@@ -32,6 +32,7 @@
       <button data-speed="2" data-i18n-title="Fast">▶▶</button>
       <button data-speed="3" data-i18n-title="Fastest">▶▶▶</button>
     </div>
+    <button class="round" id="roofBtn" data-i18n-title="Roofs on or off: look inside the buildings (R)">🏠</button>
     <button class="round" id="skipBtn" data-i18n-title="Skip to the next task (N)">⏭️</button>
     <button class="round" id="pauseBtn" data-i18n-title="Pause (Esc)">☰</button>
   </div>
@@ -42,6 +43,7 @@
 <div id="planPanel" hidden></div>
 <div id="toolbar" hidden></div>
 <div id="flightCard" class="card" hidden></div>
+<div id="siteCard" class="card" hidden></div>
 <div id="decision" class="card" hidden></div>
 <div id="hint" hidden></div>
 <div id="finger" hidden>👆</div>
@@ -68,9 +70,9 @@
   <div id="challenges" class="panel wide" hidden></div>
 </div>
 
-<script src="data/icons.js?v=5"></script>
+<script src="data/icons.js?v=6"></script>
 <script src="core/icons.js?v=1"></script>
-<script src="constants.js?v=5"></script>
+<script src="constants.js?v=6"></script>
 <script src="data/aircraft.js?v=5"></script>
 <script src="data/airlines.js?v=5"></script>
 <script src="data/buildings.js?v=6"></script>
@@ -79,6 +81,7 @@
 <script src="data/events.js?v=2"></script>
 <script src="data/masterplan.js?v=6"></script>
 <script src="data/layout.js?v=8"></script>
+<script src="data/sites.js?v=1"></script>
 <script src="data/domains.js?v=5"></script>
 <script src="data/people.js?v=2"></script>
 <script src="data/missions/missions.js?v=4"></script>
@@ -100,8 +103,8 @@
 <script src="data/strategies/ch6.js?v=1"></script>
 <script src="data/strategies/ch7.js?v=1"></script>
 <script src="data/strategies/ch8.js?v=1"></script>
-<script src="data/lang-ru.js?v=7"></script>
-<script src="data/lang-sv.js?v=7"></script>
+<script src="data/lang-ru.js?v=8"></script>
+<script src="data/lang-sv.js?v=8"></script>
 <script src="core/utils.js?v=2"></script>
 <script src="core/events.js?v=1"></script>
 <script src="core/storage.js?v=2"></script>
@@ -124,11 +127,12 @@
 <script src="sim/people.js?v=3"></script>
 <script src="sim/systems.js?v=4"></script>
 <script src="sim/airport.js?v=7"></script>
+<script src="sim/fleet.js?v=1"></script>
 <script src="sim/stands.js?v=2"></script>
 <script src="sim/schedule.js?v=4"></script>
-<script src="sim/runways.js?v=4"></script>
+<script src="sim/runways.js?v=5"></script>
 <script src="sim/passengers.js?v=4"></script>
-<script src="sim/turnaround.js?v=4"></script>
+<script src="sim/turnaround.js?v=5"></script>
 <script src="sim/flights.js?v=5"></script>
 <script src="sim/tasks.js?v=4"></script>
 <script src="sim/construction.js?v=4"></script>
@@ -153,13 +157,14 @@
 <script src="render/palette.js?v=1"></script>
 <script src="render/iso.js?v=2"></script>
 <script src="render/vehicles.js?v=1"></script>
+<script src="render/interiors.js?v=1"></script>
 <script src="render/ground.js?v=3"></script>
-<script src="render/airport.js?v=11"></script>
+<script src="render/airport.js?v=12"></script>
 <script src="render/aircraft.js?v=6"></script>
-<script src="render/traffic.js?v=7"></script>
+<script src="render/traffic.js?v=8"></script>
 <script src="render/sky.js?v=1"></script>
-<script src="render/map.js?v=7"></script>
-<script src="render/terminal.js?v=3"></script>
+<script src="render/map.js?v=8"></script>
+<script src="render/terminal.js?v=4"></script>
 <script src="ui/text.js?v=7"></script>
 <script src="ui/screens.js?v=3"></script>
 <script src="ui/hud.js?v=4"></script>
@@ -167,6 +172,7 @@
 <script src="ui/toolbar.js?v=6"></script>
 <script src="ui/plan.js?v=6"></script>
 <script src="ui/cards.js?v=2"></script>
+<script src="ui/sitecard.js?v=1"></script>
 <script src="ui/timeline.js?v=1"></script>
 <script src="ui/missioncard.js?v=3"></script>
 <script src="ui/results.js?v=4"></script>
@@ -179,6 +185,6 @@
 <script src="ui/challenges.js?v=1"></script>
 <script src="ui/hints.js?v=5"></script>
 <script src="ui/sounds.js?v=1"></script>
-<script src="game.js?v=5"></script>
+<script src="game.js?v=6"></script>
 </body>
 </html>

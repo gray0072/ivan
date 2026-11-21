@@ -4,7 +4,9 @@
 // links; the first apron with its stands and the remote stands bought later; and the buildings as they stand —
 // or as far as they are built (the master plan's projects show their stages: a slab, walls going up, a crane;
 // a project open but not started shows its plot outlined). Flat things are drawn by `flat`, standing ones are
-// handed to render/map.js as objects to sort; lamps go to the scene's light list (drawn after the dark).
+// handed to render/map.js as objects to sort; lamps go to the scene's light list (drawn after the dark). With the roofs
+// off (sc.cut) a finished building is drawn cut away with its insides by render/interiors.js; every building drawn is
+// kept with its box for a tap (`hitSite`) and the yellow ring round the one whose card is open (`ring`).
 
 const AirportArt = (() => {
   const RW = LAYOUT.runway1, TX = LAYOUT.taxi;
@@ -462,58 +464,107 @@ const AirportArt = (() => {
     if (sc.items.jetBridges) for (const y of [1690, 1755, 1820, 1885].concat(sc.items.codeF ? [1950, 1935] : [])) Iso.box(c, P[0] - 22, y - 2, P[0], y + 2, 4, 6.5, '#cfd2d4');
   }
 
+  // the buildings drawn this frame, for a tap (render/map.js hit): { key, box, h } with the key of data/layout.js
+  let sites = [];
+  const CUT_H = 4;   // m: what still stands of a building with its roof off (render/interiors.js)
+
   // every standing building, as objects for render/map.js to sort
   function objects(sc, list) {
     const add = (x, y, fn) => list.push({ d: depthOf(x, y), draw: fn });
-    const T = LAYOUT.terminal1;
-    if (sc.p('terminal1', 'hall') > 0 || sc.items.terminal) add(T.box[2], T.box[1], (c) => terminal(c, sc));
-    if (sc.p('tower1', 'found') > 0 || sc.items.tower) add(LAYOUT.tower1.x + 5, LAYOUT.tower1.y - 5, (c) => tower(c, sc));
-    if (sc.items.fireStation) add(LAYOUT.fireStation.box[2], LAYOUT.fireStation.box[1], (c) => fireStation(c, sc));
-    if (sc.items.cafe) add(LAYOUT.cafe.box[2], LAYOUT.cafe.box[1], (c) => cafe(c, sc));
-    // session 3
-    const I = LAYOUT.intlTerminal.box;
-    if (sc.p('intlTerminal', 'frame') > 0 || sc.items.intlTerminal) add(I[2], I[1], (c) => intlTerminal(c, sc));
-    const D = LAYOUT.domTerminal.box;
-    if (sc.p('domTerminal', 'hall') > 0 || sc.items.domTerminal) add(D[2], D[1], (c) => block(c, sc, D, LAYOUT.domTerminal.h, sc.items.domTerminal ? 1 : sc.p('domTerminal', 'hall'), '#ece6da', true, Terminal.mothballed('dom')));
-    const B = LAYOUT.bagHall.box;
-    if (sc.p('bagHall', 'hall') > 0 || sc.items.bagHall) add(B[2], B[1], (c) => block(c, sc, B, LAYOUT.bagHall.h, sc.items.bagHall ? 1 : sc.p('bagHall', 'hall'), '#c9c4b8', false));
-    // session 4: Terminal 2, the sorting hall
-    const T2 = LAYOUT.terminal2.box;
-    if (sc.p('terminal2', 'hall') > 0 || sc.items.terminal2) add(T2[2], T2[1], (c) => block(c, sc, T2, LAYOUT.terminal2.h, sc.items.terminal2 ? 1 : sc.p('terminal2', 'hall'), '#e8ecef', true, Terminal.mothballed('t2')));
-    const SH = LAYOUT.sorterHall.box;
-    if (sc.p('sorterHall', 'hall') > 0 || sc.items.sorterHall) add(SH[2], SH[1], (c) => block(c, sc, SH, LAYOUT.sorterHall.h, sc.items.sorterHall ? 1 : sc.p('sorterHall', 'hall'), '#c9c4b8', false));
-    // session 5: the new tower, Pier F, Sky City and its hotel, Cargo City, offices, the aquifer's pump house
-    if (sc.items.tower2 || sc.p('tower2', 'systems') > 0) add(LAYOUT.tower2.x + 6, LAYOUT.tower2.y - 6, (c) => tower2(c, sc));
-    if (sc.items.pierF || sc.p('pierF', 'gates') > 0) add(LAYOUT.pierF.box[2], LAYOUT.pierF.box[1], (c) => pierF(c, sc));
-    for (const [k, pid, sid, wall] of [['skyCity', 'skyCity', 'hall', '#e9e4d6'], ['hotel', 'skyCity', 'hotel', '#d9dde2'], ['hotelExt', null, null, '#d2d7dd'],
-      ['offices', null, null, '#dfe3e6'], ['cargoCity', 'cargoCity', 'halls', '#c9c4b8'], ['aquifer', 'aquifer', 'plant', '#a9b39a']]) {
-      const g = LAYOUT[k], q = sc.items[k] ? 1 : pid ? sc.p(pid, sid) : 0;
-      if (q > 0) add(g.box[2], g.box[1], (c) => block(c, sc, g.box, g.h, q, wall, k !== 'aquifer' && k !== 'cargoCity'));
+    sites = [];
+    // a building: as it stands (fn), or with its roof off once it is finished and the roofs are off (render/interiors.js)
+    const site = (key, box, h, q, fn, wall) => {
+      const cut = sc.cut && q >= 1 && Interiors.has(key);
+      sites.push({ key, box, h: cut ? CUT_H : h });
+      if (fn || cut) add(box[2], box[1], cut ? (c) => Interiors.draw(c, sc, key, box, h, wall) : fn);
+    };
+    const T = LAYOUT.terminal1, t1 = sc.p('terminal1', 'hall');
+    if (t1 > 0 || sc.items.terminal) {
+      if (sc.cut && t1 >= 1) {
+        site('terminal1', T.box, T.h, 1, null, '#eceae4');
+        if (sc.p('terminal1', 'waiting') >= 1) site('waiting', T.waiting, 6, 1, null, '#e3dfd6');
+        if (sc.p('terminal1', 'kiosk') > 0 || sc.items.kiosk) add(T.kiosk[2], T.kiosk[1], (c) => { const [a0, b0, a1, b1] = T.kiosk; Iso.box(c, a0, b0, a1, b1, 0, 3, '#f0ede4'); });
+      } else {
+        site('terminal1', T.box, T.h, 0, (c) => terminal(c, sc));
+        if (sc.p('terminal1', 'waiting') > 0) sites.push({ key: 'waiting', box: T.waiting, h: 6 });
+      }
     }
-    if (sc.items.offices > 1) { const g = LAYOUT.offices.box, b2 = [g[0], g[3] + 10, g[2], g[3] + 60]; add(b2[2], b2[1], (c) => block(c, sc, b2, 16, 1, '#dfe3e6', true)); }
-    // session 6: the security operations centre, the hydrogen depot's tanks, the night train's platform, the player's pier
-    if (sc.items.cyberCentre) { const g = LAYOUT.cyberCentre.box; add(g[2], g[1], (c) => block(c, sc, g, LAYOUT.cyberCentre.h, 1, '#3d4a57', true)); }
+    const T1 = LAYOUT.tower1;
+    if (sc.p('tower1', 'found') > 0 || sc.items.tower) {
+      sites.push({ key: 'tower1', box: [T1.x - T1.base / 2, T1.y - T1.base / 2, T1.x + T1.base / 2, T1.y + T1.base / 2], h: T1.h });
+      add(T1.x + 5, T1.y - 5, (c) => tower(c, sc));
+    }
+    if (sc.items.fireStation) site('fireStation', LAYOUT.fireStation.box, LAYOUT.fireStation.h, 1, (c) => fireStation(c, sc), '#e8e3d8');
+    if (sc.items.cafe) site('cafe', LAYOUT.cafe.box, 5, 1, (c) => cafe(c, sc), '#efe6d2');
+    // session 3: the international terminal — its hall on the landside and its pier along the gates
+    const I = LAYOUT.intlTerminal.box, fI = sc.p('intlTerminal', 'frame');
+    const qI = sc.items.intlTerminal ? 1 : fI > 0 ? Math.min(fI, 0.5) + sc.p('intlTerminal', 'hall') * 0.5 : 0;
+    if (qI > 0) {
+      const hallBox = [I[0] + 25, I[1], I[2], I[3]], pierBox = [I[0], I[1] + 10, I[0] + 25, I[3] - 10];
+      if (sc.cut && qI >= 1) {
+        site('intlTerminal', hallBox, LAYOUT.intlTerminal.h, 1, null, '#e6e2d8');
+        site('intlPier', pierBox, 7, 1, null, '#d9d5cc');
+      } else {
+        sites.push({ key: 'intlTerminal', box: hallBox, h: LAYOUT.intlTerminal.h }, { key: 'intlPier', box: pierBox, h: 7 });
+        add(I[2], I[1], (c) => intlTerminal(c, sc));
+      }
+    }
+    // the buildings drawn as blocks: their key, the project and stage that build them (or none), their wall, windows
+    const blocks = [['domTerminal', 'domTerminal', 'hall', '#ece6da', true], ['bagHall', 'bagHall', 'hall', '#c9c4b8', false],
+      ['terminal2', 'terminal2', 'hall', '#e8ecef', true], ['sorterHall', 'sorterHall', 'hall', '#c9c4b8', false],
+      ['skyCity', 'skyCity', 'hall', '#e9e4d6', true], ['hotel', 'skyCity', 'hotel', '#d9dde2', true], ['hotelExt', null, null, '#d2d7dd', true],
+      ['offices', null, null, '#dfe3e6', true], ['cargoCity', 'cargoCity', 'halls', '#c9c4b8', false], ['aquifer', 'aquifer', 'plant', '#a9b39a', false],
+      ['cyberCentre', null, null, '#3d4a57', true], ['computerRoom', 'computerRoom', 'room', '#d5d8dc', true],
+      ['generator', null, null, '#7d8a6a', false], ['restaurant', null, null, '#efe6d2', true], ['dutyFree', null, null, '#efe6d2', true]];
+    for (const [k, pid, sid, wall, glass] of blocks) {
+      const g = LAYOUT[k], q = sc.items[k] ? 1 : pid ? sc.p(pid, sid) : 0;
+      if (q <= 0) continue;
+      // a mothballed terminal keeps its roof: nobody inside
+      const off = k === 'domTerminal' ? Terminal.mothballed('dom') : k === 'terminal2' ? Terminal.mothballed('t2') : false;
+      site(k, g.box, g.h, off ? 0 : q, (c) => block(c, sc, g.box, g.h, q, wall, glass, off), wall);
+    }
+    if (sc.items.offices > 1) { const g = LAYOUT.offices.box, b2 = [g[0], g[3] + 10, g[2], g[3] + 60]; site('offices2', b2, 16, 1, (c) => block(c, sc, b2, 16, 1, '#dfe3e6', true), '#dfe3e6'); }
+    // session 5: the new tower, Pier F (its A380 gate at the north end, the jet bridges)
+    const T2w = LAYOUT.tower2;
+    if (sc.items.tower2 || sc.p('tower2', 'systems') > 0) {
+      sites.push({ key: 'tower2', box: [T2w.x - T2w.base / 2, T2w.y - T2w.base / 2, T2w.x + T2w.base / 2, T2w.y + T2w.base / 2], h: T2w.h });
+      add(T2w.x + 6, T2w.y - 6, (c) => tower2(c, sc));
+    }
+    const PF = LAYOUT.pierF.box, qF = sc.items.pierF ? 1 : sc.p('pierF', 'gates');
+    if (qF > 0) {
+      const main = [PF[0], PF[1], PF[2], PF[3] - 90], end = [PF[0], PF[3] - 90, PF[2], PF[3]], qA = sc.items.codeF ? 1 : sc.p('gateF', 'stand');
+      if (sc.cut && qF >= 1) {
+        site('pierF', main, LAYOUT.pierF.h, 1, null, '#e3e6e8');
+        if (qA > 0) site('pierF', end, LAYOUT.pierF.h + 2, qA, (c) => block(c, sc, end, LAYOUT.pierF.h + 2, qA, '#e3e6e8', true), '#e3e6e8');
+        if (sc.items.jetBridges) add(PF[0], PF[1], (c) => { for (const y of [1690, 1755, 1820, 1885].concat(sc.items.codeF ? [1950, 1935] : [])) Iso.box(c, PF[0] - 22, y - 2, PF[0], y + 2, 4, 6.5, '#cfd2d4'); });
+      } else {
+        sites.push({ key: 'pierF', box: main, h: LAYOUT.pierF.h });
+        if (qA > 0) sites.push({ key: 'pierF', box: end, h: LAYOUT.pierF.h + 2 });
+        add(PF[2], PF[1], (c) => pierF(c, sc));
+      }
+    }
+    // session 6: the hydrogen depot's tanks, the night train's platform, the player's pier
     if (sc.items.h2depot) {
       const g = LAYOUT.h2depot.box, n = LAYOUT.h2depot.tanks, w = (g[2] - g[0]) / n;
+      sites.push({ key: 'h2depot', box: g, h: 9.6 });
       for (let i = 0; i < n; i++) { const x0 = g[0] + i * w + 2, x1 = x0 + w - 4; add(x1, g[1], (c) => { Iso.box(c, x0, g[1], x1, g[3], 0, 9, '#eef2f5', '#d4dde4'); Iso.box(c, x0 + 3, g[1] + 3, x1 - 3, g[3] - 3, 9, 9.6, '#4aa3df'); }); }
     }
-    if (sc.items.nightTrain) { const g = LAYOUT.nightTrain.box; add(g[2], g[1], (c) => Iso.box(c, g[0], g[1], g[2], g[3], 0, LAYOUT.nightTrain.h, '#c9c4b8', '#5b3a6e')); }
+    if (sc.items.nightTrain) { const g = LAYOUT.nightTrain.box; site('nightTrain', g, LAYOUT.nightTrain.h, 1, (c) => Iso.box(c, g[0], g[1], g[2], g[3], 0, LAYOUT.nightTrain.h, '#c9c4b8', '#5b3a6e')); }
     const PG = LAYOUT.pier2040, qG = sc.items.pier2040 ? 1 : sc.p('pier2040', 'hall');
     if (qG > 0) {
       const des = S.airport.pierDesign || 'finger', box = des === 'satellite' ? PG.sat : PG.box;
-      add(box[2], box[1], (c) => {
+      site('pier2040', box, PG.h, qG, (c) => {
         block(c, sc, box, PG.h, qG, '#e6e9ec', true);
         // the green pier's solar roof
         if (des === 'green' && qG >= 1) Iso.box(c, box[0] + 2, box[1] + 4, box[2] - 2, box[3] - 4, PG.h, PG.h + 0.4, '#24456b', '#2f5a8a');
-      });
-      if (sc.items.pierArm || sc.p('pier2040', 'arm') > 0) { const a = PG.arm; add(a[2], a[1], (c) => block(c, sc, a, PG.h - 2, sc.items.pierArm ? 1 : sc.p('pier2040', 'arm'), '#e6e9ec', true)); }
+      }, '#e6e9ec');
+      if (sc.items.pierArm || sc.p('pier2040', 'arm') > 0) {
+        const a = PG.arm, qa = sc.items.pierArm ? 1 : sc.p('pier2040', 'arm');
+        site('pierArm', a, PG.h - 2, qa, (c) => block(c, sc, a, PG.h - 2, qa, '#e6e9ec', true), '#e6e9ec');
+      }
     }
-    const K = LAYOUT.computerRoom.box;
-    if (sc.p('computerRoom', 'room') > 0 || sc.items.computerRoom) add(K[2], K[1], (c) => block(c, sc, K, LAYOUT.computerRoom.h, sc.items.computerRoom ? 1 : sc.p('computerRoom', 'room'), '#d5d8dc', true));
-    for (const k of ['generator', 'restaurant', 'dutyFree']) {
-      const g = LAYOUT[k];
-      if (sc.items[k]) add(g.box[2], g.box[1], (c) => block(c, sc, g.box, g.h, 1, k === 'generator' ? '#7d8a6a' : '#efe6d2', k !== 'generator'));
-    }
+    // the car parks lie flat (drawn by `flat`): only their place, for a tap
+    for (const k of ['parkingSmall', 'parkingBig']) if (sc.items[k]) sites.push({ key: k, box: LAYOUT[k].box, h: 0.5 });
     // the crash tenders by the fire station, the airport coaches at the kerb
     for (let i = 0; i < Math.min(4, sc.items.crashTender || 0); i++) {
       const x = LAYOUT.fireStation.box[0] + 6 + i * 12, y = LAYOUT.fireStation.box[1] - 8;
@@ -544,5 +595,31 @@ const AirportArt = (() => {
     }
   }
 
-  return { flat, objects, standPos, standBox, standIndex, standEntry, isRemote, remoteWay, APRONS };
+  // a building's outline on the screen as drawn: its box's six outer corners (the near walls and the roof)
+  function outline(s) {
+    const [x0, y0, x1, y1] = s.box, h = s.h;
+    return [[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x1, y1, h], [x0, y1, h], [x0, y0, h]].map((p) => Cam.toScreen(p[0], p[1], p[2]));
+  }
+  // the building under a screen point, the nearest of those whose outline holds it: { key, box, h } or null
+  function hitSite(sx, sy) {
+    let best = null, bd = -Infinity;
+    for (const s of sites) {
+      if (!pointInPoly(sx, sy, outline(s))) continue;
+      const d = depthOf(s.box[2], s.box[1]);
+      if (d > bd) { bd = d; best = s; }
+    }
+    return best;
+  }
+  // a yellow line round every part of the building `key` (the one whose card is open), on the screen
+  function ring(c, key, partOf) {
+    Iso.screen(c);
+    c.strokeStyle = '#ffd54f'; c.lineWidth = 2; c.lineJoin = 'round';
+    for (const s of sites) {
+      if (partOf(s.key) !== key) continue;
+      const o = outline(s);
+      c.beginPath(); o.forEach((p, i) => (i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1]))); c.closePath(); c.stroke();
+    }
+  }
+
+  return { flat, objects, standPos, standBox, standIndex, standEntry, isRemote, remoteWay, APRONS, hitSite, ring };
 })();

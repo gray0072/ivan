@@ -5,7 +5,8 @@
 // the stand, the pushback, the take-off roll and the climb in between). Also the turnaround's vehicles and people
 // at each stand (stairs, the passengers walking, catering and bags, the fuel truck from its depot, the tug), the
 // plough convoy in echelon on the runway, the vehicles waiting at their depots, and over it all the little Gantt
-// bar of each turnaround. Remembers where each aircraft was drawn, for a tap (render/map.js `hit`).
+// bar of each turnaround. Remembers where each aircraft, fuel truck and plough was drawn, for a tap (render/map.js
+// `hit`): a truck or a plough keeps its number (S.ops.trucks' index, sim/fleet.js), for its card.
 
 const Traffic = (() => {
   const rp = (s, t) => Ground.rwPoint(s, t);
@@ -13,6 +14,7 @@ const Traffic = (() => {
   const EXIT = LAYOUT.taxi.apronLink.s;
   const APRON_IN = LAYOUT.taxi.apronLink.to;
   let drawn = [];   // { f, x, y, z } this frame
+  let vdrawn = [];  // { kind: 'fuel' | 'plough', i, x, y } this frame
 
   const ease = (u) => u * u * (3 - 2 * u);
   // runway 2 (08/26): its ends, length and the way from it to the aprons (session 3)
@@ -210,6 +212,7 @@ const Traffic = (() => {
       if (q) {
         const v = along(q.way, q.u);
         Vehicles.fuelTruck(c, sc, v.x, v.y, q.u >= 1 && q.way === way ? hd(90) : v.hdg, true);
+        if (tr.truck !== undefined) vdrawn.push({ kind: 'fuel', i: tr.truck, x: v.x, y: v.y });
         if (people && q.u >= 1) person(c, wingPt[0] + 4 * k, wingPt[1] + 2 * k, PAL.hiVis);
       }
     }
@@ -234,8 +237,10 @@ const Traffic = (() => {
 
   // ---------- everything that moves, as objects to sort ----------
   function objects(sc, list) {
-    drawn = [];
+    drawn = []; vdrawn = [];
     const t = sc.t, year = sc.year;
+    const truck = (i, x, y) => { vdrawn.push({ kind: 'fuel', i, x, y }); list.push({ d: depthOf(x, y), draw: (c) => Vehicles.fuelTruck(c, sc, x, y, 180, false) }); };
+    const plough = (i, x, y, h) => { vdrawn.push({ kind: 'plough', i, x, y }); list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, h) }); };
     if (S.ops) {
       for (const f of S.ops.flights) {
         if (f.stand) { const i = AirportArt.standIndex(f.stand); if (i >= 0) f.lastStand = i; }
@@ -248,14 +253,11 @@ const Traffic = (() => {
           AircraftArt.draw(c, sc, a);
         } });
       }
-      // trucks waiting at the depot
-      const free = S.ops.trucks.filter((b) => b <= t).length;
-      for (let i = 0; i < free; i++) {
-        const x = LAYOUT.fuelDepot.x + i * 5, y = LAYOUT.fuelDepot.y;
-        list.push({ d: depthOf(x, y), draw: (c) => Vehicles.fuelTruck(c, sc, x, y, 180, false) });
-      }
-      // the ploughs the airport owns, each drawn once: one on the apron while it is swept, the rest in the convoy on the
-      // runway being swept, whatever is left at the shed (with a single plough out on a runway the apron waits for it)
+      // trucks waiting at the depot, each in its own place
+      S.ops.trucks.forEach((b, i) => { if (b <= t) truck(i, LAYOUT.fuelDepot.x + i * 5, LAYOUT.fuelDepot.y); });
+      // the ploughs the airport owns, each drawn once: one on the apron while it is swept (the last one), the rest in the
+      // convoy on the runway being swept (0, 1, 2…), whatever is left at the shed (with a single plough out on a runway
+      // the apron waits for it)
       const n = Airport.ploughs(), ap = S.airport.apron;
       const rw = S.airport.runways.find((r) => r.plough && r.ploughFrom !== undefined);
       const apronOut = !!(ap.plough && ap.ploughFrom !== undefined) && n > (rw ? 1 : 0);
@@ -264,23 +266,20 @@ const Traffic = (() => {
         const q = clamp((t - rw.ploughFrom) / (rw.plough - rw.ploughFrom), 0, 1);
         for (let i = 0; i < Math.min(convoy, 6); i++) {
           const pp = convoyAt(rw, q, i);
-          list.push({ d: depthOf(pp[0], pp[1]), draw: (c) => Vehicles.plough(c, sc, pp[0], pp[1], pp[2]) });
+          plough(i, pp[0], pp[1], pp[2]);
         }
       }
       if (apronOut) {
         const q = clamp((t - ap.ploughFrom) / (ap.plough - ap.ploughFrom), 0, 1), A = LAYOUT.apron1;
         const lane = Math.floor(q * 6), u = q * 6 - lane;
         const x = A.x0 + (A.x1 - A.x0) * (lane + 0.5) / 6, y = lane % 2 ? A.y1 - (A.y1 - A.y0) * u : A.y0 + (A.y1 - A.y0) * u;
-        list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, lane % 2 ? 180 : 0) });
+        plough(n - 1, x, y, lane % 2 ? 180 : 0);
       }
-      for (let i = 0; i < Math.min(n - convoy - (apronOut ? 1 : 0), 6); i++) {
-        const x = LAYOUT.snowDepot.x + i * 9, y = LAYOUT.snowDepot.y;
-        list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, 180) });
-      }
+      for (let i = convoy, k = 0; i < n - (apronOut ? 1 : 0) && k < 6; i++, k++) plough(i, LAYOUT.snowDepot.x + k * 9, LAYOUT.snowDepot.y, 180);
     } else if (sc.apron) {
       // planning: the vehicles at rest
-      for (let i = 0; i < (sc.items.fuelTruck || 0); i++) { const x = LAYOUT.fuelDepot.x + i * 5, y = LAYOUT.fuelDepot.y; list.push({ d: depthOf(x, y), draw: (c) => Vehicles.fuelTruck(c, sc, x, y, 180, false) }); }
-      for (let i = 0; i < Math.min(6, sc.items.plough || 0); i++) { const x = LAYOUT.snowDepot.x + i * 9, y = LAYOUT.snowDepot.y; list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, 180) }); }
+      for (let i = 0; i < (sc.items.fuelTruck || 0); i++) truck(i, LAYOUT.fuelDepot.x + i * 5, LAYOUT.fuelDepot.y);
+      for (let i = 0; i < Math.min(6, sc.items.plough || 0); i++) plough(i, LAYOUT.snowDepot.x + i * 9, LAYOUT.snowDepot.y, 180);
     }
   }
 
@@ -337,5 +336,24 @@ const Traffic = (() => {
     return best;
   }
 
-  return { objects, overlay, hit, pos, standCentre };
+  // the fuel truck or plough drawn nearest a screen point (within r px, more when zoomed in): { kind, i } or null
+  function hitVehicle(sx, sy, r) {
+    let best = null, bd = Math.max(r, 5 * Cam.zoom);
+    for (const v of vdrawn) {
+      const s = Cam.toScreen(v.x, v.y, 1.5), d = Math.hypot(s[0] - sx, s[1] - sy);
+      if (d < bd) { bd = d; best = { kind: v.kind, i: v.i }; }
+    }
+    return best;
+  }
+  // a ring round the vehicle whose card is open, where it is drawn now
+  function ring(c, sel) {
+    const v = vdrawn.find((w) => w.kind === sel.kind && w.i === sel.i);
+    if (!v) return;
+    const s = Cam.toScreen(v.x, v.y, 1), r = Math.max(10, 6 * Cam.zoom);
+    Iso.screen(c);
+    c.strokeStyle = '#ffd54f'; c.lineWidth = 2;
+    c.beginPath(); c.ellipse(s[0], s[1], r, r * 0.55, 0, 0, Math.PI * 2); c.stroke();
+  }
+
+  return { objects, overlay, hit, hitVehicle, ring, pos, standCentre };
 })();

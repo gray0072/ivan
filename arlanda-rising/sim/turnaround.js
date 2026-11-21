@@ -98,7 +98,9 @@ const Turnaround = {
         S.ops.trucks[i] = t + FUEL_DRIVE + ft;
         tr.fuelEnd = t + FUEL_DRIVE / 2 + ft;
         tr.fuelFrom = t;                // for the map: the truck sets off
+        tr.truck = i;                   // … which one (its card)
         tr.fuel = 'going';
+        Fleet.fuelled(i, f);
         logEvent('fuelling', { flight: f.no });
       }
     }

@@ -3,14 +3,19 @@
 // Arlanda Rising — a frame of the map: the scene read from S (the season, the light, what is built and how far the
 // projects are, the weather), then the land, the airport's flat parts, the standing things back to front (trees and
 // houses, buildings, aircraft, vehicles), the sky and the lamps, and on top the flights' labels and turnaround bars.
-// Also what a tap on the map hit (a flight or a stand). Used by game.js every frame, for the game view, the Office
-// and the start screen's slow flyover.
+// Also what a tap on the map hit (a flight, a stand, a fuel truck or a plough, a building). With the roofs off
+// (view.cut, the 🏠 button) the finished buildings are drawn cut away with their insides (render/interiors.js); the
+// building or vehicle whose card is open is ringed in yellow. Used by game.js every frame, for the game view, the
+// Office and the start screen's slow flyover.
 
 const MapView = (() => {
   const cv = document.getElementById('map');
   const c = cv.getContext('2d', { alpha: false });
   let anim = 0;
-  const view = { standMark: null, selected: null };
+  // standMark: the stands' colours while one is being chosen; selected: the flight whose card is open; site: the key
+  // of the building whose card is open (and partOf, its parts to the card's key), vehicle: { kind, i } of the vehicle's;
+  // cut: the roofs off
+  const view = { standMark: null, selected: null, site: null, partOf: (k) => k, vehicle: null, cut: false };
 
   function resize() {
     Cam.W = window.innerWidth;
@@ -55,7 +60,7 @@ const MapView = (() => {
       siteWork: !!a.projects.site && !items.terminal,
       runway: a.runways[0] || null, runway2: a.runways.find((r) => r.id === 'r2') || null, runway3: a.runways.find((r) => r.id === 'r3') || null,
       apron: a.stands.length > 0, items, p,
-      planning: !!S.plan, lights: [], standMark: view.standMark,
+      planning: !!S.plan, lights: [], standMark: view.standMark, cut: view.cut,
       ...clearings(a, items, ready || p('site', 'apron') >= 1, p)
     };
   }
@@ -128,6 +133,8 @@ const MapView = (() => {
     for (const o of list) o.draw(c);
     if (view.selected) ring(view.selected);
     Sky.draw(c, sc);
+    if (view.site) AirportArt.ring(c, view.site, view.partOf);
+    if (view.vehicle) Traffic.ring(c, view.vehicle);
     Traffic.overlay(c, sc);
     Ground.labels(c);
   }
@@ -141,17 +148,27 @@ const MapView = (() => {
     c.beginPath(); c.ellipse(u[0], u[1], AIRCRAFT[f.type].span * 0.6 * ISO_K, AIRCRAFT[f.type].span * 0.3 * ISO_K, 0, 0, Math.PI * 2); c.stroke();
   }
 
-  // what is under a screen point: { flight } or { stand } or null
-  function hit(sx, sy) {
+  // what is under a screen point: { flight }, { stand }, { vehicle: { kind, i } }, { site: { key, box, h } } or null;
+  // `stands` first: a stand is being chosen for an aircraft, so a stand wins over a building or a vehicle
+  function hit(sx, sy, stands) {
     if (!S || !S.airport) return null;
     const f = S.ops ? Traffic.hit(sx, sy, 26) : null;
     if (f) return { flight: f };
+    const st = standAt(sx, sy);
+    if (st && stands) return { stand: st };
+    const v = Traffic.hitVehicle(sx, sy, 16);
+    if (v) return { vehicle: v };
+    const s = AirportArt.hitSite(sx, sy);
+    if (s) return { site: s };
+    return st ? { stand: st } : null;
+  }
+  function standAt(sx, sy) {
     const [x, y] = Cam.toWorld(sx, sy);
     const pad = Math.max(0, 14 / Cam.zoom);
     for (let i = 0; i < S.airport.stands.length; i++) {
       const p = AirportArt.standPos(i);
       const b = AirportArt.standBox(p, 74 + pad, 4 + pad, 28 + pad);
-      if (x > b[0] && x < b[2] && y > b[1] && y < b[3]) return { stand: S.airport.stands[i] };
+      if (x > b[0] && x < b[2] && y > b[1] && y < b[3]) return S.airport.stands[i];
     }
     return null;
   }

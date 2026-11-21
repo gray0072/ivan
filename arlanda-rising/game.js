@@ -7,7 +7,8 @@
 // mission saved (every AUTOSAVE_SECONDS, at each stage's end and when the page is hidden) and records the stars;
 // Free Play's rounds, the People screen and the Ops Center (keys P and O), and the cloud save's idle moments; session 4:
 // the Terminal view (T: live in an ops stage, the stage runs on behind it), the Airlines screen (A), Finance (F, or the
-// money in the HUD) and the Challenge Days.
+// money in the HUD) and the Challenge Days; the roofs on or off (R or the 🏠 button: the buildings cut away with their
+// insides) and the card of a building, a fuel truck or a plough tapped on the map.
 
 const Game = {
   screen: 'menu',     // menu, timeline, card, office, free, challenges, intro, play, tview, pause, panel, stageCard, results
@@ -93,7 +94,7 @@ const Game = {
     Missions.start('free', fp.difficulty, fp.world, FreePlay.round(fp));
     this.run = { id: 'free', free: true, campaign: false, difficulty: fp.difficulty };
     this.actions = 0;
-    Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close();
+    Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close(); SiteCard.close();
     this.save();
     this.intro();
   },
@@ -129,7 +130,7 @@ const Game = {
     Missions.start(id, diff, null, Challenges.def(id));
     this.run = { id, challenge: true, campaign: false, difficulty: diff };
     this.actions = 0;
-    Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close();
+    Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close(); SiteCard.close();
     this.save();
     this.intro();
   },
@@ -148,7 +149,7 @@ const Game = {
   leaveMission() {
     this.run = null; this.speed = 0; this.pick = null;
     S = null;
-    FlightCard.close(); PlanUI.reset(); Tray.reset(); Toolbar.reset();
+    FlightCard.close(); SiteCard.close(); PlanUI.reset(); Tray.reset(); Toolbar.reset();
     this.hud(false);
   },
   // the play panels (the HUD stays) hidden behind a card
@@ -169,7 +170,7 @@ const Game = {
     Missions.start(id, diff, wf.world);
     this.run = { id, campaign: wf.campaign, difficulty: diff, cid: wf.campaign && Campaign.data ? Campaign.data.campaignId : null };
     this.actions = 0;
-    Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close();
+    Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close(); SiteCard.close();
     this.save();
     this.intro();
   },
@@ -207,10 +208,10 @@ const Game = {
     if (!live) this.speed = this.lastSpeed || 1;
   },
   nextStage() { Missions.next(); this.save(); this.intro(); },
-  retryStage() { Missions.retry(); FlightCard.close(); this.pick = null; this.save(); this.intro(); },
+  retryStage() { Missions.retry(); FlightCard.close(); SiteCard.close(); this.pick = null; this.save(); this.intro(); },
   restartMission(diff) {
     if (diff && diff !== S.difficulty) { this.startMission(this.run.id, diff); return; }
-    Missions.restart(); FlightCard.close(); this.pick = null; this.actions = 0; this.save(); this.intro();
+    Missions.restart(); FlightCard.close(); SiteCard.close(); this.pick = null; this.actions = 0; this.save(); this.intro();
   },
   continueMission() {
     enterFullscreen();
@@ -311,10 +312,10 @@ const Game = {
       if (this.screen === 'tview') TermView.frame(dt);
       const st = S.mission.status;
       if (running && (st === 'stageDone' || st === 'stageFailed')) {
-        this.speed = 0; this.save(); FlightCard.close(); this.pick = null;
+        this.speed = 0; this.save(); FlightCard.close(); SiteCard.close(); this.pick = null;
         this.screen = 'stageCard'; this.panels(false); Results.stage();
       } else if (running && (st === 'done' || st === 'failed')) {
-        FlightCard.close(); this.pick = null;
+        FlightCard.close(); SiteCard.close(); this.pick = null;
         this.missionEnd();
       }
       if (S.mission) {
@@ -326,6 +327,7 @@ const Game = {
           PlanUI.render();
           if (this.screen === 'play') PlanUI.decision();
           FlightCard.render();
+          SiteCard.render();
           Hints.step(dt);
         }
         // the stands lit while a stand is being chosen
@@ -339,6 +341,8 @@ const Game = {
       }
     } else MapView.view.standMark = null;
     if (this.screen !== 'tview' && TermView.open) TermView.frame(dt);
+    // the roofs off (the 🏠 button): never over the start screen's flyover
+    MapView.view.cut = this.cut && this.screen !== 'menu';
     MapView.draw(dt);
     requestAnimationFrame((t) => this.frame(t));
   },
@@ -364,6 +368,16 @@ const Game = {
     if (dig) { this.speed = +dig[1] - 1; if (this.speed) this.lastSpeed = this.speed; return; }
     if (e.code === 'KeyN') { if (Sim.skip()) this.banner(tr('Skipped to the next task')); return; }
     if (e.code === 'KeyQ' && S.ops && S.ops.tasks.length) { this.doTask(S.ops.tasks[0].id); return; }
+    if (e.code === 'KeyR') { this.roofs(); return; }
+  },
+  // the roofs on or off, as in a doll's house: the buildings cut away with their insides (render/interiors.js); the
+  // choice is kept on this device (Settings 'roofs')
+  cut: false,
+  roofs(off) {
+    this.cut = off === undefined ? !this.cut : !!off;
+    Settings.set('roofs', this.cut ? 'off' : 'on');
+    document.getElementById('roofBtn').classList.toggle('on', this.cut);
+    if (off === undefined && this.screen === 'play') this.banner(this.cut ? (Cam.zoom < 1.5 ? tr('Roofs off: zoom in to watch the people inside') : tr('Roofs off: you see inside the buildings')) : tr('Roofs on'));
   },
   cheat(e) {
     const m = /^Digit([1-8])$/.exec(e.code);
@@ -395,20 +409,23 @@ const Game = {
     H.tap = (x, y) => {
       Sfx.unlock();
       if (!S || !S.mission || this.screen !== 'play') return;
-      const h = MapView.hit(x, y);
+      const h = MapView.hit(x, y, !!this.pick);
       if (h && h.stand && this.pick) { this.standPicked(this.pick, h.stand); return; }
       if (h && h.flight) {
+        SiteCard.close();
         FlightCard.open(h.flight);
         this.pick = this.needsStand(h.flight) ? h.flight.id : null;
         return;
       }
-      FlightCard.close();
+      // a building or a fuel truck or a plough: its card
+      if (h && (h.site || h.vehicle)) { FlightCard.close(); this.pick = null; SiteCard.open(h); return; }
+      FlightCard.close(); SiteCard.close();
       this.pick = null;
     };
     H.longPress = (x, y) => {
       if (!S || !S.mission || this.screen !== 'play') return;
       const h = MapView.hit(x, y);
-      if (h && h.flight) FlightCard.open(h.flight);
+      if (h && h.flight) { SiteCard.close(); FlightCard.open(h.flight); }
     };
     let dragging = null;
     H.dragStart = (x, y) => {
@@ -419,7 +436,7 @@ const Game = {
     };
     H.dragMove = () => {};
     H.dragEnd = (x, y) => {
-      const h = MapView.hit(x, y);
+      const h = MapView.hit(x, y, true);
       if (dragging && h && h.stand) this.standPicked(dragging, h.stand);
       dragging = null;
     };
@@ -455,6 +472,8 @@ const Game = {
     }));
     document.getElementById('skipBtn').addEventListener('click', () => { if (Sim.skip()) this.banner(tr('Skipped to the next task')); });
     document.getElementById('pauseBtn').addEventListener('click', () => this.pauseMenu());
+    document.getElementById('roofBtn').addEventListener('click', () => { Sfx.unlock(); if (this.screen === 'play') this.roofs(); });
+    this.roofs(Settings.get('roofs') === 'off');
     document.getElementById('moneyChip').addEventListener('click', () => { if (S && S.mission) this.openPanel('finance'); });
     // the mission is saved the moment the page goes away (a phone that locks, a time limit, a call)
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.save(); });

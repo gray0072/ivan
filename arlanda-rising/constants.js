@@ -46,6 +46,7 @@ const BOARD_LEAD = 25;             // boarding starts at the latest this many mi
 const BOARD_WAIT_MAX = 20;         // minutes past departure an aircraft waits for passengers still at check-in
 const FUEL_MIN_PER_T = 0.18;       // game minutes of fuelling per tonne of MTOW
 const FUEL_DRIVE = 4;              // game minutes for a fuel truck to drive to a stand and back
+const FUEL_L_PER_T = 80;           // litres of fuel a truck puts into an aircraft per tonne of its MTOW (the vehicles' cards)
 const REMOTE_WALK_MOOD = 1.5;      // Passengers points lost per flight boarded at a remote stand (×2 in snow)
 const WRONG_STAND_DELAY = 6;       // minutes lost when the duty manager sends an aircraft to a poor stand
 
@@ -68,6 +69,8 @@ const PLOUGH_MIN = { runway: 14, apron: 18 }; // game minutes a convoy of PLOUGH
 const PLOUGH_CONVOY = 4;           // ploughs of a full convoy; fewer take longer
 const PLOUGH_LEFT_MM = 0.3;        // what a cleared surface keeps
 const PLOUGH_RUN_COST = 1500;      // SEK of fuel and overtime per convoy run
+const PLOUGH_SWEEP_W = 60;         // m of a runway's width a convoy sweeps (the runway and its shoulders; the vehicles' cards)
+const PLOUGH_APRON_M2 = 12000;     // m² of apron swept per stand
 const CLOSE_CALL_POOR = 0.12;      // chance of a close call per landing on poor braking action
 const FOG_VIS_MIN = 400;           // m: below it the runway takes no movements (no landing system yet)
 const FOG_VIS_APPROACH = 250;      // … with approach lights

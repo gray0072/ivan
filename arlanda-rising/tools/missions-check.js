@@ -29,7 +29,7 @@ const chapterFiles = (dir) => fs.readdirSync(path.join(root, dir)).filter((f) =>
   'data/missions/missions.js', ...chapterFiles('data/missions'), 'data/strategies/strategies.js', ...chapterFiles('data/strategies'),
   'core/utils.js', 'core/events.js', 'core/storage.js',
   'sim/state.js', 'sim/calendar.js', 'sim/weather.js', 'sim/finance.js', 'sim/meters.js', 'sim/terminal.js', 'sim/airlines.js', 'sim/people.js', 'sim/systems.js', 'sim/airport.js', 'sim/stands.js',
-  'sim/schedule.js', 'sim/runways.js', 'sim/passengers.js', 'sim/turnaround.js', 'sim/flights.js', 'sim/tasks.js',
+  'sim/fleet.js', 'sim/schedule.js', 'sim/runways.js', 'sim/passengers.js', 'sim/turnaround.js', 'sim/flights.js', 'sim/tasks.js',
   'sim/construction.js', 'sim/summary.js', 'sim/plan.js', 'sim/ops.js', 'sim/goals.js', 'sim/missions.js', 'sim/actions.js',
   'sim/sim.js', 'sim/strategy.js', 'sim/cheats.js', 'sim/offers.js', 'sim/invest.js', 'sim/events.js', 'sim/green.js', 'data/challenges.js', 'sim/challenges.js'].forEach(load);
 

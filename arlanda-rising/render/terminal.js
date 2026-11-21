@@ -5,7 +5,8 @@
 // queue as people, security with its lanes and their queue, the airside walk with the shop units and their brands'
 // signs, the gates with the aircraft and the passengers waiting — and over each queue its wait. In ops time the people
 // are the stage's own passengers (sim/passengers.js: who is in which queue, who is airside, who is boarding); in plan
-// time and in the Office a calm flow drawn from the terminal's passengers a day. The kerb's own tab shows its desks.
+// time and in the Office a calm flow drawn from the terminal's passengers a day (`crowd`, also read by render/interiors.js
+// for the map's cut-away). The kerb's own tab shows its desks.
 // Draws into the canvas it is given; `hits` lists the units for a tap. Used by ui/terminalview.js.
 
 const TermArt = (() => {
@@ -201,5 +202,5 @@ const TermArt = (() => {
   }
 
   function hit(x, y) { return hits.find((h) => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) || null; }
-  return { draw, hit };
+  return { draw, hit, crowd };
 })();

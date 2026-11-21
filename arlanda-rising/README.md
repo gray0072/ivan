@@ -33,6 +33,7 @@ Open [index.html](index.html) in a browser. There is no build step and no server
 - **Operations stages** (an hour takes about a minute): the **task tray** on the left fills with jobs — "SK 104 lands in 4 min — pick a stand", "Check-in queue 12 min — open a desk", "SK 908 needs fuel — send a truck", "Snow on the runway — send the ploughs". Tap a task to do the obvious thing, or drag a landing aircraft onto a stand of your choice (**Pick** lights up the stands that fit). A task you miss goes to the duty manager, who does it late and not always well.
 - The bar at the bottom opens and closes check-in desks (later also security lanes and passport booths), sends the ploughs, picks the runway direction when the wind is calm (01 lands over Märsta, 19 takes off over it — which spares the town at night?) and buys small things: a remote stand, a fuel truck, a snowplough.
 - The HUD shows the money with what the mission has earned or spent so far (green or red), the date and the clock with a line of how far the stage has gone, the weather, and the five meters: **Airlines**, **Passengers** (as stars), **Neighbours**, **Staff** and **Safety**. The goals' box tells how long the stage still runs; a goal of the whole mission ("End with a profit") is shown live too. Tap an aircraft to see its card and its turnaround.
+- **Look inside:** the 🏠 button (or **R**) takes the roofs off, as in The Sims — every building is cut away and you watch the life inside: the queues at the check-in desks and at security, the shops in their brands' colours, the passengers at the gates, the bags on the belts, the computers blinking, the fire tenders in their bays. Press it again for the roofs. **Tap any building** for its card: what it is, its size, jobs and upkeep, and what it is doing now (a terminal's queues and waits, the tower's runway and movements…). **Tap a fuel truck or a snowplough** to see where it is going and how much it has done — aircraft fuelled and litres pumped, square metres swept and cubic metres of snow moved, this stage and since the airport opened.
 - Shops and car parks have a limit: the toolbar shows how many you have (a kiosk counts ½, a café 1 — up to 3) and what share of the drivers your car parks take; once it is full, one more would earn nothing and cannot be bought.
 - After each stage a card shows how it went; after the mission you get up to three stars. Between missions the **Office** shows the money, the loans and the last months' books.
 
@@ -103,9 +104,9 @@ A mission is saved every few seconds and the moment the page is hidden — a pho
 
 ## Controls
 
-**Phone and tablet:** the game goes fullscreen. Drag with one finger to move the map, pinch with two fingers to zoom. Tap a task, or drag it — or a landing aircraft — onto a stand. Hold a finger on an aircraft to see its card.
+**Phone and tablet:** the game goes fullscreen. Drag with one finger to move the map, pinch with two fingers to zoom. Tap a task, or drag it — or a landing aircraft — onto a stand. Hold a finger on an aircraft to see its card. Tap a building, a fuel truck or a plough for its card; 🏠 takes the roofs off.
 
-**Keyboard and mouse:** click and drag; the wheel zooms, right drag or the arrow keys move the map. **Space** pause / play, **1–4** the speed, **N** skip to the next task, **Q** do the oldest task, **T** the Terminal view, **A** Airlines, **F** Finance, **P** People, **O** the Ops Center, **Esc** the pause menu. In the menus Space or Enter presses the highlighted button.
+**Keyboard and mouse:** click and drag; the wheel zooms, right drag or the arrow keys move the map. **Space** pause / play, **1–4** the speed, **N** skip to the next task, **R** roofs on / off, **Q** do the oldest task, **T** the Terminal view, **A** Airlines, **F** Finance, **P** People, **O** the Ops Center, **Esc** the pause menu. In the menus Space or Enter presses the highlighted button.
 
 ## Difficulty
 

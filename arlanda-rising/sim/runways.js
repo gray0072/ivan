@@ -115,6 +115,7 @@ const Runways = {
     if (S.domains.snow >= 1) dur *= 1 - People.perk('snow', 'convoy');
     // session 6: the self-driving ploughs
     if (Systems.working('snow') >= 3) dur *= AUTO_PLOUGH_X;
+    Fleet.ploughed(id, s.snow);
     s.plough = S.clock + dur;
     s.ploughFrom = S.clock;           // for the map: where the convoy is
     if (kind === 'runway') S.ops.convoy = s.plough;
