@@ -107,6 +107,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── sim/                  # state, fish (stages, growth, sizes, hit shapes), camera, spawn, effects, leaps, jellyfish, gulls, npc (bot brain), player, records, demo (demo-mode pilot)
 │   ├── render/               # render.js (canvas, fish, jellyfish, gulls, effects), scenery.js (background)
 │   ├── ui/                   # overlay (panels, banner), menu (records table), dialogs (milestone, game over), hud, sounds (game events → sounds), fireworks
+│   ├── docs/                 # showcase.gif (from a fry to the max-size Sea King, English UI) used by the READMEs
 │   ├── README.md
 │   ├── README_RU.md
 │   ├── README_SV.md

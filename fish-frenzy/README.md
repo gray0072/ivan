@@ -8,7 +8,7 @@
 
 *[Читать на русском](README_RU.md)*
 
-<a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="screenshot.png" alt="Fish Frenzy screenshot" width="800"></a>
+<a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="docs/showcase.gif" alt="Fish Frenzy in motion: a fry among plankton and jellyfish, a small fish at the surface under the gulls and a palm island, a big fish over the seaweed on the sea floor, a shark in a school of big fish under a Sea King, the Sea King dialog, a Sea King hunting a school of sharks, the Maximum size reached dialog with fireworks and the start screen with the run's records" width="800"></a>
 
 </div>
 
