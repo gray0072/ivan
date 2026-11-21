@@ -8,7 +8,7 @@
 
 *[Читать на русском](README_RU.md)* · *[Läs på svenska](README_SV.md)*
 
-<a href="https://gray0072.github.io/ivan/lift-logic/"><img src="screenshot.png" alt="Lift Logic screenshot" width="800"></a>
+<a href="https://gray0072.github.io/ivan/lift-logic/"><img src="docs/showcase.gif" alt="Lift Logic in motion: the buildings from Grandma's House and Maple School to the Grand Sunrise Hotel, St. Hope Hospital, the Glass Tower with three lifts, the Mega Mall and its car park, the Eiffel Tower and the 102 floors of the Empire State Building, each lift run by its block program, and the newspaper after the last exam" width="800"></a>
 
 </div>
 

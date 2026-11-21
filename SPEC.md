@@ -215,6 +215,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── render/               # view (camera, layout, taps), building (the cut-away building)
 │   ├── ui/                   # blockview, editor, palette, slots, runbar, hud, hints (and the guide), textview, results, jokes (and the newspaper), museum, screens, sounds, fireworks
 │   ├── tools/                # missions-check (runs every reference solution), texts-check (every text translated)
+│   ├── docs/                 # showcase.gif (the buildings from Grandma's House to the Empire State Building, English UI) used by the READMEs
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
 │   ├── manifest.webmanifest  # PWA manifest

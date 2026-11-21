@@ -8,7 +8,7 @@
 
 *[Read in English](README.md)* · *[Läs på svenska](README_SV.md)*
 
-<a href="https://gray0072.github.io/ivan/lift-logic/"><img src="screenshot.png" alt="Скриншот Lift Logic" width="800"></a>
+<a href="https://gray0072.github.io/ivan/lift-logic/"><img src="docs/showcase.gif" alt="Lift Logic в движении: здания от Бабушкиного дома и Кленовой школы до отеля «Гранд Санрайз», больницы Святой Надежды, Стеклянной башни с тремя лифтами, Мегамолла с его парковкой, Эйфелевой башни и 102 этажей Эмпайр-стейт-билдинг, каждый лифт работает по своей программе из блоков, и газета после последнего экзамена" width="800"></a>
 
 </div>
 

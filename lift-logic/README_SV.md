@@ -8,7 +8,7 @@
 
 *[Read in English](README.md)* · *[Читать на русском](README_RU.md)*
 
-<a href="https://gray0072.github.io/ivan/lift-logic/"><img src="screenshot.png" alt="Skärmbild av Lift Logic" width="800"></a>
+<a href="https://gray0072.github.io/ivan/lift-logic/"><img src="docs/showcase.gif" alt="Lift Logic i rörelse: byggnaderna från Mormors hus och Lönnskolan till Grand Hotel Sunrise, S:t Hopps sjukhus, Glastornet med tre hissar, Megagallerian och dess parkering, Eiffeltornet och de 102 våningarna i Empire State Building, varje hiss styrd av sitt blockprogram, och tidningen efter det sista provet" width="800"></a>
 
 </div>
 
