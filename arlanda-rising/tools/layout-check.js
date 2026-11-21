@@ -9,10 +9,13 @@
 //   - a taxiway across a building or a stand (taxiways run into the aprons: that is allowed);
 //   - the ground the biggest aircraft a stand takes covers (its length behind the stop bar, its span across) on a
 //     building, a road, the railway, a runway, a taxiway or another stand's aircraft — stands of the player's pier are
-//     checked once for each of its designs (finger, satellite, green), never one design against another.
+//     checked once for each of its designs (finger, satellite, green), never one design against another;
+//   - the airside fence (render/fence.js, loaded too) with everything built and in five eras from 1960 to 2040 across a
+//     road or the railway away from the taxiway bridges, or across a runway, a taxiway, an apron, a stand, an aircraft
+//     at its stand, a car park or a building (a run ends a hand short of the wall it joins).
 // Prints every clash with where it is and exits 1 when there is one. With --svg <file> it also writes the plan of the
-// airport from above (north up, everything of every era at once, labelled, a 100 m grid) — docs/layout.svg is made this
-// way; regenerate it after changing data/layout.js or a stand's place.
+// airport from above (north up, everything of every era at once with the fence round it, labelled, a 100 m grid) —
+// docs/layout.svg is made this way; regenerate it after changing data/layout.js, render/fence.js or a stand's place.
 //
 // Usage: node arlanda-rising/tools/layout-check.js [--svg arlanda-rising/docs/layout.svg] [--all]
 //   --all   list the allowed overlaps too (stands on their aprons, the bridges…)
@@ -25,9 +28,9 @@ const showAll = args.includes('--all');
 
 const ctx = {};
 vm.createContext(ctx);
-for (const f of ['data/layout.js', 'data/aircraft.js', 'data/buildings.js', 'data/masterplan.js'])
+for (const f of ['data/layout.js', 'data/aircraft.js', 'data/buildings.js', 'data/masterplan.js', 'render/fence.js'])
   vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8').replace(/^const (\w+) =/m, 'this.$1 ='), ctx, { filename: f });
-const { LAYOUT: Lo, AIRCRAFT, BUILDINGS, PROJECTS } = ctx;
+const { LAYOUT: Lo, AIRCRAFT, BUILDINGS, PROJECTS, Fence } = ctx;
 
 // ---------- the biggest aircraft of each stand size code (sim/stands.js codeOf) ----------
 const codeOf = (span) => (span < 15 ? 'A' : span < 24 ? 'B' : span < 36 ? 'C' : span < 52 ? 'D' : span < 65 ? 'E' : 'F');
@@ -98,6 +101,8 @@ line('road in', 'road', Lo.road.slice(0, -1).concat([[Lo.roadEnd, Lo.road[Lo.roa
 line('road in (before the baggage hall)', 'road', Lo.road.slice(-2), 26, { early: 'bagHall' });
 line('landside road', 'road', Lo.landside, 26);
 line('E4', 'road', Lo.e4, 30);
+line('road west to Märsta', 'road', Lo.e4Exit.west, 26);
+Lo.e4Exit.ramps.forEach((r, i) => line('E4 slip road ' + (i + 1), 'road', r, 16));
 line('rail line', 'rail', Lo.rail.line, 12); line('rail out', 'rail', Lo.rail.out, 12);
 line('taxiway 1', 'taxi', [rp(0, Lo.taxi.offset), rp(1, Lo.taxi.offset)], Lo.taxi.w);
 Lo.taxi.links.forEach((s, i) => line('runway 1 link ' + (i + 1), 'taxi', [rp(s, 0), rp(s, Lo.taxi.offset)], Lo.taxi.w));
@@ -111,6 +116,12 @@ Lo.remote.forEach((p, i) => {
   const A = Lo.apron1, x = p.x - 75, y = Math.min(Math.max(p.y, A.y0 + 12), A.y1 - 12), xa = Math.max(x, A.x0 + 12);
   line('remote ' + (i + 1) + ' way', 'way', [[x, p.y], [x, y]].concat(xa !== x ? [[xa, y]] : []), 20);
 });
+// the airside fence with everything built (the finger design of the player's pier), as render/fence.js works it out in
+// the game: every drawn run of it is a shape that may cross nothing but a road or the railway at the taxiway bridges
+const fencePads = stands.filter((p) => p.remote || p.pad).map((p) => sBox(p, 74, 8, 28));
+const fenceWays = S.filter((sh) => sh.kind === 'way').map((sh) => sh.line);
+const fence = Fence.build(Fence.parts((k) => k !== 'satApron', fencePads, fenceWays, 'finger'));
+fence.runs.forEach((r, i) => line('fence ' + (i + 1), 'fence', r, 3));
 
 // ---------- geometry ----------
 const segs = (pts) => pts.slice(1).map((b, i) => [pts[i], b]);
@@ -153,6 +164,9 @@ const ALLOWED = {
   'taxi/way': true, 'apron/stand': true, 'stand/stand': true, 'road/road': true, 'field/field': true, 'park/park': true,
   'apron/plane': (a, b) => true, 'plane/stand': (a, b) => true, 'plane/way': true, 'plane/taxi': true,   // aircraft taxi to and past stands
   'road/taxi': (a, b, r) => nearBridge(r), 'rail/taxi': (a, b, r) => nearBridge(r),
+  'fence/road': (a, b, r) => nearBridge(r), 'fence/rail': (a, b, r) => nearBridge(r), 'fence/fence': true,
+  // the fence is worked out on a grid of Fence.CELL m: along a plot's edge it may stray half a cell into it
+  'fence/field': (a, b, r) => Math.min(r.x1 - r.x0, r.y1 - r.y0) <= Fence.CELL / 2,
   'rwy/stand': false
 };
 const problems = [], allowed = [];
@@ -175,6 +189,27 @@ for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
   const line = (kinds + '            ').slice(0, 13) + a.name + '  ×  ' + b.name + '   ' + r.text + ' at x ' + r.x0.toFixed(0) + '..' + r.x1.toFixed(0) + ', y ' + r.y0.toFixed(0) + '..' + r.y1.toFixed(0);
   (ok ? allowed : problems).push({ line, a, b, r });
 }
+// the fence in the eras between (what each adds, roughly as the master plan builds it; every remote stand bought): it
+// must cross no road or railway away from the bridges, no runway, taxiway or apron of its own era
+const ERAS = [['1960', 'runway1 apron1 terminal1 cafe'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation'],
+  ['1990', 'apron3 apron4 domTerminal terminal2'], ['2003', 'apron5 pierF runway3 taxi3 deice0 deice1 cargoCity cargoApron'],
+  ['2040 satellite', 'apron6 apron7 pier2040 pierArm satApron h2depot']];
+const eraKeys = [];
+for (const [era, keys] of ERAS) {
+  eraKeys.push(...keys.split(' '));
+  const sat = era.includes('satellite'), on = (k) => eraKeys.includes(k);
+  const f = Fence.build(Fence.parts(on, fencePads, fenceWays, sat ? 'satellite' : 'finger'));
+  const own = S.filter((sh) => ['road', 'rail'].includes(sh.kind) || (sh.kind === 'rwy' && (sh.name === 'runway 1' || on(sh.name.replace(' ', '')))) ||
+    (sh.kind === 'apron' && on(sh.name)) || (sh.kind === 'taxi' && (/^(taxiway 1|runway 1 link|apron link)/.test(sh.name) || on(sh.name.replace('taxiway ', 'taxi')))));
+  f.runs.forEach((r, i) => {
+    const fs = { name: era + ' fence ' + (i + 1), kind: 'fence', line: r, w: 3 };
+    for (const sh of own) {
+      const o = overlap(fs, sh);
+      if (o && !(['road', 'rail'].includes(sh.kind) && nearBridge(o)))
+        problems.push({ line: 'era fence    ' + fs.name + '  ×  ' + sh.name + '   ' + o.text + ' at x ' + o.x0.toFixed(0) + '..' + o.x1.toFixed(0) + ', y ' + o.y0.toFixed(0) + '..' + o.y1.toFixed(0), a: fs, b: sh, r: o });
+    }
+  });
+}
 if (showAll) { console.log('allowed:'); for (const p of allowed) console.log('  ' + p.line); }
 for (const p of problems) console.log(p.line);
 console.log(problems.length ? problems.length + ' clash(es)' : 'layout ok: ' + S.length + ' shapes, ' + stands.length + ' stands, no clash');
@@ -194,16 +229,16 @@ if (svgOut) {
   const rct = (b, fill, stroke, extra = '') => `<rect x="${px(b[0])}" y="${py(b[3])}" width="${((b[2] - b[0]) * K).toFixed(1)}" height="${((b[3] - b[1]) * K).toFixed(1)}" fill="${fill}" stroke="${stroke || 'none'}" ${extra}/>`;
   const label = (x, y, t, size = 9, col = '#222') => `<text x="${px(x)}" y="${py(y)}" font-size="${size}" fill="${col}" text-anchor="middle" dominant-baseline="middle">${esc(t)}</text>`;
   for (const l of Lo.lakes) out.push(`<polygon points="${l.pts.map((p) => px(p[0]) + ',' + py(p[1])).join(' ')}" fill="#b9d3e3"/>`);
-  const order = ['field', 'park', 'apron', 'stand', 'rwy', 'taxi', 'way', 'road', 'rail', 'bld', 'plane'];
+  const order = ['field', 'park', 'apron', 'stand', 'rwy', 'taxi', 'way', 'road', 'rail', 'bld', 'plane', 'fence'];
   const style = { field: ['#c9cfb0', '#9aa080'], park: ['#9aa0a6', null], apron: ['#d6d3cb', '#a8a49a'], stand: ['#d6d3cb', '#a8a49a'], bld: ['#e9a86b', '#7a4a20'], plane: ['none', '#2f6fb3'] };
-  const lineCol = { rwy: '#3a3d41', taxi: '#6b6f73', way: '#c8c5bd', road: '#8a6e4c', rail: '#7a2e8e' };
+  const lineCol = { rwy: '#3a3d41', taxi: '#6b6f73', way: '#c8c5bd', road: '#8a6e4c', rail: '#7a2e8e', fence: '#1f8a3a' };
   for (const kind of order) for (const sh of S) {
     if (sh.kind !== kind || sh.early) continue;
     if (sh.rect) {
       const [fill, stroke] = style[kind];
       const dash = kind === 'plane' ? 'stroke-dasharray="3 2" stroke-width="0.8"' : sh.design === 'satellite' ? 'stroke-dasharray="4 3" fill-opacity="0.55"' : 'stroke-width="0.6"';
       out.push(rct(sh.rect, kind === 'bld' && sh.design === 'satellite' ? '#f2d0a8' : fill, kind === 'plane' && sh.design === 'satellite' ? '#b0559a' : stroke, dash));
-    } else out.push(poly(sh.line, sh.w, lineCol[kind], kind === 'rail' ? 'stroke-opacity="0.7"' : ''));
+    } else out.push(poly(sh.line, sh.w, lineCol[kind], kind === 'rail' ? 'stroke-opacity="0.7"' : kind === 'fence' ? 'stroke-dasharray="6 3"' : ''));
   }
   out.push(poly(Lo.rail.tunnel, 6, '#7a2e8e', 'stroke-dasharray="8 6" stroke-opacity="0.6"'));
   for (const b of Lo.bridges) out.push(rct([b[0] - 30, b[1] - 22, b[0] + 30, b[1] + 22], 'none', '#222', 'stroke-width="1"'));
@@ -222,13 +257,14 @@ if (svgOut) {
   for (const [x, y, t] of [[Lo.road[3][0] - 60, Lo.road[3][1], 'road in'], [Lo.taxi2[2][0] - 40, Lo.taxi2[2][1] - 300, 'taxiway 2'], [1500, 230, 'taxiway 3 (bridges)'], [1500, -500, 'Arlanda Express'], [1900, 2050, 'Arlanda Express']])
     out.push(label(x, y, t, 9, '#444'));
   for (const p of problems) out.push(rct([p.r.x0 - 4, p.r.y0 - 4, p.r.x1 + 4, p.r.y1 + 4], 'none', '#e0201c', 'stroke-width="2"'));
-  out.push(`<g font-size="10" fill="#222"><rect x="6" y="6" width="330" height="92" fill="#ffffff" fill-opacity="0.85" stroke="#bbb"/>`
+  out.push(`<g font-size="10" fill="#222"><rect x="6" y="6" width="330" height="106" fill="#ffffff" fill-opacity="0.85" stroke="#bbb"/>`
     + `<text x="12" y="20" font-weight="700">Arlanda Rising: the map (data/layout.js), north up</text>`
     + `<text x="12" y="34">metres from the 01L threshold; grid 100 m; every era at once</text>`
     + `<text x="12" y="48">orange: buildings · grey: aprons · brown: roads · purple: railway (dashed: tunnel)</text>`
     + `<text x="12" y="62">blue dashes: the biggest aircraft each stand takes (dot: the stop bar)</text>`
     + `<text x="12" y="76">pink: the satellite design of the player's pier (instead of the finger)</text>`
-    + `<text x="12" y="90">${problems.length ? 'red: clashes found by tools/layout-check.js' : 'tools/layout-check.js: no clash'}</text></g>`);
+    + `<text x="12" y="90">green dashes: the airside fence with everything built (render/fence.js)</text>`
+    + `<text x="12" y="104">${problems.length ? 'red: clashes found by tools/layout-check.js' : 'tools/layout-check.js: no clash'}</text></g>`);
   out.push('</svg>');
   fs.writeFileSync(path.resolve(svgOut), out.join('\n') + '\n');
   console.log('plan written to ' + svgOut);

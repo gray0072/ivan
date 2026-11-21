@@ -3,8 +3,8 @@
 // Arlanda Rising — a frame of the map: the scene read from S (the season, the light, what is built and how far the
 // projects are, the weather), then the land, the airport's flat parts, the standing things back to front (trees and
 // houses, buildings, aircraft, vehicles), the sky and the lamps, and on top the flights' labels and turnaround bars.
-// Also what a tap on the map hit (a flight, a stand, a fuel truck or a plough, a building). With the roofs off
-// (view.cut, the 🏠 button) the finished buildings are drawn cut away with their insides (render/interiors.js); the
+// The airside fence round what is built (render/fence.js) lies over the flat parts, under the trees. Also what a tap
+// on the map hit (a flight, a stand, a fuel truck or a plough, a building). With the roofs off (view.cut, the 🏠 button) the finished buildings are drawn cut away with their insides (render/interiors.js); the
 // building or vehicle whose card is open is ringed in yellow. Used by game.js every frame, for the game view, the
 // Office and the start screen's slow flyover.
 
@@ -61,8 +61,48 @@ const MapView = (() => {
       runway: a.runways[0] || null, runway2: a.runways.find((r) => r.id === 'r2') || null, runway3: a.runways.find((r) => r.id === 'r3') || null,
       apron: a.stands.length > 0, items, p,
       planning: !!S.plan, lights: [], standMark: view.standMark, cut: view.cut,
+      fence: ready ? Fence.get(fenceSpec(a, items, p)) : null,
       ...clearings(a, items, ready || p('site', 'apron') >= 1, p)
     };
+  }
+
+  // what the airside fence goes round (render/fence.js): what stands or is being built — the runways, the taxiways, the
+  // aprons, the remote stands, the de-icing pads, the buildings on the terminal line and the piers
+  // the buildings on the terminal line built by a project of their own name: the stage that raises them
+  const HALLS = { domTerminal: 'hall', bagHall: 'hall', terminal2: 'hall', sorterHall: 'hall', cargoCity: 'halls', computerRoom: 'room' };
+  function fenceSpec(a, items, p) {
+    const aprons = {};
+    for (const [key, pid, sid, item] of AirportArt.APRONS) aprons[key] = !!(item && items[item]) || p(pid, sid) > 0;
+    const sat = a.pierDesign === 'satellite';
+    const on = (k) => {
+      switch (k) {
+        case 'runway1': return true;
+        case 'apron1': return a.stands.length > 0;
+        case 'cargoApron': return !!items.cargoStand;
+        case 'satApron': return sat && p('pier2040', 'gates') > 0;
+        case 'runway2': return p('runway2', 'strip') > 0 || a.runways.some((r) => r.id === 'r2');
+        case 'taxi2': return p('apron2', 'pave') >= 1;
+        case 'runway3': return !!items.runway3 || p('runway3', 'strip') > 0;
+        case 'taxi3': return !!items.bridges || p('bridges', 'taxi') > 0;
+        case 'deice0': return !!items.deicePad || p('deicePads', 'south') > 0;
+        case 'deice1': return !!items.deicePad || p('deicePads', 'r3') > 0;
+        case 'terminal1': return !!items.terminal || p('terminal1', 'hall') > 0;
+        case 'intlTerminal': return !!items.intlTerminal || p('intlTerminal', 'frame') > 0;
+        case 'pierF': return !!items.pierF || p('pierF', 'gates') > 0;
+        case 'pier2040': return !!items.pier2040 || p('pier2040', 'hall') > 0;
+        case 'pierArm': return !!items.pierArm || p('pier2040', 'arm') > 0;
+        default: return k in aprons ? aprons[k] : !!items[k] || (k in HALLS && p(k, HALLS[k]) > 0);
+      }
+    };
+    const pads = [], ways = [], A = LAYOUT.apron1;
+    a.stands.forEach((st, i) => {
+      if (st.at && !st.pad) return;
+      const q = AirportArt.standPos(i);
+      if (q.x >= A.x0 && q.x <= A.x1 && q.y >= A.y0 && q.y <= A.y1) return;
+      pads.push(AirportArt.standBox(q, 74, 8, 28));
+      if (!st.pad) ways.push(AirportArt.remoteWay(i));
+    });
+    return Fence.parts(on, pads, ways, a.pierDesign);
   }
 
   // the ground cleared of trees round what is built outside the site's first clearing: a remote stand's pad and its
@@ -124,6 +164,7 @@ const MapView = (() => {
     const sc = scene();
     Ground.draw(c, sc);
     AirportArt.flat(c, sc);
+    Fence.draw(c, sc);
     Ground.drawStanding(c, sc);
     const list = [];
     AirportArt.objects(sc, list);

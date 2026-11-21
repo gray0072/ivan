@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "7d791dc19ca8";
+const VERSION = "8b6bea18d43a";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -49,7 +49,7 @@ const FILES = [
   "data/icons.js?v=6",
   "data/lang-ru.js?v=8",
   "data/lang-sv.js?v=8",
-  "data/layout.js?v=8",
+  "data/layout.js?v=9",
   "data/masterplan.js?v=6",
   "data/missions/ch1.js?v=2",
   "data/missions/ch2.js?v=1",
@@ -82,10 +82,11 @@ const FILES = [
   "progress.js?v=2",
   "render/aircraft.js?v=6",
   "render/airport.js?v=12",
-  "render/ground.js?v=3",
+  "render/fence.js?v=1",
+  "render/ground.js?v=4",
   "render/interiors.js?v=1",
   "render/iso.js?v=2",
-  "render/map.js?v=8",
+  "render/map.js?v=9",
   "render/palette.js?v=1",
   "render/sky.js?v=1",
   "render/terminal.js?v=4",

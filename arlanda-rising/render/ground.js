@@ -2,8 +2,8 @@
 
 // Arlanda Rising — the land round the airport: the pine and spruce forest (a texture from afar, single trees close
 // up), fields, lakes (ice in winter), granite outcrops, the bog the site has to drain, the clearings of the site
-// project as they progress (the runway strip, the apron plot, the road in), the E4 and the road, and Märsta's red
-// and white houses with its church. The season (snow on the ground, autumn birches) comes from the scene
+// project as they progress (the runway strip, the apron plot, the road in), the E4 (on past the map's edge) and the
+// road, the junction where the E4 goes over the road on a bridge, and Märsta's red and white houses with its church. The season (snow on the ground, autumn birches) comes from the scene
 // (render/map.js). Drawn by render/map.js before the airport.
 
 const Ground = (() => {
@@ -64,6 +64,12 @@ const Ground = (() => {
     const T = LAYOUT.town;
     if (Math.hypot(x - T.x, y - T.y) < T.r) return true;
     if (nearLine(x, y, LAYOUT.e4, 40)) return true;
+    if (sc.road >= 1) {
+      const X = LAYOUT.e4Exit;
+      if (pointInPoly(x, y, X.verge) || nearLine(x, y, X.west, 32)) return true;
+      for (const r of X.ramps) if (nearLine(x, y, r, 20)) return true;
+    }
+    if (sc.fence && Fence.near(sc.fence, x, y)) return true;
     if (sc.road > 0 && nearLine(x, y, sc.roadPts, 32)) return true;
     if (sc.landsidePts && nearLine(x, y, sc.landsidePts, 32)) return true;
     // what is built outside the first clearing: its plot and its way to the apron (render/map.js `scene`)
@@ -90,6 +96,56 @@ const Ground = (() => {
     c.setLineDash(dash || []);
     c.stroke();
     c.setLineDash([]);
+  }
+
+  // ---------- the E4's bridge over the road in (data/layout.js e4Exit) ----------
+  // d: metres along the E4 from the junction (north +), n: metres across it (east +), z: up
+  const E4W = 15;   // m: half the E4's width
+  const e4Frame = (() => {
+    const X = LAYOUT.e4Exit, E = LAYOUT.e4, J = X.at;
+    const i = E.findIndex((p) => p[0] === J[0] && p[1] === J[1]);
+    const unit = (p) => { const l = Math.hypot(p[0] - J[0], p[1] - J[1]); return [(p[0] - J[0]) / l, (p[1] - J[1]) / l]; };
+    const toS = unit(E[i - 1]), toN = unit(E[i + 1]);
+    return (d, n, z) => {
+      const t = d >= 0 ? toN : toS, f = d >= 0 ? toN : [-toS[0], -toS[1]], a = Math.abs(d);
+      return [J[0] + t[0] * a + f[1] * n, J[1] + t[1] * a - f[0] * n, z || 0];
+    };
+  })();
+  function overpass(c, sc, land, verge, paved) {
+    const X = LAYOUT.e4Exit, G = X.deck, R = X.ramp, H = X.h, W = E4W, F = e4Frame, sn = sc.season === 'winter';
+    const zAt = (d) => { const a = Math.abs(d); return a <= G ? H : a >= G + R ? 0 : H * (0.5 + 0.5 * Math.cos(Math.PI * (a - G) / R)); };
+    const SLOPE = 1.6;   // m out per m up: the embankment's sides
+    const asph = sn ? '#9aa0a6' : PAL.asphalt, grass = land.grass, conc = sn ? '#b9bcbd' : '#a39f96', rail = '#dcd9d2';
+    // under the bridge: the ground between the abutments, the road through it, the deck's shadow
+    const foot = [F(-G, -W - 4), F(G, -W - 4), F(G, W + 4), F(-G, W + 4)];
+    c.save();
+    fillPoly(c, foot, grass); c.clip();
+    for (const pts of [sc.roadPts, X.west]) { strokeLine(c, pts, 26, verge); strokeLine(c, pts, 12, paved); }
+    c.restore();
+    fillPoly(c, [F(-G, -W - 1), F(G, -W - 1), F(G, W + 1), F(-G, W + 1)], 'rgba(0,0,0,0.3)');
+    Iso.units(c);
+    const q = (pts, col) => Iso.poly(c, pts, col);
+    // one stretch of the raised carriageway from d0 (farther) to d1 (nearer), on its embankment or (deck) on the bridge
+    let dash = 0;
+    const stretch = (d0, d1, deck) => {
+      const z0 = zAt(d0), z1 = zAt(d1), s0 = z0 * SLOPE, s1 = z1 * SLOPE;
+      if (!deck) q([F(d0, -W, z0), F(d1, -W, z1), F(d1, -W - s1, 0), F(d0, -W - s0, 0)], shade(grass, -0.25));
+      q([F(d0, -W, z0), F(d0, W, z0), F(d1, W, z1), F(d1, -W, z1)], asph);
+      if (dash++ % 2 === 0) q([F(d0, -0.6, z0), F(d0, 0.6, z0), F(d1, 0.6, z1), F(d1, -0.6, z1)], 'rgba(255,255,255,0.6)');
+      q([F(d0, -W, z0), F(d1, -W, z1), F(d1, -W, z1 + 1), F(d0, -W, z0 + 1)], shade(rail, -0.1));
+      if (deck) q([F(d0, W, z0 - 1.6), F(d1, W, z1 - 1.6), F(d1, W, z1), F(d0, W, z0)], shade(conc, 0.15));
+      else q([F(d0, W, z0), F(d1, W, z1), F(d1, W + s1, 0), F(d0, W + s0, 0)], shade(grass, -0.22));
+      q([F(d0, W, z0), F(d1, W, z1), F(d1, W, z1 + 1), F(d0, W, z0 + 1)], rail);
+    };
+    const STEP = 7;
+    for (let d = G + R; d > G; d -= STEP) stretch(d, Math.max(G, d - STEP), false);
+    // the north abutment's face toward the road, then the deck
+    const sG = H * SLOPE;
+    q([F(G, -W - sG, 0), F(G, W + sG, 0), F(G, W, H), F(G, -W, H)], conc);
+    q([F(G, -W - 1, H - 1.6), F(G, W + 1, H - 1.6), F(G, W + 1, H), F(G, -W - 1, H)], shade(conc, -0.25));
+    stretch(G, -G, true);
+    for (let d = -G; d > -G - R; d -= STEP) stretch(d, Math.max(-G - R, d - STEP), false);
+    Iso.ground(c);
   }
 
   function draw(c, sc) {
@@ -141,17 +197,25 @@ const Ground = (() => {
     c.fillStyle = raw;
     for (const r of sc.pads || []) c.fillRect(r[0], r[1], r[2] - r[0], r[3] - r[1]);
     for (const l of sc.ways || []) strokeLine(c, l.pts, l.d * 2, raw);
-    // roads: the E4, the road in (gravel while it is built) and the landside road along the terminals
-    strokeLine(c, LAYOUT.e4, 30, sc.season === 'winter' ? '#9aa0a6' : PAL.asphalt);
-    strokeLine(c, LAYOUT.e4, 1.2, 'rgba(255,255,255,0.6)', [14, 14]);
+    // roads: the road in (gravel while it is built), the landside road along the terminals, the E4 over them; once the
+    // road in is finished the junction: the road on west under the E4, the slip roads, the E4 on its bridge
+    const X = LAYOUT.e4Exit, paved = sc.season === 'winter' ? '#8d949a' : '#4a4d51', verge = shade(land.road, -0.15);
+    if (sc.road >= 1) {
+      fillPoly(c, X.verge, land.grass);
+      for (const r of X.ramps) { strokeLine(c, r, 16, verge); strokeLine(c, r, 8, paved); }
+      strokeLine(c, X.west, 26, verge); strokeLine(c, X.west, 12, paved);
+    }
     if (sc.road > 0) {
-      strokeLine(c, sc.roadPts, 26, shade(land.road, -0.15));
-      strokeLine(c, sc.roadPts, 12, sc.road >= 1 ? (sc.season === 'winter' ? '#8d949a' : '#4a4d51') : land.road);
+      strokeLine(c, sc.roadPts, 26, verge);
+      strokeLine(c, sc.roadPts, 12, sc.road >= 1 ? paved : land.road);
     }
     if (sc.landsidePts) {
-      strokeLine(c, sc.landsidePts, 26, shade(land.road, -0.15));
-      strokeLine(c, sc.landsidePts, 12, sc.season === 'winter' ? '#8d949a' : '#4a4d51');
+      strokeLine(c, sc.landsidePts, 26, verge);
+      strokeLine(c, sc.landsidePts, 12, paved);
     }
+    strokeLine(c, LAYOUT.e4, 30, sc.season === 'winter' ? '#9aa0a6' : PAL.asphalt);
+    strokeLine(c, LAYOUT.e4, 1.2, 'rgba(255,255,255,0.6)', [14, 14]);
+    if (sc.road >= 1) overpass(c, sc, land, verge, paved);
     // granite outcrops
     for (const r of LAYOUT.rocks) {
       if (cleared(sc, r[0], r[1]) && !pointInPoly(r[0], r[1], LAYOUT.fields[0])) continue;
@@ -277,7 +341,8 @@ const Ground = (() => {
       c.fillStyle = 'rgba(255,255,255,0.9)'; c.fillText(text, s[0], s[1]);
     };
     put(LAYOUT.town.name, LAYOUT.town.x, LAYOUT.town.y);
-    put('E4', LAYOUT.e4[3][0] - 80, LAYOUT.e4[3][1]);
+    const e4 = LAYOUT.e4.find((p) => p[1] > 0);
+    put('E4', e4[0] - 80, e4[1]);
     for (const l of LAYOUT.lakes) if (l.name) put(l.name, l.pts[0][0] + 300, l.pts[0][1] + 120);
   }
 

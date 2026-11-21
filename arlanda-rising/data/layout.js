@@ -120,8 +120,28 @@ const LAYOUT = {
   // the landside road on from the road in, north along the terminals' kerb to the international terminal and Pier F
   // (from the international terminal's year): west of it the terminals, east of it the car parks, Sky City and the hotel
   landside: [[990, 1240], [1006, 1290], [1006, 1660]],
-  // the E4 motorway, west of the airport, north–south
-  e4: [[-1700, -3600], [-1820, -1500], [-1880, -700], [-1860, 800], [-1950, 2600], [-2100, 5200]],
+  // the E4 motorway, west of the airport, north–south, on past the map's edge at both ends (south to Stockholm, north to
+  // Uppsala) so that it runs out of sight instead of stopping in the forest
+  e4: [[-1100, -32000], [-1560, -6500], [-1700, -3600], [-1820, -1500], [-1880, -700], [-1860, 800], [-1950, 2600], [-2100, 5200],
+    [-2350, 9000], [-3200, 36000]],
+  // the junction where the road in meets the E4 (`at`, a point of both lines): the E4 goes over the road on a bridge
+  // (render/ground.js: a deck `h` m up over the road, `deck` m to each side of the road's line, on embankments `ramp` m
+  // long), the road goes on under it west to Märsta (`west`), four slip roads join the two (`ramps`, a diamond), the
+  // grass inside them (`verge`); drawn once the road in is finished
+  e4Exit: { at: [-1880, -700], h: 8, deck: 17, ramp: 140,
+    west: [[-1880, -700], [-2200, -720], [-2640, -1300]],
+    ramps: [[[-1790, -706], [-1824, -664], [-1850, -560], [-1861, -420]], [[-1790, -706], [-1822, -750], [-1838, -850], [-1844, -980]],
+      [[-1970, -706], [-1936, -664], [-1906, -560], [-1891, -420]], [[-1970, -706], [-1938, -750], [-1912, -850], [-1874, -980]]],
+    verge: [[-1835, -1000], [-1772, -706], [-1846, -395], [-1906, -395], [-1988, -706], [-1885, -1000]] },
+  // the airside fence (render/fence.js works it out from what is built): it never crosses the landside belt east of the
+  // terminal line (`belt`: the road in from Cargo City north, the kerb, the car parks, Sky City, the offices, the
+  // railway's south leg), a road, the railway, a car park or Cargo City's yard — except over the two taxiway bridges;
+  // the walls of the buildings on the terminal line (`line`) are the fence where they stand, their landside faces outside
+  fence: {
+    belt: [[943, 285], [1000, 400], [1030, 900], [990, 1240], [1006, 1290], [1006, 1700], [1330, 1700], [1330, 285]],
+    line: ['terminal1', 'bagHall', 'cafe', 'restaurant', 'computerRoom', 'generator', 'sorterHall', 'intlTerminal', 'domTerminal', 'terminal2',
+      'cargoCity']
+  },
   // Märsta, south-west: the town's middle and size (red and white houses, a church)
   town: { x: -3300, y: -1900, r: 950, name: 'Märsta' },
 
