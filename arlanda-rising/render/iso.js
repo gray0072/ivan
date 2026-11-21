@@ -103,7 +103,7 @@ const Iso = {
     const q = [corner(1, -1), corner(1, 1), corner(-1, 1), corner(-1, -1)];
     for (let i = 0; i < 4; i++) {
       const a = q[i], b = q[(i + 1) % 4];
-      const nx = b[1] - a[1], ny = -(b[0] - a[0]);   // the outward normal of a clockwise ring
+      const nx = a[1] - b[1], ny = b[0] - a[0];     // the outward normal of a clockwise ring
       if (nx - ny <= 0) continue;                   // a wall facing away from the viewer
       this.poly(c, [[a[0], a[1], z0], [b[0], b[1], z0], [b[0], b[1], z1], [a[0], a[1], z1]], shade(color, nx > -ny ? -0.18 : 0.05));
     }

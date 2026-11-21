@@ -379,8 +379,8 @@ const AirportArt = (() => {
       Iso.box(c, o.x + i * 14, o.y, o.x + i * 14 + 10, o.y + 5, 0, 3, i === 1 ? '#c9b47a' : '#7d8d5a');
       Iso.gable(c, o.x + i * 14 - 0.4, o.y - 0.4, o.x + i * 14 + 10.4, o.y + 5.4, 3, 1.4, sc.season === 'winter' ? '#eef2f5' : '#4a4a48', true);
     }
-    Iso.obox(c, o.x + 10, o.y - 14, 8, 2.6, 0, 2.6, 80, '#c7802a');
-    Iso.obox(c, o.x + 24, o.y - 12, 9, 2.6, 0, 2.8, 100, '#5a7a3a');
+    Vehicles.lorry(c, o.x + 10, o.y - 14, 80, '#c7802a', '#8a8f94');
+    Vehicles.lorry(c, o.x + 24, o.y - 12, 100, '#5a7a3a', '#c9b47a');
   }
 
   function fireStation(c, sc) {
@@ -496,9 +496,9 @@ const AirportArt = (() => {
     // the crash tenders by the fire station, the airport coaches at the kerb
     for (let i = 0; i < Math.min(4, sc.items.crashTender || 0); i++) {
       const x = LAYOUT.fireStation.box[0] + 6 + i * 12, y = LAYOUT.fireStation.box[1] - 8;
-      add(x, y, (c) => Iso.obox(c, x, y, 9, 3, 0, 3.2, 90, '#c8322a'));
+      add(x, y, (c) => Vehicles.crashTender(c, x, y, 90));
     }
-    if (sc.items.busStop) for (let i = 0; i < 2; i++) { const x = LAYOUT.busStop.x, y = LAYOUT.busStop.y + i * 18; add(x, y, (c) => Iso.obox(c, x, y, 12, 2.5, 0, 3.2, 0, '#e8e8e8')); }
+    if (sc.items.busStop) for (let i = 0; i < 2; i++) { const x = LAYOUT.busStop.x, y = LAYOUT.busStop.y + i * 18; add(x, y, (c) => Vehicles.bus(c, x, y, 0)); }
     // the instrument landing system's localizer beyond the 19 end
     if (sc.items.ils || sc.p('ils1', 'antennas') >= 1) {
       const p0 = Ground.rwPoint(1 + 300 / Ground.LEN, 0);

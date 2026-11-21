@@ -147,23 +147,22 @@ const Traffic = (() => {
       person(c, lerp(from[0], to[0], k), lerp(from[1], to[1], k) + off, ['#2c3e66', '#7a2e2e', '#3e5a3e', '#6a5a3a', '#444'][i % 5]);
     }
   }
-  function beacon(sc, x, y, z) { sc.lights.push({ x, y, z, col: '255,176,0', r: 3.5, blink: 2 }); }
 
   function turnaroundKit(c, sc, f, p, t) {
     const A = AIRCRAFT[f.type], len = A.length, fw = Math.max(1.2, len * (AIRCRAFT_SHAPE[f.type] || {}).fus || 2);
     const tr = f.tr;
     if (!tr) return;
-    const door = [p.x + len * 0.3, p.y + fw + 2.5];
+    const door = [p.x + len * 0.3, p.y + fw + 3];
     const term = [LAYOUT.terminal1.box[0] - 2, clamp(p.y, LAYOUT.terminal1.box[1] + 5, LAYOUT.terminal1.box[3] - 5)];
     const people = Cam.zoom > 1.3;
     // the stairs while anyone gets off or on
-    if (f.inBlock !== null || f.st === 'parked' || tr.board !== null) Iso.obox(c, door[0], door[1], 5, 2, 0, 2.6, 0, '#d7d2c4');
+    if (f.inBlock !== null || f.st === 'parked' || tr.board !== null) Vehicles.stairs(c, door[0], door[1], 180);
     if (people && f.inBlock !== null && t < tr.off && f.paxArr) walkers(c, door, term, (t - f.inBlock) / Math.max(0.5, tr.off - f.inBlock), 7, f.id + 'off');
     if (people && tr.board !== null && tr.ready === null) walkers(c, term, door, (t - tr.board) / Math.max(1, f.booked * BOARD_PER_PAX), 7, f.id + 'on');
     // catering and bags while the services run
     if (t >= tr.off && t < tr.svc) {
-      Iso.obox(c, p.x - len * 0.28, p.y - fw - 3.5, 6.5, 2.4, 0, 3.4, 90, '#e9e6de');
-      for (let i = 0; i < 3; i++) Iso.obox(c, p.x - len * 0.05 - i * 3.6, p.y - fw - 7, 3, 1.6, 0, 1.2, 90, i ? '#8a8f94' : PAL.hiVisOrange);
+      Vehicles.catering(c, p.x - len * 0.28, p.y - fw - 3.5, 90);
+      Vehicles.bagTrain(c, p.x - len * 0.05, p.y - fw - 7, 90, 2);
       if (people) { person(c, p.x - len * 0.1, p.y - fw - 4.5, PAL.hiVisOrange); person(c, p.x - len * 0.32, p.y - fw - 6, PAL.hiVis); }
     }
     // the fuel truck: from its depot, at the wing, and back
@@ -177,33 +176,19 @@ const Traffic = (() => {
       if (q) {
         const way = [q.a, [q.a[0], (q.a[1] + q.b[1]) / 2], [q.b[0], (q.a[1] + q.b[1]) / 2], q.b];
         const v = along(way, q.u);
-        fuelTruck(c, sc, v.x, v.y, q.u >= 1 ? 90 : v.hdg, true);
+        Vehicles.fuelTruck(c, sc, v.x, v.y, q.u >= 1 ? 90 : v.hdg, true);
         if (people && q.u >= 1) person(c, wingPt[0] + 4, wingPt[1] + 2, PAL.hiVis);
       }
     }
     // session 5: a de-icing truck at the wing, its boom up and the warm glycol steaming
     if (tr.deice === 'going') {
       const dx = p.x - len * 0.1, dy = p.y + A.span * 0.3;
-      Iso.obox(c, dx, dy, 6, 2.6, 0, 3, 90, PAL.hiVisOrange);
-      Iso.obox(c, dx + 1, dy - 2, 1, 1, 3, 3 + A.span * 0.12, 90, '#d0d0d0');
-      beacon(sc, dx, dy, 3.4);
+      Vehicles.deicer(c, sc, dx, dy, 90, 3 + A.span * 0.12);
       if (sc.dark < 0.5) sc.lights.push({ x: dx, y: dy - 4, z: 5, col: '240,245,255', r: 6 });
     }
     // a hand by the nose, and the tug at pushback
     if (people && f.st !== 'taxiOut') person(c, p.x + len / 2 + 3, p.y - 3, PAL.hiVis);
-    if (tr.ready !== null && f.st !== 'taxiOut') Iso.obox(c, p.x + len / 2 + 3.5, p.y, 4.5, 2.2, 0, 1.4, 90, '#e0b020');
-  }
-  function fuelTruck(c, sc, x, y, hdg, lamp) {
-    const h = hdg * Math.PI / 180;
-    Iso.obox(c, x + Math.sin(h) * 2.8, y + Math.cos(h) * 2.8, 2.6, 2.4, 0, 2.6, hdg, '#d8dde0');
-    Iso.obox(c, x - Math.sin(h) * 1.2, y - Math.cos(h) * 1.2, 5.4, 2.4, 0.6, 2.8, hdg, '#c83a2e', '#e8e8e8');
-    if (lamp) beacon(sc, x, y, 3);
-  }
-  function plough(c, sc, x, y, hdg) {
-    const h = hdg * Math.PI / 180;
-    Iso.obox(c, x, y, 7, 2.6, 0, 3, hdg, PAL.hiVisOrange);
-    Iso.obox(c, x + Math.sin(h) * 4.6 - Math.cos(h) * 0.6, y + Math.cos(h) * 4.6 + Math.sin(h) * 0.6, 1, 4.4, 0, 1.2, hdg - 30, '#ccc');
-    beacon(sc, x, y, 3.4);
+    if (tr.ready !== null && f.st !== 'taxiOut') Vehicles.tug(c, p.x + len / 2 + 5, p.y, 270);
   }
 
   // ---------- everything that moves, as objects to sort ----------
@@ -226,7 +211,7 @@ const Traffic = (() => {
       const free = S.ops.trucks.filter((b) => b <= t).length;
       for (let i = 0; i < free; i++) {
         const x = LAYOUT.fuelDepot.x + i * 5, y = LAYOUT.fuelDepot.y;
-        list.push({ d: depthOf(x, y), draw: (c) => fuelTruck(c, sc, x, y, 180, false) });
+        list.push({ d: depthOf(x, y), draw: (c) => Vehicles.fuelTruck(c, sc, x, y, 180, false) });
       }
       // the plough convoy on the runway, the apron's own plough
       const rw = Runways.main(), n = Airport.ploughs();
@@ -234,12 +219,12 @@ const Traffic = (() => {
         const q = clamp((t - rw.ploughFrom) / (rw.plough - rw.ploughFrom), 0, 1);
         for (let i = 0; i < Math.min(n, 6); i++) {
           const pp = rp(clamp(q - i * 28 / L, 0, 1), -14 + i * 9);
-          list.push({ d: depthOf(pp[0], pp[1]), draw: (c) => plough(c, sc, pp[0], pp[1], 10.4) });
+          list.push({ d: depthOf(pp[0], pp[1]), draw: (c) => Vehicles.plough(c, sc, pp[0], pp[1], 10.4) });
         }
       } else if (n) {
         for (let i = 0; i < Math.min(n, 6); i++) {
           const x = LAYOUT.snowDepot.x + i * 9, y = LAYOUT.snowDepot.y;
-          list.push({ d: depthOf(x, y), draw: (c) => plough(c, sc, x, y, 180) });
+          list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, 180) });
         }
       }
       const ap = S.airport.apron;
@@ -247,12 +232,12 @@ const Traffic = (() => {
         const q = clamp((t - ap.ploughFrom) / (ap.plough - ap.ploughFrom), 0, 1), A = LAYOUT.apron1;
         const lane = Math.floor(q * 6), u = q * 6 - lane;
         const x = A.x0 + (A.x1 - A.x0) * (lane + 0.5) / 6, y = lane % 2 ? A.y1 - (A.y1 - A.y0) * u : A.y0 + (A.y1 - A.y0) * u;
-        list.push({ d: depthOf(x, y), draw: (c) => plough(c, sc, x, y, lane % 2 ? 180 : 0) });
+        list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, lane % 2 ? 180 : 0) });
       }
     } else if (sc.apron) {
       // planning: the vehicles at rest
-      for (let i = 0; i < (sc.items.fuelTruck || 0); i++) { const x = LAYOUT.fuelDepot.x + i * 5, y = LAYOUT.fuelDepot.y; list.push({ d: depthOf(x, y), draw: (c) => fuelTruck(c, sc, x, y, 180, false) }); }
-      for (let i = 0; i < Math.min(6, sc.items.plough || 0); i++) { const x = LAYOUT.snowDepot.x + i * 9, y = LAYOUT.snowDepot.y; list.push({ d: depthOf(x, y), draw: (c) => plough(c, sc, x, y, 180) }); }
+      for (let i = 0; i < (sc.items.fuelTruck || 0); i++) { const x = LAYOUT.fuelDepot.x + i * 5, y = LAYOUT.fuelDepot.y; list.push({ d: depthOf(x, y), draw: (c) => Vehicles.fuelTruck(c, sc, x, y, 180, false) }); }
+      for (let i = 0; i < Math.min(6, sc.items.plough || 0); i++) { const x = LAYOUT.snowDepot.x + i * 9, y = LAYOUT.snowDepot.y; list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, 180) }); }
     }
   }
 
