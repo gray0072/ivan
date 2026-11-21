@@ -18,7 +18,7 @@ function track(n, imperfect = {}) {
   return { n, rates, best, bestGems };
 }
 
-// Mia the Kitty after a long play: 🪙 3860 · 💎 47, six tracks at different levels, dressed and furnished
+// Mia the Kitty after a long play: 🪙 3860 · 💎 47, six tracks at different levels, dressed and furnished with taste
 function save() {
   const t = {
     flower: track(59),
@@ -30,14 +30,15 @@ function save() {
   };
   const progress = {}, rates = {}, best = {}, bestGems = {};
   for (const k in t) { progress[k] = t[k].n; rates[k] = t[k].rates; best[k] = t[k].best; bestGems[k] = t[k].bestGems; }
+  // a cosy room and outfit from the middle of the shop (wood, books, textiles): no gold, no diamond pieces
   const equip = {
-    head: 'crown', neck: 'starchain', body: 'wizardrobe', back: 'butterflywings', feet: 'lightsneakers', hand: 'rainbowwand',
-    wall: 'aurorawall', floor: 'starfloor', bed: 'rocketbed', table: 'gamingdesk', lamp: 'discoball', window: 'spacewindow',
-    rug: 'racetrackrug', picture: 'familyportrait', plant: 'cherryplant', toy: 'robot', pet: 'babydragon',
+    head: 'flowers', neck: 'lovikkascarf', body: 'sweater', feet: 'woolsocks',
+    wall: 'stripes', floor: 'parquet', bed: 'woodbed', table: 'fikatable', lamp: 'lantern', window: 'flowerbox',
+    rug: 'ragrug', picture: 'landscape', plant: 'bonsai', toy: 'teddy', pet: 'hedgehogpet',
   };
-  const owned = [...new Set([...Object.values(equip), 'wizard', 'witchhat', 'luciacrown', 'gown', 'tuxedo', 'spacesuit',
-    'dragonwings', 'jetpack', 'moonboots', 'guitar', 'wand', 'carbed', 'piratebed', 'lavalamp', 'aquawall', 'spacewall',
-    'castlewall', 'seafloor', 'goldfloor', 'oceanrug', 'persianrug', 'christmastreeplant', 'rockettoy', 'jellyfishtank', 'parrot'])];
+  const owned = [...new Set([...Object.values(equip), 'cap', 'strawhat', 'beanie', 'scarf', 'tshirt', 'hoodie', 'dress',
+    'backpack', 'sneakers', 'rainboots', 'fikabun', 'balloon', 'falubed', 'bookwall', 'flowerwall', 'faluwall', 'pinefloor', 'shade',
+    'curtains', 'striperug', 'dalarug', 'moosepainting', 'flowerpot', 'cactus', 'dalahorse', 'goldfish'])];
   const player = {
     id: 'mia', name: 'Mia', character: 'kitty', fullness: 92, fedAt: Date.now(),
     owned, equip, coins: 3860, gems: 47, progress, rates, best, bestGems,
