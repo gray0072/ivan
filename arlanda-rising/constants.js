@@ -227,6 +227,10 @@ const RIVAL_LATER = 0.25;          // × the pull once the rival's news is old (
 const NPV_RATE = 0.06;             // a year: the discount rate of the net present value
 const NPV_YEARS = 20;              // years an investment is counted over
 const TRAFFIC_DAYS = 30;           // days of traffic kept for the payback estimates
+// the history the analytics tabs of Finance draw (sim/stats.js; read by nothing in the sim)
+const STATS_OPS_MIN = 15;          // game minutes between two points of an ops stage
+const STATS_RECENT_MAX = 150;      // points kept of the ops stages' quarter hours and the plan stages' days
+const STATS_MONTHS_MAX = 60;       // months kept (a point at each month's close)
 
 // ---------- Challenge Days (session 4, sim/challenges.js) ----------
 // points of a Challenge Day: per departure on time and late, × the Passengers meter at the end, per flight lost, close

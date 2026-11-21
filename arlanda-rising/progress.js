@@ -52,7 +52,8 @@ const Campaign = {
   },
   keepSnapshot(id, world) {
     const snaps = Store.json(KEYS.snapshots, {});
-    snaps[id] = world;
+    // without the analytics' history (sim/stats.js): the snapshots stay small, and nothing in the sim reads it
+    snaps[id] = world && world.stats ? Object.assign({}, world, { stats: undefined }) : world;
     Store.setJson(KEYS.snapshots, snaps);
   },
   // the campaign's mission was passed: its airport carries over, the next mission comes up

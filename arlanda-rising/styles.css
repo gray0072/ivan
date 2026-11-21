@@ -460,3 +460,19 @@ table.books tr.sum td { border-top: 1px solid var(--line); font-weight: 700; pad
 .score { text-align: center; font-size: 26px; font-weight: 700; margin: 0 0 6px; color: var(--accent); }
 table.parts { max-width: 420px; margin: 6px auto; }
 .cvWrap { width: 100%; }
+
+/* the analytics tabs of Finance (ui/analytics.js): on a narrow screen the tabs show their icon only, the open one its name */
+#statsChart { width: 100%; border-radius: 10px; }
+.tabs.stats .btn { padding: 0 10px; }
+@media (max-width: 600px) { .tabs.stats .tn { display: none; } .tabs.stats .on .tn { display: inline; } }
+table.fac td:nth-child(2) { color: var(--dim); }
+table.fac td:last-child { min-width: 2.6em; font-weight: 600; }
+table.brk td.nw { white-space: nowrap; }
+table.brk td small.dir { display: inline; }
+table.brk td:nth-child(n+2), table.brk th:nth-child(n+2) { text-align: right; }
+/* a phone held upright: the departments' table drops the union's mood and packs tighter, the names keep whole words */
+@media (max-width: 600px) {
+  #finance table.brk.depts th:nth-child(5), #finance table.brk.depts td:nth-child(5) { display: none; }
+  #finance table.brk td, #finance table.brk th { padding: 5px 3px; }
+}
+.meter, #greenChip { cursor: pointer; }

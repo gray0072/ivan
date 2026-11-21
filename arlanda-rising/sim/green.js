@@ -11,21 +11,27 @@
 
 const Green = {
   on() { return !!S.airport.green; },
-  rating() {
-    let r = GREEN_BASE;
-    if (Terminal.trainRuns()) r += GREEN_PTS.train;
-    if (Airport.has('busStop')) r += GREEN_PTS.bus;
-    if (Airport.has('aquifer')) r += GREEN_PTS.aquifer;
-    r += Math.min(2, Airport.count('solar')) * GREEN_PTS.solar;
-    if ((S.domains.deice || 0) >= 3) r += GREEN_PTS.glycol;
-    r += (S.airport.biofuel || 0) * 100 * GREEN_PTS.biofuel;
-    if (Airport.has('evehicles')) r += GREEN_PTS.electric;
-    r += Airport.count('parkingBig') * GREEN_PTS.carPark;
+  // what the rating is made of, in its order: [key, points] (the analytics' Green tab lists them)
+  parts() {
+    const p = [['base', GREEN_BASE]];
+    if (Terminal.trainRuns()) p.push(['train', GREEN_PTS.train]);
+    if (Airport.has('busStop')) p.push(['bus', GREEN_PTS.bus]);
+    if (Airport.has('aquifer')) p.push(['aquifer', GREEN_PTS.aquifer]);
+    p.push(['solar', Math.min(2, Airport.count('solar')) * GREEN_PTS.solar]);
+    if ((S.domains.deice || 0) >= 3) p.push(['glycol', GREEN_PTS.glycol]);
+    p.push(['biofuel', (S.airport.biofuel || 0) * 100 * GREEN_PTS.biofuel]);
+    if (Airport.has('evehicles')) p.push(['electric', GREEN_PTS.electric]);
+    p.push(['carPark', Airport.count('parkingBig') * GREEN_PTS.carPark]);
     // session 6: charging stands for electric aircraft, the night train, the hydrogen depot, the green pier
-    r += Math.min(6, Airport.chargers()) * GREEN_PTS_6.charger;
-    if (Airport.has('nightTrain')) r += GREEN_PTS_6.nightTrain;
-    if (Airport.has('h2depot')) r += GREEN_PTS_6.h2;
-    if (Airport.has('greenPier')) r += GREEN_PTS_6.greenPier;
+    p.push(['charger', Math.min(6, Airport.chargers()) * GREEN_PTS_6.charger]);
+    if (Airport.has('nightTrain')) p.push(['nightTrain', GREEN_PTS_6.nightTrain]);
+    if (Airport.has('h2depot')) p.push(['h2', GREEN_PTS_6.h2]);
+    if (Airport.has('greenPier')) p.push(['greenPier', GREEN_PTS_6.greenPier]);
+    return p;
+  },
+  rating() {
+    let r = 0;
+    for (const x of this.parts()) r += x[1];
     return clamp(Math.round(r), 0, 100);
   },
   // SEK a month of heating and power: more in winter, less with the aquifer and the solar park

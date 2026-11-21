@@ -44,6 +44,7 @@ const Ops = {
       const share = clamp((from - (f.std - PAX_ARRIVE_FIRST)) / (PAX_ARRIVE_FIRST - PAX_ARRIVE_LAST), 0, 1);
       f.checked = f.booked * share;
     }
+    Stats.ops(true);
   },
   step() {
     const dt = OPS_STEP_MIN, stage = Missions.stage();
@@ -58,6 +59,7 @@ const Ops = {
     Meters.step(dt);
     S.clock += dt;
     S.mission.st.minutes += dt;
+    Stats.opsStep(dt);
   },
   // a scripted event of the stage
   event(e) {

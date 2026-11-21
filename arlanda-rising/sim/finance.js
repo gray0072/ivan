@@ -48,6 +48,8 @@ const Finance = {
     Systems.month();
     Airlines.month();
     Green.month();
+    // the month's point of the analytics' history (sim/stats.js: read by nothing in the sim)
+    Stats.month();
   },
   borrow(amount) {
     const room = Math.max(0, (S.loanLimit || 0) - S.loans);

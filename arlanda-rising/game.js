@@ -100,8 +100,9 @@ const Game = {
   },
   // the People screen, the Ops Center, the Terminal view, Airlines and Finance: from the Office to work in, during play
   // to look at (the game pauses) — the Terminal view in an ops stage is live, and in a plan stage its shops can be chosen
-  openPanel(which) {
-    if (this.screen === 'office') { Office.open(which); return; }
+  // (`tab`: Finance opened on an analytics tab, e.g. 'staff' from a meter in the HUD)
+  openPanel(which, tab) {
+    if (this.screen === 'office') { Office.open(which, tab); return; }
     if (this.screen !== 'play' || !S || !S.mission) return;
     const back = () => this.resume();
     if (which === 'terminal' && S.ops) { this.screen = 'tview'; TermView.show({ back }); return; }
@@ -112,7 +113,7 @@ const Game = {
     else if (which === 'ops') OpsCenter.show({ back });
     else if (which === 'terminal') TermView.show({ back, edit: !!S.plan });
     else if (which === 'airlines') AirlinesUI.show({ back });
-    else if (which === 'finance') FinanceUI.show({ back });
+    else if (which === 'finance') FinanceUI.show({ back, tab });
   },
   // ---------- the Challenge Days ----------
   toChallenges() {
@@ -483,6 +484,9 @@ const Game = {
     document.getElementById('roofBtn').addEventListener('click', () => { Sfx.unlock(); if (this.screen === 'play') this.roofs(); });
     this.roofs(Settings.get('roofs') === 'off');
     document.getElementById('moneyChip').addEventListener('click', () => { if (S && S.mission) this.openPanel('finance'); });
+    // a meter or the green rating in the HUD: its tab of Finance's analytics (ui/analytics.js)
+    document.getElementById('meters').addEventListener('click', (e) => { const m = e.target.closest('.meter'); if (m && S && S.mission) { Sfx.unlock(); this.openPanel('finance', m.dataset.m); } });
+    document.getElementById('greenChip').addEventListener('click', () => { if (S && S.mission) this.openPanel('finance', 'green'); });
     // the mission is saved the moment the page goes away (a phone that locks, a time limit, a call)
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') this.save(); });
     window.addEventListener('pagehide', () => this.save());

@@ -42,6 +42,7 @@ const Plan = {
     if (S.people && S.people.strike && S.day >= S.people.strike.from && S.day < S.people.strike.to) S.mission.st.struck = 1;
     S.mission.st.days++;
     Finance.checkMonth();
+    Stats.day();
   },
   // the player picks an option of the waiting decision
   choose(optionId) {

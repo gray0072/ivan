@@ -1,19 +1,21 @@
 // Arlanda Rising — screenshots of the text screens filled with a real play-through, on a phone held upright, a phone on
 // its side, a tablet and a computer, for a look at the layout (a steps file for tools/cdp.js, see docs/testing.md).
 // Starts a campaign at 5-1 and plays 5-1…5-8 at Medium by the reference strategies as a chain (months of books, shops,
-// car parks, systems, brands as investments), then opens the Office, Finance (Details open), People, Ops Center,
+// car parks, systems, brands as investments), then opens the Office, Finance (Details open) and its analytics tabs
+// (Passengers, Airlines, Neighbours, Staff, Safety, with the chain's history), People, Ops Center,
 // Airlines and the Terminal view, 5-10's first ops stage with its mission's info from the pause menu, and during 5-10's
 // plan stage the HUD with the plan panel. Each screen is shot at its
 // top and scrolled to its bottom, and every element sticking out of its box or out of the screen is printed as
 // OVERFLOW <size> <screen>: <element> "<text>" — none expected. The language is English, or the ARLANDA_LANG
 // environment variable's (ru, sv: the Russian texts are the longest).
 //
-// Usage: [ARLANDA_LANG=ru] node --experimental-websocket tools/cdp.js arlanda-rising/tools/screens-shots.js [out-dir] --limit 300
-//        (about three minutes)
+// Usage: [ARLANDA_LANG=ru] node --experimental-websocket tools/cdp.js arlanda-rising/tools/screens-shots.js [out-dir] --limit 500
+//        (about five minutes)
 
 const LANG = process.env.ARLANDA_LANG || 'en';
 const SIZES = [['phone', 390, 844], ['phoneSide', 844, 390], ['tablet', 820, 1180], ['desktop', 1280, 720]];
-const SCREENS = ['office', 'finance', 'people', 'opsCenter', 'airlines', 'terminal'];
+// stats-<tab>: Finance's analytics tabs (ui/analytics.js), the history being the chain's
+const SCREENS = ['office', 'finance', 'stats-passengers', 'stats-airlines', 'stats-neighbours', 'stats-staff', 'stats-safety', 'people', 'opsCenter', 'airlines', 'terminal'];
 
 // elements whose content is wider than their box (clipped or spilling) or that reach past the screen's right edge
 const OVERFLOW = `(() => {
@@ -85,7 +87,8 @@ module.exports = async (h) => {
     if (size === 'desktop') await h.desktop(w, hh); else await h.phone(w, hh);
     await h.sleep(600);
     for (const s of SCREENS) {
-      await h.ev(`(() => { Game.toOffice(); ${s === 'office' ? '' : `Office.open('${s === 'opsCenter' ? 'ops' : s}');`} return 1; })()`);
+      const open = s === 'office' ? '' : s.startsWith('stats-') ? `Office.open('finance', '${s.slice(6)}');` : `Office.open('${s === 'opsCenter' ? 'ops' : s}');`;
+      await h.ev(`(() => { Game.toOffice(); ${open} return 1; })()`);
       await look(size, s);
     }
     // 5-10: its first ops stage (the HUD, the goals, the toolbar), then its plan stage (the plan panel)

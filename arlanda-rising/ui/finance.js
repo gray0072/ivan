@@ -4,7 +4,9 @@
 // or repay in the Office), the month so far and the last month closed by line, a chart of the money month by month with
 // each month's result, every investment the airport owns with what it earns and costs a month and its payback from the
 // airport's own traffic (sim/invest.js) — and, under Details (closed by default, its state remembered), the net present
-// value and the what-if of the small builds before they are bought. Used by game.js and ui/office.js.
+// value and the what-if of the small builds before they are bought. Tabs at the top lead to the analytics of the five
+// meters and the green rating (ui/analytics.js), opened straight from a meter in the HUD or the Office. Used by game.js
+// and ui/office.js.
 
 const FinanceUI = (() => {
   const $ = (id) => document.getElementById(id);
@@ -21,8 +23,11 @@ const FinanceUI = (() => {
   // the column's name, and "NPV" on a narrow screen (styles.css)
   const npvHead = () => '<span class="long">' + Text.esc(tr('Net present value')) + '</span><span class="short">NPV</span>';
 
+  // the tab shown: the money, or one of the analytics' (ui/analytics.js)
+  let tab = 'finance';
   function show(opts) {
     back = opts.back; editable = !!opts.edit;
+    tab = opts.tab && Analytics.has(opts.tab) ? opts.tab : 'finance';
     render();
     Screens.show('finance');
   }
@@ -49,9 +54,16 @@ const FinanceUI = (() => {
   }
 
   function render() {
-    const p = $('finance'), details = Settings.get('finDetails') === 'open';
+    const p = $('finance');
+    if (tab !== 'finance') {
+      p.innerHTML = Analytics.tabsHtml(tab) + Analytics.html(tab);
+      p.appendChild(Screens.row(Screens.btn(tr('Back'), 'default', () => back())));
+      requestAnimationFrame(() => { const cv = $('statsChart'); if (cv) Analytics.draw(cv, tab); });
+      return;
+    }
+    const details = Settings.get('finDetails') === 'open';
     const room = Math.max(0, (S.loanLimit || 0) - S.loans);
-    let html = '<h1>📊 ' + Text.esc(tr('Finance')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p><div class="cards">';
+    let html = Analytics.tabsHtml(tab) + '<h1>📊 ' + Text.esc(tr('Finance')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p><div class="cards">';
     html += '<div class="ocard"><h3>💰 ' + Text.esc(tr('Money')) + '</h3><p class="big' + (S.money < 0 ? ' neg' : '') + '">' + sek(S.money) + '</p>' +
       '<p>' + Text.esc(tr('Loans: {m}', { m: sek(S.loans) })) + ' · ' + Text.esc(tr('{r} a year', { r: Math.round(LOAN_RATE * 100) + ' %' })) + '</p>' +
       '<p class="fine">' + Text.esc(tr('The owner allows {k} more.', { k: sek(room) })) + '</p>' +
@@ -121,6 +133,8 @@ const FinanceUI = (() => {
   $('finance').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+    if (b.dataset.tab) { Sfx.play('click'); tab = b.dataset.tab; render(); $('finance').scrollTop = 0; return; }
+    if (b.dataset.range) { Sfx.play('click'); Settings.set('statsRange', b.dataset.range); render(); return; }
     if (b.dataset.details) { Sfx.play('click'); Settings.set('finDetails', Settings.get('finDetails') === 'open' ? 'closed' : 'open'); render(); return; }
     if (b.dataset.loan && editable) {
       Sfx.play('click');

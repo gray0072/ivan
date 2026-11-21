@@ -58,7 +58,9 @@ const Office = (() => {
       '<li>' + Text.esc(tr('Stands: {n}', { n: w.airport.stands.length })) + '</li><li>' + Text.esc(tr('Check-in desks: {n}', { n: w.airport.desks })) + '</li>' +
       (has.fireStation ? '<li>' + Text.esc(tr('Fire category {n}', { n: Airport.fireCat() })) + '</li>' : '') + '</ul></div>';
     html += '<div class="ocard"><h3>📈 ' + Text.esc(tr('The meters')) + '</h3><ul class="has">' + METERS.map((x) => '<li>' + x.icon + ' ' + Text.esc(Text.meterName(x.k)) + ': <b>' +
-      (x.k === 'passengers' ? Text.paxStars(w.meters[x.k]) + '★' : Math.round(w.meters[x.k])) + '</b></li>').join('') + '</ul></div>';
+      (x.k === 'passengers' ? Text.paxStars(w.meters[x.k]) + '★' : Math.round(w.meters[x.k])) + '</b></li>').join('') + '</ul>' +
+      // their history and what moves them: the analytics tabs of Finance (ui/analytics.js)
+      '<div class="btnRow small"><button class="btn toggle" data-go="finance" data-tab="passengers">📈 ' + Text.esc(tr('What moves them')) + '</button></div></div>';
     // session 5: the rents of the real estate; from chapter 6 the green rating, the energy and the permit
     const rent = Airport.rent();
     if (rent || Green.on()) {
@@ -102,7 +104,7 @@ const Office = (() => {
       Game.keepWorld();
       show();
     }));
-    p.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { Sfx.play('click'); open(b.dataset.go); }));
+    p.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { Sfx.play('click'); open(b.dataset.go, b.dataset.tab); }));
     p.appendChild(Screens.row(
       Screens.btn(tr(h.free ? 'Main Menu' : 'Timeline'), 'secondary', () => (h.free ? Game.toMenu() : Game.toTimeline())),
       nm ? Screens.btn(tr('Next mission'), 'default big', () => Game.openMission(nm.id)) : null,
@@ -111,12 +113,12 @@ const Office = (() => {
     Screens.show('office');
   }
   // the People screen or the Ops Center, editable, coming back here
-  function open(which) {
+  function open(which, tab) {
     const back = () => show();
     if (which === 'people') PeopleUI.show({ back, edit: true });
     else if (which === 'terminal') TermView.show({ back, edit: true });
     else if (which === 'airlines') AirlinesUI.show({ back, edit: true });
-    else if (which === 'finance') FinanceUI.show({ back, edit: true });
+    else if (which === 'finance') FinanceUI.show({ back, edit: true, tab });
     else OpsCenter.show({ back, edit: true });
   }
   return { show, open };
