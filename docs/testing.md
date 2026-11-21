@@ -8,3 +8,12 @@ Part of the repo's rules, kept out of `AGENTS.md` because not every session need
 - A cloud save is tested without a real account: `tools/cloud-mock.js` serves the repo over `http://` (the cloud is off from `file://`) and gives a fake session and a mock of Supabase's REST (`offline`, `error`, `hang`, `ok`); see "Testing" in [cloud-save.md](cloud-save.md) for the states to check.
 - Headless Chrome on this machine has speech voices: Microsoft en-GB (George, Hazel, Susan), Microsoft Bengt sv-SE, plus online Google voices (incl. Russian).
 - Headless Chrome takes its language from the system, so a translated game may open in Swedish or Russian: switch it to English first (`I18N.set('en')` in `world-aviation`) before screenshots meant for the repo.
+
+## A showcase GIF of a game's stages
+
+A game with a long progression (eras, chapters, buildings, stages) gets an animated `docs/showcase.gif` at the top of its READMEs, so a reader sees where it starts and where it goes, not just one moment:
+
+- **Choose 6–10 moments** that look different: the start, each era or chapter, the end, a striking screen or two (a dialog, a summary) — in order of the game's progress. Put the game there with its cheats or its `SPEC.md`'s recipes and take each screenshot with `tools/cdp.js`, in English, at one viewport size (`desktop(1280, 720)` fits 800 × 450 without cropping; a phone held sideways works too).
+- **Join them:** `node tools/showcase-gif.js <folder>/docs/showcase.gif shot1.png shot2.png …` — plain Node, no packages. Each slide is fitted to 800 × 450 (cropped to the aspect from the centre, `--top` from the top), held 2.4 s and cross-faded in three frames into the next, the last back into the first; `--size`, `--hold`, `--fade`, `--no-dither` change that. Keep the file under about 5 MB (fewer slides, or `--no-dither`).
+- **Show it:** in each README the header's picture becomes `<a href="https://gray0072.github.io/ivan/<folder>/"><img src="docs/showcase.gif" alt="<Game> in motion: …" width="800"></a>`; `screenshot.png` stays as the gallery card's picture. `docs/` is left out of the offline worker by `tools/sw-build.js`, so the GIF costs a player nothing. Name the GIF in the game's `SPEC.md` file list, and remake it when a stage is added or the look changes a lot.
+- **Check it:** an `<img>` of a GIF in `file://` cannot be fetched, so to look at a frame decode it from a `data:` URL with `ImageDecoder` in a `tools/cdp.js` steps file, or just look at the source screenshots.

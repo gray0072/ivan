@@ -74,6 +74,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 ├── tools/icons-build.js      # packs each game's arrows, symbols and emoji as drawings (tools/icons/: the engine, the one-colour signs, the Twemoji files)
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
 ├── tools/cdp.js              # drives a page in headless Chrome (phone or desktop) from a steps file: screenshots, page errors
+├── tools/showcase-gif.js     # joins screenshots of a game's stages into an animated, cross-faded docs/showcase.gif for its READMEs (plain Node)
 ├── tools/cloud-mock.js       # for testing a cloud save with tools/cdp.js: the repo over http, a fake Supabase session, a mock of its REST (offline, error, hang, ok)
 ├── docs/                    # the rules by area, for agents (AGENTS.md links each and sums it up): languages.md, mobile.md, pwa.md (icons, manifest, updates, offline), icons.md (arrows and emoji drawn), code-layout.md, new-project.md, cloud-save.md (rules, recipe, typical mistakes, tests), testing.md
 ├── .gitattributes            # every text file stored with LF line endings
