@@ -31,11 +31,17 @@ const AirportArt = (() => {
   function standIndex(id) { return S.airport.stands.findIndex((s) => s.id === id); }
   // the point the stand's lead-in line starts at (the aircraft taxis there, then in)
   function standEntry(i) { const p = standPos(i); return [p.x - 75 * p.s, p.y]; }
-  // a remote stand's paved way to the first apron: the line the aircraft taxi along (render/traffic.js), from the
-  // stand's entry straight north or south to the apron's edge
+  // a remote stand: one of LAYOUT.remote (no place of its own, `at`) lying off the first apron
+  function isRemote(i) {
+    const st = S.airport.stands[i], p = standPos(i), A = LAYOUT.apron1;
+    return !!st && !st.at && !(p.x >= A.x0 && p.x <= A.x1 && p.y >= A.y0 && p.y <= A.y1);
+  }
+  // a remote stand's paved way to the first apron: the line the aircraft taxi along both ways (render/traffic.js), from
+  // the stand's entry straight north or south to the apron, and east onto it when the entry lies west of the apron
   function remoteWay(i) {
     const e = standEntry(i), A = LAYOUT.apron1;
-    return [[e[0] + 6, e[1]], [e[0], e[1]], [e[0], Math.min(Math.max(e[1], A.y0 + 12), A.y1 - 12)]];
+    const y = Math.min(Math.max(e[1], A.y0 + 12), A.y1 - 12), x = Math.max(e[0], A.x0 + 12);
+    return [[e[0] + 6, e[1]], [e[0], e[1]], [e[0], y]].concat(x !== e[0] ? [[x, y]] : []);
   }
 
   function quad(c, a, b, cc, d, fill) { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cc[0], cc[1]); c.lineTo(d[0], d[1]); c.closePath(); c.fillStyle = fill; c.fill(); }
@@ -327,6 +333,13 @@ const AirportArt = (() => {
     const T = LAYOUT.terminal1, [x0, y0, x1, y1] = T.box;
     const hall = sc.p('terminal1', 'hall'), wait = sc.p('terminal1', 'waiting'), kiosk = sc.p('terminal1', 'kiosk');
     const warm = sc.dark > 0.3 ? mix(PAL.glass, '#ffd27a', clamp(sc.dark, 0, 1)) : PAL.glass;
+    // the waiting room stands north of the hall, behind it as the map is seen: drawn first, so the hall hides its south
+    // wall and only its roof and east wall show (drawn after the hall it was painted over the hall's roof, as if hanging)
+    if (wait > 0) {
+      const [a0, b0, a1, b1] = T.waiting;
+      Iso.box(c, a0, b0, a1, b1, 0, 6 * wait, wait < 1 ? '#c8c4bc' : '#e3dfd6', sc.season === 'winter' ? '#f4f7fa' : '#8f969c');
+      if (wait >= 1) Iso.winEast(c, b0, b1, a1, 1.6, 4.6, 4, warm);
+    }
     if (hall > 0) {
       if (hall < 1) {
         Iso.box(c, x0, y0, x1, y1, 0, 0.6, '#9a9a96');
@@ -350,11 +363,6 @@ const AirportArt = (() => {
         void a; void b;
         if (sc.dark > 0.3) sc.lights.push({ x: x1 + 2, y: m, z: T.h + 2, col: '255,255,255', r: 6 });
       }
-    }
-    if (wait > 0) {
-      const [a0, b0, a1, b1] = T.waiting;
-      Iso.box(c, a0, b0, a1, b1, 0, 6 * wait, wait < 1 ? '#c8c4bc' : '#e3dfd6', sc.season === 'winter' ? '#f4f7fa' : '#8f969c');
-      if (wait >= 1) Iso.winSouth(c, a0, a1, b0, 1.6, 4.6, 4, warm);
     }
     if (kiosk > 0 || sc.items.kiosk) {
       const [a0, b0, a1, b1] = T.kiosk;
@@ -536,5 +544,5 @@ const AirportArt = (() => {
     }
   }
 
-  return { flat, objects, standPos, standBox, standIndex, standEntry, remoteWay, APRONS };
+  return { flat, objects, standPos, standBox, standIndex, standEntry, isRemote, remoteWay, APRONS };
 })();

@@ -38,20 +38,26 @@ const Traffic = (() => {
   // the lane a stand is reached by: its x (north–south along the aprons), the points from that lane into the stand and
   // from the pushed-back aircraft out to it. A stand facing east is entered from its entry point straight west of it; one
   // facing west (the satellite's east side) from the lane west of the satellite, along its south end (`st.lane`) and up
-  // the lane east of it
-  function standLane(i, len) {
+  // the lane east of it. A remote stand off the first apron is reached both ways along its paved way to the apron
+  // (AirportArt.remoteWay) — unless the aircraft comes from or goes to `towardY` beyond the stand, away from the apron
+  // (runway 3's taxiway from the south: by then the aprons south of the first are paved)
+  function standLane(i, len, towardY) {
     const e = AirportArt.standEntry(i), c = standCentre(i, len), p = AirportArt.standPos(i), st = S.airport.stands[i];
     const push = [c[0] - p.s * 30, c[1]];
+    if (p.s > 0 && AirportArt.isRemote(i)) {
+      const way = AirportArt.remoteWay(i).slice(1), end = way[way.length - 1];
+      if (towardY === undefined || (towardY - e[1]) * (end[1] - e[1]) >= 0) return { x: end[0], into: way.slice().reverse().concat([c]), out: [push].concat(way) };
+    }
     if (p.s > 0) return { x: e[0], into: [[e[0], c[1]], c], out: [push, [e[0], c[1]]] };
     const [lx, ly] = st.lane;
     return { x: lx, into: [[lx, ly], [e[0], ly], [e[0], c[1]], c], out: [push, [e[0], c[1]], [e[0], ly], [lx, ly]] };
   }
   function wayIn(i, len, dir) {
-    const l = standLane(i, len), ex = exitPath(dir), last = ex[ex.length - 1];
+    const ex = exitPath(dir), last = ex[ex.length - 1], l = standLane(i, len, last[1]);
     return ex.concat([[l.x, last[1]]]).concat(l.into);
   }
   function wayOut(i, len, dir) {
-    const l = standLane(i, len), y = l.out[l.out.length - 1][1];
+    const l = standLane(i, len, isR3(dir) ? LAYOUT.taxi3[LAYOUT.taxi3.length - 1][1] : undefined), y = l.out[l.out.length - 1][1];
     if (isR2(dir)) {
       // west to runway 2's taxiway along the aprons' west edge, then up it (data/layout.js taxi2)
       const tw = LAYOUT.taxi2;
@@ -63,7 +69,8 @@ const Traffic = (() => {
     }
     // runway 1: along the departures' lane to the apron's north end and out by their own link, never meeting the
     // arrivals coming in by theirs
-    const end = dir === '01' ? 0 : 1, O = LAYOUT.taxi.apronOut, ox = l.x - LAYOUT.taxi.outLane;
+    // (kept on the first apron for a remote stand west of it)
+    const end = dir === '01' ? 0 : 1, O = LAYOUT.taxi.apronOut, ox = Math.max(l.x - LAYOUT.taxi.outLane, LAYOUT.apron1.x0 + 6);
     return l.out.concat([[ox, y], [ox, O.to[1]], O.to, rp(O.s, LAYOUT.taxi.offset), rp(end, LAYOUT.taxi.offset), rp(end, 70)]);
   }
   // the arrivals' runway and its direction now (session 5: with runway 3 the landings keep to runway 1)
@@ -182,17 +189,27 @@ const Traffic = (() => {
       if (people) { person(c, ...at(-len * 0.1, -fw - 4.5), PAL.hiVisOrange); person(c, ...at(-len * 0.32, -fw - 6), PAL.hiVis); }
     }
     // the fuel truck: from its depot, at the wing, and back
-    if (tr.fuelFrom !== undefined && tr.fuelEnd !== null) {
+    const si = AirportArt.standIndex(f.stand);
+    if (tr.fuelFrom !== undefined && tr.fuelEnd !== null && si >= 0) {
       const depot = [LAYOUT.fuelDepot.x, LAYOUT.fuelDepot.y], wingPt = at(-2, -A.span * 0.32);
       const half = FUEL_DRIVE / 2, back = tr.fuelEnd + half;
+      // it drives to the lane behind the stand (behind the tail of the longest aircraft), along it to the wing's side and
+      // up to the wing parallel to the fuselage, never under it; a stand south of the depot is reached along the first
+      // apron's north edge, a stand facing west by the satellite's lane; and back the same way
+      const sp = AirportArt.standPos(si), tx = AirportArt.standEntry(si)[0] - 3 * sp.s, st = S.airport.stands[si];
+      let way;
+      if (sp.s < 0 && st.lane) way = [depot, [st.lane[0], depot[1]], st.lane, [tx, st.lane[1]], [tx, wingPt[1]], wingPt];
+      else {
+        const yl = wingPt[1] < depot[1] ? Math.min(depot[1], LAYOUT.apron1.y1 - 8) : depot[1];
+        way = [depot, [depot[0], yl], [tx, yl], [tx, wingPt[1]], wingPt];
+      }
       let q = null;
-      if (t < tr.fuelFrom + half) q = { u: (t - tr.fuelFrom) / half, a: depot, b: wingPt };
-      else if (t < tr.fuelEnd) q = { u: 1, a: depot, b: wingPt };
-      else if (t < back) q = { u: (t - tr.fuelEnd) / half, a: wingPt, b: depot };
+      if (t < tr.fuelFrom + half) q = { u: (t - tr.fuelFrom) / half, way };
+      else if (t < tr.fuelEnd) q = { u: 1, way };
+      else if (t < back) q = { u: (t - tr.fuelEnd) / half, way: way.slice().reverse() };
       if (q) {
-        const way = [q.a, [q.a[0], (q.a[1] + q.b[1]) / 2], [q.b[0], (q.a[1] + q.b[1]) / 2], q.b];
-        const v = along(way, q.u);
-        Vehicles.fuelTruck(c, sc, v.x, v.y, q.u >= 1 ? hd(90) : v.hdg, true);
+        const v = along(q.way, q.u);
+        Vehicles.fuelTruck(c, sc, v.x, v.y, q.u >= 1 && q.way === way ? hd(90) : v.hdg, true);
         if (people && q.u >= 1) person(c, wingPt[0] + 4 * k, wingPt[1] + 2 * k, PAL.hiVis);
       }
     }
@@ -205,6 +222,14 @@ const Traffic = (() => {
     // a hand by the nose, and the tug at pushback
     if (people && f.st !== 'taxiOut') person(c, ...at(len / 2 + 3, -3), PAL.hiVis);
     if (tr.ready !== null && f.st !== 'taxiOut') Vehicles.tug(c, ...at(len / 2 + 5, 0), hd(270));
+  }
+
+  // the i-th plough of a convoy in echelon on a runway, q of the way from its first end: [x, y, heading]
+  function convoyAt(rw, q, i) {
+    const s = q - i * 28 / (rw.id === 'r1' ? L : rw.id === 'r2' ? L2 : L3), off = -14 + i * 9;
+    if (rw.id === 'r1') return rp(clamp(s, 0, 1), off).concat([10.4]);
+    const R = rw.id === 'r2' ? R2 : R3, dx = R.to[0] - R.from[0], dy = R.to[1] - R.from[1], len = Math.hypot(dx, dy), u = clamp(s, 0, 1);
+    return [R.from[0] + dx * u + dy / len * off, R.from[1] + dy * u - dx / len * off, rw.id === 'r2' ? H2 : H3];
   }
 
   // ---------- everything that moves, as objects to sort ----------
@@ -229,26 +254,28 @@ const Traffic = (() => {
         const x = LAYOUT.fuelDepot.x + i * 5, y = LAYOUT.fuelDepot.y;
         list.push({ d: depthOf(x, y), draw: (c) => Vehicles.fuelTruck(c, sc, x, y, 180, false) });
       }
-      // the plough convoy on the runway, the apron's own plough
-      const rw = Runways.main(), n = Airport.ploughs();
-      if (rw && rw.plough && rw.ploughFrom !== undefined) {
+      // the ploughs the airport owns, each drawn once: one on the apron while it is swept, the rest in the convoy on the
+      // runway being swept, whatever is left at the shed (with a single plough out on a runway the apron waits for it)
+      const n = Airport.ploughs(), ap = S.airport.apron;
+      const rw = S.airport.runways.find((r) => r.plough && r.ploughFrom !== undefined);
+      const apronOut = !!(ap.plough && ap.ploughFrom !== undefined) && n > (rw ? 1 : 0);
+      const convoy = rw ? n - (apronOut ? 1 : 0) : 0;
+      if (rw) {
         const q = clamp((t - rw.ploughFrom) / (rw.plough - rw.ploughFrom), 0, 1);
-        for (let i = 0; i < Math.min(n, 6); i++) {
-          const pp = rp(clamp(q - i * 28 / L, 0, 1), -14 + i * 9);
-          list.push({ d: depthOf(pp[0], pp[1]), draw: (c) => Vehicles.plough(c, sc, pp[0], pp[1], 10.4) });
-        }
-      } else if (n) {
-        for (let i = 0; i < Math.min(n, 6); i++) {
-          const x = LAYOUT.snowDepot.x + i * 9, y = LAYOUT.snowDepot.y;
-          list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, 180) });
+        for (let i = 0; i < Math.min(convoy, 6); i++) {
+          const pp = convoyAt(rw, q, i);
+          list.push({ d: depthOf(pp[0], pp[1]), draw: (c) => Vehicles.plough(c, sc, pp[0], pp[1], pp[2]) });
         }
       }
-      const ap = S.airport.apron;
-      if (ap.plough && ap.ploughFrom !== undefined) {
+      if (apronOut) {
         const q = clamp((t - ap.ploughFrom) / (ap.plough - ap.ploughFrom), 0, 1), A = LAYOUT.apron1;
         const lane = Math.floor(q * 6), u = q * 6 - lane;
         const x = A.x0 + (A.x1 - A.x0) * (lane + 0.5) / 6, y = lane % 2 ? A.y1 - (A.y1 - A.y0) * u : A.y0 + (A.y1 - A.y0) * u;
         list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, lane % 2 ? 180 : 0) });
+      }
+      for (let i = 0; i < Math.min(n - convoy - (apronOut ? 1 : 0), 6); i++) {
+        const x = LAYOUT.snowDepot.x + i * 9, y = LAYOUT.snowDepot.y;
+        list.push({ d: depthOf(x, y), draw: (c) => Vehicles.plough(c, sc, x, y, 180) });
       }
     } else if (sc.apron) {
       // planning: the vehicles at rest

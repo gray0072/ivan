@@ -106,7 +106,11 @@ line('apron link (departures)', 'taxi', [rp(Lo.taxi.apronOut.s, Lo.taxi.offset),
 line('taxiway 2', 'taxi', Lo.taxi2, Lo.taxi.w); line('taxiway 3', 'taxi', Lo.taxi3, Lo.taxi.w);
 line('runway 1', 'rwy', [RW.from, RW.to], RW.w); line('runway 2', 'rwy', [Lo.runway2.from, Lo.runway2.to], Lo.runway2.w);
 line('runway 3', 'rwy', [Lo.runway3.from, Lo.runway3.to], Lo.runway3.w);
-Lo.remote.forEach((p, i) => { const A = Lo.apron1, x = p.x - 75; line('remote ' + (i + 1) + ' way', 'way', [[x, p.y], [x, Math.min(Math.max(p.y, A.y0 + 12), A.y1 - 12)]], 20); });
+// a remote stand's paved way, as render/airport.js remoteWay draws it (and east onto the apron from an entry west of it)
+Lo.remote.forEach((p, i) => {
+  const A = Lo.apron1, x = p.x - 75, y = Math.min(Math.max(p.y, A.y0 + 12), A.y1 - 12), xa = Math.max(x, A.x0 + 12);
+  line('remote ' + (i + 1) + ' way', 'way', [[x, p.y], [x, y]].concat(xa !== x ? [[xa, y]] : []), 20);
+});
 
 // ---------- geometry ----------
 const segs = (pts) => pts.slice(1).map((b, i) => [pts[i], b]);
