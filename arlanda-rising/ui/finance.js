@@ -14,7 +14,7 @@ const FinanceUI = (() => {
   const LINES = { fees: 'Fees (in summary)', landing: 'Landing fees', passenger: 'Passenger fees', stands: 'Stand time', shops: 'Shops and cafés',
     parking: 'Car parks', rail: 'The train', rent: 'Rent from the brands', deals: 'Deals', owner: 'From the owner', 'owner loan': "The owner's loan",
     loans: 'Loans', wages: 'Wages', upkeep: 'Upkeep', systems: 'Systems', interest: 'Interest', security: 'Security', desks: 'Check-in desks',
-    construction: 'Building', build: 'Buying', penalties: 'Penalties to airlines', hiring: 'Hiring', training: 'Training', drills: 'Drills', cheat: 'Cheat',
+    construction: 'Building', build: 'Buying', sold: 'Shops sold', penalties: 'Penalties to airlines', hiring: 'Hiring', training: 'Training', drills: 'Drills', cheat: 'Cheat',
     estate: 'Real estate', border: 'Passport booths', energy: 'Energy', biofuel: 'Biofuel', permit: 'Permit fines', deicing: 'De-icing fluid',
     stranded: 'Stranded passengers', overtime: 'Overtime' };
 

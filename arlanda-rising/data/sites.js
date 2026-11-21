@@ -4,8 +4,8 @@
 // as plain data. A building by its key in data/layout.js (what a tap on the map finds, render/airport.js `hitSite`):
 //   item     the kind in S.airport.items it stands for (data/buildings.js: its name, price, staff and rent)
 //   project  the master plan's project that builds it (data/masterplan.js) and `stage`, the stage that raises it
-//   does     what its card shows live: terminal, pier, mall, tower, fire, bags, servers, power, shop, rent, cargo, parking,
-//            pumps, soc, h2
+//   does     what its card shows live: terminal (with its own shops in their cells), pier, mall, tower, fire, bags, servers,
+//            power, rent, cargo, parking, pumps, soc, h2
 //   term     the terminal whose passengers it serves (data/terminals.js)
 //   icon     the sign before its name
 //   about    what it is and what it does, in a sentence or two
@@ -15,18 +15,12 @@
 
 const SITES = {
   terminal1: { item: 'terminal', project: 'terminal1', stage: 'hall', does: 'terminal', term: 't1', icon: '🛫',
-    about: 'The first terminal: one hall for every flight, with the check-in desks, a waiting room and a kiosk. The passengers walk over the apron to their aircraft.' },
+    about: 'The first terminal: one hall for every flight, with the check-in desks, a waiting room and six cells for your own shops. The passengers walk over the apron to their aircraft.' },
   waiting: { same: 'terminal1' },
   tower1: { item: 'tower', project: 'tower1', stage: 'cab', does: 'tower', icon: '🗼',
     about: 'The control tower. From the glass cab on top the controllers see the runway and the apron and clear every aircraft to land, to taxi and to take off.' },
   fireStation: { item: 'fireStation', does: 'fire', icon: '🚒',
     about: 'The airport\'s fire and rescue service. Its crash tenders wait in their bays, ready to reach any point of a runway within minutes; the biggest aircraft it can protect sets the fire category.' },
-  cafe: { item: 'cafe', does: 'shop', icon: '☕',
-    about: 'A café for the passengers waiting for their flight: coffee, buns and sandwiches. The airport gets a share of what they spend.' },
-  restaurant: { item: 'restaurant', does: 'shop', icon: '🍽️',
-    about: 'The restaurant: a proper meal before a long flight, with a view of the aircraft. The airport gets a share of what is spent.' },
-  dutyFree: { item: 'dutyFree', does: 'shop', icon: '🛍️',
-    about: 'The duty-free shop: perfume, sweets and drinks without the tax for the passengers flying abroad.' },
   intlTerminal: { item: 'intlTerminal', project: 'intlTerminal', stage: 'hall', does: 'terminal', term: 'intl', icon: '🛫',
     about: 'The international terminal: check-in and security in the departure hall on the landside, the gates along its pier, the shops in between.' },
   intlPier: { same: 'intlTerminal' },

@@ -4,7 +4,8 @@
 // links; the first apron with its stands and the remote stands bought later; the ploughs' standing and the fuel
 // trucks' yard by the fire station (and where each vehicle waits: fuelSpot, ploughSpot); and the buildings as they stand —
 // or as far as they are built (the master plan's projects show their stages: a slab, walls going up, a crane;
-// a project open but not started shows its plot outlined). Flat things are drawn by `flat`, standing ones are
+// a project open but not started shows its plot outlined; the airport's own shops as awnings on their terminal's landside
+// wall, never as buildings of their own). Flat things are drawn by `flat`, standing ones are
 // handed to render/map.js as objects to sort; lamps go to the scene's light list (drawn after the dark). With the roofs
 // off (sc.cut) a finished building is drawn cut away with its insides by render/interiors.js; every building drawn is
 // kept with its box for a tap (`hitSite`) and the yellow ring round the one whose card is open (`ring`).
@@ -366,9 +367,33 @@ const AirportArt = (() => {
     c.strokeStyle = '#333'; c.lineWidth = 0.3; c.beginPath(); c.moveTo(...P(x + jx * 0.7, y + jy * 0.7, h)); c.lineTo(hook[0], hook[1]); c.stroke();
   }
 
+  // the airport's own shops of a terminal, seen from outside with the roofs on: a striped awning on its landside (east)
+  // wall for each, as long as the cells it takes, in its colour (PAL.shop) — never a building of its own; inside, with the
+  // roofs off, each sits in its cells (render/interiors.js)
+  const AWNING_CELL = 9;   // m of wall per cell
+  function awnings(c, term, box) {
+    const x = box[2] + 0.05;
+    let y = box[1] + 6;
+    for (const s of Airport.shopsIn(term)) {
+      if (s.buy) continue;
+      const len = s.cells * AWNING_CELL - 1, col = PAL.shop[s.kind] || '#888';
+      if (y + len > box[3] - 4) break;
+      for (let k = 0, a = y; a < y + len - 0.01; k++, a += 1.5) {
+        const b = Math.min(y + len, a + 1.5);
+        Iso.poly(c, [[x, a, 3.4], [x, b, 3.4], [x + 2.6, b, 2.3], [x + 2.6, a, 2.3]], k % 2 ? '#f4f1ea' : col);
+      }
+      Iso.poly(c, [[x + 2.6, y, 2.3], [x + 2.6, y + len, 2.3], [x + 2.6, y + len, 1.8], [x + 2.6, y, 1.8]], shade(col, -0.2));
+      // its sign board on the wall over the awning
+      const m = y + len / 2, w = Math.min(3, len / 2 - 0.5);
+      Iso.poly(c, [[x, m - w, 4.3], [x, m + w, 4.3], [x, m + w, 6], [x, m - w, 6]], col);
+      Iso.poly(c, [[x + 0.02, m - w + 0.5, 4.95], [x + 0.02, m + w - 0.5, 4.95], [x + 0.02, m + w - 0.5, 5.35], [x + 0.02, m - w + 0.5, 5.35]], '#ffffff');
+      y += len + 3;
+    }
+  }
+
   function terminal(c, sc) {
     const T = LAYOUT.terminal1, [x0, y0, x1, y1] = T.box;
-    const hall = sc.p('terminal1', 'hall'), wait = sc.p('terminal1', 'waiting'), kiosk = sc.p('terminal1', 'kiosk');
+    const hall = sc.p('terminal1', 'hall'), wait = sc.p('terminal1', 'waiting');
     const warm = sc.dark > 0.3 ? mix(PAL.glass, '#ffd27a', clamp(sc.dark, 0, 1)) : PAL.glass;
     // the waiting room stands north of the hall, behind it as the map is seen: drawn first, so the hall hides its south
     // wall and only its roof and east wall show (drawn after the hall it was painted over the hall's roof, as if hanging)
@@ -401,11 +426,7 @@ const AirportArt = (() => {
         if (sc.dark > 0.3) sc.lights.push({ x: x1 + 2, y: m, z: T.h + 2, col: '255,255,255', r: 6 });
       }
     }
-    if (kiosk > 0 || sc.items.kiosk) {
-      const [a0, b0, a1, b1] = T.kiosk;
-      Iso.box(c, a0, b0, a1, b1, 0, 3, '#f0ede4');
-      for (let i = 0; i < 4; i++) Iso.poly(c, [[a0 + i * 3, b0 - 1.5, 3.4], [a0 + i * 3 + 3, b0 - 1.5, 3.4], [a0 + i * 3 + 3, b0, 2.6], [a0 + i * 3, b0, 2.6]], i % 2 ? '#ffffff' : '#2f6fb3');
-    }
+    if (hall >= 1) awnings(c, 't1', T.box);
   }
 
   function tower(c, sc) {
@@ -467,12 +488,8 @@ const AirportArt = (() => {
     // the departure hall on the landside, the pier along the gates
     block(c, sc, [x0 + 25, y0, x1, y1], T.h, done || Math.min(f, 0.5) + hall * 0.5, '#e6e2d8', true);
     block(c, sc, [x0, y0 + 10, x0 + 25, y1 - 10], 7, done || Math.min(f, 0.5) + pier * 0.5, '#d9d5cc', true);
+    if (done) awnings(c, 'intl', T.box);
     if ((done || hall >= 1) && sc.dark > 0.3) sc.lights.push({ x: x1 + 2, y: (y0 + y1) / 2, z: T.h + 2, col: '255,255,255', r: 8 });
-  }
-  function cafe(c, sc) {
-    const [x0, y0, x1, y1] = LAYOUT.cafe.box;
-    Iso.box(c, x0, y0, x1, y1, 0, 5, '#efe6d2', sc.season === 'winter' ? '#f4f7fa' : '#8a5a3a');
-    Iso.winSouth(c, x0, x1, y0, 1.2, 3.8, 3, sc.dark > 0.3 ? '#ffd27a' : PAL.glass);
   }
 
   // session 5: the new control tower of 2001 — a slender concrete shaft that narrows, the glass cab and its mast
@@ -518,7 +535,6 @@ const AirportArt = (() => {
       if (sc.cut && t1 >= 1) {
         site('terminal1', T.box, T.h, 1, null, '#eceae4');
         if (sc.p('terminal1', 'waiting') >= 1) site('waiting', T.waiting, 6, 1, null, '#e3dfd6');
-        if (sc.p('terminal1', 'kiosk') > 0 || sc.items.kiosk) add(T.kiosk[2], T.kiosk[1], (c) => { const [a0, b0, a1, b1] = T.kiosk; Iso.box(c, a0, b0, a1, b1, 0, 3, '#f0ede4'); });
       } else {
         site('terminal1', T.box, T.h, 0, (c) => terminal(c, sc));
         if (sc.p('terminal1', 'waiting') > 0) sites.push({ key: 'waiting', box: T.waiting, h: 6 });
@@ -530,7 +546,6 @@ const AirportArt = (() => {
       add(T1.x + 5, T1.y - 5, (c) => tower(c, sc));
     }
     if (sc.items.fireStation) site('fireStation', LAYOUT.fireStation.box, LAYOUT.fireStation.h, 1, (c) => fireStation(c, sc), '#e8e3d8');
-    if (sc.items.cafe) site('cafe', LAYOUT.cafe.box, 5, 1, (c) => cafe(c, sc), '#efe6d2');
     // session 3: the international terminal — its hall on the landside and its pier along the gates
     const I = LAYOUT.intlTerminal.box, fI = sc.p('intlTerminal', 'frame');
     const qI = sc.items.intlTerminal ? 1 : fI > 0 ? Math.min(fI, 0.5) + sc.p('intlTerminal', 'hall') * 0.5 : 0;
@@ -550,13 +565,15 @@ const AirportArt = (() => {
       ['skyCity', 'skyCity', 'hall', '#e9e4d6', true], ['hotel', 'skyCity', 'hotel', '#d9dde2', true], ['hotelExt', null, null, '#d2d7dd', true],
       ['offices', null, null, '#dfe3e6', true], ['cargoCity', 'cargoCity', 'halls', '#c9c4b8', false], ['aquifer', 'aquifer', 'plant', '#a9b39a', false],
       ['cyberCentre', null, null, '#3d4a57', true], ['computerRoom', 'computerRoom', 'room', '#d5d8dc', true],
-      ['generator', null, null, '#7d8a6a', false], ['restaurant', null, null, '#efe6d2', true], ['dutyFree', null, null, '#efe6d2', true]];
+      ['generator', null, null, '#7d8a6a', false]];
     for (const [k, pid, sid, wall, glass] of blocks) {
       const g = LAYOUT[k], q = sc.items[k] ? 1 : pid ? sc.p(pid, sid) : 0;
       if (q <= 0) continue;
       // a mothballed terminal keeps its roof: nobody inside
       const off = k === 'domTerminal' ? Terminal.mothballed('dom') : k === 'terminal2' ? Terminal.mothballed('t2') : false;
-      site(k, g.box, g.h, off ? 0 : q, (c) => block(c, sc, g.box, g.h, q, wall, glass, off), wall);
+      // a terminal's own shops: their awnings on its landside wall
+      const term = k === 'domTerminal' ? 'dom' : k === 'terminal2' ? 't2' : null;
+      site(k, g.box, g.h, off ? 0 : q, (c) => { block(c, sc, g.box, g.h, q, wall, glass, off); if (term && q >= 1) awnings(c, term, g.box); }, wall);
     }
     if (sc.items.offices > 1) { const g = LAYOUT.offices.box, b2 = [g[0], g[3] + 10, g[2], g[3] + 60]; site('offices2', b2, 16, 1, (c) => block(c, sc, b2, 16, 1, '#dfe3e6', true), '#dfe3e6'); }
     // session 5: the new tower, Pier F (its A380 gate at the north end, the jet bridges)

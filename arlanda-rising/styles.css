@@ -172,8 +172,8 @@ ul.goals.plain li::before { content: '•'; color: var(--accent); }
 #flightCard td:first-child { color: var(--dim); }
 .hintLine { color: var(--ok); margin: 6px 0 0; }
 /* the card of a building or a vehicle tapped on the map: where the flight's card opens, a little wider; it scrolls when
-   long (a terminal's brands) */
-#siteCard { left: calc(244px + env(safe-area-inset-left)); bottom: calc(64px + env(safe-area-inset-bottom)); width: 290px; padding: 10px 12px; font-size: 13px;
+   long (a terminal's brands and shops); opaque, as it opens over the plan panel on a phone */
+#siteCard { left: calc(244px + env(safe-area-inset-left)); bottom: calc(64px + env(safe-area-inset-bottom)); width: 290px; padding: 10px 12px; font-size: 13px; background: rgb(22, 40, 58);
   max-height: calc(100vh - var(--hudH, 60px) - 84px); overflow-y: auto; box-sizing: border-box; }
 #siteCard .x { position: absolute; right: 6px; top: 6px; border: 0; background: none; font-size: 15px; cursor: pointer; color: var(--dim); }
 .scHead { display: flex; gap: 8px; align-items: center; padding-right: 18px; }
@@ -185,6 +185,14 @@ ul.goals.plain li::before { content: '•'; color: var(--accent); }
 #siteCard table { width: 100%; border-collapse: collapse; font-size: 12px; }
 #siteCard td { padding: 1px 0; vertical-align: top; overflow-wrap: anywhere; }
 #siteCard td:first-child { color: var(--dim); padding-right: 8px; width: 45%; }
+/* a terminal's own shops in its cells: the shop, the cells it takes, its Sell button */
+#siteCard table.cells td { vertical-align: middle; padding: 2px 0; }
+#siteCard table.cells td:first-child { color: inherit; width: auto; }
+#siteCard table.cells td:nth-child(2) { color: var(--dim); white-space: nowrap; padding-right: 6px; }
+#siteCard table.cells td:last-child { text-align: right; white-space: nowrap; }
+#siteCard table.cells tr.free td:first-child { color: var(--ok); }
+#siteCard table.cells td.fine:last-child { color: var(--dim); font-size: 11px; text-align: left; white-space: normal; }
+#siteCard .tb.sell { display: inline-flex; min-height: 26px; padding: 2px 8px; font-size: 11.5px; }
 #decision { left: 50%; top: 50%; transform: translate(-50%, -50%); width: 420px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow-y: auto; padding: 14px 16px; box-sizing: border-box; z-index: 30; }
 #decision h2 { margin: 2px 0 6px; font-size: 19px; }
 #decision p { margin: 0 0 10px; line-height: 1.4; }

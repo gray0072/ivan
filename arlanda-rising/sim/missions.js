@@ -153,6 +153,8 @@ const Missions = {
     const pass = !!S.mission.forceWin || (goals.every((g) => g.ok) && !replaced);
     S.mission.forceWin = false; S.mission.forceEnd = false;
     S.mission.results[i] = { pass, goals, st, replaced };
+    // the small builds paid for and still being fitted when plan time ends are finished after it, never lost
+    if (S.plan) for (const b of S.plan.buys) Airport.finishBuy(b.kind, b.term);
     S.ops = null; S.plan = null;
     logEvent('stageEnd', { stage: i, pass });
     if (!pass) { S.mission.status = 'stageFailed'; return; }

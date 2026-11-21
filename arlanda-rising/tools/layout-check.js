@@ -54,10 +54,10 @@ const rect = (name, kind, b, o) => S.push(Object.assign({ name, kind, rect: b },
 const line = (name, kind, pts, w, o) => S.push(Object.assign({ name, kind, line: pts, w }, o));
 const box = (k) => Lo[k].box;
 
-for (const k of ['terminal1', 'cafe', 'intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'generator', 'restaurant', 'dutyFree',
+for (const k of ['terminal1', 'intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'generator',
   'terminal2', 'sorterHall', 'pierF', 'skyCity', 'hotel', 'hotelExt', 'offices', 'cargoCity', 'aquifer', 'cyberCentre', 'h2depot', 'nightTrain', 'fireStation'])
   rect(k, 'bld', box(k));
-rect('terminal1 waiting room', 'bld', Lo.terminal1.waiting); rect('terminal1 kiosk', 'bld', Lo.terminal1.kiosk);
+rect('terminal1 waiting room', 'bld', Lo.terminal1.waiting);
 const o = box('offices'); rect('offices (2nd block)', 'bld', [o[0], o[3] + 10, o[2], o[3] + 60]);
 rect('tower1', 'bld', [Lo.tower1.x - 6.5, Lo.tower1.y - 6.5, Lo.tower1.x + 6.5, Lo.tower1.y + 6.5]);
 rect('tower2', 'bld', [Lo.tower2.x - 5.5, Lo.tower2.y - 5.5, Lo.tower2.x + 5.5, Lo.tower2.y + 5.5]);
@@ -196,7 +196,7 @@ for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
 }
 // the fence in the eras between (what each adds, roughly as the master plan builds it; every remote stand bought): it
 // must cross no road or railway away from the bridges, no runway, taxiway or apron of its own era
-const ERAS = [['1960', 'runway1 apron1 terminal1 cafe'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation fuelYard'],
+const ERAS = [['1960', 'runway1 apron1 terminal1'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation fuelYard'],
   ['1990', 'apron3 apron4 domTerminal terminal2'], ['2003', 'apron5 pierF runway3 taxi3 deice0 deice1 cargoCity cargoApron'],
   ['2040 satellite', 'apron6 apron7 pier2040 pierArm satApron h2depot']];
 const eraKeys = [];
@@ -251,7 +251,7 @@ if (svgOut) {
   // labels: buildings and aprons by name, stands by number
   const named = { terminal1: 'T1 (1960)', intlTerminal: 'intl terminal / T5', domTerminal: 'domestic / T4', terminal2: 'T2', bagHall: 'bags', pierF: 'Pier F',
     skyCity: 'Sky City', hotel: 'hotel', cargoCity: 'Cargo City', sorterHall: 'sorter', offices: 'offices', cyberCentre: 'SOC', h2depot: 'H2', nightTrain: 'night train',
-    fireStation: 'fire', 'fuel yard': 'fuel', ploughs: 'ploughs', 'pier2040 finger': 'pier 2040', 'pier2040 satellite': 'sat', 'pier2040 arm': 'arm', parkingBig: 'P', parkingSmall: 'P', dutyFree: 'duty free' };
+    fireStation: 'fire', 'fuel yard': 'fuel', ploughs: 'ploughs', 'pier2040 finger': 'pier 2040', 'pier2040 satellite': 'sat', 'pier2040 arm': 'arm', parkingBig: 'P', parkingSmall: 'P' };
   for (const sh of S) if (sh.rect && named[sh.name] && !(sh.name === 'pier2040 finger' && sh.design === 'green')) {
     const b = sh.rect, vert = (b[3] - b[1]) > (b[2] - b[0]) * 1.6;
     out.push(vert ? `<text x="${px((b[0] + b[2]) / 2)}" y="${py((b[1] + b[3]) / 2)}" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 ${px((b[0] + b[2]) / 2)} ${py((b[1] + b[3]) / 2)})">${esc(named[sh.name])}</text>` : label((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, named[sh.name], 8, '#3a2410'));

@@ -33,7 +33,7 @@ const Plan = {
       if (!c.done && S.day >= c.day) { p.pending = c.id; logEvent('decision', { id: c.id }); return; }
     }
     Construction.day();
-    p.buys = p.buys.filter((b) => { if (S.day >= b.done) { Airport.finishBuy(b.kind); return false; } return true; });
+    p.buys = p.buys.filter((b) => { if (S.day >= b.done) { Airport.finishBuy(b.kind, b.term); return false; } return true; });
     Summary.day();
     Finance.running(1440);
     S.day++;

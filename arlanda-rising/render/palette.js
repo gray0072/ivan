@@ -8,7 +8,9 @@ const PAL = {
   pine: '#2E4A33', spruce: '#1F3326', birch: '#E8E4D8', granite: '#8A8F94', lake: '#3E6E8E', falu: '#8E2A1E',
   snow: '#F4F7FA', asphalt: '#3A3D41', concrete: '#B9B6AE', taxiLine: '#F2C230', glass: '#6F8FA6', wood: '#C89B63',
   hiVis: '#E8F23A', hiVisOrange: '#F28A1E', beacon: '#FFB000',
-  sky: '#203445'
+  sky: '#203445',
+  // the airport's own shops in the terminals' cells: their awnings on the map and their colour inside (render/interiors.js)
+  shop: { kiosk: '#2f6fb3', cafe: '#8a5a3a', restaurant: '#b8322a', dutyFree: '#7b4ea3' }
 };
 
 // the land by season: summer (May–September), autumn (October–November), winter (snow on the ground), spring

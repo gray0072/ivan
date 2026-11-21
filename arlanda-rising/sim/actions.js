@@ -2,7 +2,7 @@
 
 // Arlanda Rising — everything the player can do, as one list of calls: the tray's tasks, dragging an aircraft
 // to a stand, opening and closing check-in desks, sending the ploughs, the runway direction when it is
-// calm, the fee level, the small builds, the projects' stages, pace, mods and money, the decisions,
+// calm, the fee level, the small builds (and selling a shop back), the projects' stages, pace, mods and money, the decisions,
 // loans. The screens call these, and so do the reference strategies (sim/strategy.js). Each returns true
 // when it did something.
 
@@ -42,6 +42,8 @@ const Actions = {
     if (S.ops && kind === 'deicer' && S.ops.deicers) S.ops.deicers.push(0);
     return true;
   },
+  // an own shop sold back to free its cells in the terminal (by its item id, or the last bought of a kind)
+  sell(what) { return Airport.sell(what); },
   start(project, stage, pace) { return !!S.plan && Construction.start(project, stage, pace); },
   pace(project, stage, pace) { return Construction.pace(project, stage, pace); },
   mod(project, mod) { return Construction.mod(project, mod); },

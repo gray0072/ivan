@@ -2,7 +2,8 @@
 
 // Arlanda Rising — the card of a building or a vehicle tapped on the map: what it is (data/sites.js), whether it stands,
 // is being built or is closed, its main numbers (size, jobs, upkeep or rent) and what it is doing now — a terminal's
-// passengers at check-in, at security, airside and at the gates, its desks and lanes, its brands; the tower's runway and
+// passengers at check-in, at security, airside and at the gates, its desks and lanes, its brands, the airport's own shops
+// in its cells ("Shops: 4 / 6 cells") each with a Sell button in plan time (a second tap sells it: Actions.sell); the tower's runway and
 // movements; the fire category and the crash tenders of the most worth having; the bags; the systems; and for a fuel
 // truck or a snowplough where it is, how many the airport has of the most worth having (Airport.cap) and what it did
 // this stage and since the airport opened (sim/fleet.js). Refreshed while it is open; the building or the vehicle is
@@ -11,6 +12,7 @@
 const SiteCard = (() => {
   const box = document.getElementById('siteCard');
   let sel = null;   // { key } of a building (the card's key, data/sites.js) or { kind: 'fuel' | 'plough', i }
+  let armed = null, armedAt = 0;   // the shop (item id) whose Sell was tapped once: a second tap sells it
 
   const cardKey = (k) => (SITES[k] && SITES[k].same) || k;
   function open(what) {
@@ -101,7 +103,8 @@ const SiteCard = (() => {
           h += row(tr('Boarding'), boarding.length ? boarding.join(', ') : '—');
         } else h += row(tr('Passengers a day'), people(Invest.termPax(term)));
         const brands = Terminal.units(term).filter((u) => u.brand).map((u) => BRANDS[u.brand].name);
-        if (S.airport.units) h += row(tr('Shops'), brands.length ? brands.join(', ') : tr('none yet'));
+        if (S.airport.units) h += row(tr('Brands'), brands.length ? brands.join(', ') : tr('none yet'));
+        if (d.does === 'terminal' && Airport.cellsMax(term)) h += cells(term);
         break;
       }
       case 'mall': {
@@ -143,9 +146,6 @@ const SiteCard = (() => {
       case 'power':
         h += row(tr('Power'), ops && S.ops.blackout > t ? tr('a blackout: everything is dark') : tr('from the grid; the generator is ready'));
         break;
-      case 'shop':
-        h += row(tr('The airport\'s share a passenger'), sek(((BUILDINGS[d.item] || {}).shop || 0) * SHOP_SPEND));
-        break;
       case 'cargo':
         h += row(tr('Cargo stands'), String(Airport.count('cargoStand')));
         break;
@@ -154,6 +154,26 @@ const SiteCard = (() => {
         break;
     }
     return h;
+  }
+
+  // the airport's own shops in the terminal's cells: "Shops: 4 / 6 cells", each shop with the cells it takes and, where
+  // shops can be bought (plan time), a Sell button with what it brings back (a second tap sells it); the free cells
+  function cells(term) {
+    const max = Airport.cellsMax(term), taken = Airport.cellsTaken(term), list = Airport.shopsIn(term), sell = Airport.canSell();
+    let h = '</table><h4>' + Text.esc(tr('Shops: {n} / {max} cells', { n: taken, max })) + '</h4><table class="cells">';
+    for (const s of list) {
+      const name = BUILD_ICONS[s.kind] + ' ' + Text.esc(tr(BUILDINGS[s.kind].name)), size = Text.esc(Text.cells(s.cells));
+      let act = '';
+      if (s.buy) act = '<small>' + Text.esc(tr('ready in {n} days', { n: s.buy.done - S.day })) + '</small>';
+      else if (sell) {
+        const conf = armed === s.it.id;
+        act = '<button class="tb small sell' + (conf ? ' confirm' : '') + '" data-sell="' + s.it.id + '">' + Text.esc(conf ? tr('Sell? +{m}', { m: sekBare(Airport.sellPrice(s.it)) }) : tr('Sell +{m}', { m: sekBare(Airport.sellPrice(s.it)) })) + '</button>';
+      }
+      h += '<tr><td>' + name + '</td><td>' + size + '</td><td>' + act + '</td></tr>';
+    }
+    if (taken < max) h += '<tr class="free"><td>' + Text.esc(tr('Free')) + '</td><td>' + Text.esc(Text.cells(max - taken)) + '</td><td></td></tr>';
+    if (!sell && list.some((s) => s.it)) h += '<tr><td colspan="3" class="fine">' + Text.esc(tr('Shops are bought and sold in plan time.')) + '</td></tr>';
+    return h + '</table><table>';
   }
 
   // how many of a vehicle the airport has of the most worth having (Airport.cap): "3 of 6 worth having"
@@ -210,7 +230,20 @@ const SiteCard = (() => {
     }
     if (box.dataset.html !== html) { box.innerHTML = html; box.dataset.html = html; }
   }
-  box.addEventListener('click', (e) => { if (e.target.closest('.x')) close(); });
+  box.addEventListener('click', (e) => {
+    if (e.target.closest('.x')) { close(); return; }
+    const b = e.target.closest('button[data-sell]');
+    if (!b) return;
+    const id = +b.dataset.sell;
+    Sfx.play('click');
+    if (armed === id && performance.now() - armedAt < BUY_CONFIRM_MS) {
+      armed = null;
+      const it = S.airport.items.find((x) => x.id === id), m = it ? Airport.sellPrice(it) : 0;
+      if (it && Actions.sell(id)) { Game.banner(tr('Sold: {what}, +{m}', { what: tr(BUILDINGS[it.kind].name), m: sek(m) })); Sfx.play('coins'); }
+    } else { armed = id; armedAt = performance.now(); setTimeout(() => { if (armed === id) armed = null; }, BUY_CONFIRM_MS); }
+    Game.acted();
+    render();
+  });
 
   return { open, close, render };
 })();

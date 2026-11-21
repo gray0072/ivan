@@ -48,19 +48,16 @@ const LAYOUT = {
   apron3: { x0: 700, y0: 935, x1: 890, y1: 1110 },
 
   // buildings: [x0, y0, x1, y1] on the ground and a height in metres
-  terminal1: { box: [880, 1180, 925, 1300], h: 9, waiting: [880, 1300, 915, 1335], kiosk: [884, 1165, 896, 1177] },
+  terminal1: { box: [880, 1180, 925, 1300], h: 9, waiting: [880, 1300, 915, 1335] },
   tower1: { x: 912, y: 1365, base: 9, h: 28 },
   fireStation: { box: [482, 1470, 532, 1500], h: 8 },   // east of the parallel taxiway (its edge at x ≈ 468 here)
   siteOffice: { x: 720, y: 880 },
-  cafe: { box: [880, 1140, 905, 1162], h: 5 },
   intlTerminal: { box: [890, 1390, 965, 1645], h: 14 },
   domTerminal: { box: [895, 955, 975, 1112], h: 10 },
   bagHall: { box: [925, 1180, 955, 1265], h: 6 },
   computerRoom: { box: [925, 1300, 947, 1326], h: 5 },
   generator: { box: [950, 1300, 960, 1312], h: 3 },
   busStop: { x: 1010, y: 1180 },
-  restaurant: { box: [905, 1140, 925, 1162], h: 5 },
-  dutyFree: { box: [965, 1450, 990, 1520], h: 6 },
   fuelDepot: { x: 690, y: 1400 },      // where the fuel trucks wait until the jet apron is begun (it is paved over then)
   // the fuel trucks' yard from the jet apron's paving on (render/airport.js fuelSpot): east of the fire station and
   // behind the ploughs (north of their rows, farther from the viewer), a paved pad `box` with a shelter over its back
@@ -147,7 +144,7 @@ const LAYOUT = {
   // the walls of the buildings on the terminal line (`line`) are the fence where they stand, their landside faces outside
   fence: {
     belt: [[943, 285], [1000, 400], [1030, 900], [990, 1240], [1006, 1290], [1006, 1700], [1330, 1700], [1330, 285]],
-    line: ['terminal1', 'bagHall', 'cafe', 'restaurant', 'computerRoom', 'generator', 'sorterHall', 'intlTerminal', 'domTerminal', 'terminal2',
+    line: ['terminal1', 'bagHall', 'computerRoom', 'generator', 'sorterHall', 'intlTerminal', 'domTerminal', 'terminal2',
       'cargoCity']
   },
   // Märsta, south-west: the town's middle and size (red and white houses, a church)

@@ -157,6 +157,8 @@ const Text = {
   managerLines(id) { const m = MANAGERS[id]; return m ? m.good.map((g) => '＋ ' + tr(g)).concat(['− ' + tr(m.bad)]) : []; },
   // "1 job", "6 jobs"
   jobs(n) { return n === 1 ? tr('1 job') : tr('{n} jobs', { n }); },
+  // the cells of a terminal an own shop takes (data/buildings.js `cells`)
+  cells(n) { return n === 1 ? tr('1 cell') : tr('{n} cells', { n }); },
   pct(v) { return Math.round(v * 100) + '\u00a0%'; },
 
   flightState(f) {

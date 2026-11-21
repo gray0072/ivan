@@ -6,7 +6,9 @@
 // a kiosk, a café and car parks). Session 5: the security lanes and the passport booths open (− / +), de-icing trucks,
 // booths, offices and hotel wings, a solar park and electric vehicles. A buy asks for a second tap with its price
 // first. A vehicle with a limit (fuel and de-icing trucks, ploughs, crash tenders: Airport.cap) shows how many there are
-// of the most worth having (⛽ Fuel truck 3/6) and, at the limit, is disabled with the reason. Used by game.js.
+// of the most worth having (⛽ Fuel truck 3/6) and, at the limit, is disabled with the reason. The airport's own shops show
+// the cells they take in a terminal beside the price, the cells free in all the terminals (🏪 Shop cells 3 of 6 free), and
+// are disabled with the reason when no terminal has the room (Airport.roomFor). Used by game.js.
 
 const BUILD_ICONS = { stand: '🅿️', fuelTruck: '⛽', plough: '🚜', desk: '🧳', kiosk: '🏪', cafe: '☕', parkingSmall: '🚗', parkingBig: '🚙',
   crashTender: '🚒', generator: '🔋', dutyFree: '🛍️', restaurant: '🍽️', busStop: '🚌', lane: '🛂',
@@ -39,7 +41,7 @@ const Toolbar = (() => {
       out.push('kiosk', 'cafe', 'parkingSmall', 'parkingBig', 'desk', 'stand');
       if (y >= 1963) out.push('crashTender', 'restaurant');
       if (Object.keys(S.domains).some((d) => S.domains[d] >= 2) && !Airport.has('generator')) out.push('generator');
-      if (Airport.has('intlTerminal') && !Airport.has('dutyFree')) out.push('dutyFree');
+      if (Airport.has('intlTerminal')) out.push('dutyFree');
       if (!Airport.has('busStop')) out.push('busStop');
     }
     void m;
@@ -91,22 +93,27 @@ const Toolbar = (() => {
       else if (p[0] === 'short') html += '<div class="tgroup warnGroup"><span class="tl">' + (p[3] ? '✊ ' : '🤒 ') + Text.esc(p[3] ? tr('{dept} on strike', { dept: Text.dept(p[1]) }) : tr('{dept}: {p} at work', { dept: Text.dept(p[1]), p: Math.round(p[2] * 100) + ' %' })) + '</span>' +
         (p[3] ? '' : '<button class="tb small" data-act="overtime" data-d="' + p[1] + '" title="' + Text.esc(tr('Everybody in, at overtime pay')) + '">⏱️ ' + Text.esc(tr('Overtime')) + '</button>') + '</div>';
     }
-    // how many shops and car parks there are, and how many more can earn
-    const places = (what, icon, label, tip) => {
-      const n = Airport.placesTaken(what), max = Airport.placesMax(what);
-      return '<div class="tgroup' + (n >= max - 1e-9 ? ' fullGroup' : '') + '"><span class="tl" title="' + Text.esc(tip) + '">' + icon + ' ' + Text.esc(tr(label)) + ' <b>' +
-        (what === 'shop' ? Text.num(n, 1) + '/' + max : Math.round(n * 100) + '/100 %') + '</b></span></div>';
-    };
-    if (b.some((k) => BUILDINGS[k].shop)) html += places('shop', '🏪', 'Shops', tr('A kiosk counts ½, a café 1, a restaurant 0.6, a duty-free shop 1.2. More than {max} earn nothing more.', { max: SHOP_MAX }));
-    if (b.some((k) => BUILDINGS[k].parking)) html += places('parking', '🚗', 'Car parks', tr('The share of the drivers the car parks take: a small one 40 %, a big one all of them.'));
-    // a vehicle with a limit (Airport.cap) shows how many there are of the most worth having, 3/6, and why it stops there
+    // the shops' cells free in the terminals, and how much of the drivers the car parks take
+    if (b.some((k) => BUILDINGS[k].cells)) {
+      const max = Airport.cellsMax(), free = max - Airport.cellsTaken();
+      html += '<div class="tgroup' + (free <= 0 ? ' fullGroup' : '') + '"><span class="tl" title="' + Text.esc(tr('Your own shops take cells in the terminals: a kiosk 1, a café 2, a restaurant 3, a duty-free shop 4. Each terminal adds its cells. To make room, sell a shop from its terminal\'s card: tap the terminal.')) + '">🏪 ' +
+        Text.esc(tr('Shop cells')) + ' <b>' + Text.esc(tr('{free} of {max} free', { free, max })) + '</b></span></div>';
+    }
+    if (b.some((k) => BUILDINGS[k].parking)) {
+      const n = Airport.placesTaken('parking');
+      html += '<div class="tgroup' + (n >= 1 - 1e-9 ? ' fullGroup' : '') + '"><span class="tl" title="' + Text.esc(tr('The share of the drivers the car parks take: a small one 40 %, a big one all of them.')) + '">🚗 ' + Text.esc(tr('Car parks')) + ' <b>' + Math.round(n * 100) + '/100 %</b></span></div>';
+    }
+    // a vehicle with a limit (Airport.cap) shows how many there are of the most worth having, 3/6, and why it stops there;
+    // a shop the cells it takes, and with no terminal that has them free, why it cannot be bought
     for (const kind of b) {
       const bd = BUILDINGS[kind], conf = armed === kind, full = Airport.full(kind), cap = Airport.cap(kind);
       const n = Airport.owned(kind);
+      const tip = cap ? Text.capTip(kind, cap) : bd.cells ? tr('Takes {cells} in a terminal. To make room, sell a shop from its terminal\'s card: tap the terminal.', { cells: Text.cells(bd.cells) }) : '';
       html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (full ? ' disabled' : '') + (S.money < bd.price && !conf ? ' data-poor="1"' : '') +
-        (cap ? ' title="' + Text.esc(Text.capTip(kind, cap)) + '"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
+        (tip ? ' title="' + Text.esc(tip) + '"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
         Text.esc(conf ? tr('Buy?') : tr(bd.name)) + (cap ? ' <em>' + n + '/' + cap.max + '</em>' : n && (bd.shop || bd.parking) ? ' <em>×' + n + '</em>' : '') + '<small>' +
-        (full ? Text.esc(cap ? Text.capWhy(cap) : tr('Enough: one more would earn nothing')) : sekBare(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
+        (full ? Text.esc(cap ? Text.capWhy(cap) : bd.cells ? tr('No room: needs {cells}', { cells: Text.cells(bd.cells) }) : tr('Enough: one more would earn nothing')) :
+          sekBare(bd.price) + (bd.cells ? ' · ' + Text.esc(Text.cells(bd.cells)) : '') + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
     }
     box.innerHTML = html;
   }

@@ -80,7 +80,7 @@ const Fence = (() => {
     // the buildings on the terminal line, and the piers out on the apron: inside, their walls the fence where they stand
     const wall = (b) => { R(b, 0); walls.push(b); };
     for (const k of L.fence.line) if (on(k)) wall(L[k].box);
-    if (on('terminal1')) { wall(L.terminal1.waiting); wall(L.terminal1.kiosk); }
+    if (on('terminal1')) wall(L.terminal1.waiting);
     if (on('pierF')) wall(L.pierF.box);
     if (on('pier2040')) wall(design === 'satellite' ? L.pier2040.sat : L.pier2040.box);
     if (on('pierArm')) wall(L.pier2040.arm);
@@ -91,7 +91,7 @@ const Fence = (() => {
   const LAND = (() => {
     const out = [], R = (b, m) => out.push({ r: [b[0] - m, b[1] - m, b[2] + m, b[3] + m] });
     out.push({ l: L.road, h: ROAD }, { l: L.landside, h: ROAD }, { l: L.rail.line, h: RAIL }, { l: L.rail.out, h: RAIL });
-    for (const k of ['parkingSmall', 'parkingBig', 'skyCity', 'hotel', 'hotelExt', 'offices', 'cyberCentre', 'aquifer', 'nightTrain', 'dutyFree']) R(L[k].box, BOX);
+    for (const k of ['parkingSmall', 'parkingBig', 'skyCity', 'hotel', 'hotelExt', 'offices', 'cyberCentre', 'aquifer', 'nightTrain']) R(L[k].box, BOX);
     // Cargo City's yard: its west edge touches the cargo apron's corner, so the cell on that edge stays airside
     const Y = L.cargoCity.yard;
     out.push({ r: [Y[0] + 6, Y[1] - BOX, Y[2] + BOX, Y[3] + BOX] });

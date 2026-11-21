@@ -3,13 +3,17 @@
 // Arlanda Rising — the airport itself: what is built (S.airport.items), the runways and the stands, what
 // finishing a master-plan project does (`complete`), the small builds bought during a mission (`buy`), and
 // the numbers the rest of the sim asks for — runway separation, fuel trucks, ploughs, the most of a vehicle worth
-// having (`cap`: no more can be bought past it), the shops' and car
-// parks' shares, the monthly running cost of everything the airport owns.
+// having (`cap`: no more can be bought past it), the airport's own shops in the terminals' cells (bought into a terminal
+// with room, sold back: `sell`) and their share, the car parks' share, the monthly running cost of everything the airport
+// owns.
 
 const Airport = {
   count(kind) { return S.airport.items.filter((i) => i.kind === kind).length; },
   has(kind) { return this.count(kind) > 0; },
   addItem(kind, extra) {
+    // a shop given by the master plan or a mission goes into the first terminal with room (none standing yet: placed
+    // when one stands, shopPlaces)
+    if (this.cellsOf(kind) && !(extra && extra.term)) { const t = this.roomFor(kind); if (t) extra = Object.assign({ term: t }, extra || {}); }
     const it = Object.assign({ id: nextId(), kind, price: (BUILDINGS[kind] || {}).price || 0 }, extra || {});
     S.airport.items.push(it);
     return it;
@@ -22,20 +26,69 @@ const Airport = {
   // session 6: the stands with a charger for electric aircraft
   chargers() { return S.airport.stands.filter((s) => s.charge).length; },
   ploughs() { return this.count('plough'); },
+  // the airport's own shops' share of the full shop spend per passenger (SHOP_SPEND): their room is the terminals' cells
   shopShare() {
     let s = 0;
     for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {}).shop || 0;
-    return Math.min(SHOP_MAX, s);
+    return s;
   },
-  // the shops' and the car parks' places taken, with those being built: a shop or a car park more than the room
-  // left earns nothing, so it cannot be bought once the room is full
+  // the car parks' share taken, with those being built: a car park more than the drivers earns nothing, so it cannot be
+  // bought once they are all taken
   placesTaken(what) {
     let s = 0;
     for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {})[what] || 0;
     for (const b of (S.plan && S.plan.buys) || []) s += (BUILDINGS[b.kind] || {})[what] || 0;
     return s;
   },
-  placesMax(what) { return what === 'shop' ? SHOP_MAX : 1; },
+  placesMax() { return 1; },
+
+  // ---------- the airport's own shops in the terminals' cells ----------
+  // Each terminal standing has its cells (data/terminals.js `cells`: 6 in the first), a shop takes some (data/buildings.js
+  // `cells`: a kiosk 1, a café 2…) in the terminal it was bought for (it.term; the plan's buys keep theirs while they are
+  // fitted). A shop of an older save without one is placed at once in the first terminal with room. Sold back for
+  // SHOP_SELL_BACK of its price. The brands' units (sim/terminal.js) are apart from the cells.
+  cellsOf(kind) { return (BUILDINGS[kind] || {}).cells || 0; },
+  // the terminals with cells standing now, in TERMINAL_ORDER
+  shopTerms() { return TERMINAL_ORDER.filter((t) => TERMINALS[t].cells && Terminal.built(t)); },
+  cellsMax(term) { return term ? (this.shopTerms().indexOf(term) >= 0 ? TERMINALS[term].cells : 0) : this.shopTerms().reduce((s, t) => s + TERMINALS[t].cells, 0); },
+  // where every shop is: { of: { itemId: term }, used: { term: cells taken, the buys being fitted too }, pending: [buys] }
+  shopPlaces() {
+    const of = {}, used = {}, shops = S.airport.items.filter((it) => this.cellsOf(it.kind));
+    const take = (t, k) => { if (t) used[t] = (used[t] || 0) + this.cellsOf(k); };
+    for (const it of shops) if (it.term) { of[it.id] = it.term; take(it.term, it.kind); }
+    const pending = ((S.plan && S.plan.buys) || []).filter((b) => this.cellsOf(b.kind));
+    for (const b of pending) take(b.term, b.kind);
+    for (const it of shops) if (!it.term) { const t = this.roomFor(it.kind, used) || this.shopTerms()[0] || null; of[it.id] = t; take(t, it.kind); }
+    return { of, used, pending };
+  },
+  // the terminal a shop of this kind would go into now (its own `term` first), or null when no terminal has room
+  roomFor(kind, used) {
+    const n = this.cellsOf(kind), terms = this.shopTerms(), pref = (BUILDINGS[kind] || {}).term;
+    if (pref && terms.indexOf(pref) > 0) { terms.splice(terms.indexOf(pref), 1); terms.unshift(pref); }
+    return terms.find((t) => TERMINALS[t].cells - ((used || this.shopPlaces().used)[t] || 0) >= n) || null;
+  },
+  cellsTaken(term) { const u = this.shopPlaces().used; return term ? u[term] || 0 : this.shopTerms().reduce((s, t) => s + (u[t] || 0), 0); },
+  // the shops of a terminal in the order they were bought: [{ it, kind, cells }], then those being fitted [{ buy, kind, cells }]
+  shopsIn(term) {
+    const pl = this.shopPlaces();
+    return S.airport.items.filter((it) => this.cellsOf(it.kind) && pl.of[it.id] === term).map((it) => ({ it, kind: it.kind, cells: this.cellsOf(it.kind) }))
+      .concat(pl.pending.filter((b) => b.term === term).map((b) => ({ buy: b, kind: b.kind, cells: this.cellsOf(b.kind) })));
+  },
+  // SEK a shop is sold back for
+  sellPrice(it) { return Math.round((it.price || 0) * SHOP_SELL_BACK); },
+  // whether shops can be sold now: where they can be bought, in plan time with the airport open
+  canSell() { return !!(S.plan && S.airport.open); },
+  // sell an own shop (by its item id, or the last bought of a kind) to free its cells: SHOP_SELL_BACK of its price back
+  sell(what) {
+    if (!this.canSell()) return false;
+    const shops = S.airport.items.filter((it) => this.cellsOf(it.kind));
+    const it = typeof what === 'number' ? shops.find((x) => x.id === what) : shops.filter((x) => x.kind === what).pop();
+    if (!it) return false;
+    Finance.book('sold', this.sellPrice(it));
+    S.airport.items.splice(S.airport.items.indexOf(it), 1);
+    logEvent('sold', { kind: it.kind });
+    return true;
+  },
   // the vehicles past which one more does nothing: { max, why, n } (n what the limit counts: stands, runways, the top
   // fire category), or null for no limit — a fuel or a de-icing truck for each stand (an aircraft takes one at a time),
   // a full plough convoy for each runway (the convoys sweep at the same time), crash tenders up to the top fire category
@@ -49,11 +102,13 @@ const Airport = {
   },
   // how many of a kind the airport has, with those bought in plan time and not delivered yet
   owned(kind) { return this.count(kind) + ((S.plan && S.plan.buys) || []).filter((b) => b.kind === kind).length; },
-  // nothing more of it is worth buying: the shops' or car parks' room is full, or a vehicle is at its limit
+  // nothing more of it can be bought: no terminal has the cells for a shop, the car parks take every driver, or a
+  // vehicle is at its limit
   full(kind) {
-    const b = BUILDINGS[kind] || {}, what = b.shop ? 'shop' : b.parking ? 'parking' : null, cap = this.cap(kind);
+    const b = BUILDINGS[kind] || {}, cap = this.cap(kind);
     if (cap) return this.owned(kind) >= cap.max;
-    return !!what && this.placesTaken(what) >= this.placesMax(what) - 1e-9;
+    if (b.cells) return !this.roomFor(kind);
+    return !!b.parking && this.placesTaken('parking') >= this.placesMax('parking') - 1e-9;
   },
   parkingShare() {
     let s = 0;
@@ -164,13 +219,15 @@ const Airport = {
     if (b.from && Calendar.year() < b.from) return false;
     if (this.full(kind)) return false;
     Finance.book('build', -b.price);
-    if (S.plan && b.days > 0) S.plan.buys.push({ kind, done: S.day + b.days });
-    else this.finishBuy(kind);
+    // a shop keeps its cells in its terminal while it is fitted
+    const term = b.cells ? this.roomFor(kind) : undefined;
+    if (S.plan && b.days > 0) S.plan.buys.push(term ? { kind, done: S.day + b.days, term } : { kind, done: S.day + b.days });
+    else this.finishBuy(kind, term);
     return true;
   },
   // session 6: the owner's gift of a small build (a charger), free; true when it changed something
   buyFree(kind) { const n = this.chargers(), m = S.airport.items.length; this.finishBuy(kind); return kind === 'charger' ? this.chargers() > n : S.airport.items.length > m; },
-  finishBuy(kind) {
+  finishBuy(kind, term) {
     if (kind === 'stand') this.addStand({ name: String(S.airport.stands.length + 1), code: 'C', contact: false, dist: 4 });
     else if (kind === 'desk') S.airport.desks++;
     else if (kind === 'lane') Terminal.addLane();
@@ -186,7 +243,7 @@ const Airport = {
         .sort((x, y) => (y.contact - x.contact) || (x.dist - y.dist) || (x.id < y.id ? -1 : 1))[0];
       if (st) st.charge = true;
     } else if (kind === 'mcharger' && S.ops && S.ops.chargers) S.ops.chargers.push(0);
-    this.addItem(kind);
+    this.addItem(kind, term ? { term } : null);
     logEvent('bought', { kind });
   },
 

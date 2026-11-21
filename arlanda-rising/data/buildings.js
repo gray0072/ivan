@@ -7,7 +7,10 @@
 //   small    can be bought during a mission (from the build toolbar), takes `days` in plan time and is there at
 //            once in ops time
 //   from     the first year it can be bought
-//   shop     share of the full shop spend per passenger it brings (SHOP_SPEND; the shops add up to SHOP_MAX)
+//   shop     share of the full shop spend per passenger it brings (SHOP_SPEND), airport-wide
+//   cells    the cells of a terminal it takes (the airport's own shops: data/terminals.js `cells`; it can be bought
+//            only while a terminal has that many free, and sold back for SHOP_SELL_BACK of its price)
+//   term     the terminal it goes into first when there is room (else the first in TERMINAL_ORDER with room)
 //   parking  share of the departing passengers' parking it can take (PARKING_PER_PAX; up to 1 in all)
 // The big historical structures (runways, the tower, the terminals) come from data/masterplan.js and are
 // added here as their kinds when a project is finished.
@@ -24,15 +27,15 @@ const BUILDINGS = {
   fuelTruck: { name: 'Fuel truck', price: 1.2e6, staff: 2, small: true, days: 0, from: 1959 },
   plough: { name: 'Snowplough', price: 1.6e6, staff: 2, small: true, days: 0, from: 1959 },
   desk: { name: 'Check-in desk', price: 0.15e6, staff: 1, small: true, days: 2, from: 1960 },
-  kiosk: { name: 'Kiosk', price: 0.6e6, staff: 0, small: true, days: 10, from: 1960, shop: 0.5 },
-  cafe: { name: 'Café', price: 2.5e6, staff: 0, small: true, days: 25, from: 1960, shop: 1 },
+  kiosk: { name: 'Kiosk', price: 0.6e6, staff: 0, small: true, days: 10, from: 1960, shop: 0.5, cells: 1 },
+  cafe: { name: 'Café', price: 2.5e6, staff: 0, small: true, days: 25, from: 1960, shop: 1, cells: 2 },
   parkingSmall: { name: 'Car park (300 places)', price: 6e6, staff: 1, small: true, days: 20, from: 1960, parking: 0.4 },
   parkingBig: { name: 'Car park (1 200 places)', price: 18e6, staff: 3, small: true, days: 40, from: 1960, parking: 1 },
   // session 3: chapters 2 and 3
   crashTender: { name: 'Crash tender', price: 3.5e6, staff: 3, small: true, days: 30, from: 1963 },
   generator: { name: 'Backup generator', price: 6e6, staff: 1, small: true, days: 20, from: 1970 },
-  dutyFree: { name: 'Duty-free shop', price: 30e6, staff: 0, small: true, days: 60, from: 1976, shop: 1.2 },
-  restaurant: { name: 'Restaurant', price: 8e6, staff: 0, small: true, days: 40, from: 1965, shop: 0.6 },
+  dutyFree: { name: 'Duty-free shop', price: 30e6, staff: 0, small: true, days: 60, from: 1976, shop: 1.2, cells: 4, term: 'intl' },
+  restaurant: { name: 'Restaurant', price: 8e6, staff: 0, small: true, days: 40, from: 1965, shop: 0.6, cells: 3 },
   busStop: { name: 'Airport coach stops', price: 8e6, staff: 0, small: true, days: 30, from: 1989, bus: true },
   apron2: { name: 'The jet apron', price: 0, staff: 4 },
   runway2: { name: 'Runway 2', price: 0, staff: 4 },

@@ -4,13 +4,14 @@
 // as in a doll's house — the floor, the back walls (west and north) a storey high with their windows, the front walls
 // (south and east) cut low — and inside what the building does, alive with the stage's numbers:
 //   a terminal's hall — the check-in desks (the open ones staffed, their sign green) with a queue of passengers at each,
-//     the security lanes with their arches and queue, the flight screens, the brands' shops in their colours with
+//     the security lanes with their arches and queue, the flight screens, the airport's own shops in the terminal's
+//     cells (each in its colour with its sign, the free cells empty bays to count), the brands' shops in their colours with
 //     shoppers, the gates' seats filling before boarding and the passengers walking airside;
 //   a pier — the gates' seats and desks, the kiosks, the moving walkway and the corridor;
 //   Sky City — its shops round the walls and the food court; the hotel — the lobby and the rooms;
 //   offices and the security operations centre — desks and screens; the baggage halls — belts with the bags running;
 //   the computer room — racks blinking (red while a system is down); the fire station — the tenders in their bays;
-//   Cargo City — racks, containers and forklifts; a café, the restaurant, the duty-free; the generator, the pumps.
+//   Cargo City — racks, containers and forklifts; the generator, the pumps.
 // How many people stand in each queue comes from the stage (TermArt.crowd: the passengers of the terminal at check-in,
 // at security, airside and at the gates); between missions a calm flow from the passengers a day. Detail drops with the
 // zoom: zones only from far, furniture nearer, people as dots from 0.7 and as figures from 1. Drawn by render/airport.js in place of a
@@ -21,7 +22,7 @@ const Interiors = (() => {
   const KIND = {
     terminal1: 'hall', intlTerminal: 'hall', domTerminal: 'hall', terminal2: 'hall', waiting: 'gates', intlPier: 'pier', pierF: 'pier', pier2040: 'pier', pierArm: 'pier',
     skyCity: 'mall', hotel: 'hotel', hotelExt: 'hotel', offices: 'office', offices2: 'office', cyberCentre: 'soc', bagHall: 'bags', sorterHall: 'bags',
-    computerRoom: 'servers', fireStation: 'fire', cargoCity: 'cargo', cafe: 'cafe', restaurant: 'cafe', dutyFree: 'shop', generator: 'plant', aquifer: 'pumps'
+    computerRoom: 'servers', fireStation: 'fire', cargoCity: 'cargo', generator: 'plant', aquifer: 'pumps'
   };
   // whose passengers fill it
   const TERM = { terminal1: 't1', waiting: 't1', intlTerminal: 'intl', domTerminal: 'dom', terminal2: 't2', pierF: 'intl', pier2040: 'intl', pierArm: 'intl' };
@@ -30,11 +31,13 @@ const Interiors = (() => {
   const CLOTHES = ['#2f6fb3', '#c8102e', '#3a8f4b', '#e0a020', '#7b4ea3', '#333a44', '#e8e4d8', '#d96c9a', '#2b8c8c', '#8a5a3a'];
   const SKIN = ['#f0d5bc', '#e8c9a8', '#c99b74', '#8d5a3b'];
   const STAFF = '#1f3f8f', HIVIS = PAL.hiVis;
-  // the shops before any brand has a unit (or where the units are not on): a café, a newsagent, a gift shop… in plain colours
+  // Sky City's shops before any brand has a unit: a café, a newsagent, a gift shop… in plain colours
   const PLAIN = [['#8a5a3a', '#f4efe4'], ['#2f6fb3', '#ffffff'], ['#3a8f4b', '#ffffff'], ['#c8102e', '#ffffff'], ['#e0a020', '#222222']];
+  // the airport's own shops: a cell's length along the hall (m), each kind's sign
+  const CELL = 7, SHOP_ICON = { kiosk: '🏪', cafe: '☕', restaurant: '🍽️', dutyFree: '🛍️' };
   const WALL_BACK = 4, WALL_FRONT = 1.1, TW = 0.5;   // m: the back walls' height, the front walls' (cut), their thickness
   const FLOOR = { hall: '#ebe6db', gates: '#b9c4cf', pier: '#e6e8ea', mall: '#efe8da', hotel: '#c9a77c', office: '#d9dcdf', soc: '#3a4450', bags: '#a9adb1',
-    servers: '#cfd4d8', fire: '#9a9893', cargo: '#b0aca4', cafe: '#d8b58a', shop: '#f1ede4', plant: '#9fa39a', pumps: '#a6acb0' };
+    servers: '#cfd4d8', fire: '#9a9893', cargo: '#b0aca4', plant: '#9fa39a', pumps: '#a6acb0' };
   let T = 0, Z = 1, frameSc = null, crowds = {};
 
   function has(key) { return !!KIND[key]; }
@@ -197,7 +200,8 @@ const Interiors = (() => {
         }
       }
     }
-    shops(put, c, key, term, X(0.26), X(0.38), y0 + 3, y1 - 3);
+    const after = cells(put, c, key, term, X(0.26), X(0.38), y0 + 3, y1 - 3);
+    shops(put, c, key, term, X(0.26), X(0.38), after, y1 - 3);
     seats(put, key, X(0.03), X(0.19), y0 + 3, y1 - 3, cr.gates * share);
     for (let i = 0; i < clamp(Math.round(cr.airside * share / 4), 6, 90); i++) {
       const p = walker(key + 'a', i, X(0.2), X(0.25), y0 + 2, y1 - 2);
@@ -205,10 +209,59 @@ const Interiors = (() => {
     }
   }
 
+  // the airport's own shops in the terminal's cells (Airport.shopsIn), in a column [xa, xb] from ya (the walk on their west
+  // side): each shop as long as its cells, in its colour with its sign, a counter, tables or shelves by its kind and a seam
+  // on the floor between its cells; one being fitted behind a striped barrier; each free cell an empty bay between low
+  // partitions, so the cells can be counted. Returns where the brands' units start.
+  function cells(put, c, key, term, xa, xb, ya, yb) {
+    const max = Airport.cellsMax(term);
+    if (!max) return ya;
+    const list = Airport.shopsIn(term), taken = list.reduce((s, x) => s + x.cells, 0);
+    const parts = list.map((x) => ({ kind: x.kind, cells: x.cells, fit: !!x.buy })).concat(Array.from({ length: Math.max(0, max - taken) }, () => ({ cells: 1 })));
+    let y = ya;
+    parts.forEach((p, i) => {
+      const s0 = y, s1 = y + p.cells * CELL - 0.3;
+      if (s1 > yb) return;
+      const col = p.kind ? PAL.shop[p.kind] || '#888' : null;
+      flat(c, xa, s0, xb, s1, 0.12, !col ? '#dcdedf' : p.fit ? '#cfc9bd' : mix(col, '#ffffff', 0.6));
+      if (col && !p.fit) for (let k = 1; k < p.cells; k++) { const sy = s0 + k * CELL - 0.15; flat(c, xa + 0.3, sy - 0.06, xb - 0.4, sy + 0.06, 0.13, shade(col, 0.25)); }
+      put(xb, s1, (c) => {
+        // the partition on its north side, the back wall
+        box(c, xa + 0.2, s1, xb, s1 + 0.3, 0, col ? 2.2 : 1.2, '#dcdcd8');
+        box(c, xb - 0.4, s0, xb, s1, 0, col ? 2.6 : 1.2, col && !p.fit ? col : '#c9ccce');
+        if (!col) return;
+        if (p.fit) { for (let k = 0; k < (s1 - s0) / 1.2 - 1; k++) box(c, xa + 0.3, s0 + k * 1.2, xa + 0.5, s0 + k * 1.2 + 1.2, 0.5, 0.9, k % 2 ? '#222' : '#f2a020'); return; }
+        box(c, xb - 0.5, s0 + 0.3, xb - 0.1, s1 - 0.3, 2.6, 3.5, col, '#ffffff');
+        if (Z >= 0.8) shopInside(c, p.kind, xa, xb, s0, s1, col);
+        if (Z >= 1.2) { const q = P(xb - 0.3, (s0 + s1) / 2, 5.2), sz = Math.min(4, 15 / Z); Icons.draw(c, SHOP_ICON[p.kind], q[0], q[1], sz); }
+      });
+      if (col && !p.fit) for (let k = 0; k < p.cells; k++) {
+        const px = xa + 0.7 + h01(key + 'c' + i, k, 'x') * (xb - xa - 2.6), py = s0 + 1 + k * CELL + h01(key + 'c' + i, k, 'y') * (CELL - 2.4);
+        put(px, py, (c) => man(c, px, py, i * 5 + k));
+      }
+      y = s1 + 0.3;
+    });
+    return y + 3;
+  }
+  // what stands in an own shop: a kiosk's counter and racks, a café's counter and a table a cell, the restaurant's tables,
+  // the duty-free's shelves
+  function shopInside(c, kind, xa, xb, s0, s1, col) {
+    const mid = (xa + xb) / 2;
+    if (kind === 'dutyFree') {
+      for (let y = s0 + 1.2, r = 0; y < s1 - 1.2; y += 2.4, r++) box(c, mid - 0.4, y, xb - 1, y + 1.2, 0, 1.5, '#e8e4dc', ['#d96c9a', '#e0a020', '#7b4ea3', '#2f6fb3'][r % 4]);
+      counter(c, xa + 0.4, s0 + 0.6, xa + 1.3, s0 + 2.4, '#222');
+    } else if (kind === 'kiosk') {
+      counter(c, xa + 0.4, s0 + 0.8, xa + 1.3, s1 - 0.8, '#e6d2b0');
+      box(c, xb - 1.6, s0 + 0.8, xb - 0.8, s1 - 0.8, 0, 1.8, '#f4f1ea', col);
+    } else {
+      counter(c, xb - 1.8, s0 + 0.6, xb - 0.9, s1 - 0.6, '#6b4a2e');
+      for (let y = s0 + 2.5; y < s1 - 1.5; y += kind === 'restaurant' ? 3 : 5) { box(c, mid - 1.1, y - 0.5, mid - 0.1, y + 0.5, 0, 0.75, '#e6d2b0'); box(c, mid - 1.9, y - 0.25, mid - 1.4, y + 0.25, 0, 0.45, '#6b4a2e'); }
+    }
+  }
+
   // the brands' shops of a terminal in a column [xa, xb] (the walk on their west side), from ya to yb
   function shops(put, c, key, term, xa, xb, ya, yb) {
-    let units = (Terminal.units(term) || []).filter((u) => u.size !== 'desk');
-    if (!units.length) units = PLAIN.map((p, i) => ({ size: i % 2 ? 'kiosk' : 'unit', brand: null, plain: p }));
+    const units = (Terminal.units(term) || []).filter((u) => u.size !== 'desk');
     const LEN = { kiosk: 6, unit: 10, big: 16 };
     let y = ya;
     units.forEach((u, i) => {
@@ -268,10 +321,10 @@ const Interiors = (() => {
       const p = walker(key, i, X(0.42), X(0.58), y0 + 2, y1 - 2);
       put(p[0], p[1], (c) => man(c, p[0], p[1], i));
     }
-    // a kiosk now and then on the east side, in the colours of the terminal's brands
+    // a kiosk now and then on the east side, in the colours of the terminal's brands (none before a brand has a unit)
     const brands = Terminal.units('intl').filter((u) => u.brand).map((u) => BRANDS[u.brand]);
-    for (let y = y0 + 20, k = 0; y + 9 < y1 - 4; y += 60, k++) {
-      const br = brands.length ? brands[k % brands.length] : null, pl = PLAIN[k % PLAIN.length], col = br ? br.sign[0] : pl[0], fg = br ? br.sign[1] : pl[1], xa = X(0.76), xb = X(0.95), ya = y, yb = y + 9;
+    for (let y = y0 + 20, k = 0; brands.length && y + 9 < y1 - 4; y += 60, k++) {
+      const br = brands[k % brands.length], col = br.sign[0], fg = br.sign[1], xa = X(0.76), xb = X(0.95), ya = y, yb = y + 9;
       flat(c, xa, ya, xb, yb, 0.12, mix(col, '#ffffff', 0.55));
       put(xb, yb, (c) => { box(c, xb - 0.4, ya, xb, yb, 0, 2.6, col); box(c, xb - 0.5, ya + 0.5, xb - 0.1, yb - 0.5, 2.6, 3.4, col, fg); counter(c, xa + 0.5, ya + 2, xa + 1.5, yb - 2, '#e6d2b0'); });
       put(xa + 3, ya + 4, (c) => man(c, xa + 3, ya + 4, k + 2));
@@ -414,25 +467,6 @@ const Interiors = (() => {
     for (let i = 0; i < 8; i++) { const p = walker(key, i, x0 + W * 0.18, x0 + W * 0.9, y0 + 4, y1 - 4); put(p[0], p[1], (c) => man(c, p[0], p[1], i, false, i % 2 ? HIVIS : PAL.hiVisOrange)); }
   }
 
-  // ---------- a café or the restaurant: a counter on the north wall, tables ----------
-  function cafe(put, c, sc, key, b) {
-    const [x0, y0, x1, y1] = b, W = x1 - x0;
-    if (Z < 0.45) return;
-    put(x1 - 2, y1 - 2.5, (c) => counter(c, x0 + 3, y1 - 3.5, x1 - 3, y1 - 2.5, '#6b4a2e'));
-    put(x0 + W / 2, y1 - 1.5, (c) => man(c, x0 + W / 2, y1 - 1.5, 1, false, '#e8e4dc'));
-    let k = 0;
-    for (let x = x0 + 4; x < x1 - 3; x += 5) for (let y = y0 + 3.5; y < y1 - 6; y += 4.5) table(put, x, y, k++, key, 0.65);
-  }
-  // the duty-free: rows of shelves, shoppers between them
-  function shop(put, c, sc, key, b) {
-    const [x0, y0, x1, y1] = b, W = x1 - x0;
-    if (Z < 0.45) return;
-    const tops = ['#d96c9a', '#e0a020', '#7b4ea3', '#2f6fb3', '#c8102e'];
-    for (let r = 0, x = x0 + 4; x < x1 - 4; x += 5, r++) { const sx = x; put(sx + 1, y0 + 4, (c) => box(c, sx, y0 + 4, sx + 1.2, y1 - 6, 0, 1.6, '#e8e4dc', tops[r % tops.length])); }
-    put(x1 - 3, y1 - 3, (c) => counter(c, x0 + 3, y1 - 4, x1 - 3, y1 - 3, '#222'));
-    for (let i = 0; i < 10; i++) { const p = walker(key, i, x0 + 2, x1 - 2, y0 + 3, y1 - 7); put(p[0], p[1], (c) => man(c, p[0], p[1], i)); }
-    void W;
-  }
   // the generator: two engines and their exhaust; the aquifer's pump house: pumps and pipes
   function plant(put, c, sc, key, b, pumps) {
     const [x0, y0, x1, y1] = b, W = x1 - x0, L = y1 - y0;
@@ -453,7 +487,7 @@ const Interiors = (() => {
     for (let i = 0; i < 4; i++) { const p = walker(key, i, x1 - 5, x1 - 2, y0 + 2, y1 - 2); put(p[0], p[1], (c) => man(c, p[0], p[1], i)); }
   }
 
-  const DRAW = { hall, gates, pier, mall, hotel, office, soc: (p, c, sc, k, b) => office(p, c, sc, k, b, true), bags, servers, fire, cargo, cafe, shop,
+  const DRAW = { hall, gates, pier, mall, hotel, office, soc: (p, c, sc, k, b) => office(p, c, sc, k, b, true), bags, servers, fire, cargo,
     plant, pumps: (p, c, sc, k, b) => plant(p, c, sc, k, b, true) };
 
   // the building `key` cut away: its box on the ground, its height, its walls' colour
@@ -464,7 +498,7 @@ const Interiors = (() => {
     const a = Cam.toScreen(x0, y1, 0), d = Cam.toScreen(x1, y0, 0), l = Cam.toScreen(x0, y0, 0), r = Cam.toScreen(x1, y1, 0);
     if (Math.max(a[0], d[0], l[0], r[0]) < -20 || Math.min(a[0], d[0], l[0], r[0]) > Cam.W + 20 || Math.max(a[1], d[1], l[1], r[1]) < -40 || Math.min(a[1], d[1], l[1], r[1]) - 40 > Cam.H) return;
     const glass = sc.dark > 0.3 ? mix(PAL.glass, '#ffd27a', clamp(sc.dark, 0, 1)) : PAL.glass;
-    const glazed = kind === 'hall' || kind === 'pier' || kind === 'mall' || kind === 'gates' || kind === 'hotel' || kind === 'office' || kind === 'cafe' || kind === 'shop';
+    const glazed = kind === 'hall' || kind === 'pier' || kind === 'mall' || kind === 'gates' || kind === 'hotel' || kind === 'office';
     shell(c, sc, b, h, wall, FLOOR[kind], glazed ? glass : null);
     const items = [];
     DRAW[kind]((x, y, fn) => items.push({ d: depthOf(x, y), fn }), c, sc, key, b);
