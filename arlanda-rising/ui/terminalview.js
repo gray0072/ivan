@@ -43,7 +43,7 @@ const TermView = (() => {
     if (!el) return;
     const parts = [];
     if (term !== 'kerb') {
-      parts.push(tr('About {n} passengers a day leave from here.', { n: Math.round(Invest.termPax(term)) }));
+      parts.push(tr('About {n} passengers a day leave from here.', { n: groupThousands(Invest.termPax(term)) }));
       if (S.ops) parts.push(tr('Check-in: {a} min · security: {b} min', { a: Math.round(Passengers.wait()), b: Math.round(Passengers.secWait()) }));
     }
     const units = Terminal.units(term), rent = units.reduce((s, u) => s + (u.brand ? BRANDS[u.brand].rent : 0), 0);

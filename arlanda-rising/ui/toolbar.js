@@ -102,7 +102,7 @@ const Toolbar = (() => {
       const n = Airport.count(kind) + ((S.plan && S.plan.buys) || []).filter((x) => x.kind === kind).length;
       html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (full ? ' disabled' : '') + (S.money < bd.price && !conf ? ' data-poor="1"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
         Text.esc(conf ? tr('Buy?') : tr(bd.name)) + (n && (bd.shop || bd.parking) ? ' <em>×' + n + '</em>' : '') + '<small>' +
-        (full ? Text.esc(tr('Enough: one more would earn nothing')) : sek(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
+        (full ? Text.esc(tr('Enough: one more would earn nothing')) : sekBare(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
     }
     box.innerHTML = html;
   }

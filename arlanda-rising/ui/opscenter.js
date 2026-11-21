@@ -26,26 +26,26 @@ const OpsCenter = (() => {
   function render() {
     const p = $('opsCenter');
     let html = '<h1>🛠️ ' + Text.esc(tr('Ops Center')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p><table class="ops"><tr><th></th><th>' + Text.esc(tr('Level')) +
-      '</th><th>' + Text.esc(tr('Uptime')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' + Text.esc(tr('Readiness')) + '</th><th></th></tr>';
+      '</th><th>' + Text.esc(tr('Uptime')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' + Text.esc(tr('Readiness')) + '</th><th class="actCol"></th></tr>';
     for (const d of Object.keys(S.domains)) {
       const lv = S.domains[d] || 0, L = DOMAINS[d].levels[lv], r = S.sys && S.sys[d];
       const jobs = People.jobs(d), wage = jobs * STAFF_MONTH * (People.has(d) ? S.people.depts[d].wageX : 1);
-      const up = r && lv >= 2 && r.upMin + r.downMin > 0 ? Text.pct(r.upMin / (r.upMin + r.downMin)) + (r.fails ? ' · ' + tr('{n} failures', { n: r.fails }) : '') : '—';
+      const up = r && lv >= 2 && r.upMin + r.downMin > 0 ? Text.pct(r.upMin / (r.upMin + r.downMin)) + (r.fails ? ' · ' + (r.fails === 1 ? tr('1 failure') : tr('{n} failures', { n: r.fails })) : '') : '—';
       const ready = lv >= 2 ? Text.pct(r ? r.readiness : 1) : '—';
       let act = '';
       if (editable) {
         const next = DOMAINS[d].levels[lv + 1], why = Systems.cannot(d), unlocked = ((S.unlock || {})[d] || 0) >= lv + 1;
         if (next && !why && unlocked) {
-          if (lv === 0) act += '<button class="btn toggle" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire: {what}', { what: tr(next.name) })) + ' <small>' + sek(Systems.price(d)) + '</small></button>';
-          else act += '<button class="btn toggle" data-up="' + d + '" data-how="keep">' + Text.esc(tr('{what}, keep the team', { what: tr(next.name) })) + ' <small>' + sek(Systems.price(d, 'keep')) + '</small></button>' +
-            (lv === 1 ? '<button class="btn toggle" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('… let it go')) + ' <small>' + sek(Systems.price(d, 'layoff')) + '</small></button>' : '');
+          if (lv === 0) act += '<button class="btn toggle" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire: {what}', { what: tr(next.name) })) + ' <small>' + sekBare(Systems.price(d)) + '</small></button>';
+          else act += '<button class="btn toggle" data-up="' + d + '" data-how="keep">' + Text.esc(tr('{what}, keep the team', { what: tr(next.name) })) + ' <small>' + sekBare(Systems.price(d, 'keep')) + '</small></button>' +
+            (lv === 1 ? '<button class="btn toggle" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('… let it go')) + ' <small>' + sekBare(Systems.price(d, 'layoff')) + '</small></button>' : '');
         } else if (next && unlocked && why === 'room') act += '<small class="wait">' + Text.esc(tr('Needs the computer room')) + '</small>';
         else if (next && unlocked && why === 'hall') act += '<small class="wait">' + Text.esc(tr('Needs the baggage hall')) + '</small>';
         else if (next && unlocked && why === 'pads') act += '<small class="wait">' + Text.esc(tr('Needs the remote de-icing pads')) + '</small>';
-        if (lv >= 2 && r && r.readiness < 1) act += '<button class="btn toggle" data-drill="' + d + '">' + Text.esc(tr('Drill')) + ' <small>' + sek(DRILL_COST) + '</small></button>';
+        if (lv >= 2 && r && r.readiness < 1) act += '<button class="btn toggle" data-drill="' + d + '">' + Text.esc(tr('Drill')) + ' <small>' + sekBare(DRILL_COST) + '</small></button>';
       }
-      html += '<tr><td><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.dom(d)) + '</b><small>' + Text.esc(who(d)) + '</small></td><td>' + Text.esc(tr(L.name)) + '</td><td>' + Text.esc(up) +
-        '</td><td>' + sek(wage + (lv >= 2 ? L.month || 0 : 0)) + '</td><td>' + Text.esc(ready) + '</td><td class="acts">' + act + '</td></tr>';
+      html += '<tr><td><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.dom(d)) + '</b><small>' + Text.esc(who(d)) + '</small>' + (act ? '<div class="acts under">' + act + '</div>' : '') + '</td><td>' + Text.esc(tr(L.name)) + '</td><td>' + Text.esc(up) +
+        '</td><td>' + sekBare(wage + (lv >= 2 ? L.month || 0 : 0)) + '</td><td>' + Text.esc(ready) + '</td><td class="actCol">' + (act ? '<div class="acts">' + act + '</div>' : '') + '</td></tr>';
     }
     html += '</table>';
     const need = Systems.itNeed();

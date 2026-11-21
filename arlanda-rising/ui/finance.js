@@ -18,6 +18,9 @@ const FinanceUI = (() => {
     estate: 'Real estate', border: 'Passport booths', energy: 'Energy', biofuel: 'Biofuel', permit: 'Permit fines', deicing: 'De-icing fluid',
     stranded: 'Stranded passengers', overtime: 'Overtime' };
 
+  // the column's name, and "NPV" on a narrow screen (styles.css)
+  const npvHead = () => '<span class="long">' + Text.esc(tr('Net present value')) + '</span><span class="short">NPV</span>';
+
   function show(opts) {
     back = opts.back; editable = !!opts.edit;
     render();
@@ -30,16 +33,19 @@ const FinanceUI = (() => {
     const rows = keys.map((k) => {
       const a = b.in[k] || 0, o = b.out[k] || 0;
       inn += a; out += o;
-      return '<tr><td>' + Text.esc(tr(LINES[k] || k)) + '</td><td>' + (a ? sek(a) : '') + '</td><td>' + (o ? sek(o) : '') + '</td></tr>';
+      return '<tr><td>' + Text.esc(tr(LINES[k] || k)) + '</td><td>' + (a ? sekBare(a) : '') + '</td><td>' + (o ? sekBare(o) : '') + '</td></tr>';
     }).join('');
     return '<table class="books"><tr><th></th><th>' + Text.esc(tr('In')) + '</th><th>' + Text.esc(tr('Out')) + '</th></tr>' + rows +
-      '<tr class="sum"><td>' + Text.esc(tr('Result')) + '</td><td colspan="2" class="' + (inn - out < 0 ? 'neg' : 'pos') + '">' + sek(inn - out) + '</td></tr></table>';
+      '<tr class="sum"><td>' + Text.esc(tr('Result')) + '</td><td colspan="2" class="' + (inn - out < 0 ? 'neg' : 'pos') + '">' + sekBare(inn - out) + '</td></tr></table>';
   }
 
+  // a price in a table: bare, or a dash for what cost the airport nothing (built by the owner or a partner)
+  function price(v) { return v ? sekBare(v) : '—'; }
   function payback(m) {
+    if (!m.price) return '—';
     if (m.payback === null) return '<span class="neg">' + Text.esc(tr('never at today\'s traffic')) + '</span>';
     const n = Math.max(1, Math.round(m.payback));
-    return Text.esc(n <= 24 ? tr('{n} months', { n }) : tr('{n} years', { n: Text.num(n / 12, 1) }));
+    return Text.esc(n === 1 ? tr('1 month') : n <= 24 ? tr('{n} months', { n }) : tr('{n} years', { n: Text.num(n / 12, 1) }));
   }
 
   function render() {
@@ -61,11 +67,11 @@ const FinanceUI = (() => {
     if (!list.length) html += '<p class="fine">' + Text.esc(tr('Nothing that earns yet: shops, car parks, systems and the train show here.')) + '</p>';
     else {
       html += '<table class="ops inv"><tr><th></th><th>' + Text.esc(tr('Price')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' + Text.esc(tr('Pays back')) + '</th>' +
-        (details ? '<th>' + Text.esc(tr('Net present value')) + '</th>' : '') + '</tr>' +
+        (details ? '<th>' + npvHead() + '</th>' : '') + '</tr>' +
         list.map((x) => '<tr><td><b>' + Text.esc(x.key === 'brand' ? x.name : tr(x.name)) + '</b>' + (x.key === 'brand' ? '<small>' + Text.esc(tr(TERMINALS[x.term].name)) + '</small>' : '') +
-          (x.key === 'system' ? '<small>' + Text.esc(Text.dom(x.dom)) + '</small>' : '') + '</td><td>' + sek(x.price) + '</td><td class="' + (x.net < 0 ? 'neg' : 'pos') + '">' + sek(x.net) +
-          (details ? '<small>' + Text.esc(tr('{a} in, {b} out', { a: sek(x.in), b: sek(x.out) })) + '</small>' : '') + '</td><td>' + payback(x) + '</td>' +
-          (details ? '<td class="' + (x.npv < 0 ? 'neg' : 'pos') + '">' + sek(x.npv) + '</td>' : '') + '</tr>').join('') + '</table>';
+          (x.key === 'system' ? '<small>' + Text.esc(Text.dom(x.dom)) + '</small>' : '') + '</td><td>' + price(x.price) + '</td><td class="' + (x.net < 0 ? 'neg' : 'pos') + '">' + sekBare(x.net) +
+          (details ? '<small>' + Text.esc(tr('{a} in, {b} out', { a: sekBare(x.in), b: sekBare(x.out) })) + '</small>' : '') + '</td><td>' + payback(x) + '</td>' +
+          (details ? '<td class="' + (x.npv < 0 ? 'neg' : 'pos') + '">' + sekBare(x.npv) + '</td>' : '') + '</tr>').join('') + '</table>';
     }
     html += '<p class="fine">' + Text.esc(tr('Payback is the price divided by what it earns a month, from the last 30 days of traffic.')) + '</p>';
     html += '<button class="btn toggle details" data-details="1">' + Text.esc(details ? tr('Hide the details') : tr('Details: net present value and what-ifs')) + '</button>';
@@ -73,9 +79,9 @@ const FinanceUI = (() => {
       html += '<p class="fine">' + Text.esc(tr('The net present value adds up {y} years of what it earns, each year counted {r} % less than the one before — money later is worth less than money now. Above zero, it is worth more than it costs.', { y: NPV_YEARS, r: Math.round(NPV_RATE * 100) })) + '</p>';
       const kinds = ['parkingSmall', 'parkingBig', 'cafe', 'restaurant', 'dutyFree', 'lane', 'busStop', 'offices', 'hotelExt', 'solar'].filter((k) => BUILDINGS[k] && (!BUILDINGS[k].from || Calendar.year() >= BUILDINGS[k].from));
       html += '<p class="label">' + Text.esc(tr('What if you built…')) + '</p><table class="ops inv"><tr><th></th><th>' + Text.esc(tr('Price')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' +
-        Text.esc(tr('Pays back')) + '</th><th>' + Text.esc(tr('Net present value')) + '</th></tr>' + kinds.map((k) => {
+        Text.esc(tr('Pays back')) + '</th><th>' + npvHead() + '</th></tr>' + kinds.map((k) => {
         const m = Invest.whatIf(k);
-        return '<tr><td>' + Text.esc(tr(BUILDINGS[k].name)) + '</td><td>' + sek(m.price) + '</td><td class="' + (m.net < 0 ? 'neg' : 'pos') + '">' + sek(m.net) + '</td><td>' + payback(m) + '</td><td class="' + (m.npv < 0 ? 'neg' : 'pos') + '">' + sek(m.npv) + '</td></tr>';
+        return '<tr><td>' + Text.esc(tr(BUILDINGS[k].name)) + '</td><td>' + price(m.price) + '</td><td class="' + (m.net < 0 ? 'neg' : 'pos') + '">' + sekBare(m.net) + '</td><td>' + payback(m) + '</td><td class="' + (m.npv < 0 ? 'neg' : 'pos') + '">' + sekBare(m.npv) + '</td></tr>';
       }).join('') + '</table>';
     }
     p.innerHTML = html;
@@ -105,7 +111,7 @@ const FinanceUI = (() => {
     vals.forEach((v, i) => (i ? c.lineTo(X(i), Y(v)) : c.moveTo(X(i), Y(v))));
     c.stroke();
     c.fillStyle = '#c9d1d9'; c.font = '10px Arial'; c.textAlign = 'right';
-    c.fillText(money(hi, true), 58, Y(hi) + 4); c.fillText(money(lo, true), 58, Y(lo));
+    c.fillText(moneyBare(hi), 58, Y(hi) + 4); c.fillText(moneyBare(lo), 58, Y(lo));
     c.textAlign = 'left';
     const first = hist[0].month, lastM = hist[hist.length - 1].month;
     c.fillText((first % 12 + 1) + '/' + Math.floor(first / 12), 62, h - 4);

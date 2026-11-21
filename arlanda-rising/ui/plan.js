@@ -32,7 +32,7 @@ const PlanUI = (() => {
     const p = PROJECTS[pid].stages[sid];
     const days = Math.round((p.days + st.extra) * PACE[st.on ? st.pace : 'normal'].time);
     return '<div class="stageRow' + (st.done ? ' isDone' : '') + '"><div class="sn"><b>' + Text.esc(tr(p.name)) + (p.optional ? ' <em>' + Text.esc(tr('optional')) + '</em>' : '') + '</b>' +
-      '<small>' + tr('{n} days', { n: days }) + ' · ' + sek(p.price * PACE[st.on ? st.pace : 'normal'].cost) + '</small></div><div class="sr">' + right + '</div></div>';
+      '<small>' + tr('{n} days', { n: days }) + ' · ' + sekBare(p.price * PACE[st.on ? st.pace : 'normal'].cost) + '</small></div><div class="sr">' + right + '</div></div>';
   }
 
   function render() {
@@ -55,7 +55,7 @@ const PlanUI = (() => {
         html += '<div class="mods">' + mods.map((mid) => {
           const md = def.mods[mid], has = p.mods[mid];
           return '<button class="tb small' + (has ? ' on' : '') + '" data-mod="' + mid + '" data-p="' + pid + '"' + (has ? ' disabled' : '') + '>' + (has ? '✓ ' : '+ ') +
-            Text.esc(tr(md.name)) + '<small>' + sek(md.price) + '</small></button>';
+            Text.esc(tr(md.name)) + '<small>' + sekBare(md.price) + '</small></button>';
         }).join('') + '</div>';
       }
       const grants = S.mission.grants || [];
@@ -71,8 +71,8 @@ const PlanUI = (() => {
     }
     const room = Math.max(0, (S.loanLimit || 0) - S.loans);
     html += '<div class="fin"><span>' + Text.esc(tr('Loans: {m}', { m: sek(S.loans) })) + '</span>' +
-      '<button class="tb small" data-loan="borrow"' + (room <= 0 ? ' disabled' : '') + '>+' + sek(Math.min(LOAN_STEP, room) || LOAN_STEP) + '</button>' +
-      '<button class="tb small" data-loan="repay"' + (S.loans <= 0 || S.money <= 0 ? ' disabled' : '') + '>−' + sek(Math.min(LOAN_STEP, S.loans) || LOAN_STEP) + '</button></div>';
+      '<button class="tb small" data-loan="borrow"' + (room <= 0 ? ' disabled' : '') + '>+' + sekBare(Math.min(LOAN_STEP, room) || LOAN_STEP) + '</button>' +
+      '<button class="tb small" data-loan="repay"' + (S.loans <= 0 || S.money <= 0 ? ' disabled' : '') + '>−' + sekBare(Math.min(LOAN_STEP, S.loans) || LOAN_STEP) + '</button></div>';
     box.innerHTML = html;
   }
 
@@ -92,11 +92,11 @@ const PlanUI = (() => {
       else if (why === 'hall') right = '<span class="wait">' + Text.esc(tr('Needs the baggage hall')) + '</span>';
       else if (why === 'pads') right = '<span class="wait">' + Text.esc(tr('Needs the remote de-icing pads')) + '</span>';
       else if (why) right = '';
-      else if (next === 1) right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire')) + '<small>' + sek(Systems.price(d)) + '</small></button>';
-      else right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Keep the team')) + '<small>' + sek(Systems.price(d, 'keep')) + '</small></button>' +
-        '<button class="tb small" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('Let it go')) + '<small>' + sek(Systems.price(d, 'layoff')) + '</small></button>';
+      else if (next === 1) right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire')) + '<small>' + sekBare(Systems.price(d)) + '</small></button>';
+      else right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Keep the team')) + '<small>' + sekBare(Systems.price(d, 'keep')) + '</small></button>' +
+        '<button class="tb small" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('Let it go')) + '<small>' + sekBare(Systems.price(d, 'layoff')) + '</small></button>';
       html += '<div class="stageRow"><div class="sn"><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.level(d, next)) + '</b><small>' + Text.esc(Text.dom(d)) +
-        (L.staff ? ' · ' + Text.esc(tr('{n} jobs', { n: L.staff })) : '') + (L.month ? ' · ' + Text.esc(tr('{m} a month', { m: sek(L.month) })) : '') + (L.it ? ' · ' + Text.esc(tr('{n} IT people', { n: L.it })) : '') + '</small></div><div class="sr">' + right + '</div></div>';
+        (L.staff ? ' · ' + Text.esc(Text.jobs(L.staff)) : '') + (L.month ? ' · ' + Text.esc(tr('{m} a month', { m: sekBare(L.month) })) : '') + (L.it ? ' · ' + Text.esc(tr('{n} IT people', { n: L.it })) : '') + '</small></div><div class="sr">' + right + '</div></div>';
     }
     const need = Systems.itNeed();
     if (need || (S.people && S.people.it)) {

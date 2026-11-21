@@ -53,9 +53,20 @@ const TermArt = (() => {
       c.beginPath(); c.arc(x, y, 2.6, 0, Math.PI * 2); c.fill();
     }
   }
-  function label(c, text, x, y, color, size, align) {
-    c.fillStyle = color || C.text; c.font = '600 ' + (size || 12) + 'px Arial, sans-serif'; c.textAlign = align || 'center'; c.textBaseline = 'middle';
-    c.fillText(text, x, y);
+  // a label, kept inside the canvas (a narrow phone cuts nothing off) and squeezed to `maxW` when given
+  function label(c, text, x, y, color, size, align, maxW) {
+    c.fillStyle = color || C.text; c.font = '600 ' + (size || 12) + 'px Arial, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+    const W = c.canvas.clientWidth || c.canvas.width, w = Math.min(c.measureText(text).width, maxW || Infinity);
+    let x0 = align === 'left' ? x : align === 'right' ? x - w : x - w / 2;
+    x0 = Math.max(2, Math.min(W - 2 - w, x0));
+    c.fillText(text, x0, y, maxW);
+  }
+  // a label on a pale backing, readable over the people and the walls
+  function tag(c, text, x, y, size) {
+    c.font = '600 ' + size + 'px Arial, sans-serif';
+    const w = c.measureText(text).width + 8;
+    c.fillStyle = 'rgba(244,240,232,0.85)'; BrandArt.round(c, x - w / 2, y - size / 2 - 2, w, size + 4, 4); c.fill();
+    label(c, text, x, y, C.dim, size);
   }
   function waitTag(c, min, x, y) {
     const m = Math.round(min), col = m >= 15 ? C.queue : m >= 6 ? '#e0a020' : '#3a8f4b';
@@ -86,13 +97,13 @@ const TermArt = (() => {
     const zone = (sv, en, x) => { label(c, sv, x, 9, C.dim, fs - 1); label(c, en, x, 22, C.text, fs); };
     zone('Incheckning', 'Check-in', (X[1] + X[2]) / 2);
     zone('Säkerhet', 'Security', (X[2] + X[3]) / 2);
-    label(c, tr(def.name), (X[3] + X[4]) / 2, 16, C.text, fs);
+    label(c, tr(def.name), (X[3] + X[4]) / 2, 16, C.text, fs, 'center', X[4] - X[3] - 4);
     zone('Utgång', 'Gates', (X[4] + W) / 2);
     // the kerb: coaches, taxis, the train
     const kx = X[1] * 0.27;
     if (Airport.has('busStop')) { c.fillStyle = '#e8e8e8'; c.fillRect(kx - 9, top + 20, 18, 46); label(c, 'Flygbussarna', kx, top + 76, C.dim, 9); }
     c.fillStyle = '#f2c230'; for (let i = 0; i < 3; i++) c.fillRect(kx - 7, top + 100 + i * 26, 14, 20);
-    if (Terminal.trainRuns()) { c.fillStyle = '#f7d117'; c.fillRect(X[1] * 0.6, bot - 60, 10, 52); label(c, 'Arlanda Express', X[1] * 0.78, bot - 70, C.dim, 9); }
+    if (Terminal.trainRuns()) { c.fillStyle = '#f7d117'; c.fillRect(X[1] * 0.6, bot - 60, 10, 52); tag(c, 'Arlanda Express', X[1] * 0.78, bot - 70, 9); }
     // check-in: the desks along the far wall, the open ones lit; the queue in front
     const desks = S.airport.desks, open = S.ops ? S.ops.desksOpen : Math.round(desks * 0.5);
     const share = term === 'intl' ? 0.5 : term === 't2' ? 0.25 : 0.35, nd = Math.max(2, Math.min(14, Math.round(desks * share))), on = Math.max(0, Math.min(nd, Math.round(open * share)));
@@ -114,7 +125,7 @@ const TermArt = (() => {
       }
       people(c, cr.sec, X[2] + 6, top + 30, X[3] - 34, bot - 10, 's' + term, t, true);
       if (S.ops) waitTag(c, Passengers.secWait(), (X[2] + X[3]) / 2 - 10, top + 24);
-      label(c, tr('{n} lanes', { n: lanes }), (X[2] + X[3]) / 2, bot - 4, C.dim, 10);
+      tag(c, tr('{n} lanes', { n: lanes }), (X[2] + X[3]) / 2, bot - 12, 10);
     } else label(c, tr('No security check yet'), (X[2] + X[3]) / 2, (top + bot) / 2, C.dim, 10);
     // session 5: the passport booths after security, for the flights outside Schengen
     if (Terminal.borderOn() && (term === 'intl' || term === 't2')) {
@@ -123,7 +134,7 @@ const TermArt = (() => {
         c.fillStyle = i < open ? '#2f5f8f' : '#a9b3bd';
         c.fillRect(X[3] + 12 + i * 16, by, 12, 14);
       }
-      label(c, 'Passkontroll · ' + tr('Passport control'), X[3] + 12 + nb * 8, by - 8, C.dim, 9);
+      tag(c, 'Passkontroll · ' + tr('Passport control'), X[3] + 12 + nb * 8, by - 10, 9);
       if (S.ops) waitTag(c, Passengers.borderWait() > 99 ? 99 : Passengers.borderWait(), X[3] + 24 + nb * 16, by + 7);
     }
     // airside: the shop units above and below the walk
@@ -138,8 +149,8 @@ const TermArt = (() => {
         else {
           c.fillStyle = 'rgba(255,255,255,0.5)'; c.fillRect(x, y, w, h);
           c.setLineDash([4, 3]); c.strokeStyle = C.dim; c.lineWidth = 1; c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1); c.setLineDash([]);
-          label(c, w < 90 ? 'Ledig' : 'Ledig · ' + tr('To let'), x + w / 2, y + h / 2 - 5, C.dim, Math.min(10, fs));
-          label(c, tr({ kiosk: 'kiosk', unit: 'unit', big: 'big unit' }[u.size]), x + w / 2, y + h / 2 + 9, C.dim, Math.min(9, fs - 1));
+          label(c, w < 90 ? 'Ledig' : 'Ledig · ' + tr('To let'), x + w / 2, y + h / 2 - 5, C.dim, Math.min(10, fs), 'center', w - 4);
+          label(c, tr({ kiosk: 'kiosk', unit: 'unit', big: 'big unit' }[u.size]), x + w / 2, y + h / 2 + 9, C.dim, Math.min(9, fs - 1), 'center', w - 4);
         }
         if (sel === u.id) { c.strokeStyle = '#ffd65a'; c.lineWidth = 3; c.strokeRect(x - 2, y - 2, w + 4, h + 4); }
         hits.push({ id: u.id, x, y, w, h });
@@ -153,7 +164,7 @@ const TermArt = (() => {
     list.forEach((g, i) => {
       const y = top + 16 + i * ((bot - top - 20) / 5), h = (bot - top - 20) / 5 - 8;
       c.fillStyle = C.gate; c.fillRect(X[4] + 6, y, W - X[4] - 12, h);
-      label(c, g.f.no + ' · ' + fmtClock(g.f.std), X[4] + 12, y + 10, C.text, 11, 'left');
+      label(c, g.f.no + ' · ' + fmtClock(g.f.std), X[4] + 12, y + 10, C.text, 11, 'left', W - X[4] - 18);
       people(c, g.n, X[4] + 12, y + 18, W - 16, y + h - 4, 'g' + g.f.id, t, false);
     });
     if (!list.length) for (let i = 0; i < 4; i++) { const y = top + 20 + i * 80; c.fillStyle = C.gate; c.fillRect(X[4] + 6, y, W - X[4] - 12, 60); label(c, String(i + 1), X[4] + 16, y + 10, C.dim, 11); }

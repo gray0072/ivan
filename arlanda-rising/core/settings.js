@@ -26,3 +26,6 @@ const Settings = (() => {
 
 // every sum on the screens: full or short by the setting
 function sek(v) { return money(v, Settings.short()); }
+// a sum where room is short — a table's cell, a price on a button, a chart's axis: the same number without the
+// currency ("1.2 M", "45 k", "1,2 млн" short; "1 200 000" in full). Sentences and the big sums keep sek().
+function sekBare(v) { return Settings.short() ? moneyBare(v) : groupThousands(v); }

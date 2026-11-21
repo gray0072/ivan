@@ -31,12 +31,12 @@ const PeopleUI = (() => {
         const jobs = People.jobs(id);
         if (!jobs) continue;
         const d = pp.depts[id], m = pp.managers[id];
-        html += '<div class="ocard"><h3>' + Text.esc(Text.dept(id)) + ' <small>' + Text.esc(tr('{n} jobs', { n: jobs })) + '</small></h3>' +
+        html += '<div class="ocard"><h3>' + Text.esc(Text.dept(id)) + ' <small>' + Text.esc(Text.jobs(jobs)) + '</small></h3>' +
           '<p class="kv">' + Text.esc(tr('Morale')) + ' ' + bar(d.morale) + ' <b>' + Math.round(d.morale) + '</b></p>' +
           '<p class="kv">' + Text.esc(tr('Skill')) + ' ' + bar(d.skill) + ' <b>' + Math.round(d.skill) + '</b></p>' +
           '<p class="kv">' + Text.esc(tr('Fatigue')) + ' ' + bar(100 - d.fatigue) + ' <b>' + Math.round(d.fatigue) + '</b></p>' +
           '<p>' + Text.esc(tr('Away today: {p}', { p: Text.pct(People.absence(id)) })) + (d.temps > S.day ? ' · ' + Text.esc(tr('temps until {d}', { d: fmtDate(d.temps) })) : '') + '</p>' +
-          '<p>' + Text.esc(tr('Wages: {m} a month', { m: sek(jobs * (id === 'it' ? IT_JOB : STAFF_MONTH) * d.wageX) })) + (d.wageX > 1.001 ? ' (+' + Math.round((d.wageX - 1) * 100) + ' %)' : '') + '</p>' +
+          '<p>' + Text.esc(tr('Wages: {m} a month', { m: sek(jobs * (id === 'it' ? IT_JOB : STAFF_MONTH) * d.wageX) })) + (d.wageX > 1.001 ? ' (+' + Math.round((d.wageX - 1) * 100) + ' %)' : '') + '</p>' +
           '<p>✊ ' + Text.esc(tr((DEPTS[id] || {}).union || '')) + ': ' + Text.esc(tr('mood {m}, next round {d}', { m: Math.round(d.union.mood), d: fmtDate(d.union.next) })) + '</p>';
         if (pp.strike && pp.strike.dept === id) html += '<p class="warn">' + Text.esc(tr('Strike notice: from {d}', { d: fmtDate(pp.strike.from) })) + '</p>';
         // session 6: furlough, jobs gone, new people on their way
@@ -52,8 +52,8 @@ const PeopleUI = (() => {
         }
         if (editable) {
           html += '<div class="btnRow small">' +
-            (d.skill < SKILL_MAX ? '<button class="btn toggle" data-train="' + id + '">🎓 ' + Text.esc(tr('Course')) + ' <small>' + sek(TRAIN_COST * jobs) + '</small></button>' : '') +
-            (id !== 'it' && !(d.temps > S.day) ? '<button class="btn toggle" data-temps="' + id + '">🧑‍🔧 ' + Text.esc(tr('Temps')) + ' <small>' + sek(TEMPS_JOB * People.tempJobs(id)) + ' / ' + Text.esc(tr('month')) + '</small></button>' : '') +
+            (d.skill < SKILL_MAX ? '<button class="btn toggle" data-train="' + id + '">🎓 ' + Text.esc(tr('Course')) + ' <small>' + sekBare(TRAIN_COST * jobs) + '</small></button>' : '') +
+            (id !== 'it' && !(d.temps > S.day) ? '<button class="btn toggle" data-temps="' + id + '">🧑‍🔧 ' + Text.esc(tr('Temps')) + ' <small>' + sekBare(TEMPS_JOB * People.tempJobs(id)) + ' / ' + Text.esc(tr('month')) + '</small></button>' : '') +
             '</div>';
         }
         html += '</div>';

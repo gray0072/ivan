@@ -304,7 +304,11 @@ ul.goals.plain li::before { content: '•'; color: var(--accent); }
 table.books { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 table.books th { color: var(--dim); font-weight: 500; text-align: right; }
 table.books td { text-align: right; padding: 2px 0 2px 6px; white-space: nowrap; }
-table.books td:first-child { text-align: left; padding-left: 0; }
+table.books td:first-child { text-align: left; padding-left: 0; white-space: normal; }
+/* a card in the grid may shrink below its longest word's line (a Russian line of the books), never stick out */
+.ocard { min-width: 0; }
+/* the tables of the screens break a long word with a hyphen rather than grow past a phone's width (<html lang> set) */
+table.ops td, table.ops th, table.books td { hyphens: auto; overflow-wrap: break-word; }
 ul.has { margin: 0; padding-left: 18px; }
 
 /* phones */
@@ -343,11 +347,34 @@ table.ops { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.ops th { text-align: left; font-weight: 600; opacity: 0.7; padding: 4px 6px; }
 table.ops td { padding: 6px; border-top: 1px solid var(--line); vertical-align: top; }
 table.ops td small { display: block; opacity: 0.7; font-size: 11.5px; }
-table.ops td.acts { display: flex; flex-wrap: wrap; gap: 4px; }
+table.ops .acts { display: flex; flex-wrap: wrap; gap: 4px; }
+table.ops .acts.under { display: none; }
 table.ops .btn small, .ocard .btn small { opacity: 0.75; font-size: 11px; }
 .tgroup.warnGroup .tl { color: #f0c36a; }
 .opt .mgr { font-size: 12px; opacity: 0.85; line-height: 1.35; }
-@media (max-width: 640px) { table.ops th:nth-child(3), table.ops td:nth-child(3), table.ops th:nth-child(5), table.ops td:nth-child(5) { display: none; } }
+/* a narrow screen: the Ops Center drops its uptime and readiness; the investments keep every column, packed tighter */
+@media (max-width: 640px) {
+  #opsCenter table.ops th:nth-child(3), #opsCenter table.ops td:nth-child(3), #opsCenter table.ops th:nth-child(5), #opsCenter table.ops td:nth-child(5) { display: none; }
+  #opsCenter table.ops { font-size: 12px; }
+  #opsCenter table.ops td, #opsCenter table.ops th { padding: 5px 4px; }
+  #opsCenter table.ops td:nth-child(-n+2) { overflow-wrap: anywhere; min-width: 7em; }
+  #opsCenter table.ops th:nth-child(4), #opsCenter table.ops td:nth-child(4) { white-space: nowrap; }
+  /* the buttons under the area's name, not in a column of their own */
+  #opsCenter .actCol { display: none; }
+  #opsCenter .acts.under { display: flex; margin-top: 5px; }
+  table.inv { font-size: 12px; }
+  table.inv th, table.inv td { padding: 5px 2px; }
+  table.inv td:first-child { padding-left: 0; }
+  table.inv td small { font-size: 10.5px; }
+  /* a long word may break, an ordinary one keeps its column's least width; the sums never break */
+  table.inv td:first-child { overflow-wrap: anywhere; min-width: 7.2em; }
+  table.inv td:nth-child(4) { overflow-wrap: anywhere; min-width: 5.6em; }
+  table.inv th:nth-child(-n+3), table.inv td:nth-child(2), table.inv td:nth-child(3), table.inv td:nth-child(5) { white-space: nowrap; }
+  table.inv td small { white-space: normal; }
+}
+/* the net present value's column: its name, or "NPV" where it would make the table wider than the screen */
+table.inv th .short { display: none; }
+@media (max-width: 640px) { table.inv th .long { display: none; } table.inv th .short { display: inline; } }
 
 /* the start screen's account row: the cloud copy of the save (core/cloud.js) */
 .account { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 10px; margin: 12px auto 0; max-width: 420px; }
@@ -384,5 +411,4 @@ table.books tr.sum td { border-top: 1px solid var(--line); font-weight: 700; pad
 .btn.details { margin: 6px 0; }
 .score { text-align: center; font-size: 26px; font-weight: 700; margin: 0 0 6px; color: var(--accent); }
 table.parts { max-width: 420px; margin: 6px auto; }
-@media (max-width: 640px) { table.inv th:nth-child(2), table.inv td:nth-child(2) { display: none; } }
 .cvWrap { width: 100%; }

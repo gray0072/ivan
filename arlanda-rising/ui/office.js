@@ -47,7 +47,7 @@ const Office = (() => {
         hist.map((x) => {
           const inn = Object.values(x.in).reduce((a, b) => a + b, 0), out = Object.values(x.out).reduce((a, b) => a + b, 0);
           const y = Math.floor(x.month / 12), mo = x.month % 12;
-          return '<tr><td>' + (mo + 1) + '/' + String(y).slice(2) + '</td><td>' + sek(inn) + '</td><td>' + sek(out) + '</td><td class="' + (inn - out < 0 ? 'neg' : 'pos') + '">' + sek(inn - out) + '</td></tr>';
+          return '<tr><td>' + (mo + 1) + '/' + String(y).slice(2) + '</td><td>' + sekBare(inn) + '</td><td>' + sekBare(out) + '</td><td class="' + (inn - out < 0 ? 'neg' : 'pos') + '">' + sekBare(inn - out) + '</td></tr>';
         }).join('') + '</table></div>';
     }
     // what the airport has
@@ -81,7 +81,7 @@ const Office = (() => {
       for (const t of closable) {
         const m = w.airport.mothballed && w.airport.mothballed[t], closed = Terminal.mothballed(t);
         html += '<li>' + Text.esc(tr(TERMINALS[t].name)) + ': <b>' + Text.esc(closed ? (m === true ? tr('mothballed') : tr('opens {d}', { d: fmtDate(m) })) : tr('open')) + '</b> ' +
-          (m === true ? '<button class="btn toggle" data-term="reopen" data-t="' + t + '">' + Text.esc(tr('Open again')) + ' <small>' + sek(REOPEN_COST) + '</small></button>' :
+          (m === true ? '<button class="btn toggle" data-term="reopen" data-t="' + t + '">' + Text.esc(tr('Open again')) + ' <small>' + sekBare(REOPEN_COST) + '</small></button>' :
             !closed ? '<button class="btn toggle" data-term="mothball" data-t="' + t + '">' + Text.esc(tr('Mothball')) + '</button>' : '') + '</li>';
       }
       html += '</ul></div>';

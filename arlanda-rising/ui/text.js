@@ -155,7 +155,9 @@ const Text = {
   manager(id) { const m = MANAGERS[id]; return m ? m.face + ' ' + m.name : id; },
   // a manager's two strengths and the flaw, as lines
   managerLines(id) { const m = MANAGERS[id]; return m ? m.good.map((g) => '＋ ' + tr(g)).concat(['− ' + tr(m.bad)]) : []; },
-  pct(v) { return Math.round(v * 100) + ' %'; },
+  // "1 job", "6 jobs"
+  jobs(n) { return n === 1 ? tr('1 job') : tr('{n} jobs', { n }); },
+  pct(v) { return Math.round(v * 100) + '\u00a0%'; },
 
   flightState(f) {
     switch (f.st) {

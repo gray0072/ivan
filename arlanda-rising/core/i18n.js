@@ -68,7 +68,8 @@ function tr(s, params) {
     if (t && Object.prototype.hasOwnProperty.call(t, out)) out = t[out];
   }
   if (params) out = out.replace(/\{(\w+)\}/g, (all, k) => (params[k] !== undefined ? params[k] : all));
-  return out;
+  // a number and its % never part at a line's end
+  return out.replace(/ %/g, '\u00a0%');
 }
 
 // a date in the current language: "14 December 1959"
