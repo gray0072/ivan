@@ -2195,3 +2195,17 @@ Object.assign(TEXT_RU, {
   "A fuel truck: it drives from the depot to an aircraft at its stand, fills the tanks in the wing and drives back.": "Топливозаправщик: едет с базы к самолёту на стоянке, заливает топливо в баки в крыле и возвращается.",
   "A snowplough with a wide blade and a brush. The ploughs sweep a runway together, in a staggered convoy; one of them takes the apron.": "Снегоочиститель с широким отвалом и щёткой. Полосу машины чистят вместе, уступом; одна из них берёт на себя перрон."
 });
+
+// the vehicles' limits (Airport.cap): the build buttons and the cards
+Object.assign(TEXT_RU, {
+  "Max: one per stand": "Максимум: 1 на стоянку",
+  "Max: a convoy per runway": "Максимум: колонна на полосу",
+  "Max: fire category {n}": "Максимум: пожарная категория {n}",
+  "An aircraft takes one fuel truck at a time: one per stand is the most worth having ({n} stands).": "Самолёт заправляет один топливозаправщик за раз: больше одного на стоянку не нужно (стоянок: {n}).",
+  "An aircraft takes one de-icing truck at a time: one per stand is the most worth having ({n} stands).": "Самолёт обрабатывает одна машина антиобледенения за раз: больше одной на стоянку не нужно (стоянок: {n}).",
+  "A convoy of {c} ploughs sweeps a runway; with a convoy for each runway they all sweep at once ({n} runways).": "Колонна из {c} снегоочистителей чистит одну полосу; с колонной на каждую полосу все полосы чистятся сразу (полос: {n}).",
+  "Each crash tender raises the fire category by one, from {base} up to {top}: {max} tenders are the most worth having.": "Каждая пожарная машина поднимает пожарную категорию на одну, с {base} до {top}: больше {max} машин не нужно.",
+  "{n} of {max} worth having": "{n} из {max} полезных",
+  "Fuel trucks": "Заправщики",
+  "Snowploughs": "Снегоочистители"
+});

@@ -3,7 +3,8 @@
 // Arlanda Rising — the card of a building or a vehicle tapped on the map: what it is (data/sites.js), whether it stands,
 // is being built or is closed, its main numbers (size, jobs, upkeep or rent) and what it is doing now — a terminal's
 // passengers at check-in, at security, airside and at the gates, its desks and lanes, its brands; the tower's runway and
-// movements; the fire category; the bags; the systems; and for a fuel truck or a snowplough where it is and what it did
+// movements; the fire category and the crash tenders of the most worth having; the bags; the systems; and for a fuel
+// truck or a snowplough where it is, how many the airport has of the most worth having (Airport.cap) and what it did
 // this stage and since the airport opened (sim/fleet.js). Refreshed while it is open; the building or the vehicle is
 // ringed on the map (MapView.view). Used by game.js.
 
@@ -123,7 +124,7 @@ const SiteCard = (() => {
       }
       case 'fire':
         h += row(tr('Fire category'), String(Airport.fireCat()));
-        h += row(tr('Crash tenders bought'), String(Airport.count('crashTender')));
+        h += row(tr('Crash tenders bought'), worth('crashTender'));
         break;
       case 'bags':
         if (S.domains.baggage !== undefined) h += row(tr('Baggage'), Text.level('baggage', S.domains.baggage));
@@ -155,6 +156,9 @@ const SiteCard = (() => {
     return h;
   }
 
+  // how many of a vehicle the airport has of the most worth having (Airport.cap): "3 of 6 worth having"
+  function worth(kind) { const cap = Airport.cap(kind); return tr('{n} of {max} worth having', { n: Airport.owned(kind), max: cap.max }); }
+
   // ---------- a vehicle ----------
   function vehicle(kind, i) {
     const d = SITES[kind === 'fuel' ? 'fuelTruck' : 'plough'], B = BUILDINGS[d.item];
@@ -165,6 +169,7 @@ const SiteCard = (() => {
       st = !w ? tr('At the depot, ready') : w.step === 'to' ? tr('Driving to {flight}', { flight: w.f.no }) : w.step === 'fuel' ? tr('Fuelling {flight}', { flight: w.f.no }) : tr('Driving back to the depot');
       const me = now.trucks[i] || { n: 0, l: 0 }, ever = all.trucks[i] || { n: 0, l: 0 };
       html = head(d.icon, tr(B.name) + ' ' + (i + 1), st) + '<p class="about">' + Text.esc(tr(d.about)) + '</p><table>';
+      html += row(tr('Fuel trucks'), worth('fuelTruck'));
       if (S.ops) {
         html += section(tr('This stage'));
         html += row(tr('Aircraft fuelled'), String(me.n)) + row(tr('Fuel pumped'), litres(me.l));
@@ -178,6 +183,7 @@ const SiteCard = (() => {
       st = !w ? tr('At the shed, ready') : tr('Sweeping: {surface}, {p} done', { surface: Text.surface(w.id), p: Text.pct(w.q) });
       const me = now.ploughs[i] || { runs: 0, m2: 0, m3: 0 }, ever = all.ploughs[i] || { runs: 0, m2: 0, m3: 0 };
       html = head(d.icon, tr(B.name) + ' ' + (i + 1), st) + '<p class="about">' + Text.esc(tr(d.about)) + '</p><table>';
+      html += row(tr('Snowploughs'), worth('plough'));
       if (S.ops) {
         html += section(tr('This stage'));
         html += row(tr('Runs'), String(me.runs)) + row(tr('Swept'), m2(Math.round(me.m2))) + row(tr('Snow moved'), m3(Math.round(me.m3)));

@@ -1,7 +1,8 @@
 'use strict';
 
 // Arlanda Rising — the airport on the map: runway 1 with its markings, snow and lights; the parallel taxiway and its
-// links; the first apron with its stands and the remote stands bought later; and the buildings as they stand —
+// links; the first apron with its stands and the remote stands bought later; the ploughs' standing and the fuel
+// trucks' yard by the fire station (and where each vehicle waits: fuelSpot, ploughSpot); and the buildings as they stand —
 // or as far as they are built (the master plan's projects show their stages: a slab, walls going up, a crane;
 // a project open but not started shows its plot outlined). Flat things are drawn by `flat`, standing ones are
 // handed to render/map.js as objects to sort; lamps go to the scene's light list (drawn after the dark). With the roofs
@@ -44,6 +45,28 @@ const AirportArt = (() => {
     const e = standEntry(i), A = LAYOUT.apron1;
     const y = Math.min(Math.max(e[1], A.y0 + 12), A.y1 - 12), x = Math.max(e[0], A.x0 + 12);
     return [[e[0] + 6, e[1]], [e[0], e[1]], [e[0], y]].concat(x !== e[0] ? [[x, y]] : []);
+  }
+  // the fuel trucks wait by the first apron's north edge (LAYOUT.fuelDepot) until the jet apron is begun, which paves
+  // that place over; from then on in their own yard by the fire station (LAYOUT.fuelYard)
+  function fuelYardOn() { const pr = S.airport.projects.apron2, st = pr && pr.stages.pave; return !!(st && st.p > 0); }
+  // where fuel truck i waits: [x, y], or null when the yard's rows are full (it is not drawn at rest then)
+  function fuelSpot(i) {
+    if (!fuelYardOn()) return [LAYOUT.fuelDepot.x + i * 5, LAYOUT.fuelDepot.y];
+    const Y = LAYOUT.fuelYard, r = Math.floor(i / Y.cols);
+    return r < Y.rows.length ? [Y.x + (i % Y.cols) * Y.dx, Y.rows[r]] : null;
+  }
+  // a fuel truck's way from where it waits to the edge of the aprons: out of its bay to the yard's aisle and east along
+  // its lane onto the jet apron (before the yard: just its place by the first apron)
+  function fuelWayOut(i) {
+    const Y = LAYOUT.fuelYard;
+    if (!fuelYardOn()) return [fuelSpot(i)];
+    const p = fuelSpot(i) || [Y.box[2] - 4, Y.aisle + 6];
+    return [p, [p[0], Y.aisle], Y.gate];
+  }
+  // where plough i stands at the shed: [x, y], or null past its two rows
+  function ploughSpot(i) {
+    const D = LAYOUT.snowDepot, r = Math.floor(i / D.cols);
+    return r < D.rows.length ? [D.x + (i % D.cols) * D.dx, D.rows[r]] : null;
   }
 
   function quad(c, a, b, cc, d, fill) { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cc[0], cc[1]); c.lineTo(d[0], d[1]); c.closePath(); c.fillStyle = fill; c.fill(); }
@@ -129,6 +152,18 @@ const AirportArt = (() => {
     runway3(c, sc);
     // runway 2's taxiway, under the aprons it runs into (a stub from the jet apron until the runway is built)
     if (sc.p('apron2', 'pave') >= 1) line(c, LAYOUT.taxi2.slice(0, sc.runway2 ? LAYOUT.taxi2.length : 2), TX.w, sc.season === 'winter' ? '#5a5f64' : '#4b4f54');
+    // the ploughs' standing (asphalt) and the fuel trucks' yard with its bays and its lane onto the jet apron
+    const winter = sc.season === 'winter';
+    if (sc.items.plough) { const b = LAYOUT.snowDepot.box; c.fillStyle = winter ? '#9aa1a7' : '#5d6166'; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]); }
+    if (fuelYardOn()) {
+      const Y = LAYOUT.fuelYard, b = Y.box, pave = winter ? '#cfd5da' : PAL.concrete;
+      line(c, [[b[2] - 1, Y.aisle], Y.gate], 9, pave);
+      c.fillStyle = pave; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+      c.strokeStyle = 'rgba(255,255,255,0.75)'; c.lineWidth = 0.35; c.beginPath();
+      for (const y of Y.rows) for (let k = 0; k <= Y.cols; k++) { const x = Y.x + (k - 0.5) * Y.dx; c.moveTo(x, y - 4.6); c.lineTo(x, y + 4.6); }
+      c.stroke();
+      line(c, [[b[0] + 3, Y.aisle], [Y.gate[0] - 6, Y.aisle]], 0.5, PAL.taxiLine, [3, 3]);
+    }
     // the jet apron and the domestic apron, as far as they are paved
     for (const [key, pid, sid, item] of APRONS) {
       const q = item && sc.items[item] ? 1 : sc.p(pid, sid);
@@ -570,6 +605,14 @@ const AirportArt = (() => {
       const x = LAYOUT.fireStation.box[0] + 6 + i * 12, y = LAYOUT.fireStation.box[1] - 8;
       add(x, y, (c) => Vehicles.crashTender(c, x, y, 90));
     }
+    // the fuel yard's shelter over its back row: a flat roof on posts, open to the south
+    if (fuelYardOn()) {
+      const Y = LAYOUT.fuelYard, b = Y.box, y0 = Math.max(...Y.rows) - 7, x0 = b[0] + 1, x1 = b[2] - 1;
+      add(x1, y0, (c) => {
+        for (let x = x0; x <= x1 + 0.1; x += (x1 - x0) / 5) Iso.box(c, x - 0.25, y0, x + 0.25, y0 + 0.5, 0, 5, '#6b7177');
+        Iso.box(c, x0 - 0.5, y0 - 0.5, x1 + 0.5, b[3], 5, 5.5, '#c8322a', sc.season === 'winter' ? '#f4f7fa' : '#8a9096');
+      });
+    }
     if (sc.items.busStop) for (let i = 0; i < 2; i++) { const x = LAYOUT.busStop.x, y = LAYOUT.busStop.y + i * 18; add(x, y, (c) => Vehicles.bus(c, x, y, 0)); }
     // the instrument landing system's localizer beyond the 19 end
     if (sc.items.ils || sc.p('ils1', 'antennas') >= 1) {
@@ -621,5 +664,5 @@ const AirportArt = (() => {
     }
   }
 
-  return { flat, objects, standPos, standBox, standIndex, standEntry, isRemote, remoteWay, APRONS, hitSite, ring };
+  return { flat, objects, standPos, standBox, standIndex, standEntry, isRemote, remoteWay, fuelYardOn, fuelSpot, fuelWayOut, ploughSpot, APRONS, hitSite, ring };
 })();

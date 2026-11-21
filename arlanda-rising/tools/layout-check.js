@@ -67,6 +67,11 @@ rect('pier2040 satellite', 'bld', PG.sat, { design: 'satellite', onApron: true }
 rect('pier2040 satellite apron', 'apron', PG.satApron, { design: 'satellite' });
 rect('pier2040 arm', 'bld', PG.arm);
 rect('cargo yard', 'field', Lo.cargoCity.yard);
+// the vehicles' places west of the aprons: the fuel trucks' yard with its shelter (from the jet apron's year) and its
+// lane onto the jet apron, the ploughs' rows
+rect('fuel yard', 'bld', Lo.fuelYard.box);
+line('fuel yard lane', 'way', [[Lo.fuelYard.box[2] + 1, Lo.fuelYard.aisle], Lo.fuelYard.gate], 9);
+rect('ploughs', 'bld', Lo.snowDepot.box);
 rect('parkingSmall', 'park', box('parkingSmall')); rect('parkingBig', 'park', box('parkingBig'));
 Lo.solar.forEach((b, i) => rect('solar ' + (i + 1), 'field', b));
 Lo.deicePads.forEach((b, i) => rect('de-icing pad ' + (i + 1), 'apron', b));
@@ -191,7 +196,7 @@ for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
 }
 // the fence in the eras between (what each adds, roughly as the master plan builds it; every remote stand bought): it
 // must cross no road or railway away from the bridges, no runway, taxiway or apron of its own era
-const ERAS = [['1960', 'runway1 apron1 terminal1 cafe'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation'],
+const ERAS = [['1960', 'runway1 apron1 terminal1 cafe'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation fuelYard'],
   ['1990', 'apron3 apron4 domTerminal terminal2'], ['2003', 'apron5 pierF runway3 taxi3 deice0 deice1 cargoCity cargoApron'],
   ['2040 satellite', 'apron6 apron7 pier2040 pierArm satApron h2depot']];
 const eraKeys = [];
@@ -246,7 +251,7 @@ if (svgOut) {
   // labels: buildings and aprons by name, stands by number
   const named = { terminal1: 'T1 (1960)', intlTerminal: 'intl terminal / T5', domTerminal: 'domestic / T4', terminal2: 'T2', bagHall: 'bags', pierF: 'Pier F',
     skyCity: 'Sky City', hotel: 'hotel', cargoCity: 'Cargo City', sorterHall: 'sorter', offices: 'offices', cyberCentre: 'SOC', h2depot: 'H2', nightTrain: 'night train',
-    fireStation: 'fire', 'pier2040 finger': 'pier 2040', 'pier2040 satellite': 'sat', 'pier2040 arm': 'arm', parkingBig: 'P', parkingSmall: 'P', dutyFree: 'duty free' };
+    fireStation: 'fire', 'fuel yard': 'fuel', ploughs: 'ploughs', 'pier2040 finger': 'pier 2040', 'pier2040 satellite': 'sat', 'pier2040 arm': 'arm', parkingBig: 'P', parkingSmall: 'P', dutyFree: 'duty free' };
   for (const sh of S) if (sh.rect && named[sh.name] && !(sh.name === 'pier2040 finger' && sh.design === 'green')) {
     const b = sh.rect, vert = (b[3] - b[1]) > (b[2] - b[0]) * 1.6;
     out.push(vert ? `<text x="${px((b[0] + b[2]) / 2)}" y="${py((b[1] + b[3]) / 2)}" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 ${px((b[0] + b[2]) / 2)} ${py((b[1] + b[3]) / 2)})">${esc(named[sh.name])}</text>` : label((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, named[sh.name], 8, '#3a2410'));

@@ -2195,3 +2195,17 @@ Object.assign(TEXT_SV, {
   "A fuel truck: it drives from the depot to an aircraft at its stand, fills the tanks in the wing and drives back.": "En tankbil: den kör från depån till ett flygplan på sin plats, fyller tankarna i vingen och kör tillbaka.",
   "A snowplough with a wide blade and a brush. The ploughs sweep a runway together, in a staggered convoy; one of them takes the apron.": "En snöplog med ett brett blad och en sopvals. Snöplogarna röjer en bana tillsammans, i en förskjuten kolonn; en av dem tar plattan."
 });
+
+// the vehicles' limits (Airport.cap): the build buttons and the cards
+Object.assign(TEXT_SV, {
+  "Max: one per stand": "Max: en per plats",
+  "Max: a convoy per runway": "Max: en kolonn per bana",
+  "Max: fire category {n}": "Max: brandkategori {n}",
+  "An aircraft takes one fuel truck at a time: one per stand is the most worth having ({n} stands).": "Ett flygplan tankas av en tankbil i taget: mer än en per uppställningsplats behövs inte ({n} platser).",
+  "An aircraft takes one de-icing truck at a time: one per stand is the most worth having ({n} stands).": "Ett flygplan avisas av en avisningsbil i taget: mer än en per uppställningsplats behövs inte ({n} platser).",
+  "A convoy of {c} ploughs sweeps a runway; with a convoy for each runway they all sweep at once ({n} runways).": "En kolonn med {c} snöplogar röjer en bana; med en kolonn för varje bana röjs alla samtidigt ({n} banor).",
+  "Each crash tender raises the fire category by one, from {base} up to {top}: {max} tenders are the most worth having.": "Varje räddningsfordon höjer brandkategorin med ett steg, från {base} upp till {top}: fler än {max} fordon behövs inte.",
+  "{n} of {max} worth having": "{n} av {max} som behövs",
+  "Fuel trucks": "Tankbilar",
+  "Snowploughs": "Snöplogar"
+});

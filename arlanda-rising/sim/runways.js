@@ -93,18 +93,22 @@ const Runways = {
       const at = SNOW_TASK_MM - (S.domains.snow >= 1 ? People.perk('snow', 'warn') : 0);
       if (s.snow >= at && !s.plough && !queued && !Tasks.pending('plough', id)) Tasks.need('plough', id);
     }
-    // the next convoy in the queue sets off when the last one is back
-    if (S.ops.ploughQueue.length && !(S.ops.convoy > S.clock) && Airport.ploughs() > 0) this.startConvoy(S.ops.ploughQueue.shift());
+    // the next convoy in the queue sets off when one is back (or there are ploughs for another one)
+    while (S.ops.ploughQueue.length && this.convoysOut() < this.convoys() && Airport.ploughs() > 0) this.startConvoy(S.ops.ploughQueue.shift());
     const rw = this.inUse();
     if (rw && this.closedWhy(rw)) S.mission.st.closedMin += dt;
   },
-  // send the ploughs to a surface: the convoy to a runway (queued when it is out on another one), the apron's
-  // own small team to the apron (it works beside the convoy)
+  // the convoys the ploughs make, each sweeping a runway at the same time: one for every PLOUGH_CONVOY ploughs (one at
+  // least, however few), and how many are out now
+  convoys() { return Math.max(1, Math.floor(Airport.ploughs() / PLOUGH_CONVOY)); },
+  convoysOut() { return S.airport.runways.filter((r) => r.plough && r.plough > S.clock).length; },
+  // send the ploughs to a surface: a convoy to a runway (queued when every convoy is out on another one), the apron's
+  // own small team to the apron (it works beside the convoys)
   plough(id) {
     const s = this.surface(id);
     if (!s || s.plough || S.ops.ploughQueue.indexOf(id) >= 0) return false;
     if (Airport.ploughs() === 0) return false;
-    if (id !== 'apron' && S.ops.convoy > S.clock) S.ops.ploughQueue.push(id);
+    if (id !== 'apron' && this.convoysOut() >= this.convoys()) S.ops.ploughQueue.push(id);
     else this.startConvoy(id);
     return true;
   },
@@ -118,7 +122,7 @@ const Runways = {
     Fleet.ploughed(id, s.snow);
     s.plough = S.clock + dur;
     s.ploughFrom = S.clock;           // for the map: where the convoy is
-    if (kind === 'runway') S.ops.convoy = s.plough;
+    if (kind === 'runway') S.ops.convoy = Math.max(S.ops.convoy || 0, s.plough);   // when the last convoy is back
     S.mission.st.ploughRuns++;
     Finance.book('snow', -PLOUGH_RUN_COST * (S.domains.snow >= 1 && People.perk('snow', 'stormBills') ? 2 : 1));
     logEvent('convoy', { surface: id, until: s.plough });

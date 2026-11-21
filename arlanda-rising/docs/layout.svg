@@ -117,6 +117,7 @@
 <polyline points="366.9,868.9 470.0,869.0" fill="none" stroke="#6b6f73" stroke-width="11.5" stroke-linejoin="round" />
 <polyline points="530.0,725.0 494.0,725.0 494.0,325.0 750.0,325.0 795.0,375.5" fill="none" stroke="#6b6f73" stroke-width="11.5" stroke-linejoin="round" />
 <polyline points="1333.5,1450.0 800.0,1450.0 607.5,1443.0 540.0,1385.0 550.0,1170.0" fill="none" stroke="#6b6f73" stroke-width="11.5" stroke-linejoin="round" />
+<polyline points="462.5,813.0 476.0,813.0" fill="none" stroke="#c8c5bd" stroke-width="4.5" stroke-linejoin="round" />
 <polyline points="512.5,1012.5 512.5,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
 <polyline points="512.5,1040.0 512.5,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
 <polyline points="482.5,1067.5 482.5,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
@@ -164,6 +165,8 @@
 <rect x="595.0" y="425.0" width="22.5" height="127.5" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
 <rect x="550.0" y="422.5" width="20.0" height="122.5" fill="#f2d0a8" stroke="#7a4a20" stroke-dasharray="4 3" fill-opacity="0.55"/>
 <rect x="595.0" y="340.0" width="22.5" height="85.0" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
+<rect x="424.0" y="796.0" width="38.0" height="20.0" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
+<rect x="426.0" y="831.0" width="30.0" height="16.5" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
 <rect x="554.3" y="869.9" width="28.8" height="25.2" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="554.3" y="899.9" width="28.8" height="25.2" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="558.6" y="933.5" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
@@ -299,6 +302,8 @@
 <text x="606.3" y="488.8" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 606.3 488.8)">pier 2040</text>
 <text x="560.0" y="483.8" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 560.0 483.8)">sat</text>
 <text x="606.3" y="382.5" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 606.3 382.5)">arm</text>
+<text x="443.0" y="806.0" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle">fuel</text>
+<text x="441.0" y="839.3" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle">ploughs</text>
 <text x="680.0" y="941.5" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle">P</text>
 <text x="682.5" y="886.0" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 682.5 886.0)">P</text>
 <text x="481.0" y="925.0" font-size="8" fill="#6b665c" text-anchor="middle" dominant-baseline="middle">apron1</text>

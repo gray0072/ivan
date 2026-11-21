@@ -91,6 +91,7 @@ const MapView = (() => {
         case 'pierF': return !!items.pierF || p('pierF', 'gates') > 0;
         case 'pier2040': return !!items.pier2040 || p('pier2040', 'hall') > 0;
         case 'pierArm': return !!items.pierArm || p('pier2040', 'arm') > 0;
+        case 'fuelYard': return p('apron2', 'pave') > 0;
         default: return k in aprons ? aprons[k] : !!items[k] || (k in HALLS && p(k, HALLS[k]) > 0);
       }
     };
@@ -106,7 +107,8 @@ const MapView = (() => {
   }
 
   // the ground cleared of trees round what is built outside the site's first clearing: a remote stand's pad and its
-  // way to the apron, the plots of the buildings in data/layout.js (car parks, cafés…), the link from the taxiway;
+  // way to the apron, the plots of the buildings in data/layout.js (car parks, cafés…), the link from the taxiway, the
+  // service ground of the ploughs, the fire station and the fuel yard;
   // from the jet age on the later aprons, runways 2 and 3 with their strips, taxiways 2 and 3, the de-icing pads,
   // Cargo City's yard and the solar parks, each from the moment its work starts
   const PAD = 14;   // m of open ground round a plot
@@ -128,6 +130,10 @@ const MapView = (() => {
       if (!st.pad) ways.push({ pts: AirportArt.remoteWay(i), d: 10 + PAD });
     });
     const plot = (b) => pads.push([b[0] - PAD, b[1] - PAD, b[2] + PAD, b[3] + PAD]);
+    // the service ground west of the aprons, from the strip's clearing to the apron: round the ploughs' rows and the
+    // crash tenders' bays, and round the fire station and the fuel trucks' yard once the jet apron is begun
+    if (items.plough || items.fireStation) pads.push(LAYOUT.clear.ploughs);
+    if (p('apron2', 'pave') > 0) pads.push(LAYOUT.clear.yard);
     const started = (pid) => { const pr = a.projects[pid]; return !!pr && Object.keys(pr.stages).some((s) => pr.stages[s].p > 0); };
     for (const k in items) {
       const L = LAYOUT[k];

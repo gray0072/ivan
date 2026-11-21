@@ -1,7 +1,8 @@
 'use strict';
 
 // Arlanda Rising — the airside fence: worked out from what is built and drawn round it (thin posts and a mesh). The
-// airside parts that stand (runways with their strips, taxiways, aprons, remote stands, de-icing pads, the fire station)
+// airside parts that stand (runways with their strips, taxiways, aprons, remote stands, de-icing pads, the fire station,
+// the fuel yard)
 // are laid on a grid with a margin each, the gaps between them up to 2 × CLOSE m wide are fenced in with them (a closing
 // on the grid), then everything landside is cut away again — the belt east of the terminal line in data/layout.js
 // (`fence.belt`), the roads, the railway, the car parks, Cargo City's yard, the ground in front of each terminal's
@@ -45,7 +46,7 @@ const Fence = (() => {
 
   // ---------- what is airside: { parts: [{ r: box } | { l: points, h: half width }], walls: [box] } ----------
   // on(name): whether that part stands (or is being built): runway1, apron1, apron2…apron7, cargoApron, satApron,
-  // runway2, taxi2, runway3, taxi3, deice0, deice1, fireStation, h2depot, pierF, pier2040, pierArm and the keys of
+  // runway2, taxi2, runway3, taxi3, deice0, deice1, fireStation, h2depot, fuelYard, pierF, pier2040, pierArm and the keys of
   // LAYOUT.fence.line; pads: the remote stands' pads [box], ways: their paved ways to the apron [points];
   // design: the player's pier's ('satellite' puts it out on the apron)
   function parts(on, pads, ways, design) {
@@ -75,7 +76,7 @@ const Fence = (() => {
     L.deicePads.forEach((b, i) => { if (on('deice' + i)) R(b, M.pad); });
     for (const b of pads) R(b, M.pad);
     for (const w of ways) Ln(w, 10 + M.pad);
-    for (const k of ['fireStation', 'h2depot']) if (on(k)) R(L[k].box, M.svc);
+    for (const k of ['fireStation', 'h2depot', 'fuelYard']) if (on(k)) R(L[k].box, M.svc);
     // the buildings on the terminal line, and the piers out on the apron: inside, their walls the fence where they stand
     const wall = (b) => { R(b, 0); walls.push(b); };
     for (const k of L.fence.line) if (on(k)) wall(L[k].box);

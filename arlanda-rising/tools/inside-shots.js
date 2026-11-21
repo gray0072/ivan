@@ -56,9 +56,10 @@ module.exports = async (h) => {
     await h.sleep(700);
     h.log('card', await h.ev(title));
     await h.shot(name + '-2-terminal');
-    await h.ev(`SiteCard.close(); Cam.centerOn(LAYOUT.fuelDepot.x + 10, LAYOUT.fuelDepot.y, 3.5); 1`);
+    // the first truck waiting (AirportArt.fuelSpot: by 2016 in the yard by the fire station)
+    await h.ev(`SiteCard.close(); (() => { const p = AirportArt.fuelSpot(Math.max(0, S.ops.trucks.findIndex((b) => b <= S.clock))); Cam.centerOn(p[0] + 10, p[1], 3.5); })(); 1`);
     await h.sleep(800);
-    const v = await h.ev(`(() => { const t = S.ops.trucks.findIndex((b) => b <= S.clock); return Cam.toScreen(LAYOUT.fuelDepot.x + Math.max(0, t) * 5, LAYOUT.fuelDepot.y, 1.5); })()`);
+    const v = await h.ev(`(() => { const t = S.ops.trucks.findIndex((b) => b <= S.clock); const p = AirportArt.fuelSpot(Math.max(0, t)); return Cam.toScreen(p[0], p[1], 1.5); })()`);
     await press(v[0], v[1]);
     await h.sleep(700);
     h.log('card', await h.ev(title), await h.ev(`JSON.stringify(S.ops.fleet && { aircraft: S.ops.fleet.fuelN, litres: S.ops.fleet.fuelL })`));
@@ -82,9 +83,10 @@ module.exports = async (h) => {
   await h.ev(`Game.roofs(true); Cam.centerOn(905, 1240, 4); 1`);
   await h.sleep(1000);
   await h.shot('1960-1-terminal');
-  await h.ev(`Cam.centerOn(LAYOUT.snowDepot.x + 20, LAYOUT.snowDepot.y, 3.5); 1`);
+  await h.ev(`Cam.centerOn(AirportArt.ploughSpot(0)[0] + 20, AirportArt.ploughSpot(0)[1], 3.5); 1`);
   await h.sleep(800);
-  const q = await h.ev(`Cam.toScreen(LAYOUT.snowDepot.x, LAYOUT.snowDepot.y, 1.5)`);
+  // a plough at the shed (the first one there)
+  const q = await h.ev(`(() => { const p = AirportArt.ploughSpot(0); return Cam.toScreen(p[0], p[1], 1.5); })()`);
   await h.click(q[0], q[1]); await h.sleep(600);
   h.log('card', await h.ev(title), await h.ev(`JSON.stringify(S.ops.fleet && { runs: S.ops.fleet.runs, m2: S.ops.fleet.m2, m3: Math.round(S.ops.fleet.m3) })`));
   await h.shot('1960-2-plough');

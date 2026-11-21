@@ -61,8 +61,16 @@ const LAYOUT = {
   busStop: { x: 1010, y: 1180 },
   restaurant: { box: [905, 1140, 925, 1162], h: 5 },
   dutyFree: { box: [965, 1450, 990, 1520], h: 6 },
-  fuelDepot: { x: 690, y: 1400 },      // where the fuel trucks wait
-  snowDepot: { x: 560, y: 1430 },      // the ploughs' shed
+  fuelDepot: { x: 690, y: 1400 },      // where the fuel trucks wait until the jet apron is begun (it is paved over then)
+  // the fuel trucks' yard from the jet apron's paving on (render/airport.js fuelSpot): east of the fire station and
+  // behind the ploughs (north of their rows, farther from the viewer), a paved pad `box` with a shelter over its back
+  // row; the trucks stand nose south in `rows` (their y: the open front row first, then the back row under the shelter)
+  // of `cols`, from `x` every `dx` m, drive out along the aisle south of them (`aisle`, its y) and east on their lane to
+  // the jet apron's west edge (`gate`), then on the lanes behind the stands
+  fuelYard: { box: [548, 1468, 624, 1508], rows: [1486, 1502], x: 554, dx: 5.5, cols: 12, aisle: 1474, gate: [652, 1474] },
+  // the ploughs' place: two rows nose south (`rows`, their y; the first filled first) of `cols`, from `x` every `dx` m,
+  // on the ground `box` (between the departures' link and the crash tenders' bays)
+  snowDepot: { x: 560, y: 1430, rows: [1430, 1414], dx: 9, cols: 6, box: [552, 1405, 612, 1438] },
   // the car parks east of the road in and of the landside road, by the bus stop (west of them the terminals)
   parkingSmall: { box: [1020, 1186, 1100, 1248] },
   parkingBig: { box: [1024, 1258, 1106, 1398] },
@@ -162,10 +170,14 @@ const LAYOUT = {
   rocks: [[-600, 1800, 40], [1500, 2600, 55], [2100, -900, 35], [-300, -1700, 45], [3600, 3200, 50], [1300, -1500, 30]],
 
   // the clearing jobs of the site (project `site`): the runway strip with the taxiway, the apron and the
-  // terminal plot (after the bog is drained), the road
+  // terminal plot (after the bog is drained), the road; and the service ground west of the aprons, from the strip's
+  // clearing to the apron (render/map.js clearings): round the ploughs' rows and the tenders' bays once the airport has
+  // a plough or a fire station (`ploughs`), round the fire station and the fuel yard once the yard is in use (`yard`)
   clear: {
     strip: { half: 280 },
-    apron: [[560, 1040], [1000, 1040], [1000, 1470], [560, 1470]]
+    apron: [[560, 1040], [1000, 1040], [1000, 1470], [560, 1470]],
+    ploughs: [490, 1392, 640, 1468],
+    yard: [490, 1452, 640, 1545]
   },
 
   check: 'the first apron, stands, terminal, tower, taxiways and road of 1959–62 (aerodrome chart of the era); Halmsjön'

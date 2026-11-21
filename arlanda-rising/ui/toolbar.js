@@ -5,7 +5,8 @@
 // small builds of the era (a remote stand, a fuel truck, a plough, a desk; in plan time with the airport open also
 // a kiosk, a café and car parks). Session 5: the security lanes and the passport booths open (− / +), de-icing trucks,
 // booths, offices and hotel wings, a solar park and electric vehicles. A buy asks for a second tap with its price
-// first. Used by game.js.
+// first. A vehicle with a limit (fuel and de-icing trucks, ploughs, crash tenders: Airport.cap) shows how many there are
+// of the most worth having (⛽ Fuel truck 3/6) and, at the limit, is disabled with the reason. Used by game.js.
 
 const BUILD_ICONS = { stand: '🅿️', fuelTruck: '⛽', plough: '🚜', desk: '🧳', kiosk: '🏪', cafe: '☕', parkingSmall: '🚗', parkingBig: '🚙',
   crashTender: '🚒', generator: '🔋', dutyFree: '🛍️', restaurant: '🍽️', busStop: '🚌', lane: '🛂',
@@ -65,7 +66,8 @@ const Toolbar = (() => {
       }
     }
     const b = buys();
-    const k = JSON.stringify(parts.map((p) => p.map((x) => (typeof x === 'number' ? Math.round(x * 100) : x)))) + b.join() + armed + I18N.lang + (Settings.short() ? 1 : 0) + Math.floor(S.money / 1e5) + JSON.stringify((S.plan && S.plan.buys) || []) + S.airport.items.length;
+    const k = JSON.stringify(parts.map((p) => p.map((x) => (typeof x === 'number' ? Math.round(x * 100) : x)))) + b.join() + armed + I18N.lang + (Settings.short() ? 1 : 0) + Math.floor(S.money / 1e5) + JSON.stringify((S.plan && S.plan.buys) || []) + S.airport.items.length +
+      '|' + S.airport.stands.length + '|' + S.airport.runways.length;
     box.hidden = false;
     if (k === key) return;
     key = k;
@@ -97,12 +99,14 @@ const Toolbar = (() => {
     };
     if (b.some((k) => BUILDINGS[k].shop)) html += places('shop', '🏪', 'Shops', tr('A kiosk counts ½, a café 1, a restaurant 0.6, a duty-free shop 1.2. More than {max} earn nothing more.', { max: SHOP_MAX }));
     if (b.some((k) => BUILDINGS[k].parking)) html += places('parking', '🚗', 'Car parks', tr('The share of the drivers the car parks take: a small one 40 %, a big one all of them.'));
+    // a vehicle with a limit (Airport.cap) shows how many there are of the most worth having, 3/6, and why it stops there
     for (const kind of b) {
-      const bd = BUILDINGS[kind], conf = armed === kind, full = Airport.full(kind);
-      const n = Airport.count(kind) + ((S.plan && S.plan.buys) || []).filter((x) => x.kind === kind).length;
-      html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (full ? ' disabled' : '') + (S.money < bd.price && !conf ? ' data-poor="1"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
-        Text.esc(conf ? tr('Buy?') : tr(bd.name)) + (n && (bd.shop || bd.parking) ? ' <em>×' + n + '</em>' : '') + '<small>' +
-        (full ? Text.esc(tr('Enough: one more would earn nothing')) : sekBare(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
+      const bd = BUILDINGS[kind], conf = armed === kind, full = Airport.full(kind), cap = Airport.cap(kind);
+      const n = Airport.owned(kind);
+      html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (full ? ' disabled' : '') + (S.money < bd.price && !conf ? ' data-poor="1"' : '') +
+        (cap ? ' title="' + Text.esc(Text.capTip(kind, cap)) + '"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
+        Text.esc(conf ? tr('Buy?') : tr(bd.name)) + (cap ? ' <em>' + n + '/' + cap.max + '</em>' : n && (bd.shop || bd.parking) ? ' <em>×' + n + '</em>' : '') + '<small>' +
+        (full ? Text.esc(cap ? Text.capWhy(cap) : tr('Enough: one more would earn nothing')) : sekBare(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
     }
     box.innerHTML = html;
   }

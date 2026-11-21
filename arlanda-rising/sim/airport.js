@@ -2,7 +2,8 @@
 
 // Arlanda Rising — the airport itself: what is built (S.airport.items), the runways and the stands, what
 // finishing a master-plan project does (`complete`), the small builds bought during a mission (`buy`), and
-// the numbers the rest of the sim asks for — runway separation, fuel trucks, ploughs, the shops' and car
+// the numbers the rest of the sim asks for — runway separation, fuel trucks, ploughs, the most of a vehicle worth
+// having (`cap`: no more can be bought past it), the shops' and car
 // parks' shares, the monthly running cost of everything the airport owns.
 
 const Airport = {
@@ -35,8 +36,23 @@ const Airport = {
     return s;
   },
   placesMax(what) { return what === 'shop' ? SHOP_MAX : 1; },
+  // the vehicles past which one more does nothing: { max, why, n } (n what the limit counts: stands, runways, the top
+  // fire category), or null for no limit — a fuel or a de-icing truck for each stand (an aircraft takes one at a time),
+  // a full plough convoy for each runway (the convoys sweep at the same time), crash tenders up to the top fire category
+  cap(kind) {
+    const stands = S.airport.stands.length, runways = Math.max(1, S.airport.runways.length);
+    if (kind === 'fuelTruck') return { max: Math.max(1, stands * FUEL_TRUCKS_PER_STAND), why: 'stand', n: stands };
+    if (kind === 'deicer') return { max: Math.max(1, stands * DEICERS_PER_STAND), why: 'stand', n: stands };
+    if (kind === 'plough') return { max: runways * PLOUGH_CONVOY, why: 'runway', n: runways };
+    if (kind === 'crashTender') return { max: FIRE_CAT_MAX - FIRE_CAT_BASE, why: 'fire', n: FIRE_CAT_MAX };
+    return null;
+  },
+  // how many of a kind the airport has, with those bought in plan time and not delivered yet
+  owned(kind) { return this.count(kind) + ((S.plan && S.plan.buys) || []).filter((b) => b.kind === kind).length; },
+  // nothing more of it is worth buying: the shops' or car parks' room is full, or a vehicle is at its limit
   full(kind) {
-    const b = BUILDINGS[kind] || {}, what = b.shop ? 'shop' : b.parking ? 'parking' : null;
+    const b = BUILDINGS[kind] || {}, what = b.shop ? 'shop' : b.parking ? 'parking' : null, cap = this.cap(kind);
+    if (cap) return this.owned(kind) >= cap.max;
     return !!what && this.placesTaken(what) >= this.placesMax(what) - 1e-9;
   },
   parkingShare() {

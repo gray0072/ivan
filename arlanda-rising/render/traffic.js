@@ -4,7 +4,7 @@
 // 09:12, at the stand at 09:17"; this file puts the aircraft on the approach, the flare, the rollout, the taxiway,
 // the stand, the pushback, the take-off roll and the climb in between). Also the turnaround's vehicles and people
 // at each stand (stairs, the passengers walking, catering and bags, the fuel truck from its depot, the tug), the
-// plough convoy in echelon on the runway, the vehicles waiting at their depots, and over it all the little Gantt
+// plough convoys in echelon on the runways, the vehicles waiting at their depots, and over it all the little Gantt
 // bar of each turnaround. Remembers where each aircraft, fuel truck and plough was drawn, for a tap (render/map.js
 // `hit`): a truck or a plough keeps its number (S.ops.trucks' index, sim/fleet.js), for its card.
 
@@ -193,17 +193,18 @@ const Traffic = (() => {
     // the fuel truck: from its depot, at the wing, and back
     const si = AirportArt.standIndex(f.stand);
     if (tr.fuelFrom !== undefined && tr.fuelEnd !== null && si >= 0) {
-      const depot = [LAYOUT.fuelDepot.x, LAYOUT.fuelDepot.y], wingPt = at(-2, -A.span * 0.32);
+      const out = AirportArt.fuelWayOut(tr.truck !== undefined ? tr.truck : 0), depot = out[out.length - 1], wingPt = at(-2, -A.span * 0.32);
       const half = FUEL_DRIVE / 2, back = tr.fuelEnd + half;
-      // it drives to the lane behind the stand (behind the tail of the longest aircraft), along it to the wing's side and
-      // up to the wing parallel to the fuselage, never under it; a stand south of the depot is reached along the first
-      // apron's north edge, a stand facing west by the satellite's lane; and back the same way
+      // out of its bay and along the yard's lane onto the jet apron (AirportArt.fuelWayOut; before the yard straight from
+      // its place), then to the lane behind the stand (behind the tail of the longest aircraft), along it to the wing's
+      // side and up to the wing parallel to the fuselage, never under it; a stand on the first apron or south of it is
+      // reached along the first apron's north edge, a stand facing west by the satellite's lane; and back the same way
       const sp = AirportArt.standPos(si), tx = AirportArt.standEntry(si)[0] - 3 * sp.s, st = S.airport.stands[si];
       let way;
-      if (sp.s < 0 && st.lane) way = [depot, [st.lane[0], depot[1]], st.lane, [tx, st.lane[1]], [tx, wingPt[1]], wingPt];
+      if (sp.s < 0 && st.lane) way = out.concat([[st.lane[0], depot[1]], st.lane, [tx, st.lane[1]], [tx, wingPt[1]], wingPt]);
       else {
-        const yl = wingPt[1] < depot[1] ? Math.min(depot[1], LAYOUT.apron1.y1 - 8) : depot[1];
-        way = [depot, [depot[0], yl], [tx, yl], [tx, wingPt[1]], wingPt];
+        const yl = wingPt[1] < Math.min(depot[1], LAYOUT.apron1.y1) ? Math.min(depot[1], LAYOUT.apron1.y1 - 8) : depot[1];
+        way = out.concat([[depot[0], yl], [tx, yl], [tx, wingPt[1]], wingPt]);
       }
       let q = null;
       if (t < tr.fuelFrom + half) q = { u: (t - tr.fuelFrom) / half, way };
@@ -254,32 +255,26 @@ const Traffic = (() => {
         } });
       }
       // trucks waiting at the depot, each in its own place
-      S.ops.trucks.forEach((b, i) => { if (b <= t) truck(i, LAYOUT.fuelDepot.x + i * 5, LAYOUT.fuelDepot.y); });
-      // the ploughs the airport owns, each drawn once: one on the apron while it is swept (the last one), the rest in the
-      // convoy on the runway being swept (0, 1, 2…), whatever is left at the shed (with a single plough out on a runway
-      // the apron waits for it)
-      const n = Airport.ploughs(), ap = S.airport.apron;
-      const rw = S.airport.runways.find((r) => r.plough && r.ploughFrom !== undefined);
-      const apronOut = !!(ap.plough && ap.ploughFrom !== undefined) && n > (rw ? 1 : 0);
-      const convoy = rw ? n - (apronOut ? 1 : 0) : 0;
-      if (rw) {
-        const q = clamp((t - rw.ploughFrom) / (rw.plough - rw.ploughFrom), 0, 1);
-        for (let i = 0; i < Math.min(convoy, 6); i++) {
-          const pp = convoyAt(rw, q, i);
-          plough(i, pp[0], pp[1], pp[2]);
+      S.ops.trucks.forEach((b, i) => { const p = AirportArt.fuelSpot(i); if (b <= t && p) truck(i, p[0], p[1]); });
+      // the ploughs the airport owns, each drawn once where sim/fleet.js says it is: in a convoy on a runway being swept
+      // (up to six of each convoy in echelon), on the apron (the apron's team: the last one) or at the shed, in its rows
+      const inConvoy = {};
+      let k = 0;
+      Fleet.places().forEach((w, i) => {
+        if (!w) { const p = AirportArt.ploughSpot(k++); if (p) plough(i, p[0], p[1], 180); return; }
+        if (w.id === 'apron') {
+          const A = LAYOUT.apron1, lane = Math.floor(w.q * 6), u = w.q * 6 - lane;
+          const x = A.x0 + (A.x1 - A.x0) * (lane + 0.5) / 6, y = lane % 2 ? A.y1 - (A.y1 - A.y0) * u : A.y0 + (A.y1 - A.y0) * u;
+          plough(i, x, y, lane % 2 ? 180 : 0);
+          return;
         }
-      }
-      if (apronOut) {
-        const q = clamp((t - ap.ploughFrom) / (ap.plough - ap.ploughFrom), 0, 1), A = LAYOUT.apron1;
-        const lane = Math.floor(q * 6), u = q * 6 - lane;
-        const x = A.x0 + (A.x1 - A.x0) * (lane + 0.5) / 6, y = lane % 2 ? A.y1 - (A.y1 - A.y0) * u : A.y0 + (A.y1 - A.y0) * u;
-        plough(n - 1, x, y, lane % 2 ? 180 : 0);
-      }
-      for (let i = convoy, k = 0; i < n - (apronOut ? 1 : 0) && k < 6; i++, k++) plough(i, LAYOUT.snowDepot.x + k * 9, LAYOUT.snowDepot.y, 180);
+        const j = inConvoy[w.id] = (inConvoy[w.id] || 0) + 1;
+        if (j <= 6) { const pp = convoyAt(Airport.runway(w.id), w.q, j - 1); plough(i, pp[0], pp[1], pp[2]); }
+      });
     } else if (sc.apron) {
       // planning: the vehicles at rest
-      for (let i = 0; i < (sc.items.fuelTruck || 0); i++) truck(i, LAYOUT.fuelDepot.x + i * 5, LAYOUT.fuelDepot.y);
-      for (let i = 0; i < Math.min(6, sc.items.plough || 0); i++) plough(i, LAYOUT.snowDepot.x + i * 9, LAYOUT.snowDepot.y, 180);
+      for (let i = 0; i < (sc.items.fuelTruck || 0); i++) { const p = AirportArt.fuelSpot(i); if (p) truck(i, p[0], p[1]); }
+      for (let i = 0; i < (sc.items.plough || 0); i++) { const p = AirportArt.ploughSpot(i); if (p) plough(i, p[0], p[1], 180); }
     }
   }
 

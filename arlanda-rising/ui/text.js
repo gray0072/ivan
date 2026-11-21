@@ -267,6 +267,16 @@ const Text = {
     if (!out.length) out.push(tr('nothing changes'));
     return out.join(' · ');
   },
+  // a vehicle's limit (Airport.cap): why it stops there, short (the build button at its limit) and in full (its tooltip)
+  capWhy(cap) {
+    return cap.why === 'stand' ? tr('Max: one per stand') : cap.why === 'runway' ? tr('Max: a convoy per runway') : tr('Max: fire category {n}', { n: cap.n });
+  },
+  capTip(kind, cap) {
+    if (kind === 'fuelTruck') return tr('An aircraft takes one fuel truck at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
+    if (kind === 'deicer') return tr('An aircraft takes one de-icing truck at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
+    if (kind === 'plough') return tr('A convoy of {c} ploughs sweeps a runway; with a convoy for each runway they all sweep at once ({n} runways).', { c: PLOUGH_CONVOY, n: cap.n });
+    return tr('Each crash tender raises the fire category by one, from {base} up to {top}: {max} tenders are the most worth having.', { base: FIRE_CAT_BASE, top: FIRE_CAT_MAX, max: cap.max });
+  },
   // stars as HTML: the ones earned lit, the rest dim
   stars(n, of) { let s = ''; for (let i = 0; i < (of || 3); i++) s += '<span class="star' + (i < n ? ' on' : '') + '">★</span>'; return s; }
 };
