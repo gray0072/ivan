@@ -291,7 +291,7 @@ const PROJECTS = {
     check: 'the year the pads came (not found: the game\'s 2004)'
   },
   skyCity: {
-    name: 'Sky City', year: 1993, plot: { x: 970, y: 1395, w: 105, h: 55 },
+    name: 'Sky City', year: 1993, plot: { x: 1024, y: 1395, w: 130, h: 55 },
     stages: {
       hall: { name: 'The hall between the terminals', days: 60, price: 300e6 },
       hotel: { name: 'The hotel', days: 60, price: 260e6, optional: true, effect: 'hotel' }
@@ -301,7 +301,7 @@ const PROJECTS = {
     check: 'the hotel\'s year rests on hotel listings only; in the game the owner builds Sky City before chapter 5'
   },
   cargoCity: {
-    name: 'Cargo City', year: 2006, plot: { x: 1150, y: 300, w: 260, h: 200 },
+    name: 'Cargo City', year: 2006, plot: { x: 905, y: 395, w: 75, h: 345 },
     stages: {
       halls: { name: 'The cargo halls', days: 45, price: 260e6 },
       offices: { name: 'Offices for the forwarders', days: 30, price: 80e6, after: ['halls'], optional: true, effect: 'offices' }
@@ -358,8 +358,16 @@ const PROJECTS = {
     },
     mods: { tents: { name: 'Heated winter tents', price: 30e6, noWinter: true } },
     effect: 'pier2040',
-    // where its stands stand: the finger's along x 880 from y 2020, the satellite's on both sides of its building
-    spots: { finger: { x: 880, y0: 2020, dy: 42 }, satellite: { x0: 745, x1: 855, y0: 2100, dy: 28 }, arm: { x0: 950, dx: 26, y: 2225 } },
+    // where its stands stand ([x, y, heading]; data/layout.js pier2040): the finger's along x 880 (nose east, wider apart
+    // for the two code D stands); the satellite's code E and D stands on its west side nose east, its code C ones on its east
+    // side nose west, reached by the lane `satLane` (x, then y: in along the satellite's south end); the second arm's along
+    // its west side, on its own apron
+    spots: {
+      finger: [[880, 2022, 90], [880, 2074, 90], [880, 2120, 90], [880, 2160, 90], [880, 2200, 90], [880, 2240, 90]],
+      satellite: [[798, 2045, 90], [798, 2115, 90], [798, 2177, 90], [798, 2232, 90], [842, 2040, 270], [842, 2095, 270], [842, 2150, 270], [842, 2205, 270]],
+      arm: [[880, 2285, 90], [880, 2325, 90], [880, 2365, 90], [880, 2405, 90]]
+    },
+    satLane: [805, 1999],
     // its design is the player's (a decision: `pier`): the stands it brings and × its price
     designs: {
       finger: { k: 1, stands: [['G1', 'D'], ['G2', 'D'], ['G3', 'C'], ['G4', 'C'], ['G5', 'C'], ['G6', 'C']] },

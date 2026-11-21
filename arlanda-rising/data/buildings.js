@@ -70,7 +70,7 @@ const BUILDINGS = {
   // session 6: chapters 7 and 8 — a security operations centre against cyber attacks, the cargo apron's stands, the
   // future's chargers (a stand's charger, the mobile one), the hydrogen depot, the night train's platform
   cyberCentre: { name: 'Security operations centre', price: 30e6, staff: 6, small: true, days: 30, from: 2016 },
-  cargoStand: { name: 'Cargo stand', price: 6e6, staff: 0, small: true, days: 14, from: 2000, spots: [[1185, 520], [1245, 520], [1305, 520], [1365, 520]] },
+  cargoStand: { name: 'Cargo stand', price: 6e6, staff: 0, small: true, days: 14, from: 2000, spots: [[905, 440], [905, 510], [905, 580], [905, 650], [905, 720]] },   // nose east to Cargo City's halls (data/layout.js cargoApron)
   charger: { name: 'Charging stand', price: 8e6, staff: 0, small: true, days: 14, from: 2028 },
   mcharger: { name: 'Mobile charger', price: 2e6, staff: 1, small: true, days: 0, from: 2028 },
   h2depot: { name: 'Hydrogen depot', price: 90e6, staff: 3, small: true, days: 40, from: 2033 },

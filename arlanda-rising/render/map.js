@@ -40,13 +40,18 @@ const MapView = (() => {
     const p = (pid, sid) => { const pr = a.projects[pid]; return pr && pr.stages[sid] ? pr.stages[sid].p : 0; };
     const ready = !!a.siteReady;
     const roadP = ready ? 1 : p('site', 'road');
+    // the road in stops at the baggage hall's door once it stands in front of the first terminal (data/layout.js roadEnd);
+    // the landside road along the terminals from the international terminal's year
+    const roadPts = polyPart(LAYOUT.road, roadP);
+    if (roadP >= 1 && (items.bagHall || p('bagHall', 'hall') > 0)) roadPts[roadPts.length - 1] = [LAYOUT.roadEnd, roadPts[roadPts.length - 1][1]];
+    const landside = items.intlTerminal || p('intlTerminal', 'frame') > 0;
     const t = S.ops ? Sim.clockNow() : 12 * 60;   // between the sim's steps, so that what moves moves smoothly
     const sun = Calendar.sunElevation(S.day, t);
     return {
       season: season(d.m, w ? w.temp : null), year: d.y, t, anim, sun,
       dark: Sky.darkness(S.day, t), vis: w ? w.vis : 10000, snowfall: w ? w.snow : 0,
       siteDone: ready, strip: ready ? 1 : p('site', 'strip'), drain: ready ? 1 : p('site', 'drain'),
-      apronClear: ready ? 1 : p('site', 'apron'), road: roadP, roadPts: polyPart(LAYOUT.road, roadP),
+      apronClear: ready ? 1 : p('site', 'apron'), road: roadP, roadPts, landsidePts: landside ? LAYOUT.landside : null,
       siteWork: !!a.projects.site && !items.terminal,
       runway: a.runways[0] || null, runway2: a.runways.find((r) => r.id === 'r2') || null, runway3: a.runways.find((r) => r.id === 'r3') || null,
       apron: a.stands.length > 0, items, p,
@@ -74,7 +79,7 @@ const MapView = (() => {
       if (st.at && !st.pad) return;
       const q = AirportArt.standPos(i);
       if (q.x >= A.x0 && q.x <= A.x1 && q.y >= A.y0 && q.y <= A.y1) return;
-      pads.push([q.x - 80 - PAD, q.y - 34 - PAD, q.x + 8 + PAD, q.y + 34 + PAD]);
+      pads.push(AirportArt.standBox(q, 80 + PAD, 8 + PAD, 34 + PAD));
       if (!st.pad) ways.push({ pts: AirportArt.remoteWay(i), d: 10 + PAD });
     });
     const plot = (b) => pads.push([b[0] - PAD, b[1] - PAD, b[2] + PAD, b[3] + PAD]);
@@ -87,19 +92,20 @@ const MapView = (() => {
       const L = LAYOUT[pid];
       if (L && L.box && !items[pid] && started(pid)) plot(L.box);
     }
-    for (const [key, pid, sid] of AirportArt.APRONS) {
+    for (const [key, pid, sid, item] of AirportArt.APRONS) {
       const B = LAYOUT[key];
-      if (p(pid, sid) > 0) plot([B.x0, B.y0, B.x1, B.y1]);
+      if ((item && items[item]) || p(pid, sid) > 0) plot([B.x0, B.y0, B.x1, B.y1]);
     }
     const R2 = LAYOUT.runway2, s2 = p('runway2', 'strip');
     if (s2 > 0) ways.push({ pts: [R2.from, [R2.from[0] + (R2.to[0] - R2.from[0]) * s2, R2.from[1] + (R2.to[1] - R2.from[1]) * s2]], d: STRIP_HALF + PAD });
     const R3 = LAYOUT.runway3, s3 = items.runway3 ? 1 : p('runway3', 'strip');
     if (s3 > 0) ways.push({ pts: [R3.from, R3.to], d: STRIP_HALF * s3 + PAD });
-    if (p('apron2', 'pave') >= 1) ways.push({ pts: LAYOUT.taxi2.slice(0, a.runways.some((r) => r.id === 'r2') ? 4 : 2), d: LAYOUT.taxi.w / 2 + PAD });
+    if (p('apron2', 'pave') >= 1) ways.push({ pts: LAYOUT.taxi2.slice(0, a.runways.some((r) => r.id === 'r2') ? LAYOUT.taxi2.length : 2), d: LAYOUT.taxi.w / 2 + PAD });
     const t3 = items.bridges ? 1 : p('bridges', 'taxi');
     if (t3 > 0) ways.push({ pts: polyPart(LAYOUT.taxi3, t3), d: LAYOUT.taxi.w / 2 + PAD });
     LAYOUT.deicePads.forEach((b, i) => { if (items.deicePad || p('deicePads', i === 0 ? 'south' : 'r3') > 0) plot(b); });
-    if (items.cargoCity || p('cargoCity', 'halls') > 0) { const b = LAYOUT.cargoCity.box; plot([b[0] - 20, b[1] - 30, b[2] + 20, b[3]]); }
+    if (items.cargoCity || p('cargoCity', 'halls') > 0) plot(LAYOUT.cargoCity.yard);
+    if (items.cargoStand) { const b = LAYOUT.cargoApron; plot([b.x0, b.y0, b.x1, b.y1]); }
     for (let i = 0; i < Math.min(2, items.solar || 0); i++) plot(LAYOUT.solar[i]);
     return { pads, ways };
   }
@@ -144,7 +150,8 @@ const MapView = (() => {
     const pad = Math.max(0, 14 / Cam.zoom);
     for (let i = 0; i < S.airport.stands.length; i++) {
       const p = AirportArt.standPos(i);
-      if (x > p.x - 74 - pad && x < p.x + 4 + pad && y > p.y - 28 - pad && y < p.y + 28 + pad) return { stand: S.airport.stands[i] };
+      const b = AirportArt.standBox(p, 74 + pad, 4 + pad, 28 + pad);
+      if (x > b[0] && x < b[2] && y > b[1] && y < b[3]) return { stand: S.airport.stands[i] };
     }
     return null;
   }

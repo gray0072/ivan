@@ -26,32 +26,45 @@ const Traffic = (() => {
   const runwayHdg = (dir) => (dir === '01' ? 10.4 : dir === '19' ? 190.4 : dir === '08' ? H2 : dir === '26' ? H2 + 180 : dir === '01R' ? H3 : H3 + 180);
   // from the runway's exit to the apron's entry
   function exitPath(dir) {
-    if (isR2(dir)) return [rwFrom(dir, R2.exit), R2.from].concat(LAYOUT.taxi2.slice(0, 3).reverse());
+    if (isR2(dir)) return [rwFrom(dir, R2.exit)].concat(LAYOUT.taxi2.slice().reverse());
     if (isR3(dir)) return [rwFrom(dir, dir === '01R' ? R3.exit * L3 : (1 - R3.exit) * L3)].concat(LAYOUT.taxi3);
     return [rp(EXIT, 0), rp(EXIT, LAYOUT.taxi.offset), APRON_IN];
   }
   function along(pts, u) { return alongPoly(pts, polyLength(pts) * clamp(u, 0, 1)); }
 
-  // the stand's centre for an aircraft of length len, and the way in from the runway exit
-  function standCentre(i, len) { const p = AirportArt.standPos(i); return [p.x - 4 - len / 2, p.y]; }
+  // the stand's centre for an aircraft of length len (west of the stop bar, or east of it at a stand facing west), and
+  // the way in from the runway exit
+  function standCentre(i, len) { const p = AirportArt.standPos(i); return [p.x - p.s * (4 + len / 2), p.y]; }
+  // the lane a stand is reached by: its x (north–south along the aprons), the points from that lane into the stand and
+  // from the pushed-back aircraft out to it. A stand facing east is entered from its entry point straight west of it; one
+  // facing west (the satellite's east side) from the lane west of the satellite, along its south end (`st.lane`) and up
+  // the lane east of it
+  function standLane(i, len) {
+    const e = AirportArt.standEntry(i), c = standCentre(i, len), p = AirportArt.standPos(i), st = S.airport.stands[i];
+    const push = [c[0] - p.s * 30, c[1]];
+    if (p.s > 0) return { x: e[0], into: [[e[0], c[1]], c], out: [push, [e[0], c[1]]] };
+    const [lx, ly] = st.lane;
+    return { x: lx, into: [[lx, ly], [e[0], ly], [e[0], c[1]], c], out: [push, [e[0], c[1]], [e[0], ly], [lx, ly]] };
+  }
   function wayIn(i, len, dir) {
-    const e = AirportArt.standEntry(i), c = standCentre(i, len), ex = exitPath(dir), last = ex[ex.length - 1];
-    return ex.concat([[e[0], last[1]], [e[0], c[1]], c]);
+    const l = standLane(i, len), ex = exitPath(dir), last = ex[ex.length - 1];
+    return ex.concat([[l.x, last[1]]]).concat(l.into);
   }
   function wayOut(i, len, dir) {
-    const e = AirportArt.standEntry(i), c = standCentre(i, len);
+    const l = standLane(i, len), y = l.out[l.out.length - 1][1];
     if (isR2(dir)) {
+      // west to runway 2's taxiway along the aprons' west edge, then up it (data/layout.js taxi2)
       const tw = LAYOUT.taxi2;
-      return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], tw[0][1]]].concat(tw).concat(dir === '26' ? [R2.to] : []);
+      return l.out.concat([[l.x, y], [tw[1][0], y]]).concat(tw.slice(2)).concat(dir === '26' ? [R2.to] : []);
     }
     if (isR3(dir)) {
       const tw = LAYOUT.taxi3.slice().reverse();
-      return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], tw[0][1]]].concat(tw).concat([dir === '01R' ? R3.from : R3.to]);
+      return l.out.concat([[l.x, tw[0][1]]]).concat(tw).concat([dir === '01R' ? R3.from : R3.to]);
     }
     // runway 1: along the departures' lane to the apron's north end and out by their own link, never meeting the
     // arrivals coming in by theirs
-    const end = dir === '01' ? 0 : 1, O = LAYOUT.taxi.apronOut, ox = e[0] - LAYOUT.taxi.outLane;
-    return [[c[0] - 30, c[1]], [ox, c[1]], [ox, O.to[1]], O.to, rp(O.s, LAYOUT.taxi.offset), rp(end, LAYOUT.taxi.offset), rp(end, 70)];
+    const end = dir === '01' ? 0 : 1, O = LAYOUT.taxi.apronOut, ox = l.x - LAYOUT.taxi.outLane;
+    return l.out.concat([[ox, y], [ox, O.to[1]], O.to, rp(O.s, LAYOUT.taxi.offset), rp(end, LAYOUT.taxi.offset), rp(end, 70)]);
   }
   // the arrivals' runway and its direction now (session 5: with runway 3 the landings keep to runway 1)
   function dirNow() { const rw = S.ops ? Runways.forArr() : null; return rw ? Runways.direction(rw) : '19'; }
@@ -107,11 +120,12 @@ const Traffic = (() => {
     }
     if ((f.st === 'turn' || f.st === 'parked') && si >= 0) {
       const c = standCentre(si, len);
-      return { x: c[0], y: c[1], z: 0, hdg: 90, moving: false, atStand: true };
+      return { x: c[0], y: c[1], z: 0, hdg: AirportArt.standPos(si).hdg, moving: false, atStand: true };
     }
     if (f.st === 'taxiOut') {
       const i = si >= 0 ? si : f.lastStand || 0, dir = f.tdir || dirNow(), c = standCentre(i, len), tt = t - f.offBlock;
-      if (tt < 0.8) return { x: c[0] - 30 * ease(tt / 0.8), y: c[1], z: 0, hdg: 90, moving: true, push: true };
+      const sp = AirportArt.standPos(i);
+      if (tt < 0.8) return { x: c[0] - sp.s * 30 * ease(tt / 0.8), y: c[1], z: 0, hdg: sp.hdg, moving: true, push: true };
       const way = wayOut(i, len, dir), dur = Math.max(0.5, f.at - f.offBlock - 0.8);
       const p = along(way, (tt - 0.8) / dur);
       return { x: p.x, y: p.y, z: 0, hdg: p.hdg, moving: true };
@@ -152,22 +166,24 @@ const Traffic = (() => {
     const A = AIRCRAFT[f.type], len = A.length, fw = Math.max(1.2, len * (AIRCRAFT_SHAPE[f.type] || {}).fus || 2);
     const tr = f.tr;
     if (!tr) return;
-    const door = [p.x + len * 0.3, p.y + fw + 3];
+    // offsets from the aircraft's centre are given for one facing east and turned with it (k −1: nose west)
+    const k = p.hdg === 270 ? -1 : 1, at = (dx, dy) => [p.x + k * dx, p.y + k * dy], hd = (h) => (k > 0 ? h : (h + 180) % 360);
+    const door = at(len * 0.3, fw + 3);
     const term = [LAYOUT.terminal1.box[0] - 2, clamp(p.y, LAYOUT.terminal1.box[1] + 5, LAYOUT.terminal1.box[3] - 5)];
     const people = Cam.zoom > 1.3;
     // the stairs while anyone gets off or on
-    if (f.inBlock !== null || f.st === 'parked' || tr.board !== null) Vehicles.stairs(c, door[0], door[1], 180);
+    if (f.inBlock !== null || f.st === 'parked' || tr.board !== null) Vehicles.stairs(c, door[0], door[1], hd(180));
     if (people && f.inBlock !== null && t < tr.off && f.paxArr) walkers(c, door, term, (t - f.inBlock) / Math.max(0.5, tr.off - f.inBlock), 7, f.id + 'off');
     if (people && tr.board !== null && tr.ready === null) walkers(c, term, door, (t - tr.board) / Math.max(1, f.booked * BOARD_PER_PAX), 7, f.id + 'on');
     // catering and bags while the services run
     if (t >= tr.off && t < tr.svc) {
-      Vehicles.catering(c, p.x - len * 0.28, p.y - fw - 3.5, 90);
-      Vehicles.bagTrain(c, p.x - len * 0.05, p.y - fw - 7, 90, 2);
-      if (people) { person(c, p.x - len * 0.1, p.y - fw - 4.5, PAL.hiVisOrange); person(c, p.x - len * 0.32, p.y - fw - 6, PAL.hiVis); }
+      Vehicles.catering(c, ...at(-len * 0.28, -fw - 3.5), hd(90));
+      Vehicles.bagTrain(c, ...at(-len * 0.05, -fw - 7), hd(90), 2);
+      if (people) { person(c, ...at(-len * 0.1, -fw - 4.5), PAL.hiVisOrange); person(c, ...at(-len * 0.32, -fw - 6), PAL.hiVis); }
     }
     // the fuel truck: from its depot, at the wing, and back
     if (tr.fuelFrom !== undefined && tr.fuelEnd !== null) {
-      const depot = [LAYOUT.fuelDepot.x, LAYOUT.fuelDepot.y], wingPt = [p.x - 2, p.y - A.span * 0.32];
+      const depot = [LAYOUT.fuelDepot.x, LAYOUT.fuelDepot.y], wingPt = at(-2, -A.span * 0.32);
       const half = FUEL_DRIVE / 2, back = tr.fuelEnd + half;
       let q = null;
       if (t < tr.fuelFrom + half) q = { u: (t - tr.fuelFrom) / half, a: depot, b: wingPt };
@@ -176,19 +192,19 @@ const Traffic = (() => {
       if (q) {
         const way = [q.a, [q.a[0], (q.a[1] + q.b[1]) / 2], [q.b[0], (q.a[1] + q.b[1]) / 2], q.b];
         const v = along(way, q.u);
-        Vehicles.fuelTruck(c, sc, v.x, v.y, q.u >= 1 ? 90 : v.hdg, true);
-        if (people && q.u >= 1) person(c, wingPt[0] + 4, wingPt[1] + 2, PAL.hiVis);
+        Vehicles.fuelTruck(c, sc, v.x, v.y, q.u >= 1 ? hd(90) : v.hdg, true);
+        if (people && q.u >= 1) person(c, wingPt[0] + 4 * k, wingPt[1] + 2 * k, PAL.hiVis);
       }
     }
     // session 5: a de-icing truck at the wing, its boom up and the warm glycol steaming
     if (tr.deice === 'going') {
-      const dx = p.x - len * 0.1, dy = p.y + A.span * 0.3;
-      Vehicles.deicer(c, sc, dx, dy, 90, 3 + A.span * 0.12);
+      const [dx, dy] = at(-len * 0.1, A.span * 0.3);
+      Vehicles.deicer(c, sc, dx, dy, hd(90), 3 + A.span * 0.12);
       if (sc.dark < 0.5) sc.lights.push({ x: dx, y: dy - 4, z: 5, col: '240,245,255', r: 6 });
     }
     // a hand by the nose, and the tug at pushback
-    if (people && f.st !== 'taxiOut') person(c, p.x + len / 2 + 3, p.y - 3, PAL.hiVis);
-    if (tr.ready !== null && f.st !== 'taxiOut') Vehicles.tug(c, p.x + len / 2 + 5, p.y, 270);
+    if (people && f.st !== 'taxiOut') person(c, ...at(len / 2 + 3, -3), PAL.hiVis);
+    if (tr.ready !== null && f.st !== 'taxiOut') Vehicles.tug(c, ...at(len / 2 + 5, 0), hd(270));
   }
 
   // ---------- everything that moves, as objects to sort ----------

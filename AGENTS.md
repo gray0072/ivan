@@ -53,6 +53,8 @@ Every project lives in its own folder at the repo root, named in kebab-case (par
 
 No Playwright or Puppeteer: a page is driven in headless Chrome with `tools/cdp.js`, long gameplay tests run in Node. Keep browser runs short and never run several at once. **Read [docs/testing.md](docs/testing.md) before testing.**
 
+**Expect a lot of debugging, and make it cheap.** The bigger games (`arlanda-rising`, `world-aviation`) are debugged again and again — the same questions about the map, the sim and the balance come back. A check you write to answer one is not thrown away: it goes into the game's `tools/` with a header (what it checks, how to run it), a picture you need to see the game's world goes into its `docs/` as a generated file (`arlanda-rising/docs/layout.svg`, the plan written by `tools/layout-check.js`), and a recipe that puts the game into a state goes into its `SPEC.md` → [docs/testing.md](docs/testing.md#tools-and-docs-for-debugging).
+
 ## Pitfalls
 
 - **Line endings are LF.** `.gitattributes` (`* text=auto eol=lf`) stores and checks out every text file with LF on every OS, so an editor or a script that writes CRLF does not turn a one-line change into a whole-file diff. Write LF; never commit CRLF.

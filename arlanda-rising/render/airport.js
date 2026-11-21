@@ -8,22 +8,29 @@
 
 const AirportArt = (() => {
   const RW = LAYOUT.runway1, TX = LAYOUT.taxi;
-  // the aprons after the first: their plot in LAYOUT, the project and its stage that pave them
-  const APRONS = [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron'], ['apron4', 'terminal2', 'gates'], ['apron5', 'pierF', 'apron'], ['apron6', 'pier2040', 'gates']];
+  // the aprons after the first: their plot in LAYOUT, the project and its stage that pave them (and the item that stands
+  // for it once built, where there is one)
+  const APRONS = [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron'], ['apron4', 'terminal2', 'gates'], ['apron5', 'pierF', 'apron'], ['apron6', 'pier2040', 'gates'],
+    ['apron7', 'pier2040', 'arm', 'pierArm']];
   const rp = (s, t) => Ground.rwPoint(s, t);
 
   // a stand's place on the map: the apron's in order, then the remote slots
-  // (a stand a project placed keeps its own place, `at`; session 3)
+  // (a stand a project placed keeps its own place, `at`; session 3); x, y the stop bar's point by the nose, hdg 90 (nose
+  // east, the aircraft west of the point) or 270 (nose west, the aircraft east of it); `s` +1 or −1 along x from the nose
+  // to the tail's side is −s
   function standPos(i) {
     const st = S.airport.stands[i];
-    if (st && st.at) return { x: st.at[0], y: st.at[1], hdg: 90 };
+    if (st && st.at) return st.hdg === 270 ? { x: st.at[0], y: st.at[1], hdg: 270, s: -1 } : { x: st.at[0], y: st.at[1], hdg: 90, s: 1 };
     let k = 0;
     for (let j = 0; j < i; j++) if (!S.airport.stands[j].at) k++;
-    return k < LAYOUT.stands.length ? LAYOUT.stands[k] : LAYOUT.remote[(k - LAYOUT.stands.length) % LAYOUT.remote.length];
+    const q = k < LAYOUT.stands.length ? LAYOUT.stands[k] : LAYOUT.remote[(k - LAYOUT.stands.length) % LAYOUT.remote.length];
+    return { x: q.x, y: q.y, hdg: 90, s: 1 };
   }
+  // the ground a stand takes: from its stop bar back over the aircraft, `back` m, and `half` m to each side
+  function standBox(p, back, front, half) { return p.s > 0 ? [p.x - back, p.y - half, p.x + front, p.y + half] : [p.x - front, p.y - half, p.x + back, p.y + half]; }
   function standIndex(id) { return S.airport.stands.findIndex((s) => s.id === id); }
   // the point the stand's lead-in line starts at (the aircraft taxis there, then in)
-  function standEntry(i) { const p = standPos(i); return [p.x - 75, p.y]; }
+  function standEntry(i) { const p = standPos(i); return [p.x - 75 * p.s, p.y]; }
   // a remote stand's paved way to the first apron: the line the aircraft taxi along (render/traffic.js), from the
   // stand's entry straight north or south to the apron's edge
   function remoteWay(i) {
@@ -112,15 +119,20 @@ const AirportArt = (() => {
     }
     runway2(c, sc);
     runway3(c, sc);
+    // runway 2's taxiway, under the aprons it runs into (a stub from the jet apron until the runway is built)
+    if (sc.p('apron2', 'pave') >= 1) line(c, LAYOUT.taxi2.slice(0, sc.runway2 ? LAYOUT.taxi2.length : 2), TX.w, sc.season === 'winter' ? '#5a5f64' : '#4b4f54');
     // the jet apron and the domestic apron, as far as they are paved
-    for (const [key, pid, sid] of APRONS) {
-      const q = sc.p(pid, sid);
+    for (const [key, pid, sid, item] of APRONS) {
+      const q = item && sc.items[item] ? 1 : sc.p(pid, sid);
       if (q <= 0) continue;
       const B = LAYOUT[key];
       c.fillStyle = q < 1 ? '#a39a88' : sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
       c.fillRect(B.x0, B.y0, (B.x1 - B.x0) * Math.min(1, q * 1.2), B.y1 - B.y0);
     }
-    if (sc.p('apron2', 'pave') >= 1) line(c, LAYOUT.taxi2.slice(0, sc.runway2 ? 4 : 2), TX.w, sc.season === 'winter' ? '#5a5f64' : '#4b4f54');
+    // the satellite's apron reaches over the finger's place for its east side's lane; the cargo apron by Cargo City
+    const conc = sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
+    if (S.airport.pierDesign === 'satellite' && sc.p('pier2040', 'gates') > 0) { const b = LAYOUT.pier2040.satApron; c.fillStyle = conc; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]); }
+    if (sc.items.cargoStand) { const b = LAYOUT.cargoApron; c.fillStyle = conc; c.fillRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0); }
     if (sc.apron) {
       const A = LAYOUT.apron1;
       c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
@@ -141,23 +153,24 @@ const AirportArt = (() => {
       const p = standPos(i), A = LAYOUT.apron1;
       const onApron = (!!st.at && !st.pad) || (p.x >= A.x0 && p.x <= A.x1 && p.y >= A.y0 && p.y <= A.y1);
       // session 6: a stand with its own pad (the cargo stands, the second arm's)
-      if (st.pad) { c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete; c.fillRect(p.x - 74, p.y - 28, 82, 56); }
+      if (st.pad) { const b = standBox(p, 74, 8, 28); c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]); }
       else if (!onApron) {
         c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
         c.fillRect(p.x - 70, p.y - 26, 78, 52);
         line(c, remoteWay(i), 20, sc.season === 'winter' ? '#cfd5da' : PAL.concrete);
       }
       const hl = sc.standMark && sc.standMark[st.id];
-      line(c, [[p.x - 70, p.y], [p.x - 2, p.y]], hl ? 3 : 0.8, hl ? hl : PAL.taxiLine);
-      line(c, [[p.x - 2, p.y - 6], [p.x - 2, p.y + 6]], 1.2, PAL.taxiLine);
-      groundText(c, st.name, p.x - 60, p.y + 12, [1, 0], 9, st.closed ? '#e35b4f' : PAL.taxiLine);
+      const k = p.s, bx = standBox(p, 72, 2, 27);
+      line(c, [[p.x - 70 * k, p.y], [p.x - 2 * k, p.y]], hl ? 3 : 0.8, hl ? hl : PAL.taxiLine);
+      line(c, [[p.x - 2 * k, p.y - 6], [p.x - 2 * k, p.y + 6]], 1.2, PAL.taxiLine);
+      groundText(c, st.name, p.x - 60 * k, p.y + 12, [1, 0], 9, st.closed ? '#e35b4f' : PAL.taxiLine);
       if (hl) {
         c.strokeStyle = hl; c.lineWidth = 2.5; c.setLineDash([5, 4]);
-        c.strokeRect(p.x - 72, p.y - 27, 74, 54); c.setLineDash([]);
+        c.strokeRect(bx[0], bx[1], bx[2] - bx[0], bx[3] - bx[1]); c.setLineDash([]);
       }
-      if (st.closed) { c.fillStyle = 'rgba(227,91,79,0.25)'; c.fillRect(p.x - 72, p.y - 27, 74, 54); }
+      if (st.closed) { c.fillStyle = 'rgba(227,91,79,0.25)'; c.fillRect(bx[0], bx[1], bx[2] - bx[0], bx[3] - bx[1]); }
       // session 6: a charging stand's green post and cable
-      if (st.charge) { c.fillStyle = '#2f9e5b'; c.fillRect(p.x - 12, p.y - 22, 6, 6); line(c, [[p.x - 9, p.y - 16], [p.x - 20, p.y - 6]], 0.8, '#2f9e5b'); }
+      if (st.charge) { c.fillStyle = '#2f9e5b'; c.fillRect(p.x - 9 * k - 3, p.y - 22, 6, 6); line(c, [[p.x - 9 * k, p.y - 16], [p.x - 20 * k, p.y - 6]], 0.8, '#2f9e5b'); }
     });
     // car parks
     for (const [kind, box] of [['parkingSmall', LAYOUT.parkingSmall.box], ['parkingBig', LAYOUT.parkingBig.box]]) {
@@ -252,7 +265,7 @@ const AirportArt = (() => {
       c.fillStyle = sn ? '#cfd5da' : '#a7a49c'; c.fillRect(b[0], b[1], (b[2] - b[0]) * q, b[3] - b[1]);
       c.strokeStyle = '#e0a020'; c.lineWidth = 1.2; c.setLineDash([5, 4]); c.strokeRect(b[0] + 6, b[1] + 6, b[2] - b[0] - 12, b[3] - b[1] - 12); c.setLineDash([]);
     });
-    if (sc.items.cargoCity || sc.p('cargoCity', 'halls') > 0) { const b = LAYOUT.cargoCity.box; c.fillStyle = sn ? '#d9dee3' : '#8a8e93'; c.fillRect(b[0] - 20, b[1] - 30, b[2] - b[0] + 40, 30); }
+    if (sc.items.cargoCity || sc.p('cargoCity', 'halls') > 0) { const b = LAYOUT.cargoCity.yard; c.fillStyle = sn ? '#d9dee3' : '#8a8e93'; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]); }
     for (let i = 0; i < Math.min(2, sc.items.solar || 0); i++) {
       const b = LAYOUT.solar[i];
       c.fillStyle = '#2b3d5c'; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
@@ -523,5 +536,5 @@ const AirportArt = (() => {
     }
   }
 
-  return { flat, objects, standPos, standIndex, standEntry, remoteWay, APRONS };
+  return { flat, objects, standPos, standBox, standIndex, standEntry, remoteWay, APRONS };
 })();

@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "3ca5c7f2e196";
+const VERSION = "940663fd7298";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -42,15 +42,15 @@ const FILES = [
   "data/aircraft.js?v=5",
   "data/airlines.js?v=5",
   "data/brands.js?v=1",
-  "data/buildings.js?v=5",
+  "data/buildings.js?v=6",
   "data/challenges.js?v=1",
   "data/domains.js?v=5",
   "data/events.js?v=2",
   "data/icons.js?v=5",
   "data/lang-ru.js?v=6",
   "data/lang-sv.js?v=6",
-  "data/layout.js?v=7",
-  "data/masterplan.js?v=5",
+  "data/layout.js?v=8",
+  "data/masterplan.js?v=6",
   "data/missions/ch1.js?v=2",
   "data/missions/ch2.js?v=1",
   "data/missions/ch3.js?v=1",
@@ -80,18 +80,18 @@ const FILES = [
   "manifest.webmanifest?v=1",
   "progress.js?v=2",
   "render/aircraft.js?v=6",
-  "render/airport.js?v=9",
-  "render/ground.js?v=2",
+  "render/airport.js?v=10",
+  "render/ground.js?v=3",
   "render/iso.js?v=2",
-  "render/map.js?v=6",
+  "render/map.js?v=7",
   "render/palette.js?v=1",
   "render/sky.js?v=1",
   "render/terminal.js?v=2",
-  "render/traffic.js?v=5",
+  "render/traffic.js?v=6",
   "render/vehicles.js?v=1",
   "sim/actions.js?v=5",
   "sim/airlines.js?v=1",
-  "sim/airport.js?v=6",
+  "sim/airport.js?v=7",
   "sim/calendar.js?v=1",
   "sim/challenges.js?v=1",
   "sim/cheats.js?v=3",

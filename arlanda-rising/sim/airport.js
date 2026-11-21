@@ -50,6 +50,8 @@ const Airport = {
   addStand(def) {
     const st = { id: 's' + nextId(), name: def.name, code: def.code, contact: !!def.contact, dist: def.dist, occ: null, res: null };
     if (def.at) st.at = def.at.slice();
+    // a stand facing west (nose to a building on its west side) and the lane it is reached by (render/traffic.js)
+    if (def.hdg === 270) { st.hdg = 270; st.lane = def.lane.slice(); }
     S.airport.stands.push(st);
     return st;
   },
@@ -125,16 +127,15 @@ const Airport = {
       case 'pier2040': {
         const des = p.designs[a.pierDesign || 'finger'], sp = p.spots;
         des.stands.forEach((s, i) => {
-          const sat = a.pierDesign === 'satellite';
-          const at = sat ? [i % 2 ? sp.satellite.x1 : sp.satellite.x0, sp.satellite.y0 + Math.floor(i / 2) * sp.satellite.dy] : [sp.finger.x, sp.finger.y0 + i * sp.finger.dy];
-          const st = this.addStand({ name: s[0], code: s[1], contact: true, dist: sat ? 4 : 3, at });
+          const sat = a.pierDesign === 'satellite', spot = (sat ? sp.satellite : sp.finger)[i];
+          const st = this.addStand({ name: s[0], code: s[1], contact: true, dist: sat ? 4 : 3, at: [spot[0], spot[1]], hdg: spot[2], lane: p.satLane });
           if (des.charge) st.charge = true;
         });
         this.addItem('pier2040', { price });
         if (des.charge) this.addItem('greenPier');
         break;
       }
-      case 'pierArm': this.addItem('pierArm'); p.arm.forEach((s, i) => { const st = this.addStand({ name: s[0], code: s[1], contact: true, dist: 4, at: [p.spots.arm.x0 + i * p.spots.arm.dx, p.spots.arm.y] }); st.pad = true; if (p.designs[a.pierDesign || 'finger'].charge) st.charge = true; }); break;
+      case 'pierArm': this.addItem('pierArm'); p.arm.forEach((s, i) => { const st = this.addStand({ name: s[0], code: s[1], contact: true, dist: 4, at: p.spots.arm[i].slice(0, 2) }); if (p.designs[a.pierDesign || 'finger'].charge) st.charge = true; }); break;
       default: throw new Error('unknown effect ' + effect);
     }
     logEvent('built', { what: effect, project });
@@ -158,10 +159,11 @@ const Airport = {
     else if (kind === 'desk') S.airport.desks++;
     else if (kind === 'lane') Terminal.addLane();
     else if (kind === 'booth') { S.airport.booths = (S.airport.booths || 0) + 1; if (S.ops && S.ops.boothsOpen !== undefined) S.ops.boothsOpen++; }
-    // session 6: a stand of the cargo apron by Cargo City; a charger on the best stand without one; the mobile charger
+    // session 6: a stand of the cargo apron by Cargo City (the five spots in a column; a sixth and later squeezed in
+    // between them, which no mission needs); a charger on the best stand without one; the mobile charger
     else if (kind === 'cargoStand') {
       const spots = BUILDINGS.cargoStand.spots, n = S.airport.stands.filter((s) => s.cargo).length, at = spots[n % spots.length];
-      const st = this.addStand({ name: 'K' + (n + 1), code: 'E', contact: false, dist: 5, at: [at[0], at[1] + Math.floor(n / spots.length) * 70] });
+      const st = this.addStand({ name: 'K' + (n + 1), code: 'E', contact: false, dist: 5, at: [at[0] - Math.floor(n / spots.length) * 4, at[1] + Math.floor(n / spots.length) * 35] });
       st.cargo = true; st.pad = true;
     } else if (kind === 'charger') {
       const st = S.airport.stands.filter((s) => !s.charge && !s.cargo && SIZE_CODES.indexOf(s.code) <= 3)

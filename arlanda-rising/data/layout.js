@@ -38,17 +38,19 @@ const LAYOUT = {
   ],
 
   // session 3: runway 2 (08/26) from the AIP's ends (59.658419 N 17.936133 E, 59.663897 N 17.979153 E), its taxiway
-  // from the jet apron's north end; the jet apron (1965), the domestic apron (1983); where the aircraft on runway 2
-  // leave it (m from its threshold)
+  // from the jet apron's north end: west along the gap between the jet apron and the aprons of 2002 and later, north
+  // along their west edge (x 688, clear of the aprons that start at x 700), east past the north end of the piers and the
+  // second arm and up to the 08 threshold — never across an apron or a pier; the jet apron (1965), the domestic apron
+  // (1983); where the aircraft on runway 2 leave it (m from its threshold)
   runway2: { from: [1290, 2349], to: [3709, 2958], w: 45, exit: 1500 },
-  taxi2: [[760, 1650], [800, 1700], [1150, 2250], [1290, 2349]],
+  taxi2: [[760, 1650], [688, 1650], [688, 2450], [1200, 2450], [1290, 2349]],
   apron2: { x0: 640, y0: 1380, x1: 890, y1: 1650 },
   apron3: { x0: 700, y0: 935, x1: 890, y1: 1110 },
 
   // buildings: [x0, y0, x1, y1] on the ground and a height in metres
   terminal1: { box: [880, 1180, 925, 1300], h: 9, waiting: [880, 1300, 915, 1335], kiosk: [884, 1165, 896, 1177] },
   tower1: { x: 912, y: 1365, base: 9, h: 28 },
-  fireStation: { box: [455, 1470, 505, 1500], h: 8 },
+  fireStation: { box: [482, 1470, 532, 1500], h: 8 },   // east of the parallel taxiway (its edge at x ≈ 468 here)
   siteOffice: { x: 720, y: 880 },
   cafe: { box: [880, 1140, 905, 1162], h: 5 },
   intlTerminal: { box: [890, 1390, 965, 1645], h: 14 },
@@ -61,17 +63,18 @@ const LAYOUT = {
   dutyFree: { box: [965, 1450, 990, 1520], h: 6 },
   fuelDepot: { x: 690, y: 1400 },      // where the fuel trucks wait
   snowDepot: { x: 560, y: 1430 },      // the ploughs' shed
-  // the car parks east of the road in, by the bus stop (west of it the road and the terminals)
+  // the car parks east of the road in and of the landside road, by the bus stop (west of them the terminals)
   parkingSmall: { box: [1020, 1186, 1100, 1248] },
-  parkingBig: { box: [1016, 1258, 1106, 1398] },
+  parkingBig: { box: [1024, 1258, 1106, 1398] },
   // session 4: Terminal 2 south of the domestic terminal, with its own apron; the sorting hall; Arlanda Express — the
   // line from the East Coast railway in the north-east, the tunnel under the terminals (portals north and south) and
   // its two stations under the landside road (the game's drawing of the course, to be checked)
   terminal2: { box: [895, 775, 975, 930], h: 11 },
   apron4: { x0: 700, y0: 760, x1: 890, y1: 935 },
-  sorterHall: { box: [960, 1330, 1000, 1380], h: 7 },
-  rail: { line: [[4600, 4200], [3200, 2600], [1800, 1950], [1150, 1780]], tunnel: [[1150, 1780], [1060, 1600], [1050, 1000], [1080, 640]],
+  sorterHall: { box: [955, 1330, 990, 1385], h: 7 },
+  rail: { line: [[4600, 4200], [4000, 2900], [3200, 2500], [1800, 1950], [1150, 1780]], tunnel: [[1150, 1780], [1060, 1600], [1050, 1000], [1080, 640]],
     south: [1050, 1000], north: [1055, 1500], portalN: [1150, 1780], portalS: [1080, 640], out: [[1080, 640], [1300, 200], [1700, -900], [2300, -3600]] },
+  // the line passes beyond runway 2's east end (not over the runway) and Cargo City lies west of the line out to the south
 
   // session 5: runway 3 (01R/19L) from SkyVector's ends (01R 59°37.58′ N 17°57.04′ E, 19L 59°38.91′ N 17°57.52′ E), its
   // exit (a share of its length from 01R) and the taxiway from it west over the railway and the road (the two taxiway
@@ -85,25 +88,38 @@ const LAYOUT = {
   tower2: { x: 1063, y: 1113, base: 11, h: 83 },
   pierF: { box: [890, 1655, 935, 1990], h: 8 },
   apron5: { x0: 700, y0: 1655, x1: 890, y1: 1990 },
-  skyCity: { box: [970, 1402, 1040, 1445], h: 12 },
-  hotel: { box: [1040, 1405, 1070, 1440], h: 36 },
-  hotelExt: { box: [1070, 1405, 1098, 1440], h: 28 },
-  offices: { box: [1112, 1180, 1150, 1240], h: 18 },
-  cargoCity: { box: [1160, 320, 1400, 470], h: 12 },
-  deicePads: [[200, 80, 330, 180], [2190, -940, 2300, -800]],
+  skyCity: { box: [1024, 1402, 1094, 1445], h: 12 },     // east of the landside road, across it from the terminals
+  hotel: { box: [1094, 1405, 1124, 1440], h: 36 },
+  hotelExt: { box: [1124, 1405, 1152, 1440], h: 28 },
+  offices: { box: [1112, 1180, 1150, 1240], h: 18 },     // a second block, when bought, stands at [1112, 1250, 1150, 1300]
+  // Cargo City between the taxiway to the bridges and the road in: the halls' landside on the road, their airside on
+  // the cargo apron west of them, whose stands (data/buildings.js cargoStand) stand nose east to the halls in a column
+  cargoCity: { box: [915, 420, 975, 740], h: 12, yard: [915, 395, 978, 420] },
+  cargoApron: { x0: 815, y0: 400, x1: 912, y1: 760 },
+  deicePads: [[200, 80, 330, 180], [2250, -940, 2360, -800]],   // the second outside runway 3's strip (its edge x ≈ 2230)
   aquifer: { box: [1190, 1460, 1214, 1480], h: 4 },
   solar: [[1450, 600, 1700, 760], [1450, 800, 1700, 960]],
   // session 6: the cargo stands by Cargo City, the security operations centre, the hydrogen depot, the night train's
   // platform at the station, the player's pier north of Pier F (the finger along the line of the piers, or a satellite
   // out on the apron reached by a tunnel)
-  cyberCentre: { box: [1112, 1250, 1140, 1275], h: 9 },
+  cyberCentre: { box: [1160, 1185, 1188, 1210], h: 9 },   // east of the offices (their second block takes the plot south of it)
   h2depot: { box: [560, 1520, 620, 1560], tanks: 3 },
-  nightTrain: { box: [1100, 1760, 1180, 1790], h: 4 },
-  pier2040: { box: [890, 1995, 935, 2250], h: 10, sat: [760, 2085, 840, 2195], arm: [935, 2170, 1040, 2200] },
+  nightTrain: { box: [1180, 1748, 1260, 1770], h: 4 },    // beside the line east of the north portal, not on it
+  // the player's pier: the finger along the line of the piers; or the satellite, an island in the apron with stands nose
+  // east on its west side and nose west on its east side (that apron then paved up to x 935, `satApron`, for their
+  // lane); the second arm continues the finger north over its own apron (apron7)
+  pier2040: { box: [890, 1995, 935, 2250], h: 10, sat: [800, 2010, 840, 2255], satApron: [890, 1995, 935, 2250], arm: [890, 2250, 935, 2420] },
   apron6: { x0: 700, y0: 1995, x1: 890, y1: 2260 },
+  apron7: { x0: 700, y0: 2260, x1: 890, y1: 2425 },
 
   // the road in: from the E4 round the south end of the runway to the terminal (the clearing's line too)
+  // (under the taxiway bridge at [915, 214]); once the baggage hall stands in front of the first terminal's door the road
+  // stops at the hall's east face (`roadEnd`, its x)
   road: [[-1880, -700], [-900, -760], [200, -620], [700, -200], [1000, 400], [1030, 900], [990, 1240], [930, 1240]],
+  roadEnd: 958,
+  // the landside road on from the road in, north along the terminals' kerb to the international terminal and Pier F
+  // (from the international terminal's year): west of it the terminals, east of it the car parks, Sky City and the hotel
+  landside: [[990, 1240], [1006, 1290], [1006, 1660]],
   // the E4 motorway, west of the airport, north–south
   e4: [[-1700, -3600], [-1820, -1500], [-1880, -700], [-1860, 800], [-1950, 2600], [-2100, 5200]],
   // Märsta, south-west: the town's middle and size (red and white houses, a church)
