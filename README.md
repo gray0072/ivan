@@ -25,50 +25,18 @@
 <table>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="flight-simulator/screenshot.png" alt="Flight Simulator screenshot"></a>
-      <h3><img src="flight-simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
-      <p>First-person arcade flight: steer with the arrow keys, pop balloons with the twin gun for points and land on the highlighted airport's runway.</p>
-      <p><code>Aviation</code> <code>Arcade</code> <code>Shooter</code></p>
-      <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Play</b></a> · <a href="flight-simulator/">Source</a></p>
+      <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/docs/showcase.gif" alt="Arlanda Rising screenshot"></a>
+      <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
+      <p>Run Stockholm Arlanda through its real history, from clearing the pine forest in 1958 through the jets, Schengen, the ash cloud and the pandemic to your own airport of 2040. An isometric airport that lives in front of you, short missions with stars, Free Play and a cloud save.</p>
+      <p><code>Strategy</code> <code>Building</code> <code>Aviation</code></p>
+      <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Play</b></a> · <a href="arlanda-rising/">Source</a> · <sub>2026-11-20</sub></p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="fish-frenzy/docs/showcase.gif" alt="Fish Frenzy screenshot"></a>
-      <h3><img src="fish-frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
-      <p>Eat-and-grow arcade: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish, dodge bigger ones and jellyfish, and climb the food chain to the Sea King. Three difficulty levels and best-time records.</p>
-      <p><code>Arcade</code> <code>For kids</code></p>
-      <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Play</b></a> · <a href="fish-frenzy/">Source</a></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/fun-training/"><img src="fun-training/docs/showcase.gif" alt="Fun Training screenshot"></a>
-      <h3><img src="fun-training/icon.svg" alt="" width="28" height="28" align="center"> Fun Training</h3>
-      <p>A training game for school kids: answer math and reading tasks in time to water a flower, stop zombies, lay rails for a train or keep a panda fed. Progress tracks with stars and bosses, and coins to spend on your own character and room.</p>
-      <p><code>Learning</code> <code>For kids</code></p>
-      <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Play</b></a> · <a href="fun-training/">Source</a></p>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/world-aviation/"><img src="world-aviation/docs/showcase.gif" alt="World Aviation screenshot"></a>
-      <h3><img src="world-aviation/icon.svg" alt="" width="28" height="28" align="center"> World Aviation</h3>
-      <p>A cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, then buy traffic rights to the rest of the world. Push back, taxi, fly the ILS and land eighteen aircraft, from a 19-seat turboprop to the A380, at 141 real airports.</p>
-      <p><code>Aviation</code> <code>Simulator</code> <code>Strategy</code></p>
-      <p><a href="https://gray0072.github.io/ivan/world-aviation/"><b>▶ Play</b></a> · <a href="world-aviation/">Source</a></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/yacht/"><img src="yacht/screenshot.png" alt="Yacht screenshot"></a>
-      <h3><img src="yacht/icon.svg" alt="" width="28" height="28" align="center"> Yacht</h3>
-      <p>The dice game Yacht, also known as Yahtzee and dice poker, for up to 10 players on one device: shake the leather cup, keep the dice you like and fill the score sheet. Saved groups of players, statistics, hints and a table of your choice.</p>
-      <p><code>Tabletop</code> <code>Multiplayer</code> <code>Turn-based</code></p>
-      <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Play</b></a> · <a href="yacht/">Source</a></p>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/city-builder/"><img src="city-builder/screenshot.png" alt="City Builder screenshot"></a>
-      <h3><img src="city-builder/icon.svg" alt="" width="28" height="28" align="center"> City Builder</h3>
-      <p>A city-building game: lay roads, build houses, shops and factories, keep the residents happy and watch cottages grow into apartment blocks. Grow a hamlet into a Metropolis, put out fires, hold back spring floods and don't go bankrupt.</p>
-      <p><code>Strategy</code> <code>Building</code></p>
-      <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Play</b></a> · <a href="city-builder/">Source</a></p>
+      <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/docs/showcase.gif" alt="Lift Logic screenshot"></a>
+      <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
+      <p>A programming puzzle: be the brain of a lift. Build its program from colourful blocks, Scratch-style, and watch a building live by it — from Grandma's house to a hotel, a hospital, the Eiffel Tower and the Empire State Building. 72 missions with stars, hints and jokes.</p>
+      <p><code>Puzzle</code> <code>Learning</code> <code>For kids</code></p>
+      <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Play</b></a> · <a href="lift-logic/">Source</a> · <sub>2026-11-19</sub></p>
     </td>
   </tr>
   <tr>
@@ -77,23 +45,55 @@
       <h3><img src="wiggle-wars/icon.svg" alt="" width="28" height="28" align="center"> Wiggle Wars</h3>
       <p>Turn-based artillery with worms: bazookas, grenades, air strikes, a jetpack and more on a land that blows apart, with wind, crates and mines. One against one on one phone, against the computer, or a twelve-mission campaign with stars.</p>
       <p><code>Turn-based</code> <code>Multiplayer</code> <code>Shooter</code></p>
-      <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Play</b></a> · <a href="wiggle-wars/">Source</a></p>
+      <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Play</b></a> · <a href="wiggle-wars/">Source</a> · <sub>2026-11-10</sub></p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/docs/showcase.gif" alt="Lift Logic screenshot"></a>
-      <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
-      <p>A programming puzzle: be the brain of a lift. Build its program from colourful blocks, Scratch-style, and watch a building live by it — from Grandma's house to a hotel, a hospital, the Eiffel Tower and the Empire State Building. 72 missions with stars, hints and jokes.</p>
-      <p><code>Puzzle</code> <code>Learning</code> <code>For kids</code></p>
-      <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Play</b></a> · <a href="lift-logic/">Source</a></p>
+      <a href="https://gray0072.github.io/ivan/yacht/"><img src="yacht/screenshot.png" alt="Yacht screenshot"></a>
+      <h3><img src="yacht/icon.svg" alt="" width="28" height="28" align="center"> Yacht</h3>
+      <p>The dice game Yacht, also known as Yahtzee and dice poker, for up to 10 players on one device: shake the leather cup, keep the dice you like and fill the score sheet. Saved groups of players, statistics, hints and a table of your choice.</p>
+      <p><code>Tabletop</code> <code>Multiplayer</code> <code>Turn-based</code></p>
+      <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Play</b></a> · <a href="yacht/">Source</a> · <sub>2026-11-03</sub></p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/docs/showcase.gif" alt="Arlanda Rising screenshot"></a>
-      <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
-      <p>Run Stockholm Arlanda through its real history, from clearing the pine forest in 1958 through the jets, Schengen, the ash cloud and the pandemic to your own airport of 2040. An isometric airport that lives in front of you, short missions with stars, Free Play and a cloud save.</p>
-      <p><code>Strategy</code> <code>Building</code> <code>Aviation</code></p>
-      <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Play</b></a> · <a href="arlanda-rising/">Source</a></p>
+      <a href="https://gray0072.github.io/ivan/city-builder/"><img src="city-builder/screenshot.png" alt="City Builder screenshot"></a>
+      <h3><img src="city-builder/icon.svg" alt="" width="28" height="28" align="center"> City Builder</h3>
+      <p>A city-building game: lay roads, build houses, shops and factories, keep the residents happy and watch cottages grow into apartment blocks. Grow a hamlet into a Metropolis, put out fires, hold back spring floods and don't go bankrupt.</p>
+      <p><code>Strategy</code> <code>Building</code></p>
+      <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Play</b></a> · <a href="city-builder/">Source</a> · <sub>2026-10-24</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/world-aviation/"><img src="world-aviation/docs/showcase.gif" alt="World Aviation screenshot"></a>
+      <h3><img src="world-aviation/icon.svg" alt="" width="28" height="28" align="center"> World Aviation</h3>
+      <p>A cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, then buy traffic rights to the rest of the world. Push back, taxi, fly the ILS and land eighteen aircraft, from a 19-seat turboprop to the A380, at 141 real airports.</p>
+      <p><code>Aviation</code> <code>Simulator</code> <code>Strategy</code></p>
+      <p><a href="https://gray0072.github.io/ivan/world-aviation/"><b>▶ Play</b></a> · <a href="world-aviation/">Source</a> · <sub>2026-10-04</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/fun-training/"><img src="fun-training/docs/showcase.gif" alt="Fun Training screenshot"></a>
+      <h3><img src="fun-training/icon.svg" alt="" width="28" height="28" align="center"> Fun Training</h3>
+      <p>A training game for school kids: answer math and reading tasks in time to water a flower, stop zombies, lay rails for a train or keep a panda fed. Progress tracks with stars and bosses, and coins to spend on your own character and room.</p>
+      <p><code>Learning</code> <code>For kids</code></p>
+      <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Play</b></a> · <a href="fun-training/">Source</a> · <sub>2026-09-28</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="fish-frenzy/docs/showcase.gif" alt="Fish Frenzy screenshot"></a>
+      <h3><img src="fish-frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
+      <p>Eat-and-grow arcade: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish, dodge bigger ones and jellyfish, and climb the food chain to the Sea King. Three difficulty levels and best-time records.</p>
+      <p><code>Arcade</code> <code>For kids</code></p>
+      <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Play</b></a> · <a href="fish-frenzy/">Source</a> · <sub>2026-09-17</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="flight-simulator/screenshot.png" alt="Flight Simulator screenshot"></a>
+      <h3><img src="flight-simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
+      <p>First-person arcade flight: steer with the arrow keys, pop balloons with the twin gun for points and land on the highlighted airport's runway.</p>
+      <p><code>Aviation</code> <code>Arcade</code> <code>Shooter</code></p>
+      <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Play</b></a> · <a href="flight-simulator/">Source</a> · <sub>2026-09-05</sub></p>
     </td>
     <td width="50%" valign="top"></td>
   </tr>

@@ -35,7 +35,7 @@ Each project folder must contain:
 
 1. Create the project folder and write its `SPEC.md` first; agree on it with the user before writing game code.
 2. Create the rest of the files above (including `icon.svg`, `icon-maskable.svg`, the rendered PWA PNGs, `manifest.webmanifest` and `sw.js` from `node tools/sw-build.js <folder>`), implementing the spec.
-3. Add a card to the root `index.html` gallery page (copy an existing `.card` block: the link, the screenshot, `data-showcase` when the game has a `docs/showcase.gif`, the icon, the name, the description and `data-tags`) and its texts to `assets/gallery-lang.js` in all three languages (see "The game's card" below).
+3. Add a card **first** in the root `index.html` gallery page (copy an existing `.card` block: the link, the screenshot, `data-showcase` when the game has a `docs/showcase.gif`, the icon, the name, the description, `data-tags` and the release date) and its texts to `assets/gallery-lang.js` in all three languages (see "The game's card" below).
 4. Run `node tools/readme-games.js`: it writes the games table of the three root READMEs (`README.md`, `README_RU.md`, `README_SV.md`) from the gallery and checks the card rules.
 
 ## The game's card
@@ -45,6 +45,8 @@ The same card shows the game in the gallery (`index.html`) and in the root READM
 - **The name is the English one in every language** — never translated (`Flight Simulator`, not `Авиасимулятор` or `Flygsimulator`); it is written in `index.html` only, with no `data-i18n`.
 - **The description is at most 50 words** in each language: what the game is and what the player does, in a sentence or two, and one or two things that stand out. No lists of every feature, chapter or aircraft — those belong in the game's README. The same text is used in the READMEs.
 - **One to four tags** in `data-tags`, from the tag list in `assets/gallery-lang.js` (the `tags` object, labelled in all three languages; the gallery's filter lists them in that order). Reuse a tag before adding one: a tag that only one game has filters nothing. A new tag gets a label in every language.
-- After changing a card, a description or a tag run `node tools/readme-games.js` (it fails on a description over 50 words, more than four tags or a missing label; `--check` changes nothing), bump `?v=N` of `gallery-lang.js` in `index.html` and run `node tools/sw-build.js .`.
+- **The release date** is the date of the game's first commit — its spec usually — found by `git log --reverse --format=%ad --date=short -- <folder>` (a folder renamed since, like `flight simulator` → `flight-simulator`, counts from its first name). It is written in the card's foot after the tags, `<time class="released" datetime="2026-11-20">2026-11-20</time>`; the gallery shows it small and short in the browser's own locale, whatever language the gallery is in (2026-11-20 in Sweden, 20.11.2026 in Russia, 11/20/2026 in the US), the READMEs as 2026-11-20 after the Source link.
+- **The cards go from newest to oldest** by that date, in the gallery and in the READMEs: a new game's card goes first in `index.html`.
+- After changing a card, a description or a tag run `node tools/readme-games.js` (it fails on a description over 50 words, more than four tags, a missing label, a card without a release date or the cards out of order; `--check` changes nothing), bump `?v=N` of `gallery-lang.js` in `index.html` and run `node tools/sw-build.js .`.
 5. Update the `Projects` (one-line summary + link to the game's `SPEC.md`) and `Project structure` sections of the root `SPEC.md`.
 6. Do not touch the GitHub Pages deployment setup (`Settings → Pages → Deploy from a branch → main / (root)`) — it already picks up every new file automatically, no workflow or build config needed.

@@ -3,6 +3,7 @@
 // read by assets/gallery.js and assets/gallery-theme.js. English matches the text written in
 // index.html. Game names are never translated. A card's description is at most 50 words, the
 // same text as the game's card in the root READMEs.
+// `released`: the tooltip of a card's release date.
 // `tags`: the labels of the tags a card lists in its data-tags (at most four per game); the
 // filter above the cards shows them in this order.
 
@@ -17,6 +18,7 @@ const GALLERY_LANG = {
     source: 'Source on GitHub',
     tagFilter: 'Filter by tag',
     tagAll: 'All',
+    released: 'Released',
     theme: 'Theme',
     themeSystem: 'System',
     themeLight: 'Light',
@@ -56,6 +58,7 @@ const GALLERY_LANG = {
     source: 'Исходный код на GitHub',
     tagFilter: 'Фильтр по тегам',
     tagAll: 'Все',
+    released: 'Дата выхода',
     theme: 'Тема',
     themeSystem: 'Системная',
     themeLight: 'Светлая',
@@ -95,6 +98,7 @@ const GALLERY_LANG = {
     source: 'Källkoden på GitHub',
     tagFilter: 'Filtrera efter tagg',
     tagAll: 'Alla',
+    released: 'Släppt',
     theme: 'Tema',
     themeSystem: 'System',
     themeLight: 'Ljust',

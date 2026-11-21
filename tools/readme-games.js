@@ -3,9 +3,10 @@
 
 // Writes the games table of the three root READMEs (README.md, README_RU.md, README_SV.md) from
 // the gallery: the cards of index.html (order, folder, name, data-tags) and their texts in
-// assets/gallery-lang.js (description, tags, alt text). A game with a docs/showcase.gif shows it,
-// the others their screenshot.png. Also checks the gallery's own rules: a description of at most
-// 50 words in every language, at most four tags per game, every tag labelled in every language.
+// assets/gallery-lang.js (description, tags, alt text), the release date of <time datetime>. A game
+// with a docs/showcase.gif shows it, the others their screenshot.png. Also checks the gallery's own
+// rules: a description of at most 50 words in every language, at most four tags per game, every tag
+// labelled in every language, a release date on every card and the cards from newest to oldest.
 // Run it after changing a card, a description or a tag, before committing.
 //
 // Usage: node tools/readme-games.js [--check]
@@ -33,11 +34,18 @@ const games = [...page.matchAll(/<a class="card" href="([a-z0-9-]+)\/" data-tags
   tags: tags.split(/\s+/).filter(Boolean),
   name: body.match(/<h2>[\s\S]*?alt="">([^<]+)<\/h2>/)[1].trim(),
   key: body.match(/data-i18n="(\w+)Desc"/)[1],
+  released: (body.match(/<time class="released" datetime="(\d{4}-\d\d-\d\d)">/) || [])[1],
   gif: fs.existsSync(path.join(repo, folder, 'docs/showcase.gif')),
 }));
 
 const problems = [];
 const words = (s) => s.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+games.forEach((g, i) => {
+  const above = games[i - 1];
+  if (!g.released) problems.push(`${g.folder}: no release date (<time class="released" datetime="YYYY-MM-DD">)`);
+  else if (above && above.released && above.released < g.released)
+    problems.push(`${g.folder}: released ${g.released}, after ${above.folder} above it (the cards go from newest to oldest)`);
+});
 for (const g of games) {
   if (g.tags.length < 1 || g.tags.length > MAX_TAGS) problems.push(`${g.folder}: ${g.tags.length} tags (1–${MAX_TAGS})`);
   for (const [lang, t] of Object.entries(LANG)) {
@@ -57,7 +65,7 @@ function cell(g, lang) {
       <h3><img src="${g.folder}/icon.svg" alt="" width="28" height="28" align="center"> ${g.name}</h3>
       <p>${esc(t[g.key + 'Desc'])}</p>
       <p>${g.tags.map(tag => `<code>${esc(t.tags[tag])}</code>`).join(' ')}</p>
-      <p><a href="${url}"><b>▶ ${r.play}</b></a> · <a href="${g.folder}/">${r.source}</a></p>
+      <p><a href="${url}"><b>▶ ${r.play}</b></a> · <a href="${g.folder}/">${r.source}</a>${g.released ? ` · <sub>${g.released}</sub>` : ''}</p>
     </td>`;
 }
 function table(lang) {

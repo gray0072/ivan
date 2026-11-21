@@ -1,5 +1,5 @@
 // The root gallery's main script: the language switcher (the texts are in assets/gallery-lang.js),
-// the tags of the cards and the filter by tag above them, the showcase GIFs on the cards, and
+// the tags of the cards and the filter by tag above them, the cards' release dates, the showcase GIFs on the cards, and
 // picking up a new deploy (assets/update.js). The theme is assets/gallery-theme.js. The gallery
 // holds no game state, so any moment is idle.
 
@@ -79,6 +79,19 @@ const GalleryLang = (() => {
     for (const b of document.querySelectorAll('.lang button')) b.setAttribute('aria-pressed', b.dataset.lang === lang);
     GalleryTags.setTexts(t);
     GalleryTheme.setTexts(t);
+    showDates(lang, t);
+  }
+
+  // a card's release date (the first commit of its game, in <time datetime>) short, in the
+  // browser's own locale, not the gallery's language: 2026-11-20 in Sweden, 20.11.2026 in Russia,
+  // 11/20/2026 in the US
+  function showDates(lang, t) {
+    const fmt = new Intl.DateTimeFormat(navigator.languages && navigator.languages.length ? navigator.languages : undefined,
+      { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'UTC' });
+    for (const el of document.querySelectorAll('time.released')) {
+      el.textContent = fmt.format(new Date(el.dateTime + 'T00:00:00Z'));
+      el.title = t.released;
+    }
   }
 
   function init() {

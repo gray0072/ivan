@@ -25,50 +25,18 @@
 <table>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="flight-simulator/screenshot.png" alt="Skärmbild från Flight Simulator"></a>
-      <h3><img src="flight-simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
-      <p>Arkadflyg i förstapersonsvy: styr med piltangenterna, skjut ballonger med dubbelkanonen för poäng och landa på banan vid den markerade flygplatsen.</p>
-      <p><code>Flyg</code> <code>Arkad</code> <code>Skjutspel</code></p>
-      <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Spela</b></a> · <a href="flight-simulator/">Källkod</a></p>
+      <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/docs/showcase.gif" alt="Skärmbild från Arlanda Rising"></a>
+      <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
+      <p>Driv Stockholm Arlanda genom dess riktiga historia: från tallskogen som röjs 1958 via jetplanen, Schengen, askmolnet och pandemin till ditt eget Arlanda 2040. En isometrisk flygplats som lever framför dig, korta uppdrag med stjärnor, fritt spel och molnsparning.</p>
+      <p><code>Strategi</code> <code>Bygga</code> <code>Flyg</code></p>
+      <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Spela</b></a> · <a href="arlanda-rising/">Källkod</a> · <sub>2026-11-20</sub></p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="fish-frenzy/docs/showcase.gif" alt="Skärmbild från Fish Frenzy"></a>
-      <h3><img src="fish-frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
-      <p>Ett ät-och-väx-arkadspel: styr en fisk med piltangenterna eller en joystick på skärmen, ät plankton och mindre fiskar, undvik större fiskar och maneter och klättra uppför näringskedjan till Havskungen. Tre svårighetsgrader och rekord för bästa tid.</p>
-      <p><code>Arkad</code> <code>För barn</code></p>
-      <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Spela</b></a> · <a href="fish-frenzy/">Källkod</a></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/fun-training/"><img src="fun-training/docs/showcase.gif" alt="Skärmbild från Fun Training"></a>
-      <h3><img src="fun-training/icon.svg" alt="" width="28" height="28" align="center"> Fun Training</h3>
-      <p>Ett övningsspel för skolbarn: lös matte- och läsuppgifter i tid för att vattna en blomma, stoppa zombier, lägga räls åt ett tåg eller hålla en panda mätt. Framstegsbanor med stjärnor och bossar, och mynt att lägga på din egen figur och ditt rum.</p>
-      <p><code>Lärande</code> <code>För barn</code></p>
-      <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Spela</b></a> · <a href="fun-training/">Källkod</a></p>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/world-aviation/"><img src="world-aviation/docs/showcase.gif" alt="Skärmbild från World Aviation"></a>
-      <h3><img src="world-aviation/icon.svg" alt="" width="28" height="28" align="center"> World Aviation</h3>
-      <p>En flygsimulator med vy från cockpit och en karriär i ett flygbolag: börja med inrikesflyg i Sverige från Arlanda och köp sedan trafikrättigheter till resten av världen. Pushback, taxning, ILS-inflygning och landning med arton flygplan, från en turboprop med 19 platser till A380, på 141 riktiga flygplatser.</p>
-      <p><code>Flyg</code> <code>Simulator</code> <code>Strategi</code></p>
-      <p><a href="https://gray0072.github.io/ivan/world-aviation/"><b>▶ Spela</b></a> · <a href="world-aviation/">Källkod</a></p>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/yacht/"><img src="yacht/screenshot.png" alt="Skärmbild från Yacht"></a>
-      <h3><img src="yacht/icon.svg" alt="" width="28" height="28" align="center"> Yacht</h3>
-      <p>Tärningsspelet Yacht, även känt som Yatzy och tärningspoker, för upp till 10 spelare på en enhet: skaka läderbägaren, behåll de tärningar du vill ha och fyll i protokollet. Sparade spelargrupper, statistik, tips och ett bord efter eget val.</p>
-      <p><code>Sällskapsspel</code> <code>Flera spelare</code> <code>Turbaserat</code></p>
-      <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Spela</b></a> · <a href="yacht/">Källkod</a></p>
-    </td>
-    <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/city-builder/"><img src="city-builder/screenshot.png" alt="Skärmbild från City Builder"></a>
-      <h3><img src="city-builder/icon.svg" alt="" width="28" height="28" align="center"> City Builder</h3>
-      <p>Ett stadsbyggarspel: bygg vägar, hus, affärer och fabriker, håll invånarna glada och se stugorna växa till höghus. Låt ett torp bli en Metropol, släck bränder, stoppa vårfloden och gå inte i konkurs.</p>
-      <p><code>Strategi</code> <code>Bygga</code></p>
-      <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Spela</b></a> · <a href="city-builder/">Källkod</a></p>
+      <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/docs/showcase.gif" alt="Skärmbild från Lift Logic"></a>
+      <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
+      <p>Ett programmeringspussel: var hissens hjärna. Bygg dess program av färgglada block, som i Scratch, och se ett hus leva efter det — från mormors hus till ett hotell, ett sjukhus, Eiffeltornet och Empire State Building. 72 uppdrag med stjärnor, tips och skämt.</p>
+      <p><code>Pussel</code> <code>Lärande</code> <code>För barn</code></p>
+      <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Spela</b></a> · <a href="lift-logic/">Källkod</a> · <sub>2026-11-19</sub></p>
     </td>
   </tr>
   <tr>
@@ -77,23 +45,55 @@
       <h3><img src="wiggle-wars/icon.svg" alt="" width="28" height="28" align="center"> Wiggle Wars</h3>
       <p>Turbaserat artilleri med maskar: bazookor, granater, flyganfall, raketryggsäck och mer på en mark som sprängs i bitar, med vind, lådor och minor. En mot en på en telefon, mot datorn eller en kampanj med tolv uppdrag och stjärnor.</p>
       <p><code>Turbaserat</code> <code>Flera spelare</code> <code>Skjutspel</code></p>
-      <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Spela</b></a> · <a href="wiggle-wars/">Källkod</a></p>
+      <p><a href="https://gray0072.github.io/ivan/wiggle-wars/"><b>▶ Spela</b></a> · <a href="wiggle-wars/">Källkod</a> · <sub>2026-11-10</sub></p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/lift-logic/"><img src="lift-logic/docs/showcase.gif" alt="Skärmbild från Lift Logic"></a>
-      <h3><img src="lift-logic/icon.svg" alt="" width="28" height="28" align="center"> Lift Logic</h3>
-      <p>Ett programmeringspussel: var hissens hjärna. Bygg dess program av färgglada block, som i Scratch, och se ett hus leva efter det — från mormors hus till ett hotell, ett sjukhus, Eiffeltornet och Empire State Building. 72 uppdrag med stjärnor, tips och skämt.</p>
-      <p><code>Pussel</code> <code>Lärande</code> <code>För barn</code></p>
-      <p><a href="https://gray0072.github.io/ivan/lift-logic/"><b>▶ Spela</b></a> · <a href="lift-logic/">Källkod</a></p>
+      <a href="https://gray0072.github.io/ivan/yacht/"><img src="yacht/screenshot.png" alt="Skärmbild från Yacht"></a>
+      <h3><img src="yacht/icon.svg" alt="" width="28" height="28" align="center"> Yacht</h3>
+      <p>Tärningsspelet Yacht, även känt som Yatzy och tärningspoker, för upp till 10 spelare på en enhet: skaka läderbägaren, behåll de tärningar du vill ha och fyll i protokollet. Sparade spelargrupper, statistik, tips och ett bord efter eget val.</p>
+      <p><code>Sällskapsspel</code> <code>Flera spelare</code> <code>Turbaserat</code></p>
+      <p><a href="https://gray0072.github.io/ivan/yacht/"><b>▶ Spela</b></a> · <a href="yacht/">Källkod</a> · <sub>2026-11-03</sub></p>
     </td>
   </tr>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://gray0072.github.io/ivan/arlanda-rising/"><img src="arlanda-rising/docs/showcase.gif" alt="Skärmbild från Arlanda Rising"></a>
-      <h3><img src="arlanda-rising/icon.svg" alt="" width="28" height="28" align="center"> Arlanda Rising</h3>
-      <p>Driv Stockholm Arlanda genom dess riktiga historia: från tallskogen som röjs 1958 via jetplanen, Schengen, askmolnet och pandemin till ditt eget Arlanda 2040. En isometrisk flygplats som lever framför dig, korta uppdrag med stjärnor, fritt spel och molnsparning.</p>
-      <p><code>Strategi</code> <code>Bygga</code> <code>Flyg</code></p>
-      <p><a href="https://gray0072.github.io/ivan/arlanda-rising/"><b>▶ Spela</b></a> · <a href="arlanda-rising/">Källkod</a></p>
+      <a href="https://gray0072.github.io/ivan/city-builder/"><img src="city-builder/screenshot.png" alt="Skärmbild från City Builder"></a>
+      <h3><img src="city-builder/icon.svg" alt="" width="28" height="28" align="center"> City Builder</h3>
+      <p>Ett stadsbyggarspel: bygg vägar, hus, affärer och fabriker, håll invånarna glada och se stugorna växa till höghus. Låt ett torp bli en Metropol, släck bränder, stoppa vårfloden och gå inte i konkurs.</p>
+      <p><code>Strategi</code> <code>Bygga</code></p>
+      <p><a href="https://gray0072.github.io/ivan/city-builder/"><b>▶ Spela</b></a> · <a href="city-builder/">Källkod</a> · <sub>2026-10-24</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/world-aviation/"><img src="world-aviation/docs/showcase.gif" alt="Skärmbild från World Aviation"></a>
+      <h3><img src="world-aviation/icon.svg" alt="" width="28" height="28" align="center"> World Aviation</h3>
+      <p>En flygsimulator med vy från cockpit och en karriär i ett flygbolag: börja med inrikesflyg i Sverige från Arlanda och köp sedan trafikrättigheter till resten av världen. Pushback, taxning, ILS-inflygning och landning med arton flygplan, från en turboprop med 19 platser till A380, på 141 riktiga flygplatser.</p>
+      <p><code>Flyg</code> <code>Simulator</code> <code>Strategi</code></p>
+      <p><a href="https://gray0072.github.io/ivan/world-aviation/"><b>▶ Spela</b></a> · <a href="world-aviation/">Källkod</a> · <sub>2026-10-04</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/fun-training/"><img src="fun-training/docs/showcase.gif" alt="Skärmbild från Fun Training"></a>
+      <h3><img src="fun-training/icon.svg" alt="" width="28" height="28" align="center"> Fun Training</h3>
+      <p>Ett övningsspel för skolbarn: lös matte- och läsuppgifter i tid för att vattna en blomma, stoppa zombier, lägga räls åt ett tåg eller hålla en panda mätt. Framstegsbanor med stjärnor och bossar, och mynt att lägga på din egen figur och ditt rum.</p>
+      <p><code>Lärande</code> <code>För barn</code></p>
+      <p><a href="https://gray0072.github.io/ivan/fun-training/"><b>▶ Spela</b></a> · <a href="fun-training/">Källkod</a> · <sub>2026-09-28</sub></p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/fish-frenzy/"><img src="fish-frenzy/docs/showcase.gif" alt="Skärmbild från Fish Frenzy"></a>
+      <h3><img src="fish-frenzy/icon.svg" alt="" width="28" height="28" align="center"> Fish Frenzy</h3>
+      <p>Ett ät-och-väx-arkadspel: styr en fisk med piltangenterna eller en joystick på skärmen, ät plankton och mindre fiskar, undvik större fiskar och maneter och klättra uppför näringskedjan till Havskungen. Tre svårighetsgrader och rekord för bästa tid.</p>
+      <p><code>Arkad</code> <code>För barn</code></p>
+      <p><a href="https://gray0072.github.io/ivan/fish-frenzy/"><b>▶ Spela</b></a> · <a href="fish-frenzy/">Källkod</a> · <sub>2026-09-17</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://gray0072.github.io/ivan/flight-simulator/"><img src="flight-simulator/screenshot.png" alt="Skärmbild från Flight Simulator"></a>
+      <h3><img src="flight-simulator/icon.svg" alt="" width="28" height="28" align="center"> Flight Simulator</h3>
+      <p>Arkadflyg i förstapersonsvy: styr med piltangenterna, skjut ballonger med dubbelkanonen för poäng och landa på banan vid den markerade flygplatsen.</p>
+      <p><code>Flyg</code> <code>Arkad</code> <code>Skjutspel</code></p>
+      <p><a href="https://gray0072.github.io/ivan/flight-simulator/"><b>▶ Spela</b></a> · <a href="flight-simulator/">Källkod</a> · <sub>2026-09-05</sub></p>
     </td>
     <td width="50%" valign="top"></td>
   </tr>
