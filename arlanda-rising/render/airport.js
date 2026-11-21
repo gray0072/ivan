@@ -8,6 +8,8 @@
 
 const AirportArt = (() => {
   const RW = LAYOUT.runway1, TX = LAYOUT.taxi;
+  // the aprons after the first: their plot in LAYOUT, the project and its stage that pave them
+  const APRONS = [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron'], ['apron4', 'terminal2', 'gates'], ['apron5', 'pierF', 'apron'], ['apron6', 'pier2040', 'gates']];
   const rp = (s, t) => Ground.rwPoint(s, t);
 
   // a stand's place on the map: the apron's in order, then the remote slots
@@ -111,7 +113,7 @@ const AirportArt = (() => {
     runway2(c, sc);
     runway3(c, sc);
     // the jet apron and the domestic apron, as far as they are paved
-    for (const [key, pid, sid] of [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron'], ['apron4', 'terminal2', 'gates'], ['apron5', 'pierF', 'apron'], ['apron6', 'pier2040', 'gates']]) {
+    for (const [key, pid, sid] of APRONS) {
       const q = sc.p(pid, sid);
       if (q <= 0) continue;
       const B = LAYOUT[key];
@@ -521,5 +523,5 @@ const AirportArt = (() => {
     }
   }
 
-  return { flat, objects, standPos, standIndex, standEntry, remoteWay };
+  return { flat, objects, standPos, standIndex, standEntry, remoteWay, APRONS };
 })();

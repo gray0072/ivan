@@ -51,14 +51,17 @@ const MapView = (() => {
       runway: a.runways[0] || null, runway2: a.runways.find((r) => r.id === 'r2') || null, runway3: a.runways.find((r) => r.id === 'r3') || null,
       apron: a.stands.length > 0, items, p,
       planning: !!S.plan, lights: [], standMark: view.standMark,
-      ...clearings(a, items, ready || p('site', 'apron') >= 1)
+      ...clearings(a, items, ready || p('site', 'apron') >= 1, p)
     };
   }
 
   // the ground cleared of trees round what is built outside the site's first clearing: a remote stand's pad and its
-  // way to the apron, the plots of the buildings in data/layout.js (car parks, cafés…), the link from the taxiway
+  // way to the apron, the plots of the buildings in data/layout.js (car parks, cafés…), the link from the taxiway;
+  // from the jet age on the later aprons, runways 2 and 3 with their strips, taxiways 2 and 3, the de-icing pads,
+  // Cargo City's yard and the solar parks, each from the moment its work starts
   const PAD = 14;   // m of open ground round a plot
-  function clearings(a, items, apronDone) {
+  const STRIP_HALF = 120;   // m: half the cleared strip of runways 2 and 3, as render/airport.js draws it
+  function clearings(a, items, apronDone, p) {
     const pads = [], ways = [];
     if (apronDone) {
       const T = LAYOUT.taxi, a = Ground.rwPoint(T.apronLink.s, T.offset), b = Ground.rwPoint(T.apronOut.s, T.offset);
@@ -74,10 +77,30 @@ const MapView = (() => {
       pads.push([q.x - 80 - PAD, q.y - 34 - PAD, q.x + 8 + PAD, q.y + 34 + PAD]);
       if (!st.pad) ways.push({ pts: AirportArt.remoteWay(i), d: 10 + PAD });
     });
+    const plot = (b) => pads.push([b[0] - PAD, b[1] - PAD, b[2] + PAD, b[3] + PAD]);
+    const started = (pid) => { const pr = a.projects[pid]; return !!pr && Object.keys(pr.stages).some((s) => pr.stages[s].p > 0); };
     for (const k in items) {
       const L = LAYOUT[k];
-      if (L && L.box) pads.push([L.box[0] - PAD, L.box[1] - PAD, L.box[2] + PAD, L.box[3] + PAD]);
+      if (L && L.box) plot(L.box);
     }
+    for (const pid in a.projects) {
+      const L = LAYOUT[pid];
+      if (L && L.box && !items[pid] && started(pid)) plot(L.box);
+    }
+    for (const [key, pid, sid] of AirportArt.APRONS) {
+      const B = LAYOUT[key];
+      if (p(pid, sid) > 0) plot([B.x0, B.y0, B.x1, B.y1]);
+    }
+    const R2 = LAYOUT.runway2, s2 = p('runway2', 'strip');
+    if (s2 > 0) ways.push({ pts: [R2.from, [R2.from[0] + (R2.to[0] - R2.from[0]) * s2, R2.from[1] + (R2.to[1] - R2.from[1]) * s2]], d: STRIP_HALF + PAD });
+    const R3 = LAYOUT.runway3, s3 = items.runway3 ? 1 : p('runway3', 'strip');
+    if (s3 > 0) ways.push({ pts: [R3.from, R3.to], d: STRIP_HALF * s3 + PAD });
+    if (p('apron2', 'pave') >= 1) ways.push({ pts: LAYOUT.taxi2.slice(0, a.runways.some((r) => r.id === 'r2') ? 4 : 2), d: LAYOUT.taxi.w / 2 + PAD });
+    const t3 = items.bridges ? 1 : p('bridges', 'taxi');
+    if (t3 > 0) ways.push({ pts: polyPart(LAYOUT.taxi3, t3), d: LAYOUT.taxi.w / 2 + PAD });
+    LAYOUT.deicePads.forEach((b, i) => { if (items.deicePad || p('deicePads', i === 0 ? 'south' : 'r3') > 0) plot(b); });
+    if (items.cargoCity || p('cargoCity', 'halls') > 0) { const b = LAYOUT.cargoCity.box; plot([b[0] - 20, b[1] - 30, b[2] + 20, b[3]]); }
+    for (let i = 0; i < Math.min(2, items.solar || 0); i++) plot(LAYOUT.solar[i]);
     return { pads, ways };
   }
 
