@@ -211,7 +211,7 @@ const Text = {
     }
     if (o.brand) {
       const b = BRANDS[o.brand.id], free = Terminal.units(o.brand.term).find((u) => !u.brand && Terminal.fits(u, o.brand.id));
-      out.push(tr('{brand} in {term}', { brand: b.name, term: tr(TERMINALS[o.brand.term].name) }));
+      out.push(tr('{brand} in {term}', { brand: b.name, term: tr(Terminal.name(o.brand.term)) }));
       if (free) out.push('−' + sek(UNIT_FIT[free.size]) + ' · ' + tr('rent {r} a month', { r: sek(b.rent) }));
       else out.push(tr('no free unit there'));
     }
@@ -221,7 +221,7 @@ const Text = {
       else out.push(tr('{al} will say no: it wants more', { al }));
     }
     if (o.incentive) out.push(tr('{p} off the fees of {al} for two years', { p: this.pct(o.incentive.share), al: (AIRLINES[o.incentive.code] || {}).name }));
-    if (o.term) out.push(tr('{al} moves to {term}', { al: (AIRLINES[o.term.code] || {}).name, term: tr(TERMINALS[o.term.term].name) }));
+    if (o.term) out.push(tr('{al} moves to {term}', { al: (AIRLINES[o.term.code] || {}).name, term: tr(Terminal.name(o.term.term)) }));
     if (o.train === 'own') out.push(tr('you build it, half paid by the owner · {m} a train passenger', { m: sek(TRAIN_TICKET) }));
     if (o.train === 'concession') out.push(tr('free for you · {m} a train passenger', { m: sek(TRAIN_STATION_FEE) }));
     if (o.extraDays) out.push(tr('+{n} days of work', { n: o.extraDays[2] }));
@@ -255,8 +255,8 @@ const Text = {
     if (o.biofuel !== undefined) out.push(tr('{p} of the fuel bio', { p: this.pct(o.biofuel) }) + ' · ' + tr('{m} a month', { m: sek(BIOFUEL_MONTH * o.biofuel) }) + ' · ' + tr('green rating +{n}', { n: Math.round(o.biofuel * 100 * GREEN_PTS.biofuel) }));
     if (o.stranded) out.push('−' + sek(o.stranded));
     // session 6
-    for (const t of [].concat(o.mothball || [])) out.push(tr('{term} closed', { term: tr(TERMINALS[t].name) }));
-    for (const t of [].concat(o.reopen || [])) out.push(S.airport.mothballed && S.airport.mothballed[t] === true ? tr('{term} open again in {n} days', { term: tr(TERMINALS[t].name), n: REOPEN_DAYS }) + ' · −' + sek(REOPEN_COST) : tr('{term} is open already', { term: tr(TERMINALS[t].name) }));
+    for (const t of [].concat(o.mothball || [])) out.push(tr('{term} closed', { term: tr(Terminal.name(t)) }));
+    for (const t of [].concat(o.reopen || [])) out.push(S.airport.mothballed && S.airport.mothballed[t] === true ? tr('{term} open again in {n} days', { term: tr(Terminal.name(t)), n: REOPEN_DAYS }) + ' · −' + sek(REOPEN_COST) : tr('{term} is open already', { term: tr(Terminal.name(t)) }));
     if (o.relief === true) out.push(tr('{p} of the rent off for a year', { p: this.pct(RENT_RELIEF) }) + ' · −' + sek(Terminal.rent() * RENT_RELIEF * 12));
     if (o.relief === false) out.push(tr('half of the shops close'));
     if (o.staff && o.staff.how === 'furlough') out.push(tr('{p} at home, the state pays most of their wages', { p: this.pct(o.staff.share) }));

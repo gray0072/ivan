@@ -62,7 +62,7 @@ const AirlinesUI = (() => {
           '<p>' + Text.esc(tr('{n} flights a day · fees {m} a month', { n: Text.num(n, 1), m: sek(Airlines.monthFees(code)) })) + '</p>' +
           (ot !== null ? '<p>' + Text.esc(tr('On time here: {p}', { p: Text.pct(ot) })) + '</p>' : '');
         if (al.incentive && S.day < al.incentive.until) html += '<p class="fine">🤝 ' + Text.esc(tr('{p} off its fees until {d}', { p: Text.pct(al.incentive.share), d: fmtDate(al.incentive.until) })) + '</p>';
-        if (al.term) html += '<p class="fine">🏢 ' + Text.esc(tr(TERMINALS[al.term].name)) + '</p>';
+        if (al.term) html += '<p class="fine">🏢 ' + Text.esc(tr(Terminal.name(al.term))) + '</p>';
       } else {
         const r = Airlines.courtRoute(code);
         html += '<p>' + Text.esc(tr('Not flying here. It would start {n} flights a day with its {type}.', { n: r.perDay, type: AIRCRAFT[r.type].name })) + '</p>';

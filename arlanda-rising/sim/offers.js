@@ -84,7 +84,7 @@ const Offers = {
         const [term, id] = cands[Math.floor(rnd() * cands.length)];
         const b = BRANDS[id];
         out.push({ group: 'shop', icon: '🏪', title: '{brand} wants a unit', text: '{brand} would like to open in {term}. It pays {sekRent} a month in rent, and a share of what the passengers spend.',
-          params: { brand: b.name, term: TERMINALS[term].name, sekRent: b.rent }, default: 'no',
+          params: { brand: b.name, term: Terminal.name(term, year), sekRent: b.rent }, default: 'no',
           options: [{ id: 'yes', brand: { term, id }, label: 'Give it a unit' }, { id: 'no', label: 'Not now' }] });
       }
     }

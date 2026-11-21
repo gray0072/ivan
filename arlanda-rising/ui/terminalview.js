@@ -26,7 +26,7 @@ const TermView = (() => {
     const p = $('terminal');
     const list = terms();
     let html = '<h1>🏪 ' + Text.esc(tr('Terminal view')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day) + (S.ops ? ' · ' + fmtClock(S.clock) : '')) + '</p>' +
-      '<div class="tabs">' + list.map((x) => '<button class="btn toggle' + (x === term ? ' on' : '') + '" data-term="' + x + '">' + Text.esc(tr(TERMINALS[x].name)) + '</button>').join('') + '</div>' +
+      '<div class="tabs">' + list.map((x) => '<button class="btn toggle' + (x === term ? ' on' : '') + '" data-term="' + x + '">' + Text.esc(tr(Terminal.name(x))) + '</button>').join('') + '</div>' +
       '<div class="cvWrap"><canvas id="termCanvas"></canvas></div><div id="termInfo" class="fine"></div><div id="unitCard"></div>';
     p.innerHTML = html;
     p.appendChild(Screens.row(Screens.btn(tr('Back'), 'default', () => back())));
@@ -104,7 +104,7 @@ const TermView = (() => {
     const b = e.target.closest('button');
     if (b && b.dataset.term) { Sfx.play('click'); term = b.dataset.term; sel = null; render(); return; }
     if (b && b.dataset.brand && editable && sel) {
-      if (Actions.brand(sel, b.dataset.brand)) { Sfx.play('coins'); Game.banner(tr('{brand} opens in {term}', { brand: BRANDS[b.dataset.brand].name, term: tr(TERMINALS[term].name) })); Game.keepWorld(); Game.acted(); }
+      if (Actions.brand(sel, b.dataset.brand)) { Sfx.play('coins'); Game.banner(tr('{brand} opens in {term}', { brand: BRANDS[b.dataset.brand].name, term: tr(Terminal.name(term)) })); Game.keepWorld(); Game.acted(); }
       else Sfx.play('sad');
       unitCard(); info();
       return;

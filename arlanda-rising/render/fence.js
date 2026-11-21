@@ -247,8 +247,9 @@ const Fence = (() => {
       }
       close();
     }
+    // (the far end first: a point put before the near end would move the far end's index)
     function toWall(run) {
-      for (const end of [0, run.length - 1]) {
+      for (const end of [run.length - 1, 0]) {
         const p = run[end];
         let best = null, bd = HIDE + CELL;
         for (const b of spec.walls) { const d = boxDist(p[0], p[1], b); if (d < bd) { bd = d; best = b; } }

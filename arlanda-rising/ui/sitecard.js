@@ -69,7 +69,7 @@ const SiteCard = (() => {
   // ---------- a building ----------
   function building(key) {
     const d = SITES[key], B = BUILDINGS[d.item] || {}, n = Math.max(1, Airport.count(d.item));
-    let html = head(d.icon, tr(B.name || key), state(d)) + '<p class="about">' + Text.esc(tr(d.about)) + '</p><table>';
+    let html = head(d.icon, tr(d.term ? Terminal.name(d.term) : B.name || key), state(d)) + '<p class="about">' + Text.esc(tr(d.about)) + '</p><table>';
     const sz = size(key);
     if (sz) html += row(tr('Size'), sz);
     if (B.staff) html += row(tr('Staff'), Text.jobs(B.staff * n));

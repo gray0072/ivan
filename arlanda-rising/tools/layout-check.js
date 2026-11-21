@@ -224,16 +224,17 @@ for (const k of ['terminal1', 'intlTerminal', 'domTerminal', 'terminal2']) {
   if (leg < R2.hold + 10) flag('taxiway 2    its last leg (' + leg.toFixed(0) + ' m) is shorter than the holding line\'s distance', at(e));
 }
 // the fence in the eras between (what each adds, roughly as the master plan builds it; every remote stand bought): it
-// must cross no road or railway away from the bridges, no runway, taxiway or apron of its own era
-const ERAS = [['1960', 'runway1 apron1 terminal1'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation fuelYard'],
+// must cross no road or railway away from the bridges, no runway, taxiway, apron or building of its own era, and a run
+// that is not a closed loop ends at a wall (render/fence.js: a hand short of it), never in the open
+const ERAS = [['1960', 'runway1 apron1 terminal1 tower1'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation fuelYard'],
   ['1990', 'apron3 apron4 domTerminal terminal2'], ['2003', 'apron5 pierF runway3 taxi3 deice0 deice1 cargoCity cargoApron'],
   ['2040 satellite', 'apron6 apron7 pier2040 pierArm satApron h2depot']];
 const eraKeys = [];
 for (const [era, keys] of ERAS) {
   eraKeys.push(...keys.split(' '));
   const sat = era.includes('satellite'), on = (k) => eraKeys.includes(k);
-  const f = Fence.build(Fence.parts(on, fencePads, fenceWays, sat ? 'satellite' : 'finger'));
-  const own = S.filter((sh) => ['road', 'rail'].includes(sh.kind) || (sh.kind === 'rwy' && (sh.name === 'runway 1' || on(sh.name.replace(' ', '')))) ||
+  const spec = Fence.parts(on, fencePads, fenceWays, sat ? 'satellite' : 'finger'), f = Fence.build(spec);
+  const own = S.filter((sh) => ['road', 'rail'].includes(sh.kind) || (sh.kind === 'bld' && on(sh.name)) || (sh.kind === 'rwy' && (sh.name === 'runway 1' || on(sh.name.replace(' ', '')))) ||
     (sh.kind === 'apron' && on(sh.name)) || (sh.kind === 'taxi' && (/^(taxiway 1|runway 1 link|apron link)/.test(sh.name) || on(sh.name.replace('taxiway ', 'taxi')))));
   f.runs.forEach((r, i) => {
     const fs = { name: era + ' fence ' + (i + 1), kind: 'fence', line: r, w: 3 };
@@ -242,6 +243,9 @@ for (const [era, keys] of ERAS) {
       if (o && !(['road', 'rail'].includes(sh.kind) && nearBridge(o)))
         problems.push({ line: 'era fence    ' + fs.name + '  ×  ' + sh.name + '   ' + o.text + ' at x ' + o.x0.toFixed(0) + '..' + o.x1.toFixed(0) + ', y ' + o.y0.toFixed(0) + '..' + o.y1.toFixed(0), a: fs, b: sh, r: o });
     }
+    const a = r[0], b = r[r.length - 1];
+    if (Math.hypot(a[0] - b[0], a[1] - b[1]) > 1) for (const e of [a, b])
+      if (!spec.walls.some((w) => distRect(e, w) < 2)) flag('era fence    ' + fs.name + ' ends in the open, away from a wall', { x0: e[0], y0: e[1], x1: e[0], y1: e[1] });
   });
 }
 if (showAll) { console.log('allowed:'); for (const p of allowed) console.log('  ' + p.line); }

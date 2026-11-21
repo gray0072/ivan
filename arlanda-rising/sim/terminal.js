@@ -51,6 +51,18 @@ const Terminal = {
     for (const u of this.units()) if (u.brand && i++ % 2 === 1) this.close(u.id);
     return true;
   },
+  // a terminal's name in a year (this one by default): data/terminals.js `names`
+  name(term, year) {
+    const d = TERMINALS[term], y = year || Calendar.year();
+    let n = d.name;
+    for (const [from, m] of d.names || []) if (y >= from) n = m;
+    return n;
+  },
+  // the name of a kind of building in S.airport.items: a terminal's of this year, else data/buildings.js's
+  itemName(kind) {
+    const t = Object.keys(TERMINALS).find((k) => TERMINALS[k].names && TERMINALS[k].item === kind);
+    return t ? this.name(t) : BUILDINGS[kind] ? BUILDINGS[kind].name : kind;
+  },
   built(term) { return term === 'kerb' ? Airport.has('terminal') : !!TERMINALS[term] && Airport.has(TERMINALS[term].item); },
   // the units of every terminal that stands (once the units are on); a terminal finished later gets its own
   ensure() {

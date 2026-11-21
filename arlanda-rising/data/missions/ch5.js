@@ -56,7 +56,7 @@ addMissions(5, [
     brief: [
       'On the 25th of March Sweden joins the Schengen area. A flight to Oslo, Paris or Rome becomes like a flight to Luleå: no passports.',
       'But London, New York and Bangkok stay outside. Their passengers must meet the police at a passport booth, and they must never mix with the others.',
-      'Build a new floor in the international terminal with a passport hall, and decide who opens the booths. Then run the first evening.'
+      'Build a new floor in Terminal 5 with a passport hall, and decide who opens the booths. Then run the first evening.'
     ],
     aim: 'Split the terminal for Schengen, build the passport booths, and run the first Schengen evening.',
     news: [
@@ -130,7 +130,7 @@ addMissions(5, [
       terms: TERMS_2001, projects: ['pierF'], booths: 6 },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'booth', 'plough'],
     brief: [
-      'A new pier reaches out from the international terminal: Pier F, with gates for the long-haul jets.',
+      'A new pier reaches out from Terminal 5: Pier F, with gates for the long-haul jets.',
       'Its gates must be fitted out and its apron marked in the middle of the winter. And should its gates have jet bridges? They cost more, but the passengers walk dry from the door to the aircraft, and the big airlines insist on them.',
       'Then a midday wave of long-haul flights.'
     ],

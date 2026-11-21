@@ -99,7 +99,7 @@ const TermArt = (() => {
     const zone = (sv, en, x) => { label(c, sv, x, 9, C.dim, fs - 1); label(c, en, x, 22, C.text, fs); };
     zone('Incheckning', 'Check-in', (X[1] + X[2]) / 2);
     zone('Säkerhet', 'Security', (X[2] + X[3]) / 2);
-    label(c, tr(def.name), (X[3] + X[4]) / 2, 16, C.text, fs, 'center', X[4] - X[3] - 4);
+    label(c, tr(Terminal.name(term)), (X[3] + X[4]) / 2, 16, C.text, fs, 'center', X[4] - X[3] - 4);
     zone('Utgång', 'Gates', (X[4] + W) / 2);
     // the kerb: coaches, taxis, the train
     const kx = X[1] * 0.27;

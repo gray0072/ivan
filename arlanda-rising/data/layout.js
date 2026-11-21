@@ -53,7 +53,9 @@ const LAYOUT = {
   // its door: nothing is built in front of it (tools/layout-check.js) — the baggage hall (1973) is joined to the first
   // terminal's south end, as wide as the terminal, its west face on the apron's edge where the baggage trains come in
   terminal1: { box: [880, 1180, 925, 1300], h: 9, waiting: [880, 1300, 915, 1335] },
-  tower1: { x: 912, y: 1365, base: 9, h: 28 },
+  // the first tower north of the waiting room, a step off the apron's edge (x 880) and clear of the fence, which runs
+  // from the waiting room's corner north-west round the apron
+  tower1: { x: 893, y: 1362, base: 9, h: 28 },
   fireStation: { box: [482, 1470, 532, 1500], h: 8 },   // east of the parallel taxiway (its edge at x ≈ 468 here)
   siteOffice: { x: 720, y: 880 },
   intlTerminal: { box: [890, 1390, 965, 1645], h: 14 },

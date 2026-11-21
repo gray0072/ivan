@@ -80,7 +80,7 @@ const FinanceUI = (() => {
     else {
       html += '<table class="ops inv"><tr><th></th><th>' + Text.esc(tr('Price')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' + Text.esc(tr('Pays back')) + '</th>' +
         (details ? '<th>' + npvHead() + '</th>' : '') + '</tr>' +
-        list.map((x) => '<tr><td><b>' + Text.esc(x.key === 'brand' ? x.name : tr(x.name)) + '</b>' + (x.key === 'brand' ? '<small>' + Text.esc(tr(TERMINALS[x.term].name)) + '</small>' : '') +
+        list.map((x) => '<tr><td><b>' + Text.esc(x.key === 'brand' ? x.name : tr(x.name)) + '</b>' + (x.key === 'brand' ? '<small>' + Text.esc(tr(Terminal.name(x.term))) + '</small>' : '') +
           (x.key === 'system' ? '<small>' + Text.esc(Text.dom(x.dom)) + '</small>' : '') + '</td><td>' + price(x.price) + '</td><td class="' + (x.net < 0 ? 'neg' : 'pos') + '">' + sekBare(x.net) +
           (details ? '<small>' + Text.esc(tr('{a} in, {b} out', { a: sekBare(x.in), b: sekBare(x.out) })) + '</small>' : '') + '</td><td>' + payback(x) + '</td>' +
           (details ? '<td class="' + (x.npv < 0 ? 'neg' : 'pos') + '">' + sekBare(x.npv) + '</td>' : '') + '</tr>').join('') + '</table>';

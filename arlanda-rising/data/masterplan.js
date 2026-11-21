@@ -174,7 +174,7 @@ const PROJECTS = {
 
   // ---------- chapter 4: open skies ----------
   terminal2: {
-    name: 'Terminal 2', year: 1990, plot: { x: 890, y: 760, w: 90, h: 170 },
+    name: 'Domestic 2', year: 1990, plot: { x: 890, y: 760, w: 90, h: 170 },
     stages: {
       hall: { name: 'The terminal hall', days: 50, price: 140e6 },
       gates: { name: 'The gates and their apron', days: 35, price: 70e6 },
@@ -188,7 +188,7 @@ const PROJECTS = {
       { name: '13', code: 'C', contact: true, dist: 1, at: [880, 850] },
       { name: '14', code: 'D', contact: true, dist: 2, at: [880, 795] }
     ],
-    src: 'swedavia.com About the airport; sv.wikipedia Stockholm-Arlanda flygplats: Inrikes 2, today Terminal 2, opened in 1990 for SAS\'s domestic flights; in 1992 it was rebuilt for domestic and international flights and the terminals were numbered 2–5',
+    src: 'swedavia.com About the airport; sv.wikipedia Stockholm-Arlanda flygplats: Inrikes 2, today Terminal 2, opened in 1990 for SAS\'s domestic flights; in 1992 it was rebuilt for domestic and international flights and the terminals were numbered 2–5 (en.wikipedia: in 1993, Arlanda International becoming Terminal 5 in March 1993)',
     check: 'its opening day (en.wikipedia alone gives 12 December 1990); its look and its apron'
   },
   arlandaExpress: {

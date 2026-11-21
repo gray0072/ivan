@@ -54,7 +54,7 @@ const Office = (() => {
     const has = {};
     for (const it of w.airport.items) has[it.kind] = (has[it.kind] || 0) + 1;
     html += '<div class="ocard"><h3>🛫 ' + Text.esc(tr('Your airport')) + '</h3><ul class="has">' +
-      Object.keys(has).map((k) => '<li>' + Text.esc(tr(BUILDINGS[k] ? BUILDINGS[k].name : k)) + (has[k] > 1 ? ' × ' + has[k] : '') + '</li>').join('') +
+      Object.keys(has).map((k) => '<li>' + Text.esc(tr(Terminal.itemName(k))) + (has[k] > 1 ? ' × ' + has[k] : '') + '</li>').join('') +
       '<li>' + Text.esc(tr('Stands: {n}', { n: w.airport.stands.length })) + '</li><li>' + Text.esc(tr('Check-in desks: {n}', { n: w.airport.desks })) + '</li>' +
       (has.fireStation ? '<li>' + Text.esc(tr('Fire category {n}', { n: Airport.fireCat() })) + '</li>' : '') + '</ul></div>';
     html += '<div class="ocard"><h3>📈 ' + Text.esc(tr('The meters')) + '</h3><ul class="has">' + METERS.map((x) => '<li>' + x.icon + ' ' + Text.esc(Text.meterName(x.k)) + ': <b>' +
@@ -82,7 +82,7 @@ const Office = (() => {
       if (w.airport.demand !== undefined && w.airport.demand < 1) html += '<li>✈️ ' + Text.esc(tr('Traffic: {p} of normal', { p: Text.pct(Summary.demand()) })) + '</li>';
       for (const t of closable) {
         const m = w.airport.mothballed && w.airport.mothballed[t], closed = Terminal.mothballed(t);
-        html += '<li>' + Text.esc(tr(TERMINALS[t].name)) + ': <b>' + Text.esc(closed ? (m === true ? tr('mothballed') : tr('opens {d}', { d: fmtDate(m) })) : tr('open')) + '</b> ' +
+        html += '<li>' + Text.esc(tr(Terminal.name(t))) + ': <b>' + Text.esc(closed ? (m === true ? tr('mothballed') : tr('opens {d}', { d: fmtDate(m) })) : tr('open')) + '</b> ' +
           (m === true ? '<button class="btn toggle" data-term="reopen" data-t="' + t + '">' + Text.esc(tr('Open again')) + ' <small>' + sekBare(REOPEN_COST) + '</small></button>' :
             !closed ? '<button class="btn toggle" data-term="mothball" data-t="' + t + '">' + Text.esc(tr('Mothball')) + '</button>' : '') + '</li>';
       }

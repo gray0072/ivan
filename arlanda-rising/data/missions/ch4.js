@@ -37,18 +37,18 @@ const ROUTES_1997 = {
 
 addMissions(4, [
   {
-    name: 'Terminal 2', kind: 'build', date: '1990-03-05', requires: BUILT_1989,
+    name: 'Domestic 2', kind: 'build', date: '1990-03-05', requires: BUILT_1989,
     setup: { open: true, openSkies: true, units: true, lanes: 10, budget: 60e6, minMoney: 300e6, loanLimit: 250e6, items: ITEMS_1990, desks: 26, airlines: ROUTES_1990,
       domains: TEAMS_1990, it: 3, projects: ['terminal2'] },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce'],
     brief: [
       'A new decade, and more people fly every year. The domestic terminal is full, so a second one is going up next to it: Inrikes 2.',
       'A terminal is more than desks and gates. It has shop units, and real shops and cafés want them: each pays rent, and earns more the longer the passengers have to spend.',
-      'Build Terminal 2, fill its units in the Terminal view (T), then run the first morning there.'
+      'Build Domestic 2, fill its units in the Terminal view (T), then run the first morning there.'
     ],
-    aim: 'Build Terminal 2, put real shops and cafés in the terminals, then run its first morning.',
+    aim: 'Build Domestic 2, put real shops and cafés in the terminals, then run its first morning.',
     news: [
-      { icon: '🏢', text: 'Terminal 2: a second domestic terminal with three gates.' },
+      { icon: '🏢', text: 'Domestic 2: a second domestic terminal with three gates.' },
       { icon: '🏪', text: 'Shop units: real brands pay rent and a share of what the passengers spend. Open the Terminal view with T.' },
       { icon: '🛂', text: 'Security lanes after check-in: a second queue on the way to the gates.' }
     ],
@@ -56,14 +56,14 @@ addMissions(4, [
       { text: 'Inrikes 2, today Terminal 2, opened in 1990 for the domestic flights of SAS.', src: SRC_SV4 }
     ],
     stages: [
-      { name: 'Terminal 2', mode: 'plan', days: 120, crews: 2, endEarly: true, goal: [{ k: 'project', id: 'terminal2' }, { k: 'brands', min: 4 }],
-        choices: [{ id: 'whoT2', at: 6, default: 'sas', icon: '✈️', title: 'Who moves into Terminal 2?',
+      { name: 'Domestic 2', mode: 'plan', days: 120, crews: 2, endEarly: true, goal: [{ k: 'project', id: 'terminal2' }, { k: 'brands', min: 4 }],
+        choices: [{ id: 'whoT2', at: 6, default: 'sas', icon: '✈️', title: 'Who moves into Domestic 2?',
           text: 'SAS would like the new terminal for its domestic flights, with gates next to the hall. Linjeflyg says it was here first.',
           options: [
             { id: 'sas', term: { code: 'SK', term: 't2' }, meters: { airlines: 3 }, label: 'SAS domestic' },
             { id: 'lf', term: { code: 'LF', term: 't2' }, meters: { airlines: 1 }, label: 'Linjeflyg' }
           ] }] },
-      { name: 'The first morning in Terminal 2', mode: 'ops', date: '1990-12-17', from: '06:30', to: '09:30', weather: { temp: -4, wind: [20, 8] }, desks: 12,
+      { name: 'The first morning in Domestic 2', mode: 'ops', date: '1990-12-17', from: '06:30', to: '09:30', weather: { temp: -4, wind: [20, 8] }, desks: 12,
         flights: [F4('SK', 'DC9', 12, '06:35', '09:00', 40, { base: 100, load: 0.85 }), F4('SK', 'MD87', 6, '06:50', '08:50', 40, { base: 300, load: 0.85 }),
           F4('LF', 'F28', 11, '06:40', '09:05', 35, { base: 400, load: 0.85 }), F4('LF', 'B737', 2, '07:00', '08:40', 40, { base: 450, load: 0.85 }),
           F4('SK', 'B767', 1, '07:40', '07:40', 90, { base: 900 }), F4('LH', 'B737', 2, '07:30', '08:30', 45, { base: 3020 }), F4('AY', 'MD87', 1, '08:20', '08:20', 45, { base: 800 })],
@@ -163,7 +163,7 @@ addMissions(4, [
       'But a passenger stuck in the security queue buys nothing. Every minute saved there is a minute in the shops.',
       'First see the queue, then add lanes and shops, and run the evening again.'
     ],
-    aim: 'Shorten the security queue and fill the international terminal\'s shops.',
+    aim: 'Shorten the security queue and fill the shops of Terminal 5.',
     news: [
       { icon: '🛂', text: 'Security: lanes cost every month, but a short queue means more time in the shops.' },
       { icon: '🛍️', text: 'Duty free: a big shop for the international passengers.' }
