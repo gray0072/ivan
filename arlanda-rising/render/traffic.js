@@ -48,8 +48,10 @@ const Traffic = (() => {
       const tw = LAYOUT.taxi3.slice().reverse();
       return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], tw[0][1]]].concat(tw).concat([dir === '01R' ? R3.from : R3.to]);
     }
-    const end = dir === '01' ? 0 : 1;
-    return [[c[0] - 30, c[1]], [e[0], c[1]], [e[0], APRON_IN[1]], APRON_IN, rp(EXIT, LAYOUT.taxi.offset), rp(end, LAYOUT.taxi.offset), rp(end, 70)];
+    // runway 1: along the departures' lane to the apron's north end and out by their own link, never meeting the
+    // arrivals coming in by theirs
+    const end = dir === '01' ? 0 : 1, O = LAYOUT.taxi.apronOut, ox = e[0] - LAYOUT.taxi.outLane;
+    return [[c[0] - 30, c[1]], [ox, c[1]], [ox, O.to[1]], O.to, rp(O.s, LAYOUT.taxi.offset), rp(end, LAYOUT.taxi.offset), rp(end, 70)];
   }
   // the arrivals' runway and its direction now (session 5: with runway 3 the landings keep to runway 1)
   function dirNow() { const rw = S.ops ? Runways.forArr() : null; return rw ? Runways.direction(rw) : '19'; }
@@ -73,8 +75,9 @@ const Traffic = (() => {
     if (f.st === 'sched' || f.st === 'inbound' || f.st === 'approach') {
       if (f.eta === null || t < f.eta - 1.6) return null;
       const dir = dirNow();
-      if (t <= f.eta) {
-        const d = -(1200 + (f.eta - t) * 4000);
+      // on the final (and over the threshold for the rest of the step the sim lands it in)
+      if (t <= f.eta + OPS_STEP_MIN) {
+        const d = -(1200 + Math.max(0, f.eta - t) * 4000);
         const p = rwFrom(dir, d);
         return { x: p[0], y: p[1], z: -d * 0.052, hdg: runwayHdg(dir), moving: true, landing: true };
       }

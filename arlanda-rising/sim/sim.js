@@ -22,6 +22,9 @@ const Sim = {
     if (S.ops) Ops.step(); else Plan.day();
     if (Missions.ended()) Missions.endStage();
   },
+  // the clock the map draws at: the sim's clock and the part of the next step already run (its positions are worked
+  // out from times, so the aircraft and the vehicles move every frame, not once a step)
+  clockNow() { return S.clock + (S.ops && S.mission && this.playing() ? clamp(S.mission.acc || 0, 0, OPS_STEP_MIN) : 0); },
   // ops time with an empty tray: run until a task appears or the stage ends
   skip() {
     if (!S.ops || S.ops.tasks.length) return false;

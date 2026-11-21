@@ -40,7 +40,7 @@ const MapView = (() => {
     const p = (pid, sid) => { const pr = a.projects[pid]; return pr && pr.stages[sid] ? pr.stages[sid].p : 0; };
     const ready = !!a.siteReady;
     const roadP = ready ? 1 : p('site', 'road');
-    const t = S.ops ? S.clock : 12 * 60;
+    const t = S.ops ? Sim.clockNow() : 12 * 60;   // between the sim's steps, so that what moves moves smoothly
     const sun = Calendar.sunElevation(S.day, t);
     return {
       season: season(d.m, w ? w.temp : null), year: d.y, t, anim, sun,
@@ -60,7 +60,12 @@ const MapView = (() => {
   const PAD = 14;   // m of open ground round a plot
   function clearings(a, items, apronDone) {
     const pads = [], ways = [];
-    if (apronDone) { const T = LAYOUT.taxi; ways.push({ pts: [Ground.rwPoint(T.apronLink.s, T.offset), T.apronLink.to], d: 34 }); }
+    if (apronDone) {
+      const T = LAYOUT.taxi, a = Ground.rwPoint(T.apronLink.s, T.offset), b = Ground.rwPoint(T.apronOut.s, T.offset);
+      for (const [k, p] of [[T.apronLink, a], [T.apronOut, b]]) ways.push({ pts: [p, k.to], d: 34 });
+      // and the patch of forest the two links would leave between them
+      pads.push([Math.min(a[0], b[0]), T.apronLink.to[1], T.apronOut.to[0], T.apronOut.to[1]]);
+    }
     const A = LAYOUT.apron1;
     a.stands.forEach((st, i) => {
       if (st.at && !st.pad) return;
@@ -100,7 +105,7 @@ const MapView = (() => {
 
   // a ring round the selected flight
   function ring(f) {
-    const p = Traffic.pos(f, S.clock);
+    const p = Traffic.pos(f, Sim.clockNow());
     if (!p) return;
     const u = P(p.x, p.y, p.z);
     c.strokeStyle = '#ffd54f'; c.lineWidth = 2 / Cam.zoom;

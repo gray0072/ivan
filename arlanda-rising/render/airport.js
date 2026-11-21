@@ -56,11 +56,11 @@ const AirportArt = (() => {
       const asph = sn ? '#5a5f64' : '#4b4f54';
       line(c, [rp(0, TX.offset), rp(1, TX.offset)], tw, asph);
       for (const s of TX.links) line(c, [rp(s, 0), rp(s, TX.offset)], tw, asph);
-      if (sc.apron) line(c, [rp(TX.apronLink.s, TX.offset), TX.apronLink.to], tw, asph);
+      if (sc.apron) for (const k of [TX.apronLink, TX.apronOut]) line(c, [rp(k.s, TX.offset), k.to], tw, asph);
       const yl = PAL.taxiLine;
       line(c, [rp(0, TX.offset), rp(1, TX.offset)], 0.8, yl);
       for (const s of TX.links) line(c, [rp(s, 6), rp(s, TX.offset)], 0.8, yl);
-      if (sc.apron) line(c, [rp(TX.apronLink.s, TX.offset), TX.apronLink.to], 0.8, yl);
+      if (sc.apron) for (const k of [TX.apronLink, TX.apronOut]) line(c, [rp(k.s, TX.offset), k.to], 0.8, yl);
       // the runway
       band(c, -0.004, 1.004, -w - 2, w + 2, sn ? '#c4cbd1' : '#6b6f63');
       band(c, 0, 1, -w, w, PAL.asphalt);

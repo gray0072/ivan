@@ -17,9 +17,11 @@ const LAYOUT = {
   // runway 1 (01L/19R): the centreline from the 01 threshold to the 19 threshold, its width
   runway1: { from: [0, 0], to: [596, 3236], w: 45, strip: 150 },
 
-  // the parallel taxiway 180 m east of runway 1, its links to the runway (s: 0 the south end, 1 the north)
-  // and the link to the apron
-  taxi: { offset: 180, w: 23, links: [0, 0.395, 1], apronLink: { s: 0.395, to: [640, 1245] } },
+  // the parallel taxiway 180 m east of runway 1, its links to the runway (s: 0 the south end, 1 the north),
+  // the link to the apron the arrivals come in by, and the departures' own link at the apron's north end (one way in,
+  // one way out, so they never meet head-on); the departures leave a stand along a lane `outLane` m west of the
+  // arrivals' one
+  taxi: { offset: 180, w: 23, links: [0, 0.395, 1], apronLink: { s: 0.395, to: [640, 1245] }, apronOut: { s: 0.431, to: [640, 1362] }, outLane: 40 },
 
   // the first apron and its stands (in the order apron1 makes them; nose toward the terminal, east)
   apron1: { x0: 640, y0: 1120, x1: 880, y1: 1380 },
