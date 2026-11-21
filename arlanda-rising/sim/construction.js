@@ -2,7 +2,8 @@
 
 // Arlanda Rising — building the master plan's projects in plan time. The player starts each stage when its
 // stages before are done (at most S.plan.crews at once), at a normal or a fast pace (faster and dearer),
-// buys a project's mods (heated winter tents, a backup radio) and picks how it is paid (cash, a loan, or
+// buys a project's mods (a backup radio; heated winter tents only while winter work lies ahead in the mission and the
+// project is not finished: `modCannot`) and picks how it is paid (cash, a loan, or
 // the owner's grant where the mission offers one). Work is slower in December–February. Every day of work
 // is paid as it is done; a finished stage or project changes the airport (sim/airport.js `complete`).
 // The state of each project is S.airport.projects[id].
@@ -48,9 +49,39 @@ const Construction = {
     p.stages[sid].pace = pace;
     return true;
   },
+  // whether a day of plan time from now to the mission's end falls in December–February: the rest of this plan stage,
+  // then the stages after it on their dates (an ops stage takes no plan days)
+  winterAhead() {
+    if (!S.mission || !S.plan) return false;
+    const stages = Missions.def().stages;
+    let day = S.day, end = S.plan.end;
+    for (let i = S.mission.stage; i < stages.length; i++) {
+      const st = stages[i];
+      if (i > S.mission.stage) {
+        if (st.date) day = Math.max(day, Calendar.parse(st.date));
+        if (st.mode === 'ops') continue;
+        end = day + st.days;
+      }
+      for (; day < end; day++) if (Calendar.winter(day)) return true;
+    }
+    return false;
+  },
+  // why a mod cannot be bought now, or null: 'bought'; for a mod that only keeps the work at full speed in winter
+  // (heated tents) 'done' (the project is finished) or 'noWinter' (no winter work left in the mission): buying it then
+  // would be money thrown away
+  modCannot(id, mid) {
+    const p = this.state(id), m = PROJECTS[id] && PROJECTS[id].mods && PROJECTS[id].mods[mid];
+    if (!p || !m) return 'closed';
+    if (p.mods[mid]) return 'bought';
+    if (m.noWinter && !m.safety) {
+      if (p.done) return 'done';
+      if (!this.winterAhead()) return 'noWinter';
+    }
+    return null;
+  },
   mod(id, mid) {
     const p = this.state(id), m = PROJECTS[id].mods && PROJECTS[id].mods[mid];
-    if (!p || !m || p.mods[mid]) return false;
+    if (!p || !m || this.modCannot(id, mid)) return false;
     p.mods[mid] = true;
     this.pay(p, m.price);
     if (m.safety) { S.airport.safetyBase += m.safety; S.meters.safety = Math.min(100, S.meters.safety + m.safety); }

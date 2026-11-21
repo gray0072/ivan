@@ -11,6 +11,13 @@ const PlanUI = (() => {
   const dec = document.getElementById('decision');
   let key = '', decKey = '';
   const LOAN_STEP = 5e6;
+  // whether winter work lies ahead (Construction.winterAhead), worked out once a game day: the tents come and go with it
+  let winterDay = '', winter = false;
+  function winterAhead() {
+    const k = S.mission.id + ':' + S.mission.stage + ':' + S.day;
+    if (k !== winterDay) { winterDay = k; winter = Construction.winterAhead(); }
+    return winter;
+  }
 
   function stageRow(pid, sid, def, st) {
     const why = Construction.cannot(pid, sid);
@@ -40,7 +47,7 @@ const PlanUI = (() => {
     const ids = S.mission.projects || [];
     const goals = Goals.all(Missions.stage().goal, S.mission.st), mg = Text.missionGoals();
     const k = JSON.stringify(goals) + mg + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
-      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + (S.people ? S.people.it : 0);
+      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + (S.people ? S.people.it : 0) + winterAhead();
     box.hidden = false;
     if (k === key) return;
     key = k;
@@ -50,13 +57,17 @@ const PlanUI = (() => {
       if (!p) continue;
       html += '<div class="proj"><h3>' + Text.esc(tr(def.name)) + (p.done ? ' <span class="done">✓</span>' : '') + '</h3>';
       for (const sid of Object.keys(def.stages)) html += stageRow(pid, sid, def.stages[sid], p.stages[sid]);
-      const mods = Object.keys(def.mods || {});
+      // the options: one bought shows ✓; heated tents (a mod that only keeps the work at full speed in winter) are
+      // offered only while winter work lies ahead in the mission and the project is not finished, with what they do
+      const mods = Object.keys(def.mods || {}).filter((mid) => { const why = Construction.modCannot(pid, mid); return !why || why === 'bought'; });
       if (mods.length) {
+        let note = '';
         html += '<div class="mods">' + mods.map((mid) => {
-          const md = def.mods[mid], has = p.mods[mid];
-          return '<button class="tb small' + (has ? ' on' : '') + '" data-mod="' + mid + '" data-p="' + pid + '"' + (has ? ' disabled' : '') + '>' + (has ? '✓ ' : '+ ') +
+          const md = def.mods[mid], has = p.mods[mid], what = md.noWinter ? tr('Work goes on at full speed in December–February (otherwise half speed)') : '';
+          if (what && !has) note = what;
+          return '<button class="tb small' + (has ? ' on' : '') + '" data-mod="' + mid + '" data-p="' + pid + '"' + (has ? ' disabled' : '') + (what ? ' title="' + Text.esc(what) + '"' : '') + '>' + (has ? '✓ ' : '+ ') +
             Text.esc(tr(md.name)) + '<small>' + sekBare(md.price) + '</small></button>';
-        }).join('') + '</div>';
+        }).join('') + (note ? '<small class="modNote">' + Text.esc(note) + '</small>' : '') + '</div>';
       }
       const grants = S.mission.grants || [];
       html += '<div class="fin"><span>' + Text.esc(tr('Paid with')) + '</span>' + ['cash', 'loan'].concat(grants.indexOf(pid) >= 0 ? ['grant'] : []).map((h) =>

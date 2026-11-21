@@ -2027,6 +2027,7 @@ Object.assign(TEXT_SV, {
   "A walking tunnel airside": "En gångtunnel på airside",
   "Signs, gates and the shops' corridor": "Skyltar, gater och butikskorridoren",
   "Work at night too": "Arbeta även på natten",
+  "Work goes on at full speed in December–February (otherwise half speed)": "Arbetet går i full fart i december–februari (annars i halv fart)",
   "The site and the foundations": "Tomten och grunden",
   "The pier itself": "Själva piren",
   "Gates, bridges and the apron": "Gater, bryggor och plattan",

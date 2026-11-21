@@ -2027,6 +2027,7 @@ Object.assign(TEXT_RU, {
   "A walking tunnel airside": "Пешеходный тоннель в чистой зоне",
   "Signs, gates and the shops' corridor": "Указатели, выходы и коридор магазинов",
   "Work at night too": "Работать и ночью",
+  "Work goes on at full speed in December–February (otherwise half speed)": "В декабре–феврале работа идёт в полную силу (иначе вдвое медленнее)",
   "The site and the foundations": "Площадка и фундаменты",
   "The pier itself": "Сам пирс",
   "Gates, bridges and the apron": "Выходы, телетрапы и перрон",
