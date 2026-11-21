@@ -13,7 +13,7 @@ Authoritative developer/AI working spec for this repository. Not end-user docume
 
 ## Overview
 
-A growing gallery of small, self-contained browser games and experiments. Each project lives in its own folder (lowercase, hyphen-separated, e.g. `flight-simulator`) with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, a Swedish `README_SV.md`, and a `screenshot.png` (always showing the English UI). Every game has three difficulty levels (Easy / Medium / Hard), chosen on the start screen and in the restart dialog. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each; a switcher with flags in its top left corner shows it in English, Russian or Swedish (first the browser's language, then the one picked last).
+A growing gallery of small, self-contained browser games and experiments. Each project lives in its own folder (lowercase, hyphen-separated, e.g. `flight-simulator`) with its own `index.html`, an English `README.md`, a Russian `README_RU.md`, a Swedish `README_SV.md`, and a `screenshot.png` (always showing the English UI). Every game has three difficulty levels (Easy / Medium / Hard), chosen on the start screen and in the restart dialog. The repository root hosts an `index.html` gallery page that links out to every project, plus a screenshot preview for each; a switcher with flags in its top left corner shows it in English, Russian or Swedish (first the browser's language, then the one picked last). Every card carries the game's English name (never translated), a description of at most 50 words and one to four tags; a row of tags above the cards filters them, and a button at the top right switches the theme between System (the default), Light and Dark. The root READMEs show the same cards (`tools/readme-games.js`).
 
 ## Projects
 
@@ -79,7 +79,8 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 ├── tools/cloud-mock.js       # for testing a cloud save with tools/cdp.js: the repo over http, a fake Supabase session, a mock of its REST (offline, error, hang, ok)
 ├── docs/                    # the rules by area, for agents (AGENTS.md links each and sums it up): languages.md, mobile.md, pwa.md (icons, manifest, updates, offline), icons.md (arrows and emoji drawn), code-layout.md, new-project.md, cloud-save.md (rules, recipe, typical mistakes, tests), testing.md
 ├── .gitattributes            # every text file stored with LF line endings
-├── assets/                  # gallery.css, gallery-lang.js (the gallery's texts in English, Russian and Swedish), gallery.js (the language switcher, remembered as ivanGallery.lang; picks up a new deploy via update.js; installs every game's offline worker), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image), showcase.gif (the animated preview at the top of the root READMEs: 800 × 450 slides of the games, English UI, about 4.5 MB)
+├── tools/readme-games.js     # writes the games table of the three root READMEs from the gallery's cards and checks them (a description of at most 50 words, one to four tags)
+├── assets/                  # gallery.css (light and dark colour tokens), gallery-lang.js (the gallery's texts in English, Russian and Swedish: the cards' descriptions, the tag labels), gallery-theme.js (the theme: System by default, Light or Dark, remembered as ivanGallery.theme, loaded in <head>), gallery.js (the language switcher, remembered as ivanGallery.lang; the cards' tags and the filter by tag; a card's docs/showcase.gif played on hover or when in view on a touch screen, never offline; picks up a new deploy via update.js; installs every game's offline worker), flag-gb/ru/se.svg (the switcher's flags), icon.svg (favicon + README logo), icon-maskable.svg, PWA PNGs (icon-192/512, icon-maskable-512, apple-touch-icon), social-preview.png (GitHub social preview, og:image), showcase.gif (the animated preview at the top of the root READMEs: every game's screenshot.png as an 800 × 450 slide, `--fade 2`, about 4 MB)
 ├── flight-simulator/
 │   ├── SPEC.md               # the game's own spec
 │   ├── index.html           # markup only, links versioned CSS/JS
@@ -262,11 +263,11 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 5. Give the game three difficulty levels (Easy / Medium / Hard), selectable on the start screen and in the restart dialog, and a Sound On / Off switch on the start screen and in the pause (see `AGENTS.md`; the whole procedure: `docs/new-project.md`).
 6. Add a `screenshot.png` preview image showing the English UI.
 7. Make it an installable PWA: `icon-maskable.svg`, the PNGs from `tools/pwa-icons.sh <name>`, a `manifest.webmanifest`, the `<head>` links and its offline `sw.js` from `node tools/sw-build.js <name>` (see `docs/pwa.md`).
-8. Add a card for it to the root `index.html` gallery and a row to the tables in the root `README.md` / `README_RU.md` / `README_SV.md`.
+8. Add a card for it to the root `index.html` gallery (English name, at most 50 words, one to four tags) and run `node tools/readme-games.js` for the tables in the root `README.md` / `README_RU.md` / `README_SV.md`.
 9. List it in the `Projects` section above with a one-line summary and a link to its `SPEC.md`.
 
 ## Backlog
 
 - [ ] Add more mini-games/experiments to the gallery
-- [ ] Add a search/filter control to the root gallery page once there are enough projects
-- [ ] Add a light/dark toggle to the root gallery page (currently dark-only, matching the first project's cockpit theme)
+- [x] A filter by tag on the root gallery page
+- [x] System, Light and Dark themes on the root gallery page

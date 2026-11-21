@@ -17,7 +17,7 @@ Large parts of the rules live in `docs/`, one file per area. **When a task touch
 | icons, the manifest, `<head>` links, updates (`update.js`), the offline worker (`sw.js`) | [docs/pwa.md](docs/pwa.md) |
 | an arrow, a symbol or an emoji anywhere (text, CSS, canvas, texture) | [docs/icons.md](docs/icons.md) |
 | creating, moving or splitting files and modules | [docs/code-layout.md](docs/code-layout.md) |
-| a new game or project | [docs/new-project.md](docs/new-project.md) (and all the guides above) |
+| a new game or project, a game's card in the gallery and the root READMEs | [docs/new-project.md](docs/new-project.md) (and all the guides above) |
 | a cloud save, a Google sign-in, Supabase | [docs/cloud-save.md](docs/cloud-save.md) |
 | headless Chrome, screenshots, long gameplay tests | [docs/testing.md](docs/testing.md) |
 
@@ -47,7 +47,7 @@ Large parts of the rules live in `docs/`, one file per area. **When a task touch
 
 ## Projects
 
-Every project lives in its own folder at the repo root, named in kebab-case (part of the public URL: never renamed once published), with its `SPEC.md`, `index.html`, `styles.css`, `constants.js`, the main loop, its code folders, three READMEs, the icons, the manifest, `sw.js` and a screenshot. **Creating a project: read [docs/new-project.md](docs/new-project.md)** — the full layout and the steps (the spec agreed first, the gallery card, the root READMEs and `SPEC.md`).
+Every project lives in its own folder at the repo root, named in kebab-case (part of the public URL: never renamed once published), with its `SPEC.md`, `index.html`, `styles.css`, `constants.js`, the main loop, its code folders, three READMEs, the icons, the manifest, `sw.js` and a screenshot. **Creating a project: read [docs/new-project.md](docs/new-project.md)** — the full layout and the steps (the spec agreed first, the gallery card, the root READMEs and `SPEC.md`). **A game's card** (the gallery and the root READMEs) carries its English name in every language, a description of at most 50 words and one to four tags from the list in `assets/gallery-lang.js`; `node tools/readme-games.js` writes the READMEs' games table from the gallery and checks these limits → [docs/new-project.md](docs/new-project.md#the-games-card).
 
 ## Testing the games
 

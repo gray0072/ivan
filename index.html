@@ -8,14 +8,22 @@
 <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=1">
-<meta name="theme-color" content="#0d1b2a">
+<meta name="theme-color" content="#0d1b2a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#eef2f7" media="(prefers-color-scheme: light)">
 <meta property="og:title" content="Browser Games Gallery">
 <meta property="og:description" content="Tiny self-contained browser games in vanilla JavaScript. No install — just open and play.">
 <meta property="og:image" content="https://gray0072.github.io/ivan/assets/social-preview.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="assets/gallery.css?v=1">
+<link rel="stylesheet" href="assets/gallery.css?v=2">
+<script src="assets/gallery-theme.js?v=1"></script>
 </head>
 <body>
+
+<button type="button" class="theme-btn" aria-label="Theme: System" data-theme-btn>
+  <svg class="t-system" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+  <svg class="t-light" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  <svg class="t-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+</button>
 
 <a class="gh-link" href="https://github.com/gray0072/ivan" target="_blank" rel="noopener noreferrer" aria-label="GitHub repository" data-i18n-aria="github">
   <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
@@ -37,68 +45,79 @@
   <p data-i18n="tagline">Small self-contained browser games and experiments. No install — just open and play.</p>
 </header>
 
+<nav class="tags" aria-label="Filter by tag" data-i18n-aria="tagFilter"></nav>
+
 <main>
-  <a class="card" href="flight-simulator/">
-    <img src="flight-simulator/screenshot.png" alt="Flight simulator screenshot" data-i18n-alt="fsAlt">
+  <a class="card" href="flight-simulator/" data-tags="aviation arcade shooter">
+    <img src="flight-simulator/screenshot.png" alt="Flight Simulator screenshot" data-i18n-alt="fsAlt">
     <div class="body">
-      <h2><img class="icon" src="flight-simulator/icon.svg" alt=""><span data-i18n="fsName">Flight Simulator</span></h2>
-      <p data-i18n="fsDesc">First-person arcade flight game: steer with the arrow keys, fire a twin-gun with Ctrl to pop balloons for points, and land on the highlighted airport's runway.</p>
+      <h2><img class="icon" src="flight-simulator/icon.svg" alt="">Flight Simulator</h2>
+      <p data-i18n="fsDesc">First-person arcade flight: steer with the arrow keys, pop balloons with the twin gun for points and land on the highlighted airport's runway.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="fish-frenzy/">
-    <img src="fish-frenzy/screenshot.png" alt="Fish frenzy screenshot" data-i18n-alt="ffAlt">
+  <a class="card" href="fish-frenzy/" data-tags="arcade kids">
+    <img src="fish-frenzy/screenshot.png" data-showcase="fish-frenzy/docs/showcase.gif" alt="Fish Frenzy screenshot" data-i18n-alt="ffAlt">
     <div class="body">
       <h2><img class="icon" src="fish-frenzy/icon.svg" alt="">Fish Frenzy</h2>
-      <p data-i18n="ffDesc">Eat-and-grow arcade game: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish, avoid bigger ones and jellyfish, and climb the food chain to the Sea King. Three difficulty levels and best-time records.</p>
+      <p data-i18n="ffDesc">Eat-and-grow arcade: steer a fish with the arrow keys or a touch joystick, eat plankton and smaller fish, dodge bigger ones and jellyfish, and climb the food chain to the Sea King. Three difficulty levels and best-time records.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="fun-training/">
-    <img src="fun-training/screenshot.png" alt="Fun Training screenshot" data-i18n-alt="ftAlt">
+  <a class="card" href="fun-training/" data-tags="learning kids">
+    <img src="fun-training/screenshot.png" data-showcase="fun-training/docs/showcase.gif" alt="Fun Training screenshot" data-i18n-alt="ftAlt">
     <div class="body">
       <h2><img class="icon" src="fun-training/icon.svg" alt="">Fun Training</h2>
-      <p data-i18n="ftDesc">A training game for school kids: water a flower, stop zombies, lay rails for a train, keep a balloon in the air, a campfire burning or a panda fed and happy by answering tasks in time. Math, reading-scale and listen-and-read tasks (Swedish, English, Russian), players, progress tracks with stars and bosses, coins and diamonds to spend on your own character — food, clothes and a room to furnish — and settings for operations, limits and speed.</p>
+      <p data-i18n="ftDesc">A training game for school kids: answer math and reading tasks in time to water a flower, stop zombies, lay rails for a train or keep a panda fed. Progress tracks with stars and bosses, and coins to spend on your own character and room.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="world-aviation/">
-    <img src="world-aviation/screenshot.png" alt="World Aviation screenshot" data-i18n-alt="waAlt">
+  <a class="card" href="world-aviation/" data-tags="aviation simulator strategy">
+    <img src="world-aviation/screenshot.png" data-showcase="world-aviation/docs/showcase.gif" alt="World Aviation screenshot" data-i18n-alt="waAlt">
     <div class="body">
       <h2><img class="icon" src="world-aviation/icon.svg" alt="">World Aviation</h2>
-      <p data-i18n="waDesc">A cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, win Scandinavia, then buy the traffic rights to the rest of the world, region by region. Push back, taxi, take off, work the emergency checklists, fly the ILS and land — from Visby to New York and Tokyo. Eighteen aircraft from a 19-seat turboprop to the ATR 72, the Embraer E2, the A220, the 737, the A320neo, the 787, the A350, the 777, the An-124, the 747-8F and the double-deck A380, 141 real airports, a training tree and Swedish kronor.</p>
+      <p data-i18n="waDesc">A cockpit-view flight simulator and airline career: start with Swedish domestic flights out of Arlanda, then buy traffic rights to the rest of the world. Push back, taxi, fly the ILS and land eighteen aircraft, from a 19-seat turboprop to the A380, at 141 real airports.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="yacht/">
+  <a class="card" href="yacht/" data-tags="tabletop multiplayer turn-based">
     <img src="yacht/screenshot.png" alt="Yacht screenshot" data-i18n-alt="ytAlt">
     <div class="body">
-      <h2><img class="icon" src="yacht/icon.svg" alt=""><span data-i18n="ytName">Yacht</span></h2>
-      <p data-i18n="ytDesc">The dice game Yacht, also known as Yahtzee and dice poker, for up to 10 players on one device: shake the leather cup, keep the dice you like and fill the score sheet. Saved groups of players, statistics, hints on three levels, and a table in the colour and texture you choose. English, Russian and Swedish.</p>
+      <h2><img class="icon" src="yacht/icon.svg" alt="">Yacht</h2>
+      <p data-i18n="ytDesc">The dice game Yacht, also known as Yahtzee and dice poker, for up to 10 players on one device: shake the leather cup, keep the dice you like and fill the score sheet. Saved groups of players, statistics, hints and a table of your choice.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="city-builder/">
+  <a class="card" href="city-builder/" data-tags="strategy building">
     <img src="city-builder/screenshot.png" alt="City Builder screenshot" data-i18n-alt="cbAlt">
     <div class="body">
       <h2><img class="icon" src="city-builder/icon.svg" alt="">City Builder</h2>
-      <p data-i18n="cbDesc">A city-building game: lay roads, build houses, shops and factories, keep the residents happy and watch cottages grow into apartment blocks. Grow a hamlet into a Village, a Town, a City and a Metropolis, put out fires, hold back spring floods and don't go bankrupt. Three difficulty levels, records, English, Russian and Swedish.</p>
+      <p data-i18n="cbDesc">A city-building game: lay roads, build houses, shops and factories, keep the residents happy and watch cottages grow into apartment blocks. Grow a hamlet into a Metropolis, put out fires, hold back spring floods and don't go bankrupt.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="wiggle-wars/">
+  <a class="card" href="wiggle-wars/" data-tags="turn-based multiplayer shooter">
     <img src="wiggle-wars/screenshot.png" alt="Wiggle Wars screenshot" data-i18n-alt="wwAlt">
     <div class="body">
       <h2><img class="icon" src="wiggle-wars/icon.svg" alt="">Wiggle Wars</h2>
-      <p data-i18n="wwDesc">A turn-based artillery game with worms, in the spirit of Worms: bazookas, grenades, air strikes, a jetpack and a dozen more weapons on a land that blows apart, with wind, crates, mines and oil barrels. One against one on one phone or tablet, against the computer, or a twelve-mission campaign with stars. Pick the worms per team, the weapons and the map; English, Russian and Swedish.</p>
+      <p data-i18n="wwDesc">Turn-based artillery with worms: bazookas, grenades, air strikes, a jetpack and more on a land that blows apart, with wind, crates and mines. One against one on one phone, against the computer, or a twelve-mission campaign with stars.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="lift-logic/">
-    <img src="lift-logic/screenshot.png" alt="Lift Logic screenshot" data-i18n-alt="llAlt">
+  <a class="card" href="lift-logic/" data-tags="puzzle learning kids">
+    <img src="lift-logic/screenshot.png" data-showcase="lift-logic/docs/showcase.gif" alt="Lift Logic screenshot" data-i18n-alt="llAlt">
     <div class="body">
       <h2><img class="icon" src="lift-logic/icon.svg" alt="">Lift Logic</h2>
-      <p data-i18n="llDesc">A programming puzzle game: be the brain of a lift. Build its program from colourful blocks, Scratch-style, and watch a building live by it — people press the buttons, ride, and give up and take the stairs if your lift is slow. From Grandma's three-storey house to a school, a grand hotel, a hospital, an office tower with three lifts, a shopping mall, the Eiffel Tower and the 102 floors of the Empire State Building: 72 missions with three stars, hints, an Inspector that shows what went wrong, jokes and a Lift Museum. English, Russian and Swedish.</p>
+      <p data-i18n="llDesc">A programming puzzle: be the brain of a lift. Build its program from colourful blocks, Scratch-style, and watch a building live by it — from Grandma's house to a hotel, a hospital, the Eiffel Tower and the Empire State Building. 72 missions with stars, hints and jokes.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
-  <a class="card" href="arlanda-rising/">
-    <img src="arlanda-rising/screenshot.png" alt="Arlanda Rising screenshot" data-i18n-alt="arAlt">
+  <a class="card" href="arlanda-rising/" data-tags="strategy building aviation">
+    <img src="arlanda-rising/screenshot.png" data-showcase="arlanda-rising/docs/showcase.gif" alt="Arlanda Rising screenshot" data-i18n-alt="arAlt">
     <div class="body">
       <h2><img class="icon" src="arlanda-rising/icon.svg" alt="">Arlanda Rising</h2>
-      <p data-i18n="arDesc">A management game about running Stockholm Arlanda through its real history: clear the pine forest in 1958, pick stands and plough the snow by hand, then grow with the jets — the jumbo, runway 2, the international terminal, the domestic flights from Bromma — and hand the work to teams, managers and the first computers, through strikes, flu seasons, fog and failures; then open the skies of the 1990s — Terminal 2, real shops and cafés in the terminals, new airlines and route incentives, Copenhagen as a rival, Arlanda Express — and run the 2000s and 2010s: Schengen and the passport booths, runway 3, security after 2001, de-icing, the ash cloud, Emirates, a green rating and the environmental permit. Then survive the storm years — the empty skies of the pandemic, furlough or lay-offs, the freighters, the summer of queues, a cyber attack and the day the screens went blue in 2024 — and build your own Arlanda of 2040: electric aircraft and charging stands, robots, hydrogen, your own pier, and a final exam where a blackout leaves only the people. An isometric airport that lives in front of you, short missions in stages that are never lost, three stars each, Free Play, Challenge Days and a cloud save through Google. English, Russian and Swedish.</p>
+      <p data-i18n="arDesc">Run Stockholm Arlanda through its real history, from clearing the pine forest in 1958 through the jets, Schengen, the ash cloud and the pandemic to your own airport of 2040. An isometric airport that lives in front of you, short missions with stars, Free Play and a cloud save.</p>
+      <ul class="card-tags"></ul>
     </div>
   </a>
 </main>
@@ -108,7 +127,7 @@
 </footer>
 
 <script src="assets/update.js?v=2"></script>
-<script src="assets/gallery-lang.js?v=13"></script>
-<script src="assets/gallery.js?v=3"></script>
+<script src="assets/gallery-lang.js?v=14"></script>
+<script src="assets/gallery.js?v=4"></script>
 </body>
 </html>
