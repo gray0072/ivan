@@ -2257,5 +2257,6 @@ Object.assign(TEXT_RU, {
   "Charge": "Зарядка",
   "Passengers off": "Высадка",
   "Services": "Обслуживание",
-  "Orange: held up. Pale: a vehicle on its way.": "Оранжевый: задержка. Бледный: машина в пути."
+  "Orange: held up. Pale: a vehicle on its way.": "Оранжевый: задержка. Бледный: машина в пути.",
+  "✓ is met at this moment; the stage and the mission are judged at their end.": "✓ — выполнено сейчас; этап и миссию оценивают в их конце."
 });

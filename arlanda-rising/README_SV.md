@@ -100,7 +100,7 @@ Efter kapitel 3 kommer **utmaningsdagarna**: längre dagar på ungefär tjugo mi
 
 ## Aldrig förlorat
 
-Ett uppdrag sparas med några sekunders mellanrum och i samma ögonblick som sidan döljs — en mobil som låses, en tidsgräns som stänger appen. Öppna spelet igen så fortsätter **Fortsätt uppdraget** från exakt det ögonblicket, pausat. En misslyckad etapp spelas om, inte hela uppdraget.
+Ett uppdrag sparas med några sekunders mellanrum och i samma ögonblick som sidan döljs — en mobil som låses, en tidsgräns som stänger appen. Öppna spelet igen så fortsätter **Fortsätt uppdraget** från exakt det ögonblicket, pausat. En misslyckad etapp spelas om, inte hela uppdraget. **Uppdraget** i pausmenyn (☰ eller Esc) visar dess kort igen — numret, genomgången, etapperna med den du är i, etappens mål och stjärnornas mål med hur det ligger till just nu.
 
 ## Kontroller
 

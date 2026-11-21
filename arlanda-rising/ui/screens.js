@@ -2,7 +2,7 @@
 
 // Arlanda Rising — the overlay screens and what they share: showing one panel at a time, the difficulty picker
 // (start screen, mission card, pause, results — pre-selected), the Sound On / Off switch, and the start screen,
-// the pause menu, the settings, the confirm dialog, the cloud save's account row and the Free Play screen. The
+// the pause menu (with the running mission's card, ui/missioncard.js), the settings, the confirm dialog, the cloud save's account row and the Free Play screen. The
 // other screens have their own files (timeline, missioncard, results, office, people, opscenter). Buttons call
 // game.js; Space / Enter press the panel's default button.
 
@@ -221,6 +221,9 @@ const Screens = (() => {
     p.innerHTML = '<h1>⏸ ' + Text.esc(tr('Paused')) + '</h1>';
     const col = el('div', 'btnCol');
     col.appendChild(btn(tr('Continue'), 'default', () => Game.resume()));
+    // the mission's card with where it stands now (ui/missioncard.js): looking changes nothing
+    const md = Missions.def();
+    col.appendChild(btn('📋 ' + tr('The mission') + (MISSION[md.id] ? ' ' + md.id : ''), 'secondary', () => Game.missionInfo()));
     col.appendChild(btn(tr('Retry stage'), 'secondary', () => Game.retryStage()));
     p.appendChild(col);
     let d = S.difficulty;

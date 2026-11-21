@@ -4,30 +4,60 @@
 // briefing in two or three bubbles, the goal and the two goals for ★★ and ★★★ (with the best stars so far), the
 // stages and the minutes, what is new in the mission, the difficulty, Start. The stage card before play: the
 // stage's name and time, its goals, and before the first stage "Meanwhile…" — what happened since the last mission.
-// Used by game.js.
+// The same card opens from the pause menu as the mission's info (`info`): its number, the briefing, the stages with the
+// one being played marked, the goals of this stage and of the mission and the stars' goals with their values so far —
+// it only reads the running mission (S.mission), Back returns to the pause menu. Used by game.js.
 
 const SEASONS = ['Winter', 'Winter', 'Spring', 'Spring', 'Spring', 'Summer', 'Summer', 'Summer', 'Autumn', 'Autumn', 'Autumn', 'Winter'];
 
 const MissionCard = (() => {
   const $ = (id) => document.getElementById(id);
 
+  // the card's text, shared by the card before a mission and the info of the one being played (`live`: its stage, the
+  // goals' values so far); a Free Play round and a Challenge Day show what they have (no chapter, briefing or news)
+  function body(m, live) {
+    const day = Calendar.parse(m.date), d = Calendar.date(day);
+    const tot = live ? Missions.liveTotal() : null, cur = live ? S.mission.stage : -1;
+    const chap = m.chapter ? tr('Chapter {n}: {name}', { n: m.chapter, name: tr(CHAPTERS[m.chapter - 1].name) }) + ' · ' + (live ? m.id : m.n + '/11')
+      : m.challenge ? tr('Challenge Days') : m.free ? tr('Free Play') + ' · ' + tr('round {n}', { n: m.round }) : '';
+    // the stars' goals: before the mission as they read, during it with their value so far (✓ met at this moment)
+    const starGoals = live ? Goals.all(m.stars, tot).map((r, i) => '<li class="' + (r.ok ? 'ok' : 'no') + '"><span class="mark">' + Text.stars(i + 2) + '</span><span class="g">' +
+      Text.esc(Text.goal(r.goal)) + '</span><b>' + Text.esc(Text.value(r)) + '</b></li>').join('')
+      : m.stars.map((g, i) => '<li>' + Text.stars(i + 2) + ' <span>' + Text.esc(Text.goal(g)) + '</span></li>').join('');
+    let html = '<div class="mcHead">' + (chap ? '<span class="chap">' + Text.esc(chap) + '</span>' : '') +
+      '<h1>' + Text.esc(tr(m.name)) + '</h1><p class="when">' + Text.esc(fmtDate(day)) + ' · ' + Text.esc(tr(SEASONS[d.m - 1])) + ' · ~' + Text.minutes(m) + ' ' + Text.esc(tr('min')) + '</p></div>' +
+      ((m.brief || []).length ? '<div class="astrid"><div class="face">👵</div><div class="bubbles">' + m.brief.map((b) => '<p class="bubble">' + Text.esc(tr(b)) + '</p>').join('') + '</div></div>' : '') +
+      (m.aim ? '<div class="goalLine"><b>' + Text.stars(1) + '</b> ' + Text.esc(tr(m.aim)) + '</div>' : '');
+    if (live && (m.goal || []).length) html += '<p class="label">' + Text.esc(tr('The mission')) + '</p>' + Text.goalsHtml(Goals.all(m.goal, tot));
+    if (starGoals) html += live ? '<ul class="goals starGoals">' + starGoals + '</ul>' : '<ul class="starGoals">' + starGoals + '</ul>';
+    if (m.chapter) html += '<p class="best">' + Text.esc(tr('Best so far:')) + ' ' + Text.stars(Progress.best(m.id)) + '</p>';
+    html += '<div class="stagesList">' + m.stages.map((s, i) => '<span class="stg' + (i === cur ? ' on' : i < cur ? ' done' : '') + '">' + (i < cur ? '✓' : s.mode === 'ops' ? '🛬' : '🏗️') + ' ' + (i + 1) + '. ' +
+      Text.esc(tr(s.name)) + ' <small>' + Text.esc(Text.stageWhen(s)) + '</small></span>').join('') + '</div>';
+    if (live) {
+      const goals = Goals.all(Missions.stage().goal, S.mission.st);
+      html += '<p class="label">' + Text.esc(tr('Goals of this stage')) + ' <small>' + Text.esc(tr('Stage {i} of {n}', { i: cur + 1, n: m.stages.length })) + '</small></p>' +
+        (goals.length ? Text.goalsHtml(goals) : '<p class="fine">' + Text.esc(tr('No goal in this stage: get ready for the next one.')) + '</p>') +
+        '<p class="fine">' + Text.esc(tr('✓ is met at this moment; the stage and the mission are judged at their end.')) + ' ' +
+        Text.esc(tr('Difficulty')) + ': ' + Text.esc(tr({ easy: 'Easy', medium: 'Medium', hard: 'Hard' }[S.difficulty] || 'Medium')) + '.</p>';
+    }
+    if (m.news) html += '<div class="news"><p class="label">' + Text.esc(tr('New in this mission')) + '</p>' + m.news.map((n) => '<p>' + n.icon + ' ' + Text.esc(tr(n.text)) + '</p>').join('') + '</div>';
+    return html;
+  }
+
   function show(id, replay) {
     const m = MISSION[id], p = $('missionCard');
-    const day = Calendar.parse(m.date), d = Calendar.date(day);
     let diff = Game.campaignDiff(id);
-    const starGoals = m.stars.map((g, i) => '<li>' + Text.stars(i + 2) + ' <span>' + Text.esc(Text.goal(g)) + '</span></li>').join('');
-    p.innerHTML =
-      '<div class="mcHead"><span class="chap">' + Text.esc(tr('Chapter {n}: {name}', { n: m.chapter, name: tr(CHAPTERS[m.chapter - 1].name) })) + ' · ' + m.n + '/11</span>' +
-      '<h1>' + Text.esc(tr(m.name)) + '</h1><p class="when">' + Text.esc(fmtDate(day)) + ' · ' + Text.esc(tr(SEASONS[d.m - 1])) + ' · ~' + Text.minutes(m) + ' ' + Text.esc(tr('min')) + '</p></div>' +
-      '<div class="astrid"><div class="face">👵</div><div class="bubbles">' + m.brief.map((b) => '<p class="bubble">' + Text.esc(tr(b)) + '</p>').join('') + '</div></div>' +
-      '<div class="goalLine"><b>' + Text.stars(1) + '</b> ' + Text.esc(tr(m.aim || '')) + '</div>' +
-      '<ul class="starGoals">' + starGoals + '</ul>' +
-      '<p class="best">' + Text.esc(tr('Best so far:')) + ' ' + Text.stars(Progress.best(id)) + '</p>' +
-      '<div class="stagesList">' + m.stages.map((s, i) => '<span class="stg">' + (s.mode === 'ops' ? '🛬' : '🏗️') + ' ' + (i + 1) + '. ' + Text.esc(tr(s.name)) + ' <small>' + Text.esc(Text.stageWhen(s)) + '</small></span>').join('') + '</div>' +
-      (m.news ? '<div class="news"><p class="label">' + Text.esc(tr('New in this mission')) + '</p>' + m.news.map((n) => '<p>' + n.icon + ' ' + Text.esc(tr(n.text)) + '</p>').join('') + '</div>' : '') +
-      (replay ? '<p class="fine">' + Text.esc(tr('A replay: it can earn stars, and your campaign stays as it is.')) + '</p>' : '');
+    p.innerHTML = body(m, false) + (replay ? '<p class="fine">' + Text.esc(tr('A replay: it can earn stars, and your campaign stays as it is.')) + '</p>' : '');
     p.appendChild(Screens.diffPicker(diff, (x) => { diff = x; }));
     p.appendChild(Screens.row(Screens.btn(tr('Back'), 'secondary', () => Game.toTimeline()), Screens.btn(tr('Start'), 'default big', () => Game.startMission(id, diff))));
+    Screens.show('missionCard');
+  }
+
+  // the mission being played, from the pause menu: the same card, read-only, with where it stands now
+  function info(back) {
+    const p = $('missionCard');
+    p.innerHTML = body(Missions.def(), true);
+    p.appendChild(Screens.row(Screens.btn(tr('Back'), 'default', back)));
     Screens.show('missionCard');
   }
 
@@ -82,5 +112,5 @@ const MissionCard = (() => {
     Screens.show('stageIntro');
   }
 
-  return { show, stage };
+  return { show, info, stage };
 })();

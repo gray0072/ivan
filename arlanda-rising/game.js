@@ -11,7 +11,7 @@
 // insides) and the card of a building, a fuel truck or a plough tapped on the map.
 
 const Game = {
-  screen: 'menu',     // menu, timeline, card, office, free, challenges, intro, play, tview, pause, panel, stageCard, results
+  screen: 'menu',     // menu, timeline, card, office, free, challenges, intro, play, tview, pause, info, panel, stageCard, results
   speed: 0, lastSpeed: 1,
   run: null,          // { id, campaign, difficulty } of the mission being played
   pick: null,         // a flight whose stand the player is choosing on the map
@@ -201,6 +201,13 @@ const Game = {
     this.save();
     Screens.pause();
   },
+  // from the pause menu: the mission's card with where it stands (read only); Back or Esc goes back to the pause menu
+  missionInfo() {
+    if (this.screen !== 'pause' || !S || !S.mission) return;
+    this.screen = 'info';
+    MissionCard.info(() => this.backToPause());
+  },
+  backToPause() { this.screen = 'pause'; Screens.pause(); },
   resume() {
     Screens.hide();
     const live = this.screen === 'tview';
@@ -319,7 +326,7 @@ const Game = {
         this.missionEnd();
       }
       if (S.mission) {
-        const live = this.screen === 'play' || this.screen === 'intro' || this.screen === 'pause' || this.screen === 'panel' || this.screen === 'tview';
+        const live = this.screen === 'play' || this.screen === 'intro' || this.screen === 'pause' || this.screen === 'info' || this.screen === 'panel' || this.screen === 'tview';
         if (live) {
           Hud.update();
           Tray.render();
@@ -355,6 +362,7 @@ const Game = {
     if (e.code === 'Escape') {
       if (this.screen === 'play') this.pauseMenu();
       else if (this.screen === 'pause') this.resume();
+      else if (this.screen === 'info') this.backToPause();
       else if (this.screen === 'panel' || this.screen === 'tview') this.resume();
       else if (this.screen === 'timeline' || this.screen === 'office' || this.screen === 'card' || this.screen === 'free' || this.screen === 'challenges') this.toMenu();
       return;

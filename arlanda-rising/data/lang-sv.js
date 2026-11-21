@@ -2257,5 +2257,6 @@ Object.assign(TEXT_SV, {
   "Charge": "Laddning",
   "Passengers off": "Avstigning",
   "Services": "Service",
-  "Orange: held up. Pale: a vehicle on its way.": "Orange: försenat. Blekt: ett fordon är på väg."
+  "Orange: held up. Pale: a vehicle on its way.": "Orange: försenat. Blekt: ett fordon är på väg.",
+  "✓ is met at this moment; the stage and the mission are judged at their end.": "✓ är uppfyllt just nu; etappen och uppdraget bedöms när de slutar."
 });

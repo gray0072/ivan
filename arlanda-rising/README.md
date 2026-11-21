@@ -100,7 +100,7 @@ After chapter 3 come the **Challenge Days**: longer days of about twenty minutes
 
 ## Never lost
 
-A mission is saved every few seconds and the moment the page is hidden — a phone that locks, a time limit that closes the app. Open the game again and **Continue mission** goes on from that very moment, paused. A failed stage is retried, not the whole mission.
+A mission is saved every few seconds and the moment the page is hidden — a phone that locks, a time limit that closes the app. Open the game again and **Continue mission** goes on from that very moment, paused. A failed stage is retried, not the whole mission. **The mission** in the pause menu (☰ or Esc) shows its card again — the number, the briefing, the stages with the one you are in, the goals of this stage and the stars' goals with where you stand now.
 
 ## Controls
 

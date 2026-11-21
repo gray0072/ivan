@@ -318,6 +318,12 @@ ul.goals.plain li::before { content: '•'; color: var(--accent); }
 .best { font-size: 13px; color: var(--dim); margin: 4px 0; }
 .stagesList { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .stg { padding: 4px 9px; border-radius: 10px; background: rgba(255,255,255,0.07); font-size: 12.5px; }
+/* the mission's info from the pause menu: the stage being played, those done */
+.stg.on { background: #2f6fb3; color: #fff; }
+.stg.on small { color: #dce8f5; }
+.stg.done { opacity: 0.6; }
+.label small { color: var(--dim); font-weight: 400; }
+ul.goals.starGoals li .mark { white-space: nowrap; }
 .news p { margin: 3px 0; font-size: 13.5px; }
 .meanwhile { padding: 8px 12px; border-radius: 12px; background: rgba(47,111,179,0.25); border: 1px solid rgba(47,111,179,0.6); margin: 6px 0; }
 .meanwhile p { margin: 4px 0 0; font-size: 13.5px; }

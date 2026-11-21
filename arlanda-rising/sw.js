@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "e2f28ad08dc4";
+const VERSION = "6e175a0c595c";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -47,8 +47,8 @@ const FILES = [
   "data/domains.js?v=5",
   "data/events.js?v=2",
   "data/icons.js?v=6",
-  "data/lang-ru.js?v=12",
-  "data/lang-sv.js?v=12",
+  "data/lang-ru.js?v=13",
+  "data/lang-sv.js?v=13",
   "data/layout.js?v=12",
   "data/masterplan.js?v=7",
   "data/missions/ch1.js?v=2",
@@ -72,7 +72,7 @@ const FILES = [
   "data/strategies/ch8.js?v=1",
   "data/strategies/strategies.js?v=1",
   "data/terminals.js?v=3",
-  "game.js?v=6",
+  "game.js?v=7",
   "icon-192.png?v=1",
   "icon-512.png?v=1",
   "icon-maskable-512.png?v=1",
@@ -126,20 +126,20 @@ const FILES = [
   "sim/terminal.js?v=3",
   "sim/turnaround.js?v=6",
   "sim/weather.js?v=1",
-  "styles.css?v=10",
+  "styles.css?v=11",
   "ui/airlines.js?v=1",
   "ui/cards.js?v=3",
   "ui/challenges.js?v=1",
   "ui/finance.js?v=4",
   "ui/hints.js?v=5",
   "ui/hud.js?v=4",
-  "ui/missioncard.js?v=3",
+  "ui/missioncard.js?v=4",
   "ui/office.js?v=6",
   "ui/opscenter.js?v=3",
   "ui/people.js?v=3",
   "ui/plan.js?v=7",
   "ui/results.js?v=4",
-  "ui/screens.js?v=3",
+  "ui/screens.js?v=4",
   "ui/sitecard.js?v=3",
   "ui/sounds.js?v=1",
   "ui/terminalview.js?v=2",
