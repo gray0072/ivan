@@ -22,6 +22,12 @@ const AirportArt = (() => {
   function standIndex(id) { return S.airport.stands.findIndex((s) => s.id === id); }
   // the point the stand's lead-in line starts at (the aircraft taxis there, then in)
   function standEntry(i) { const p = standPos(i); return [p.x - 75, p.y]; }
+  // a remote stand's paved way to the first apron: the line the aircraft taxi along (render/traffic.js), from the
+  // stand's entry straight north or south to the apron's edge
+  function remoteWay(i) {
+    const e = standEntry(i), A = LAYOUT.apron1;
+    return [[e[0] + 6, e[1]], [e[0], e[1]], [e[0], Math.min(Math.max(e[1], A.y0 + 12), A.y1 - 12)]];
+  }
 
   function quad(c, a, b, cc, d, fill) { c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.lineTo(cc[0], cc[1]); c.lineTo(d[0], d[1]); c.closePath(); c.fillStyle = fill; c.fill(); }
   function band(c, s0, s1, t0, t1, fill) { quad(c, rp(s0, t0), rp(s1, t0), rp(s1, t1), rp(s0, t1), fill); }
@@ -137,7 +143,7 @@ const AirportArt = (() => {
       else if (!onApron) {
         c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
         c.fillRect(p.x - 70, p.y - 26, 78, 52);
-        line(c, [[p.x - 70, p.y], [A.x0, Math.min(Math.max(p.y, A.y0 + 10), A.y1 - 10)]], 20, sc.season === 'winter' ? '#cfd5da' : PAL.concrete);
+        line(c, remoteWay(i), 20, sc.season === 'winter' ? '#cfd5da' : PAL.concrete);
       }
       const hl = sc.standMark && sc.standMark[st.id];
       line(c, [[p.x - 70, p.y], [p.x - 2, p.y]], hl ? 3 : 0.8, hl ? hl : PAL.taxiLine);
@@ -515,5 +521,5 @@ const AirportArt = (() => {
     }
   }
 
-  return { flat, objects, standPos, standIndex, standEntry };
+  return { flat, objects, standPos, standIndex, standEntry, remoteWay };
 })();

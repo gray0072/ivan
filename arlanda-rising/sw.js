@@ -16,13 +16,13 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "7284cac59bbc";
+const VERSION = "1f0577fc2504";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
   "apple-touch-icon.png?v=1",
   "art/brands.js?v=1",
-  "art/emblems.js?v=3",
+  "art/emblems.js?v=4",
   "art/flag-gb.svg",
   "art/flag-ru.svg",
   "art/flag-se.svg",
@@ -49,7 +49,7 @@ const FILES = [
   "data/icons.js?v=5",
   "data/lang-ru.js?v=5",
   "data/lang-sv.js?v=5",
-  "data/layout.js?v=5",
+  "data/layout.js?v=6",
   "data/masterplan.js?v=5",
   "data/missions/ch1.js?v=2",
   "data/missions/ch2.js?v=1",
@@ -79,11 +79,11 @@ const FILES = [
   "lib/supabase.min.js?v=1",
   "manifest.webmanifest?v=1",
   "progress.js?v=2",
-  "render/aircraft.js?v=5",
-  "render/airport.js?v=5",
-  "render/ground.js?v=1",
+  "render/aircraft.js?v=6",
+  "render/airport.js?v=6",
+  "render/ground.js?v=2",
   "render/iso.js?v=1",
-  "render/map.js?v=3",
+  "render/map.js?v=4",
   "render/palette.js?v=1",
   "render/sky.js?v=1",
   "render/terminal.js?v=2",

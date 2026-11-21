@@ -7,17 +7,20 @@
 // world-aviation/art/emblems.js in spirit; more kinds come with the later chapters' airlines.
 
 const Emblems = {
-  // on a fin: the canvas is already turned into the fin's plane, centred on the emblem; size in metres
-  drawOnFin(c, e, size) {
+  // on a fin: the canvas is already turned into the fin's plane, centred on the emblem; size in metres, maxW the
+  // width the fin has for it (an emblem wider than that is made smaller)
+  drawOnFin(c, e, size, maxW) {
     if (e[0] === 'text') {
       c.fillStyle = e[2];
       c.font = 'italic 900 ' + size + 'px Arial, sans-serif';
       c.textAlign = 'center'; c.textBaseline = 'middle';
-      const w = c.measureText(e[1]).width, max = size * 2.2;
-      if (w > max) c.scale(max / w, 1);
+      // the italic leans over by about a fifth of its height
+      const w = c.measureText(e[1]).width + size * 0.2, max = Math.min(size * 2.2, maxW || Infinity);
+      if (w > max) c.scale(max / w, max / w);
       c.fillText(e[1], 0, 0);
     } else if (e[0] === 'circle') {
       // ['circle', disc colour, letters, letters' colour]: a disc with letters in it
+      if (maxW && size * 1.4 > maxW) { const k = maxW / (size * 1.4); c.scale(k, k); }
       c.fillStyle = e[1];
       c.beginPath(); c.arc(0, 0, size * 0.7, 0, Math.PI * 2); c.fill();
       c.fillStyle = e[3];

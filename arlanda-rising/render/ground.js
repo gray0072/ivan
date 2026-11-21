@@ -12,7 +12,8 @@ const Ground = (() => {
   const DIR = [(RW.to[0] - RW.from[0]) / L, (RW.to[1] - RW.from[1]) / L];   // along runway 1, north
   const NRM = [DIR[1], -DIR[0]];                                           // across it, east
   const TREE_GRID = 18;           // m between trees
-  const STRIP_T = [-160, 215];    // the strip's cleared width across the runway (m, east +), with the taxiway
+  const STRIP_T = [-175, 235];    // the strip's cleared width across the runway (m, east +), with the taxiway and room
+                                  // for the trees in front of it not to stand over it
 
   // a point at s (0 the 01 threshold, 1 the 19 one) along runway 1 and t metres east of its centreline
   function rwPoint(s, t) { return [RW.from[0] + DIR[0] * L * s + NRM[0] * t, RW.from[1] + DIR[1] * L * s + NRM[1] * t]; }
@@ -63,7 +64,10 @@ const Ground = (() => {
     const T = LAYOUT.town;
     if (Math.hypot(x - T.x, y - T.y) < T.r) return true;
     if (nearLine(x, y, LAYOUT.e4, 40)) return true;
-    if (sc.road > 0 && nearLine(x, y, sc.roadPts, 22)) return true;
+    if (sc.road > 0 && nearLine(x, y, sc.roadPts, 32)) return true;
+    // what is built outside the first clearing: its plot and its way to the apron (render/map.js `scene`)
+    for (const r of sc.pads || []) if (x > r[0] && x < r[2] && y > r[1] && y < r[3]) return true;
+    for (const l of sc.ways || []) if (nearLine(x, y, l.pts, l.d)) return true;
     return false;
   }
   function nearLine(x, y, pts, d) {
@@ -133,6 +137,9 @@ const Ground = (() => {
       const a = LAYOUT.clear.apron, x1 = a[0][0] + (a[1][0] - a[0][0]) * sc.apronClear;
       fillPoly(c, [[a[0][0], a[0][1]], [x1, a[0][1]], [x1, a[2][1]], [a[0][0], a[2][1]]], raw);
     }
+    c.fillStyle = raw;
+    for (const r of sc.pads || []) c.fillRect(r[0], r[1], r[2] - r[0], r[3] - r[1]);
+    for (const l of sc.ways || []) strokeLine(c, l.pts, l.d * 2, raw);
     // roads: the E4, and the road in (gravel while it is built)
     strokeLine(c, LAYOUT.e4, 30, sc.season === 'winter' ? '#9aa0a6' : PAL.asphalt);
     strokeLine(c, LAYOUT.e4, 1.2, 'rgba(255,255,255,0.6)', [14, 14]);
@@ -157,8 +164,9 @@ const Ground = (() => {
     const key = kind + season + bucket;
     if (sprites[key]) return sprites[key];
     if (Object.keys(sprites).length > 200) for (const k in sprites) delete sprites[k];
-    const hM = kind === 'birch' ? 13 : kind === 'spruce' ? 17 : 19, wM = kind === 'birch' ? 7 : kind === 'spruce' ? 6 : 7;
-    const w = Math.ceil(wM * 1.4 * bucket) + 4, h = Math.ceil(hM * ISO_Z * bucket) + 6;
+    // hM sets the shape: a spruce's tip stands 1.28 × hM over its foot, a pine's 1.12 ×, a birch's crown 0.96 ×
+    const hM = kind === 'birch' ? 11.5 : kind === 'spruce' ? 12.5 : 14.5, wM = kind === 'birch' ? 7 : kind === 'spruce' ? 6 : 7;
+    const w = Math.ceil(wM * 1.4 * bucket) + 4, h = Math.ceil(hM * 1.32 * bucket) + 6;   // tall enough for the whole crown
     const cv = document.createElement('canvas');
     cv.width = w; cv.height = h;
     const g = cv.getContext('2d'), s = bucket, cx = w / 2, by = h - 2;

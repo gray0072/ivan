@@ -50,8 +50,30 @@ const MapView = (() => {
       siteWork: !!a.projects.site && !items.terminal,
       runway: a.runways[0] || null, runway2: a.runways.find((r) => r.id === 'r2') || null, runway3: a.runways.find((r) => r.id === 'r3') || null,
       apron: a.stands.length > 0, items, p,
-      planning: !!S.plan, lights: [], standMark: view.standMark
+      planning: !!S.plan, lights: [], standMark: view.standMark,
+      ...clearings(a, items, ready || p('site', 'apron') >= 1)
     };
+  }
+
+  // the ground cleared of trees round what is built outside the site's first clearing: a remote stand's pad and its
+  // way to the apron, the plots of the buildings in data/layout.js (car parks, cafés…), the link from the taxiway
+  const PAD = 14;   // m of open ground round a plot
+  function clearings(a, items, apronDone) {
+    const pads = [], ways = [];
+    if (apronDone) { const T = LAYOUT.taxi; ways.push({ pts: [Ground.rwPoint(T.apronLink.s, T.offset), T.apronLink.to], d: 34 }); }
+    const A = LAYOUT.apron1;
+    a.stands.forEach((st, i) => {
+      if (st.at && !st.pad) return;
+      const q = AirportArt.standPos(i);
+      if (q.x >= A.x0 && q.x <= A.x1 && q.y >= A.y0 && q.y <= A.y1) return;
+      pads.push([q.x - 80 - PAD, q.y - 34 - PAD, q.x + 8 + PAD, q.y + 34 + PAD]);
+      if (!st.pad) ways.push({ pts: AirportArt.remoteWay(i), d: 10 + PAD });
+    });
+    for (const k in items) {
+      const L = LAYOUT[k];
+      if (L && L.box) pads.push([L.box[0] - PAD, L.box[1] - PAD, L.box[2] + PAD, L.box[3] + PAD]);
+    }
+    return { pads, ways };
   }
 
   function draw(realDt) {

@@ -59,8 +59,9 @@ const LAYOUT = {
   dutyFree: { box: [965, 1450, 990, 1520], h: 6 },
   fuelDepot: { x: 690, y: 1400 },      // where the fuel trucks wait
   snowDepot: { x: 560, y: 1430 },      // the ploughs' shed
-  parkingSmall: { box: [960, 1180, 1040, 1250] },
-  parkingBig: { box: [960, 1260, 1110, 1400] },
+  // the car parks east of the road in, by the bus stop (west of it the road and the terminals)
+  parkingSmall: { box: [1020, 1186, 1100, 1248] },
+  parkingBig: { box: [1016, 1258, 1106, 1398] },
   // session 4: Terminal 2 south of the domestic terminal, with its own apron; the sorting hall; Arlanda Express — the
   // line from the East Coast railway in the north-east, the tunnel under the terminals (portals north and south) and
   // its two stations under the landside road (the game's drawing of the course, to be checked)

@@ -164,7 +164,7 @@ const AircraftArt = (() => {
       const cx = ((root0 + root1) / 2 + (topFront + topBack) / 2) / 2, cy = -H * 0.5;
       c.translate(cx, cy);
       if (ex < 0) c.scale(-1, 1);   // never mirrored on the side we see
-      Emblems.drawOnFin(c, liv.emblem, H * 0.42);
+      Emblems.drawOnFin(c, liv.emblem, H * 0.42, (root0 - root1) * 0.55);   // the chord near the emblem's top edge
     }
     c.restore();
   }
