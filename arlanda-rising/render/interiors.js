@@ -11,7 +11,9 @@
 //   Sky City — its shops round the walls and the food court; the hotel — the lobby and the rooms;
 //   offices and the security operations centre — desks and screens; the baggage halls — belts with the bags running;
 //   the computer room — racks blinking (red while a system is down); the fire station — the tenders in their bays;
-//   Cargo City — racks, containers and forklifts; the generator, the pumps.
+//   Cargo City — racks, containers and forklifts; the generator, the pumps;
+//   a control tower's glass cab (`cab`, called by render/airport.js on top of the shaft) — consoles round the windows
+//     with their screens (a radar scope and paper strips in the old tower) and the controllers at them.
 // How many people stand in each queue comes from the stage (TermArt.crowd: the passengers of the terminal at check-in,
 // at security, airside and at the gates); between missions a calm flow from the passengers a day. Detail drops with the
 // zoom: zones only from far, furniture nearer, people as dots from 0.7 and as figures from 1. Drawn by render/airport.js in place of a
@@ -487,6 +489,79 @@ const Interiors = (() => {
     for (let i = 0; i < 4; i++) { const p = walker(key, i, x1 - 5, x1 - 2, y0 + 2, y1 - 2); put(p[0], p[1], (c) => man(c, p[0], p[1], i)); }
   }
 
+  // ---------- a control tower's glass cab, its roof off ----------
+  // drawn by render/airport.js on top of the tower's shaft: the cab's floor at height z0, its square [cx ± half, cy ± half];
+  // `old`: the tower of 1960 (consoles with a round radar scope and the paper strips), else the tower of 2001 (flat
+  // screens). The back windows (west and north) stand to the cab's height, the front ones are cut to the sill; consoles
+  // run round the windows with the controllers at them, looking out — more of them the more runways there are, two at night
+  function cab(c, sc, key, cx, cy, half, z0, old) {
+    if (frameSc !== sc) { frameSc = sc; crowds = {}; T = S.ops ? sc.t : sc.anim; Z = Cam.zoom; }
+    const x0 = cx - half, y0 = cy - half, x1 = cx + half, y1 = cy + half, H = 3.4;
+    const glassCol = sc.dark > 0.3 ? 'rgba(150,230,200,0.45)' : 'rgba(127,166,189,0.55)', sill = '#cfcbc2';
+    c.save();
+    c.translate(0, -z0 * ISO_Z);
+    flat(c, x0, y0, x1, y1, 0.02, '#3d444c');
+    // the back windows: a sill, the glass leaning out a little, the mullions
+    box(c, x0, y0, x0 + TW, y1, 0, WALL_FRONT, sill);
+    box(c, x0, y1 - TW, x1, y1, 0, WALL_FRONT, sill);
+    Iso.poly(c, [[x0, y0, WALL_FRONT], [x0, y1, WALL_FRONT], [x0 - 0.3, y1 + 0.3, H], [x0 - 0.3, y0, H]], glassCol);
+    Iso.poly(c, [[x0, y1, WALL_FRONT], [x1, y1, WALL_FRONT], [x1, y1 + 0.3, H], [x0 - 0.3, y1 + 0.3, H]], glassCol);
+    c.strokeStyle = '#5e646a'; c.lineWidth = 0.15;
+    c.beginPath();
+    for (let i = 0; i <= 3; i++) {
+      const y = y0 + (y1 - y0) * i / 3, x = x0 + (x1 - x0) * i / 3;
+      c.moveTo(...P(x0, y, WALL_FRONT)); c.lineTo(...P(x0 - 0.3, y + 0.3 * i / 3, H));
+      c.moveTo(...P(x, y1, WALL_FRONT)); c.lineTo(...P(x - 0.3 * (1 - i / 3), y1 + 0.3, H));
+    }
+    c.stroke();
+    if (Z >= 0.45) {
+      const hr = (S.ops ? sc.t : 12 * 60) / 60, night = hr < 6 || hr >= 23;
+      const n = night ? 2 : clamp((old ? 1 : 2) + S.airport.runways.length, 2, 8);
+      const items = [], put = (x, y, fn) => items.push({ d: depthOf(x, y), fn });
+      // the consoles round the windows, two places on each side: the place's console and the controller's chair
+      const D = 0.9, sp = (x1 - x0) / 4, places = [];
+      for (const k of [1, 3]) {
+        places.push({ con: [x0 + k * sp - 1, y1 - TW - D, x0 + k * sp + 1, y1 - TW], seat: [x0 + k * sp, y1 - TW - D - 0.7] });
+        places.push({ con: [x0 + TW, y0 + k * sp - 1, x0 + TW + D, y0 + k * sp + 1], seat: [x0 + TW + D + 0.7, y0 + k * sp] });
+        places.push({ con: [x1 - TW - D, y0 + k * sp - 1, x1 - TW, y0 + k * sp + 1], seat: [x1 - TW - D - 0.7, y0 + k * sp] });
+        places.push({ con: [x0 + k * sp - 1, y0 + TW, x0 + k * sp + 1, y0 + TW + D], seat: [x0 + k * sp, y0 + TW + D + 0.7] });
+      }
+      const on = openSet(places.length, Math.min(n, places.length));
+      places.forEach((p, i) => {
+        const [a0, b0, a1, b1] = p.con, staffed = on.has(i), glow = staffed || sc.dark > 0.3 ? (old ? '#7dffb0' : '#5fb3ff') : '#333';
+        put(a1, b0, (c) => {
+          box(c, a0, b0, a1, b1, 0, 0.8, old ? '#8a8f86' : '#d9dcdf', old ? '#6d7268' : '#c4c8cc');
+          const mx = (a0 + a1) / 2, my = (b0 + b1) / 2;
+          if (old && i % 2 === 0) {
+            // the radar scope, its line sweeping round
+            const u = P(mx, my, 0.82), a = T * 2 + i;
+            c.fillStyle = '#123322'; c.beginPath(); c.ellipse(u[0], u[1], 0.6, 0.3, 0, 0, Math.PI * 2); c.fill();
+            c.strokeStyle = glow; c.lineWidth = 0.08; c.beginPath(); c.moveTo(u[0], u[1]); c.lineTo(u[0] + Math.cos(a) * 0.6, u[1] + Math.sin(a) * 0.3); c.stroke();
+          } else if (old) {
+            // the strip board: the flights' paper strips
+            for (let s = 0; s < 4; s++) flat(c, mx - 0.5, my - 0.6 + s * 0.3, mx + 0.5, my - 0.45 + s * 0.3, 0.82, s % 2 ? '#f4efe4' : '#e8d27a');
+          } else {
+            // two flat screens on the console
+            for (const d of [-0.6, 0.6]) {
+              const sx = (a1 - a0) > (b1 - b0) ? mx + d : mx, sy = (a1 - a0) > (b1 - b0) ? my : my + d;
+              box(c, sx - 0.3, sy - 0.3, sx + 0.3, sy + 0.3, 0.8, 1.35, '#1f2a3a', glow);
+            }
+          }
+        });
+        if (staffed) put(p.seat[0], p.seat[1], (c) => man(c, p.seat[0], p.seat[1], hashOf(key, i), true, i % 3 ? null : '#e8e4d8'));
+      });
+      // the stairs and the lift coming up in the middle, the supervisor walking between the places
+      put(cx + 0.9, cy - 0.9, (c) => box(c, cx - 0.9, cy - 0.9, cx + 0.9, cy + 0.9, 0, 0.5, '#6b7177'));
+      if (!night) { const p = walker(key, 0, x0 + 3, x1 - 3, cy - 2.2, cy - 1.9, true); put(p[0], p[1], (c) => man(c, p[0], p[1], 5)); }
+      items.sort((p, q) => p.d - q.d);
+      for (const it of items) it.fn(c);
+    }
+    // the front windows, cut to the sill
+    box(c, x0, y0, x1, y0 + TW, 0, WALL_FRONT, sill);
+    box(c, x1 - TW, y0, x1, y1, 0, WALL_FRONT, sill);
+    c.restore();
+  }
+
   const DRAW = { hall, gates, pier, mall, hotel, office, soc: (p, c, sc, k, b) => office(p, c, sc, k, b, true), bags, servers, fire, cargo,
     plant, pumps: (p, c, sc, k, b) => plant(p, c, sc, k, b, true) };
 
@@ -508,5 +583,5 @@ const Interiors = (() => {
     if (sc.dark > 0.3) sc.lights.push({ x: (x0 + x1) / 2, y: (y0 + y1) / 2, z: 2, col: '255,225,170', r: Math.min(60, Math.max(x1 - x0, y1 - y0) * 0.45), flood: true });
   }
 
-  return { has, draw, KIND };
+  return { has, draw, cab, KIND };
 })();

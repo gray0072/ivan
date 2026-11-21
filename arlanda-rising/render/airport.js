@@ -365,6 +365,10 @@ const AirportArt = (() => {
     c.lineWidth = 1.1; c.beginPath(); c.moveTo(j0[0], j0[1]); c.lineTo(j1[0], j1[1]); c.stroke();
     const hook = P(x + jx * 0.7, y + jy * 0.7, h * 0.45);
     c.strokeStyle = '#333'; c.lineWidth = 0.3; c.beginPath(); c.moveTo(...P(x + jx * 0.7, y + jy * 0.7, h)); c.lineTo(hook[0], hook[1]); c.stroke();
+    c.fillStyle = '#333'; c.fillRect(hook[0] - 0.5, hook[1], 1, 0.9);
+    // the counterweight at the back of the jib, the driver's cab under it at the top of the mast
+    Iso.box(c, x - jx * 0.3 - 1.2, y - jy * 0.3 - 1.2, x - jx * 0.3 + 1.2, y - jy * 0.3 + 1.2, h - 1.6, h, '#7d8186');
+    Iso.box(c, x - 1, y - 1, x + 1, y + 1, h - 2.2, h - 0.2, '#e0a020', '#c78a12');
   }
 
   // the airport's own shops of a terminal, seen from outside with the roofs on: a striped awning on its landside (east)
@@ -423,7 +427,13 @@ const AirportArt = (() => {
         c.fillText('ARLANDA', 18, 0.2);
         c.restore();
         void a; void b;
-        if (sc.dark > 0.3) sc.lights.push({ x: x1 + 2, y: m, z: T.h + 2, col: '255,255,255', r: 6 });
+        // two small lamps, one at each end of the sign, so that the light never covers the letters
+        for (const s of [-1, 1]) {
+          const y = m + s * 22;
+          Iso.box(c, x1 - 0.4, y - 0.2, x1, y + 0.2, T.h, T.h + 2.3, '#3a3f45');
+          Iso.box(c, x1 - 0.4, y - 0.5, x1 + 1.1, y + 0.5, T.h + 2.3, T.h + 2.8, '#3a3f45', sc.dark > 0.3 ? '#fff6d8' : '#5a6068');
+        }
+        if (sc.dark > 0.3) for (const s of [-1, 1]) sc.lights.push({ x: x1 + 0.8, y: m + s * 22, z: T.h + 2.3, col: '255,255,255', r: 2.2 });
       }
     }
     if (hall >= 1) awnings(c, 't1', T.box);
@@ -436,20 +446,28 @@ const AirportArt = (() => {
     Iso.box(c, T.x - b - 2, T.y - b - 2, T.x + b + 2, T.y + b + 2, 0, 0.8 * f, '#9a9893');
     const shaftH = T.h - 6;
     if (sh > 0) Iso.box(c, T.x - b * 0.55, T.y - b * 0.55, T.x + b * 0.55, T.y + b * 0.55, 0.8, 0.8 + shaftH * sh, '#d9d5cc');
+    // with the roofs off the finished cab is cut away (render/interiors.js): the controllers at their consoles, and the
+    // radio mast stands at its back corner instead of on the roof
+    const cut = sc.cut && cab >= 1;
+    const mast = () => {
+      if (radio <= 0) return;
+      const mx = cut ? T.x - b * 0.95 : T.x, my = cut ? T.y + b * 0.95 : T.y;
+      const z = 0.8 + shaftH + 5, top = P(mx, my, z + 8 * radio), bot = P(mx, my, cut ? z - 4.2 : z);
+      c.strokeStyle = '#555'; c.lineWidth = 0.3; c.beginPath(); c.moveTo(bot[0], bot[1]); c.lineTo(top[0], top[1]); c.stroke();
+      if (radio >= 1) sc.lights.push({ x: mx, y: my, z: z + 8, col: '255,40,40', r: 4, blink: 1 });
+    };
+    if (cut) mast();
     if (cab > 0) {
       const z0 = 0.8 + shaftH, glass = sc.dark > 0.3 ? '#9fe0c0' : '#7fa6bd';
       Iso.box(c, T.x - b, T.y - b, T.x + b, T.y + b, z0, z0 + 0.8, '#cfcbc2');
-      Iso.box(c, T.x - b * 0.95, T.y - b * 0.95, T.x + b * 0.95, T.y + b * 0.95, z0 + 0.8, z0 + 0.8 + 3.6 * cab, glass, '#5e646a');
+      if (cut) Interiors.cab(c, sc, 'tower1', T.x, T.y, b * 0.95, z0 + 0.8, true);
+      else Iso.box(c, T.x - b * 0.95, T.y - b * 0.95, T.x + b * 0.95, T.y + b * 0.95, z0 + 0.8, z0 + 0.8 + 3.6 * cab, glass, '#5e646a');
       if (cab >= 1) {
-        Iso.box(c, T.x - b * 1.05, T.y - b * 1.05, T.x + b * 1.05, T.y + b * 1.05, z0 + 4.4, z0 + 5, '#ddd9d0');
+        if (!cut) Iso.box(c, T.x - b * 1.05, T.y - b * 1.05, T.x + b * 1.05, T.y + b * 1.05, z0 + 4.4, z0 + 5, '#ddd9d0');
         if (sc.dark > 0.3) sc.lights.push({ x: T.x, y: T.y, z: z0 + 2.5, col: '170,255,210', r: 7 });
       }
     }
-    if (radio > 0) {
-      const z = 0.8 + shaftH + 5, top = P(T.x, T.y, z + 8 * radio), bot = P(T.x, T.y, z);
-      c.strokeStyle = '#555'; c.lineWidth = 0.3; c.beginPath(); c.moveTo(bot[0], bot[1]); c.lineTo(top[0], top[1]); c.stroke();
-      if (radio >= 1) sc.lights.push({ x: T.x, y: T.y, z: z + 8, col: '255,40,40', r: 4, blink: 1 });
-    }
+    if (!cut) mast();
   }
 
   function siteOffice(c, sc) {
@@ -503,6 +521,16 @@ const AirportArt = (() => {
       Iso.box(c, T.x - b * 0.6 * k, T.y - b * 0.6 * k, T.x + b * 0.6 * k, T.y + b * 0.6 * k, z0, z1, '#d7d3ca');
     }
     const lit = fit >= 1 && sc.dark > 0.3;
+    // with the roofs off the finished tower's cab is cut away (render/interiors.js), its mast at the back corner
+    if (sc.cut && sc.items.tower2) {
+      const m = b * 0.85;
+      Iso.box(c, T.x - b * 0.9, T.y - b * 0.9, T.x + b * 0.9, T.y + b * 0.9, h - 0.6, h, '#e6e2da');
+      Iso.box(c, T.x - m - 0.4, T.y + m - 0.4, T.x - m + 0.4, T.y + m + 0.4, h, T.h * 1.08, '#9a9a9a');
+      Interiors.cab(c, sc, 'tower2', T.x, T.y, m, h, false);
+      if (sc.dark > 0.3) sc.lights.push({ x: T.x, y: T.y, z: h + 2, col: '255,231,168', r: 7 });
+      if (sc.dark > 0.2) sc.lights.push({ x: T.x - m, y: T.y + m, z: T.h * 1.08, col: '255,60,50', r: 4, blink: 1.5 });
+      return;
+    }
     Iso.box(c, T.x - b * 0.85, T.y - b * 0.85, T.x + b * 0.85, T.y + b * 0.85, h, h + 6, lit ? '#ffe7a8' : '#5f8aa6', '#3e4448');
     Iso.box(c, T.x - b * 0.9, T.y - b * 0.9, T.x + b * 0.9, T.y + b * 0.9, h + 6, h + 7, '#e6e2da');
     Iso.box(c, T.x - 0.4, T.y - 0.4, T.x + 0.4, T.y + 0.4, h + 7, T.h * 1.08, '#9a9a9a');
@@ -637,16 +665,18 @@ const AirportArt = (() => {
       add(p0[0], p0[1], (c) => { for (let i = -3; i <= 3; i++) { const q = Ground.rwPoint(1 + 300 / Ground.LEN, i * 6); Iso.obox(c, q[0], q[1], 1, 1, 0, 3, 0, '#c9c9c9'); } });
     }
     if (sc.siteWork) add(LAYOUT.siteOffice.x + 40, LAYOUT.siteOffice.y, (c) => siteOffice(c, sc));
-    // cranes at the stages being built
+    // cranes at the stages being built: x, y, the height, and the y they sort at — a crane beside a building stands in
+    // front of its east wall and its jib swings high over its roof, so it is drawn after the building (sorted at the
+    // building's south edge; sorted at its own foot it was drawn first and the walls hid all but the foot of its mast)
     for (const id of Object.keys(S.airport.projects)) {
       const p = S.airport.projects[id];
       if (!Object.values(p.stages).some((s) => s.on && !s.done)) continue;
       const pl = PROJECTS[id] && PROJECTS[id].plot;
-      const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28] :
-        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2', 't4t5', 'pier2040'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34] :
+      const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28, T.box[1]] :
+        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2', 't4t5', 'pier2040'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34, pl.y] :
         id === 'runway3' ? [LAYOUT.runway3.from[0] + 120, LAYOUT.runway3.from[1] + 1200, 30] : id === 'bridges' ? [LAYOUT.bridges[0][0], LAYOUT.bridges[0][1] + 40, 30] :
         id === 'arlandaExpress' ? [LAYOUT.rail.south[0] + 30, LAYOUT.rail.south[1], 30] : null;
-      if (pos) add(pos[0], pos[1], (c) => crane(c, pos[0], pos[1], pos[2], sc.anim));
+      if (pos) add(pos[0], pos[3] !== undefined ? Math.min(pos[1], pos[3]) : pos[1], (c) => crane(c, pos[0], pos[1], pos[2], sc.anim));
     }
     // floodlight masts round the apron
     if (sc.apron && sc.dark > 0.25) {
