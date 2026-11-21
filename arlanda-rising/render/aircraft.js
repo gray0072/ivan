@@ -69,10 +69,27 @@ const AircraftArt = (() => {
       c.closePath(); c.fillStyle = fill; c.fill();
     };
     // the shapes in local metres: x to the right wing, y to the nose
-    const fus = [];
-    for (let i = 0; i <= 8; i++) { const an = Math.PI / 2 * i / 8; fus.push([fw * Math.sin(an), L / 2 - fw * 1.6 * (1 - Math.cos(an))]); }
-    fus.push([fw, -L * 0.22], [fw * 0.35, -L / 2]);
-    const full = fus.concat(fus.slice().reverse().map((q) => [-q[0], q[1]]));
+    // the fuselage's outline, its nose tip set back by `b` m (the layers above and below the nose's tip are shorter,
+    // so the nose is round in profile too); `from` cuts it to the nose cone (y ≥ from) for a painted nose
+    const NOSE_LEN = fw * 1.6;
+    const outline = (b, from) => {
+      const ny = NOSE_LEN - b * 0.5, y0 = L / 2 - b - ny, half = [];
+      for (let i = 0; i <= 8; i++) { const an = Math.PI / 2 * i / 8; half.push([fw * Math.sin(an), y0 + ny * Math.cos(an)]); }
+      if (from === undefined) half.push([fw, -L * 0.22], [fw * 0.35, -L / 2]);
+      else {
+        const cut = half.filter((q) => q[1] >= from);
+        const t = Math.min(1, (L / 2 - b - from) / ny);
+        cut.push([fw * Math.sqrt(Math.max(0, 1 - (1 - t) * (1 - t))), from]);
+        half.length = 0; half.push(...cut);
+      }
+      return half.concat(half.slice().reverse().map((q) => [-q[0], q[1]]));
+    };
+    // the setback at a height f (0 the belly, 1 the top): the tip at NOSE_TIP, the top curving back by fw, the belly by half that
+    const NOSE_TIP = 0.35;
+    const setback = (f) => f >= NOSE_TIP
+      ? fw * (1 - Math.sqrt(1 - ((f - NOSE_TIP) / (1 - NOSE_TIP)) ** 2))
+      : fw * 0.5 * (1 - Math.sqrt(1 - ((NOSE_TIP - f) / NOSE_TIP) ** 2));
+    const full = outline(0);
     const tanS = Math.tan(sh.sweep * Math.PI / 180);
     const rootLe = L * 0.1, rootC = L * 0.2, tipC = L * 0.07;
     const wing = (side) => [[side * fw * 0.8, rootLe], [side * B / 2, rootLe - tanS * B / 2], [side * B / 2, rootLe - tanS * B / 2 - tipC], [side * fw * 0.8, rootLe - rootC]];
@@ -121,12 +138,14 @@ const AircraftArt = (() => {
     for (let i = 0; i <= layers; i++) {
       const z = zl + (zh - zl) * i / layers, f = i / layers;
       const col = f < 0.3 ? (liv.belly || METAL) : f < 0.5 ? liv.line : f < 0.58 && liv.line2 ? liv.line2 : liv.top;
-      polyL(full, z, i === layers ? shade(liv.top, 0.06) : shade(col, -0.1 + f * 0.1));
+      const b = setback(f);
+      polyL(outline(b), z, i === layers ? shade(liv.top, 0.06) : shade(col, -0.1 + f * 0.1));
+      // session 5: a painted nose (Norwegian's red), the cone of every layer
+      if (liv.nose) polyL(outline(b, L / 2 - fw * 1.2), z + 0.01, shade(liv.nose, -0.1 + f * 0.16));
     }
-    // session 5: a painted nose (Norwegian's red)
-    if (liv.nose) polyL([[-fw, L / 2 - fw * 1.2], [fw, L / 2 - fw * 1.2], [fw * 0.6, L / 2 - fw * 0.1], [-fw * 0.6, L / 2 - fw * 0.1]], zh + 0.01, liv.nose);
-    // cockpit windows
-    polyL([[-fw * 0.6, L / 2 - fw * 0.9], [fw * 0.6, L / 2 - fw * 0.9], [fw * 0.7, L / 2 - fw * 1.6], [-fw * 0.7, L / 2 - fw * 1.6]], zh + 0.02, '#2a3540');
+    // cockpit windows: a band on the nose's slope, on the layer at 80 % of the height
+    const wf = 0.8, wz = zl + (zh - zl) * wf, wTip = L / 2 - setback(wf);
+    polyL([[-fw * 0.55, wTip - fw * 0.35], [fw * 0.55, wTip - fw * 0.35], [fw * 0.8, wTip - fw * 0.95], [-fw * 0.8, wTip - fw * 0.95]], wz + 0.02, '#2a3540');
     polyL(wing(nearSide), wingZ, METAL);
     drawEngines(nearSide);
     polyL(stab(nearSide), zb + 4.6, METAL);
