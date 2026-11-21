@@ -2,7 +2,7 @@
 
 // Arlanda Rising — the ground vehicles, each built of a few simple solids so that it reads at a glance: wheels, a
 // chassis, a cab with its windscreen, and the one part that says what the vehicle does — the fuel truck's round
-// tank, the plough's wide blade, the stair truck's stairs and rails, the catering box on its lift, the de-icer's
+// tank (the mobile charger's green battery box, the apron robot's low driverless cart), the plough's wide blade, the stair truck's stairs and rails, the catering box on its lift, the de-icer's
 // boom and basket, the fire tender's water cannon, the coach's band of windows. Every solid is a convex prism in
 // the vehicle's own frame (a along the heading, b to the right, z up), its walls lit like the buildings
 // (render/iso.js) and those facing away from the viewer left out. Used by render/traffic.js (the turnaround, the
@@ -92,14 +92,31 @@ const Vehicles = (() => {
   function beacon(sc, o, a, z) { if (sc) { const p = at(o, a, 0, z); sc.lights.push({ x: p[0], y: p[1], z, col: '255,176,0', r: 3.5, blink: 2 }); } }
   function lamp(c, o, a, z) { box(c, o, a - 0.25, a + 0.25, -0.25, 0.25, z, z + 0.35, PAL.beacon); }
 
-  // the fuel truck: a red cab and a silver tank
-  function fuelTruck(c, sc, x, y, hdg, lit) {
+  // the fuel truck: a red cab and a silver tank (the oil company's and the hydrogen bowser in their own colours)
+  function fuelTruck(c, sc, x, y, hdg, lit, cabCol, tankCol) {
     const o = frame(x, y, hdg), z = 0.9;
     vehicle(c, o, 1.25, [2.9, -1.5, -2.8], 0.5, chassis(c, o, -4.1, 4.2, 1.25, z), [
-      [3.2, () => { cab(c, o, 2.2, 4.3, 1.25, z, 2.9, '#c83a2e'); if (lit) lamp(c, o, 3.2, 2.9); }],
-      [-0.9, () => { tank(c, o, -4.1, 1.9, z + 1.0, 1.0, '#d6dadd'); box(c, o, -4.3, -4.1, -0.5, 0.5, z, z + 0.7, '#555b60'); }]
+      [3.2, () => { cab(c, o, 2.2, 4.3, 1.25, z, 2.9, cabCol || '#c83a2e'); if (lit) lamp(c, o, 3.2, 2.9); }],
+      [-0.9, () => { tank(c, o, -4.1, 1.9, z + 1.0, 1.0, tankCol || '#d6dadd'); box(c, o, -4.3, -4.1, -0.5, 0.5, z, z + 0.7, '#555b60'); }]
     ]);
     if (lit) beacon(sc, o, 3.2, 3.3);
+  }
+  // the mobile charger: a white van with a green battery box and a green lamp
+  function charger(c, sc, x, y, hdg) {
+    const o = frame(x, y, hdg), z = 0.85;
+    vehicle(c, o, 1.15, [2.3, -2.0], 0.45, chassis(c, o, -3.4, 3.6, 1.15, z), [
+      [2.8, () => { cab(c, o, 1.9, 3.7, 1.15, z, 2.6, '#eceae4'); lamp(c, o, 2.8, 2.6); }],
+      [-0.8, () => { box(c, o, -3.4, 1.6, -1.15, 1.15, z, 2.3, '#2f9e5b'); panels(c, o, -3.4, 1.6, 1.15, 1.5, 1.75, '#eceae4', 'frs', 0); }]
+    ]);
+    if (sc) { const p = at(o, 2.8, 0, 3); sc.lights.push({ x: p[0], y: p[1], z: 3, col: '90,220,130', r: 3, blink: 2 }); }
+  }
+  // an apron robot's fuel cart: low, driverless, white with a silver tank and a blue lamp
+  function robot(c, sc, x, y, hdg) {
+    const o = frame(x, y, hdg);
+    vehicle(c, o, 1.0, [1.4, -1.4], 0.35, () => box(c, o, -2.2, 2.2, -1.0, 1.0, 0.25, 0.8, '#e8eaec'), [
+      [-0.2, () => { tank(c, o, -1.9, 1.4, 1.35, 0.55, '#c9ced2'); box(c, o, 1.6, 2.1, -0.2, 0.2, 0.8, 1.2, '#3a8fe0'); }]
+    ]);
+    if (sc) { const p = at(o, 1.9, 0, 1.3); sc.lights.push({ x: p[0], y: p[1], z: 1.3, col: '90,160,255', r: 2.5, blink: 2 }); }
   }
   // the snow plough: an orange truck pushing a wide yellow blade set at an angle
   function plough(c, sc, x, y, hdg) {
@@ -212,5 +229,5 @@ const Vehicles = (() => {
     ]);
   }
 
-  return { fuelTruck, plough, tug, stairs, catering, bagTrain, deicer, crashTender, bus, lorry };
+  return { fuelTruck, charger, robot, plough, tug, stairs, catering, bagTrain, deicer, crashTender, bus, lorry };
 })();

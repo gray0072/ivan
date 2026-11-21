@@ -171,6 +171,21 @@ ul.goals.plain li::before { content: '•'; color: var(--accent); }
 #flightCard table { width: 100%; border-collapse: collapse; font-size: 12px; }
 #flightCard td { padding: 1px 0; }
 #flightCard td:first-child { color: var(--dim); }
+/* the turnaround in the flight's card: the bar as over the aircraft (colours from render/traffic.js STEP_COL), then each
+   step with its swatch — the legend —, what it does and, small, why it waits */
+#flightCard { max-height: calc(100vh - var(--hudH, 60px) - 84px); overflow-y: auto; box-sizing: border-box; }
+.tbar { display: flex; gap: 2px; height: 8px; padding: 2px; margin: 8px 0 4px; background: rgba(13,27,42,0.8); border-radius: 4px; }
+.tbar span { flex: 1; position: relative; overflow: hidden; border-radius: 1px; background-color: rgba(255,255,255,0.15); }
+.tbar i { position: absolute; left: 0; top: 0; bottom: 0; }
+.tbar i.pale { opacity: 0.4; }
+.tbar .dx { flex: 0 0 8px; margin-left: 2px; }
+.tbar .dx i { top: auto; width: 100%; }
+#flightCard table.steps td { vertical-align: top; padding: 2px 0; }
+#flightCard table.steps td:first-child { white-space: nowrap; padding-right: 8px; }
+.steps .sw { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.steps td.held { color: #ffb08f; }
+.steps small { display: block; font-size: 11px; }
+#flightCard .legend { margin: 4px 0 0; color: var(--dim); font-size: 11px; }
 .hintLine { color: var(--ok); margin: 6px 0 0; }
 /* the card of a building or a vehicle tapped on the map: where the flight's card opens, a little wider; it scrolls when
    long (a terminal's brands and shops); opaque, as it opens over the plan panel on a phone */

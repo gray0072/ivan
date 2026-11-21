@@ -3,10 +3,12 @@
 // Arlanda Rising — everything that moves on the map, worked out from the sim's times (the sim only knows "landed at
 // 09:12, at the stand at 09:17"; this file puts the aircraft on the approach, the flare, the rollout, the taxiway,
 // the stand, the pushback, the take-off roll and the climb in between). Also the turnaround's vehicles and people
-// at each stand (stairs, the passengers walking, catering and bags, the fuel truck from its depot, the tug), the
-// plough convoys in echelon on the runways, the vehicles waiting at their depots, and over it all the little Gantt
-// bar of each turnaround. Remembers where each aircraft, fuel truck and plough was drawn, for a tap (render/map.js
-// `hit`): a truck or a plough keeps its number (S.ops.trucks' index, sim/fleet.js), for its card.
+// at each stand (stairs, the passengers walking — a figure for every PAX_PER_FIGURE of them —, catering and bags, the
+// fuel truck or whatever brings the fuel or the power, the tug), the plough convoys in echelon on the runways, the
+// vehicles waiting at their depots, and over it all the little Gantt bar of each turnaround, drawn from
+// Turnaround.steps (STEP_COL: the same colours in the flight's card, ui/cards.js). Remembers where each aircraft, fuel
+// truck and plough was drawn, for a tap (render/map.js `hit`): a truck or a plough keeps its number (S.ops.trucks'
+// index, sim/fleet.js), for its card.
 
 const Traffic = (() => {
   const rp = (s, t) => Ground.rwPoint(s, t);
@@ -15,6 +17,11 @@ const Traffic = (() => {
   const APRON_IN = LAYOUT.taxi.apronLink.to;
   let drawn = [];   // { f, x, y, z } this frame
   let vdrawn = [];  // { kind: 'fuel' | 'plough', i, x, y } this frame
+  // the passengers walking to and from an aircraft: a figure for every PAX_PER_FIGURE of them, at least FIGURES_MIN and
+  // at most FIGURES_MAX a door (the frame rate); an aircraft of WIDE_SEATS seats or more uses a second door, behind the wing
+  const PAX_PER_FIGURE = 6, FIGURES_MIN = 2, FIGURES_MAX = 40, WIDE_SEATS = 220;
+  // the bar's colours: passengers off, services, fuel (or charging), boarding, de-icing; a step held up shows WAIT
+  const STEP_COL = { off: '#7fb2e5', svc: '#b0c46a', fuel: '#e3c34a', board: '#c99ae6', deice: '#8fe3f2', wait: '#ff7a1f' };
 
   const ease = (u) => u * u * (3 - 2 * u);
   // runway 2 (08/26): its ends, length and the way from it to the aprons (session 3)
@@ -162,13 +169,68 @@ const Traffic = (() => {
     c.strokeStyle = col; c.lineWidth = 0.55; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
     c.fillStyle = '#e8c9a8'; c.beginPath(); c.arc(b[0], b[1] - 0.25, 0.32, 0, Math.PI * 2); c.fill();
   }
+  // how many figures walk for so many passengers
+  function figures(pax) { return pax > 0 ? clamp(Math.round(pax / PAX_PER_FIGURE), FIGURES_MIN, FIGURES_MAX) : 0; }
+  // n figures in a stream from one point to another, u of the way through (0 the first sets off, 1 the last is there);
+  // the stream is longer the more of them there are
   function walkers(c, from, to, u, n, seed) {
+    const sp = clamp(n * 0.02, 0.3, 0.75);
     for (let i = 0; i < n; i++) {
-      const k = clamp(u * 1.4 - i / n * 0.4, 0, 1);
+      const k = clamp(u * (1 + sp) - i / n * sp, 0, 1);
       if (k <= 0 || k >= 1) continue;
       const off = ((hashOf(seed, i) % 100) / 100 - 0.5) * 4;
       person(c, lerp(from[0], to[0], k), lerp(from[1], to[1], k) + off, ['#2c3e66', '#7a2e2e', '#3e5a3e', '#6a5a3a', '#444'][i % 5]);
     }
+  }
+
+  // what brings the fuel or the power to the wing, by the sim's times (sim/turnaround.js): the player's fuel truck
+  // (tr.truck, its card) or the apron robots' cart set off at fuelFrom and reach the wing at fuelStart (FUEL_DRIVE / 2),
+  // the mobile charger in CHARGE_DRIVE / 2; the oil company's truck and the hydrogen bowser are at the wing when the
+  // passengers are off, so they drive in while they get off; each stays while the fuel flows (to fuelEnd) and drives
+  // back as long as it came. A stand's own charger: its cable to the nose while it charges.
+  function fuelKit(c, sc, f, A, t, si, at, hd, k, people) {
+    const tr = f.tr, by = Turnaround.fuelBy(f), wingPt = at(-2, -A.span * 0.32);
+    if (by === 'stand') {
+      if (tr.fuel === 'going' && t < tr.fuelEnd) {
+        const sp = AirportArt.standPos(si), a = P(sp.x - 9 * sp.s, sp.y - 16, 0.6), b = P(...at(A.length / 2 - 3, -1), 1.2);
+        c.strokeStyle = '#2f9e5b'; c.lineWidth = 0.5; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+      }
+      return;
+    }
+    let from, arrive, end;
+    if (tr.fuelEnd !== null && (tr.fuel === 'going' || tr.fuel === 'done')) {
+      arrive = Turnaround.fuelStart(tr); end = tr.fuelEnd;
+      from = tr.fuelFrom !== undefined && by !== 'h2' ? tr.fuelFrom : arrive - FUEL_DRIVE / 2;
+    } else if (tr.fuel === 'wait' && (by === 'oil' || by === 'h2') && f.inBlock !== null) {
+      // on its way while the passengers get off: at the wing as they are off
+      arrive = tr.off; end = Infinity; from = arrive - FUEL_DRIVE / 2;
+    } else return;
+    const drive = arrive - from, back = end + drive;
+    if (t < from || t >= back) return;
+    const out = AirportArt.fuelWayOut(tr.truck !== undefined ? tr.truck : 0), depot = out[out.length - 1];
+    // out of its bay and along the yard's lane onto the jet apron (AirportArt.fuelWayOut; before the yard straight from
+    // its place), then to the lane behind the stand (behind the tail of the longest aircraft), along it to the wing's
+    // side and up to the wing parallel to the fuselage, never under it; a stand on the first apron or south of it is
+    // reached along the first apron's north edge, a stand facing west by the satellite's lane; and back the same way
+    const sp = AirportArt.standPos(si), tx = AirportArt.standEntry(si)[0] - 3 * sp.s, st = S.airport.stands[si];
+    let way;
+    if (sp.s < 0 && st.lane) way = out.concat([[st.lane[0], depot[1]], st.lane, [tx, st.lane[1]], [tx, wingPt[1]], wingPt]);
+    else {
+      const yl = wingPt[1] < Math.min(depot[1], LAYOUT.apron1.y1) ? Math.min(depot[1], LAYOUT.apron1.y1 - 8) : depot[1];
+      way = out.concat([[depot[0], yl], [tx, yl], [tx, wingPt[1]], wingPt]);
+    }
+    let q;
+    if (t < arrive) q = { u: drive > 0 ? (t - from) / drive : 1, way };
+    else if (t < end) q = { u: 1, way };
+    else q = { u: drive > 0 ? (t - end) / drive : 1, way: way.slice().reverse() };
+    const v = along(q.way, q.u), there = q.u >= 1 && q.way === way, h = there ? hd(90) : v.hdg;
+    if (by === 'robot') Vehicles.robot(c, sc, v.x, v.y, h);
+    else if (by === 'mobile') Vehicles.charger(c, sc, v.x, v.y, h);
+    else if (by === 'oil') Vehicles.fuelTruck(c, sc, v.x, v.y, h, true, '#2b5f8a');
+    else if (by === 'h2') Vehicles.fuelTruck(c, sc, v.x, v.y, h, true, '#f0f2f4', '#9fd3ee');
+    else Vehicles.fuelTruck(c, sc, v.x, v.y, h, true);
+    if (tr.truck !== undefined) vdrawn.push({ kind: 'fuel', i: tr.truck, x: v.x, y: v.y });
+    if (people && there && by !== 'robot') person(c, wingPt[0] + 4 * k, wingPt[1] + 2 * k, PAL.hiVis);
   }
 
   function turnaroundKit(c, sc, f, p, t) {
@@ -177,46 +239,32 @@ const Traffic = (() => {
     if (!tr) return;
     // offsets from the aircraft's centre are given for one facing east and turned with it (k −1: nose west)
     const k = p.hdg === 270 ? -1 : 1, at = (dx, dy) => [p.x + k * dx, p.y + k * dy], hd = (h) => (k > 0 ? h : (h + 180) % 360);
-    const door = at(len * 0.3, fw + 3);
+    const steps = Turnaround.steps(f, t);
+    // the doors: one in front, and a second behind the wing on a wide-body (its passengers split between them)
+    const doors = [at(len * 0.3, fw + 3)].concat(A.seats >= WIDE_SEATS ? [at(-len * 0.32, fw + 3)] : []);
     const term = [LAYOUT.terminal1.box[0] - 2, clamp(p.y, LAYOUT.terminal1.box[1] + 5, LAYOUT.terminal1.box[3] - 5)];
     const people = Cam.zoom > 1.3;
     // the stairs while anyone gets off or on
-    if (f.inBlock !== null || f.st === 'parked' || tr.board !== null) Vehicles.stairs(c, door[0], door[1], hd(180));
-    if (people && f.inBlock !== null && t < tr.off && f.paxArr) walkers(c, door, term, (t - f.inBlock) / Math.max(0.5, tr.off - f.inBlock), 7, f.id + 'off');
-    if (people && tr.board !== null && tr.ready === null) walkers(c, term, door, (t - tr.board) / Math.max(1, f.booked * BOARD_PER_PAX), 7, f.id + 'on');
-    // catering and bags while the services run
-    if (t >= tr.off && t < tr.svc) {
-      Vehicles.catering(c, ...at(-len * 0.28, -fw - 3.5), hd(90));
-      Vehicles.bagTrain(c, ...at(-len * 0.05, -fw - 7), hd(90), 2);
-      if (people) { person(c, ...at(-len * 0.1, -fw - 4.5), PAL.hiVisOrange); person(c, ...at(-len * 0.32, -fw - 6), PAL.hiVis); }
+    if (f.inBlock !== null || f.st === 'parked' || tr.board !== null) doors.forEach((d) => Vehicles.stairs(c, d[0], d[1], hd(180)));
+    // the passengers off (as many figures as get off) and on (as many as board, at boarding's own pace: Turnaround.steps)
+    if (people && f.inBlock !== null && t < tr.off && f.paxArr) {
+      const n = figures(f.paxArr / doors.length), u = (t - f.inBlock) / Math.max(0.5, tr.off - f.inBlock);
+      doors.forEach((d, j) => walkers(c, d, term, u, n, f.id + 'off' + j));
     }
-    // the fuel truck: from its depot, at the wing, and back
+    if (people && tr.board !== null && tr.ready === null && steps.board.timeU < 1) {
+      const n = figures(f.booked / doors.length);
+      doors.forEach((d, j) => walkers(c, term, d, steps.board.timeU, n, f.id + 'on' + j));
+    }
+    // catering while the services run; the bags with them (the airline's handlers), or, sent by the player or a team,
+    // only while the carts are at the hold (tr.bags 'going', from bagsFrom to bagsEnd)
+    const svcOn = t >= tr.off && t < tr.svc, bagsOn = tr.bags ? tr.bags === 'going' && t >= tr.bagsFrom && t < tr.bagsEnd : svcOn;
+    if (svcOn) Vehicles.catering(c, ...at(-len * 0.28, -fw - 3.5), hd(90));
+    if (bagsOn) Vehicles.bagTrain(c, ...at(-len * 0.05, -fw - 7), hd(90), 2);
+    if (people && svcOn) person(c, ...at(-len * 0.32, -fw - 6), PAL.hiVis);
+    if (people && bagsOn) person(c, ...at(-len * 0.1, -fw - 4.5), PAL.hiVisOrange);
+    // the fuel or the power (Turnaround.fuelBy): a vehicle from its depot to the wing, there while it flows, and back
     const si = AirportArt.standIndex(f.stand);
-    if (tr.fuelFrom !== undefined && tr.fuelEnd !== null && si >= 0) {
-      const out = AirportArt.fuelWayOut(tr.truck !== undefined ? tr.truck : 0), depot = out[out.length - 1], wingPt = at(-2, -A.span * 0.32);
-      const half = FUEL_DRIVE / 2, back = tr.fuelEnd + half;
-      // out of its bay and along the yard's lane onto the jet apron (AirportArt.fuelWayOut; before the yard straight from
-      // its place), then to the lane behind the stand (behind the tail of the longest aircraft), along it to the wing's
-      // side and up to the wing parallel to the fuselage, never under it; a stand on the first apron or south of it is
-      // reached along the first apron's north edge, a stand facing west by the satellite's lane; and back the same way
-      const sp = AirportArt.standPos(si), tx = AirportArt.standEntry(si)[0] - 3 * sp.s, st = S.airport.stands[si];
-      let way;
-      if (sp.s < 0 && st.lane) way = out.concat([[st.lane[0], depot[1]], st.lane, [tx, st.lane[1]], [tx, wingPt[1]], wingPt]);
-      else {
-        const yl = wingPt[1] < Math.min(depot[1], LAYOUT.apron1.y1) ? Math.min(depot[1], LAYOUT.apron1.y1 - 8) : depot[1];
-        way = out.concat([[depot[0], yl], [tx, yl], [tx, wingPt[1]], wingPt]);
-      }
-      let q = null;
-      if (t < tr.fuelFrom + half) q = { u: (t - tr.fuelFrom) / half, way };
-      else if (t < tr.fuelEnd) q = { u: 1, way };
-      else if (t < back) q = { u: (t - tr.fuelEnd) / half, way: way.slice().reverse() };
-      if (q) {
-        const v = along(q.way, q.u);
-        Vehicles.fuelTruck(c, sc, v.x, v.y, q.u >= 1 && q.way === way ? hd(90) : v.hdg, true);
-        if (tr.truck !== undefined) vdrawn.push({ kind: 'fuel', i: tr.truck, x: v.x, y: v.y });
-        if (people && q.u >= 1) person(c, wingPt[0] + 4 * k, wingPt[1] + 2 * k, PAL.hiVis);
-      }
-    }
+    if (si >= 0) fuelKit(c, sc, f, A, t, si, at, hd, k, people);
     // session 5: a de-icing truck at the wing, its boom up and the warm glycol steaming
     if (tr.deice === 'going') {
       const [dx, dy] = at(-len * 0.1, A.span * 0.3);
@@ -302,22 +350,30 @@ const Traffic = (() => {
   function roundRect(c, x, y, w, h, r) {
     c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
   }
-  // the turnaround's steps as a bar: off · services · fuel · boarding, filled as they are done
+  // the turnaround's steps as a bar (Turnaround.steps): off · services · fuel · boarding, each filled as far as it is
+  // done in its colour; a vehicle on its way fills it pale as it comes (the fuel truck, the charger), then it fills
+  // solid as the fuel flows; a step held up (the carts, a truck, the passengers, a task not done) glows WAIT where it
+  // is not done; a small square after the bar is the de-icing (WAIT until the de-icer comes, then filled from below)
   function gantt(c, f, x, y, t) {
-    const tr = f.tr, w = 64, h = 6;
-    const parts = [
-      ['#7fb2e5', f.inBlock === null ? 1 : clamp((t - f.inBlock) / Math.max(0.1, tr.off - f.inBlock), 0, 1)],
-      ['#b0c46a', clamp((t - tr.off) / Math.max(0.1, tr.svc - tr.off), 0, 1)],
-      [tr.fuel === 'asked' || tr.fuel === 'queued' ? '#f28a1e' : '#e3c34a', tr.fuel === 'done' && t >= (tr.fuelEnd || 0) ? 1 : tr.fuel === 'going' ? clamp((t - (tr.fuelFrom || t)) / Math.max(0.1, tr.fuelEnd - (tr.fuelFrom || t)), 0, 1) : 0],
-      ['#c99ae6', tr.board === null ? 0 : tr.ready !== null ? 1 : clamp((t - tr.board) / Math.max(0.5, f.booked * BOARD_PER_PAX), 0, 1)]
-    ];
+    const S4 = Turnaround.steps(f, t), w = 64, h = 6, seg = w / 4;
+    const de = S4.deice && S4.deice.st !== 'pad' ? S4.deice : null, dw = de ? h + 3 : 0;
+    const pulse = 0.55 + 0.4 * Math.abs(Math.sin(performance.now() / 320));
+    const x0 = x - (w + dw) / 2;
     c.fillStyle = 'rgba(13,27,42,0.8)';
-    roundRect(c, x - w / 2 - 2, y - 1, w + 4, h + 2, 3); c.fill();
-    const seg = w / parts.length;
-    parts.forEach((p, i) => {
-      c.fillStyle = 'rgba(255,255,255,0.15)'; c.fillRect(x - w / 2 + i * seg + 0.5, y, seg - 1, h);
-      c.fillStyle = p[0]; c.fillRect(x - w / 2 + i * seg + 0.5, y, (seg - 1) * p[1], h);
-    });
+    roundRect(c, x0 - 2, y - 1, w + dw + 4, h + 2, 3); c.fill();
+    const cell = (s, col, cx, cw) => {
+      c.fillStyle = 'rgba(255,255,255,0.15)'; c.fillRect(cx, y, cw, h);
+      if (s.st === 'wait') { c.globalAlpha = pulse; c.fillStyle = STEP_COL.wait; c.fillRect(cx, y, cw, h); c.globalAlpha = 1; }
+      if (s.st === 'coming') { c.globalAlpha = 0.4; c.fillStyle = col; c.fillRect(cx, y, cw * s.drive, h); c.globalAlpha = 1; }
+      c.fillStyle = col; c.fillRect(cx, y, cw * s.u, h);
+    };
+    ['off', 'svc', 'fuel', 'board'].forEach((key, i) => cell(S4[key], STEP_COL[key], x0 + i * seg + 0.5, seg - 1));
+    if (de) {
+      const cx = x0 + w + 3;
+      c.fillStyle = 'rgba(255,255,255,0.15)'; c.fillRect(cx, y, h, h);
+      if (de.st === 'wait') { c.globalAlpha = pulse; c.fillStyle = STEP_COL.wait; c.fillRect(cx, y, h, h); c.globalAlpha = 1; }
+      c.fillStyle = STEP_COL.deice; c.fillRect(cx, y + h * (1 - de.u), h, h * de.u);
+    }
   }
 
   // the flight drawn nearest a screen point (within r px)
@@ -350,5 +406,5 @@ const Traffic = (() => {
     c.beginPath(); c.ellipse(s[0], s[1], r, r * 0.55, 0, 0, Math.PI * 2); c.stroke();
   }
 
-  return { objects, overlay, hit, hitVehicle, ring, pos, standCentre };
+  return { objects, overlay, hit, hitVehicle, ring, pos, standCentre, STEP_COL };
 })();

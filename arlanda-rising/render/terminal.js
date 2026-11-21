@@ -24,7 +24,8 @@ const TermArt = (() => {
       for (const f of S.ops.flights) {
         if (Terminal.of(f.al, f.intl) !== term || Flights.over(f) || f.st === 'taxiOut' || !f.booked) continue;
         const through = f.checked;
-        if (f.tr && f.tr.board !== null && f.tr.ready === null) out.gates.push({ f, n: Math.max(0, through * 0.6) });
+        // boarding: the gate's seats empty as its passengers board (at boarding's pace, Turnaround.steps)
+        if (f.tr && f.tr.board !== null && f.tr.ready === null) out.gates.push({ f, n: Math.max(0, through * 0.6 * (1 - Turnaround.steps(f, S.clock).board.timeU)) });
         else if (f.st === 'turn' || f.st === 'parked' || f.st === 'waitStand' || f.st === 'taxiIn') { out.airside += through; out.gates.push({ f, n: through * 0.3 }); }
         else out.airside += through * 0.5;
       }

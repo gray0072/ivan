@@ -284,6 +284,7 @@ const CUT_K = 1.4;                 // a team with this share of its jobs gone do
 const CARGO_TONNES_FEE = 1400;     // SEK the airport earns per tonne of cargo loaded or unloaded (handling, the cargo apron)
 const CHARGE_MIN = 12;             // game minutes an electric aircraft charges at a stand with a charger
 const CHARGE_MOBILE_MIN = 26;      // … from the mobile charger, sent to it by hand or by the ramp team
+const CHARGE_DRIVE = 3;            // game minutes for the mobile charger to drive to a stand and back
 const H2_MIN = 15;                 // game minutes a hydrogen aircraft takes on fuel at the hydrogen depot
 const ROBOT_X = 0.8;               // × the turnaround's service minutes with the apron robots working
 const AUTO_PLOUGH_X = 0.6;         // × the convoy's minutes with the self-driving ploughs working

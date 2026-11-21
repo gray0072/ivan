@@ -6,7 +6,9 @@
 // through check-in, or BOARD_WAIT_MAX past departure without the late ones), then pushback at the planned
 // time. Snow on the apron makes every step slower. Session 3: the bags (the carts sent by hand, the handlers or the
 // belts; boarding waits for them) and the announcement of a late flight. Session 5: de-icing in the cold, by a truck at
-// the stand before pushback, or at a remote pad on the way out (sim/flights.js). Used by sim/flights.js.
+// the stand before pushback, or at a remote pad on the way out (sim/flights.js). Used by sim/flights.js. `steps` says
+// what each of the bar's four steps is doing (and why it waits) from the same fields, for render/traffic.js (the bar,
+// the vehicles at the wing) and ui/cards.js (the flight's card); `tools/turnaround-check.js` checks it.
 
 const Turnaround = {
   slow() {
@@ -68,7 +70,7 @@ const Turnaround = {
     if (tr.fuel === 'wait' && t >= tr.off && (A.electric || A.hydrogen)) {
       const st = Airport.stand(f.stand);
       // in a blackout the stands' chargers are dark: only the mobile chargers' batteries work
-      if (A.hydrogen || (st && st.charge && !(S.ops.blackout > t))) { tr.fuel = 'going'; tr.fuelFrom = t; tr.fuelEnd = t + (A.hydrogen ? H2_MIN : CHARGE_MIN) * this.slow(); tr.charge = A.electric ? 'stand' : 'h2'; }
+      if (A.hydrogen || (st && st.charge && !(S.ops.blackout > t))) { tr.fuel = 'going'; tr.fuelFrom = tr.fuelAt = t; tr.fuelEnd = t + (A.hydrogen ? H2_MIN : CHARGE_MIN) * this.slow(); tr.charge = A.electric ? 'stand' : 'h2'; }
       else if (S.mission.hands.indexOf('charge') >= 0 || S.domains.turnaround > 0) { tr.fuel = 'asked'; tr.charge = 'mobile'; Tasks.need('charge', f.id); }
       else { tr.fuel = 'cqueued'; tr.charge = 'mobile'; }
     }
@@ -77,19 +79,21 @@ const Turnaround = {
       const i = ch.findIndex((busy) => busy <= t);
       if (i >= 0) {
         const ct = CHARGE_MOBILE_MIN * this.slow();
-        ch[i] = t + 3 + ct;
-        tr.fuelFrom = t; tr.fuelEnd = t + 1.5 + ct; tr.fuel = 'going';
+        // it drives over (half of CHARGE_DRIVE), charges, and drives back
+        ch[i] = t + CHARGE_DRIVE + ct;
+        tr.fuelFrom = t; tr.fuelAt = t + CHARGE_DRIVE / 2; tr.fuelEnd = t + CHARGE_DRIVE / 2 + ct; tr.fuel = 'going';
         logEvent('charging', { flight: f.no });
       }
     }
-    // fuel, after the passengers are off
+    // fuel, after the passengers are off: by the player's trucks, or by the oil company's, already at the stand (no
+    // fuelFrom: none of the airport's vehicles drives)
     if (tr.fuel === 'wait' && t >= tr.off) {
       if (S.mission.hands.indexOf('fuel') >= 0 || S.domains.turnaround > 0) { tr.fuel = 'asked'; Tasks.need('fuel', f.id); }
-      else { tr.fuel = 'done'; tr.fuelEnd = t + this.fuelTime(f.type) * this.slow(); }
+      else { tr.fuel = 'going'; tr.fuelAt = t; tr.fuelEnd = t + this.fuelTime(f.type) * this.slow(); }
     }
     // session 6: the apron robots bring their own fuel carts: no waiting for a truck
     if (tr.fuel === 'queued' && Systems.working('turnaround') >= 2) {
-      tr.fuelFrom = t; tr.fuelEnd = t + FUEL_DRIVE / 2 + this.fuelTime(f.type) * this.slow() * ROBOT_X; tr.fuel = 'going';
+      tr.fuelFrom = t; tr.fuelAt = t + FUEL_DRIVE / 2; tr.fuelEnd = t + FUEL_DRIVE / 2 + this.fuelTime(f.type) * this.slow() * ROBOT_X; tr.fuel = 'going';
     }
     if (tr.fuel === 'queued') {
       const i = S.ops.trucks.findIndex((busy) => busy <= t);
@@ -98,6 +102,7 @@ const Turnaround = {
         S.ops.trucks[i] = t + FUEL_DRIVE + ft;
         tr.fuelEnd = t + FUEL_DRIVE / 2 + ft;
         tr.fuelFrom = t;                // for the map: the truck sets off
+        tr.fuelAt = t + FUEL_DRIVE / 2; // … and is at the wing: the fuel flows from here to fuelEnd
         tr.truck = i;                   // … which one (its card)
         tr.fuel = 'going';
         Fleet.fuelled(i, f);
@@ -143,5 +148,110 @@ const Turnaround = {
   // session 5: every departure needs de-icing at or below DEICE_TEMP, once a mission has opened the domain
   deiceNeed(f) { return S.domains.deice !== undefined && !f.training && Weather.now().temp <= DEICE_TEMP; },
   // the fluid of one de-icing (less with glycol recovery)
-  glycol() { Finance.book('deicing', -GLYCOL_COST * (Systems.working('deice') >= 3 ? 1 - GLYCOL_RECOVER : 1)); }
+  glycol() { Finance.book('deicing', -GLYCOL_COST * (Systems.working('deice') >= 3 ? 1 - GLYCOL_RECOVER : 1)); },
+
+  // ---------- what the turnaround is doing, for the bar over the aircraft and its card (nothing here changes it) ----------
+  // who fuels (or charges) the aircraft: 'truck' (the player's fuel truck, tr.truck), 'robot' (the apron robots' cart),
+  // 'oil' (the oil company's truck, the fuel not in the player's hands), 'stand' (the stand's charger), 'mobile' (the
+  // mobile charger), 'h2' (the hydrogen bowser) — or, before it is decided, 'electric' (a stand's or the mobile charger)
+  fuelBy(f) {
+    const tr = f.tr, A = AIRCRAFT[f.type];
+    if (tr.charge) return tr.charge;
+    if (A.hydrogen) return 'h2';
+    if (A.electric) return 'electric';
+    if (tr.truck !== undefined) return 'truck';
+    if (tr.fuelFrom !== undefined) return 'robot';
+    if (tr.fuel === 'going' || tr.fuel === 'done') return 'oil';
+    return S.mission.hands.indexOf('fuel') >= 0 || S.domains.turnaround > 0 ? 'truck' : 'oil';
+  },
+  // when the fuel (or the power) starts to flow: the vehicle at the wing (a save from before tr.fuelAt: worked out)
+  fuelStart(tr) {
+    if (tr.fuelAt !== undefined) return tr.fuelAt;
+    if (tr.fuelFrom === undefined) return tr.off;
+    return tr.fuelFrom + (tr.charge === 'mobile' ? CHARGE_DRIVE / 2 : tr.charge ? 0 : FUEL_DRIVE / 2);
+  },
+  // who will do a task asked for a flight: { by: 'you' } (in the tray), { by: 'people' | 'system' | 'duty', at } or null
+  who(kind, id) {
+    if (S.ops.tasks.some((k) => k.kind === kind && k.target === id)) return { by: 'you' };
+    const l = S.ops.later.find((k) => k.kind === kind && k.target === id);
+    return l ? { by: l.by, at: l.at } : null;
+  },
+  // the bar's four steps at time t, by the same fields and rules as `step`: { off, svc, fuel, board, deice }, each
+  // { st, u, … } — st 'later' (not begun, nothing wrong), 'wait' (held up: `why`, and `who` will do it or `at` when it
+  // can go on), 'coming' (a vehicle on its way: `drive` the share of its way, `end` when it is at the wing), 'going'
+  // (`u` the share done, `end` when it is done), 'done'; deice is null when no de-icing is needed, 'pad' when it is done
+  // on the way out.
+  // - off: the passengers getting off (an aircraft here overnight has none: done, `night`).
+  // - svc: the airline's cleaning and catering (from tr.off to tr.svc, `timeU`) and, with the bags in the player's or a
+  //   team's hands, the bags (the carts sent, BAG_CART_MIN at the hold, `bagsU`): as far as the slower of the two.
+  // - fuel: `by` (fuelBy); waits for the task to be done (tray, team, duty manager), a free truck or charger; the
+  //   vehicle drives to the wing (fuelFrom → fuelStart) and only then the fuel flows (fuelStart → fuelEnd).
+  // - board: begins once the passengers are off, the services, the bags and the fuel are done and it is BOARD_LEAD
+  //   before departure (`at`); it is held up (`need`: 'svc', 'bags', 'fuel') once that time has come and its minutes
+  //   no longer fit before the departure (before that it comes after them, 'later'). Its minutes
+  //   (booked × BOARD_PER_PAX, × the snow and heat, × the biometric gates) run from tr.board (`timeU`), but it goes no
+  //   further than the share of its passengers through the terminal: it waits for the late ones (`n`) until
+  //   BOARD_WAIT_MAX past departure (`at`).
+  steps(f, t) {
+    const tr = f.tr, done = () => ({ st: 'done', u: 1 });
+    const off = f.inBlock === null ? { st: 'done', u: 1, night: true } : t >= tr.off ? done()
+      : { st: 'going', u: clamp((t - f.inBlock) / Math.max(0.1, tr.off - f.inBlock), 0, 1), end: tr.off };
+    // the services and the bags
+    const timeU = tr.svc <= tr.off ? 1 : clamp((t - tr.off) / (tr.svc - tr.off), 0, 1);
+    const bagsU = !tr.bags || tr.bags === 'done' ? 1 : tr.bags === 'going' ? clamp((t - tr.bagsFrom) / Math.max(0.1, tr.bagsEnd - tr.bagsFrom), 0, 1) : 0;
+    let svc;
+    if (t >= tr.svc && (!tr.bags || tr.bags === 'done')) svc = done();
+    else if (tr.bags === 'asked') svc = { st: 'wait', u: 0, why: 'carts', who: this.who('bags', f.id), timeU, bagsU };
+    else if (t < tr.off) svc = { st: 'later', u: 0, timeU, bagsU };
+    else svc = { st: 'going', u: Math.min(timeU, bagsU), end: Math.max(tr.svc, tr.bags === 'going' ? tr.bagsEnd : 0), timeU, bagsU };
+    svc.bags = tr.bags;
+    // the fuel or the power
+    const by = this.fuelBy(f);
+    let fuel;
+    if (tr.fuel === 'wait') fuel = { st: 'later', u: 0 };
+    else if (tr.fuel === 'asked') fuel = { st: 'wait', u: 0, why: tr.charge ? 'charger' : 'truck', who: this.who(tr.charge ? 'charge' : 'fuel', f.id) };
+    else if (tr.fuel === 'queued') {
+      const trucks = S.ops.trucks;
+      fuel = trucks.length ? { st: 'wait', u: 0, why: 'freeTruck', at: Math.max(t, Math.min(...trucks)) } : { st: 'wait', u: 0, why: 'noTruck' };
+    } else if (tr.fuel === 'cqueued') {
+      const ch = S.ops.chargers;
+      fuel = { st: 'wait', u: 0, why: 'freeCharger', at: ch && ch.length ? Math.max(t, Math.min(...ch)) : null };
+    } else {
+      const from = this.fuelStart(tr);
+      if (t >= tr.fuelEnd) fuel = done();
+      else if (t < from) fuel = { st: 'coming', u: 0, drive: tr.fuelFrom !== undefined ? clamp((t - tr.fuelFrom) / Math.max(0.1, from - tr.fuelFrom), 0, 1) : 0, end: from };
+      else fuel = { st: 'going', u: clamp((t - from) / Math.max(0.1, tr.fuelEnd - from), 0, 1), end: tr.fuelEnd };
+    }
+    fuel.by = by;
+    // boarding
+    let board;
+    const dur = f.booked * BOARD_PER_PAX * this.slow() * (Systems.working('border') >= 3 ? BIO_BOARD_X : 1);
+    if (tr.ready !== null) board = done();
+    else if (tr.board === null) {
+      const at = f.std - BOARD_LEAD, need = [];
+      if (off.st !== 'done' || t < tr.svc) need.push('svc');
+      if (tr.bags && tr.bags !== 'done') need.push('bags');
+      if (fuel.st !== 'done') need.push('fuel');
+      // held up only once it can no longer be done by the departure (before that it just comes after them)
+      board = { st: need.length && t >= Math.max(at, f.std - dur) ? 'wait' : 'later', u: 0, why: need.length ? 'need' : 'opens', need, at };
+    } else {
+      const bt = dur > 0 ? clamp((t - tr.board) / dur, 0, 1) : 1;
+      const allIn = f.checked >= f.booked - 0.5 && !Passengers.queued(f);
+      const paxU = allIn || f.booked <= 0 ? 1 : clamp(f.checked / f.booked, 0, 1);
+      board = !allIn && bt >= paxU ? { st: 'wait', u: Math.min(bt, paxU), why: 'pax', n: Math.max(1, Math.round(f.booked - f.checked)), at: f.std + BOARD_WAIT_MAX, timeU: bt }
+        : { st: 'going', u: Math.min(bt, paxU), end: tr.board + dur, timeU: bt };
+    }
+    // de-icing, once boarding has begun (before: 'later' when it will be needed)
+    let deice = null;
+    const d = tr.deice;
+    if (d === undefined) deice = tr.ready === null && this.deiceNeed(f) ? { st: 'later', u: 0 } : null;
+    else if (d === 'pad') deice = { st: 'pad', u: 0 };
+    else if (d === 'asked') deice = { st: 'wait', u: 0, why: 'deicer', who: this.who('deice', f.id) };
+    else if (d === 'queued') {
+      const trucks = S.ops.deicers || [];
+      deice = { st: 'wait', u: 0, why: 'freeDeicer', at: trucks.length ? Math.max(t, Math.min(...trucks)) : t };
+    } else if (d === 'going') deice = t >= tr.deiceEnd ? done() : { st: 'going', u: clamp((t - tr.deiceFrom) / Math.max(0.1, tr.deiceEnd - tr.deiceFrom), 0, 1), end: tr.deiceEnd };
+    else if (d === 'done') deice = done();
+    return { off, svc, fuel, board, deice };
+  }
 };

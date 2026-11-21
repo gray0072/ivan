@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "900b910ae09b";
+const VERSION = "e2f28ad08dc4";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -26,7 +26,7 @@ const FILES = [
   "art/flag-gb.svg",
   "art/flag-ru.svg",
   "art/flag-se.svg",
-  "constants.js?v=8",
+  "constants.js?v=9",
   "core/audio.js?v=1",
   "core/cloud.js?v=1",
   "core/cursor.js?v=1",
@@ -47,8 +47,8 @@ const FILES = [
   "data/domains.js?v=5",
   "data/events.js?v=2",
   "data/icons.js?v=6",
-  "data/lang-ru.js?v=11",
-  "data/lang-sv.js?v=11",
+  "data/lang-ru.js?v=12",
+  "data/lang-sv.js?v=12",
   "data/layout.js?v=12",
   "data/masterplan.js?v=7",
   "data/missions/ch1.js?v=2",
@@ -89,9 +89,9 @@ const FILES = [
   "render/map.js?v=11",
   "render/palette.js?v=2",
   "render/sky.js?v=1",
-  "render/terminal.js?v=4",
-  "render/traffic.js?v=9",
-  "render/vehicles.js?v=1",
+  "render/terminal.js?v=5",
+  "render/traffic.js?v=10",
+  "render/vehicles.js?v=2",
   "sim/actions.js?v=6",
   "sim/airlines.js?v=1",
   "sim/airport.js?v=9",
@@ -124,11 +124,11 @@ const FILES = [
   "sim/systems.js?v=4",
   "sim/tasks.js?v=4",
   "sim/terminal.js?v=3",
-  "sim/turnaround.js?v=5",
+  "sim/turnaround.js?v=6",
   "sim/weather.js?v=1",
-  "styles.css?v=9",
+  "styles.css?v=10",
   "ui/airlines.js?v=1",
-  "ui/cards.js?v=2",
+  "ui/cards.js?v=3",
   "ui/challenges.js?v=1",
   "ui/finance.js?v=4",
   "ui/hints.js?v=5",
