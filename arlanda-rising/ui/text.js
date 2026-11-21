@@ -105,6 +105,17 @@ const Text = {
       default: return this.num(v, 0);
     }
   },
+  // minutes as "45 min" or "1 h 20 min"
+  duration(min) {
+    const h = Math.floor(min / 60), m = Math.round(min % 60);
+    return h ? (m ? tr('{h} h {m} min', { h, m }) : tr('{h} h', { h })) : tr('{n} min', { n: m });
+  },
+  // the whole mission's goals, live (a goal over the mission, like "End with a profit"): nothing when it has none
+  missionGoals() {
+    const m = Missions.def();
+    if (!m || !m.goal || !m.goal.length) return '';
+    return '<div class="gMission"><b>' + this.esc(tr('The mission')) + '</b>' + this.goalsHtml(Goals.all(m.goal, Missions.liveTotal())) + '</div>';
+  },
   goalsHtml(results) {
     return '<ul class="goals">' + results.map((r) => '<li class="' + (r.ok ? 'ok' : 'no') + '"><span class="mark">' + (r.ok ? '✓' : '✗') + '</span><span class="g">' +
       this.esc(this.goal(r.goal)) + '</span><b>' + this.esc(this.value(r)) + '</b></li>').join('') + '</ul>';

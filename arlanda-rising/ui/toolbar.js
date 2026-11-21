@@ -65,7 +65,7 @@ const Toolbar = (() => {
       }
     }
     const b = buys();
-    const k = JSON.stringify(parts.map((p) => p.map((x) => (typeof x === 'number' ? Math.round(x * 100) : x)))) + b.join() + armed + I18N.lang + (Settings.short() ? 1 : 0) + Math.floor(S.money / 1e5);
+    const k = JSON.stringify(parts.map((p) => p.map((x) => (typeof x === 'number' ? Math.round(x * 100) : x)))) + b.join() + armed + I18N.lang + (Settings.short() ? 1 : 0) + Math.floor(S.money / 1e5) + JSON.stringify((S.plan && S.plan.buys) || []) + S.airport.items.length;
     box.hidden = false;
     if (k === key) return;
     key = k;
@@ -89,10 +89,20 @@ const Toolbar = (() => {
       else if (p[0] === 'short') html += '<div class="tgroup warnGroup"><span class="tl">' + (p[3] ? '✊ ' : '🤒 ') + Text.esc(p[3] ? tr('{dept} on strike', { dept: Text.dept(p[1]) }) : tr('{dept}: {p} at work', { dept: Text.dept(p[1]), p: Math.round(p[2] * 100) + ' %' })) + '</span>' +
         (p[3] ? '' : '<button class="tb small" data-act="overtime" data-d="' + p[1] + '" title="' + Text.esc(tr('Everybody in, at overtime pay')) + '">⏱️ ' + Text.esc(tr('Overtime')) + '</button>') + '</div>';
     }
+    // how many shops and car parks there are, and how many more can earn
+    const places = (what, icon, label, tip) => {
+      const n = Airport.placesTaken(what), max = Airport.placesMax(what);
+      return '<div class="tgroup' + (n >= max - 1e-9 ? ' fullGroup' : '') + '"><span class="tl" title="' + Text.esc(tip) + '">' + icon + ' ' + Text.esc(tr(label)) + ' <b>' +
+        (what === 'shop' ? Text.num(n, 1) + '/' + max : Math.round(n * 100) + '/100 %') + '</b></span></div>';
+    };
+    if (b.some((k) => BUILDINGS[k].shop)) html += places('shop', '🏪', 'Shops', tr('A kiosk counts ½, a café 1, a restaurant 0.6, a duty-free shop 1.2. More than {max} earn nothing more.', { max: SHOP_MAX }));
+    if (b.some((k) => BUILDINGS[k].parking)) html += places('parking', '🚗', 'Car parks', tr('The share of the drivers the car parks take: a small one 40 %, a big one all of them.'));
     for (const kind of b) {
-      const bd = BUILDINGS[kind], conf = armed === kind;
-      html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (S.money < bd.price && !conf ? ' data-poor="1"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
-        Text.esc(conf ? tr('Buy?') : tr(bd.name)) + '<small>' + sek(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '') + '</small></button>';
+      const bd = BUILDINGS[kind], conf = armed === kind, full = Airport.full(kind);
+      const n = Airport.count(kind) + ((S.plan && S.plan.buys) || []).filter((x) => x.kind === kind).length;
+      html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (full ? ' disabled' : '') + (S.money < bd.price && !conf ? ' data-poor="1"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
+        Text.esc(conf ? tr('Buy?') : tr(bd.name)) + (n && (bd.shop || bd.parking) ? ' <em>×' + n + '</em>' : '') + '<small>' +
+        (full ? Text.esc(tr('Enough: one more would earn nothing')) : sek(bd.price) + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
     }
     box.innerHTML = html;
   }

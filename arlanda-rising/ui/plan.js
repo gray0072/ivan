@@ -38,13 +38,13 @@ const PlanUI = (() => {
   function render() {
     if (!S || !S.plan || !S.mission) { box.hidden = true; key = ''; return; }
     const ids = S.mission.projects || [];
-    const goals = Goals.all(Missions.stage().goal, S.mission.st);
-    const k = JSON.stringify(goals) + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
+    const goals = Goals.all(Missions.stage().goal, S.mission.st), mg = Text.missionGoals();
+    const k = JSON.stringify(goals) + mg + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
       JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + (S.people ? S.people.it : 0);
     box.hidden = false;
     if (k === key) return;
     key = k;
-    let html = (goals.length ? '<div class="pGoals"><b>' + Text.esc(tr(Missions.stage().name)) + '</b>' + Text.goalsHtml(goals) + '</div>' : '') + '<div class="pHead"><b>' + Text.esc(tr('Building')) + '</b><span>👷 ' + Text.esc(tr('Crews at work: {a} of {n}', { a: Construction.active(), n: S.plan.crews })) + '</span></div>';
+    let html = (goals.length || mg ? '<div class="pGoals">' + (goals.length ? '<b>' + Text.esc(tr(Missions.stage().name)) + '</b>' + Text.goalsHtml(goals) : '') + mg + '</div>' : '') + '<div class="pHead"><b>' + Text.esc(tr('Building')) + '</b><span>👷 ' + Text.esc(tr('Crews at work: {a} of {n}', { a: Construction.active(), n: S.plan.crews })) + '</span></div>';
     for (const pid of ids) {
       const p = Construction.state(pid), def = PROJECTS[pid];
       if (!p) continue;

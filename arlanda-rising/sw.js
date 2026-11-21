@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "1f0577fc2504";
+const VERSION = "66e9f9a221a8";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -47,8 +47,8 @@ const FILES = [
   "data/domains.js?v=5",
   "data/events.js?v=2",
   "data/icons.js?v=5",
-  "data/lang-ru.js?v=5",
-  "data/lang-sv.js?v=5",
+  "data/lang-ru.js?v=6",
+  "data/lang-sv.js?v=6",
   "data/layout.js?v=6",
   "data/masterplan.js?v=5",
   "data/missions/ch1.js?v=2",
@@ -90,7 +90,7 @@ const FILES = [
   "render/traffic.js?v=3",
   "sim/actions.js?v=5",
   "sim/airlines.js?v=1",
-  "sim/airport.js?v=5",
+  "sim/airport.js?v=6",
   "sim/calendar.js?v=1",
   "sim/challenges.js?v=1",
   "sim/cheats.js?v=3",
@@ -103,7 +103,7 @@ const FILES = [
   "sim/green.js?v=2",
   "sim/invest.js?v=2",
   "sim/meters.js?v=5",
-  "sim/missions.js?v=5",
+  "sim/missions.js?v=6",
   "sim/offers.js?v=2",
   "sim/ops.js?v=5",
   "sim/passengers.js?v=4",
@@ -121,25 +121,25 @@ const FILES = [
   "sim/terminal.js?v=3",
   "sim/turnaround.js?v=4",
   "sim/weather.js?v=1",
-  "styles.css?v=4",
+  "styles.css?v=5",
   "ui/airlines.js?v=1",
   "ui/cards.js?v=2",
   "ui/challenges.js?v=1",
   "ui/finance.js?v=2",
   "ui/hints.js?v=5",
-  "ui/hud.js?v=3",
+  "ui/hud.js?v=4",
   "ui/missioncard.js?v=3",
   "ui/office.js?v=5",
   "ui/opscenter.js?v=2",
   "ui/people.js?v=2",
-  "ui/plan.js?v=4",
+  "ui/plan.js?v=5",
   "ui/results.js?v=4",
   "ui/screens.js?v=3",
   "ui/sounds.js?v=1",
   "ui/terminalview.js?v=1",
-  "ui/text.js?v=5",
+  "ui/text.js?v=6",
   "ui/timeline.js?v=1",
-  "ui/toolbar.js?v=4",
+  "ui/toolbar.js?v=5",
   "ui/tray.js?v=1",
 ];
 // false for the root gallery: its scope contains every game's folder, which belong to the games'

@@ -2077,5 +2077,16 @@ Object.assign(TEXT_SV, {
   "every system's readiness back to 100 %": "varje systems beredskap tillbaka till 100 %",
   "{n} gates": "{n} gater",
   "a charger at every gate": "en laddare vid varje gate",
-  "After the storm, 2024": "Efter stormen, 2024"
+  "After the storm, 2024": "Efter stormen, 2024",
+  "This mission so far: income less costs {m}": "Uppdraget hittills: intäkter minus kostnader {m}",
+  "Stage {a} of {n}": "Etapp {a} av {n}",
+  "Until {t}: {d} left": "Till {t}: {d} kvar",
+  "Time is up: the last flights are finishing": "Tiden är slut: de sista flygen avslutas",
+  "{h} h {m} min": "{h} h {m} min",
+  "{h} h": "{h} h",
+  "The mission": "Uppdraget",
+  "Shops": "Butiker",
+  "A kiosk counts ½, a café 1, a restaurant 0.6, a duty-free shop 1.2. More than {max} earn nothing more.": "En kiosk räknas som ½, ett kafé 1, en restaurang 0,6, en taxfreebutik 1,2. Mer än {max} ger inget mer.",
+  "The share of the drivers the car parks take: a small one 40 %, a big one all of them.": "Andelen bilister som parkeringarna tar: en liten 40 %, en stor alla.",
+  "Enough: one more would earn nothing": "Det räcker: en till skulle inte ge något"
 });

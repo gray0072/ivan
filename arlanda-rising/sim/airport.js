@@ -26,6 +26,19 @@ const Airport = {
     for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {}).shop || 0;
     return Math.min(SHOP_MAX, s);
   },
+  // the shops' and the car parks' places taken, with those being built: a shop or a car park more than the room
+  // left earns nothing, so it cannot be bought once the room is full
+  placesTaken(what) {
+    let s = 0;
+    for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {})[what] || 0;
+    for (const b of (S.plan && S.plan.buys) || []) s += (BUILDINGS[b.kind] || {})[what] || 0;
+    return s;
+  },
+  placesMax(what) { return what === 'shop' ? SHOP_MAX : 1; },
+  full(kind) {
+    const b = BUILDINGS[kind] || {}, what = b.shop ? 'shop' : b.parking ? 'parking' : null;
+    return !!what && this.placesTaken(what) >= this.placesMax(what) - 1e-9;
+  },
   parkingShare() {
     let s = 0;
     for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {}).parking || 0;
@@ -132,6 +145,7 @@ const Airport = {
     const b = BUILDINGS[kind];
     if (!b || !b.small) return false;
     if (b.from && Calendar.year() < b.from) return false;
+    if (this.full(kind)) return false;
     Finance.book('build', -b.price);
     if (S.plan && b.days > 0) S.plan.buys.push({ kind, done: S.day + b.days });
     else this.finishBuy(kind);

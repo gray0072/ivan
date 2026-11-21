@@ -184,6 +184,13 @@ const Missions = {
     return w;
   },
   // what the autosave writes, and taking it back (the mission goes on at that very moment, paused)
+  // the mission's stats so far: the stages played and the one running (for the goals of the whole mission, live)
+  liveTotal() {
+    const t = Goals.add(Goals.add(Goals.newStats(), S.mission.total), S.mission.st || {});
+    return t;
+  },
+  // the mission's income less its costs so far
+  result() { const t = S.mission.total, st = S.mission.st || {}; return (t.income + (st.income || 0)) - (t.cost + (st.cost || 0)); },
   save() { return { state: S, checkpoint: this.checkpoint, startWorld: this.startWorld }; },
   resume(data) {
     S = typeof data.state === 'string' ? JSON.parse(data.state) : JSON.parse(JSON.stringify(data.state));

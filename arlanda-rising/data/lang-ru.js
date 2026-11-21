@@ -2077,5 +2077,16 @@ Object.assign(TEXT_RU, {
   "every system's readiness back to 100 %": "готовность каждой системы снова 100 %",
   "{n} gates": "{n} выходов",
   "a charger at every gate": "зарядка у каждого выхода",
-  "After the storm, 2024": "После бури, 2024"
+  "After the storm, 2024": "После бури, 2024",
+  "This mission so far: income less costs {m}": "Миссия пока: доходы минус расходы {m}",
+  "Stage {a} of {n}": "Этап {a} из {n}",
+  "Until {t}: {d} left": "До {t}: осталось {d}",
+  "Time is up: the last flights are finishing": "Время вышло: заканчиваются последние рейсы",
+  "{h} h {m} min": "{h} ч {m} мин",
+  "{h} h": "{h} ч",
+  "The mission": "Миссия",
+  "Shops": "Магазины",
+  "A kiosk counts ½, a café 1, a restaurant 0.6, a duty-free shop 1.2. More than {max} earn nothing more.": "Киоск считается за ½, кафе за 1, ресторан за 0,6, дьюти-фри за 1,2. Больше {max} уже ничего не приносят.",
+  "The share of the drivers the car parks take: a small one 40 %, a big one all of them.": "Доля водителей, которых берут парковки: малая 40 %, большая — все.",
+  "Enough: one more would earn nothing": "Хватит: ещё одна ничего не принесёт"
 });

@@ -41,6 +41,16 @@ small { color: var(--dim); }
 .chip b { font-weight: 600; font-variant-numeric: tabular-nums; }
 button.chip { cursor: pointer; }
 .chip.debt b { color: var(--bad); }
+/* the mission's result so far beside the money; the stage's time as a line under the date */
+.mwrap { display: flex; align-items: baseline; gap: 5px; }
+#trend { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--dim); }
+#trend.up { color: var(--ok); }
+#trend.down { color: #ff9c8c; }
+#dateChip { position: relative; }
+#dateChip .prog { position: absolute; left: 12px; right: 12px; bottom: 3px; height: 2px; border-radius: 1px; background: rgba(255,255,255,0.15); overflow: hidden; }
+#dateChip .prog i { display: block; height: 100%; width: 0; background: var(--accent); }
+.gLeft { color: var(--dim); font-size: 11.5px; margin: -1px 0 3px; }
+.gMission { margin-top: 5px; padding-top: 4px; border-top: 1px solid var(--line); }
 #meters { pointer-events: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 3px 8px; gap: 8px; }
 .meter { display: flex; align-items: center; gap: 3px; font-size: 12px; }
 .meter .mi { font-size: 13px; }
@@ -107,6 +117,8 @@ ul.goals.plain li::before { content: '•'; color: var(--accent); }
 #toolbar:empty { display: none; }
 .tgroup { display: flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 10px; background: rgba(255,255,255,0.05); white-space: nowrap; font-size: 12.5px; }
 .tl b { color: var(--accent); }
+.tgroup.fullGroup .tl b { color: var(--ok); }
+.tb em { font-style: normal; color: var(--accent); font-weight: 600; }
 .tb {
   flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   min-height: 40px; padding: 3px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,0.07);
@@ -316,6 +328,8 @@ ul.has { margin: 0; padding-left: 18px; }
 /* a phone held upright: the money's chip keeps one width while the sum changes */
 @media (max-width: 600px) and (orientation: portrait) {
   #money { display: inline-block; min-width: 4.6em; text-align: right; }
+  .mwrap { flex-direction: column; align-items: flex-end; gap: 0; line-height: 1.05; }
+  #trend { font-size: 10px; }
 }
 
 /* session 3: the People screen, the Ops Center, the teams in the bar, managers in a decision */

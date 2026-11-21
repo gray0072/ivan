@@ -34,6 +34,14 @@ const Hud = (() => {
     if (h && h !== hudH) { hudH = h; document.documentElement.style.setProperty('--hudH', h + 'px'); }
     $('money').textContent = PHONE_UPRIGHT.matches ? moneyBare(S.money) : sek(S.money);
     $('moneyChip').classList.toggle('debt', S.money < 0);
+    // earning or spending: the mission's income less its costs so far
+    const res = Missions.result(), tr$ = $('trend');
+    tr$.textContent = (res > 0 ? '+' : '') + (Math.abs(res) < 1 ? '0' : moneyBare(res));
+    tr$.className = res >= 1 ? 'up' : res <= -1 ? 'down' : '';
+    $('moneyChip').title = tr('Money') + ' · ' + tr('This mission so far: income less costs {m}', { m: sek(res) });
+    // how far the stage is: the clock between its start and end, or its days
+    const prog = S.ops ? (S.clock - S.ops.from) / (S.ops.to - S.ops.from) : S.plan ? (S.day - S.plan.day0) / (S.plan.end - S.plan.day0) : 0;
+    $('dateChip').querySelector('.prog i').style.width = Math.round(clamp(prog, 0, 1) * 100) + '%';
     if (S.ops) {
       $('date').textContent = fmtDate(S.day) + ' · ' + fmtClock(S.clock);
       const w = Weather.now(), parts = [Math.round(w.temp) + '°', wind(w)];
@@ -76,8 +84,11 @@ const Hud = (() => {
     const stage = Missions.stage();
     if (!stage || S.plan) { box.hidden = true; return; }
     const res = Goals.all(stage.goal, S.mission.st);
-    const head = '<div class="gHead"><b>' + Text.esc(tr(stage.name)) + '</b><span>' + (S.mission.stage + 1) + '/' + Missions.def().stages.length + '</span></div>';
-    const html = head + (res.length ? Text.goalsHtml(res) : '<p class="fine">' + Text.esc(tr('No goal in this stage: get ready for the next one.')) + '</p>');
+    const head = '<div class="gHead"><b>' + Text.esc(tr(stage.name)) + '</b><span>' + Text.esc(tr('Stage {a} of {n}', { a: S.mission.stage + 1, n: Missions.def().stages.length })) + '</span></div>';
+    // the time left in the stage, to its end on the clock
+    const left = S.ops ? Math.ceil(S.ops.to - S.clock) : 0;
+    const when = !S.ops ? '' : '<div class="gLeft">⏱ ' + Text.esc(left > 0 ? tr('Until {t}: {d} left', { t: fmtClock(S.ops.to), d: Text.duration(left) }) : tr('Time is up: the last flights are finishing')) + '</div>';
+    const html = head + when + (res.length ? Text.goalsHtml(res) : '<p class="fine">' + Text.esc(tr('No goal in this stage: get ready for the next one.')) + '</p>') + Text.missionGoals();
     if (box.dataset.html !== html) { box.innerHTML = html; box.dataset.html = html; }
     box.hidden = false;
   }
