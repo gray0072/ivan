@@ -27,7 +27,8 @@ const ROUTES_2035 = Object.assign({}, ROUTES_2030, { ELECTRIC: [{ type: 'EL30', 
 const ROUTES_2040 = Object.assign({}, ROUTES_2035, { ELECTRIC: [{ type: 'EL30', perDay: 18, load: 0.85 }], HYDRO: [{ type: 'H2P', perDay: 2, load: 0.8 }],
   SK: [{ type: 'A20N', perDay: 18, load: 0.82 }, { type: 'A321', perDay: 10, load: 0.82 }, { type: 'A359', perDay: 3, load: 0.86 }] });
 const SETUP_8 = { open: true, openSkies: true, minMoney: 300e6, units: true, lanes: 24, items: ITEMS_2030, desks: 40, domains: TEAMS_2030, it: 14,
-  terms: TERMS_2019, booths: 10, secRule: 2, owner: 'Swedavia', green: true, permit: { perDay: 170 }, events: true, cyber: true, demand: 1 };
+  terms: TERMS_2019, booths: 10, secRule: 2, owner: 'Swedavia', green: true, permit: { perDay: 170 }, events: true, cyber: true, demand: 1,
+  unmothball: ['t3'] };   // Terminal 3 open again since October 2024, its gates part of Terminal 2 since the end of 2026
 const S8 = (extra) => Object.assign({}, SETUP_8, extra);
 const HANDS_8 = ['stand', 'checkin', 'fuel', 'charge', 'bags', 'announce', 'booth', 'lane'];
 // the ordinary traffic of a morning in the 2030s

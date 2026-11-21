@@ -18,11 +18,11 @@ const TermArt = (() => {
   function crowd(term) {
     const out = { checkin: 0, sec: 0, airside: 0, gates: [], live: !!S.ops };
     if (S.ops) {
-      const mine = (id) => { const f = Flights.get(id); return f && Terminal.of(f.al, f.intl) === term; };
+      const mine = (id) => { const f = Flights.get(id); return f && Terminal.of(f.al, f.intl, f.type) === term; };
       for (const c of S.ops.queue) if (mine(c[0])) out.checkin += c[1];
       for (const c of S.ops.sec || []) if (mine(c[0])) out.sec += c[1];
       for (const f of S.ops.flights) {
-        if (Terminal.of(f.al, f.intl) !== term || Flights.over(f) || f.st === 'taxiOut' || !f.booked) continue;
+        if (Terminal.of(f.al, f.intl, f.type) !== term || Flights.over(f) || f.st === 'taxiOut' || !f.booked) continue;
         const through = f.checked;
         // boarding: the gate's seats empty as its passengers board (at boarding's pace, Turnaround.steps)
         if (f.tr && f.tr.board !== null && f.tr.ready === null) out.gates.push({ f, n: Math.max(0, through * 0.6 * (1 - Turnaround.steps(f, S.clock).board.timeU)) });

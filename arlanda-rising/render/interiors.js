@@ -22,14 +22,14 @@
 const Interiors = (() => {
   // the inside of each building drawn (data/layout.js keys)
   const KIND = {
-    terminal1: 'hall', intlTerminal: 'hall', domTerminal: 'hall', terminal2: 'hall', waiting: 'gates', intlPier: 'pier', pierF: 'pier', pier2040: 'pier', pierArm: 'pier',
+    terminal1: 'hall', intlTerminal: 'hall', domTerminal: 'hall', terminal2: 'hall', terminal3: 'hall', waiting: 'gates', intlPier: 'pier', pierF: 'pier', pier2040: 'pier', pierArm: 'pier',
     skyCity: 'mall', hotel: 'hotel', hotelExt: 'hotel', offices: 'office', offices2: 'office', cyberCentre: 'soc', bagHall: 'bags', sorterHall: 'bags',
     computerRoom: 'servers', fireStation: 'fire', cargoCity: 'cargo', generator: 'plant', aquifer: 'pumps'
   };
   // whose passengers fill it
-  const TERM = { terminal1: 't1', waiting: 't1', intlTerminal: 'intl', domTerminal: 'dom', terminal2: 't2', pierF: 'intl', pier2040: 'intl', pierArm: 'intl' };
+  const TERM = { terminal1: 't1', waiting: 't1', intlTerminal: 'intl', domTerminal: 'dom', terminal2: 't2', terminal3: 't3', pierF: 'intl', pier2040: 'intl', pierArm: 'intl' };
   // the project whose desks a terminal has (data/masterplan.js `desks`)
-  const DESKS = { terminal1: 'terminal1', intlTerminal: 'intlTerminal', domTerminal: 'domTerminal', terminal2: 'terminal2' };
+  const DESKS = { terminal1: 'terminal1', intlTerminal: 'intlTerminal', domTerminal: 'domTerminal', terminal2: 'terminal2', terminal3: 'terminal3' };
   const CLOTHES = ['#2f6fb3', '#c8102e', '#3a8f4b', '#e0a020', '#7b4ea3', '#333a44', '#e8e4d8', '#d96c9a', '#2b8c8c', '#8a5a3a'];
   const SKIN = ['#f0d5bc', '#e8c9a8', '#c99b74', '#8d5a3b'];
   const STAFF = '#1f3f8f', HIVIS = PAL.hiVis;

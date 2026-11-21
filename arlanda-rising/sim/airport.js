@@ -74,6 +74,23 @@ const Airport = {
     return S.airport.items.filter((it) => this.cellsOf(it.kind) && pl.of[it.id] === term).map((it) => ({ it, kind: it.kind, cells: this.cellsOf(it.kind) }))
       .concat(pl.pending.filter((b) => b.term === term).map((b) => ({ buy: b, kind: b.kind, cells: this.cellsOf(b.kind) })));
   },
+  // the first terminal torn down: its item goes, its brands' units close, its own shops move into the other terminals'
+  // free cells, each in turn (one with no room anywhere is sold back for SHOP_SELL_BACK of its price)
+  razeFirstTerminal() {
+    const a = S.airport, t1 = a.items.find((it) => it.kind === 'terminal');
+    if (t1) a.items.splice(a.items.indexOf(t1), 1);
+    a.t1Gone = true;
+    if (a.units) a.units = a.units.filter((u) => u.term !== 't1');
+    const of = this.shopPlaces().of, moving = a.items.filter((it) => this.cellsOf(it.kind) && (it.term || of[it.id]) === 't1');
+    for (const it of moving) it.term = 'gone';
+    for (const it of moving) {
+      const t = this.roomFor(it.kind);
+      if (t) { it.term = t; continue; }
+      Finance.book('sold', this.sellPrice(it));
+      a.items.splice(a.items.indexOf(it), 1);
+      logEvent('sold', { kind: it.kind });
+    }
+  },
   // SEK a shop is sold back for
   sellPrice(it) { return Math.round((it.price || 0) * SHOP_SELL_BACK); },
   // whether shops can be sold now: where they can be bought, in plan time with the airport open
@@ -164,6 +181,9 @@ const Airport = {
       // session 4
       case 'terminal2': for (const s of p.stands) this.addStand(s); this.addItem('terminal2', { price }); a.desks += p.desks || 10; Terminal.ensure(); break;
       case 'units': if (!a.units) a.units = []; Terminal.ensure(); break;
+      case 'terminal3': this.addItem('terminal3', { price }); a.desks += p.desks || 2; Terminal.ensure(); break;
+      // the first terminal torn down (2017): its building goes, the kerb and the check-in stay (Terminal.built('kerb'))
+      case 'oldHall': this.razeFirstTerminal(); break;
       case 'arlandaExpress':
         a.train = a.trainDeal || 'concession';
         a.trainFrom = Calendar.parse(TRAIN_FIRST_DAY);

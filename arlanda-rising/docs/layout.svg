@@ -141,6 +141,7 @@
 <rect x="612.5" y="887.0" width="11.0" height="13.0" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
 <rect x="625.0" y="894.0" width="5.0" height="6.0" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
 <rect x="597.5" y="1085.0" width="40.0" height="77.5" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
+<rect x="597.5" y="1073.5" width="40.0" height="10.5" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
 <rect x="627.5" y="857.5" width="17.5" height="27.5" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
 <rect x="595.0" y="555.0" width="22.5" height="167.5" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
 <rect x="662.0" y="827.5" width="35.0" height="21.5" fill="#e9a86b" stroke="#7a4a20" stroke-width="0.6"/>
@@ -282,6 +283,7 @@
 <text x="617.5" y="1033.3" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 617.5 1033.3)">domestic / T4</text>
 <text x="601.3" y="974.0" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle">bags</text>
 <text x="617.5" y="1123.8" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 617.5 1123.8)">T2</text>
+<text x="617.5" y="1078.8" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle">T3</text>
 <text x="636.3" y="871.3" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle">sorter</text>
 <text x="606.3" y="638.8" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle" transform="rotate(-90 606.3 638.8)">Pier F</text>
 <text x="679.5" y="838.3" font-size="8" fill="#3a2410" text-anchor="middle" dominant-baseline="middle">Sky City</text>

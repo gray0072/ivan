@@ -574,7 +574,10 @@ const AirportArt = (() => {
       if (fn || cut) add(box[2], box[1], cut ? (c) => Interiors.draw(c, sc, key, box, h, wall) : fn);
     };
     const T = LAYOUT.terminal1, t1 = sc.p('terminal1', 'hall');
-    if (t1 > 0 || sc.items.terminal) {
+    // torn down in 2017 (sim/airport.js razeFirstTerminal): nothing drawn, its plot grassed over with the fence across it
+    if (S.airport.t1Gone) {
+      // (no building, no card)
+    } else if (t1 > 0 || sc.items.terminal) {
       if (sc.cut && t1 >= 1) {
         site('terminal1', T.box, T.h, 1, null, '#eceae4');
         if (sc.p('terminal1', 'waiting') >= 1) site('waiting', T.waiting, 6, 1, null, '#e3dfd6');
@@ -604,7 +607,7 @@ const AirportArt = (() => {
     }
     // the buildings drawn as blocks: their key, the project and stage that build them (or none), their wall, windows
     const blocks = [['domTerminal', 'domTerminal', 'hall', '#ece6da', true], ['bagHall', 'bagHall', 'hall', '#c9c4b8', false],
-      ['terminal2', 'terminal2', 'hall', '#e8ecef', true], ['sorterHall', 'sorterHall', 'hall', '#c9c4b8', false],
+      ['terminal2', 'terminal2', 'hall', '#e8ecef', true], ['terminal3', 'terminal3', 'hall', '#e6e9ea', true], ['sorterHall', 'sorterHall', 'hall', '#c9c4b8', false],
       ['skyCity', 'skyCity', 'hall', '#e9e4d6', true], ['hotel', 'skyCity', 'hotel', '#d9dde2', true], ['hotelExt', null, null, '#d2d7dd', true],
       ['offices', null, null, '#dfe3e6', true], ['cargoCity', 'cargoCity', 'halls', '#c9c4b8', false], ['aquifer', 'aquifer', 'plant', '#a9b39a', false],
       ['cyberCentre', null, null, '#3d4a57', true], ['computerRoom', 'computerRoom', 'room', '#d5d8dc', true],
@@ -613,9 +616,9 @@ const AirportArt = (() => {
       const g = LAYOUT[k], q = sc.items[k] ? 1 : pid ? sc.p(pid, sid) : 0;
       if (q <= 0) continue;
       // a mothballed terminal keeps its roof: nobody inside
-      const off = k === 'domTerminal' ? Terminal.mothballed('dom') : k === 'terminal2' ? Terminal.mothballed('t2') : false;
+      const off = k === 'domTerminal' ? Terminal.mothballed('dom') : k === 'terminal2' ? Terminal.mothballed('t2') : k === 'terminal3' ? Terminal.mothballed('t3') : false;
       // a terminal's own shops: their awnings on its landside wall
-      const term = k === 'domTerminal' ? 'dom' : k === 'terminal2' ? 't2' : null;
+      const term = k === 'domTerminal' ? 'dom' : k === 'terminal2' ? 't2' : k === 'terminal3' ? 't3' : null;
       site(k, g.box, g.h, off ? 0 : q, (c) => { block(c, sc, g.box, g.h, q, wall, glass, off); if (term && q >= 1) awnings(c, term, g.box); }, wall);
     }
     if (sc.items.offices > 1) { const g = LAYOUT.offices.box, b2 = [g[0], g[3] + 10, g[2], g[3] + 60]; site('offices2', b2, 16, 1, (c) => block(c, sc, b2, 16, 1, '#dfe3e6', true), '#dfe3e6'); }
@@ -688,7 +691,7 @@ const AirportArt = (() => {
       if (!Object.values(p.stages).some((s) => s.on && !s.done)) continue;
       const pl = PROJECTS[id] && PROJECTS[id].plot;
       const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28, T.box[1]] :
-        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2', 't4t5', 'pier2040'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34, pl.y] :
+        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'terminal3', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2', 't4t5', 'pier2040'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34, pl.y] :
         id === 'runway3' ? [LAYOUT.runway3.from[0] + 120, LAYOUT.runway3.from[1] + 1200, 30] : id === 'bridges' ? [LAYOUT.bridges[0][0], LAYOUT.bridges[0][1] + 40, 30] :
         id === 'arlandaExpress' ? [LAYOUT.rail.south[0] + 30, LAYOUT.rail.south[1], 30] : null;
       if (pos) add(pos[0], pos[3] !== undefined ? Math.min(pos[1], pos[3]) : pos[1], (c) => crane(c, pos[0], pos[1], pos[2], sc.anim));

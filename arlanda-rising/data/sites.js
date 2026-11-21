@@ -26,6 +26,8 @@ const SITES = {
   intlPier: { same: 'intlTerminal' },
   domTerminal: { item: 'domTerminal', project: 'domTerminal', stage: 'hall', does: 'terminal', term: 'dom', icon: '🛫',
     about: 'The domestic terminal: quick check-in and a short walk to the gates for the flights within Sweden.' },
+  terminal3: { item: 'terminal3', project: 'terminal3', stage: 'hall', does: 'terminal', term: 't3', icon: '🛫',
+    about: 'The regional terminal: a small hall for the domestic propeller flights, its passengers walking out to their aircraft.' },
   terminal2: { item: 'terminal2', project: 'terminal2', stage: 'hall', does: 'terminal', term: 't2', icon: '🛫',
     about: 'Terminal 2: a terminal of its own for the airlines the airport sends there, with its own check-in, security, shops and gates.' },
   bagHall: { item: 'bagHall', project: 'bagHall', stage: 'hall', does: 'bags', icon: '🛄',

@@ -55,7 +55,7 @@ const MapView = (() => {
       dark: Sky.darkness(S.day, t), vis: w ? w.vis : 10000, snowfall: w ? w.snow : 0,
       siteDone: ready, strip: ready ? 1 : p('site', 'strip'), drain: ready ? 1 : p('site', 'drain'),
       apronClear: ready ? 1 : p('site', 'apron'), road: roadP, roadPts, landsidePts: landside ? LAYOUT.landside : null,
-      siteWork: !!a.projects.site && !items.terminal,
+      siteWork: !!a.projects.site && !items.terminal && !a.t1Gone,
       runway: a.runways[0] || null, runway2: a.runways.find((r) => r.id === 'r2') || null, runway3: a.runways.find((r) => r.id === 'r3') || null,
       apron: a.stands.length > 0, items, p,
       planning: !!S.plan, lights: [], standMark: view.standMark, cut: view.cut,
@@ -67,7 +67,7 @@ const MapView = (() => {
   // what the airside fence goes round (render/fence.js): what stands or is being built — the runways, the taxiways, the
   // aprons, the remote stands, the de-icing pads, the buildings on the terminal line and the piers
   // the buildings on the terminal line built by a project of their own name: the stage that raises them
-  const HALLS = { domTerminal: 'hall', bagHall: 'hall', terminal2: 'hall', sorterHall: 'hall', cargoCity: 'halls', computerRoom: 'room' };
+  const HALLS = { domTerminal: 'hall', bagHall: 'hall', terminal2: 'hall', terminal3: 'hall', sorterHall: 'hall', cargoCity: 'halls', computerRoom: 'room' };
   function fenceSpec(a, items, p) {
     const aprons = {};
     for (const [key, pid, sid, item] of AirportArt.APRONS) aprons[key] = !!(item && items[item]) || p(pid, sid) > 0;
@@ -84,7 +84,8 @@ const MapView = (() => {
         case 'taxi3': return !!items.bridges || p('bridges', 'taxi') > 0;
         case 'deice0': return !!items.deicePad || p('deicePads', 'south') > 0;
         case 'deice1': return !!items.deicePad || p('deicePads', 'r3') > 0;
-        case 'terminal1': return !!items.terminal || p('terminal1', 'hall') > 0;
+        case 'terminal1': return !a.t1Gone && (!!items.terminal || p('terminal1', 'hall') > 0);
+        case 'oldHall': return !!a.t1Gone;
         case 'intlTerminal': return !!items.intlTerminal || p('intlTerminal', 'frame') > 0;
         case 'pierF': return !!items.pierF || p('pierF', 'gates') > 0;
         case 'pier2040': return !!items.pier2040 || p('pier2040', 'hall') > 0;

@@ -8,7 +8,7 @@
 // with the source); the flights of a day, the people, the brands' units and the deals are the game's own story.
 
 const SRC_SV4 = 'sv.wikipedia Stockholm-Arlanda flygplats; swedavia.com About the airport';
-const BUILT_1989 = BUILT_1983.concat(['computerRoom']);
+const BUILT_1989 = BUILT_1983.concat(['computerRoom', 'terminal3']);
 const BUILT_1990 = BUILT_1989.concat(['terminal2']);
 const BUILT_1999 = BUILT_1990.concat(['arlandaExpress', 'sorterHall']);
 const ITEMS_1990 = { fuelTruck: 6, plough: 6, crashTender: 2 };

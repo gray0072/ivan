@@ -32,7 +32,7 @@ const Meters = {
     const unann = (f.ann === 'asked' && S.clock - f.annAsk > ANNOUNCE_OK) || (f.ann === 'done' && f.annAt - f.annAsk > ANNOUNCE_OK);
     if (unann) S.mission.st.unannounced++;
     // session 4: the brands of its terminal and the way to the airport (the coaches, the train)
-    const extra = (f.lostBags ? LOST_BAG_MOOD : 0) + (unann ? ANNOUNCE_MOOD : 0) - Terminal.groundPax() - Terminal.paxBonus(Terminal.of(f.al, f.intl)) +
+    const extra = (f.lostBags ? LOST_BAG_MOOD : 0) + (unann ? ANNOUNCE_MOOD : 0) - Terminal.groundPax() - Terminal.paxBonus(Terminal.of(f.al, f.intl, f.type)) +
       // session 6: a hot terminal that was not cooled
       (Turnaround.hot() && !S.flags.cooled ? HEAT_PAX : 0);
     if (f.booked > 0) this.pull('passengers', 92 - wait * 1.2 - Math.max(0, f.delay - 5) * 0.8 - walk * 4 - missed * 80 - extra, METER_EMA.passengers);

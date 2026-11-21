@@ -369,7 +369,7 @@ addMissions(3, [
     stars: [{ k: 'passengers', min: 92 }, { k: 'onTime', p: 0.9 }]
   },
   {
-    name: 'Exam: Domestic Rush', kind: 'exam', date: '1989-12-18', requires: BUILT_1983.concat(['computerRoom']),
+    name: 'Exam: Domestic Rush', kind: 'exam', date: '1989-12-18', requires: BUILT_1983.concat(['computerRoom', 'terminal3']),
     setup: { open: true, items: ITEMS_1983, desks: 26, airlines: ROUTES_1988, domains: Object.assign({}, TEAMS_1976, { stands: 2, info: 2 }), it: 3 },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'plough'],
     brief: [
@@ -380,7 +380,11 @@ addMissions(3, [
     aim: 'Get through the Christmas rush: snow, a power cut and a failing computer.',
     news: [
       { icon: '🎓', text: 'The exam: everything of the chapter.' },
-      { icon: '🔌', text: 'A power cut stops every system without backup power.' }
+      { icon: '🔌', text: 'A power cut stops every system without backup power.' },
+      { icon: '🛫', text: 'The regional terminal: the owner has built a small hall for the domestic propeller flights between the terminals.' }
+    ],
+    facts: [
+      { text: 'Terminal 3 opened in August 1989 for the smaller airlines\' propeller routes that moved from Bromma.', src: 'sv.wikipedia Stockholm-Arlanda flygplats' }
     ],
     stages: [
       { name: 'Snowy morning', mode: 'ops', from: '06:00', to: '08:30', weather: { temp: -9, wind: [20, 8], snow: [['06:15', '08:00', 3]] }, desks: 6,

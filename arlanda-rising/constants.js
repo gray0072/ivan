@@ -256,6 +256,7 @@ const GLYCOL_COST = 12000;         // SEK of de-icing fluid per aircraft (a few 
 const GLYCOL_RECOVER = 0.3;        // share of the fluid bought less with glycol recovery
 const DEICE_WINTER_SHARE = 0.5;    // share of the winter departures de-iced, in summary
 const SKY_SPEND = 0.35;            // × the spend of the brands in Sky City for every departing passenger (landside, no free-time rule)
+const T3_SHARE = 0.05;             // share of the domestic passengers through Terminal 3 (its propeller flights), for a brand's estimate
 
 // ---------- A-CDM, self bag drop, the green rating, the permit, events (session 5, chapter 6) ----------
 const ACDM_TAXI_X = 0.7;           // × the taxi-out minutes with A-CDM working (start-up given in sequence)

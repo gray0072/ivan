@@ -30,7 +30,7 @@ const CH_HANDS = ['stand', 'checkin', 'fuel', 'bags', 'announce', 'plough'];
 const CHALLENGES = [
   {
     id: 'c1', name: 'Christmas Week, 1989', opens: '3-11', date: '1989-12-18',
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom'],
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3'],
     setup: CH_SETUP89, hands: CH_HANDS,
     aim: 'Six busy days before Christmas, one peak each: snow, the flu and everybody flying home.',
     brief: ['Monday to Saturday before Christmas, the busiest peak of each day. Points for every flight on time and for happy passengers; lost flights cost a lot.'],
@@ -78,7 +78,7 @@ const CHALLENGES = [
   },
   {
     id: 'c3', name: 'Record Day, 1999', opens: '4-11', date: '1999-08-16',
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal2', 'arlandaExpress', 'sorterHall'],
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3', 'terminal2', 'arlandaExpress', 'sorterHall'],
     setup: { open: true, openSkies: true, units: true, lanes: 12, items: { fuelTruck: 6, plough: 6, crashTender: 2, generator: 1, dutyFree: 1 }, desks: 36, it: 6,
       airlines: { SK: [{ type: 'MD87', perDay: 16, load: 0.74 }, { type: 'B737', perDay: 14, load: 0.74 }, { type: 'DC9', perDay: 8, load: 0.72 }],
         BRAATHENS: [{ type: 'B737', perDay: 6, load: 0.72 }], PREMIAIR: [{ type: 'A320', perDay: 3, load: 0.9, months: [6, 7, 8, 12] }],

@@ -64,7 +64,7 @@ addMissions(7, [
           { id: 'terminals', at: 2, default: 'keep', icon: '🔒', title: 'Which terminals stay open?',
             text: 'Hardly anybody flies. Terminal 5 alone could take every flight there is. Closing the others saves heat, light, cleaning and people.',
             options: [
-              { id: 'both', mothball: ['t2', 'dom'], label: 'Close Terminals 2 and 4' },
+              { id: 'both', mothball: ['t2', 't3', 'dom'], label: 'Close Terminals 2, 3 and 4' },
               { id: 't2', mothball: ['t2'], label: 'Close Terminal 2 only' },
               { id: 'keep', label: 'Keep them all open' }
             ] },

@@ -89,7 +89,7 @@ const SiteCard = (() => {
         const term = d.term, cr = TermArt.crowd(term);
         h += section(ops ? tr('Now') : tr('A usual day'));
         if (ops) {
-          const deps = S.ops.flights.filter((f) => f.booked > 0 && !f.training && Terminal.of(f.al, f.intl) === term);
+          const deps = S.ops.flights.filter((f) => f.booked > 0 && !f.training && Terminal.of(f.al, f.intl, f.type) === term);
           if (d.does === 'terminal') {
             h += row(tr('Departures this stage'), String(deps.length));
             h += row(tr('Queueing at check-in'), people(cr.checkin) + ' · ' + wait(Passengers.wait()));

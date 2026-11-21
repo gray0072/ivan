@@ -13,9 +13,11 @@
 // sim/summary.js, sim/finance.js, sim/meters.js, the Terminal view and the Finance screen.
 
 const Terminal = {
-  // the terminal a departure goes through
-  of(code, intl) {
+  // the terminal a departure goes through (`type`: its aircraft — a domestic flight by propeller goes through Terminal 3
+  // while it stands and is open)
+  of(code, intl, type) {
     const al = S.airlines[code];
+    if (!intl && type && (AIRCRAFT[type] || {}).engines === 'prop' && Airport.has('terminal3') && !this.mothballed('t3')) return 't3';
     // session 6: a mothballed terminal's flights move to Terminal 5 (the international terminal)
     if (al && al.term === 't2' && Airport.has('terminal2') && !this.mothballed('t2')) return 't2';
     if (intl) return Airport.has('intlTerminal') ? 'intl' : 't1';
@@ -63,7 +65,8 @@ const Terminal = {
     const t = Object.keys(TERMINALS).find((k) => TERMINALS[k].names && TERMINALS[k].item === kind);
     return t ? this.name(t) : BUILDINGS[kind] ? BUILDINGS[kind].name : kind;
   },
-  built(term) { return term === 'kerb' ? Airport.has('terminal') : !!TERMINALS[term] && Airport.has(TERMINALS[term].item); },
+  // the kerb stands from the first terminal on, also after it is torn down (2017)
+  built(term) { return term === 'kerb' ? Airport.has('terminal') || !!S.airport.t1Gone : !!TERMINALS[term] && Airport.has(TERMINALS[term].item); },
   // the units of every terminal that stands (once the units are on); a terminal finished later gets its own
   ensure() {
     const a = S.airport;

@@ -172,6 +172,18 @@ const PROJECTS = {
     check: 'the game\'s own story: where the first computers of Arlanda stood is not known'
   },
 
+  // the regional terminal, built by the owner between chapters 3 and 4 (no mission of its own)
+  terminal3: {
+    name: 'The regional terminal', year: 1989, plot: { x: 895, y: 932, w: 80, h: 21 },
+    stages: {
+      hall: { name: 'The terminal hall', days: 40, price: 45e6 },
+      desks: { name: 'Check-in desks', days: 10, price: 3e6, after: ['hall'] }
+    },
+    effect: 'terminal3', desks: 2,
+    src: 'sv.wikipedia Stockholm-Arlanda flygplats: Terminal 3 opened in August 1989 for the smaller airlines\' propeller routes from Bromma (en.wikipedia gives 1990); en.wikipedia Stockholm Arlanda Airport: closed early in 2020 in the pandemic, open again in October 2024, closed in September 2026 and its gates 51–59 joined to Terminal 2',
+    check: 'its name before the numbering of 1993; its look and size'
+  },
+
   // ---------- chapter 4: open skies ----------
   terminal2: {
     name: 'Domestic 2', year: 1990, plot: { x: 890, y: 760, w: 90, h: 170 },
@@ -332,6 +344,17 @@ const PROJECTS = {
     stand: { name: '19', code: 'F', contact: true, dist: 3, at: [880, 1950] },
     src: 'newstodate.aero, January 2018: a new A380 gate at Pier F with two exits, one over the wing, boards more than 500 passengers in 35 minutes; the first A380 at Arlanda was Lufthansa\'s demonstration visit on 15 September 2010',
     check: 'its stand number (not found)'
+  },
+
+  // the first terminal torn down by the owner in 2017 (no mission of its own): its plot left paved
+  oldHall: {
+    name: 'Tearing down the old hall', year: 2017, plot: { x: 880, y: 1180, w: 45, h: 155 },
+    stages: {
+      down: { name: 'The demolition', days: 30, price: 12e6 }
+    },
+    effect: 'oldHall',
+    src: 'Flygtorget, Nu försvinner Arlanda Utrikes (13 April 2017): Arlanda\'s first international hall of 1962, later offices and storage, to be torn down before the summer of 2017 to make room for the longer Pier F; sv.wikipedia: none of old Arlanda\'s terminals is left',
+    check: 'the day it was torn down; in reality it stood where Pier F grew, in the game it is the first terminal by the first apron'
   },
 
   // ---------- chapter 7: the storm years ----------

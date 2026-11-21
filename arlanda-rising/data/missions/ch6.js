@@ -9,7 +9,7 @@
 
 const SRC_SV6 = 'swedavia.com About the airport; sv.wikipedia Stockholm-Arlanda flygplats';
 const BUILT_2010 = BUILT_2006.concat(['aquifer']);
-const BUILT_2018 = BUILT_2010.concat(['gateF']);
+const BUILT_2018 = BUILT_2010.concat(['gateF', 'oldHall']);
 const ITEMS_2010 = Object.assign({}, ITEMS_2000, { deicer: 3, crashTender: 3 });
 const TEAMS_2010 = Object.assign({}, TEAMS_2005, { security: 2 });
 const TERMS_2010 = Object.assign({}, TERMS_2001, { DY: 't2' });
@@ -424,7 +424,7 @@ addMissions(6, [
     stars: [{ k: 'airportDelay', max: 3 }, { k: 'onTime', p: 0.9 }]
   },
   {
-    name: 'Exam: Record Summer', kind: 'exam', date: '2018-01-15', requires: BUILT_2010,
+    name: 'Exam: Record Summer', kind: 'exam', date: '2018-01-15', requires: BUILT_2010.concat(['oldHall']),
     setup: { open: true, openSkies: true, minMoney: 300e6, units: true, lanes: 16, items: ITEMS_2010, desks: 40, airlines: Object.assign({}, ROUTES_2016, { EK: [{ type: 'B77W', perDay: 1, load: 0.86 }] }),
       domains: Object.assign({}, TEAMS_2010, { checkin: 3, stands: 3 }), it: 10, terms: TERMS_2010, booths: 8, secRule: 2, owner: 'Swedavia', green: true, permit: { perDay: 135 },
       events: true, projects: ['gateF'], unlock: { border: 2 } },
@@ -442,7 +442,8 @@ addMissions(6, [
     facts: [
       { text: 'In January 2018 a new gate at Pier F opened for the Airbus A380, with a second bridge over the wing so that more than 500 passengers can board in 35 minutes.', src: 'newstodate.aero, January 2018' },
       { text: 'Arlanda had 26.8 million passengers in 2018 — its record.', src: 'en.wikipedia Stockholm Arlanda Airport (traffic by year, from Swedavia)' },
-      { text: 'Flygskam, flight shame, was one of the new Swedish words of 2018.', src: 'Språkrådet, Nyordslistan 2018 (SVT)' }
+      { text: 'Flygskam, flight shame, was one of the new Swedish words of 2018.', src: 'Språkrådet, Nyordslistan 2018 (SVT)' },
+      { text: 'In 2017 Arlanda\'s first international hall of 1962 — later the domestic hall, then offices and storage — was torn down to make room as the airport grew.', src: 'Flygtorget, Nu försvinner Arlanda Utrikes (13 April 2017)' }
     ],
     stages: [
       { name: 'Before the summer', mode: 'plan', days: 50, crews: 2, goal: [],

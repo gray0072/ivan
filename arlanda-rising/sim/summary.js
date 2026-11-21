@@ -46,7 +46,7 @@ const Summary = {
         // session 4: the brands of its terminal, the train
         let more = 0;
         if (S.airport.units) {
-          const brands = n * pax * Terminal.spend(Terminal.of(code, intl), intl, Terminal.leisure(code), m) * 0.7 * keep;
+          const brands = n * pax * Terminal.spend(Terminal.of(code, intl, r.type), intl, Terminal.leisure(code), m) * 0.7 * keep;
           Finance.book('shops', brands);
           if (S.mission && S.mission.st) S.mission.st.brandsIn += brands;
           more += brands;

@@ -7,8 +7,8 @@
 //            (no 1: the number was kept for a terminal south of Terminal 2 never built) and Terminal 4 became Pier C
 //            of Terminal 5 in 2025 (sim/terminal.js name)
 //   item     the kind in S.airport.items that stands for the finished building (data/buildings.js)
-//   who      whose departures go through it: 'all' (the first terminal before the others), 'intl', 'dom', or 'airlines'
-//            (the airlines the game sends there: S.airlines[code].term)
+//   who      whose departures go through it: 'all' (the first terminal before the others), 'intl', 'dom', 'airlines'
+//            (the airlines the game sends there: S.airlines[code].term) or 'prop' (the domestic flights by propeller)
 //   units    its shop units by size, landside to airside: kiosk < unit < big; a brand fits a unit of its size or
 //            bigger (data/brands.js); 'desk' units stand landside at the kerb (car rental, taxis, tickets)
 //   sign     the bilingual sign over its door
@@ -20,10 +20,13 @@ const TERMINALS = {
   t1: { name: 'The first terminal', item: 'terminal', who: 'all', units: ['kiosk', 'unit'], cells: 6, sign: 'Avgångar · Departures' },
   intl: { name: 'The international terminal', names: [[1993, 'Terminal 5']], item: 'intlTerminal', who: 'intl', units: ['big', 'unit', 'unit', 'unit', 'unit', 'kiosk', 'kiosk', 'kiosk'], cells: 8, sign: 'Utrikes · International' },
   dom: { name: 'The domestic terminal', names: [[1990, 'Domestic 1'], [1993, 'Terminal 4'], [2025, 'Terminal 5 · Pier C']], item: 'domTerminal', who: 'dom', units: ['unit', 'unit', 'kiosk', 'kiosk'], cells: 4, sign: 'Inrikes · Domestic' },
+  // Terminal 3 (1989): the regional terminal; closed in the pandemic (2020) and opened again in October 2024; closed as a
+  // terminal in September 2026, its gates 51–59 joined to Terminal 2 at the end of 2026; its name before 1993 not found
+  t3: { name: 'The regional terminal', names: [[1993, 'Terminal 3'], [2027, 'Terminal 2 · gates 51–59']], item: 'terminal3', who: 'prop', units: ['unit', 'kiosk'], cells: 2, sign: 'Terminal 3' },
   t2: { name: 'Domestic 2', names: [[1993, 'Terminal 2']], item: 'terminal2', who: 'airlines', units: ['big', 'unit', 'unit', 'kiosk', 'kiosk'], cells: 4, sign: 'Terminal 2' },
   // session 5: Sky City between the terminals — shops and restaurants landside, for everybody who passes
   sky: { name: 'Sky City', item: 'skyCity', who: 'none', units: ['big', 'unit', 'unit', 'unit', 'kiosk', 'kiosk'], sign: 'Sky City' },
   kerb: { name: 'The kerb', item: 'terminal', who: 'none', units: ['desk', 'desk', 'desk', 'desk', 'desk', 'desk'], sign: 'Taxi · Buss · Hyrbil' }
 };
-const TERMINAL_ORDER = ['t1', 'intl', 'dom', 't2', 'sky', 'kerb'];
+const TERMINAL_ORDER = ['t1', 'intl', 'dom', 't2', 't3', 'sky', 'kerb'];
 const UNIT_SIZES = ['kiosk', 'unit', 'big'];

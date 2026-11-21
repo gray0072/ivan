@@ -76,7 +76,7 @@ const Office = (() => {
       html += '</ul></div>';
     }
     // session 6: the terminals that can be mothballed in a crisis and opened again, and the traffic there is
-    const closable = ['t2', 'dom'].filter((t) => Terminal.built(t));
+    const closable = ['t2', 't3', 'dom'].filter((t) => Terminal.built(t));
     if (closable.length && (w.airport.demand !== undefined || Terminal.mothballCount())) {
       html += '<div class="ocard"><h3>🔒 ' + Text.esc(tr('Terminals')) + '</h3><ul class="has">';
       if (w.airport.demand !== undefined && w.airport.demand < 1) html += '<li>✈️ ' + Text.esc(tr('Traffic: {p} of normal', { p: Text.pct(Summary.demand()) })) + '</li>';

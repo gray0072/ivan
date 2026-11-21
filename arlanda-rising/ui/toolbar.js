@@ -25,7 +25,7 @@ const Toolbar = (() => {
       if (S.airport.stands.length) out.push('stand');
       if (hands.indexOf('fuel') >= 0) out.push('fuelTruck');
       if (hands.indexOf('plough') >= 0 || Airport.ploughs() > 0) out.push('plough');
-      if (Airport.has('terminal')) out.push('desk');
+      if (Terminal.built('kerb')) out.push('desk');
       if (Object.keys(S.domains).some((d) => S.domains[d] >= 2) && !Airport.has('generator')) out.push('generator');
       if (S.airport.lanes) out.push('lane');
       // session 5: de-icing trucks while they are needed, passport booths

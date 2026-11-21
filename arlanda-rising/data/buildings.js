@@ -47,6 +47,7 @@ const BUILDINGS = {
   // session 4: chapter 4
   lane: { name: 'Security lane', price: 2.5e6, staff: 0, small: true, days: 10, from: 1970, lane: true },
   terminal2: { name: 'Terminal 2', price: 0, staff: 30 },
+  terminal3: { name: 'The regional terminal', price: 0, staff: 8 },
   railStation: { name: 'The Arlanda Express stations', price: 0, staff: 4 },
   sorterHall: { name: 'The sorting hall', price: 0, staff: 2 },
   // session 5: chapters 5 and 6 — `rent`: SEK a month the airport earns from it (real estate), `booth`: a passport booth

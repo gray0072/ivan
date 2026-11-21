@@ -81,6 +81,9 @@ const LAYOUT = {
   // line from the East Coast railway in the north-east, the tunnel under the terminals (portals north and south) and
   // its two stations under the landside road (the game's drawing of the course, to be checked)
   terminal2: { box: [895, 775, 975, 930], h: 11 },
+  // Terminal 3 (1989, the regional terminal): a low hall in the gap between Terminal 2 and the domestic terminal, its
+  // kerb in line with theirs, its passengers walking out to the propeller aircraft on the aprons beside it
+  terminal3: { box: [895, 932, 975, 953], h: 6 },
   apron4: { x0: 700, y0: 760, x1: 890, y1: 935 },
   sorterHall: { box: [955, 1330, 990, 1385], h: 7 },
   rail: { line: [[4600, 4200], [4000, 2900], [3200, 2500], [1800, 1950], [1150, 1780]], tunnel: [[1150, 1780], [1060, 1600], [1050, 1000], [1080, 640]],
@@ -151,10 +154,11 @@ const LAYOUT = {
   // terminal line (`belt`: the road in from Cargo City north, the kerb, the car parks, Sky City, the offices, the
   // railway's south leg), a road, the railway, a car park or Cargo City's yard — except over the two taxiway bridges;
   // the walls of the buildings on the terminal line (`line`) are the fence where they stand, their landside faces outside
+  // (the first terminal's only until it is torn down in 2017: then the fence closes across its plot)
   fence: {
     belt: [[943, 285], [1000, 400], [1030, 900], [998, 1175], [1001, 1217], [1004, 1242], [1006, 1270], [1006, 1700], [1330, 1700], [1330, 285]],
     line: ['terminal1', 'bagHall', 'computerRoom', 'generator', 'sorterHall', 'intlTerminal', 'domTerminal', 'terminal2',
-      'cargoCity']
+      'terminal3', 'cargoCity']
   },
   // Märsta, south-west: the town's middle and size (red and white houses, a church)
   town: { x: -3300, y: -1900, r: 950, name: 'Märsta' },

@@ -19,6 +19,7 @@ const Fence = (() => {
   const ROAD = 25, RAIL = 21, BOX = 10;   // m: kept clear of the fence round a road's line, the railway's, a landside plot
   const BRIDGE = 28;      // m: the fence over a taxiway bridge, each side of the taxiway's line
   const SHADOW = 120;     // m: the ground in front of a terminal's landside face (east) that stays outside
+  const OLD_STEP = 10;    // m: the fence across the first terminal's plot once it is torn down, inside its old west face
   const HIDE = 15;        // m: a fence this close to a building on the line is its wall
   const H = 3;            // m: the fence's height (a little over the real 2.4 m, to be seen)
   const POST = 14;        // m between posts
@@ -45,7 +46,7 @@ const Fence = (() => {
   const boxDist = (x, y, b) => { const ex = Math.max(b[0] - x, 0, x - b[2]), ey = Math.max(b[1] - y, 0, y - b[3]); return Math.sqrt(ex * ex + ey * ey); };
 
   // ---------- what is airside: { parts: [{ r: box } | { l: points, h: half width }], walls: [box] } ----------
-  // on(name): whether that part stands (or is being built): runway1, apron1, apron2…apron7, cargoApron, satApron,
+  // on(name): whether that part stands (or is being built): oldHall (the first terminal torn down), runway1, apron1, apron2…apron7, cargoApron, satApron,
   // runway2, taxi2, runway3, taxi3, deice0, deice1, fireStation, h2depot, fuelYard, pierF, pier2040, pierArm and the keys of
   // LAYOUT.fence.line; pads: the remote stands' pads [box], ways: their paved ways to the apron [points];
   // design: the player's pier's ('satellite' puts it out on the apron)
@@ -84,7 +85,11 @@ const Fence = (() => {
     if (on('pierF')) wall(L.pierF.box);
     if (on('pier2040')) wall(design === 'satellite' ? L.pier2040.sat : L.pier2040.box);
     if (on('pierArm')) wall(L.pier2040.arm);
-    return { parts: out, walls, shadows: L.fence.line.filter((k) => on(k)).map((k) => L[k].box) };
+    // the first terminal torn down (2017, `oldHall`): its plot, its waiting room's and the ground in front stay landside, so
+    // the fence runs a step (OLD_STEP m) inside the old west face, off the apron's edge, from the baggage hall to the computer room
+    const T = L.terminal1, W = T.waiting, x0 = T.box[0] + OLD_STEP;
+    const cuts = on('oldHall') ? [[x0, T.box[1], T.box[2] + SHADOW, T.box[3]], [x0, W[1], W[2], W[3]]] : [];
+    return { parts: out, walls, shadows: L.fence.line.filter((k) => on(k)).map((k) => L[k].box), cuts };
   }
 
   // the landside, always the same: { parts, poly }
@@ -159,6 +164,7 @@ const Fence = (() => {
     const land = new Uint8Array(N);
     for (const p of LAND) paint(land, p);
     for (const b of spec.shadows) paint(land, { r: [b[2], b[1], b[2] + SHADOW, b[3]] });
+    for (const b of spec.cuts || []) paint(land, { r: b });
     const belt = L.fence.belt;
     const bx0 = Math.min(...belt.map((p) => p[0])), bx1 = Math.max(...belt.map((p) => p[0])), by0 = Math.min(...belt.map((p) => p[1])), by1 = Math.max(...belt.map((p) => p[1]));
     for (let j = 0; j < Hh; j++) for (let i = 0; i < W; i++) {

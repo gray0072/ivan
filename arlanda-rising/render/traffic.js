@@ -233,6 +233,19 @@ const Traffic = (() => {
     if (people && there && by !== 'robot') person(c, wingPt[0] + 4 * k, wingPt[1] + 2 * k, PAL.hiVis);
   }
 
+  // the building whose west face the passengers of an aircraft at p walk to and from: the first terminal, and once it is
+  // torn down (2017) the nearest terminal or pier standing
+  function walkTo(p) {
+    if (!S.airport.t1Gone) return LAYOUT.terminal1.box;
+    const L = LAYOUT, boxes = [];
+    for (const [k, item] of [['intlTerminal', 'intlTerminal'], ['domTerminal', 'domTerminal'], ['terminal2', 'terminal2'], ['terminal3', 'terminal3'], ['pierF', 'pierF']])
+      if (Airport.has(item)) boxes.push(L[k].box);
+    if (Airport.has('pier2040')) boxes.push(S.airport.pierDesign === 'satellite' ? L.pier2040.sat : L.pier2040.box);
+    let best = L.intlTerminal.box, bd = Infinity;
+    for (const b of boxes) { const d = Math.max(b[1] - p.y, 0, p.y - b[3]) + Math.abs(b[0] - p.x) * 0.1; if (d < bd) { bd = d; best = b; } }
+    return best;
+  }
+
   function turnaroundKit(c, sc, f, p, t) {
     const A = AIRCRAFT[f.type], len = A.length, fw = Math.max(1.2, len * (AIRCRAFT_SHAPE[f.type] || {}).fus || 2);
     const tr = f.tr;
@@ -242,7 +255,7 @@ const Traffic = (() => {
     const steps = Turnaround.steps(f, t);
     // the doors: one in front, and a second behind the wing on a wide-body (its passengers split between them)
     const doors = [at(len * 0.3, fw + 3)].concat(A.seats >= WIDE_SEATS ? [at(-len * 0.32, fw + 3)] : []);
-    const term = [LAYOUT.terminal1.box[0] - 2, clamp(p.y, LAYOUT.terminal1.box[1] + 5, LAYOUT.terminal1.box[3] - 5)];
+    const tb = walkTo(p), term = [tb[0] - 2, clamp(p.y, tb[1] + 5, tb[3] - 5)];
     const people = Cam.zoom > 1.3;
     // the stairs while anyone gets off or on
     if (f.inBlock !== null || f.st === 'parked' || tr.board !== null) doors.forEach((d) => Vehicles.stairs(c, d[0], d[1], hd(180)));

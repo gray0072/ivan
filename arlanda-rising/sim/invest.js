@@ -26,6 +26,7 @@ const Invest = {
     if (term === 'intl') return pax * intl;
     if (term === 'dom') return pax * (1 - intl) * (Airport.has('terminal2') ? 0.6 : 1);
     if (term === 't2') return pax * 0.3;
+    if (term === 't3') return pax * (1 - intl) * T3_SHARE;
     return Airport.has('intlTerminal') || Airport.has('domTerminal') ? 0 : pax;
   },
   // money a month: { in, out } of a building kind, at today's traffic
@@ -43,7 +44,7 @@ const Invest = {
   // a brand in a unit
   brand(id, term) {
     const b = BRANDS[id], pax = this.termPax(term) * 30;
-    const intl = term === 'intl' || (term !== 'dom' && this.share('intl') > 0.5);
+    const intl = term === 'intl' || (term !== 'dom' && term !== 't3' && this.share('intl') > 0.5);
     let k = b.spend;
     if (b.fit === 'intl' && !intl) k = 0;
     if (b.fit === 'business') k *= 1 + 0.4 * (1 - this.share('leisure'));
