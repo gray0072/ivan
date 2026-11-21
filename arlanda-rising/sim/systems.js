@@ -23,7 +23,8 @@ const Systems = {
   // the level that does the work now: a system that is down falls to the team kept beside it, or to the player
   working(dom) {
     const lv = this.level(dom);
-    if (lv >= 3 && this.down(dom)) return 2;
+    // session 6: a deep failure (an outage, a blackout, an attack) takes the level below down with it
+    if (lv >= 3 && this.down(dom) && !S.ops.down[dom].deep) return 2;
     if (lv >= 2 && this.down(dom)) return S.sys && S.sys[dom] && S.sys[dom].kept ? 1 : 0;
     return lv;
   },
@@ -129,12 +130,13 @@ const Systems = {
       if (rand() < dt / mtbf * diff().failures) this.fail(d);
     }
   },
-  fail(dom, minutes) {
+  fail(dom, minutes, deep) {
     if (!S.ops || this.level(dom) < 2 || this.down(dom)) return false;
     const L = this.def(dom), r = this.rec(dom);
     const fix = minutes || L.fix * (People.perk('it', 'fix') || 1) / this.itFactor();
     S.ops.down = S.ops.down || {};
     S.ops.down[dom] = { from: S.clock, until: S.clock + fix };
+    if (deep) S.ops.down[dom].deep = true;
     r.fails++;
     if (S.mission && S.mission.st) S.mission.st.failures++;
     logEvent('failure', { dom });
@@ -146,6 +148,36 @@ const Systems = {
     for (const d of Object.keys(S.domains)) if (this.level(d) >= 2) this.fail(d, minutes || POWER_CUT_MIN);
     logEvent('powerCut', { saved: false });
   },
+
+  // ---------- session 6: outages that take several domains down at once ----------
+  // the systems there are now, the integrated ones (level 3) first: they share their data, so they fall first
+  linked() { return Object.keys(S.domains).filter((d) => this.level(d) >= 2 && !this.down(d)).sort((a, b) => this.level(b) - this.level(a) || (a < b ? -1 : 1)); },
+  // a global IT outage (the faulty update of July 2024): every system's computers down for `minutes`
+  outage(minutes) {
+    for (const d of this.linked()) this.fail(d, minutes, true);
+    logEvent('outage', {});
+  },
+  // a total blackout: the grid and the backup power fail together, every system goes dark
+  blackout(minutes) {
+    for (const d of this.linked()) this.fail(d, minutes, true);
+    if (S.ops) S.ops.blackout = S.clock + minutes;
+    logEvent('blackout', {});
+  },
+  // a cyber attack on the airport's network: the linked systems fall together (CYBER_SPREAD of them, the integrated
+  // first); a security operations centre cuts off the first one at once and keeps the rest running
+  cyber(minutes) {
+    const list = this.linked();
+    if (Airport.has('cyberCentre')) { if (list[0]) this.fail(list[0], Math.round(minutes / 3)); logEvent('cyber', { stopped: true }); return; }
+    for (const d of list.slice(0, CYBER_SPREAD)) this.fail(d, minutes, true);
+    logEvent('cyber', { stopped: false });
+  },
+  // the fallback readiness of every system, on average (1 when there is none)
+  readinessAll() {
+    const list = Object.keys(S.domains).filter((d) => this.level(d) >= 2);
+    return list.length ? list.reduce((s, d) => s + this.readiness(d), 0) / list.length : 1;
+  },
+  // a drill in every system that needs one
+  drillAll() { let n = 0; for (const d of Object.keys(S.domains)) if (this.drill(d)) n++; return n > 0; },
 
   // ---------- each day and month ----------
   day() {

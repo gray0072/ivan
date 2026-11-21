@@ -105,7 +105,7 @@ const AirportArt = (() => {
     runway2(c, sc);
     runway3(c, sc);
     // the jet apron and the domestic apron, as far as they are paved
-    for (const [key, pid, sid] of [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron'], ['apron4', 'terminal2', 'gates'], ['apron5', 'pierF', 'apron']]) {
+    for (const [key, pid, sid] of [['apron2', 'apron2', 'pave'], ['apron3', 'domTerminal', 'apron'], ['apron4', 'terminal2', 'gates'], ['apron5', 'pierF', 'apron'], ['apron6', 'pier2040', 'gates']]) {
       const q = sc.p(pid, sid);
       if (q <= 0) continue;
       const B = LAYOUT[key];
@@ -131,8 +131,10 @@ const AirportArt = (() => {
     // the stands' markings (and the remote stands' own paving)
     S.airport.stands.forEach((st, i) => {
       const p = standPos(i), A = LAYOUT.apron1;
-      const onApron = !!st.at || (p.x >= A.x0 && p.x <= A.x1 && p.y >= A.y0 && p.y <= A.y1);
-      if (!onApron) {
+      const onApron = (!!st.at && !st.pad) || (p.x >= A.x0 && p.x <= A.x1 && p.y >= A.y0 && p.y <= A.y1);
+      // session 6: a stand with its own pad (the cargo stands, the second arm's)
+      if (st.pad) { c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete; c.fillRect(p.x - 74, p.y - 28, 82, 56); }
+      else if (!onApron) {
         c.fillStyle = sc.season === 'winter' ? '#cfd5da' : PAL.concrete;
         c.fillRect(p.x - 70, p.y - 26, 78, 52);
         line(c, [[p.x - 70, p.y], [A.x0, Math.min(Math.max(p.y, A.y0 + 10), A.y1 - 10)]], 20, sc.season === 'winter' ? '#cfd5da' : PAL.concrete);
@@ -146,6 +148,8 @@ const AirportArt = (() => {
         c.strokeRect(p.x - 72, p.y - 27, 74, 54); c.setLineDash([]);
       }
       if (st.closed) { c.fillStyle = 'rgba(227,91,79,0.25)'; c.fillRect(p.x - 72, p.y - 27, 74, 54); }
+      // session 6: a charging stand's green post and cable
+      if (st.charge) { c.fillStyle = '#2f9e5b'; c.fillRect(p.x - 12, p.y - 22, 6, 6); line(c, [[p.x - 9, p.y - 16], [p.x - 20, p.y - 6]], 0.8, '#2f9e5b'); }
     });
     // car parks
     for (const [kind, box] of [['parkingSmall', LAYOUT.parkingSmall.box], ['parkingBig', LAYOUT.parkingBig.box]]) {
@@ -378,8 +382,9 @@ const AirportArt = (() => {
   }
 
   // the buildings of chapters 2 and 3, as far as they are built: a slab, walls going up, then the finished house
-  function block(c, sc, box, h, q, wall, glassRows) {
-    const [x0, y0, x1, y1] = box, warm = sc.dark > 0.3 ? mix(PAL.glass, '#ffd27a', clamp(sc.dark, 0, 1)) : PAL.glass;
+  // `off`: a mothballed building, its windows dark (session 6)
+  function block(c, sc, box, h, q, wall, glassRows, off) {
+    const [x0, y0, x1, y1] = box, warm = off ? '#4a5561' : sc.dark > 0.3 ? mix(PAL.glass, '#ffd27a', clamp(sc.dark, 0, 1)) : PAL.glass;
     const roof = sc.season === 'winter' ? '#f4f7fa' : '#8f969c';
     if (q < 1) {
       Iso.box(c, x0, y0, x1, y1, 0, 0.6, '#9a9a96');
@@ -440,12 +445,12 @@ const AirportArt = (() => {
     const I = LAYOUT.intlTerminal.box;
     if (sc.p('intlTerminal', 'frame') > 0 || sc.items.intlTerminal) add(I[2], I[1], (c) => intlTerminal(c, sc));
     const D = LAYOUT.domTerminal.box;
-    if (sc.p('domTerminal', 'hall') > 0 || sc.items.domTerminal) add(D[2], D[1], (c) => block(c, sc, D, LAYOUT.domTerminal.h, sc.items.domTerminal ? 1 : sc.p('domTerminal', 'hall'), '#ece6da', true));
+    if (sc.p('domTerminal', 'hall') > 0 || sc.items.domTerminal) add(D[2], D[1], (c) => block(c, sc, D, LAYOUT.domTerminal.h, sc.items.domTerminal ? 1 : sc.p('domTerminal', 'hall'), '#ece6da', true, Terminal.mothballed('dom')));
     const B = LAYOUT.bagHall.box;
     if (sc.p('bagHall', 'hall') > 0 || sc.items.bagHall) add(B[2], B[1], (c) => block(c, sc, B, LAYOUT.bagHall.h, sc.items.bagHall ? 1 : sc.p('bagHall', 'hall'), '#c9c4b8', false));
     // session 4: Terminal 2, the sorting hall
     const T2 = LAYOUT.terminal2.box;
-    if (sc.p('terminal2', 'hall') > 0 || sc.items.terminal2) add(T2[2], T2[1], (c) => block(c, sc, T2, LAYOUT.terminal2.h, sc.items.terminal2 ? 1 : sc.p('terminal2', 'hall'), '#e8ecef', true));
+    if (sc.p('terminal2', 'hall') > 0 || sc.items.terminal2) add(T2[2], T2[1], (c) => block(c, sc, T2, LAYOUT.terminal2.h, sc.items.terminal2 ? 1 : sc.p('terminal2', 'hall'), '#e8ecef', true, Terminal.mothballed('t2')));
     const SH = LAYOUT.sorterHall.box;
     if (sc.p('sorterHall', 'hall') > 0 || sc.items.sorterHall) add(SH[2], SH[1], (c) => block(c, sc, SH, LAYOUT.sorterHall.h, sc.items.sorterHall ? 1 : sc.p('sorterHall', 'hall'), '#c9c4b8', false));
     // session 5: the new tower, Pier F, Sky City and its hotel, Cargo City, offices, the aquifer's pump house
@@ -457,6 +462,23 @@ const AirportArt = (() => {
       if (q > 0) add(g.box[2], g.box[1], (c) => block(c, sc, g.box, g.h, q, wall, k !== 'aquifer' && k !== 'cargoCity'));
     }
     if (sc.items.offices > 1) { const g = LAYOUT.offices.box, b2 = [g[0], g[3] + 10, g[2], g[3] + 60]; add(b2[2], b2[1], (c) => block(c, sc, b2, 16, 1, '#dfe3e6', true)); }
+    // session 6: the security operations centre, the hydrogen depot's tanks, the night train's platform, the player's pier
+    if (sc.items.cyberCentre) { const g = LAYOUT.cyberCentre.box; add(g[2], g[1], (c) => block(c, sc, g, LAYOUT.cyberCentre.h, 1, '#3d4a57', true)); }
+    if (sc.items.h2depot) {
+      const g = LAYOUT.h2depot.box, n = LAYOUT.h2depot.tanks, w = (g[2] - g[0]) / n;
+      for (let i = 0; i < n; i++) { const x0 = g[0] + i * w + 2, x1 = x0 + w - 4; add(x1, g[1], (c) => { Iso.box(c, x0, g[1], x1, g[3], 0, 9, '#eef2f5', '#d4dde4'); Iso.box(c, x0 + 3, g[1] + 3, x1 - 3, g[3] - 3, 9, 9.6, '#4aa3df'); }); }
+    }
+    if (sc.items.nightTrain) { const g = LAYOUT.nightTrain.box; add(g[2], g[1], (c) => Iso.box(c, g[0], g[1], g[2], g[3], 0, LAYOUT.nightTrain.h, '#c9c4b8', '#5b3a6e')); }
+    const PG = LAYOUT.pier2040, qG = sc.items.pier2040 ? 1 : sc.p('pier2040', 'hall');
+    if (qG > 0) {
+      const des = S.airport.pierDesign || 'finger', box = des === 'satellite' ? PG.sat : PG.box;
+      add(box[2], box[1], (c) => {
+        block(c, sc, box, PG.h, qG, '#e6e9ec', true);
+        // the green pier's solar roof
+        if (des === 'green' && qG >= 1) Iso.box(c, box[0] + 2, box[1] + 4, box[2] - 2, box[3] - 4, PG.h, PG.h + 0.4, '#24456b', '#2f5a8a');
+      });
+      if (sc.items.pierArm || sc.p('pier2040', 'arm') > 0) { const a = PG.arm; add(a[2], a[1], (c) => block(c, sc, a, PG.h - 2, sc.items.pierArm ? 1 : sc.p('pier2040', 'arm'), '#e6e9ec', true)); }
+    }
     const K = LAYOUT.computerRoom.box;
     if (sc.p('computerRoom', 'room') > 0 || sc.items.computerRoom) add(K[2], K[1], (c) => block(c, sc, K, LAYOUT.computerRoom.h, sc.items.computerRoom ? 1 : sc.p('computerRoom', 'room'), '#d5d8dc', true));
     for (const k of ['generator', 'restaurant', 'dutyFree']) {
@@ -481,7 +503,7 @@ const AirportArt = (() => {
       if (!Object.values(p.stages).some((s) => s.on && !s.done)) continue;
       const pl = PROJECTS[id] && PROJECTS[id].plot;
       const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28] :
-        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34] :
+        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2', 't4t5', 'pier2040'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34] :
         id === 'runway3' ? [LAYOUT.runway3.from[0] + 120, LAYOUT.runway3.from[1] + 1200, 30] : id === 'bridges' ? [LAYOUT.bridges[0][0], LAYOUT.bridges[0][1] + 40, 30] :
         id === 'arlandaExpress' ? [LAYOUT.rail.south[0] + 30, LAYOUT.rail.south[1], 30] : null;
       if (pos) add(pos[0], pos[1], (c) => crane(c, pos[0], pos[1], pos[2], sc.anim));

@@ -12,7 +12,8 @@
 //            failures on average), fix (game minutes a failure takes to mend), days (to install in plan time)
 // Level 3 (integrated) comes with chapter 4 for the bags, with chapters 5–6 for the stands (A-CDM), check-in (self bag
 // drop), security (CT scanners) and de-icing (glycol recovery): a system that fails falls to the level below it.
-// Chapter 1 is worked by hand only; the people level comes with chapter 2, the first machines and systems with
+// Session 6 adds the apron robots (turnaround level 2), the self-driving ploughs (snow level 3) and biometric boarding
+// (border level 3) of chapter 8. Chapter 1 is worked by hand only; the people level comes with chapter 2, the first machines and systems with
 // chapters 2 and 3. A domain is part of the game once a mission opens it (S.domains has its key), so the
 // baggage and information domains cost nothing in summary before their chapters.
 
@@ -26,9 +27,12 @@ const DOMAINS = {
     { name: 'A-CDM (shared times)', staff: 2, price: 60e6, month: 400000, delay: 0.25, right: 0.99, from: 2009,
       it: 4, mtbf: 50, fix: 45, days: 30 }
   ] },
-  turnaround: { name: 'Turnaround', icon: '⛽', tasks: ['fuel'], levels: [
+  turnaround: { name: 'Turnaround', icon: '⛽', tasks: ['fuel', 'charge'], levels: [
     { name: 'By hand' },
-    { name: 'Ramp supervisor', staff: 4, price: 0, month: 0, delay: 1.5, right: 0.9, from: 1963 }
+    { name: 'Ramp supervisor', staff: 4, price: 0, month: 0, delay: 1.5, right: 0.9, from: 1963 },
+    // session 6: robots that fuel, charge and tow the aircraft by themselves; the services go faster (ROBOT_X)
+    { name: 'Apron robots', staff: 2, price: 70e6, month: 450000, delay: 0.25, right: 1, from: 2030,
+      it: 3, mtbf: 40, fix: 45, days: 30 }
   ] },
   checkin: { name: 'Check-in', icon: '🧳', tasks: ['checkin'], levels: [
     { name: 'By hand' },
@@ -43,7 +47,10 @@ const DOMAINS = {
     { name: 'By hand' },
     { name: 'Snow chief with convoys', staff: 4, price: 0, month: 0, delay: 4, right: 0.9, from: 1963 },
     { name: 'Weather-based clearing plan', staff: 2, price: 12e6, month: 80000, delay: 1.5, right: 0.97, from: 1985,
-      it: 1, mtbf: 40, fix: 60, days: 15 }
+      it: 1, mtbf: 40, fix: 60, days: 15 },
+    // session 6: ploughs that drive themselves in a convoy (AUTO_PLOUGH_X faster); a failure falls to the clearing plan
+    { name: 'Self-driving ploughs', staff: 1, price: 50e6, month: 300000, delay: 0.5, right: 1, from: 2030,
+      it: 2, mtbf: 35, fix: 50, days: 25 }
   ] },
   baggage: { name: 'Baggage', icon: '🛄', tasks: ['bags'], levels: [
     { name: 'By hand' },
@@ -75,7 +82,10 @@ const DOMAINS = {
     { name: 'By hand' },
     { name: 'Police shift planner', staff: 0, price: 0, month: 0, delay: 2, right: 0.95, from: 2001 },
     { name: 'e-gates', staff: 0, price: 30e6, month: 200000, delay: 0.5, right: 1, from: 2013,
-      it: 1, mtbf: 45, fix: 30, days: 20 }
+      it: 1, mtbf: 45, fix: 30, days: 20 },
+    // session 6: the face is the boarding pass — through the border and onto the aircraft without a document
+    { name: 'Biometric boarding', staff: 0, price: 60e6, month: 350000, delay: 0.25, right: 1, from: 2030,
+      it: 2, mtbf: 50, fix: 35, days: 25 }
   ] },
   // de-icing: a truck to every departure in the cold, then a crew, then the remote pads by the runways, then glycol
   // recovery (the fluid caught on the pads and cleaned)

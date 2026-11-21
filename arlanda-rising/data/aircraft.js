@@ -75,5 +75,22 @@ const AIRCRAFT = {
   A388: { name: 'Airbus A380', engines: 'jet', span: 79.8, length: 72.7, mtow: 575, seats: 520, svc: 70, cat: 10,
     src: 'en.wikipedia Airbus A380; the first A380 at Arlanda was a Lufthansa demonstration visit on 15 September 2010 (Sveriges Radio)', check: 'no scheduled A380 is known at Arlanda' },
   G550: { name: 'Gulfstream G550', engines: 'jet', span: 28.5, length: 29.4, mtow: 41.3, seats: 14, svc: 10, cat: 6,
-    src: 'en.wikipedia Gulfstream G550', check: '' }
+    src: 'en.wikipedia Gulfstream G550', check: '' },
+  // session 6: the 2020s — freighters (`cargo`: tonnes they carry, no passengers), the new single-aisles and wide-bodies;
+  // and the future of chapter 8 (`electric`: charged at the stand instead of fuelled, `hydrogen`: needs the hydrogen
+  // depot) — the game's own types, no real maker is named
+  B76F: { name: 'Boeing 767-300F', engines: 'jet', span: 47.6, length: 54.9, mtow: 186, seats: 0, cargo: 52, svc: 45, cat: 8,
+    src: 'en.wikipedia Boeing 767 (the freighter: about 52 t of payload)', check: 'which integrators flew it to Arlanda' },
+  B77F: { name: 'Boeing 777F', engines: 'jet', span: 64.8, length: 63.7, mtow: 347, seats: 0, cargo: 102, svc: 60, cat: 9,
+    src: 'en.wikipedia Boeing 777 (the freighter: about 102 t of payload); Qatar Airways Cargo flew to Arlanda twice a week in May 2020 (newstodate.aero, May 2020)', check: 'the type of Qatar\'s Arlanda freighters' },
+  A20N: { name: 'Airbus A320neo', engines: 'jet', span: 35.8, length: 37.6, mtow: 79, seats: 180, svc: 22, cat: 6,
+    src: 'en.wikipedia Airbus A320neo family', check: 'SAS seats' },
+  B38M: { name: 'Boeing 737 MAX 8', engines: 'jet', span: 35.9, length: 39.5, mtow: 82.2, seats: 189, svc: 22, cat: 7,
+    src: 'en.wikipedia Boeing 737 MAX', check: 'Norwegian seats' },
+  A359: { name: 'Airbus A350-900', engines: 'jet', span: 64.8, length: 66.8, mtow: 283, seats: 300, svc: 50, cat: 9,
+    src: 'en.wikipedia Airbus A350', check: 'SAS seats; its Arlanda routes' },
+  EL30: { name: 'Electric commuter (30 seats)', engines: 'prop', span: 24, length: 21, mtow: 21, seats: 30, svc: 10, cat: 5, electric: true,
+    src: 'the game\'s own type: a 30-seat electric regional aircraft of the 2030s', check: '' },
+  H2P: { name: 'Hydrogen airliner (70 seats)', engines: 'prop', span: 30, length: 28, mtow: 32, seats: 70, svc: 14, cat: 6, hydrogen: true,
+    src: 'the game\'s own type: a hydrogen-electric prototype of the 2030s', check: '' }
 };

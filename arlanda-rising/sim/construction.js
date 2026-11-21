@@ -85,7 +85,8 @@ const Construction = {
         const sd = def.stages[sid], pace = PACE[s.pace];
         const step = Math.min(1 - s.p, 1 / ((sd.days + s.extra) * pace.time) * (winter && !noWinter ? WINTER_WORK : 1));
         s.p += step;
-        this.pay(p, sd.price * pace.cost * step);
+        // session 6: a design's own price (× p.k, the player's pier)
+        this.pay(p, sd.price * pace.cost * step * (p.k || 1));
         if (s.p >= 1 - 1e-9) {
           s.p = 1; s.done = true; s.on = false;
           logEvent('stageBuilt', { project: id, stage: sid });

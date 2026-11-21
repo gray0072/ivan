@@ -36,7 +36,13 @@ const Hints = (() => {
     { id: 'deice', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'deice'), text: () => tr('Frost on the wings! No aircraft leaves without de-icing. A truck per aircraft — or pads by the runway one day?') },
     { id: 'parallel', when: () => S.ops && Airport.runway('r3') && S.ops.flights.some((f) => f.st === 'taxiOut'), text: () => tr('Two parallel runways: the landings use runway 1, the departures runway 3. The taxi over the bridges takes a few minutes more.') },
     { id: 'permit', when: () => S.plan && Green.on() && Green.permit() && Green.permit().broken, text: () => tr('The permit is broken: a fine every month. Raise the green rating or keep the flights under the cap.') },
-    { id: 'green', when: () => S.plan && Green.on() && Green.rating() < 60, text: () => tr('The green rating is low. A solar park, electric vehicles or biofuel raise it — a new car park lowers it.') }
+    { id: 'green', when: () => S.plan && Green.on() && Green.rating() < 60, text: () => tr('The green rating is low. A solar park, electric vehicles or biofuel raise it — a new car park lowers it.') },
+    // session 6
+    { id: 'empty', when: () => S.airport.demand !== undefined && S.airport.demand < 0.3 && S.plan && !Terminal.mothballCount(), text: () => tr('The terminals are empty, but they still cost heat, light and people. A terminal can be mothballed.') },
+    { id: 'jobsGone', when: () => S.ops && S.people && Object.keys(S.people.depts).some((d) => People.cut(d) > 0.1 && People.jobs(d) > 0), text: () => tr('A team has empty jobs: some of its work comes to your tray. New people need weeks — a clearance takes six.') },
+    { id: 'charge', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'charge'), text: () => tr('An electric aircraft needs charging. The mobile charger takes one at a time — charging stands do it by themselves.') },
+    { id: 'outage', when: () => S.ops && Object.keys(S.domains).filter((d) => Systems.down(d)).length >= 3, text: () => tr('Many systems are down at once. Now the teams kept beside them work by hand — the drills decide how well.') },
+    { id: 'heat', when: () => S.ops && Turnaround.hot(), text: () => tr('It is hot: the heavy jets must take off from runway 1, the long one.') }
   ];
   function hasStartable() {
     for (const id of Object.keys(S.airport.projects)) for (const sid of Object.keys(S.airport.projects[id].stages)) if (!Construction.cannot(id, sid)) return true;

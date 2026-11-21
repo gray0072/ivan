@@ -29,7 +29,15 @@ const Summary = {
       const al = S.airlines[code], intl = (AIRLINES[code] || {}).intl;
       for (const r of al.routes || []) {
         if (r.months && r.months.indexOf(m) < 0) continue;
-        const n = r.perDay * season, pax = AIRCRAFT[r.type].seats * (r.load || 0.7);
+        // session 6: a crisis leaves a share of the passengers (S.airport.demand); the freighters fly on and pay per tonne
+        const freight = AIRCRAFT[r.type].cargo || 0;
+        const n = r.perDay * season * (freight ? 1 : this.demand()), pax = AIRCRAFT[r.type].seats * (r.load || 0.7);
+        if (freight) {
+          const c = n * freight * (r.load || 0.8) * CARGO_TONNES_FEE * keep;
+          Finance.book('cargo', c);
+          if (S.mission && S.mission.st) S.mission.st.cargoIn = (S.mission.st.cargoIn || 0) + c;
+          out.income += c;
+        }
         const fees = Finance.departureFees(r.type, pax, intl, code);
         const aero = n * (fees.landing + fees.pax) * keep;
         const shops = n * pax * (SHOP_SPEND * Airport.shopShare() * 0.7 + PARKING_PER_PAX * Airport.parkingShare()) * keep;
@@ -57,6 +65,8 @@ const Summary = {
     this.record(out);
     return out;
   },
+  // session 6: the share of the normal passenger traffic there is now (a pandemic, the way back)
+  demand() { const d = S.airport.demand; return d === undefined ? 1 : Math.max(DEMAND_MIN, d); },
   // the last TRAFFIC_DAYS days of traffic, for the payback estimates (sim/invest.js)
   record(out) {
     const t = S.traffic = S.traffic || [];

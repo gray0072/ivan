@@ -2,7 +2,8 @@
 
 // Arlanda Rising — the People screen (SPEC.md "Screens"): the departments (jobs, morale, fatigue, skill, absence
 // today, the wage level, the union and its next round, the temps), their managers (perks, flaw, mood, a raise asked
-// for), the managers' candidates in pairs for a team without a head, the IT people and the summer holidays. Opened
+// for), the managers' candidates in pairs for a team without a head, the IT people and the summer holidays; session 6:
+// the share on furlough, the jobs gone and Recruit (new people at once here, after the clearance's weeks in plan time). Opened
 // from the Office (key P) on the campaign's or Free Play's airport, where every button works at once (time is
 // stopped), or during play to look only (the game pauses). Used by game.js and ui/office.js.
 
@@ -38,6 +39,11 @@ const PeopleUI = (() => {
           '<p>' + Text.esc(tr('Wages: {m} a month', { m: sek(jobs * (id === 'it' ? IT_JOB : STAFF_MONTH) * d.wageX) })) + (d.wageX > 1.001 ? ' (+' + Math.round((d.wageX - 1) * 100) + ' %)' : '') + '</p>' +
           '<p>✊ ' + Text.esc(tr((DEPTS[id] || {}).union || '')) + ': ' + Text.esc(tr('mood {m}, next round {d}', { m: Math.round(d.union.mood), d: fmtDate(d.union.next) })) + '</p>';
         if (pp.strike && pp.strike.dept === id) html += '<p class="warn">' + Text.esc(tr('Strike notice: from {d}', { d: fmtDate(pp.strike.from) })) + '</p>';
+        // session 6: furlough, jobs gone, new people on their way
+        if (People.furloughed(id)) html += '<p>🏠 ' + Text.esc(tr('{p} on furlough until {d}', { p: Text.pct(People.furloughed(id)), d: fmtDate(d.furlough.until) })) + '</p>';
+        const rh = pp.hiring.find((h) => h.dom === id && h.rehire);
+        if (People.cut(id) > 0) html += '<p class="warn">' + Text.esc(tr('{p} of the jobs are empty', { p: Text.pct(People.cut(id)) })) + (rh ? ' · ' + Text.esc(tr('new people start {d}', { d: fmtDate(rh.at) })) : '') + '</p>' +
+          (editable && !rh ? '<div class="btnRow small"><button class="btn toggle" data-rehire="' + id + '">📝 ' + Text.esc(tr('Recruit')) + '</button></div>' : '');
         if (m) {
           html += '<div class="mgrBox"><b>' + Text.esc(Text.manager(m.id)) + '</b> <small>' + Text.esc(tr('mood {m}', { m: Math.round(m.mood) })) + '</small><br>' +
             Text.managerLines(m.id).map((l) => '<small>' + Text.esc(l) + '</small>').join('<br>') + '</div>';
@@ -92,6 +98,7 @@ const PeopleUI = (() => {
     else if (b.dataset.mgr) done = Actions.manager(b.dataset.mgr);
     else if (b.dataset.it) done = Actions.hireIT(+b.dataset.it);
     else if (b.dataset.summer) done = Actions.summer('spread');
+    else if (b.dataset.rehire) done = Actions.rehire(b.dataset.rehire);
     if (!done) return;
     Sfx.play('click');
     Game.keepWorld();

@@ -77,6 +77,8 @@ const Results = (() => {
     html += '<p class="quote">' + Text.esc(tr(lines[(S.mission.stage + stars) % lines.length])) + '</p>';
     const nx = info.next;
     if (nx) html += '<p class="label">' + Text.esc(tr('Next: {name} · ~{n} min', { name: tr(nx.name), n: Text.minutes(nx) })) + '</p>';
+    // session 6: the final exam is the last mission of the game
+    else if (pass && !nx && m.chapter >= CHAPTERS.length) html += '<p class="fine">🎉 ' + Text.esc(tr('You have played the whole campaign: from a pine forest in 1958 to your own Arlanda of 2040. Free Play and the Challenge Days go on.')) + '</p>';
     else if (pass && !nx) html += '<p class="fine">' + Text.esc(tr('That was the last mission of chapter {n}. {next} comes in a later version of the game.', { n: m.chapter, next: tr((CHAPTERS[m.chapter] || {}).name || '') })) + '</p>';
     if (pass && m.id === FREE_OPENS && !info.replayed) html += '<p class="fine">🛫 ' + Text.esc(tr('Free Play is open: an endless airport, from the start screen.')) + '</p>';
     if (pass && CHALLENGES.some((c) => c.opens === m.id)) html += '<p class="fine">🏆 ' + Text.esc(tr('A Challenge Day is open: a longer day with a score, from the start screen.')) + '</p>';

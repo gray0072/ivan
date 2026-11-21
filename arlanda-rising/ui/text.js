@@ -16,7 +16,10 @@ const METERS = [
 const FLAG_NAMES = {
   trainChosen: 'Decide who builds the train', lowFareAnswered: 'Answer the low-fare question',
   targetSet: 'Answer the owner\'s target', strandedHelped: 'Look after the stranded passengers',
-  guestsPlanned: 'Plan the guests\' stands', jetsReady: 'Make room for the business jets'
+  guestsPlanned: 'Plan the guests\' stands', jetsReady: 'Make room for the business jets',
+  // session 6
+  shopsAnswered: 'Answer the shops about the rent', staffAnswered: 'Decide what happens to the staff', slotsGiven: 'Give the empty slots to an airline',
+  cyberAnswered: 'Protect the network', nightsChosen: 'Decide what the nights are for', peakReady: 'Get ready for the peak'
 };
 
 const Text = {
@@ -77,6 +80,14 @@ const Text = {
       case 'permitOk': return tr('Keep within the environmental permit');
       case 'runways': return tr('{n} runways in use', { n });
       case 'owner': return tr('Arlanda run by {owner}', { owner: c.id });
+      // session 6
+      case 'loss': return tr('Lose at most {m}', { m: sek(n) });
+      case 'cargo': return tr('Freight earns at least {m}', { m: sek(n) });
+      case 'mothballed': return tr('At least {n} terminals mothballed', { n });
+      case 'laidOff': return n ? tr('At most {p} of the jobs empty', { p: this.pct(n) }) : tr('No job empty');
+      case 'readiness': return tr('Fallback readiness: at least {n} %', { n });
+      case 'chargers': return tr('At least {n} charging stands', { n });
+      case 'joined': return tr('Terminals 4 and 5 joined');
     }
     return c.k;
   },
@@ -87,7 +98,9 @@ const Text = {
     switch (c.k) {
       case 'onTime': return Math.round(v * 100) + ' %';
       case 'avgDelay': case 'airportDelay': case 'checkinWait': case 'maxWait': case 'securityWait': case 'borderWait': return this.num(v, 1) + ' ' + tr('min');
-      case 'profit': case 'money': case 'spent': case 'lastMonth': case 'brandsIn': case 'estate': return sek(v);
+      case 'profit': case 'money': case 'spent': case 'lastMonth': case 'brandsIn': case 'estate': case 'loss': case 'cargo': return sek(v);
+      case 'laidOff': return this.pct(v);
+      case 'readiness': return Math.round(v) + ' %';
       case 'perDay': return this.num(v, 1);
       default: return this.num(v, 0);
     }
@@ -118,10 +131,12 @@ const Text = {
       case 'lane': return tr('Security queue {n} min — open a lane', { n: Math.round(Passengers.secWait()) });
       case 'booth': return tr('Passport queue {n} min — open a booth', { n: Math.round(Math.min(99, Passengers.borderWait())) });
       case 'deice': { const st = f && Airport.stand(f.stand); return tr('{no} on stand {stand} needs de-icing — send a truck', { no: f ? f.no : '', stand: st ? st.name : '' }); }
+      // session 6
+      case 'charge': { const st = f && Airport.stand(f.stand); return tr('{no} on stand {stand} needs charging — send the mobile charger', { no: f ? f.no : '', stand: st ? st.name : '' }); }
     }
     return k.kind;
   },
-  taskIcon(kind) { return { stand: '🛬', fuel: '⛽', checkin: '🧳', plough: '❄️', bags: '🛄', announce: '📢', lane: '🛂', booth: '🛃', deice: '🧊' }[kind] || '❗'; },
+  taskIcon(kind) { return { stand: '🛬', fuel: '⛽', checkin: '🧳', plough: '❄️', bags: '🛄', announce: '📢', lane: '🛂', booth: '🛃', deice: '🧊', charge: '🔋' }[kind] || '❗'; },
   // a department's and a domain's names, a domain's level as shown
   dept(id) { return tr((DEPTS[id] || {}).name || id); },
   dom(id) { return tr((DOMAINS[id] || {}).name || id); },
@@ -140,6 +155,10 @@ const Text = {
       case 'turn':
         if (f.tr && (f.tr.deice === 'asked' || f.tr.deice === 'queued')) return tr('Waiting for de-icing');
         if (f.tr && f.tr.deice === 'going') return tr('Being de-iced');
+        // session 6: an electric aircraft charging, a hydrogen one taking on fuel
+        if (f.tr && f.tr.charge && (f.tr.fuel === 'asked' || f.tr.fuel === 'cqueued')) return tr('Waiting for the charger');
+        if (f.tr && f.tr.charge === 'h2' && f.tr.fuel === 'going') return tr('Taking on hydrogen');
+        if (f.tr && f.tr.charge && f.tr.fuel === 'going') return tr('Charging');
         return f.tr && f.tr.ready !== null ? tr('Ready to go') : f.tr && f.tr.board !== null ? tr('Boarding') : f.tr && (f.tr.fuel === 'asked' || f.tr.fuel === 'queued') ? tr('Waiting for fuel') : tr('Turnaround');
       case 'parked': return tr('Parked, getting ready');
       case 'taxiOut': return tr('Taxiing out');
@@ -220,6 +239,17 @@ const Text = {
     if (o.lanes) out.push(tr('+{n} security lanes', { n: o.lanes }) + ' · −' + sek(BUILDINGS.lane.price * o.lanes));
     if (o.biofuel !== undefined) out.push(tr('{p} of the fuel bio', { p: this.pct(o.biofuel) }) + ' · ' + tr('{m} a month', { m: sek(BIOFUEL_MONTH * o.biofuel) }) + ' · ' + tr('green rating +{n}', { n: Math.round(o.biofuel * 100 * GREEN_PTS.biofuel) }));
     if (o.stranded) out.push('−' + sek(o.stranded));
+    // session 6
+    for (const t of [].concat(o.mothball || [])) out.push(tr('{term} closed', { term: tr(TERMINALS[t].name) }));
+    for (const t of [].concat(o.reopen || [])) out.push(S.airport.mothballed && S.airport.mothballed[t] === true ? tr('{term} open again in {n} days', { term: tr(TERMINALS[t].name), n: REOPEN_DAYS }) + ' · −' + sek(REOPEN_COST) : tr('{term} is open already', { term: tr(TERMINALS[t].name) }));
+    if (o.relief === true) out.push(tr('{p} of the rent off for a year', { p: this.pct(RENT_RELIEF) }) + ' · −' + sek(Terminal.rent() * RENT_RELIEF * 12));
+    if (o.relief === false) out.push(tr('half of the shops close'));
+    if (o.staff && o.staff.how === 'furlough') out.push(tr('{p} at home, the state pays most of their wages', { p: this.pct(o.staff.share) }));
+    if (o.staff && o.staff.how === 'layoff') out.push(tr('{p} of the jobs gone · three months of wages now', { p: this.pct(o.staff.share) }) + ' · ' + tr('morale down'));
+    if (o.rehire) out.push(tr('new people in two weeks, six with a clearance'));
+    if (o.cutFill) out.push(tr('{p} of the empty jobs filled at once', { p: this.pct(o.cutFill.share) }));
+    if (o.drills) out.push(tr('every system\'s readiness back to 100 %') + ' · −' + sek(DRILL_COST * Object.keys(S.domains).filter((d) => S.domains[d] >= 2).length));
+    if (o.pier) { const d = PROJECTS.pier2040.designs[o.pier]; out.push(tr('{n} gates', { n: d.stands.length }) + ' · × ' + this.num(d.k, 2) + (d.charge ? ' · ' + tr('a charger at every gate') : '')); }
     if (o.flag && !out.length) out.push(tr('a decision taken'));
     if (!out.length) out.push(tr('nothing changes'));
     return out.join(' · ');

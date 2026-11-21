@@ -18,6 +18,8 @@ const Airport = {
   // minutes between two movements on a runway
   sep() { return this.has('tower2') ? RWY_SEP_NEW : this.has('tower') ? RWY_SEP : RWY_SEP_NO_TOWER; },
   fuelTrucks() { return this.count('fuelTruck'); },
+  // session 6: the stands with a charger for electric aircraft
+  chargers() { return S.airport.stands.filter((s) => s.charge).length; },
   ploughs() { return this.count('plough'); },
   shopShare() {
     let s = 0;
@@ -105,6 +107,21 @@ const Airport = {
       case 'aquifer': this.addItem('aquifer', { price }); break;
       case 'codeF': this.addStand(p.stand); this.addItem('codeF', { price }); break;
       case 'overWing': this.addItem('overWing'); break;
+      // session 6: Terminals 4 and 5 joined airside; the player's pier of the 2030s (its stands by the design chosen)
+      case 't4t5': a.joined = true; this.addItem('t4t5', { price }); break;
+      case 'pier2040': {
+        const des = p.designs[a.pierDesign || 'finger'], sp = p.spots;
+        des.stands.forEach((s, i) => {
+          const sat = a.pierDesign === 'satellite';
+          const at = sat ? [i % 2 ? sp.satellite.x1 : sp.satellite.x0, sp.satellite.y0 + Math.floor(i / 2) * sp.satellite.dy] : [sp.finger.x, sp.finger.y0 + i * sp.finger.dy];
+          const st = this.addStand({ name: s[0], code: s[1], contact: true, dist: sat ? 4 : 3, at });
+          if (des.charge) st.charge = true;
+        });
+        this.addItem('pier2040', { price });
+        if (des.charge) this.addItem('greenPier');
+        break;
+      }
+      case 'pierArm': this.addItem('pierArm'); p.arm.forEach((s, i) => { const st = this.addStand({ name: s[0], code: s[1], contact: true, dist: 4, at: [p.spots.arm.x0 + i * p.spots.arm.dx, p.spots.arm.y] }); st.pad = true; if (p.designs[a.pierDesign || 'finger'].charge) st.charge = true; }); break;
       default: throw new Error('unknown effect ' + effect);
     }
     logEvent('built', { what: effect, project });
@@ -120,11 +137,23 @@ const Airport = {
     else this.finishBuy(kind);
     return true;
   },
+  // session 6: the owner's gift of a small build (a charger), free; true when it changed something
+  buyFree(kind) { const n = this.chargers(), m = S.airport.items.length; this.finishBuy(kind); return kind === 'charger' ? this.chargers() > n : S.airport.items.length > m; },
   finishBuy(kind) {
     if (kind === 'stand') this.addStand({ name: String(S.airport.stands.length + 1), code: 'C', contact: false, dist: 4 });
     else if (kind === 'desk') S.airport.desks++;
     else if (kind === 'lane') Terminal.addLane();
     else if (kind === 'booth') { S.airport.booths = (S.airport.booths || 0) + 1; if (S.ops && S.ops.boothsOpen !== undefined) S.ops.boothsOpen++; }
+    // session 6: a stand of the cargo apron by Cargo City; a charger on the best stand without one; the mobile charger
+    else if (kind === 'cargoStand') {
+      const spots = BUILDINGS.cargoStand.spots, n = S.airport.stands.filter((s) => s.cargo).length, at = spots[n % spots.length];
+      const st = this.addStand({ name: 'K' + (n + 1), code: 'E', contact: false, dist: 5, at: [at[0], at[1] + Math.floor(n / spots.length) * 70] });
+      st.cargo = true; st.pad = true;
+    } else if (kind === 'charger') {
+      const st = S.airport.stands.filter((s) => !s.charge && !s.cargo && SIZE_CODES.indexOf(s.code) <= 3)
+        .sort((x, y) => (y.contact - x.contact) || (x.dist - y.dist) || (x.id < y.id ? -1 : 1))[0];
+      if (st) st.charge = true;
+    } else if (kind === 'mcharger' && S.ops && S.ops.chargers) S.ops.chargers.push(0);
     this.addItem(kind);
     logEvent('bought', { kind });
   },
@@ -133,9 +162,13 @@ const Airport = {
   monthlyCost() {
     let jobs = 0, upkeep = 0;
     for (const it of S.airport.items) {
-      jobs += (BUILDINGS[it.kind] || {}).staff || 0;
-      upkeep += (it.price || 0) * UPKEEP_YEAR / 12;
+      // session 6: a mothballed terminal keeps only a few of its people and needs little upkeep
+      const k = Terminal.mothballedItem(it.kind) ? 1 - MOTHBALL_SAVE : 1;
+      jobs += ((BUILDINGS[it.kind] || {}).staff || 0) * k;
+      upkeep += (it.price || 0) * UPKEEP_YEAR / 12 * k;
     }
+    // session 6: the buildings' own staff are laid off and furloughed like the teams
+    if (S.people) jobs *= (1 - People.cutShare()) * (1 - People.furloughShare() * (1 - FURLOUGH_PAY));
     // the teams (sim/people.js: their wage levels, IT, the managers, the temps) and the systems' licences
     return { wages: jobs * STAFF_MONTH + People.wages(), upkeep, systems: Systems.monthly(), interest: S.loans * LOAN_RATE / 12,
       security: Terminal.lanes() * LANE_MONTH, border: (S.airport.schengen ? S.airport.booths || 0 : 0) * BOOTH_MONTH };

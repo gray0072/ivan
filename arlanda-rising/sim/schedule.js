@@ -6,7 +6,7 @@
 //   planned arrival; `parked` ones stand on the apron at the start and only leave (their departures spread
 //   between `from` and `to`); `training` flights carry no passengers (school flying). Arrivals come early
 //   or late by the difficulty's randomness. `waiver`: the flight may land although the fire category is too low
-//   (a one-off permission). Session 5: `ns` — a flight outside the Schengen area (else its airline's own `ns`), `vip` — a
+//   (a one-off permission). Session 6: `cargo` — tonnes of freight in a passenger aircraft flying without passengers. Session 5: `ns` — a flight outside the Schengen area (else its airline's own `ns`), `vip` — a
 //   state or VIP flight kept apart on its own stand.
 // Used by sim/ops.js; the flights live in S.ops.flights.
 
@@ -40,6 +40,8 @@ const Schedule = {
       checked: 0, waitSum: 0, paxServed: 0, missed: 0, delay: 0, adelay: 0, extraTaxi: 0, tr: null
     };
     if (line.waiver) f.waiver = true;
+    // session 6: a passenger aircraft flown with freight only (`cargo`: tonnes), no passengers
+    if (line.cargo) { f.cargoT = line.cargo; f.booked = 0; f.paxArr = 0; }
     // session 5: an aircraft that stays for days (a guest's): it lands and keeps its stand; its departure is not this stage's
     if (line.stay) f.stay = true;
     if (line.parked) {

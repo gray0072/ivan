@@ -9,7 +9,15 @@
 // the stand before pushback, or at a remote pad on the way out (sim/flights.js). Used by sim/flights.js.
 
 const Turnaround = {
-  slow() { return S.airport.apron.snow >= SNOW_APRON_SLOW_MM ? SNOW_APRON_SLOW : 1; },
+  slow() {
+    let k = S.airport.apron.snow >= SNOW_APRON_SLOW_MM ? SNOW_APRON_SLOW : 1;
+    // session 6: the heat slows the people on the ramp (not the robots)
+    if (this.hot() && Systems.working('turnaround') < 2 && !S.flags.shaded) k *= HEAT_SLOW;
+    return k;
+  },
+  hot() { return !!(S.ops && S.ops.weather && Weather.now().temp >= HEAT_TEMP); },
+  // session 6: the services' minutes — faster with the apron robots working
+  svcK() { return Systems.working('turnaround') >= 2 ? ROBOT_X : 1; },
   fuelTime(type) { return AIRCRAFT[type].mtow * FUEL_MIN_PER_T; },
   // the shortest turnaround of a flight with nothing waiting: off, the longer of services and fuel, on
   minTime(f) {
@@ -21,7 +29,7 @@ const Turnaround = {
     f.inBlock = t;
     f.st = 'turn';
     const off = t + (f.paxArr * DEBOARD_PER_PAX + 1) * k;
-    f.tr = { off, svc: off + AIRCRAFT[f.type].svc * k, fuel: 'wait', fuelEnd: null, board: null, ready: null };
+    f.tr = { off, svc: off + AIRCRAFT[f.type].svc * k * this.svcK(), fuel: 'wait', fuelEnd: null, board: null, ready: null };
     // the bags by hand or by the baggage team: the carts must be sent before the services can finish
     if (f.paxArr > 0 && (S.mission.hands.indexOf('bags') >= 0 || (S.domains.baggage || 0) > 0)) { f.tr.bags = 'asked'; Tasks.need('bags', f.id); }
     // with everything on time here it could leave at: from its real arrival time, by the nearest stand
@@ -54,10 +62,34 @@ const Turnaround = {
     // a late flight: its delay must be told to the passengers waiting at the gate
     if (!f.ann && tr.ready === null && t >= f.std + ANNOUNCE_LEAD && f.booked > 0 &&
       (S.mission.hands.indexOf('announce') >= 0 || (S.domains.info || 0) > 0)) { f.ann = 'asked'; f.annAsk = t; Tasks.need('announce', f.id); }
+    // session 6: an electric aircraft charges — at a stand with a charger by itself, else from the mobile charger sent to
+    // it (by hand or by the ramp team); a hydrogen one takes on fuel from the depot
+    const A = AIRCRAFT[f.type];
+    if (tr.fuel === 'wait' && t >= tr.off && (A.electric || A.hydrogen)) {
+      const st = Airport.stand(f.stand);
+      // in a blackout the stands' chargers are dark: only the mobile chargers' batteries work
+      if (A.hydrogen || (st && st.charge && !(S.ops.blackout > t))) { tr.fuel = 'going'; tr.fuelFrom = t; tr.fuelEnd = t + (A.hydrogen ? H2_MIN : CHARGE_MIN) * this.slow(); tr.charge = A.electric ? 'stand' : 'h2'; }
+      else if (S.mission.hands.indexOf('charge') >= 0 || S.domains.turnaround > 0) { tr.fuel = 'asked'; tr.charge = 'mobile'; Tasks.need('charge', f.id); }
+      else { tr.fuel = 'cqueued'; tr.charge = 'mobile'; }
+    }
+    if (tr.fuel === 'cqueued') {
+      const ch = S.ops.chargers = S.ops.chargers || new Array(Math.max(1, Airport.count('mcharger'))).fill(0);
+      const i = ch.findIndex((busy) => busy <= t);
+      if (i >= 0) {
+        const ct = CHARGE_MOBILE_MIN * this.slow();
+        ch[i] = t + 3 + ct;
+        tr.fuelFrom = t; tr.fuelEnd = t + 1.5 + ct; tr.fuel = 'going';
+        logEvent('charging', { flight: f.no });
+      }
+    }
     // fuel, after the passengers are off
     if (tr.fuel === 'wait' && t >= tr.off) {
       if (S.mission.hands.indexOf('fuel') >= 0 || S.domains.turnaround > 0) { tr.fuel = 'asked'; Tasks.need('fuel', f.id); }
       else { tr.fuel = 'done'; tr.fuelEnd = t + this.fuelTime(f.type) * this.slow(); }
+    }
+    // session 6: the apron robots bring their own fuel carts: no waiting for a truck
+    if (tr.fuel === 'queued' && Systems.working('turnaround') >= 2) {
+      tr.fuelFrom = t; tr.fuelEnd = t + FUEL_DRIVE / 2 + this.fuelTime(f.type) * this.slow() * ROBOT_X; tr.fuel = 'going';
     }
     if (tr.fuel === 'queued') {
       const i = S.ops.trucks.findIndex((busy) => busy <= t);
@@ -75,7 +107,8 @@ const Turnaround = {
     if (tr.board === null && tr.fuel === 'done' && t >= tr.fuelEnd && t >= tr.svc && (!tr.bags || tr.bags === 'done') && t >= f.std - BOARD_LEAD) tr.board = t;
     if (tr.board !== null && tr.ready === null) {
       const allIn = f.checked >= f.booked - 0.5 && !Passengers.queued(f);
-      const done = t >= tr.board + f.booked * BOARD_PER_PAX * this.slow();
+      // session 6: with biometric boarding the face is the boarding pass
+      const done = t >= tr.board + f.booked * BOARD_PER_PAX * this.slow() * (Systems.working('border') >= 3 ? BIO_BOARD_X : 1);
       if (done && allIn) tr.ready = t;
       else if (done && t >= f.std + BOARD_WAIT_MAX) {
         f.missed = Math.round(f.booked - f.checked);

@@ -21,6 +21,11 @@ const Green = {
     r += (S.airport.biofuel || 0) * 100 * GREEN_PTS.biofuel;
     if (Airport.has('evehicles')) r += GREEN_PTS.electric;
     r += Airport.count('parkingBig') * GREEN_PTS.carPark;
+    // session 6: charging stands for electric aircraft, the night train, the hydrogen depot, the green pier
+    r += Math.min(6, Airport.chargers()) * GREEN_PTS_6.charger;
+    if (Airport.has('nightTrain')) r += GREEN_PTS_6.nightTrain;
+    if (Airport.has('h2depot')) r += GREEN_PTS_6.h2;
+    if (Airport.has('greenPier')) r += GREEN_PTS_6.greenPier;
     return clamp(Math.round(r), 0, 100);
   },
   // SEK a month of heating and power: more in winter, less with the aquifer and the solar park
@@ -29,6 +34,8 @@ const Green = {
     let save = 0;
     if (Airport.has('aquifer')) save += ENERGY_SAVE.aquifer;
     save += Math.min(2, Airport.count('solar')) * ENERGY_SAVE.solar;
+    // session 6: each terminal mothballed is cold and dark
+    save += Terminal.mothballCount() * MOTHBALL_ENERGY;
     return ENERGY_MONTH * (winter ? 1.5 : 1) * (1 - save);
   },
   biofuelMonth() { return BIOFUEL_MONTH * (S.airport.biofuel || 0); },

@@ -16,9 +16,40 @@ const Terminal = {
   // the terminal a departure goes through
   of(code, intl) {
     const al = S.airlines[code];
-    if (al && al.term === 't2' && Airport.has('terminal2')) return 't2';
+    // session 6: a mothballed terminal's flights move to Terminal 5 (the international terminal)
+    if (al && al.term === 't2' && Airport.has('terminal2') && !this.mothballed('t2')) return 't2';
     if (intl) return Airport.has('intlTerminal') ? 'intl' : 't1';
-    return Airport.has('domTerminal') ? 'dom' : 't1';
+    return Airport.has('domTerminal') && !this.mothballed('dom') ? 'dom' : Airport.has('intlTerminal') ? 'intl' : 't1';
+  },
+  // ---------- session 6: terminals closed in a crisis, rent relief, Terminals 4 and 5 as one ----------
+  // a terminal mothballed now (S.airport.mothballed[term]: true, or the day it opens again)
+  mothballed(term) { const m = S.airport.mothballed && S.airport.mothballed[term]; return !!m && (m === true || S.day < m); },
+  mothballedItem(kind) { const m = S.airport.mothballed; if (!m) return false; for (const t of Object.keys(m)) if (TERMINALS[t] && TERMINALS[t].item === kind && this.mothballed(t)) return true; return false; },
+  mothballCount() { return Object.keys(S.airport.mothballed || {}).filter((t) => this.mothballed(t)).length; },
+  // close a terminal until better times (only one that stands, never Terminal 5)
+  mothball(term) {
+    if (term === 'intl' || !this.built(term) || this.mothballed(term)) return false;
+    S.airport.mothballed = S.airport.mothballed || {};
+    S.airport.mothballed[term] = true;
+    logEvent('mothballed', { term });
+    return true;
+  },
+  // open it again: cleaned, tested and staffed, REOPEN_DAYS later in plan time
+  reopen(term) {
+    const m = S.airport.mothballed;
+    if (!m || m[term] !== true) return false;
+    Finance.book('build', -REOPEN_COST);
+    m[term] = S.plan ? S.day + REOPEN_DAYS : S.day;
+    logEvent('reopened', { term });
+    return true;
+  },
+  // the brands asked for rent relief in the crisis: `yes` lets RENT_RELIEF of the rent off for a year, `no` makes half of
+  // them close (each second unit with a brand, in order)
+  relief(yes) {
+    if (yes) { S.airport.relief = S.day + 365; return true; }
+    let i = 0;
+    for (const u of this.units()) if (u.brand && i++ % 2 === 1) this.close(u.id);
+    return true;
   },
   built(term) { return term === 'kerb' ? Airport.has('terminal') : !!TERMINALS[term] && Airport.has(TERMINALS[term].item); },
   // the units of every terminal that stands (once the units are on); a terminal finished later gets its own
@@ -80,8 +111,10 @@ const Terminal = {
     if (!a.units) return 0;
     let sum = 0;
     const seen = {};
+    // session 6: with Terminals 4 and 5 joined airside their passengers walk past the brands of both
+    const terms = a.joined && (term === 'dom' || term === 'intl') ? ['dom', 'intl'] : [term];
     for (const u of a.units) {
-      if (u.term !== term || !u.brand) continue;
+      if (terms.indexOf(u.term) < 0 || !u.brand || this.mothballed(u.term)) continue;
       const b = BRANDS[u.brand];
       if (b.fit === 'intl' && !intl) continue;
       let k = b.spend;
@@ -108,11 +141,22 @@ const Terminal = {
     return Math.min(BRAND_PAX_MAX, p);
   },
   // the rent of every brand, SEK a month
-  rent() { let r = 0; for (const u of S.airport.units || []) if (u.brand) r += BRANDS[u.brand].rent; return r; },
+  rent() {
+    let r = 0;
+    for (const u of S.airport.units || []) if (u.brand && !this.mothballed(u.term)) r += BRANDS[u.brand].rent;
+    // session 6: rent relief in a crisis
+    return S.airport.relief && S.day < S.airport.relief ? r * (1 - RENT_RELIEF) : r;
+  },
 
   // ---------- security ----------
   // the lanes there are now (a scripted event may close some for the stage: `lanesShut`)
-  lanesUp() { const n = S.airport.lanes || 0; return n ? Math.max(1, n - ((S.ops && S.ops.lanesShut) || 0)) : 0; },
+  lanesUp() {
+    const n = S.airport.lanes || 0;
+    if (!n) return 0;
+    // session 6: a lane needs its screeners — with the security team's jobs gone or furloughed, fewer lanes can open
+    const staff = this.secDomain() && People.has('security') ? clamp(1 - People.cut('security') - People.furloughed('security'), 0, 1) : 1;
+    return Math.max(1, Math.floor((n - ((S.ops && S.ops.lanesShut) || 0)) * staff + 1e-9));
+  },
   // the lanes working now: all of them, or (session 5: security is a domain of its own) the ones opened
   lanes() {
     const up = this.lanesUp();
@@ -134,6 +178,8 @@ const Terminal = {
     const rule = S.airport.secRule || 0;
     let r = LANE_RATE * SEC_RULE_X[rule];
     if (Systems.working('security') >= 3) r = LANE_RATE * SEC_RULE_X[Math.min(rule, 1)] * CT_X;
+    // session 6: in a blackout the X-ray machines are dark: the bags are searched by hand
+    if (S.ops && S.ops.blackout > S.clock) r *= BLACKOUT_LANE_X;
     return r * (1 - People.perk('security', 'slow'));
   },
 
@@ -146,7 +192,7 @@ const Terminal = {
     S.ops.boothsOpen = clamp(Math.round(n), 0, S.airport.booths);
     return this.booths() !== was;
   },
-  boothRate() { return BOOTH_RATE * (Systems.working('border') >= 2 ? EGATE_X : 1); },
+  boothRate() { const w = Systems.working('border'); return BOOTH_RATE * (w >= 3 ? BIO_X : w >= 2 ? EGATE_X : 1); },
   // a departure that goes through passport control: an international flight outside the Schengen area
   nonSchengen(f) { return !!(this.borderOn() && f.intl && f.ns); },
 

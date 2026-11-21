@@ -66,5 +66,17 @@ const BUILDINGS = {
   cargoCity: { name: 'Cargo City', price: 0, staff: 6, rent: 2.2e6 },
   aquifer: { name: 'The aquifer energy store', price: 0, staff: 1 },
   codeF: { name: 'The A380 gate', price: 0, staff: 2 },
-  overWing: { name: 'Over-the-wing boarding', price: 0, staff: 1 }
+  overWing: { name: 'Over-the-wing boarding', price: 0, staff: 1 },
+  // session 6: chapters 7 and 8 — a security operations centre against cyber attacks, the cargo apron's stands, the
+  // future's chargers (a stand's charger, the mobile one), the hydrogen depot, the night train's platform
+  cyberCentre: { name: 'Security operations centre', price: 30e6, staff: 6, small: true, days: 30, from: 2016 },
+  cargoStand: { name: 'Cargo stand', price: 6e6, staff: 0, small: true, days: 14, from: 2000, spots: [[1185, 520], [1245, 520], [1305, 520], [1365, 520]] },
+  charger: { name: 'Charging stand', price: 8e6, staff: 0, small: true, days: 14, from: 2028 },
+  mcharger: { name: 'Mobile charger', price: 2e6, staff: 1, small: true, days: 0, from: 2028 },
+  h2depot: { name: 'Hydrogen depot', price: 90e6, staff: 3, small: true, days: 40, from: 2033 },
+  nightTrain: { name: 'Night train platform', price: 60e6, staff: 2, small: true, days: 45, from: 2030, rent: 0.9e6 },
+  t4t5: { name: 'The link between Terminals 4 and 5', price: 0, staff: 2 },
+  pier2040: { name: 'Your pier', price: 0, staff: 16 },
+  greenPier: { name: 'The green pier\'s solar roof', price: 0, staff: 0 },
+  pierArm: { name: 'The pier\'s second arm', price: 0, staff: 6 }
 };

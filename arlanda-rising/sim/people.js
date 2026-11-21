@@ -36,7 +36,79 @@ const People = {
     if (!L || !lv) return 0;
     let n = L[lv].staff || 0;
     if (lv >= 2 && S.sys && S.sys[id] && S.sys[id].kept) n += L[1].staff || 0;
-    return n;
+    // session 6: the jobs laid off (or left in the long pause) and not yet filled again
+    const cut = this.cut(id);
+    return cut ? Math.round(n * (1 - cut)) : n;
+  },
+  // ---------- session 6: the storm years — furlough, lay-offs, the people who left, rehiring ----------
+  // the share of a department's jobs gone (laid off, or left for other work) and not yet filled again
+  cut(id) { const d = S.people && S.people.depts[id]; return d && d.cut ? d.cut : 0; },
+  // the share of a department at home on furlough today
+  furloughed(id) { const d = S.people && S.people.depts[id]; return d && d.furlough && S.day < d.furlough.until ? d.furlough.share : 0; },
+  // every department of people the airport pays (not the police, not IT)
+  staffDepts() { return S.people ? Object.keys(S.people.depts).filter((id) => id !== 'it' && !(DEPTS[id] || {}).police && this.jobs(id) > 0) : []; },
+  // the crisis answer for the staff: furlough (the state pays most of the wages, the people stay), lay off (wages saved
+  // after the notice, morale down, the jobs must be filled again later) or keep everybody
+  crisis(how, share, months) {
+    if (!S.people) return false;
+    if (how === 'furlough') {
+      for (const id of this.staffDepts()) { const d = S.people.depts[id]; d.furlough = { share, until: S.day + Math.round((months || 6) * 30.4) }; d.wasFurloughed = true; this.morale(id, -2); }
+      logEvent('furlough', { share });
+    } else if (how === 'layoff') {
+      let pay = 0;
+      for (const id of this.staffDepts()) {
+        const d = S.people.depts[id], n = this.jobs(id);
+        pay += Math.round(n * share) * STAFF_MONTH * d.wageX * LAYOFF_PAY_MONTHS;
+        d.cut = 1 - (1 - (d.cut || 0)) * (1 - share);
+      }
+      Finance.book('layoffs', -pay);
+      this.moraleAll(-LAYOFF_MORALE);
+      for (const id of Object.keys(S.people.depts)) S.people.depts[id].union.mood = clamp(S.people.depts[id].union.mood - 15, 0, 100);
+      S.meters.neighbours = clamp(S.meters.neighbours - 2, 0, 100);
+      logEvent('layoffs', { share });
+    }
+    this.updateMeter();
+    return true;
+  },
+  // the long pause made people leave for other work: the furloughed more, those kept on half as many; a team cut deeper
+  // by lay-offs keeps its own cut
+  leavers(share) {
+    if (!S.people || S.people.left) return;
+    S.people.left = true;
+    for (const id of this.staffDepts()) { const d = S.people.depts[id]; d.cut = Math.max(d.cut || 0, d.wasFurloughed ? share : share / 2); }
+    this.updateMeter();
+  },
+  // fill the jobs gone again: recruiting costs, and the new people start after the hiring days — or the security
+  // clearance's weeks, where the job needs one (the lesson of the summer of 2022)
+  rehire(id) {
+    const d = S.people && S.people.depts[id];
+    if (!d || !d.cut || S.people.hiring.some((h) => h.dom === id)) return false;
+    const L = DOMAINS[id] && DOMAINS[id].levels;
+    let full = (L && L[S.domains[id] || 0] && L[S.domains[id] || 0].staff) || 0;
+    if ((S.domains[id] || 0) >= 2 && S.sys && S.sys[id] && S.sys[id].kept) full += L[1].staff || 0;
+    Finance.book('hiring', -HIRE_COST * Math.max(1, Math.round(full * d.cut)));
+    const days = (DEPTS[id].clearance && Calendar.year() >= DEPTS[id].clearance) ? CLEARANCE_DAYS : HIRE_DAYS;
+    if (S.plan) S.people.hiring.push({ dom: id, at: S.day + days, rehire: true });
+    else this.rehired(id);
+    logEvent('rehire', { dom: id });
+    return true;
+  },
+  rehired(id) {
+    const d = this.dept(id);
+    d.skill = Math.max(SKILL_START, d.skill - 25 * (d.cut || 0));
+    d.cut = 0;
+    this.updateMeter();
+    logEvent('teamReady', { dom: id });
+  },
+  furloughShare() {
+    const list = this.staffDepts();
+    return list.length ? list.reduce((s, id) => s + this.furloughed(id), 0) / list.length : 0;
+  },
+  rehireAll() { let n = 0; for (const id of Object.keys((S.people || {}).depts || {})) if (this.rehire(id)) n++; return n > 0; },
+  // the share of the airport's jobs gone, on average over the departments
+  cutShare() {
+    const list = this.staffDepts().concat(S.people ? Object.keys(S.people.depts).filter((id) => this.cut(id) >= 0.99) : []);
+    return list.length ? list.reduce((s, id) => s + this.cut(id), 0) / list.length : 0;
   },
 
   // ---------- absence ----------
@@ -55,9 +127,11 @@ const People = {
   capacity(id) {
     if (!this.has(id)) return 1;
     if (this.striking(id)) return STRIKE_CAPACITY;
-    if (S.ops && S.ops.overtime && S.ops.overtime[id]) return 1;
+    // session 6: jobs gone and people on furlough leave work to the tray (overtime cannot fill a job nobody holds)
+    const gone = clamp(this.cut(id) * CUT_K + this.furloughed(id), 0, 1);
+    if (S.ops && S.ops.overtime && S.ops.overtime[id]) return 1 - gone;
     const a = S.ops && S.ops.absence ? (S.ops.absence[id] || 0) : this.absence(id);
-    return clamp(1 - Math.max(0, a - ABSENCE_SLACK) * SHORT_K, 0, 1);
+    return clamp(1 - Math.max(0, a - ABSENCE_SLACK) * SHORT_K - gone, 0, 1);
   },
   striking(id) {
     const s = S.people && S.people.strike;
@@ -248,7 +322,7 @@ const People = {
   // ---------- each day and each month ----------
   day() {
     if (!S.people) return;
-    for (const h of S.people.hiring.slice()) if (S.day >= h.at) { S.people.hiring = S.people.hiring.filter((x) => x !== h); this.hired(h.dom); }
+    for (const h of S.people.hiring.slice()) if (S.day >= h.at) { S.people.hiring = S.people.hiring.filter((x) => x !== h); if (h.rehire) this.rehired(h.dom); else this.hired(h.dom); }
     this.strikeEnds();
   },
   // a month: morale drifts toward what the wages and the bosses give, fatigue fades, skill grows, the managers'
@@ -288,7 +362,8 @@ const People = {
   wages() {
     let w = 0;
     if (S.people) {
-      for (const id of Object.keys(S.people.depts)) w += this.jobs(id) * (id === 'it' ? IT_JOB : STAFF_MONTH) * S.people.depts[id].wageX;
+      // session 6: a furloughed job costs FURLOUGH_PAY of its wage (the state pays the rest)
+      for (const id of Object.keys(S.people.depts)) w += this.jobs(id) * (id === 'it' ? IT_JOB : STAFF_MONTH) * S.people.depts[id].wageX * (1 - this.furloughed(id) * (1 - FURLOUGH_PAY));
       w += this.salaries();
       for (const id of Object.keys(S.people.depts)) if (S.people.depts[id].temps > S.day) w += TEMPS_JOB * this.tempJobs(id);
     } else {

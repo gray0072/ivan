@@ -39,12 +39,16 @@ const Flights = {
     for (const f of arr) {
       // the fire service must fit the aircraft: a bigger one is sent to another airport
       if (AIRCRAFT[f.type].cat > Airport.fireCat() && !f.mayday && !f.waiver) { this.divert(f, rw, 'fire'); continue; }
+      // session 6: a hydrogen aircraft can only come where there is hydrogen for its way home
+      if (AIRCRAFT[f.type].hydrogen && !Airport.has('h2depot') && !f.mayday) { this.divert(f, rw, 'h2'); continue; }
       if (Runways.canUse(rw)) this.land(f, rw);
       else if (t - f.holdFrom >= HOLD_MAX) this.divert(f, rw);
     }
     dep.sort((a, b) => a.at - b.at);
     for (const f of dep) {
-      if (Runways.canUse(rwD)) this.takeOff(f, rwD);
+      // session 6: in the heat a heavy jet needs the long runway
+      const r = Runways.heavyInHeat(f) ? Airport.runway('r1') : rwD;
+      if (Runways.canUse(r)) this.takeOff(f, r);
       else if (t - f.offBlock >= DEP_WAIT_MAX) this.cancel(f);
     }
   },
@@ -83,7 +87,7 @@ const Flights = {
     f.adelay = Math.max(0, S.clock - Math.max(f.std, f.earliest || f.std));
     f.st = 'taxiOut';
     // session 5: start-up in sequence with A-CDM; over the bridges to runway 3; through a remote de-icing pad
-    const rwD = Runways.forDep();
+    const rwD = Runways.heavyInHeat(f) ? Airport.runway('r1') : Runways.forDep();
     f.tdir = rwD ? Runways.direction(rwD) : null;
     f.at = S.clock + this.taxiTime(f) * (Systems.working('stands') >= 3 ? ACDM_TAXI_X : 1) + (rwD && rwD.id === 'r3' ? R3_TAXI : 0);
     if (f.tr && f.tr.deice === 'pad') { f.at += DEICE_PAD_MIN; Turnaround.glycol(); }
@@ -103,6 +107,9 @@ const Flights = {
     Finance.book('landing', fees.landing);
     Finance.book('passenger', fees.pax);
     if (f.inBlock !== null && f.offBlock - f.inBlock > STAND_FREE_MIN) Finance.book('stands', (f.offBlock - f.inBlock - STAND_FREE_MIN) / 60 * STAND_FEE_HOUR);
+    // session 6: a freighter pays for the tonnes handled
+    const freight = f.cargoT || (AIRCRAFT[f.type].cargo || 0) * 0.8;
+    if (freight) { const c = freight * CARGO_TONNES_FEE; Finance.book('cargo', c); S.mission.st.cargoIn = (S.mission.st.cargoIn || 0) + c; }
   },
   takeOff(f, rw) {
     Runways.use(rw, f, false);

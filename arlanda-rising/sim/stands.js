@@ -19,7 +19,11 @@ const Stands = {
   // that fits (big stands stay free for big aircraft), then the nearest
   ranked(f) {
     const wantsContact = ((AIRLINES[f.al] || {}).temper || {}).contact && f.booked > 0;
+    // session 6: an electric aircraft wants a charger; a freighter the cargo apron, which the others leave to it
+    const A = AIRCRAFT[f.type], el = !!A.electric, fr = !!A.cargo;
     return S.airport.stands.filter((st) => this.fits(st, f.type) && !st.closed).sort((a, b) =>
+      ((!!b.cargo === fr ? 1 : 0) - (!!a.cargo === fr ? 1 : 0)) ||
+      (el ? (!!b.charge - !!a.charge) : 0) ||
       (wantsContact ? (b.contact - a.contact) : 0) ||
       (SIZE_CODES.indexOf(a.code) - SIZE_CODES.indexOf(b.code)) || (a.dist - b.dist) || (a.id < b.id ? -1 : 1));
   },

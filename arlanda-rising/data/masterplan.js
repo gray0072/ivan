@@ -332,5 +332,42 @@ const PROJECTS = {
     stand: { name: '19', code: 'F', contact: true, dist: 3, at: [880, 1950] },
     src: 'newstodate.aero, January 2018: a new A380 gate at Pier F with two exits, one over the wing, boards more than 500 passengers in 35 minutes; the first A380 at Arlanda was Lufthansa\'s demonstration visit on 15 September 2010',
     check: 'its stand number (not found)'
+  },
+
+  // ---------- chapter 7: the storm years ----------
+  t4t5: {
+    name: 'One terminal: Terminals 4 and 5 joined', year: 2022, plot: { x: 900, y: 1112, w: 40, h: 278 },
+    stages: {
+      tunnel: { name: 'A walking tunnel airside', days: 40, price: 160e6 },
+      gates: { name: 'Signs, gates and the shops\' corridor', days: 12, price: 30e6, after: ['tunnel'] }
+    },
+    mods: { fast: { name: 'Work at night too', price: 15e6, noWinter: true } },
+    effect: 't4t5',
+    src: 'swedavia.com, Terminal 4 is open (15 June 2022) and Terminal 4 is now part of Terminal 5: a pedestrian tunnel lets passengers walk between them airside without a second security check; Terminals 2, 3 and 4 were closed in the pandemic and Terminal 2 reopened on 26 October 2021',
+    check: 'the tunnel\'s length and place (the game\'s drawing)'
+  },
+
+  // ---------- chapter 8: Arlanda 2040 — the player's own pier (the real Pier G was dropped in November 2026) ----------
+  pier2040: {
+    name: 'Your pier', year: 2036, plot: { x: 700, y: 1995, w: 240, h: 265 },
+    stages: {
+      ground: { name: 'The site and the foundations', days: 35, price: 500e6 },
+      hall: { name: 'The pier itself', days: 45, price: 1300e6, after: ['ground'] },
+      gates: { name: 'Gates, bridges and the apron', days: 20, price: 400e6, after: ['hall'] },
+      arm: { name: 'A second arm', days: 30, price: 650e6, after: ['hall'], optional: true, effect: 'pierArm' }
+    },
+    mods: { tents: { name: 'Heated winter tents', price: 30e6, noWinter: true } },
+    effect: 'pier2040',
+    // where its stands stand: the finger's along x 880 from y 2020, the satellite's on both sides of its building
+    spots: { finger: { x: 880, y0: 2020, dy: 42 }, satellite: { x0: 745, x1: 855, y0: 2100, dy: 28 }, arm: { x0: 950, dx: 26, y: 2225 } },
+    // its design is the player's (a decision: `pier`): the stands it brings and × its price
+    designs: {
+      finger: { k: 1, stands: [['G1', 'D'], ['G2', 'D'], ['G3', 'C'], ['G4', 'C'], ['G5', 'C'], ['G6', 'C']] },
+      satellite: { k: 1.3, stands: [['G1', 'E'], ['G2', 'E'], ['G3', 'D'], ['G4', 'D'], ['G5', 'C'], ['G6', 'C'], ['G7', 'C'], ['G8', 'C']] },
+      green: { k: 1.15, charge: true, stands: [['G1', 'D'], ['G2', 'D'], ['G3', 'C'], ['G4', 'C'], ['G5', 'C'], ['G6', 'C']] }
+    },
+    arm: [['G9', 'C'], ['G10', 'C'], ['G11', 'C'], ['G12', 'C']],
+    src: 'swedavia.com: Pier G, 14 gates with jet bridges, was approved for detailed design in 2025 and discontinued by Swedavia\'s board in November 2026',
+    check: 'the game\'s own: the player\'s design for the future'
   }
 };

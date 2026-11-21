@@ -13,7 +13,7 @@ const Events = {
   begin(stage) {
     if (!S.airport.events || stage.calm) return;
     if (rand() >= EVENT_CHANCE * diff().weather) return;
-    const m = Calendar.month(), list = RANDOM_EVENTS.filter((e) => !e.months || e.months.indexOf(m) >= 0);
+    const m = Calendar.month(), list = RANDOM_EVENTS.filter((e) => (!e.months || e.months.indexOf(m) >= 0) && (!e.needs || S.airport[e.needs]));
     let w = 0;
     for (const e of list) w += e.weight;
     let r = rand() * w, pick = list[0];
@@ -44,9 +44,22 @@ const Events = {
   },
   // a scripted event of the stage that is one of these: true when it was
   scripted(e) {
-    if (['storm', 'wildlife', 'secPause', 'vipStand', 'update', 'ash'].indexOf(e.do) < 0) return false;
+    // session 6: an airline banned from the airspace (its flights cancelled, not the airport's fault)
+    if (e.do === 'ban') { this.ban(e.al); return true; }
+    if (['storm', 'wildlife', 'secPause', 'vipStand', 'update', 'ash', 'cyber', 'outage', 'blackout'].indexOf(e.do) < 0) return false;
     this.run(e.do, e.min || 0);
     return true;
+  },
+  // session 6: the airspace closed to an airline: every flight of it not yet gone is cancelled, its routes end
+  ban(code) {
+    for (const f of S.ops.flights) {
+      if (f.al !== code || Flights.over(f) || f.st === 'taxiOut') continue;
+      Stands.release(f); Tasks.drop(f.id); Passengers.drop(f);
+      f.st = 'cancelled'; f.banned = true;
+      S.mission.st.banned = (S.mission.st.banned || 0) + 1;
+    }
+    if (S.airlines[code]) { S.airlines[code].routes = []; Meters.updateAirlines(); }
+    logEvent('banned', { al: code });
   },
   run(kind, min) {
     const t = S.clock, o = S.ops;
@@ -68,6 +81,12 @@ const Events = {
       if (st) { st.closed = true; (o.kept = o.kept || []).push({ stand: st.id, until: t + (min || VIP_STAND_MIN) }); }
     } else if (kind === 'emergency') {
       Ops.event({ do: 'emergency' });
+    } else if (kind === 'cyber') {
+      Systems.cyber(min || 40);
+    } else if (kind === 'outage') {
+      Systems.outage(min || 120);
+    } else if (kind === 'blackout') {
+      Systems.blackout(min || 120);
     } else if (kind === 'update') {
       const d = Object.keys(S.domains).filter((x) => S.domains[x] >= 2 && !Systems.down(x)).sort()[0];
       if (d) Systems.fail(d);

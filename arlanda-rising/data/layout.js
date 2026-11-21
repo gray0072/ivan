@@ -90,6 +90,14 @@ const LAYOUT = {
   deicePads: [[200, 80, 330, 180], [2190, -940, 2300, -800]],
   aquifer: { box: [1190, 1460, 1214, 1480], h: 4 },
   solar: [[1450, 600, 1700, 760], [1450, 800, 1700, 960]],
+  // session 6: the cargo stands by Cargo City, the security operations centre, the hydrogen depot, the night train's
+  // platform at the station, the player's pier north of Pier F (the finger along the line of the piers, or a satellite
+  // out on the apron reached by a tunnel)
+  cyberCentre: { box: [1112, 1250, 1140, 1275], h: 9 },
+  h2depot: { box: [560, 1520, 620, 1560], tanks: 3 },
+  nightTrain: { box: [1100, 1760, 1180, 1790], h: 4 },
+  pier2040: { box: [890, 1995, 935, 2250], h: 10, sat: [760, 2085, 840, 2195], arm: [935, 2170, 1040, 2200] },
+  apron6: { x0: 700, y0: 1995, x1: 890, y1: 2260 },
 
   // the road in: from the E4 round the south end of the runway to the terminal (the clearing's line too)
   road: [[-1880, -700], [-900, -760], [200, -620], [700, -200], [1000, 400], [1030, 900], [990, 1240], [930, 1240]],

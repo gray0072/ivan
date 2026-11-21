@@ -15,7 +15,10 @@
 //   brands earned the airport in the stage), mood (code, min: an airline's mood), perDay (code, min: its flights a day),
 //   carriers (min airlines flying), train (the line built, by any deal), score (min points of a Challenge Day);
 //   session 5: borderWait (max average minutes at passport control), estate (min SEK of rent a month from real estate),
-//   green (min green rating), permitOk (the environmental permit not broken in the stage, nor now), runways (min runways).
+//   green (min green rating), permitOk (the environmental permit not broken in the stage, nor now), runways (min runways);
+//   session 6: loss (max SEK the stage lost: costs above income), cargo (min SEK from freight in the stage), mothballed (min
+//   terminals closed), laidOff (max share of the jobs gone), readiness (min fallback readiness of the systems, %),
+//   chargers (min charging stands), joined (Terminals 4 and 5 joined airside).
 // A mission's ★ is every stage passed and its own `goal`; ★★ and ★★★ one each of its two `stars`.
 // Used by sim/missions.js, the stage card and the results.
 
@@ -25,7 +28,7 @@ const Goals = {
       maxWait: 0, missed: 0, tasksPlayer: 0, tasksDuty: 0, tasksAuto: 0, tasksPeople: 0, overflow: 0, closeCalls: 0,
       noise: 0, nightMoves: 0, income: 0, cost: 0, built: 0, ploughRuns: 0, closedMin: 0, minutes: 0, days: 0, decisions: 0,
       tasksSys: 0, short: 0, struck: 0, failures: 0, lostBags: 0, unannounced: 0, emergencies: 0, secServed: 0, secWaitSum: 0, brandsIn: 0,
-      borderServed: 0, borderWaitSum: 0, permitFines: 0 };
+      borderServed: 0, borderWaitSum: 0, permitFines: 0, cargoIn: 0, banned: 0 };
   },
   // the mission's counters: the stages' added up (the longest wait the longest)
   add(total, st) {
@@ -78,12 +81,20 @@ const Goals = {
       case 'permitOk': return !st.permitFines && !(Green.permit() || {}).broken;
       case 'runways': return S.airport.runways.length;
       case 'owner': return S.owner === c.id;
+      // session 6
+      case 'loss': return Math.max(0, st.cost - st.income);
+      case 'cargo': return st.cargoIn || 0;
+      case 'mothballed': return Terminal.mothballCount();
+      case 'laidOff': return People.cutShare();
+      case 'readiness': return Systems.readinessAll() * 100;
+      case 'chargers': return Airport.chargers();
+      case 'joined': return !!S.airport.joined;
       // the result of the last month closed: what the airport earns now, investments' payback included
       // (the one-off sums left out: loans taken or repaid, the owner's money, building and buying)
       case 'lastMonth': {
         const h = S.finance.history[S.finance.history.length - 1];
         if (!h) return 0;
-        const oneOff = ['loans', 'owner', 'owner loan', 'construction', 'build', 'deals', 'hiring', 'training', 'drills', 'stranded'];
+        const oneOff = ['loans', 'owner', 'owner loan', 'construction', 'build', 'deals', 'hiring', 'training', 'drills', 'stranded', 'layoffs'];
         let r = 0;
         for (const k of Object.keys(h.in)) if (oneOff.indexOf(k) < 0) r += h.in[k];
         for (const k of Object.keys(h.out)) if (oneOff.indexOf(k) < 0) r -= h.out[k];

@@ -102,6 +102,17 @@ const Missions = {
     if (u.strike) { People.ensure(); People.dept(u.strike.dept); const from = Calendar.parse(u.strike.from); S.people.strike = { dept: u.strike.dept, from, to: from + STRIKE_DAYS, settle: WAGE_DEMAND }; }
     for (const id of u.managers || []) if (!S.people || !Object.values(S.people.managers).some((m) => m.id === id)) People.hireManager(id);
     if (u.it && (!S.people || S.people.it < u.it)) People.hireIT(u.it - (S.people ? S.people.it : 0));
+    // session 6: the traffic a crisis leaves (1 again once it is over), random cyber attacks, the terminals the owner keeps
+    // closed, the people who left in the long pause, and the minimum of charging stands and mobile chargers
+    if (u.demand !== undefined) S.airport.demand = u.demand;
+    if (u.cyber) S.airport.cyber = true;
+    for (const t of u.mothball || []) Terminal.mothball(t);
+    for (const t of u.unmothball || []) if (S.airport.mothballed && S.airport.mothballed[t]) delete S.airport.mothballed[t];
+    if (u.leavers) People.leavers(u.leavers);
+    // a department short of people at the start (they left for other work): { dept: share of its jobs empty }
+    for (const d of Object.keys(u.cut || {})) if (People.has(d)) { S.people.depts[d].cut = Math.max(S.people.depts[d].cut || 0, u.cut[d]); People.updateMeter(); }
+    if (u.chargers) while (Airport.chargers() < u.chargers && Airport.buyFree('charger')) { /* the owner's chargers */ }
+    if (u.pierDesign && !S.airport.pierDesign) S.airport.pierDesign = u.pierDesign;
     People.updateMeter();
   },
   // a level the Office may buy from now on
@@ -119,6 +130,8 @@ const Missions = {
     S.mission.st = Goals.newStats();
     S.mission.acc = 0;
     S.mission.hands = (stage.hands || m.hands || []).slice();
+    // session 6: the traffic a crisis leaves in this stage
+    if (stage.demand !== undefined) S.airport.demand = stage.demand;
     if (stage.mode === 'ops') Ops.begin(stage); else Plan.begin(stage);
     this.checkpoint = JSON.stringify(S);
     logEvent('stageStart', { stage: i });

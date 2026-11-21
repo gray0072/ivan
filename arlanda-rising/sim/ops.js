@@ -72,7 +72,7 @@ const Ops = {
     } else if (e.do === 'strike') {
       // a strike called this morning: the team works at STRIKE_CAPACITY for the rest of the stage
       if (People.has(e.dept)) { S.ops.strike = e.dept; S.mission.st.struck = 1; logEvent('strikeNow', { dept: e.dept }); }
-    } else if (e.do === 'fail') Systems.fail(e.dom, e.min);
+    } else if (e.do === 'fail') Systems.fail(e.dom, e.min, e.deep);
     else if (e.do === 'power') Systems.powerCut(e.min);
     else if (e.do === 'lanesShut') S.ops.lanesShut = e.n;
     else if (e.do === 'sick') { if (People.has(e.dept)) S.ops.absence[e.dept] = (S.ops.absence[e.dept] || 0) + e.share; }

@@ -25,7 +25,10 @@ const AIRLINES = {
       { from: 1983, to: 1997, top: '#f6f6f3', belly: '#e9e9e4', line: '#c8102e', line2: '#d9a521', tail: '#f6f6f3',
         titles: 'SCANDINAVIAN', emblem: ['text', 'SAS', '#1f3f8f'] },
       { from: 1998, to: 2019, top: '#f7f7f5', belly: '#e6e8ea', line: '#f7f7f5', tail: '#f7f7f5',
-        titles: 'Scandinavian Airlines', emblem: ['text', 'SAS', '#1f3f8f'] }
+        titles: 'Scandinavian Airlines', emblem: ['text', 'SAS', '#1f3f8f'] },
+      // session 6: the livery of 2019 — the fin, the engines and the belly's logo in Scandinavian blue
+      { from: 2020, to: 2050, top: '#f6f7f8', belly: '#d3dbe6', line: '#f6f7f8', tail: '#0d1f5c',
+        titles: 'SAS', emblem: ['text', 'SAS', '#ffffff'] }
     ],
     court: [{ from: 1990, type: 'MD87', perDay: 2, load: 0.72, need: 0.1 }], rival: 'Copenhagen',
     src: 'sv.wikipedia Arlanda: the first landing on 14 December 1959 was an SAS Caravelle from Bromma; the first regular flight, 26 June 1960, an SAS DC-8 to New York',
@@ -162,6 +165,47 @@ const AIRLINES = {
         titles: '', emblem: ['text', 'VIP', '#8a8f94'] }
     ],
     src: 'the game\'s own: no real operator is named',
+    check: '' },
+  // ---------- session 6: the cargo airlines of the pandemic, the end of 2022, the future of chapter 8 ----------
+  DHL: { name: 'DHL Express', kind: 'cargo', years: [1990, null], intl: true,
+    temper: { patience: 1.1, contact: false, fees: 1.2 },
+    liveries: [
+      { from: 2002, to: 2050, top: '#ffcc00', belly: '#ffcc00', line: '#d40511', tail: '#ffcc00',
+        titles: 'DHL', emblem: ['text', 'DHL', '#d40511'] }
+    ],
+    src: 'Swedavia (2020), Seven quick questions about air cargo: DHL Express, UPS, TNT, FedEx, Turkish Airlines Cargo and Korean Air Cargo serve Swedavia\'s airports; en.wikipedia DHL Aviation: yellow with red titles',
+    check: 'its first year at Arlanda (the game\'s 1990)' },
+  UPS: { name: 'UPS Airlines', kind: 'cargo', years: [1990, null], intl: true,
+    temper: { patience: 1.1, contact: false, fees: 1.2 },
+    liveries: [
+      { from: 2003, to: 2050, top: '#4b2e20', belly: '#4b2e20', line: '#4b2e20', tail: '#4b2e20',
+        titles: 'UPS', emblem: ['text', 'UPS', '#ffb500'] }
+    ],
+    src: 'Swedavia (2020), Seven quick questions about air cargo; en.wikipedia UPS Airlines: brown with the gold shield on the fin',
+    check: 'its first year at Arlanda (the game\'s 1990); the shield drawn as gold letters' },
+  AFL: { name: 'Aeroflot', kind: 'network', years: [1960, 2022], intl: true,
+    temper: { patience: 1, contact: false, fees: 1 },
+    liveries: [
+      { from: 2003, to: 2022, top: '#f2f3f4', belly: '#c5ccd3', line: '#1b3b8c', tail: '#f2f3f4',
+        titles: 'AEROFLOT', emblem: ['text', 'SU', '#1b3b8c'] }
+    ],
+    src: 'Transportstyrelsen, Stängt luftrum för Ryssland (2022): Swedish airspace closed to Russian aviation, Aeroflot\'s departures from Arlanda stopped; Aeroflot cancelled all its flights to Europe on 27 February 2022 (Reuters)',
+    check: 'its first year at Arlanda (the game\'s 1960); the fin drawn plain with SU instead of the flag' },
+  ELECTRIC: { name: 'Electric regional flights', kind: 'future', years: [2030, null], intl: false,
+    temper: { patience: 1.3, contact: true, fees: 1.5 },
+    liveries: [
+      { from: 2025, to: 2060, top: '#f7f8f6', belly: '#e3ebe1', line: '#2f9e5b', tail: '#2f9e5b',
+        titles: 'electric', emblem: ['text', 'E', '#ffffff'] }
+    ],
+    src: 'the game\'s own: the regional flights of the 2030s on electric aircraft, no real operator is named',
+    check: '' },
+  HYDRO: { name: 'Hydrogen test flights', kind: 'future', years: [2035, null], intl: true,
+    temper: { patience: 1.2, contact: false, fees: 1.5 },
+    liveries: [
+      { from: 2025, to: 2060, top: '#f7f8fa', belly: '#dfe8f0', line: '#4aa3df', tail: '#4aa3df',
+        titles: 'H2', emblem: ['text', 'H2', '#ffffff'] }
+    ],
+    src: 'the game\'s own: a hydrogen-electric prototype\'s test flights, no real maker or operator is named',
     check: '' }
 };
 

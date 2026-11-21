@@ -107,5 +107,22 @@ const Plan = {
     if (o.biofuel !== undefined) Green.biofuel(o.biofuel);
     if (o.stranded) Finance.book('stranded', -o.stranded);
     if (o.permit) S.airport.permit = Object.assign({}, S.airport.permit || {}, o.permit);
+    // session 6: the traffic a crisis leaves, terminals closed and opened again, rent relief for the brands, the staff's
+    // crisis answer (furlough, lay-offs), rehiring, a drill everywhere, the design of the player's pier
+    if (o.demand !== undefined) S.airport.demand = o.demand;
+    for (const t of [].concat(o.mothball || [])) Terminal.mothball(t);
+    for (const t of [].concat(o.reopen || [])) Terminal.reopen(t);
+    if (o.relief !== undefined) Terminal.relief(o.relief);
+    if (o.staff) People.crisis(o.staff.how, o.staff.share, o.staff.months);
+    if (o.rehire) { if (o.rehire === true) People.rehireAll(); else for (const d of [].concat(o.rehire)) People.rehire(d); }
+    if (o.drills) Systems.drillAll();
+    // a second company's people, cleared already, fill a share of a department's empty jobs at once
+    if (o.cutFill && People.has(o.cutFill.dept)) { const d = S.people.depts[o.cutFill.dept]; d.cut = Math.max(0, (d.cut || 0) - o.cutFill.share); People.updateMeter(); }
+    if (o.pier) {
+      S.airport.pierDesign = o.pier;
+      const p = Construction.open('pier2040');
+      p.k = PROJECTS.pier2040.designs[o.pier].k;
+      if (S.mission.projects.indexOf('pier2040') < 0) S.mission.projects.push('pier2040');
+    }
   }
 };

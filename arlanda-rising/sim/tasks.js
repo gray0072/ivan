@@ -64,6 +64,8 @@ const Tasks = {
     if (kind === 'lane') return Terminal.lanes() < Terminal.lanesUp();
     if (kind === 'booth') return Terminal.booths() < (S.airport.booths || 0);
     if (kind === 'deice') { const f = Flights.get(target); return !!f && f.tr && f.tr.deice === 'asked'; }
+    // session 6: the mobile charger for an electric aircraft
+    if (kind === 'charge') { const f = Flights.get(target); return !!f && f.tr && f.tr.fuel === 'asked' && f.tr.charge === 'mobile'; }
     return false;
   },
   // what one tap does
@@ -86,6 +88,7 @@ const Tasks = {
       case 'lane': Terminal.openLane(Terminal.lanes() + 1); logEvent('lane', { open: Terminal.lanes() }); return true;
       case 'booth': Terminal.openBooth(Terminal.booths() + 1); logEvent('booth', { open: Terminal.booths() }); return true;
       case 'deice': Flights.get(target).tr.deice = 'queued'; return true;
+      case 'charge': Flights.get(target).tr.fuel = 'cqueued'; return true;
     }
     return false;
   },

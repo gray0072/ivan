@@ -20,9 +20,9 @@ const EPOCH_YEAR = 1950;           // day 0 of the calendar is 1 January of this
 // ---------- the task tray and the duty manager ----------
 const TRAY_MAX = 6;                // tasks the tray holds; more go to the duty manager at once
 // game minutes a task waits for the player before the duty manager takes it
-const TASK_DEADLINE = { stand: 5, fuel: 6, checkin: 8, plough: 10, bags: 6, announce: 4, lane: 6, booth: 6, deice: 6 };
+const TASK_DEADLINE = { stand: 5, fuel: 6, checkin: 8, plough: 10, bags: 6, announce: 4, lane: 6, booth: 6, deice: 6, charge: 6 };
 // game minutes the duty manager is late on top of that (and right only MANUAL_SUMMARY_EFF of the time)
-const DUTY_LATE = { stand: 15, fuel: 15, checkin: 20, plough: 25, bags: 15, announce: 12, lane: 15, booth: 15, deice: 15 };
+const DUTY_LATE = { stand: 15, fuel: 15, checkin: 20, plough: 25, bags: 15, announce: 12, lane: 15, booth: 15, deice: 15, charge: 15 };
 const MANUAL_SUMMARY_EFF = 0.6;    // the duty manager's efficiency, also for the skipped time between missions
 // share of the income lost in summary (plan time, the skipped time) per domain still done by hand at that efficiency
 const SUMMARY_LOSS = { stands: 0.04, turnaround: 0.03, checkin: 0.04, snow: 0.06, baggage: 0.03, info: 0.02, security: 0.03, border: 0.02, deice: 0.04 };
@@ -263,3 +263,31 @@ const EVENT_CHANCE = 0.4;          // chance an ops stage gets a random event (o
 const EVENT_GAP = 60;              // game minutes from the stage's start before a random event may come
 const VIP_STAND_MIN = 75;          // game minutes a stand is kept for a VIP or state flight
 const ASH_HOTEL = 900;             // SEK a night per stranded passenger the airport helps with (cots, food, hotels)
+
+// ---------- the storm years and the future (session 6, chapters 7 and 8) ----------
+const DEMAND_MIN = 0.05;           // the least share of the normal traffic a crisis leaves (S.airport.demand, in summary)
+const MOTHBALL_SAVE = 0.85;        // share of a mothballed terminal's jobs, upkeep and energy saved while it is closed
+const MOTHBALL_ENERGY = 0.12;      // share of the energy bill each terminal mothballed saves (from chapter 6's bill)
+const REOPEN_COST = 25e6;          // SEK to clean, test and staff a mothballed terminal again
+const REOPEN_DAYS = 21;            // days from the decision until it opens (plan time)
+const RENT_RELIEF = 0.7;           // share of the brands' rent let off while the relief runs
+const RENT_STAY = 0.5;             // share of the brands that stay through a crisis without relief (the rest close)
+const FURLOUGH_PAY = 0.25;         // share of a furloughed job's wage the airport still pays (the state pays the rest)
+const LAYOFF_PAY_MONTHS = 3;       // months of wages paid out to each job laid off (notice)
+const CUT_K = 1.4;                 // a team with this share of its jobs gone does (1 − share × CUT_K) of its work itself
+const CARGO_TONNES_FEE = 1400;     // SEK the airport earns per tonne of cargo loaded or unloaded (handling, the cargo apron)
+const CHARGE_MIN = 12;             // game minutes an electric aircraft charges at a stand with a charger
+const CHARGE_MOBILE_MIN = 26;      // … from the mobile charger, sent to it by hand or by the ramp team
+const H2_MIN = 15;                 // game minutes a hydrogen aircraft takes on fuel at the hydrogen depot
+const ROBOT_X = 0.8;               // × the turnaround's service minutes with the apron robots working
+const AUTO_PLOUGH_X = 0.6;         // × the convoy's minutes with the self-driving ploughs working
+const BIO_BOARD_X = 0.7;           // × the boarding minutes with biometric boarding working (faces as boarding passes)
+const BIO_X = 2.6;                 // × a booth's passengers with biometric boarding working (instead of EGATE_X)
+const HEAT_TEMP = 30;              // °C: from here the heat slows the ramp (unless the robots do it) and the heavy jets need the long runway
+const HEAT_PAX = 25;                // Passengers points off each departure's result in the heat in a terminal not cooled
+const HEAT_SLOW = 1.35;            // × the turnaround's minutes in the heat with people on the ramp
+const HEAT_HEAVY_T = 200;          // t of maximum take-off weight from which a departure needs runway 1 (3 300 m) in the heat
+const CYBER_SPREAD = 4;            // systems a cyber attack takes down at most without a security operations centre (the integrated first)
+const GREEN_PTS_6 = { charger: 1.5, nightTrain: 6, h2: 4, greenPier: 6 }; // green rating points: each charging stand (up to 6), the night train, the hydrogen depot, the green pier
+const BLACKOUT_LANE_X = 0.75;      // × a security lane's passengers in a blackout (the bags searched by hand)
+const LEAVERS_2022 = 0.3;          // share of the furloughed staff who found other work in the long pause (half of it of those kept on)

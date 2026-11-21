@@ -46,13 +46,26 @@ const FREE_ERAS = [
         QR: [{ type: 'A319', perDay: 1, load: 0.78 }] },
       domains: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2, border: 1, security: 2, deice: 2 }, terms: { SK: 'intl', BA: 't2', AY: 't2', DY: 't2' },
       booths: 6, secRule: 2, events: true, rivals: { pull: 1, months: 1 },
-      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2, border: 1, security: 2, deice: 3 } } }
+      unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2, border: 1, security: 2, deice: 3 } } },
+  // session 6: the airport after the storm years — Terminals 4 and 5 as one, the A380 gate, the freighters, cyber attacks
+  { id: '2024', name: 'After the storm, 2024', date: '2024-09-02', opens: '7-11',
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal2', 'arlandaExpress', 'sorterHall',
+      'skyCity', 'skyCity.hotel', 'schengen', 'schengen.t2', 'tower2', 'pierF', 'pierF.bridges', 'runway3', 'bridges', 'deicePads', 'cargoCity', 'aquifer', 'gateF', 't4t5'],
+    setup: { open: true, openSkies: true, units: true, lanes: 20, budget: 300e6, loanLimit: 1500e6, items: { fuelTruck: 6, plough: 7, crashTender: 3, generator: 1, deicer: 4 }, desks: 40, it: 11,
+      airlines: { SK: [{ type: 'A20N', perDay: 14, load: 0.8 }, { type: 'A321', perDay: 8, load: 0.8 }, { type: 'CRJ9', perDay: 8, load: 0.76 }, { type: 'A359', perDay: 1, load: 0.85 }],
+        DY: [{ type: 'B738', perDay: 12, load: 0.84 }, { type: 'B38M', perDay: 4, load: 0.84 }], LH: [{ type: 'A320', perDay: 5, load: 0.74 }], AY: [{ type: 'A321', perDay: 5, load: 0.76 }],
+        BA: [{ type: 'A320', perDay: 4, load: 0.76 }], EK: [{ type: 'B77W', perDay: 1, load: 0.86 }], QR: [{ type: 'A359', perDay: 1, load: 0.85 }],
+        DHL: [{ type: 'B76F', perDay: 1, load: 0.8 }], UPS: [{ type: 'B76F', perDay: 1, load: 0.8 }] },
+      domains: { stands: 3, turnaround: 1, checkin: 3, snow: 2, baggage: 3, info: 2, border: 2, security: 2, deice: 3 }, terms: { SK: 'intl', BA: 't2', AY: 't2', DY: 't2' },
+      booths: 8, secRule: 2, events: true, cyber: true, owner: 'Swedavia', green: true, permit: { perDay: 135 }, rivals: { pull: 1, months: 1 },
+      unlock: { stands: 3, turnaround: 1, checkin: 3, snow: 2, baggage: 3, info: 2, border: 2, security: 3, deice: 3 } } }
 ];
 
 // game minutes on the ground by type, for the flights made from the routes
 const FREE_TURN = { DC3: 30, CV44: 35, DC6B: 55, CRVL: 40, DC8: 65, DC9: 40, B727: 50, B747: 125, DC10: 75, F28: 35, MD81: 40,
   B737: 40, B767: 90, MD87: 40, F100: 35, F50: 25, BA46: 35, A320: 55, B757: 60,
-  B736: 45, B738: 50, A321: 55, A319: 50, CRJ9: 40, AT72: 35, A333: 110, A343: 110, B77W: 120, B789: 110, A388: 140, G550: 60 };
+  B736: 45, B738: 50, A321: 55, A319: 50, CRJ9: 40, AT72: 35, A333: 110, A343: 110, B77W: 120, B789: 110, A388: 140, G550: 60,
+  B76F: 90, B77F: 120, A20N: 50, B38M: 50, A359: 110, EL30: 35, H2P: 50 };
 const FREE_OPENS = '2-11';         // the mission whose pass opens Free Play
 const FREE_PLAN_DAYS = 40;         // days of plan time in a round
 const FREE_GOAL_ONTIME = 0.7;      // the rolling goal of a round's ops stage

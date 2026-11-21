@@ -40,7 +40,15 @@ const AIRCRAFT_SHAPE = {
   B77W: { sweep: 31, engines: [0.25], fin: 0.16, fus: 0.043 },
   B789: { sweep: 32, engines: [0.25], fin: 0.17, fus: 0.046 },
   A388: { sweep: 33, engines: [0.22, 0.4], fin: 0.17, fus: 0.05 },
-  G550: { sweep: 27, rear: true, fin: 0.22, fus: 0.05 }
+  G550: { sweep: 27, rear: true, fin: 0.22, fus: 0.05 },
+  // session 6: the freighters, the 2020s' types, the future's electric and hydrogen aircraft (many small propellers)
+  B76F: { sweep: 31, engines: [0.24], fin: 0.18, fus: 0.05 },
+  B77F: { sweep: 31, engines: [0.25], fin: 0.17, fus: 0.048 },
+  A20N: { sweep: 25, engines: [0.2], fin: 0.2, fus: 0.045 },
+  B38M: { sweep: 25, engines: [0.17], fin: 0.19, fus: 0.042 },
+  A359: { sweep: 31, engines: [0.25], fin: 0.17, fus: 0.046 },
+  EL30: { sweep: 2, engines: [0.13, 0.27, 0.41], props: true, fin: 0.23, fus: 0.06 },
+  H2P: { sweep: 4, engines: [0.18, 0.33], props: true, fin: 0.21, fus: 0.056 }
 };
 
 const AircraftArt = (() => {

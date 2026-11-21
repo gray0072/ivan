@@ -79,6 +79,19 @@ const Actions = {
     return true;
   },
   biofuel(share) { return Green.biofuel(share); },
+  // session 6: terminals closed and opened again, rehiring a department's jobs (or every one), drills everywhere, the
+  // mobile charger sent to an electric aircraft
+  mothball(term) { return !S.ops && Terminal.mothball(term); },
+  reopen(term) { return !S.ops && Terminal.reopen(term); },
+  rehire(dept) { return !S.ops && (dept ? People.rehire(dept) : People.rehireAll()); },
+  drillAll() { return Systems.drillAll(); },
+  charge(flightId) {
+    const f = S.ops && Flights.get(flightId);
+    if (!f || !Tasks.valid('charge', flightId)) return false;
+    f.tr.fuel = 'cqueued';
+    this.doneByHand('charge', flightId);
+    return true;
+  },
   deice(flightId) {
     const f = S.ops && Flights.get(flightId);
     if (!f || !Tasks.valid('deice', flightId)) return false;

@@ -23,6 +23,8 @@ const Runways = {
   },
   forArr() { return Airport.runway('r3') ? this.pick(['r1', 'r3', 'r2']) : this.inUse(); },
   forDep() { return Airport.runway('r3') ? this.pick(['r3', 'r1', 'r2']) : this.inUse(); },
+  // session 6: in the heat (HEAT_TEMP) the air is thin: a heavy jet must take off from runway 1, the long one
+  heavyInHeat(f) { return !!(Airport.runway('r1') && Airport.runway('r3') && Turnaround.hot() && AIRCRAFT[f.type].mtow >= HEAT_HEAVY_T); },
   // the wind across a runway, kt
   crosswind(rw) {
     const w = Weather.now();
@@ -111,6 +113,8 @@ const Runways = {
     const kind = id === 'apron' ? 'apron' : 'runway';
     let dur = PLOUGH_MIN[kind] * (kind === 'apron' ? 1 : Math.max(1, PLOUGH_CONVOY / Airport.ploughs()));
     if (S.domains.snow >= 1) dur *= 1 - People.perk('snow', 'convoy');
+    // session 6: the self-driving ploughs
+    if (Systems.working('snow') >= 3) dur *= AUTO_PLOUGH_X;
     s.plough = S.clock + dur;
     s.ploughFrom = S.clock;           // for the map: where the convoy is
     if (kind === 'runway') S.ops.convoy = s.plough;

@@ -10,6 +10,7 @@
 //   months   the months it may come in (none: any)
 //   weight   how often, against the others
 //   pax      Passengers points when it is over (a happy end)
+//   needs    (session 6) a flag of S.airport it needs (`cyber`: from chapter 7)
 //   text     the line on screen
 // Random events never blame a real company: a breakdown is "a system", a delay the weather or the animals.
 
@@ -27,5 +28,8 @@ const RANDOM_EVENTS = [
   { id: 'vip', do: 'vipStand', min: [70, 80], weight: 1,
     text: 'A state visit: a stand by the terminal is kept free for the visitors\' aircraft.' },
   { id: 'update', do: 'update', weight: 1,
-    text: 'A software update went wrong overnight: a system restarts in the middle of the morning.' }
+    text: 'A software update went wrong overnight: a system restarts in the middle of the morning.' },
+  // session 6: from chapter 7 (setup `cyber`) — an attack on the airport's network takes the linked systems down together
+  { id: 'cyber', do: 'cyber', min: [30, 50], weight: 1.5, needs: 'cyber',
+    text: 'A cyber attack on the airport\'s network: the linked systems go down together. The IT people cut them off and clean them.' }
 ];

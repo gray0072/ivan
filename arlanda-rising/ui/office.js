@@ -3,7 +3,8 @@
 // Arlanda Rising — the Office between missions (and between Free Play's rounds), with time stopped: the airport on the
 // map behind, the money and the loans (borrow or repay here), the last months' books, what the airport has, the five
 // meters, the People screen and the Ops Center (hire, train, put in systems, drills — at once, on the airport that
-// carries over), what waits for an answer (a manager's raise), and the next mission or round a tap away. Used by
+// carries over), what waits for an answer (a manager's raise), the terminals to mothball and open again (session 6), and
+// the next mission or round a tap away. Used by
 // game.js; it works on the world of Game.holder() (the campaign's or Free Play's), which is S while it is open.
 
 const Office = (() => {
@@ -72,6 +73,19 @@ const Office = (() => {
       }
       html += '</ul></div>';
     }
+    // session 6: the terminals that can be mothballed in a crisis and opened again, and the traffic there is
+    const closable = ['t2', 'dom'].filter((t) => Terminal.built(t));
+    if (closable.length && (w.airport.demand !== undefined || Terminal.mothballCount())) {
+      html += '<div class="ocard"><h3>🔒 ' + Text.esc(tr('Terminals')) + '</h3><ul class="has">';
+      if (w.airport.demand !== undefined && w.airport.demand < 1) html += '<li>✈️ ' + Text.esc(tr('Traffic: {p} of normal', { p: Text.pct(Summary.demand()) })) + '</li>';
+      for (const t of closable) {
+        const m = w.airport.mothballed && w.airport.mothballed[t], closed = Terminal.mothballed(t);
+        html += '<li>' + Text.esc(tr(TERMINALS[t].name)) + ': <b>' + Text.esc(closed ? (m === true ? tr('mothballed') : tr('opens {d}', { d: fmtDate(m) })) : tr('open')) + '</b> ' +
+          (m === true ? '<button class="btn toggle" data-term="reopen" data-t="' + t + '">' + Text.esc(tr('Open again')) + ' <small>' + sek(REOPEN_COST) + '</small></button>' :
+            !closed ? '<button class="btn toggle" data-term="mothball" data-t="' + t + '">' + Text.esc(tr('Mothball')) + '</button>' : '') + '</li>';
+      }
+      html += '</ul></div>';
+    }
     html += '</div>';
     if (nm) html += '<p class="label">' + Text.esc(tr('Next: {name} · ~{n} min', { name: tr(nm.name), n: Text.minutes(nm) })) + '</p>';
     if (h.free) html += '<p class="label">' + Text.esc(tr('Round {n} comes next.', { n: h.round })) + '</p>';
@@ -79,6 +93,12 @@ const Office = (() => {
     p.querySelectorAll('[data-loan]').forEach((b) => b.addEventListener('click', () => {
       Sfx.play('click');
       if (b.dataset.loan === 'borrow') Finance.borrow(LOAN_STEP); else Finance.repay(LOAN_STEP);
+      Game.keepWorld();
+      show();
+    }));
+    p.querySelectorAll('[data-term]').forEach((b) => b.addEventListener('click', () => {
+      if (!(b.dataset.term === 'reopen' ? Actions.reopen(b.dataset.t) : Actions.mothball(b.dataset.t))) return;
+      Sfx.play('click');
       Game.keepWorld();
       show();
     }));
