@@ -74,6 +74,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 ├── tools/icons-build.js      # packs each game's arrows, symbols and emoji as drawings (tools/icons/: the engine, the one-colour signs, the Twemoji files)
 ├── tools/i18n-check.js       # lists the tr() texts a translated game's language tables miss
 ├── tools/cdp.js              # drives a page in headless Chrome (phone or desktop) from a steps file: screenshots, page errors
+├── tools/showcase.js         # remakes a game's docs/showcase.gif: takes the slides of <folder>/tools/showcase-slides.js with tools/cdp.js, one short run each, and joins them
 ├── tools/showcase-gif.js     # joins screenshots of a game's stages into an animated, cross-faded docs/showcase.gif for its READMEs (plain Node)
 ├── tools/cloud-mock.js       # for testing a cloud save with tools/cdp.js: the repo over http, a fake Supabase session, a mock of its REST (offline, error, hang, ok)
 ├── docs/                    # the rules by area, for agents (AGENTS.md links each and sums it up): languages.md, mobile.md, pwa.md (icons, manifest, updates, offline), icons.md (arrows and emoji drawn), code-layout.md, new-project.md, cloud-save.md (rules, recipe, typical mistakes, tests), testing.md
@@ -107,10 +108,10 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── sim/                  # state, fish (stages, growth, sizes, hit shapes), camera, spawn, effects, leaps, jellyfish, gulls, npc (bot brain), player, records, demo (demo-mode pilot)
 │   ├── render/               # render.js (canvas, fish, jellyfish, gulls, effects), scenery.js (background)
 │   ├── ui/                   # overlay (panels, banner), menu (records table), dialogs (milestone, game over), hud, sounds (game events → sounds), fireworks
+│   ├── tools/                # showcase-slides (the slides of docs/showcase.gif, taken by tools/showcase.js)
 │   ├── docs/                 # showcase.gif (from a fry to the max-size Sea King, English UI) used by the READMEs
 │   ├── README.md
 │   ├── README_RU.md
-│   ├── README_SV.md
 │   ├── icon.svg
 │   ├── icon-maskable.svg     # full-bleed Android home-screen icon (artwork in the safe circle)
 │   ├── icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png  # PWA icons, rendered by tools/pwa-icons.sh
@@ -128,6 +129,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── scenes/               # fx.js shared drawing helpers + processes (flower, zombies, railway, balloon, campfire, panda)
 │   ├── characters/           # the player's animal characters as SVG (species.js, look.js)
 │   ├── items/                # shop: food.js, clothes.js + wear/<slot>.js, furniture.js + room/<slot>.js, shop.js
+│   ├── tools/                # showcase-slides (the slides of docs/showcase.gif, taken by tools/showcase.js)
 │   ├── docs/                 # showcase.gif (the six scenes, bosses, a level-up and the furnished room, English UI) used by the READMEs
 │   ├── README.md
 │   ├── README_RU.md
@@ -216,7 +218,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── art/                  # people, cabins, interiors, buildings (silhouettes, logo), flag-gb / flag-ru / flag-se.svg
 │   ├── render/               # view (camera, layout, taps), building (the cut-away building)
 │   ├── ui/                   # blockview, editor, palette, slots, runbar, hud, hints (and the guide), textview, results, jokes (and the newspaper), museum, screens, sounds, fireworks
-│   ├── tools/                # missions-check (runs every reference solution), texts-check (every text translated)
+│   ├── tools/                # missions-check (runs every reference solution), texts-check (every text translated), showcase-slides (the slides of docs/showcase.gif, taken by tools/showcase.js)
 │   ├── docs/                 # showcase.gif (the buildings from Grandma's House to the Empire State Building, English UI) used by the READMEs
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
@@ -234,7 +236,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── art/                  # emblems (airline fin art), flag-gb / flag-ru / flag-se.svg
 │   ├── render/               # palette, iso (camera, projection), ground (forest, fields, lakes, clearings, Märsta), airport (runway, apron, buildings by stage), aircraft, traffic (aircraft paths, vehicles, people, turnaround bars), sky (light, fog, snow, lamps), map (a frame, taps)
 │   ├── ui/                   # text, screens, hud, tray, toolbar, plan (projects, decisions), cards (the flight card), timeline, missioncard, results, office, hints (Kaj, the guiding finger), sounds
-│   ├── tools/                # missions-check (plays every mission with its reference strategy, balances the chapter)
+│   ├── tools/                # missions-check (plays every mission with its reference strategy, balances the chapter), showcase-slides (the slides of docs/showcase.gif, taken by tools/showcase.js)
 │   ├── docs/                 # showcase.gif (the eras from 1958 to 2040, English UI) used by the READMEs
 │   ├── README.md, README_RU.md, README_SV.md
 │   ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png
