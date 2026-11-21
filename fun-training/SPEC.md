@@ -273,8 +273,11 @@ fun-training/
 ├── README.md / README_RU.md   # short, link to the live page
 ├── icon.svg
 ├── icon-maskable.svg, icon-*.png, apple-touch-icon.png, manifest.webmanifest, sw.js   # PWA (installable, Android icon, offline: sw.js from tools/sw-build.js)
-└── screenshot.png
+├── docs/            # showcase.gif (scenes, bosses, a level-up and the room at the top of the READMEs, English UI; tools/showcase-gif.js, left out of the offline worker)
+└── screenshot.png   # the gallery card's picture
 ```
+
+- **The showcase GIF** (`docs/showcase.gif`, `node tools/showcase-gif.js …` with the default dithering, 9 slides, about 4 MB; see `docs/testing.md`): 1280 × 720, English UI, Pick 1–4, 10 tasks per lesson. Each run writes one long-played player into `funTraining.v1` before a reload (Mia the Kitty, 🪙 3860 · 💎 47; progress flower 59 all perfect, zombies 33, railway 27, balloon 14, campfire 21, panda 9, a few ↻ steps; dressed and furnished with 🪙 1000+ and 💎 pieces), opens her home and starts a step by clicking its track cell; the task type of each lesson is set on the player's settings before it starts. The answers are clicked, not cheated (`]` would mark the lesson and hide the level-up): the steps file wraps `Tasks.make` to keep the current task and clicks the choice with its answer. The slides: Home with the six tracks and their stars · Zombie Defense step 34, a scale task after a mistake (the two-line solution) · Railway Rush step 28, a reading task (English words up to 6 letters) · Campfire Night step 22, a mixed math task of 3 numbers, the fire left to burn down for 9 s so the wolves' eyes come close · Balloon Flight step 15, the thundercloud boss after one hit · Panda Snack step 10, the crowned monkey big boss at the basket (letters) · Grow a Flower step 60, the caterpillar big boss on the stem · its victory 1–2 s after the dialog opens (shots every 0.4 s, the one with a firework ring kept): the Gold star, the ladder of levels and the fireworks · the room with the Room tab of the shop.
 
 ## Differences from the repo conventions
 

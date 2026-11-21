@@ -8,7 +8,7 @@
 
 *[Читать на русском](README_RU.md)*
 
-<a href="https://gray0072.github.io/ivan/fun-training/"><img src="screenshot.png" alt="Fun Training screenshot" width="800"></a>
+<a href="https://gray0072.github.io/ivan/fun-training/"><img src="docs/showcase.gif" alt="Fun Training in motion: the home screen of a long-played player with stars on all six tracks, Zombie Defense with a scale task, Railway Rush with a reading task, Campfire Night with a mixed math task, the thundercloud boss over the balloon, the crowned monkey big boss stealing the panda's basket, the caterpillar boss climbing the flower, the victory dialog with the Gold star, the ladder of levels and fireworks, and the character's furnished room with the shop" width="800"></a>
 
 </div>
 

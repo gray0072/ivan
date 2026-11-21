@@ -128,6 +128,7 @@ Management and strategy game about running Stockholm Arlanda through its real hi
 │   ├── scenes/               # fx.js shared drawing helpers + processes (flower, zombies, railway, balloon, campfire, panda)
 │   ├── characters/           # the player's animal characters as SVG (species.js, look.js)
 │   ├── items/                # shop: food.js, clothes.js + wear/<slot>.js, furniture.js + room/<slot>.js, shop.js
+│   ├── docs/                 # showcase.gif (the six scenes, bosses, a level-up and the furnished room, English UI) used by the READMEs
 │   ├── README.md
 │   ├── README_RU.md
 │   ├── icon.svg
