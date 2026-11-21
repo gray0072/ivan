@@ -178,6 +178,7 @@ const Game = {
   intro() {
     this.screen = 'intro';
     this.speed = 0;
+    this.lastSpeed = 1;   // every stage starts at ▶, whatever the last one ran at
     this.hud(true);
     const st = Missions.stage();
     const proj = (Missions.def().setup || {}).projects || [];

@@ -313,6 +313,10 @@ ul.has { margin: 0; padding-left: 18px; }
   #flightCard { left: 6px; right: 6px; width: auto; bottom: calc(60px + env(safe-area-inset-bottom)); }
   .meter .mbar { width: 18px; }
 }
+/* a phone held upright: the money's chip keeps one width while the sum changes */
+@media (max-width: 600px) and (orientation: portrait) {
+  #money { display: inline-block; min-width: 4.6em; text-align: right; }
+}
 
 /* session 3: the People screen, the Ops Center, the teams in the bar, managers in a decision */
 .kv { display: flex; align-items: center; gap: 6px; margin: 2px 0; }

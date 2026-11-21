@@ -5,6 +5,9 @@
 // next event, pause; and the stage's goals with their values right now. Refreshed a few times a second by
 // game.js.
 
+// a phone held upright: the money in the HUD without its currency, so the first row keeps its width
+const PHONE_UPRIGHT = window.matchMedia('(max-width: 600px) and (orientation: portrait)');
+
 const Hud = (() => {
   const $ = (id) => document.getElementById(id);
   let built = false, last = 0, hudH = 0;
@@ -29,7 +32,7 @@ const Hud = (() => {
     // the panels under the HUD start below it, however many rows it takes
     const h = $('hud').offsetHeight;
     if (h && h !== hudH) { hudH = h; document.documentElement.style.setProperty('--hudH', h + 'px'); }
-    $('money').textContent = sek(S.money);
+    $('money').textContent = PHONE_UPRIGHT.matches ? moneyBare(S.money) : sek(S.money);
     $('moneyChip').classList.toggle('debt', S.money < 0);
     if (S.ops) {
       $('date').textContent = fmtDate(S.day) + ' · ' + fmtClock(S.clock);

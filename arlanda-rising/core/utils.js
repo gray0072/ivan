@@ -66,3 +66,14 @@ function money(v, short) {
   if (short && a >= 1e4) return sign + num(a / 1e3) + ' ' + u[1];
   return groupThousands(v) + ' ' + u[0];
 }
+// the HUD's money on a phone held upright: always short and without the currency ("1.2 M", "45 k", "1,2 млн")
+const MONEY_BARE = { en: ['', 'k', 'M'], ru: ['', 'тыс.', 'млн'], sv: ['', 'k', 'M'] };
+function moneyBare(v) {
+  const lang = typeof I18N !== 'undefined' && MONEY_BARE[I18N.lang] ? I18N.lang : 'en';
+  const u = MONEY_BARE[lang], dec = lang === 'en' ? '.' : ',';
+  const a = Math.abs(v), sign = v < 0 ? '−' : '';
+  const num = (x) => { const r = Math.round(x * 10) / 10; return r >= 100 || Number.isInteger(r) ? groupThousands(Math.round(r)) : String(r).replace('.', dec); };
+  if (a >= 1e6) return sign + num(a / 1e6) + ' ' + u[2];
+  if (a >= 1e4) return sign + num(a / 1e3) + ' ' + u[1];
+  return groupThousands(v);
+}
