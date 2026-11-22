@@ -77,6 +77,8 @@ rect('cargo yard', 'field', Lo.cargoCity.yard);
 rect('fuel yard', 'bld', Lo.fuelYard.box);
 line('fuel yard lane', 'way', [[Lo.fuelYard.box[2] + 1, Lo.fuelYard.aisle], Lo.fuelYard.gate], 9);
 rect('ploughs', 'bld', Lo.snowDepot.box);
+// the fire station's apron in front of its six bays, where its crash tenders stand nose out
+rect('fire station apron', 'apron', Lo.fireStation.apron);
 rect('parkingSmall', 'park', box('parkingSmall')); rect('parkingBig', 'park', box('parkingBig'));
 Lo.solar.forEach((b, i) => rect('solar ' + (i + 1), 'field', b));
 Lo.deicePads.forEach((b, i) => rect('de-icing pad ' + (i + 1), 'apron', b));

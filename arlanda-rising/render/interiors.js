@@ -435,17 +435,23 @@ const Interiors = (() => {
     put(x1 - 3, y1 - 3, (c) => { box(c, x1 - 4.5, y1 - 3.5, x1 - 2.5, y1 - 2.7, 0, 0.75, '#e8e4dc'); man(c, x1 - 3.5, y1 - 2.2, 4, true); });
   }
 
-  // ---------- the fire station: the tenders in their bays ----------
+  // ---------- the fire station: the tenders in their six bays, the crew room behind ----------
+  // (with the roofs on they stand nose out on the apron in front of their open doors: render/airport.js fireStation)
   function fire(put, c, sc, key, b) {
     const [x0, y0, x1, y1] = b;
     if (Z < 0.45) return;
-    for (let i = 0; i < 3; i++) {
-      const x = x0 + 9.5 + i * 15, y = y0 + 9;
-      put(x, y, (c) => Vehicles.crashTender(c, x, y, 180));
-    }
-    flat(c, x0 + 1, y1 - 8, x1 - 1, y1 - 1, 0.12, '#c9a77c');
-    table(put, x0 + 14, y1 - 4, 0, key, 0.9);
-    table(put, x0 + 30, y1 - 4, 1, key, 0.7);
+    const bays = AirportArt.fireBays(sc);
+    // the bays' floor with a yellow line between two bays, the crew room's floor behind them
+    flat(c, x0 + 0.5, y0 + 0.5, x1 - 0.5, y0 + 13, 0.1, '#a3a7ab');
+    for (const bay of bays.slice(1)) flat(c, bay.x - 4.15, y0 + 0.5, bay.x - 3.85, y0 + 13, 0.12, '#f2c230');
+    for (const bay of bays) if (bay.tender) put(bay.x, y0 + 6.5, (c) => Vehicles.crashTender(c, bay.x, y0 + 6.5, 180));
+    flat(c, x0 + 1, y0 + 15, x1 - 1, y1 - 1, 0.12, '#c9a77c');
+    // the lockers along the back wall, the crew at their tables, one getting ready by the tenders
+    put(x1 - 2, y1 - 1.5, (c) => box(c, x0 + 3, y1 - 1.6, x1 - 3, y1 - 0.8, 0, 1.9, '#b8322a'));
+    table(put, x0 + 12, y1 - 7, 0, key, 0.9);
+    table(put, x0 + 26, y1 - 7, 1, key, 0.7);
+    table(put, x0 + 40, y1 - 7, 2, key, 0.5);
+    put(bays[2].x + 4, y0 + 10, (c) => man(c, bays[2].x + 4, y0 + 10, 3, false, '#26324a'));
   }
 
   // ---------- Cargo City: racks of goods, containers, forklifts ----------

@@ -58,7 +58,11 @@ const LAYOUT = {
   // the first tower north of the waiting room, a step off the apron's edge (x 880) and clear of the fence, which runs
   // from the waiting room's corner north-west round the apron
   tower1: { x: 893, y: 1362, base: 9, h: 28 },
-  fireStation: { box: [482, 1470, 532, 1500], h: 8 },   // east of the parallel taxiway (its edge at x ≈ 468 here)
+  // east of the parallel taxiway (its edge at x ≈ 468 here): `bays` bays side by side along its south front (one door
+  // each, `pitch` m apart from `bay0` m east of its west wall), its `own` crash tenders and those bought (at most
+  // FIRE_CAT_MAX − FIRE_CAT_BASE: 3 + 3 = 6) parked nose out on its concrete `apron` in front of their open doors, the crew
+  // room behind the bays (render/airport.js fireBays)
+  fireStation: { box: [482, 1470, 532, 1500], h: 8, bays: 6, own: 3, bay0: 5, pitch: 8, apron: [470, 1455, 536, 1470] },
   siteOffice: { x: 720, y: 880 },
   intlTerminal: { box: [890, 1390, 965, 1645], h: 14 },
   domTerminal: { box: [895, 955, 975, 1112], h: 10 },

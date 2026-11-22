@@ -2,7 +2,8 @@
 
 // Arlanda Rising — the airport on the map: runway 1 with its markings, snow and lights; the parallel taxiway and its
 // links; the first apron with its stands and the remote stands bought later; the ploughs' standing and the fuel
-// trucks' yard by the fire station (and where each vehicle waits: fuelSpot, ploughSpot); and the buildings as they stand —
+// trucks' yard by the fire station (and where each vehicle waits: fuelSpot, ploughSpot); the fire station with its six
+// bays, its crash tenders parked nose out on its apron and its firefighters (fireBays); and the buildings as they stand —
 // or as far as they are built (the master plan's projects show their stages: a slab, walls going up, a crane;
 // a project open but not started shows its plot outlined; the airport's own shops as awnings on their terminal's landside
 // wall, never as buildings of their own). Flat things are drawn by `flat`, standing ones are
@@ -168,6 +169,14 @@ const AirportArt = (() => {
     // the ploughs' standing (asphalt) and the fuel trucks' yard with its bays and its lane onto the jet apron
     const winter = sc.season === 'winter';
     if (sc.items.plough) { const b = LAYOUT.snowDepot.box; c.fillStyle = winter ? '#9aa1a7' : '#5d6166'; c.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]); }
+    // the fire station's apron in front of its doors: a yellow box in front of each bay, where its tender stands
+    if (sc.items.fireStation || sc.p('fireStation', 'station') >= 1) {
+      const F = LAYOUT.fireStation, a = F.apron;
+      c.fillStyle = winter ? '#cfd5da' : PAL.concrete; c.fillRect(a[0], a[1], a[2] - a[0], a[3] - a[1]);
+      c.strokeStyle = PAL.taxiLine; c.lineWidth = 0.3; c.beginPath();
+      for (const bay of fireBays(sc)) c.rect(bay.x - 2.6, F.box[1] - 12, 5.2, 11.5);
+      c.stroke();
+    }
     if (fuelYardOn()) {
       const Y = LAYOUT.fuelYard, b = Y.box, pave = winter ? '#cfd5da' : PAL.concrete;
       line(c, [[b[2] - 1, Y.aisle], Y.gate], 9, pave);
@@ -493,10 +502,39 @@ const AirportArt = (() => {
     Vehicles.lorry(c, o.x + 24, o.y - 12, 100, '#5a7a3a', '#c9b47a');
   }
 
+  // the fire station's bays, west to east: { x (the bay's middle), tender (a crash tender stands in it) } — the station's
+  // own tenders first, then those bought (data/layout.js fireStation)
+  function fireBays(sc) {
+    const F = LAYOUT.fireStation, n = Math.min(F.bays, F.own + ((sc && sc.items.crashTender) || 0)), out = [];
+    for (let i = 0; i < F.bays; i++) out.push({ x: F.box[0] + F.bay0 + i * F.pitch, tender: i < n });
+    return out;
+  }
+  // the station with a door to each bay: open (dark, lit at night) with its tender parked nose out on the apron, or shut
+  // (a red roller door); a few firefighters by the tenders. Drawn with the building, so the tenders in front of its long
+  // front are never sorted behind it
   function fireStation(c, sc) {
-    const [x0, y0, x1, y1] = LAYOUT.fireStation.box, h = LAYOUT.fireStation.h;
+    const F = LAYOUT.fireStation, [x0, y0, x1, y1] = F.box, h = F.h, y = y0 - 0.05;
     Iso.box(c, x0, y0, x1, y1, 0, h, '#e8e3d8', sc.season === 'winter' ? '#f4f7fa' : '#7c8288');
-    for (let i = 0; i < 3; i++) Iso.poly(c, [[x0 + 4 + i * 15, y0 - 0.05, 0], [x0 + 15 + i * 15, y0 - 0.05, 0], [x0 + 15 + i * 15, y0 - 0.05, 5], [x0 + 4 + i * 15, y0 - 0.05, 5]], '#b8322a');
+    const bays = fireBays(sc), inside = sc.dark > 0.3 ? '#6b5a3c' : '#34383d';
+    for (const b of bays) {
+      Iso.poly(c, [[b.x - 2.6, y, 0], [b.x + 2.6, y, 0], [b.x + 2.6, y, 5], [b.x - 2.6, y, 5]], b.tender ? inside : '#b8322a');
+      if (!b.tender) for (let z = 1; z < 5; z += 1) Iso.poly(c, [[b.x - 2.6, y - 0.01, z], [b.x + 2.6, y - 0.01, z], [b.x + 2.6, y - 0.01, z + 0.08], [b.x - 2.6, y - 0.01, z + 0.08]], '#8e2620');
+    }
+    // the station's name band over the doors
+    Iso.poly(c, [[x0 + 1, y, 5.8], [x1 - 1, y, 5.8], [x1 - 1, y, 7], [x0 + 1, y, 7]], '#c8322a');
+    for (const b of bays) if (b.tender) Vehicles.crashTender(c, b.x, y0 - 5.6, 180);
+    if (Cam.zoom >= 1) {
+      const crew = [[bays[0].x + 4, y0 - 3], [bays[1].x + 4, y0 - 9], [bays[3].x + 4, y0 - 2], [bays[4].x + 4, y0 - 11.5], [bays[5].x + 4, y0 - 12.5]];
+      crew.forEach(([px, py], i) => firefighter(c, px + (i % 2) * 0.8, py));
+    }
+  }
+  // a firefighter standing: a dark uniform with a reflective band, a yellow helmet
+  function firefighter(c, x, y) {
+    const a = P(x, y, 0), m = P(x, y, 1.0), b = P(x, y, 1.7);
+    c.lineCap = 'round'; c.lineWidth = 0.6;
+    c.strokeStyle = '#26324a'; c.beginPath(); c.moveTo(a[0], a[1]); c.lineTo(b[0], b[1]); c.stroke();
+    c.strokeStyle = '#e8e36a'; c.lineWidth = 0.62; c.beginPath(); c.moveTo(m[0], m[1] + 0.12); c.lineTo(m[0], m[1] - 0.12); c.stroke();
+    c.fillStyle = '#f2c230'; c.beginPath(); c.arc(b[0], b[1] - 0.25, 0.34, 0, Math.PI * 2); c.fill();
   }
 
   // the buildings of chapters 2 and 3, as far as they are built: a slab, walls going up, then the finished house
@@ -666,11 +704,7 @@ const AirportArt = (() => {
     }
     // the car parks lie flat (drawn by `flat`): only their place, for a tap
     for (const k of ['parkingSmall', 'parkingBig']) if (sc.items[k]) sites.push({ key: k, box: LAYOUT[k].box, h: 0.5 });
-    // the crash tenders by the fire station, the airport coaches at the kerb
-    for (let i = 0; i < Math.min(4, sc.items.crashTender || 0); i++) {
-      const x = LAYOUT.fireStation.box[0] + 6 + i * 12, y = LAYOUT.fireStation.box[1] - 8;
-      add(x, y, (c) => Vehicles.crashTender(c, x, y, 90));
-    }
+    // (the crash tenders stand at the fire station's bays: drawn with it, fireStation, or inside it with the roofs off)
     // the fuel yard's shelter over its back row: a flat roof on posts, open to the south
     if (fuelYardOn()) {
       const Y = LAYOUT.fuelYard, b = Y.box, y0 = Math.max(...Y.rows) - 7, x0 = b[0] + 1, x1 = b[2] - 1;
@@ -679,6 +713,7 @@ const AirportArt = (() => {
         Iso.box(c, x0 - 0.5, y0 - 0.5, x1 + 0.5, b[3], 5, 5.5, '#c8322a', sc.season === 'winter' ? '#f4f7fa' : '#8a9096');
       });
     }
+    // the airport coaches at the kerb
     if (sc.items.busStop) for (let i = 0; i < 2; i++) { const x = LAYOUT.busStop.x, y = LAYOUT.busStop.y + i * 18; add(x, y, (c) => Vehicles.bus(c, x, y, 0)); }
     // the instrument landing system's localizer beyond the 19 end
     if (sc.items.ils || sc.p('ils1', 'antennas') >= 1) {
@@ -732,5 +767,5 @@ const AirportArt = (() => {
     }
   }
 
-  return { flat, objects, standPos, standBox, standIndex, standEntry, isRemote, remoteWay, fuelYardOn, fuelSpot, fuelWayOut, ploughSpot, APRONS, hitSite, ring };
+  return { flat, objects, fireBays, standPos, standBox, standIndex, standEntry, isRemote, remoteWay, fuelYardOn, fuelSpot, fuelWayOut, ploughSpot, APRONS, hitSite, ring };
 })();
