@@ -20,10 +20,10 @@ STRATEGIES['6-2'] = {
   moves: OPEN6(0, '18:30', 34, 14, 8).concat(OPEN6(2, '07:00', 38, 16, 8))
 };
 
-// A Royal Wedding: two remote stands for the guests
+// A Royal Wedding: the guests by the terminal (the remote row has room for one more stand only)
 STRATEGIES['6-3'] = {
   tray: REACT_QUICK,
-  choices: { guestStands: 'remote' },
+  choices: { guestStands: 'pier' },
   moves: OPEN6(1, '12:00', 34, 14, 8)
 };
 

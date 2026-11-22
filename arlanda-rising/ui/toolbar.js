@@ -1,14 +1,18 @@
 'use strict';
 
-// Arlanda Rising — the bar at the bottom of the game view: the check-in desks open (− / +), the ploughs to send when
-// there is snow, the runway direction when the wind is calm (01 lands over Märsta, 19 takes off over it), and the
-// small builds of the era (a remote stand, a fuel truck, a plough, a desk; in plan time with the airport open also
-// a kiosk, a café and car parks). Session 5: the security lanes and the passport booths open (− / +), de-icing trucks,
-// booths, offices and hotel wings, a solar park and electric vehicles. A buy asks for a second tap with its price
-// first. A vehicle with a limit (fuel and de-icing trucks, ploughs, crash tenders: Airport.cap) shows how many there are
-// of the most worth having (⛽ Fuel truck 3/6) and, at the limit, is disabled with the reason. The airport's own shops show
-// the cells they take in a terminal beside the price, the cells free in all the terminals (🏪 Shop cells 3 of 6 free), and
-// are disabled with the reason when no terminal has the room (Airport.roomFor). Used by game.js.
+// Arlanda Rising — the bar at the bottom of the game view: the check-in desks open of those there are (Open 2 of 4
+// desks, − / +), the ploughs to send when there is snow, the runway direction — the wind's (Runway 19 · the wind decides)
+// or, when it is calm, the player's: 01 lands over Märsta, 19 takes off over it, and which is quieter with the flights of
+// the next hour — and the small builds of the era (a remote stand, a fuel truck, a plough, a desk; in plan time with the
+// airport open also a kiosk, a café and car parks). Session 5: the security lanes and the passport booths open (− / +),
+// de-icing trucks, booths, offices and hotel wings, a solar park and electric vehicles. A buy asks for a second tap with
+// its price first. A thing with a limit (fuel and de-icing trucks, ploughs, crash tenders, the desks the halls have room
+// for, the remote stands: Airport.cap) shows how many there are of the most (⛽ Fuel truck 3/6, 🧳 Check-in desk 4/12) and,
+// at the limit, is disabled with the reason. The airport's own shops show the cells they take in a terminal beside the
+// price, the cells free in all the terminals (🏪 Shop cells 3 of 6 free), and are disabled with the reason when no
+// terminal has the room (Airport.roomFor). The car parks show their places against those the drivers need (🚗 Car parks
+// 300 places, 700 needed), each what it would add a month, and are disabled once the places cover the need. The words come
+// from ui/text.js (capWhy, buyTip, buyWhy, buyGain, parkingLine, dirOver), for the menus to share. Used by game.js.
 
 const BUILD_ICONS = { stand: '🅿️', fuelTruck: '⛽', plough: '🚜', desk: '🧳', kiosk: '🏪', cafe: '☕', parkingSmall: '🚗', parkingBig: '🚙',
   crashTender: '🚒', generator: '🔋', dutyFree: '🛍️', restaurant: '🍽️', busStop: '🚌', lane: '🛂',
@@ -60,7 +64,7 @@ const Toolbar = (() => {
       if (Terminal.lanes()) parts.push(Terminal.secDomain() ? ['lanes', Terminal.lanes(), Terminal.lanesUp(), Passengers.secWait()] : ['sec', Passengers.secWait(), Terminal.lanes()]);
       if (Terminal.borderOn()) parts.push(['booths', Terminal.booths(), S.airport.booths, Passengers.borderWait()]);
       const rw = Runways.main();
-      if (rw) { const w = Weather.now(); parts.push(['dir', Runways.direction(rw), w.wind < CALM_WIND]); }
+      if (rw) { const calm = Weather.now().wind < CALM_WIND; parts.push(['dir', Runways.direction(rw), calm, calm ? Runways.noiseAhead().dir : null]); }
       // the teams that are short or on strike today (overtime brings everybody in), the systems that are down
       for (const d of Object.keys(S.domains)) {
         if (Systems.down(d)) parts.push(['down', d, Math.ceil(S.ops.down[d].until - S.clock)]);
@@ -69,18 +73,24 @@ const Toolbar = (() => {
     }
     const b = buys();
     const k = JSON.stringify(parts.map((p) => p.map((x) => (typeof x === 'number' ? Math.round(x * 100) : x)))) + b.join() + armed + I18N.lang + (Settings.short() ? 1 : 0) + Math.floor(S.money / 1e5) + JSON.stringify((S.plan && S.plan.buys) || []) + S.airport.items.length +
-      '|' + S.airport.stands.length + '|' + S.airport.runways.length;
+      '|' + S.airport.stands.length + '|' + S.airport.runways.length + '|' + (b.some((k) => BUILDINGS[k].places) ? Airport.parkingNeed() : '');
     box.hidden = false;
     if (k === key) return;
     key = k;
     let html = '';
     for (const p of parts) {
-      if (p[0] === 'desks') html += '<div class="tgroup"><span class="tl">🧳 ' + Text.esc(tr('Desks open')) + ' <b>' + p[1] + '/' + p[2] + '</b></span>' +
+      // the desks open of those there are ("Open 2 of 4 desks"), apart from the desks to buy (🧳 Check-in desk 4/12)
+      if (p[0] === 'desks') html += '<div class="tgroup"><span class="tl" title="' + Text.esc(tr('Open desks check in the passengers and cost wages by the hour. To have more desks, buy them below.')) + '">🧳 ' +
+        Text.esc(tr('Open {open} of {n} desks', { open: '\u0001', n: p[2] })).replace('\u0001', '<b>' + p[1] + '</b>') + '</span>' +
         '<button class="tb small" data-act="deskMinus"' + (p[1] <= 0 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="deskPlus"' + (p[1] >= p[2] ? ' disabled' : '') + '>+</button></div>';
       else if (p[0] === 'plough') html += '<button class="tb' + (p[2] ? ' busy' : '') + '" data-act="plough" data-s="' + p[1] + '"' + (p[2] || !p[3] ? ' disabled' : '') + '>🚜 ' +
         Text.esc(p[2] ? tr('Ploughing') : tr('Plough')) + '<small>' + Text.esc(Text.surface(p[1])) + '</small></button>';
-      else if (p[0] === 'dir') html += '<div class="tgroup"><span class="tl" title="' + Text.esc(p[2] ? tr('Calm wind: you choose the direction') : tr('Into the wind')) + '">🛫 ' + Text.esc(tr('Runway')) + '</span>' +
-        ['01', '19'].map((d) => '<button class="tb small' + (p[1] === d ? ' on' : '') + '" data-act="dir" data-d="' + d + '"' + (p[2] ? '' : ' disabled') + '>' + d + '</button>').join('') + '</div>';
+      // the wind decides the direction; when it is calm the player does: each button says what it flies over the town,
+      // and the group which one is quieter for the neighbours with the flights of the next hour (Runways.noiseAhead)
+      else if (p[0] === 'dir' && !p[2]) html += '<div class="tgroup"><span class="tl" title="' + Text.esc(tr('Into the wind')) + '">🛫 ' + Text.esc(tr('Runway')) + ' <b>' + p[1] + '</b> · ' + Text.esc(tr('the wind decides')) + '</span></div>';
+      else if (p[0] === 'dir') html += '<div class="tgroup"><span class="tl" title="' + Text.esc(tr('Calm wind: you choose the direction. Take-offs are louder than landings: the neighbours hear which way they fly.')) + '">🛫 ' + Text.esc(tr('Runway')) +
+        (p[3] ? '<br><small>🏡 ' + Text.esc(tr('{dir} is quieter now', { dir: p[3] })) + '</small>' : '') + '</span>' +
+        ['01', '19'].map((d) => '<button class="tb' + (p[1].slice(0, 2) === d ? ' on' : '') + '" data-act="dir" data-d="' + d + '">' + d + '<small>' + Text.esc(Text.dirOver(d)) + '</small></button>').join('') + '</div>';
       else if (p[0] === 'sec') html += '<div class="tgroup' + (p[1] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛂 ' + Text.esc(tr('Security {n} min · {l} lanes', { n: Math.round(p[1]), l: p[2] })) + '</span>' +
         '<button class="tb small" data-act="tview" title="' + Text.esc(tr('Terminal view (T)')) + '">🏪</button></div>';
       else if (p[0] === 'lanes') html += '<div class="tgroup' + (p[3] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛂 ' + Text.esc(tr('Lanes')) + ' <b>' + p[1] + '/' + p[2] + '</b> · ' +
@@ -99,21 +109,22 @@ const Toolbar = (() => {
       html += '<div class="tgroup' + (free <= 0 ? ' fullGroup' : '') + '"><span class="tl" title="' + Text.esc(tr('Your own shops take cells in the terminals: a kiosk 1, a café 2, a restaurant 3, a duty-free shop 4. Each terminal adds its cells. To make room, sell a shop from its terminal\'s card: tap the terminal.')) + '">🏪 ' +
         Text.esc(tr('Shop cells')) + ' <b>' + Text.esc(tr('{free} of {max} free', { free, max })) + '</b></span></div>';
     }
-    if (b.some((k) => BUILDINGS[k].parking)) {
-      const n = Airport.placesTaken('parking');
-      html += '<div class="tgroup' + (n >= 1 - 1e-9 ? ' fullGroup' : '') + '"><span class="tl" title="' + Text.esc(tr('The share of the drivers the car parks take: a small one 40 %, a big one all of them.')) + '">🚗 ' + Text.esc(tr('Car parks')) + ' <b>' + Math.round(n * 100) + '/100 %</b></span></div>';
+    // the car parks' places against those the drivers need at today's traffic (green once they cover it)
+    if (b.some((k) => BUILDINGS[k].places)) {
+      html += '<div class="tgroup' + (Airport.places(true) >= Airport.parkingNeed() ? ' fullGroup' : '') + '"><span class="tl" title="' + Text.esc(Text.parkingTip()) + '">🚗 ' + Text.esc(tr('Car parks')) +
+        ' <b>' + Text.esc(Text.parkingLine()) + '</b></span></div>';
     }
-    // a vehicle with a limit (Airport.cap) shows how many there are of the most worth having, 3/6, and why it stops there;
-    // a shop the cells it takes, and with no terminal that has them free, why it cannot be bought
+    // a thing with a limit (Airport.cap: the vehicles, the desks, the remote stands) shows how many there are of the most
+    // worth having, 3/6, and why it stops there; a shop the cells it takes, and with no terminal that has them free, why it
+    // cannot be bought; a car park what it would add a month, and nothing once the drivers have their places
     for (const kind of b) {
       const bd = BUILDINGS[kind], conf = armed === kind, full = Airport.full(kind), cap = Airport.cap(kind);
-      const n = Airport.owned(kind);
-      const tip = cap ? Text.capTip(kind, cap) : bd.cells ? tr('Takes {cells} in a terminal. To make room, sell a shop from its terminal\'s card: tap the terminal.', { cells: Text.cells(bd.cells) }) : '';
+      const n = Airport.owned(kind), tip = Text.buyTip(kind), gain = bd.places && !full ? Text.buyGain(kind) : '';
       html += '<button class="tb buy' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '"' + (full ? ' disabled' : '') + (S.money < bd.price && !conf ? ' data-poor="1"' : '') +
         (tip ? ' title="' + Text.esc(tip) + '"' : '') + '>' + BUILD_ICONS[kind] + ' ' +
-        Text.esc(conf ? tr('Buy?') : tr(bd.name)) + (cap ? ' <em>' + n + '/' + cap.max + '</em>' : n && (bd.shop || bd.parking) ? ' <em>×' + n + '</em>' : '') + '<small>' +
-        (full ? Text.esc(cap ? Text.capWhy(cap) : bd.cells ? tr('No room: needs {cells}', { cells: Text.cells(bd.cells) }) : tr('Enough: one more would earn nothing')) :
-          sekBare(bd.price) + (bd.cells ? ' · ' + Text.esc(Text.cells(bd.cells)) : '') + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '')) + '</small></button>';
+        Text.esc(conf ? tr('Buy?') : tr(bd.name)) + (cap ? ' <em>' + n + '/' + cap.max + '</em>' : n && (bd.shop || bd.places) ? ' <em>×' + n + '</em>' : '') + '<small>' +
+        (full ? Text.esc(Text.buyWhy(kind)) :
+          sekBare(bd.price) + (bd.cells ? ' · ' + Text.esc(Text.cells(bd.cells)) : '') + (bd.days && S.plan ? ' · ' + tr('{n} days', { n: bd.days }) : '') + (gain ? ' · ' + Text.esc(gain) : '')) + '</small></button>';
     }
     box.innerHTML = html;
   }

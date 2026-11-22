@@ -29,15 +29,16 @@ const Invest = {
     if (term === 't3') return pax * (1 - intl) * T3_SHARE;
     return Airport.has('intlTerminal') || Airport.has('domTerminal') ? 0 : pax;
   },
-  // money a month: { in, out } of a building kind, at today's traffic
-  building(kind) {
+  // money a month: { in, out } of a building kind, at today's traffic — a car park the airport owns (`own`) its places'
+  // part of what the car parks take, one more what its places would add (nothing once the drivers have room)
+  building(kind, own) {
     const b = BUILDINGS[kind] || {}, pax = this.paxDay() * 30;
     let inn = 0;
     if (b.shop) inn += pax * SHOP_SPEND * b.shop * 0.7;
     if (b.rent) inn += b.rent;
     // session 5: a solar park saves a share of the energy bill (chapter 6)
     if (kind === 'solar' && Green.on()) inn += ENERGY_MONTH * 1.25 * ENERGY_SAVE.solar;
-    if (b.parking) inn += pax * PARKING_PER_PAX * Math.min(1, b.parking) * (Airport.has('busStop') ? 1 - BUS_PARKING : 1) * (Terminal.trainRuns() ? 1 - TRAIN_PARKING : 1);
+    if (b.places) inn += own ? Airport.parkingMonth() * b.places / Math.max(1, Airport.places()) : Airport.parkingGain(kind);
     const out = (b.staff || 0) * STAFF_MONTH + (b.price || 0) * UPKEEP_YEAR / 12 + (kind === 'lane' ? LANE_MONTH : 0);
     return { in: inn, out };
   },
@@ -74,9 +75,9 @@ const Invest = {
     const seen = {};
     for (const it of S.airport.items) {
       const b = BUILDINGS[it.kind] || {};
-      if (!(b.shop || b.parking || b.bus || b.lane || b.rent)) continue;
+      if (!(b.shop || b.places || b.bus || b.lane || b.rent)) continue;
       seen[it.kind] = (seen[it.kind] || 0) + 1;
-      out.push(Object.assign({ key: it.kind, name: b.name, n: seen[it.kind] }, this.money(it.price || b.price || 0, this.building(it.kind))));
+      out.push(Object.assign({ key: it.kind, name: b.name, n: seen[it.kind] }, this.money(it.price || b.price || 0, this.building(it.kind, true))));
     }
     for (const u of S.airport.units || []) if (u.brand) out.push(Object.assign({ key: 'brand', brand: u.brand, term: u.term, name: BRANDS[u.brand].name }, this.money(u.price || UNIT_FIT[u.size], this.brand(u.brand, u.term))));
     for (const d of Object.keys(S.domains)) {

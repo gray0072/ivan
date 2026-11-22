@@ -2,10 +2,11 @@
 
 // Arlanda Rising — the airport itself: what is built (S.airport.items), the runways and the stands, what
 // finishing a master-plan project does (`complete`), the small builds bought during a mission (`buy`), and
-// the numbers the rest of the sim asks for — runway separation, fuel trucks, ploughs, the most of a vehicle worth
-// having (`cap`: no more can be bought past it), the airport's own shops in the terminals' cells (bought into a terminal
-// with room, sold back: `sell`) and their share, the car parks' share, the monthly running cost of everything the airport
-// owns.
+// the numbers the rest of the sim asks for — runway separation, fuel trucks, ploughs, the most of a thing worth
+// having (`cap`: no more can be bought past it — a vehicle, the check-in desks the halls have room for, the remote
+// stands), the airport's own shops in the terminals' cells (bought into a terminal with room, sold back: `sell`) and their
+// share, the car parks' places against those the drivers need and what they take, the monthly running cost of
+// everything the airport owns.
 
 const Airport = {
   count(kind) { return S.airport.items.filter((i) => i.kind === kind).length; },
@@ -32,15 +33,33 @@ const Airport = {
     for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {}).shop || 0;
     return s;
   },
-  // the car parks' share taken, with those being built: a car park more than the drivers earns nothing, so it cannot be
-  // bought once they are all taken
-  placesTaken(what) {
+  // ---------- the car parks ----------
+  // The drivers among a day's departing passengers need PARK_PLACES_PER_PAX places each (Invest.paxDay: the last days in
+  // summary), less those the airport coaches (BUS_PARKING) and the train (TRAIN_PARKING) take away. The car parks' places
+  // (data/buildings.js `places`) cover that need or a part of it; they earn PARKING_PER_PAX of every departing passenger ×
+  // the share of the drivers they take (parkingShare). A place more than the need earns nothing, so a car park cannot be
+  // bought while the places (those being built too) cover it — until the traffic grows.
+  places(buys) {
     let s = 0;
-    for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {})[what] || 0;
-    for (const b of (S.plan && S.plan.buys) || []) s += (BUILDINGS[b.kind] || {})[what] || 0;
+    for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {}).places || 0;
+    if (buys) for (const b of (S.plan && S.plan.buys) || []) s += (BUILDINGS[b.kind] || {}).places || 0;
     return s;
   },
-  placesMax() { return 1; },
+  // the share of the drivers left to the car parks once the coaches and the train have taken theirs
+  driversLeft() { return (this.has('busStop') ? 1 - BUS_PARKING : 1) * (Terminal.trainRuns() ? 1 - TRAIN_PARKING : 1); },
+  // the places the drivers need at today's traffic
+  parkingNeed() { return Math.round(Invest.paxDay() * PARK_PLACES_PER_PAX * this.driversLeft()); },
+  // the share of the drivers who find a place (`extra` places more: a what-if)
+  parkingCover(extra) {
+    const p = this.places() + (extra || 0), need = this.parkingNeed();
+    return need > 0 ? Math.min(1, p / need) : p > 0 ? 1 : 0;
+  },
+  // the share of the departing passengers' parking the car parks take
+  parkingShare(extra) { return this.parkingCover(extra) * this.driversLeft(); },
+  // SEK a month the car parks take at today's traffic (`extra` places more: a what-if)
+  parkingMonth(extra) { return Invest.paxDay() * 30 * PARKING_PER_PAX * this.parkingShare(extra); },
+  // SEK a month one more car park of a kind would add at today's traffic (0 once the places cover the need)
+  parkingGain(kind) { const p = (BUILDINGS[kind] || {}).places || 0; return p ? this.parkingMonth(p + this.places(true) - this.places()) - this.parkingMonth(this.places(true) - this.places()) : 0; },
 
   // ---------- the airport's own shops in the terminals' cells ----------
   // Each terminal standing has its cells (data/terminals.js `cells`: 6 in the first), a shop takes some (data/buildings.js
@@ -106,32 +125,49 @@ const Airport = {
     logEvent('sold', { kind: it.kind });
     return true;
   },
-  // the vehicles past which one more does nothing: { max, why, n } (n what the limit counts: stands, runways, the top
-  // fire category), or null for no limit — a fuel or a de-icing truck for each stand (an aircraft takes one at a time),
-  // a full plough convoy for each runway (the convoys sweep at the same time), crash tenders up to the top fire category
+  // the things past which one more cannot be bought: { max, why, n } (n what the limit counts: stands, runways, the top
+  // fire category, the terminals' halls), or null for no limit — a fuel or a de-icing truck for each stand (an aircraft
+  // takes one at a time), a full plough convoy for each runway (the convoys sweep at the same time), crash tenders up to
+  // the top fire category, the check-in desks the halls of the terminals standing have room for (deskRoom), the remote
+  // stands their row has room for (REMOTE_STANDS_MAX). ui/text.js capWhy and capTip say why.
   cap(kind) {
     const stands = S.airport.stands.length, runways = Math.max(1, S.airport.runways.length);
     if (kind === 'fuelTruck') return { max: Math.max(1, stands * FUEL_TRUCKS_PER_STAND), why: 'stand', n: stands };
     if (kind === 'deicer') return { max: Math.max(1, stands * DEICERS_PER_STAND), why: 'stand', n: stands };
     if (kind === 'plough') return { max: runways * PLOUGH_CONVOY, why: 'runway', n: runways };
     if (kind === 'crashTender') return { max: FIRE_CAT_MAX - FIRE_CAT_BASE, why: 'fire', n: FIRE_CAT_MAX };
+    if (kind === 'desk') { const h = this.deskHalls(); return { max: this.deskRoom(), why: 'hall', n: h.length }; }
+    if (kind === 'stand') return { max: REMOTE_STANDS_MAX, why: 'remote', n: REMOTE_STANDS_MAX };
     return null;
   },
-  // how many of a kind the airport has, with those bought in plan time and not delivered yet
-  owned(kind) { return this.count(kind) + ((S.plan && S.plan.buys) || []).filter((b) => b.kind === kind).length; },
-  // nothing more of it can be bought: no terminal has the cells for a shop, the car parks take every driver, or a
-  // vehicle is at its limit
+  // the terminals whose check-in halls stand (data/terminals.js `desks`): the first terminal's stays with the kerb after
+  // it is torn down (2017), and the desks they have room for together
+  deskHalls() { return TERMINAL_ORDER.filter((t) => TERMINALS[t].desks && Terminal.built(t === 't1' ? 'kerb' : t)); },
+  deskRoom() { return this.deskHalls().reduce((s, t) => s + TERMINALS[t].desks, 0); },
+  // how many of a kind the airport has, with those bought in plan time and not delivered yet (the desks: every desk, the
+  // terminals' own too)
+  owned(kind) {
+    const n = kind === 'desk' ? S.airport.desks : this.count(kind);
+    return n + ((S.plan && S.plan.buys) || []).filter((b) => b.kind === kind).length;
+  },
+  // nothing more of it can be bought: at its limit (cap), no terminal has the cells for a shop, or the car parks' places
+  // cover what the drivers need
   full(kind) {
     const b = BUILDINGS[kind] || {}, cap = this.cap(kind);
     if (cap) return this.owned(kind) >= cap.max;
     if (b.cells) return !this.roomFor(kind);
-    return !!b.parking && this.placesTaken('parking') >= this.placesMax('parking') - 1e-9;
+    return !!b.places && this.places(true) >= this.parkingNeed();
   },
-  parkingShare() {
-    let s = 0;
-    for (const it of S.airport.items) s += (BUILDINGS[it.kind] || {}).parking || 0;
-    // the airport coaches take some of the drivers
-    return Math.min(1, s) * (this.has('busStop') ? 1 - BUS_PARKING : 1);
+  // a save of an older version may have more remote stands than their row has room for: the last ones bought go, their
+  // price paid back (at a mission's start, before anything stands on them)
+  fitRemote() {
+    const a = S.airport;
+    while (this.count('stand') > REMOTE_STANDS_MAX) {
+      const it = a.items.filter((x) => x.kind === 'stand').pop(), rem = a.stands.filter((s) => !s.at);
+      a.items.splice(a.items.indexOf(it), 1);
+      if (rem.length > PROJECTS.apron1.stands.length) a.stands.splice(a.stands.indexOf(rem[rem.length - 1]), 1);
+      Finance.book('sold', it.price || BUILDINGS.stand.price);
+    }
   },
   // the fire service's category: the first fire station's, and one more for each crash tender bought
   fireCat() { return this.has('fireStation') ? Math.min(FIRE_CAT_MAX, FIRE_CAT_BASE + this.count('crashTender')) : 0; },
@@ -248,7 +284,8 @@ const Airport = {
   // session 6: the owner's gift of a small build (a charger), free; true when it changed something
   buyFree(kind) { const n = this.chargers(), m = S.airport.items.length; this.finishBuy(kind); return kind === 'charger' ? this.chargers() > n : S.airport.items.length > m; },
   finishBuy(kind, term) {
-    if (kind === 'stand') this.addStand({ name: String(S.airport.stands.length + 1), code: 'C', contact: false, dist: 4 });
+    // a remote stand: the next place of their row (render/airport.js standPos), named R1…R4 apart from the aprons' numbers
+    if (kind === 'stand') this.addStand({ name: 'R' + (this.count('stand') + 1), code: 'C', contact: false, dist: 4 });
     else if (kind === 'desk') S.airport.desks++;
     else if (kind === 'lane') Terminal.addLane();
     else if (kind === 'booth') { S.airport.booths = (S.airport.booths || 0) + 1; if (S.ops && S.ops.boothsOpen !== undefined) S.ops.boothsOpen++; }

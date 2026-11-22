@@ -286,7 +286,7 @@ addMissions(8, [
         goal: [{ k: 'lost', max: 0 }, { k: 'onTime', p: 0.75 }, { k: 'passengers', min: 78 }] }
     ],
     goal: [],
-    stars: [{ k: 'airportDelay', max: 3 }, { k: 'passengers', min: 88 }]
+    stars: [{ k: 'airportDelay', max: 4 }, { k: 'passengers', min: 88 }]
   },
   {
     name: 'Night Train or Night Flight', kind: 'choice', date: '2040-08-20', requires: BUILT_2036,

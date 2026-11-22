@@ -31,10 +31,12 @@ const LAYOUT = {
     { x: 868, y: 1215, hdg: 90 },   // 3 (C, contact)
     { x: 772, y: 1150, hdg: 90 }    // 4 (C, remote)
   ],
-  // the remote stands bought later, one after another (each paved on its own)
+  // the remote stands bought later (REMOTE_STANDS_MAX), one after another, each paved on its own: a row south-west of the
+  // first apron, nose east, 55 m apart (a code C wingspan of 36 m and room between the wingtips), west of the domestic
+  // apron (1983) and Terminal 2's (1990) so that no later apron, building or lead-in line ever reaches them; their paved
+  // ways run north along one line at x 605, west of the aircraft's tails, onto the first apron's south-west corner (render/airport.js remoteWay)
   remote: [
-    { x: 800, y: 1075, hdg: 90 }, { x: 800, y: 1020, hdg: 90 }, { x: 740, y: 965, hdg: 90 }, { x: 680, y: 1020, hdg: 90 },
-    { x: 680, y: 1075, hdg: 90 }, { x: 740, y: 1430, hdg: 90 }
+    { x: 680, y: 1075, hdg: 90 }, { x: 680, y: 1020, hdg: 90 }, { x: 680, y: 965, hdg: 90 }, { x: 680, y: 910, hdg: 90 }
   ],
 
   // session 3: runway 2 (08/26) from the AIP's ends (59.658419 N 17.936133 E, 59.663897 N 17.979153 E), its taxiway

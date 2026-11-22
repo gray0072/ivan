@@ -10,6 +10,8 @@
 //   - the previous chapter's exam strategy gets ★★★ (each chapter needs its new ideas);
 //   - a Real Arlanda medal is out of the reference's reach on every difficulty;
 //   - a mission is longer than MISSION_MINUTES_MAX or a stage longer than STAGE_MINUTES_MAX at ▶;
+//   - a mission starts with more check-in desks than the halls have room for, or more remote stands than their row
+//     (Airport.cap: the limits the build buttons show);
 //   - a mission saved and resumed in the middle of each stage (the autosave) ends differently from one
 //     played straight through.
 // The strategy of the mission before is tried too, as a warning when it already gets ★★★.
@@ -42,6 +44,9 @@ const out = vm.runInContext(`(() => {
   // and resumed from the save (the autosave's test)
   function play(id, d, world, strat, cutAt, def) {
     Missions.start(id, d, world, def);
+    // what the mission starts with stays within the limits the player sees (Airport.cap): the desks the halls have
+    // room for, the remote stands
+    const over = ['desk', 'stand'].filter((k) => Airport.owned(k) > Airport.cap(k).max).map((k) => k + ' ' + Airport.owned(k) + '/' + Airport.cap(k).max);
     let r = Strategy.runner(strat), steps = 0, stageSteps = 0, cuts = 0;
     const stageMin = [];
     for (;;) {
@@ -66,7 +71,7 @@ const out = vm.runInContext(`(() => {
     const m = S.mission, tot = m.total;
     for (const res of m.results) if (res) stageMin.push(+Missions.minutes(res.st).toFixed(1));
     return {
-      status: m.status, stars: m.stars, medal: m.medal, cuts, state: JSON.stringify(S),
+      status: m.status, stars: m.stars, medal: m.medal, cuts, over, state: JSON.stringify(S),
       failedStage: m.status === 'stageFailed' ? m.stage : null,
       failed: m.status === 'stageFailed' ? m.results[m.stage].goals.filter((g) => !g.ok).map((g) => g.goal.k + '=' + g.value) : [],
       judged: m.judged ? m.judged.stars.map((g) => (g.ok ? '✓ ' : '✗ ') + g.goal.k + '=' + g.value) : [],
@@ -107,6 +112,7 @@ const out = vm.runInContext(`(() => {
       r.diffs[d] = res;
       if (res.status !== 'done') r.problems.push(d + ': the reference fails' + (res.failedStage !== null ? ' stage ' + (res.failedStage + 1) + ' (' + res.failed.join(', ') + ')' : ''));
       else if (d !== 'hard' && res.stars < 3) r.problems.push(d + ': the reference gets ' + res.stars + ' stars (' + res.judged.join(', ') + ')');
+      if (res.over.length) r.problems.push(d + ': starts past a limit (' + res.over.join(', ') + ')');
     }
     const md = r.diffs.medium;
     if (md.minutes > MISSION_MINUTES_MAX) r.problems.push('takes ' + md.minutes + ' min at ▶ (max ' + MISSION_MINUTES_MAX + ')');
@@ -146,6 +152,7 @@ const out = vm.runInContext(`(() => {
       r.diffs[d] = res;
       if (res.status !== 'done') r.problems.push(d + ': the reference fails' + (res.failedStage !== null ? ' stage ' + (res.failedStage + 1) + ' (' + res.failed.join(', ') + ')' : ' (score ' + res.score + ')'));
       else if (d !== 'hard' && res.stars < 3) r.problems.push(d + ': the reference gets ' + res.stars + ' stars (score ' + res.score + ')');
+      if (res.over.length) r.problems.push(d + ': starts past a limit (' + res.over.join(', ') + ')');
     }
     const idle = play(c.id, 'medium', null, {}, null, Challenges.def(c.id));
     r.idle = idle.status === 'done' ? idle.stars : 0;

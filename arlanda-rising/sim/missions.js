@@ -23,6 +23,7 @@ const Missions = {
     S.difficulty = difficulty;
     S.cheated = false;          // a cheat marks this run only
     S.mission = null; S.ops = null; S.plan = null;
+    Airport.fitRemote();
     const day0 = Calendar.parse(m.date);
     const log0 = S.log.length;
     const meanwhile = S.day < day0 ? Summary.skip(day0) : null;

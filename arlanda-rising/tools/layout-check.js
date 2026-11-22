@@ -10,6 +10,8 @@
 //   - the ground the biggest aircraft a stand takes covers (its length behind the stop bar, its span across) on a
 //     building, a road, the railway, a runway, a taxiway or another stand's aircraft — stands of the player's pier are
 //     checked once for each of its designs (finger, satellite, green), never one design against another;
+//   - a remote stand (data/layout.js remote, every one of REMOTE_STANDS_MAX bought) whose pad, aircraft or paved way
+//     reaches an apron of any era (the way may join the first apron) or another stand's aircraft;
 //   - a building on the 40 m in front of a terminal's landside face (its kerb and door), the road in ending away from
 //     the first terminal's door, and taxiway 2 joining runway 2 badly (a turn sharper than a right angle, an entry not
 //     square to the runway, off its centreline or away from its 08 end, shorter than its holding line's distance);
@@ -99,9 +101,9 @@ for (const d of ['finger', 'satellite', 'green']) {
 PP.arm.forEach((s, i) => stand('arm ' + s[0], PP.spots.arm[i][0], PP.spots.arm[i][1], PP.spots.arm[i][2], s[1]));
 const sBox = (p, back, front, half) => (p.s > 0 ? [p.x - back, p.y - half, p.x + front, p.y + half] : [p.x - front, p.y - half, p.x + back, p.y + half]);
 for (const p of stands) {
-  if (p.remote || p.pad) rect(p.name + ' pad', 'stand', sBox(p, 74, 8, 28), { design: p.design });
+  if (p.remote || p.pad) rect(p.name + ' pad', 'stand', sBox(p, 74, 8, 28), { design: p.design, stand: p, remote: p.remote });
   const A = BIG[p.code];
-  rect(p.name + ' (' + p.code + ' ' + A.length.toFixed(0) + '×' + A.span.toFixed(0) + ' m)', 'plane', sBox(p, 4 + A.length, -2, A.span / 2), { design: p.design, stand: p });
+  rect(p.name + ' (' + p.code + ' ' + A.length.toFixed(0) + '×' + A.span.toFixed(0) + ' m)', 'plane', sBox(p, 4 + A.length, -2, A.span / 2), { design: p.design, stand: p, remote: p.remote });
 }
 
 // lines
@@ -121,7 +123,7 @@ line('runway 3', 'rwy', [Lo.runway3.from, Lo.runway3.to], Lo.runway3.w);
 // a remote stand's paved way, as render/airport.js remoteWay draws it (and east onto the apron from an entry west of it)
 Lo.remote.forEach((p, i) => {
   const A = Lo.apron1, x = p.x - 75, y = Math.min(Math.max(p.y, A.y0 + 12), A.y1 - 12), xa = Math.max(x, A.x0 + 12);
-  line('remote ' + (i + 1) + ' way', 'way', [[x, p.y], [x, y]].concat(xa !== x ? [[xa, y]] : []), 20);
+  line('remote ' + (i + 1) + ' way', 'way', [[x, p.y], [x, y]].concat(xa !== x ? [[xa, y]] : []), 20, { remote: true, stand: stands.find((s) => s.name === 'remote ' + (i + 1)) });
 });
 // the airside fence with everything built (the finger design of the player's pier), as render/fence.js works it out in
 // the game: every drawn run of it is a shape that may cross nothing but a road or the railway at the taxiway bridges
@@ -189,8 +191,12 @@ for (let i = 0; i < S.length; i++) for (let j = i + 1; j < S.length; j++) {
   let ok = ALLOWED[kinds];
   if (kinds === 'apron/bld' && (a.onApron || b.onApron)) ok = true;
   if (typeof ok === 'function') ok = ok(a, b, r);
-  // two aircraft: never; a remote stand of 1960 under a later apron is that apron's stand by then
+  // two aircraft: never
   if (kinds === 'plane/plane') ok = false;
+  // a remote stand stands apart in every era: its pad, its aircraft and its paved way touch no apron (the way only the
+  // first apron it leads onto) and no other stand's aircraft
+  const apart = (rem, other) => rem.remote && ((other.kind === 'apron' && !(rem.kind === 'way' && other.name === 'apron1')) || (other.kind === 'plane' && other.stand !== rem.stand));
+  if (apart(a, b) || apart(b, a)) ok = false;
   const line = (kinds + '            ').slice(0, 13) + a.name + '  ×  ' + b.name + '   ' + r.text + ' at x ' + r.x0.toFixed(0) + '..' + r.x1.toFixed(0) + ', y ' + r.y0.toFixed(0) + '..' + r.y1.toFixed(0);
   (ok ? allowed : problems).push({ line, a, b, r });
 }

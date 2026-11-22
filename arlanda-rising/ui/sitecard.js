@@ -95,6 +95,7 @@ const SiteCard = (() => {
             h += row(tr('Queueing at check-in'), people(cr.checkin) + ' · ' + wait(Passengers.wait()));
             if (S.airport.lanes) h += row(tr('Queueing at security'), people(cr.sec) + ' · ' + wait(Passengers.secWait()));
             h += row(tr('Check-in desks open'), S.ops.desksOpen + ' / ' + S.airport.desks);
+            h += row(tr('Room for check-in desks'), tr('{n} in all the halls', { n: Airport.deskRoom() }));
             if (S.airport.lanes) h += row(tr('Security lanes open'), Terminal.lanes() + ' / ' + S.airport.lanes);
           }
           h += row(tr('Airside'), people(cr.airside));
@@ -150,7 +151,9 @@ const SiteCard = (() => {
         h += row(tr('Cargo stands'), String(Airport.count('cargoStand')));
         break;
       case 'parking':
+        h += row(tr('Car parks'), Text.parkingLine());
         h += row(tr('Drivers who park at the airport'), Text.pct(Airport.parkingShare()));
+        h += row(tr('Parking fees a month'), sek(Airport.parkingMonth()));
         break;
     }
     return h;

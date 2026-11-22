@@ -74,7 +74,6 @@ const TEXT_SV = {
   "Buy a second truck from the toolbar.": "Köp en andra tankbil i raden nedanför.",
   "Buy?": "Köpa?",
   "Café": "Kafé",
-  "Calm wind: you choose the direction": "Svag vind: du väljer riktningen",
   "Cancel": "Avbryt",
   "Cancelled": "Inställt",
   "Car park (1 200 places)": "Parkering (1 200 platser)",
@@ -115,7 +114,6 @@ const TEXT_SV = {
   "Departed": "Avgått",
   "Departure": "Avgång",
   "Desks and the waiting room": "Diskarna och väntsalen",
-  "Desks open": "Öppna diskar",
   "Difficulty": "Svårighetsgrad",
   "Do at least {n} tasks yourself": "Gör minst {n} uppgifter själv",
   "Domestic 1": "Inrikes 1",
@@ -2105,7 +2103,6 @@ Object.assign(TEXT_SV, {
   "{h} h": "{h} h",
   "The mission": "Uppdraget",
   "Shops": "Butiker",
-  "The share of the drivers the car parks take: a small one 40 %, a big one all of them.": "Andelen bilister som parkeringarna tar: en liten 40 %, en stor alla.",
   "Enough: one more would earn nothing": "Det räcker: en till skulle inte ge något"
 });
 
@@ -2343,5 +2340,26 @@ Object.assign(TEXT_SV, {
   "Bars: noise": "Staplar: buller",
   "Bars: the share of the staff away": "Staplar: andelen personal borta",
   "Bars: close calls": "Staplar: tillbud",
-  "The airport itself": "Flygplatsen själv"
+  "The airport itself": "Flygplatsen själv",
+  "Max: the halls are full": "Max: hallarna är fulla",
+  "Max: {n} remote stands": "Max: {n} fjärrplatser",
+  "The check-in halls of the terminals standing have room for {max} desks. A new terminal brings more room.": "Incheckningshallarna i terminalerna som står har plats för {max} diskar. En ny terminal ger mer plats.",
+  "Their row beside the first apron has room for {max} aircraft up to a Boeing 737 or an A321, clear of the aprons of later years. The passengers walk out to them. The new aprons and piers bring stands of their own.": "Deras rad bredvid det första förklädet har plats för {max} flygplan upp till en Boeing 737 eller en A321, utanför de senare årens förkläden. Passagerarna går ut till dem. De nya förkläden och pirerna har egna platser.",
+  "{have} places, {need} needed": "{have} platser, {need} behövs",
+  "The drivers among today's passengers need about {need} places (the coaches and the train take some of them away); your car parks have {have}. Each place a driver takes earns parking fees, {m} a month now; a place more than the drivers need earns nothing.": "Bilisterna bland dagens passagerare behöver ungefär {need} platser (bussarna och tåget tar en del av dem); dina parkeringar har {have}. Varje plats en bilist tar ger parkeringsavgifter, {m} i månaden nu; en plats mer än bilisterna behöver ger ingenting.",
+  "+{m} a month": "+{m} i månaden",
+  "Landings over Märsta": "Landningar över Märsta",
+  "Take-offs over Märsta": "Starter över Märsta",
+  "Take-offs over Upplands Väsby": "Starter över Upplands Väsby",
+  "Open desks check in the passengers and cost wages by the hour. To have more desks, buy them below.": "Öppna diskar checkar in passagerarna och kostar lön per timme. Vill du ha fler diskar, köp dem nedan.",
+  "Open {open} of {n} desks": "Öppna {open} av {n} diskar",
+  "the wind decides": "vinden bestämmer",
+  "Calm wind: you choose the direction. Take-offs are louder than landings: the neighbours hear which way they fly.": "Svag vind: du väljer riktningen. Starter låter mer än landningar: grannarna hör åt vilket håll de flyger.",
+  "{dir} is quieter now": "{dir} är tystare nu",
+  "room for {n} more": "plats för {n} till",
+  "The wind is calm: you choose the runway direction in the bar below. {dir} is quieter for Märsta now — on 01 the landings come in over the town, on 19 the louder take-offs climb out over it.": "Svag vind: du väljer banriktningen i listen nedan. {dir} är tystare för Märsta nu — på 01 kommer landningarna in över staden, på 19 stiger de mer högljudda starterna över den.",
+  "Parking fees a month": "Parkeringsavgifter i månaden",
+  "Room for check-in desks": "Plats för incheckningsdiskar",
+  "{n} in all the halls": "{n} i alla hallar",
+  "{have} places + {more} being built, {need} needed": "{have} platser + {more} byggs, {need} behövs"
 });

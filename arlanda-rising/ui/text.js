@@ -201,8 +201,11 @@ const Text = {
     const out = [];
     if (o.money) out.push((o.money > 0 ? '+' : '−') + sek(Math.abs(o.money)));
     const builds = [].concat(o.build || []);
-    if (builds.length) {
-      const b = BUILDINGS[builds[0]], sum = builds.reduce((s, k) => s + BUILDINGS[k].price, 0);
+    // only what can still be bought is built and paid (Airport.buy): at a limit, the reason instead
+    const cap = builds.length && Airport.cap(builds[0]), room = cap ? Math.max(0, cap.max - Airport.owned(builds[0])) : builds.length && Airport.full(builds[0]) ? 0 : builds.length;
+    if (room < builds.length) out.push(room ? tr('room for {n} more', { n: room }) : this.buyWhy(builds[0]));
+    if (room) {
+      const b = BUILDINGS[builds[0]], sum = builds.slice(0, room).reduce((s, k) => s + BUILDINGS[k].price, 0);
       out.push('−' + sek(sum));
       if (b.days) out.push(tr('ready in {n} days', { n: b.days }));
       // session 4: the payback from the airport's own traffic
@@ -269,16 +272,49 @@ const Text = {
     if (!out.length) out.push(tr('nothing changes'));
     return out.join(' · ');
   },
-  // a vehicle's limit (Airport.cap): why it stops there, short (the build button at its limit) and in full (its tooltip)
+  // a limit (Airport.cap): why it stops there, short (the build button at its limit) and in full (its tooltip)
   capWhy(cap) {
-    return cap.why === 'stand' ? tr('Max: one per stand') : cap.why === 'runway' ? tr('Max: a convoy per runway') : tr('Max: fire category {n}', { n: cap.n });
+    switch (cap.why) {
+      case 'stand': return tr('Max: one per stand');
+      case 'runway': return tr('Max: a convoy per runway');
+      case 'hall': return tr('Max: the halls are full');
+      case 'remote': return tr('Max: {n} remote stands', { n: cap.max });
+    }
+    return tr('Max: fire category {n}', { n: cap.n });
   },
   capTip(kind, cap) {
     if (kind === 'fuelTruck') return tr('An aircraft takes one fuel truck at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
     if (kind === 'deicer') return tr('An aircraft takes one de-icing truck at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
     if (kind === 'plough') return tr('A convoy of {c} ploughs sweeps a runway; with a convoy for each runway they all sweep at once ({n} runways).', { c: PLOUGH_CONVOY, n: cap.n });
+    if (kind === 'desk') return tr('The check-in halls of the terminals standing have room for {max} desks. A new terminal brings more room.', { max: cap.max });
+    if (kind === 'stand') return tr('Their row beside the first apron has room for {max} aircraft up to a Boeing 737 or an A321, clear of the aprons of later years. The passengers walk out to them. The new aprons and piers bring stands of their own.', { max: cap.max });
     return tr('Each crash tender raises the fire category by one, from {base} up to {top}: {max} tenders are the most worth having.', { base: FIRE_CAT_BASE, top: FIRE_CAT_MAX, max: cap.max });
   },
+  // the car parks at today's traffic (Airport.parkingNeed): "300 places, 700 needed", and what that means
+  parkingLine() {
+    const have = Airport.places(), more = Airport.places(true) - have, need = groupThousands(Airport.parkingNeed());
+    return more ? tr('{have} places + {more} being built, {need} needed', { have: groupThousands(have), more: groupThousands(more), need }) : tr('{have} places, {need} needed', { have: groupThousands(have), need });
+  },
+  parkingTip() {
+    return tr('The drivers among today\'s passengers need about {need} places (the coaches and the train take some of them away); your car parks have {have}. Each place a driver takes earns parking fees, {m} a month now; a place more than the drivers need earns nothing.',
+      { need: groupThousands(Airport.parkingNeed()), have: groupThousands(Airport.places(true)), m: sek(Airport.parkingMonth()) });
+  },
+  // what a build button says about a thing that can be bought (data/buildings.js), for the bar and the menus: the
+  // explanation of its limit in full (a tooltip), why it cannot be bought now (short) or what it adds (short)
+  buyTip(kind) {
+    const b = BUILDINGS[kind] || {}, cap = Airport.cap(kind);
+    if (cap) return this.capTip(kind, cap);
+    if (b.cells) return tr('Takes {cells} in a terminal. To make room, sell a shop from its terminal\'s card: tap the terminal.', { cells: this.cells(b.cells) });
+    if (b.places) return this.parkingTip();
+    return '';
+  },
+  buyWhy(kind) {
+    const b = BUILDINGS[kind] || {}, cap = Airport.cap(kind);
+    return cap ? this.capWhy(cap) : b.cells ? tr('No room: needs {cells}', { cells: this.cells(b.cells) }) : tr('Enough: one more would earn nothing');
+  },
+  buyGain(kind) { const g = Airport.parkingGain(kind); return g > 0 ? tr('+{m} a month', { m: sekBare(g) }) : ''; },
+  // the runway direction when it is calm: what each one flies over the towns (sim/runways.js use)
+  dirOver(d) { return d === '01' ? tr('Landings over Märsta') : Airport.runway('r3') ? tr('Take-offs over Upplands Väsby') : tr('Take-offs over Märsta'); },
   // stars as HTML: the ones earned lit, the rest dim
   stars(n, of) { let s = ''; for (let i = 0; i < (of || 3); i++) s += '<span class="star' + (i < n ? ' on' : '') + '">★</span>'; return s; }
 };

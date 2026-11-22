@@ -74,7 +74,6 @@ const TEXT_RU = {
   "Buy a second truck from the toolbar.": "Второй заправщик можно купить на панели внизу.",
   "Buy?": "Купить?",
   "Café": "Кафе",
-  "Calm wind: you choose the direction": "Штиль: направление выбираешь ты",
   "Cancel": "Отмена",
   "Cancelled": "Отменён",
   "Car park (1 200 places)": "Парковка (1 200 мест)",
@@ -115,7 +114,6 @@ const TEXT_RU = {
   "Departed": "Улетел",
   "Departure": "Вылет",
   "Desks and the waiting room": "Стойки и зал ожидания",
-  "Desks open": "Открыто стоек",
   "Difficulty": "Сложность",
   "Do at least {n} tasks yourself": "Сделай сам не меньше {n} задач",
   "Domestic 1": "Внутренний 1",
@@ -2105,7 +2103,6 @@ Object.assign(TEXT_RU, {
   "{h} h": "{h} ч",
   "The mission": "Миссия",
   "Shops": "Магазины",
-  "The share of the drivers the car parks take: a small one 40 %, a big one all of them.": "Доля водителей, которых берут парковки: малая 40 %, большая — все.",
   "Enough: one more would earn nothing": "Хватит: ещё одна ничего не принесёт"
 });
 
@@ -2343,5 +2340,26 @@ Object.assign(TEXT_RU, {
   "Bars: noise": "Столбики: шум",
   "Bars: the share of the staff away": "Столбики: доля отсутствующих",
   "Bars: close calls": "Столбики: опасные сближения",
-  "The airport itself": "Сам аэропорт"
+  "The airport itself": "Сам аэропорт",
+  "Max: the halls are full": "Максимум: залы заполнены",
+  "Max: {n} remote stands": "Максимум: {n} дальние стоянки",
+  "The check-in halls of the terminals standing have room for {max} desks. A new terminal brings more room.": "Сколько стоек помещается в залах регистрации построенных терминалов: {max}. Новый терминал добавит места.",
+  "Their row beside the first apron has room for {max} aircraft up to a Boeing 737 or an A321, clear of the aprons of later years. The passengers walk out to them. The new aprons and piers bring stands of their own.": "Их ряд рядом с первым перроном вмещает {max} самолёта размером до Boeing 737 или A321 — в стороне от перронов следующих лет. Пассажиры идут к ним пешком. Новые перроны и пирсы приносят свои стоянки.",
+  "{have} places, {need} needed": "{have} мест, нужно {need}",
+  "The drivers among today's passengers need about {need} places (the coaches and the train take some of them away); your car parks have {have}. Each place a driver takes earns parking fees, {m} a month now; a place more than the drivers need earns nothing.": "Водителям среди сегодняшних пассажиров нужно около {need} мест (автобусы и поезд забирают часть из них); на твоих парковках {have}. Каждое занятое место приносит плату за парковку, сейчас {m} в месяц; место сверх нужного не приносит ничего.",
+  "+{m} a month": "+{m} в месяц",
+  "Landings over Märsta": "Посадки над Мэрштой",
+  "Take-offs over Märsta": "Взлёты над Мэрштой",
+  "Take-offs over Upplands Väsby": "Взлёты над Упландс-Весбю",
+  "Open desks check in the passengers and cost wages by the hour. To have more desks, buy them below.": "Открытые стойки регистрируют пассажиров, и за каждый час работы платится зарплата. Чтобы стоек стало больше, купи их ниже.",
+  "Open {open} of {n} desks": "Открыто {open} из {n} стоек",
+  "the wind decides": "решает ветер",
+  "Calm wind: you choose the direction. Take-offs are louder than landings: the neighbours hear which way they fly.": "Штиль: направление выбираешь ты. Взлёт громче посадки — соседи слышат, куда летят самолёты.",
+  "{dir} is quieter now": "Сейчас тише {dir}",
+  "room for {n} more": "место ещё для {n}",
+  "The wind is calm: you choose the runway direction in the bar below. {dir} is quieter for Märsta now — on 01 the landings come in over the town, on 19 the louder take-offs climb out over it.": "Штиль: направление полосы выбираешь ты на панели внизу. Сейчас для Мэршты тише {dir}: на 01 над городом заходят на посадку, на 19 над ним набирают высоту более громкие взлёты.",
+  "Parking fees a month": "Плата за парковку в месяц",
+  "Room for check-in desks": "Места для стоек регистрации",
+  "{n} in all the halls": "{n} во всех залах",
+  "{have} places + {more} being built, {need} needed": "{have} мест + {more} строится, нужно {need}"
 });

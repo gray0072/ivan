@@ -95,12 +95,10 @@
 <rect x="500.0" y="420.0" width="95.0" height="132.5" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
 <rect x="500.0" y="337.5" width="95.0" height="82.5" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
 <rect x="557.5" y="1170.0" width="48.5" height="180.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
-<rect x="513.0" y="998.5" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
-<rect x="513.0" y="1026.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
-<rect x="483.0" y="1053.5" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
-<rect x="453.0" y="1026.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
 <rect x="453.0" y="998.5" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
-<rect x="483.0" y="821.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
+<rect x="453.0" y="1026.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
+<rect x="453.0" y="1053.5" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
+<rect x="453.0" y="1081.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
 <rect x="565.5" y="1316.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
 <rect x="565.5" y="1281.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
 <rect x="565.5" y="1246.0" width="41.0" height="28.0" fill="#d6d3cb" stroke="#a8a49a" stroke-width="0.6"/>
@@ -118,12 +116,10 @@
 <polyline points="530.0,725.0 494.0,725.0 494.0,325.0 773.0,325.0 779.5,326.0 785.0,329.0 789.5,334.0 792.5,340.0 801.0,374.0" fill="none" stroke="#6b6f73" stroke-width="11.5" stroke-linejoin="round" />
 <polyline points="1333.5,1450.0 800.0,1450.0 607.5,1443.0 540.0,1385.0 550.0,1170.0" fill="none" stroke="#6b6f73" stroke-width="11.5" stroke-linejoin="round" />
 <polyline points="462.5,813.0 476.0,813.0" fill="none" stroke="#c8c5bd" stroke-width="4.5" stroke-linejoin="round" />
-<polyline points="512.5,1012.5 512.5,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
-<polyline points="512.5,1040.0 512.5,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
-<polyline points="482.5,1067.5 482.5,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
-<polyline points="452.5,1040.0 452.5,984.0 476.0,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
 <polyline points="452.5,1012.5 452.5,984.0 476.0,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
-<polyline points="482.5,835.0 482.5,866.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
+<polyline points="452.5,1040.0 452.5,984.0 476.0,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
+<polyline points="452.5,1067.5 452.5,984.0 476.0,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
+<polyline points="452.5,1095.0 452.5,984.0 476.0,984.0" fill="none" stroke="#c8c5bd" stroke-width="10.0" stroke-linejoin="round" />
 <polyline points="-790.0,1900.0 -300.0,1930.0 250.0,1860.0 500.0,1650.0 650.0,1350.0 665.0,1100.0 647.0,947.5 645.0,940.0 641.0,934.5 635.5,931.0 627.5,930.0 615.0,930.0" fill="none" stroke="#8a6e4c" stroke-width="13.0" stroke-linejoin="round" />
 <polyline points="649.0,962.5 649.0,952.5 650.5,941.5 652.0,929.0 653.0,915.0 653.0,720.0" fill="none" stroke="#8a6e4c" stroke-width="13.0" stroke-linejoin="round" />
 <polyline points="-400.0,17550.0 -630.0,4800.0 -700.0,3350.0 -760.0,2300.0 -790.0,1900.0 -780.0,1150.0 -825.0,250.0 -900.0,-1050.0 -1025.0,-2950.0 -1450.0,-16450.0" fill="none" stroke="#8a6e4c" stroke-width="15.0" stroke-linejoin="round" />
@@ -168,12 +164,10 @@
 <rect x="554.3" y="899.9" width="28.8" height="25.2" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="558.6" y="933.5" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="510.6" y="966.0" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
-<rect x="524.6" y="1003.5" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
-<rect x="524.6" y="1031.0" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
-<rect x="494.6" y="1058.5" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
-<rect x="464.6" y="1031.0" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="464.6" y="1003.5" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
-<rect x="494.6" y="826.0" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
+<rect x="464.6" y="1031.0" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
+<rect x="464.6" y="1058.5" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
+<rect x="464.6" y="1086.0" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="559.3" y="792.4" width="28.8" height="25.2" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="559.3" y="759.9" width="28.8" height="25.2" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
 <rect x="509.6" y="736.0" width="24.4" height="18.0" fill="none" stroke="#2f6fb3" stroke-dasharray="3 2" stroke-width="0.8"/>
@@ -228,12 +222,10 @@
 <circle cx="584.0" cy="912.5" r="1.6" fill="#2f6fb3"/>
 <circle cx="584.0" cy="942.5" r="1.6" fill="#2f6fb3"/>
 <circle cx="536.0" cy="975.0" r="1.6" fill="#2f6fb3"/>
-<circle cx="550.0" cy="1012.5" r="1.6" fill="#2f6fb3"/>
-<circle cx="550.0" cy="1040.0" r="1.6" fill="#2f6fb3"/>
-<circle cx="520.0" cy="1067.5" r="1.6" fill="#2f6fb3"/>
-<circle cx="490.0" cy="1040.0" r="1.6" fill="#2f6fb3"/>
 <circle cx="490.0" cy="1012.5" r="1.6" fill="#2f6fb3"/>
-<circle cx="520.0" cy="835.0" r="1.6" fill="#2f6fb3"/>
+<circle cx="490.0" cy="1040.0" r="1.6" fill="#2f6fb3"/>
+<circle cx="490.0" cy="1067.5" r="1.6" fill="#2f6fb3"/>
+<circle cx="490.0" cy="1095.0" r="1.6" fill="#2f6fb3"/>
 <circle cx="589.0" cy="805.0" r="1.6" fill="#2f6fb3"/>
 <circle cx="589.0" cy="772.5" r="1.6" fill="#2f6fb3"/>
 <circle cx="535.0" cy="745.0" r="1.6" fill="#2f6fb3"/>

@@ -14,16 +14,18 @@
 //   sign     the bilingual sign over its door
 //   cells    the cells for the airport's own shops (a kiosk takes 1, a café 2, a restaurant 3, a duty-free shop 4:
 //            data/buildings.js `cells`), apart from the brands' units: they add up over the terminals standing
+//   desks    the check-in desks its hall has room for (the desks its project brings and those bought later): they add up
+//            over the terminals standing (sim/airport.js deskRoom); the first terminal's hall stays with the kerb after 2017
 // The kerb is shared by every terminal: its desks are for the ground transport and the car rental companies.
 
 const TERMINALS = {
-  t1: { name: 'The first terminal', item: 'terminal', who: 'all', units: ['kiosk', 'unit'], cells: 6, sign: 'Avgångar · Departures' },
-  intl: { name: 'The international terminal', names: [[1993, 'Terminal 5']], item: 'intlTerminal', who: 'intl', units: ['big', 'unit', 'unit', 'unit', 'unit', 'kiosk', 'kiosk', 'kiosk'], cells: 8, sign: 'Utrikes · International' },
-  dom: { name: 'The domestic terminal', names: [[1990, 'Domestic 1'], [1993, 'Terminal 4'], [2025, 'Terminal 5 · Pier C']], item: 'domTerminal', who: 'dom', units: ['unit', 'unit', 'kiosk', 'kiosk'], cells: 4, sign: 'Inrikes · Domestic' },
+  t1: { name: 'The first terminal', item: 'terminal', who: 'all', units: ['kiosk', 'unit'], cells: 6, desks: 12, sign: 'Avgångar · Departures' },
+  intl: { name: 'The international terminal', names: [[1993, 'Terminal 5']], item: 'intlTerminal', who: 'intl', units: ['big', 'unit', 'unit', 'unit', 'unit', 'kiosk', 'kiosk', 'kiosk'], cells: 8, desks: 16, sign: 'Utrikes · International' },
+  dom: { name: 'The domestic terminal', names: [[1990, 'Domestic 1'], [1993, 'Terminal 4'], [2025, 'Terminal 5 · Pier C']], item: 'domTerminal', who: 'dom', units: ['unit', 'unit', 'kiosk', 'kiosk'], cells: 4, desks: 10, sign: 'Inrikes · Domestic' },
   // Terminal 3 (1989): the regional terminal; closed in the pandemic (2020) and opened again in October 2024; closed as a
   // terminal in September 2026, its gates 51–59 joined to Terminal 2 at the end of 2026; its name before 1993 not found
-  t3: { name: 'The regional terminal', names: [[1993, 'Terminal 3'], [2027, 'Terminal 2 · gates 51–59']], item: 'terminal3', who: 'prop', units: ['unit', 'kiosk'], cells: 2, sign: 'Terminal 3' },
-  t2: { name: 'Domestic 2', names: [[1993, 'Terminal 2']], item: 'terminal2', who: 'airlines', units: ['big', 'unit', 'unit', 'kiosk', 'kiosk'], cells: 4, sign: 'Terminal 2' },
+  t3: { name: 'The regional terminal', names: [[1993, 'Terminal 3'], [2027, 'Terminal 2 · gates 51–59']], item: 'terminal3', who: 'prop', units: ['unit', 'kiosk'], cells: 2, desks: 4, sign: 'Terminal 3' },
+  t2: { name: 'Domestic 2', names: [[1993, 'Terminal 2']], item: 'terminal2', who: 'airlines', units: ['big', 'unit', 'unit', 'kiosk', 'kiosk'], cells: 4, desks: 14, sign: 'Terminal 2' },
   // session 5: Sky City between the terminals — shops and restaurants landside, for everybody who passes
   sky: { name: 'Sky City', item: 'skyCity', who: 'none', units: ['big', 'unit', 'unit', 'unit', 'kiosk', 'kiosk'], sign: 'Sky City' },
   kerb: { name: 'The kerb', item: 'terminal', who: 'none', units: ['desk', 'desk', 'desk', 'desk', 'desk', 'desk'], sign: 'Taxi · Buss · Hyrbil' }

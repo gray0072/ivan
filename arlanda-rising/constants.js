@@ -37,6 +37,7 @@ const DEP_WAIT_MAX = 90;           // game minutes a departure waits for a usabl
 const TAXI_BASE = 3;               // game minutes of taxiing, plus the stand's own distance
 const ONTIME_MIN = 15;             // a departure up to this late is on time
 const CALM_WIND = 6;               // kt: below it the player may choose the runway direction
+const NOISE_AHEAD_MIN = 60;        // game minutes of flights due that the toolbar weighs to say which direction is quieter
 
 // ---------- stands and turnarounds ----------
 const SIZE_CODES = 'ABCDEF';       // ICAO aerodrome reference codes, small to large
@@ -49,6 +50,8 @@ const FUEL_DRIVE = 4;              // game minutes for a fuel truck to drive to 
 const FUEL_TRUCKS_PER_STAND = 1;   // the most fuel trucks worth having per stand: an aircraft takes one truck at a time
 const FUEL_L_PER_T = 80;           // litres of fuel a truck puts into an aircraft per tonne of its MTOW (the vehicles' cards)
 const REMOTE_WALK_MOOD = 1.5;      // Passengers points lost per flight boarded at a remote stand (×2 in snow)
+const REMOTE_STANDS_MAX = 4;       // remote stands that can be bought: their row south-west of the first apron (data/layout.js
+                                   // remote) has room for four aircraft of code C, clear of every apron of the later eras
 const WRONG_STAND_DELAY = 6;       // minutes lost when the duty manager sends an aircraft to a poor stand
 
 // ---------- the terminal ----------
@@ -89,6 +92,8 @@ const PAX_FEE_DOMESTIC = 70;       // … domestic
 const SHOP_SPEND = 25;             // SEK the airport gets per departing passenger from a café with full free time
 const SHOP_SELL_BACK = 0.5;        // share of its price an own shop is sold back for (to make room in its terminal's cells)
 const PARKING_PER_PAX = 14;        // SEK of parking per departing passenger when the car parks take them all
+const PARK_PLACES_PER_PAX = 0.2;   // car park places a day's departing passengers need (those who drive, their cars staying a
+                                   // few days), after the coaches and the train take their share of the drivers
 const STAND_FREE_MIN = 60;         // minutes on a stand included in the landing fee
 const STAND_FEE_HOUR = 800;        // SEK per hour beyond it
 const DIVERT_PENALTY = 30000;      // SEK paid to the airline for a diversion the airport caused

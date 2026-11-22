@@ -3,7 +3,7 @@
 // Arlanda Rising — the runways and the paved surfaces in an ops stage: the direction in use (into the wind,
 // or the player's choice when it is calm), whether a runway takes movements now (snow, a plough convoy on
 // it, the dark without lights, fog, Safety under its floor), the separation between movements, the noise
-// each movement makes over the towns, snow building up on the surfaces and the plough convoys clearing it.
+// each movement makes over the towns (and, when it is calm, which direction would be quieter in the next hour), snow building up on the surfaces and the plough convoys clearing it.
 // Used by sim/flights.js, sim/tasks.js and the screens (braking action, why a runway is closed).
 
 const Runways = {
@@ -56,6 +56,34 @@ const Runways = {
     const off = (h) => Math.abs(((w.windDir - h) % 360 + 540) % 360 - 180);
     return off(rw.hdg[0]) <= off(rw.hdg[1]) ? rw.dirs[0] : rw.dirs[1];
   },
+  // the noise units over the towns of one movement: the direction's way over a town or the forest, a jet ×1.5, at night
+  // ×NOISE_NIGHT_X
+  noiseOf(f, landing, overTown, t) {
+    let n = overTown ? (landing ? NOISE_ARR_TOWN : NOISE_DEP_TOWN) : NOISE_FOREST;
+    if (AIRCRAFT[f.type].engines === 'jet') n *= 1.5;
+    return Calendar.night(t) ? n * NOISE_NIGHT_X : n;
+  },
+  // what the choice does when it is calm: the noise over the towns of the flights due in the next NOISE_AHEAD_MIN
+  // minutes with each direction — on 01 the landings come in over Märsta (the take-offs climb out north over the forest),
+  // on 19 the take-offs climb out over it (with runway 3 the take-offs on 19L over Upplands Väsby) — and the quieter one:
+  // { '01': units, '19': units, arr, dep, dir: '01' / '19' / null when both are the same }. Read by the toolbar and the
+  // hints; the sim itself only uses S.airport.prefDir.
+  noiseAhead() {
+    const t0 = S.clock, t1 = t0 + NOISE_AHEAD_MIN, out = { '01': 0, '19': 0, arr: 0, dep: 0, dir: null };
+    for (const f of (S.ops && S.ops.flights) || []) {
+      if (Flights.over(f)) continue;
+      if (f.landed === null && f.eta !== null && f.eta < t1 && (f.st === 'sched' || f.st === 'inbound' || f.st === 'approach')) {
+        const t = Math.max(t0, f.eta);
+        out.arr++; out['01'] += this.noiseOf(f, true, true, t); out['19'] += this.noiseOf(f, true, false, t);
+      }
+      if (f.std !== null && f.std !== undefined && f.std < t1) {
+        const t = Math.max(t0, f.std);
+        out.dep++; out['01'] += this.noiseOf(f, false, false, t); out['19'] += this.noiseOf(f, false, true, t);
+      }
+    }
+    if (Math.abs(out['01'] - out['19']) > 0.05) out.dir = out['01'] < out['19'] ? '01' : '19';
+    return out;
+  },
   // a movement on the runway: it is busy for the separation, the towns hear it
   use(rw, f, landing) {
     // low visibility with an instrument landing system: longer separation
@@ -66,10 +94,8 @@ const Runways = {
     // runway 1: landing on 01 comes in from the south over Märsta, taking off on 19 climbs out over it;
     // runway 2 lies in the forest north-east of the terminals; runway 3 (session 5) the same toward Upplands Väsby
     const overTown = (rw.id === 'r1' && (landing ? dir === '01' : dir === '19')) || (rw.id === 'r3' && (landing ? dir === '01R' : dir === '19L'));
-    let n = overTown ? (landing ? NOISE_ARR_TOWN : NOISE_DEP_TOWN) : NOISE_FOREST;
-    if (AIRCRAFT[f.type].engines === 'jet') n *= 1.5;
-    const night = Calendar.night(S.clock);
-    if (night) { n *= NOISE_NIGHT_X; S.mission.st.nightMoves++; }
+    const n = this.noiseOf(f, landing, overTown, S.clock);
+    if (Calendar.night(S.clock)) S.mission.st.nightMoves++;
     S.mission.st.noise += n;
     Meters.noise(n);
     if (landing && this.braking(rw) === 'poor' && rand() < CLOSE_CALL_POOR) Meters.closeCall();

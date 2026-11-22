@@ -15,6 +15,9 @@ const Hints = (() => {
     { id: 'duty', when: () => S.mission.st.tasksDuty > 0, text: () => tr('The duty manager did a task — late. Tap tasks before their ring runs out.') },
     { id: 'queue', when: () => S.ops && Passengers.wait() > 12 && S.ops.desksOpen < S.airport.desks, text: () => tr('The check-in queue is {n} minutes. Open another desk in the bar below!', { n: Math.round(Passengers.wait()) }) },
     { id: 'snow', when: () => S.ops && Runways.main() && Runways.main().snow > 2.5 && !Runways.main().plough, text: () => tr('Snow on the runway! Send the ploughs before it reaches 6 mm.') },
+    // the wind falls calm with the noisier direction in use: the choice in the bar below matters to Märsta
+    { id: 'calm', when: () => S.ops && Runways.main() && Weather.now().wind < CALM_WIND && calmDir() && calmDir() !== Runways.direction(Runways.main()).slice(0, 2),
+      text: () => tr('The wind is calm: you choose the runway direction in the bar below. {dir} is quieter for Märsta now — on 01 the landings come in over the town, on 19 the louder take-offs climb out over it.', { dir: calmDir() }) },
     { id: 'dark', when: () => S.ops && Runways.main() && !Runways.main().lit && Calendar.sunElevation(S.day, S.clock + 30) < -6 && !Weather.now().dark, text: () => tr('It will be dark in half an hour. Without lights the runway closes.') },
     { id: 'bigJet', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'stand' && Flights.get(k.target) && Stands.codeOf(Flights.get(k.target).type) === 'D'), text: () => tr('A DC-8 is coming. Only the big stands, 1 and 2, fit it.') },
     { id: 'crew', when: () => S.plan && !S.plan.pending && Construction.active() < S.plan.crews && S.day - S.plan.day0 > 3 && hasStartable(), text: () => tr('A crew is free. Start the next job in the panel!') },
@@ -44,6 +47,7 @@ const Hints = (() => {
     { id: 'outage', when: () => S.ops && Object.keys(S.domains).filter((d) => Systems.down(d)).length >= 3, text: () => tr('Many systems are down at once. Now the teams kept beside them work by hand — the drills decide how well.') },
     { id: 'heat', when: () => S.ops && Turnaround.hot(), text: () => tr('It is hot: the heavy jets must take off from runway 1, the long one.') }
   ];
+  function calmDir() { return Runways.noiseAhead().dir; }
   function hasStartable() {
     for (const id of Object.keys(S.airport.projects)) for (const sid of Object.keys(S.airport.projects[id].stages)) if (!Construction.cannot(id, sid)) return true;
     return false;
