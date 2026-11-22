@@ -95,14 +95,14 @@ const PlanUI = (() => {
 
   // the teams and systems the mission lets the player add now (Text.ladder): hire a team (ready in two weeks), buy a
   // system (straight from the hands too; from a team, keep it as the fallback or let it go), hire a team back beside a
-  // system; a department whose head has left, with a button to People; IT people
+  // system; a department whose head has left, with a button to Departments; IT people
   function teams() {
     let html = '';
     for (const d of Object.keys(S.domains)) {
       for (const st of Text.ladder(d)) html += ladderStep(d, st);
       const v = S.people && S.people.vacant && S.people.vacant[d];
       if (v && People.staffed(d) && !People.manager(d)) html += '<div class="stageRow"><div class="sn"><b>👔 ' + Text.esc(tr('No head — find one')) + '</b><small>' + Text.esc(Text.dept(d)) + '</small></div>' +
-        '<div class="sr"><button class="tb small" data-people="1">👥 ' + Text.esc(tr('People')) + '</button></div></div>';
+        '<div class="sr"><button class="tb small" data-people="1">👥 ' + Text.esc(tr('Departments')) + '</button></div></div>';
     }
     const need = Systems.itNeed();
     if (need || (S.people && S.people.it)) {

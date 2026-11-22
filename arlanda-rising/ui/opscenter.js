@@ -2,19 +2,19 @@
 
 // Arlanda Rising — the Ops Center (SPEC.md "Screens"): one row per domain the airport has — its level, who or what
 // does the work, the system's uptime and failures, the monthly cost (the team's wages and the licence), the fallback
-// readiness, the department's head (or "No head — find one", a button to People), and the next steps of its ladder
+// readiness, the department's head (or "No head — find one", a button to Departments), and the next steps of its ladder
 // (Text.ladder: a team to hire, a system to buy with its price and running cost — straight from the hands too, and from
 // a team what happens to it: kept as the fallback or let go —, a team hired back beside a system), a drill; and the IT
-// people and the backup power. From the Office (key O) every button works at once; in plan time too (teams and systems
-// after their days); in ops time it is to look only. Used by game.js and ui/office.js.
+// people and the backup power. The first tab of the bar it shares with Finance and Departments (ui/analytics.js
+// InfoTabs). From the Office (key O) every button works at once; in plan time too (teams and systems after their days);
+// in ops time it is to look only. Opened through InfoTabs (game.js, ui/office.js).
 
 const OpsCenter = (() => {
   const $ = (id) => document.getElementById(id);
-  let back = null, editable = false, people = null;
+  let back = null, editable = false;
 
-  // opts.people: how People opens from here (the Office's own, or the panel in play)
   function show(opts) {
-    back = opts.back; editable = !!opts.edit; people = opts.people || null;
+    back = opts.back; editable = !!opts.edit;
     render();
     Screens.show('opsCenter');
   }
@@ -28,7 +28,7 @@ const OpsCenter = (() => {
 
   function render() {
     const p = $('opsCenter');
-    let html = '<h1>🛠️ ' + Text.esc(tr('Ops Center')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p><table class="ops"><tr><th></th><th>' + Text.esc(tr('Level')) +
+    let html = Analytics.tabsHtml('ops') + '<h1>🛠️ ' + Text.esc(tr('Ops Center')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p><table class="ops"><tr><th></th><th>' + Text.esc(tr('Level')) +
       '</th><th>' + Text.esc(tr('Uptime')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' + Text.esc(tr('Readiness')) + '</th><th class="actCol"></th></tr>';
     for (const d of Object.keys(S.domains)) {
       const lv = S.domains[d] || 0, L = DOMAINS[d].levels[lv], r = S.sys && S.sys[d];
@@ -44,9 +44,9 @@ const OpsCenter = (() => {
           (st.notes || []).slice(1).map((n) => '<small class="ladNote">' + Text.esc(n) + '</small>').join('') + '</div>';
       }
       if (editable && lv >= 2 && r && r.readiness < 1) act += '<div class="ladActs"><button class="btn toggle" data-drill="' + d + '">' + Text.esc(tr('Drill')) + ' <small>' + sekBare(DRILL_COST) + '</small></button></div>';
-      // the department's head, or none yet: People has the candidates
+      // the department's head, or none yet: Departments has the candidates
       const head = Text.headLine(d);
-      const headHtml = head ? '<small>' + Text.esc(head) + (people && !People.manager(d) ? ' <button class="btn toggle small" data-people="1">👥 ' + Text.esc(tr('People')) + '</button>' : '') + '</small>' : '';
+      const headHtml = head ? '<small>' + Text.esc(head) + (!People.manager(d) ? ' <button class="btn toggle small" data-tab="people">👥 ' + Text.esc(tr('Departments')) + '</button>' : '') + '</small>' : '';
       html += '<tr><td><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.dom(d)) + '</b><small>' + Text.esc(who(d)) + '</small>' + headHtml + (act ? '<div class="acts under">' + act + '</div>' : '') + '</td><td>' + Text.esc(tr(L.name)) + '</td><td>' + Text.esc(up) +
         '</td><td>' + sekBare(wage + (lv >= 2 ? L.month || 0 : 0)) + '</td><td>' + Text.esc(ready) + '</td><td class="actCol">' + (act ? '<div class="acts">' + act + '</div>' : '') + '</td></tr>';
     }
@@ -61,7 +61,8 @@ const OpsCenter = (() => {
 
   $('opsCenter').addEventListener('click', (e) => {
     const b = e.target.closest('button');
-    if (b && b.dataset.people && people) { Sfx.play('click'); people(); return; }
+    // a tab of the bar, or Departments for a head (ui/analytics.js InfoTabs)
+    if (b && b.dataset.tab) { Sfx.play('click'); InfoTabs.open(b.dataset.tab); return; }
     if (!b || !editable) return;
     let done = false;
     if (b.dataset.up) done = Actions.upgrade(b.dataset.up, b.dataset.how);

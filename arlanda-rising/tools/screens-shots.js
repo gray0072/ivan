@@ -2,7 +2,7 @@
 // its side, a tablet and a computer, for a look at the layout (a steps file for tools/cdp.js, see docs/testing.md).
 // Starts a campaign at 5-1 and plays 5-1…5-8 at Medium by the reference strategies as a chain (months of books, shops,
 // car parks, systems, brands as investments), then opens the Office, Finance (Details open) and its analytics tabs
-// (Passengers, Airlines, Neighbours, Staff, Safety, with the chain's history), People, Ops Center,
+// (Passengers, Airlines, Neighbours, Staff, Safety, with the chain's history), Departments, Ops Center,
 // Airlines and the Terminal view, 5-10's first ops stage with its mission's info from the pause menu, and during 5-10's
 // plan stage the HUD with the plan panel. Each screen is shot at its
 // top and scrolled to its bottom, and every element sticking out of its box or out of the screen is printed as

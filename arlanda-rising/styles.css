@@ -562,10 +562,16 @@ table.books tr.sum td { border-top: 1px solid var(--line); font-weight: 700; pad
 table.parts { max-width: 420px; margin: 6px auto; }
 .cvWrap { width: 100%; }
 
-/* the analytics tabs of Finance (ui/analytics.js): on a narrow screen the tabs show their icon only, the open one its name */
+/* the tab bar of the Ops Center, Finance with its analytics, and Departments (ui/analytics.js): on a phone — held
+   upright or on its side — the tabs show their icon only, the open one too (its page's title names it), sharing the
+   width in one row, so the nine fit a 360 px phone */
 #statsChart { width: 100%; border-radius: 10px; }
 .tabs.stats .btn { padding: 0 10px; }
-@media (max-width: 600px) { .tabs.stats .tn { display: none; } .tabs.stats .on .tn { display: inline; } }
+@media (max-width: 600px), (max-height: 500px) {
+  .tabs.stats { flex-wrap: nowrap; gap: 4px; }
+  .tabs.stats .btn { flex: 1 1 0; min-width: 0; max-width: 64px; padding: 0 2px; font-size: 15px; }
+  .tabs.stats .tn { display: none; }
+}
 table.fac td:nth-child(2) { color: var(--dim); }
 table.fac td:last-child { min-width: 2.6em; font-weight: 600; }
 table.brk td.nw { white-space: nowrap; }

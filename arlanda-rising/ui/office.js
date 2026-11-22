@@ -2,7 +2,7 @@
 
 // Arlanda Rising — the Office between missions (and between Free Play's rounds), with time stopped: the airport on the
 // map behind, the money and the loans (borrow or repay here: FinanceUI's loans card), the last months' books, what the airport has, the five
-// meters, the People screen and the Ops Center (hire, train, put in systems, drills — at once, on the airport that
+// meters, the Ops Center and Departments (hire, train, put in systems, drills — at once, on the airport that
 // carries over), what waits for an answer (a manager's raise), the terminals to mothball and open again (session 6), and
 // the next mission or round a tap away. Used by
 // game.js; it works on the world of Game.holder() (the campaign's or Free Play's), which is S while it is open.
@@ -16,9 +16,10 @@ const Office = (() => {
     const nm = h.free ? null : Campaign.nextMission();
     let html = '<h1>🏢 ' + Text.esc(tr(h.free ? 'Free Play' : 'The Office')) + '</h1><p class="when">' + Text.esc(fmtDate(w.day)) + ' · ' +
       Text.esc(w.owner === 'Swedavia' ? tr('Owner: Swedavia') : tr('Owner: Luftfartsverket (LFV)')) + '</p>';
-    html += '<div class="btnRow"><button class="btn secondary" data-go="people">👥 ' + Text.esc(tr('People')) + '</button>' +
-      '<button class="btn secondary" data-go="ops">🛠️ ' + Text.esc(tr('Ops Center')) + '</button>' +
+    // the Ops Center, Finance and Departments are tabs of one screen (ui/analytics.js InfoTabs), each with its button
+    html += '<div class="btnRow"><button class="btn secondary" data-go="ops">🛠️ ' + Text.esc(tr('Ops Center')) + '</button>' +
       '<button class="btn secondary" data-go="finance">📊 ' + Text.esc(tr('Finance')) + '</button>' +
+      '<button class="btn secondary" data-go="people">👥 ' + Text.esc(tr('Departments')) + '</button>' +
       '<button class="btn secondary" data-go="airlines">✈️ ' + Text.esc(tr('Airlines')) + '</button>' +
       (w.airport.units ? '<button class="btn secondary" data-go="terminal">🏪 ' + Text.esc(tr('Terminal view')) + '</button>' : '') + '</div>';
     // the Offers board waiting (chapter 4 on)
@@ -28,9 +29,9 @@ const Office = (() => {
     const asks = (w.people && w.people.asks) || [];
     for (const d of asks) {
       const m = w.people.managers[d];
-      if (m) html += '<p class="warn">' + Text.esc(tr('{name} asks for a raise — answer in People, or it counts as "not now".', { name: People.mdef(m.id).name })) + '</p>';
+      if (m) html += '<p class="warn">' + Text.esc(tr('{name} asks for a raise — answer in Departments, or it counts as "not now".', { name: People.mdef(m.id).name })) + '</p>';
     }
-    // session 7: a department whose head has left: the team works on, People has two candidates
+    // session 7: a department whose head has left: the team works on, Departments has two candidates
     for (const d of Object.keys((w.people && w.people.vacant) || {})) {
       const v = w.people.vacant[d], m = People.mdef(v.id);
       if (!People.staffed(d) || w.people.managers[d]) continue;
@@ -110,14 +111,13 @@ const Office = (() => {
     ));
     Screens.show('office');
   }
-  // the People screen or the Ops Center, editable, coming back here
+  // a screen, editable, coming back here: the Ops Center, Finance (on `tab`) or Departments — one screen with tabs —,
+  // the Terminal view or Airlines
   function open(which, tab) {
     const back = () => show();
-    if (which === 'people') PeopleUI.show({ back, edit: true });
-    else if (which === 'terminal') TermView.show({ back, edit: true });
+    if (which === 'terminal') TermView.show({ back, edit: true });
     else if (which === 'airlines') AirlinesUI.show({ back, edit: true });
-    else if (which === 'finance') FinanceUI.show({ back, tab });
-    else OpsCenter.show({ back, edit: true, people: () => PeopleUI.show({ back: () => open('ops'), edit: true }) });
+    else InfoTabs.open(which === 'finance' ? tab || 'finance' : which, { back, edit: { people: true, ops: true } });
   }
   return { show, open };
 })();

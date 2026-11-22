@@ -7,16 +7,36 @@
 // history from S.stats (sim/stats.js): the recent quarter hours of the ops stages and days of the plan stages, or month
 // by month, with a second measure as bars under the line (passengers a day, on-time departures, noise, staff away, close
 // calls). Drawn in the style of the money chart. Used by ui/finance.js.
+// Also the tab bar the Ops Center (ui/opscenter.js), Finance and Departments (ui/people.js) share, and InfoTabs, which
+// switches between them, so that to the player they are one screen with tabs. Used by game.js and ui/office.js too.
 
+// the tabs in their order: the Ops Center, the money, the meters in the HUD's order (ui/text.js METERS) with
+// Departments beside Staff, and the green rating; `screen`: a screen of its own, not an analytics page of Finance
 const STATS_TABS = [
+  { k: 'ops', icon: '🛠️', name: 'Ops Center', screen: true },
   { k: 'finance', icon: '📊', name: 'Finance' },
-  { k: 'passengers', icon: '🧳', name: 'Passengers' },
   { k: 'airlines', icon: '✈️', name: 'Airlines' },
+  { k: 'passengers', icon: '🧳', name: 'Passengers' },
   { k: 'neighbours', icon: '🏡', name: 'Neighbours' },
   { k: 'staff', icon: '👷', name: 'Staff' },
+  { k: 'people', icon: '👥', name: 'Departments', screen: true },
   { k: 'safety', icon: '🛡️', name: 'Safety' },
   { k: 'green', icon: '🌿', name: 'Green rating' }
 ];
+
+// the tab bar's screens as one: a tab opens its screen with the same Back and the same editing as the tab it was opened
+// on — `edit.ops` the Ops Center's (true / false), `edit.people` Departments' (true / 'heads' / false); Finance has none
+const InfoTabs = (() => {
+  let ctx = { back: () => {}, edit: {} };
+  // open(tab, { back, edit }) from outside (game.js, ui/office.js); open(tab) from a tab of the bar
+  function open(tab, opts) {
+    if (opts) ctx = { back: opts.back, edit: opts.edit || {} };
+    if (tab === 'ops') OpsCenter.show({ back: ctx.back, edit: !!ctx.edit.ops });
+    else if (tab === 'people') PeopleUI.show({ back: ctx.back, edit: ctx.edit.people });
+    else FinanceUI.show({ back: ctx.back, tab });
+  }
+  return { open };
+})();
 
 // the green rating's points as shown (sim/green.js parts)
 const GREEN_PART_NAMES = { base: 'The airport itself', train: 'Arlanda Express', bus: 'Airport coach stops', aquifer: 'The aquifer energy store', solar: 'Solar park',
@@ -30,9 +50,10 @@ const Analytics = (() => {
 
   // the tabs there are now: the green rating once the owner counts it
   function tabs() { return STATS_TABS.filter((t) => t.k !== 'green' || Green.on()); }
+  // the bar; on a phone the tabs show their icon only (styles.css), the name stays as the tooltip and the label
   function tabsHtml(cur) {
-    return '<div class="tabs stats" role="group">' + tabs().map((t) => '<button class="btn toggle' + (t.k === cur ? ' on' : '') + '" data-tab="' + t.k + '" title="' + esc(tr(t.name)) + '">' +
-      t.icon + '<span class="tn"> ' + esc(tr(t.name)) + '</span></button>').join('') + '</div>';
+    return '<div class="tabs stats" role="group">' + tabs().map((t) => '<button class="btn toggle' + (t.k === cur ? ' on' : '') + '" data-tab="' + t.k + '" title="' + esc(tr(t.name)) +
+      '" aria-label="' + esc(tr(t.name)) + '"' + (t.k === cur ? ' aria-pressed="true"' : '') + '>' + t.icon + '<span class="tn"> ' + esc(tr(t.name)) + '</span></button>').join('') + '</div>';
   }
 
   // the mission's counters so far (null outside a mission)
@@ -266,7 +287,8 @@ const Analytics = (() => {
     const body = { passengers, airlines, neighbours, staff, safety, green }[tab](t);
     return '<h1>' + t.icon + ' ' + esc(tr(t.name)) + '</h1><p class="when">' + esc(fmtDate(S.day)) + (S.ops ? ' · ' + fmtClock(S.clock) : '') + '</p>' + body + chartHtml(tab);
   }
-  function has(tab) { return tabs().some((t) => t.k === tab); }
+  // an analytics page of Finance there is now (not the Ops Center or Departments)
+  function has(tab) { return tabs().some((t) => t.k === tab && !t.screen); }
 
   return { tabsHtml, html, draw, has };
 })();

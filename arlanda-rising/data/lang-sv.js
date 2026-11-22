@@ -255,6 +255,7 @@ const TEXT_SV = {
   "Paused. Press ▶ to go on: {aim}": "Paus. Tryck ▶ för att fortsätta: {aim}",
   "Pave the apron": "Belägg plattan",
   "Pave the runway": "Belägg banan",
+  "The Ops Center, Finance, Departments and the meters are tabs of one screen: tap the money or a meter at the top, then pick a tab.": "Ops Center, Ekonomi, Avdelningar och mätarna är flikar på en och samma skärm: tryck på pengarna eller en mätare överst och välj en flik.",
   "Phone and tablet: the game goes fullscreen. Drag with one finger to move the map, pinch with two to zoom, tap a task or drag it to a stand, hold a finger on an aircraft to see its card.": "Mobil och surfplatta: spelet går i helskärm. Dra med ett finger för att flytta kartan, nyp med två för att zooma, tryck på en uppgift eller dra den till en plats, håll fingret på ett plan för att se dess kort.",
   "Pick": "Välj",
   "Plan time: a day goes by every second. Start the jobs, then let the time run.": "Plantid: en dag går varje sekund. Starta jobben och låt tiden gå.",
@@ -832,9 +833,9 @@ Object.assign(TEXT_SV, {
   "{dept} is on strike today.": "{dept} strejkar i dag.",
   "{dept}: {p} away today.": "{dept}: {p} borta i dag.",
   "Owner: Swedavia": "Ägare: Swedavia",
-  "People": "Personal",
+  "Departments": "Avdelningar",
   "Ops Center": "Ops Center",
-  "{name} asks for a raise — answer in People, or it counts as \"not now\".": "{name} ber om löneförhöjning – svara under Personal, annars räknas det som ”inte nu”.",
+  "{name} asks for a raise — answer in Departments, or it counts as \"not now\".": "{name} ber om löneförhöjning – svara under Avdelningar, annars räknas det som ”inte nu”.",
   "Strike notice: {dept} from {d}": "Strejkvarsel: {dept} från {d}",
   "Fire category {n}": "Brandkategori {n}",
   "Round {n} comes next.": "Omgång {n} står på tur.",
@@ -967,7 +968,7 @@ Object.assign(TEXT_SV, {
   "A crash tender": "En räddningsbil",
   "The fire chief wants another crash tender: the fire category goes up by one.": "Räddningschefen vill ha ännu en räddningsbil: brandkategorin stiger med ett.",
   "Buy it": "Köp den",
-  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. In the Office, People (P) and the Ops Center (O) hire them, train them and hold drills; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.": "Från kapitel 2 tar lag, chefer och system hela sorters arbete ur dina händer – mot löner och licenser varje månad. På kontoret anställer, utbildar och övar du under Personal (P) och Ops Center (O); när ett lag är kort tar Övertid i fältet nedanför in alla. Fritt spel öppnar efter kapitel 2."
+  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.": "Från kapitel 2 tar lag, chefer och system hela sorters arbete ur dina händer – mot löner och licenser varje månad. I Ops Center (O) och under Avdelningar (P) anställer, utbildar och övar du – på kontoret och mitt i ett uppdrag också; när ett lag är kort tar Övertid i fältet nedanför in alla. Fritt spel öppnar efter kapitel 2."
 });
 
 // session 4: the terminals, brands, airlines, Finance, chapter 4 and the Challenge Days
@@ -2338,14 +2339,14 @@ Object.assign(TEXT_SV, {
   "The team keeps working — only the head's skill is gone. Two candidates will apply.": "Laget jobbar vidare – bara chefens skicklighet är borta. Två kandidater kommer att söka.",
   "In the panel you can hire a team, or buy the system straight away: it comes with its own operators.": "I panelen kan du anställa ett lag – eller köpa systemet direkt: det har sina egna operatörer.",
   "{dept} runs the desks: it opens one more as the queue grows. A head who reads the departures opens them sooner — or press + yourself.": "{dept} sköter diskarna: laget öppnar en till när kön växer. En chef som läser avgångarna öppnar dem tidigare – eller tryck + själv.",
-  "The team keeps working — only the head's skill is gone. Find a new head in People.": "Laget jobbar vidare – bara chefens skicklighet är borta. Hitta en ny chef under Personal.",
+  "The team keeps working — only the head's skill is gone. Find a new head in Departments.": "Laget jobbar vidare – bara chefens skicklighet är borta. Hitta en ny chef under Avdelningar.",
   "{name}, head of {dept}, has left for another airport.": "{name}, chef för {dept}, har gått till en annan flygplats.",
   "The team keeps working — only the head's skill is gone.": "Laget jobbar vidare – bara chefens skicklighet är borta.",
   "Find a new head": "Hitta en ny chef",
   "No head — find one": "Ingen chef – hitta en",
   "{name} has left for another airport.": "{name} har gått till en annan flygplats.",
   "{name} has retired.": "{name} har gått i pension.",
-  "Heads are hired here in the Office, in plan time or from the pause menu.": "Chefer anställs här – på kontoret, under planeringen eller från pausmenyn.",
+  "Heads are hired here in the Office or during a mission.": "Chefer anställs här – på kontoret eller under ett uppdrag.",
   "A head makes a team better. {dept} has no team yet: it is hired with the head — {m}, ready in {n} days.": "En chef gör ett lag bättre. {dept} har inget lag än: det anställs med chefen – {m}, klart om {n} dagar.",
   "Your team of {n} — what happens to it?": "Ditt lag på {n} – vad händer med det?",
   "Buy, keep the team as the fallback": "Köp, behåll laget som reserv",

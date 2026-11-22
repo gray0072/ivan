@@ -6,7 +6,7 @@
 // plan panel), the stage card, the results and the Office. It wires the map's
 // gestures (tap a task or an aircraft, drag one to a stand, pan, pinch), the keys and the cheats, keeps the running
 // mission saved (every AUTOSAVE_SECONDS, at each stage's end and when the page is hidden) and records the stars;
-// Free Play's rounds, the People screen and the Ops Center (keys P and O), and the cloud save's idle moments; session 4:
+// Free Play's rounds, Departments and the Ops Center (keys P and O: tabs of Finance's bar), and the cloud save's idle moments; session 4:
 // the Terminal view (T: live in an ops stage, the stage runs on behind it), the Airlines screen (A), Finance (F, or the
 // money in the HUD) and the Challenge Days; the roofs on or off (R or the 🏠 button: the buildings cut away with their
 // insides) and the card of a building, a fuel truck or a plough tapped on the map.
@@ -99,9 +99,10 @@ const Game = {
     this.save();
     this.intro();
   },
-  // the People screen, the Ops Center, the Terminal view, Airlines and Finance: from the Office to work in, during play
-  // to look at (the game pauses) — the Terminal view in an ops stage is live, and in a plan stage its shops can be chosen
-  // (`tab`: Finance opened on an analytics tab, e.g. 'staff' from a meter in the HUD)
+  // the Ops Center, Finance and Departments (one screen with tabs, ui/analytics.js InfoTabs), the Terminal view and
+  // Airlines: from the Office to work in, during play to look at (the game pauses) — the Terminal view in an ops stage
+  // is live, and in a plan stage its shops can be chosen (`tab`: Finance opened on an analytics tab, e.g. 'staff' from a
+  // meter in the HUD)
   openPanel(which, tab) {
     if (this.screen === 'office') { Office.open(which, tab); return; }
     if (this.screen !== 'play' || !S || !S.mission) return;
@@ -112,15 +113,15 @@ const Game = {
     this.screen = 'panel';
     this.panel(which, back, tab);
   },
-  // session 7: People and the Ops Center during play: in plan time everything can be changed there (new people after
-  // their days), in ops time People hires a head at once and answers a raise; from the pause menu they go back to it
+  // session 7: Departments and the Ops Center during play: in plan time everything can be changed there (new people
+  // after their days), in ops time Departments hires a head at once and answers a raise, the Ops Center is to look at;
+  // their tabs and Finance's keep that, and Back comes back to play
   panel(which, back, tab) {
-    const people = () => PeopleUI.show({ back: () => this.panel('ops', back), edit: S.plan ? true : S.ops ? 'heads' : false });
-    if (which === 'people') PeopleUI.show({ back, edit: S.plan ? true : S.ops ? 'heads' : false });
-    else if (which === 'ops') OpsCenter.show({ back, edit: !!S.plan, people });
+    const edit = { people: S.plan ? true : S.ops ? 'heads' : false, ops: !!S.plan };
+    if (which === 'people' || which === 'ops') InfoTabs.open(which, { back, edit });
+    else if (which === 'finance') InfoTabs.open(tab || 'finance', { back, edit });
     else if (which === 'terminal') TermView.show({ back, edit: !!S.plan });
     else if (which === 'airlines') AirlinesUI.show({ back });
-    else if (which === 'finance') FinanceUI.show({ back, tab });
   },
   // ---------- the Challenge Days ----------
   toChallenges() {
@@ -216,12 +217,6 @@ const Game = {
     MissionCard.info(() => this.backToPause());
   },
   backToPause() { this.screen = 'pause'; Screens.pause(); },
-  // from the pause menu: People or the Ops Center (on a phone there is no P or O key); Back comes back to the menu
-  pausePanel(which) {
-    if (this.screen !== 'pause' || !S || !S.mission) return;
-    this.screen = 'panel';
-    this.panel(which, () => this.backToPause());
-  },
   resume() {
     Screens.hide();
     const live = this.screen === 'tview';

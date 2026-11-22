@@ -255,6 +255,7 @@ const TEXT_RU = {
   "Paused. Press ▶ to go on: {aim}": "Пауза. Нажми ▶, чтобы продолжить: {aim}",
   "Pave the apron": "Замостить перрон",
   "Pave the runway": "Заасфальтировать полосу",
+  "The Ops Center, Finance, Departments and the meters are tabs of one screen: tap the money or a meter at the top, then pick a tab.": "Ops Center, «Финансы», «Службы» и показатели — вкладки одного экрана: нажми на деньги или на показатель вверху и выбери вкладку.",
   "Phone and tablet: the game goes fullscreen. Drag with one finger to move the map, pinch with two to zoom, tap a task or drag it to a stand, hold a finger on an aircraft to see its card.": "Телефон и планшет: игра открывается на весь экран. Одним пальцем двигай карту, двумя — меняй масштаб, нажимай на задачу или перетаскивай её на стоянку, удерживай палец на самолёте, чтобы увидеть его карточку.",
   "Pick": "Выбрать",
   "Plan time: a day goes by every second. Start the jobs, then let the time run.": "Время стройки: каждую секунду проходит день. Начни работы и пусти время.",
@@ -832,9 +833,9 @@ Object.assign(TEXT_RU, {
   "{dept} is on strike today.": "{dept}: сегодня забастовка.",
   "{dept}: {p} away today.": "{dept}: сегодня отсутствует {p}.",
   "Owner: Swedavia": "Владелец: Swedavia",
-  "People": "Люди",
+  "Departments": "Службы",
   "Ops Center": "Ops Center",
-  "{name} asks for a raise — answer in People, or it counts as \"not now\".": "{name} просит прибавку — ответь в разделе «Люди», иначе это будет «не сейчас».",
+  "{name} asks for a raise — answer in Departments, or it counts as \"not now\".": "{name} просит прибавку — ответь в разделе «Службы», иначе это будет «не сейчас».",
   "Strike notice: {dept} from {d}": "Объявлена забастовка: {dept} с {d}",
   "Fire category {n}": "Пожарная категория {n}",
   "Round {n} comes next.": "Следующий — раунд {n}.",
@@ -967,7 +968,7 @@ Object.assign(TEXT_RU, {
   "A crash tender": "Пожарная машина",
   "The fire chief wants another crash tender: the fire category goes up by one.": "Начальник пожарной службы хочет ещё одну пожарную машину: категория вырастет на единицу.",
   "Buy it": "Купить",
-  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. In the Office, People (P) and the Ops Center (O) hire them, train them and hold drills; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.": "Со второй главы команды, руководители и системы забирают у тебя целые виды работы — за зарплату и лицензии каждый месяц. В Офисе разделы «Люди» (P) и Ops Center (O) позволяют нанимать, обучать и проводить учения; когда в команде не хватает людей, кнопка «Сверхурочные» на панели внизу собирает всех. После второй главы открывается свободная игра."
+  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.": "Со второй главы команды, руководители и системы забирают у тебя целые виды работы — за зарплату и лицензии каждый месяц. В Ops Center (O) и в разделе «Службы» (P) их нанимают, обучают и проводят учения — в Офисе и прямо во время миссии; когда в команде не хватает людей, кнопка «Сверхурочные» на панели внизу собирает всех. После второй главы открывается свободная игра."
 });
 
 // session 4: the terminals, brands, airlines, Finance, chapter 4 and the Challenge Days
@@ -2338,14 +2339,14 @@ Object.assign(TEXT_RU, {
   "The team keeps working — only the head's skill is gone. Two candidates will apply.": "Команда продолжает работать — пропали только умения руководителя. Скоро придут два кандидата.",
   "In the panel you can hire a team, or buy the system straight away: it comes with its own operators.": "На панели можно нанять команду — или сразу купить систему: у неё свои операторы.",
   "{dept} runs the desks: it opens one more as the queue grows. A head who reads the departures opens them sooner — or press + yourself.": "Стойками управляет отдел «{dept}»: она открывает ещё одну, когда очередь растёт. Руководитель, который следит за вылетами, откроет их раньше — или нажми + сам.",
-  "The team keeps working — only the head's skill is gone. Find a new head in People.": "Команда продолжает работать — пропали только умения руководителя. Найди нового в разделе «Люди».",
+  "The team keeps working — only the head's skill is gone. Find a new head in Departments.": "Команда продолжает работать — пропали только умения руководителя. Найди нового в разделе «Службы».",
   "{name}, head of {dept}, has left for another airport.": "Руководитель отдела «{dept}» {name} уходит в другой аэропорт.",
   "The team keeps working — only the head's skill is gone.": "Команда продолжает работать — пропали только умения руководителя.",
   "Find a new head": "Найти руководителя",
   "No head — find one": "Нет руководителя — найди",
   "{name} has left for another airport.": "{name} уходит в другой аэропорт.",
   "{name} has retired.": "{name} уходит на пенсию.",
-  "Heads are hired here in the Office, in plan time or from the pause menu.": "Руководителей нанимают здесь — в Офисе, во время планирования или из меню паузы.",
+  "Heads are hired here in the Office or during a mission.": "Руководителей нанимают здесь — в Офисе или во время миссии.",
   "A head makes a team better. {dept} has no team yet: it is hired with the head — {m}, ready in {n} days.": "Руководитель делает команду лучше. У отдела «{dept}» ещё нет команды: её наймут вместе с руководителем — {m}, готова через {n} дн.",
   "Your team of {n} — what happens to it?": "Твоя команда из {n} человек — что с ней будет?",
   "Buy, keep the team as the fallback": "Купить, команду оставить запасной",

@@ -83,7 +83,7 @@ A child may have **40 minutes a day** on the phone. So:
 
 ## Screens
 
-Every screen — the start screen, the timeline, the Office, the mission card, the game view with its HUD, "The buy menu", "Roofs off and the cards of the map", the Terminal view, the Ops Center, People, Airlines, Finance with its analytics tabs, the stage card and the results, Pause, the Archive and the Album — is in **[spec/ui.md](spec/ui.md)**, with "The game in the browser (session 2)": the map in `render/`, play, help, the flow of `game.js`, the campaign in `progress.js`, the autosave and the texts.
+Every screen — the start screen, the timeline, the Office, the mission card, the game view with its HUD, "The buy menu", "Roofs off and the cards of the map", the Terminal view, the Ops Center, Finance with its analytics tabs and Departments (one screen with tabs), Airlines, the stage card and the results, Pause, the Archive and the Album — is in **[spec/ui.md](spec/ui.md)**, with "The game in the browser (session 2)": the map in `render/`, play, help, the flow of `game.js`, the campaign in `progress.js`, the autosave and the texts.
 
 ## Time
 
@@ -345,7 +345,7 @@ Picked on the start screen, the mission card, the pause menu and the results (pr
 ## Controls
 
 - **Touch** (like `city-builder`, a map app, no joystick): one finger taps to select, build or open a card, drags an aircraft from the tray or the map to a stand, drags a line for taxiways, roads and fences, pans otherwise; two fingers pan and pinch-zoom; a long press on anything shows its card. Big buildings show a ghost with ✔ / ✖ first. Start / Continue request fullscreen on coarse-pointer devices.
-- **Desktop:** click and drag like touch; right or middle drag and the arrow keys pan, the wheel zooms at the pointer. Keys by their place (work on a Russian layout): **Space** pause / play, **1–4** speeds, **5 / 6 / 7** the buy menu's Services, Vehicles, Build (Esc closes it), **N** skip to next event, **R** roofs on / off, **T** terminal view, **O** Ops Center, **F** finance, **P** people, **A** airlines, **Q** the oldest task, **Esc** back / pause. Menus: arrows move the focus, Space / Enter press the focused (or default) button.
+- **Desktop:** click and drag like touch; right or middle drag and the arrow keys pan, the wheel zooms at the pointer. Keys by their place (work on a Russian layout): **Space** pause / play, **1–4** speeds, **5 / 6 / 7** the buy menu's Services, Vehicles, Build (Esc closes it), **N** skip to next event, **R** roofs on / off, **T** terminal view, **O** Ops Center, **F** finance, **P** Departments (each a tab of one screen), **A** airlines, **Q** the oldest task, **Esc** back / pause. Menus: arrows move the focus, Space / Enter press the focused (or default) button.
 - Mouse cursor hidden in fullscreen while still; updates and offline: see "Offline and install".
 
 ## Saved in the browser
@@ -436,9 +436,9 @@ arlanda-rising/
 ├── ui/          text.js (goals, tasks, meters, minutes, effects), screens.js (overlay panels, the start screen, help, settings,
 │                pause, confirm, the difficulty picker), hud.js, tray.js, toolbar.js (the bar: its live part), buymenu.js (the bar's buy menu: Services, Vehicles, Build and their sheet), plan.js (the plan panel, decisions),
 │                cards.js (the flight card), sitecard.js (the card of a building, a fuel truck or a plough), timeline.js, missioncard.js (and the card before each stage, and the running mission's info from the pause menu), results.js (the stage
-│                card, the results, the newspaper), office.js, people.js (the People screen), opscenter.js (the Ops Center),
+│                card, the results, the newspaper), office.js, people.js (Departments), opscenter.js (the Ops Center),
 │                hints.js (Kaj, the finger), sounds.js, terminalview.js (the Terminal view), finance.js (Finance and its
-│                chart), analytics.js (Finance's tabs for the meters and the green rating), airlines.js (Airlines, the Offers board), challenges.js (the Challenge Days and their results);
+│                chart), analytics.js (Finance's tabs for the meters and the green rating; the tab bar the Ops Center, Finance and Departments share, InfoTabs), airlines.js (Airlines, the Offers board), challenges.js (the Challenge Days and their results);
 │                planned: archive, album
 ├── tools/       missions-check.js, debug-mission.js (one mission flight by flight), turnaround-check.js (the turnaround's bar and card against the sim), terminals-check.js (the terminals through the years), layout-check.js (the map's geometry,
 │                and the plan docs/layout.svg), map-shots.js (the map in its eras, for tools/cdp.js), screens-shots.js (the text screens at four sizes, with an overflow check), inside-shots.js (the roofs off and the cards at four sizes), shops-shots.js (the own shops in the terminals' cells, sold and bought, from the roofs and the card), buymenu-shots.js (the buy menu at four sizes, with an overflow check), showcase-slides.js (the slides of docs/showcase.gif for tools/showcase.js)

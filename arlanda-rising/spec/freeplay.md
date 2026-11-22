@@ -72,7 +72,7 @@ The sim always steps by `OPS_STEP_MIN` in the day and by days at night; **pace o
 
 ### 3.4 Pausing and comfort
 
-- **Big screens pause** the game while open (Finance and its tabs, People, the Ops Center, Airlines, Development, the inbox card, a decision): reading and planning never eat the clock. Setting *Pause while I plan* (on by default). The buy menu and the bar's − / + do not pause (as in missions: buying while watching the queue).
+- **Big screens pause** the game while open (Finance and its tabs — the Ops Center and Departments among them —, Airlines, Development, the inbox card, a decision): reading and planning never eat the clock. Setting *Pause while I plan* (on by default). The buy menu and the bar's − / + do not pause (as in missions: buying while watching the queue).
 - A hidden page pauses (as now); on return the game waits paused.
 - **Comfortable rhythm**: a simple tap 3–6 s, a planning decision 20–60 s paused. Attention pace keeps the tray at 2–5 tasks a minute in a manual era — the missions' measured comfort zone (chapter 1: about 4–6 a minute; the 1963 exam's 6 a minute is "the limit of one pair of hands").
 
@@ -200,7 +200,7 @@ Missions script their airlines' routes (`setup.airlines`). Free Play needs traff
 - **Night report** (new): section 3.5.
 - **Era card / era change**: Astrid's briefing, the paper, Real Arlanda, the checkpoint.
 - **Checkpoints** (new): from the pause menu and after a bankruptcy (section 9).
-- The Office is not used: its screens (Finance, People, Ops Center, Airlines) open from the game, paused.
+- The Office is not used: its screens (the Ops Center, Finance, Departments, Airlines) open from the game, paused.
 
 ---
 
@@ -292,7 +292,7 @@ Usage (planned): `node arlanda-rising/tools/freeplay-bot.js [--difficulty d] [--
 | Traffic growth | `Airlines`, `Meters`, `Summary.demand` | `sim/market.js` (section 6) |
 | Eras, asks, gates | `Goals`, the eras of `FREE_ERAS` (as start presets) | `data/freeplay.js` (eras, gates, asks, the market curve, waves, start presets), `sim/freeplay.js` rewritten (lifecycle, day/night loop, eras, checkpoints' data) |
 | Constants | — | `FREE_*` in `constants.js`, each with its unit |
-| UI | HUD, bar, buy menu, tray, plan panel, cards, Finance, People, Ops Center, Airlines | `ui/development.js`, `ui/inbox.js`, `ui/nightreport.js`, `ui/checkpoints.js`; HUD and `game.js` read `S.free` |
+| UI | HUD, bar, buy menu, tray, plan panel, cards, the Ops Center, Finance, Departments, Airlines | `ui/development.js`, `ui/inbox.js`, `ui/nightreport.js`, `ui/checkpoints.js`; HUD and `game.js` read `S.free` |
 | Tests | the `vm` loader of `missions-check.js` | `tools/freeplay-bot.js`, `tools/freeplay-policy.js`; the loader's file list shared (one list, not two) |
 
 **Guardrails for every step**:

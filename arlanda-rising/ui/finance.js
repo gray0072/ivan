@@ -6,8 +6,8 @@
 // each month's result, every investment the airport owns with what it earns and costs a month and its payback from the
 // airport's own traffic (sim/invest.js) — and, under Details (closed by default, its state remembered), the net present
 // value and the what-if of the small builds before they are bought. Tabs at the top lead to the analytics of the five
-// meters and the green rating (ui/analytics.js), opened straight from a meter in the HUD or the Office. Used by game.js
-// and ui/office.js.
+// meters and the green rating (ui/analytics.js), opened straight from a meter in the HUD or the Office, and to the Ops
+// Center and Departments (the same tab bar on their screens, InfoTabs). Opened through InfoTabs (game.js, ui/office.js).
 
 const FinanceUI = (() => {
   const $ = (id) => document.getElementById(id);
@@ -154,7 +154,8 @@ const FinanceUI = (() => {
   $('finance').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
-    if (b.dataset.tab) { Sfx.play('click'); tab = b.dataset.tab; render(); $('finance').scrollTop = 0; return; }
+    // a tab: an analytics page here, or the Ops Center or Departments (ui/analytics.js InfoTabs)
+    if (b.dataset.tab) { Sfx.play('click'); InfoTabs.open(b.dataset.tab); return; }
     if (b.dataset.range) { Sfx.play('click'); Settings.set('statsRange', b.dataset.range); render(); return; }
     if (b.dataset.details) { Sfx.play('click'); Settings.set('finDetails', Settings.get('finDetails') === 'open' ? 'closed' : 'open'); render(); return; }
     if (b.dataset.loan && loan(b.dataset.loan)) render();

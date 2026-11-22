@@ -187,7 +187,8 @@ const Screens = (() => {
       'The bar at the bottom opens check-in desks, sends the ploughs and picks the runway direction when the wind is calm. Its three buttons buy small things in any mission: Services (shops, car parks, rent), Vehicles (trucks, ploughs, crash tenders), Build (stands, desks, lanes and more) — each card with its price, its days and, for what earns, its profit and payback at today\'s traffic. What a later mission teaches stays locked until then.',
       'Mouse: click and drag, the wheel zooms, right drag or the arrow keys move the map. Keys: Space pause, 1–4 speed, 5–7 Services, Vehicles, Build, N skip to the next task, Q do the oldest task, Esc pause menu.',
       'From chapter 4 on, the Terminal view (T) shows the queues and the shop units: put real shops and cafés there — each pays rent and earns more when the queues are short. Airlines (A) shows every airline\'s mood and temper, the Offers board and route incentives; Finance (F) the books, the payback of every investment and, under Details, its net present value. Challenge Days open after chapter 3.',
-      'From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. In the Office, People (P) and the Ops Center (O) hire them, train them and hold drills; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.',
+      'From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.',
+      'The Ops Center, Finance, Departments and the meters are tabs of one screen: tap the money or a meter at the top, then pick a tab.',
       'Phone and tablet: the game goes fullscreen. Drag with one finger to move the map, pinch with two to zoom, tap a task or drag it to a stand, hold a finger on an aircraft to see its card.'
     ].map((t) => '<p>' + Text.esc(tr(t)) + '</p>').join('');
     p.appendChild(row(btn(tr('Back'), 'default', () => menu())));
@@ -226,8 +227,6 @@ const Screens = (() => {
     col.appendChild(btn('📋 ' + tr('The mission') + (MISSION[md.id] ? ' ' + md.id : ''), 'secondary', () => Game.missionInfo()));
     col.appendChild(btn(tr('Retry stage'), 'secondary', () => Game.retryStage()));
     p.appendChild(col);
-    // session 7: the teams and their heads, also on a phone (no P or O key there)
-    p.appendChild(row(btn('👥 ' + tr('People'), 'secondary', () => Game.pausePanel('people')), btn('🛠️ ' + tr('Ops Center'), 'secondary', () => Game.pausePanel('ops'))));
     let d = S.difficulty;
     p.appendChild(diffPicker(d, (x) => { d = x; }));
     p.appendChild(row(btn(tr('Restart mission'), 'secondary', () => Game.restartMission(d))));

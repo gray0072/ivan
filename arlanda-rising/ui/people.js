@@ -1,13 +1,14 @@
 'use strict';
 
-// Arlanda Rising — the People screen (SPEC.md "Screens"): the departments (jobs, morale, fatigue, skill, absence
+// Arlanda Rising — the Departments screen (SPEC.md "Screens"; RU «Службы»): the departments (jobs, morale, fatigue, skill, absence
 // today, the wage level, the union and its next round, the temps), their managers (perks, flaw, mood, a raise asked
 // for) — or, in a department without one, "No head — find one" with its two candidates and Hire (why the last head
 // left, and that the team keeps working), the IT people and the summer holidays; session 6: the share on furlough, the
-// jobs gone and Recruit (new people at once here, after the clearance's weeks in plan time). Opened from the Office (key
-// P) on the campaign's or Free Play's airport, where every button works at once (time is stopped), in plan time (the
-// same, new people after their days), and in ops time from the pause menu or P, where a head can be hired at once and
-// a raise answered (the game pauses). Used by game.js and ui/office.js.
+// jobs gone and Recruit (new people at once here, after the clearance's weeks in plan time). A tab of the bar it shares
+// with the Ops Center and Finance (ui/analytics.js InfoTabs), opened from the Office (key P) on the campaign's or Free
+// Play's airport, where every button works at once (time is stopped), in plan time (the same, new people after their
+// days), and in ops time (P, or a tab of Finance: the money or a meter in the HUD), where a head can be hired at once
+// and a raise answered (the game pauses). Opened through InfoTabs (game.js, ui/office.js).
 
 const PeopleUI = (() => {
   const $ = (id) => document.getElementById(id);
@@ -26,7 +27,7 @@ const PeopleUI = (() => {
   function render() {
     const p = $('people');
     const pp = S.people;
-    let html = '<h1>👥 ' + Text.esc(tr('People')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + ' · 👷 ' + Text.esc(Text.meterName('staff')) + ': <b>' + Math.round(S.meters.staff) + '</b></p>';
+    let html = Analytics.tabsHtml('people') + '<h1>👥 ' + Text.esc(tr('Departments')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + ' · 👷 ' + Text.esc(Text.meterName('staff')) + ': <b>' + Math.round(S.meters.staff) + '</b></p>';
     if (!pp || !Object.keys(pp.depts).some((d) => People.jobs(d) > 0)) {
       html += '<p class="fine">' + Text.esc(tr('No teams yet: every task is done by hand. Teams come with chapter 2.')) + '</p>';
     } else {
@@ -87,13 +88,14 @@ const PeopleUI = (() => {
         Text.managerLines(c).map((l) => '<small>' + Text.esc(l) + '</small>').join('<br>') +
         (can('mgr') ? '<div class="btnRow small"><button class="btn toggle" data-mgr="' + c + '">' + Text.esc(tr('Hire')) + '</button></div>' : '') + '</div>';
     }
-    if (!editable) h += '<p class="fine">' + Text.esc(tr('Heads are hired here in the Office, in plan time or from the pause menu.')) + '</p>';
+    if (!editable) h += '<p class="fine">' + Text.esc(tr('Heads are hired here in the Office or during a mission.')) + '</p>';
     return h;
   }
 
   // every change is made on the world and kept at once
   $('people').addEventListener('click', (e) => {
     const b = e.target.closest('button');
+    if (b && b.dataset.tab) { Sfx.play('click'); InfoTabs.open(b.dataset.tab); return; }
     if (!b || !editable || !b.dataset) return;
     if (!can(b.dataset.mgr ? 'mgr' : b.dataset.raise ? 'raise' : 'other')) return;
     let done = false;
