@@ -35,8 +35,13 @@ const Office = (() => {
     for (const d of Object.keys((w.people && w.people.vacant) || {})) {
       const v = w.people.vacant[d], m = People.mdef(v.id);
       if (!People.staffed(d) || w.people.managers[d]) continue;
-      html += '<p class="warn">👔 ' + Text.esc((v.why === 'poached' ? tr('{name}, head of {dept}, has left for another airport.', { name: m ? m.name : '', dept: Text.dept(d) }) : tr('{name}, head of {dept}, has retired.', { name: m ? m.name : '', dept: Text.dept(d) })) + ' ' +
+      const p = { name: m ? m.name : '', dept: Text.dept(d) };
+      html += '<p class="warn">👔 ' + Text.esc((v.why === 'poached' ? tr('{name}, head of {dept}, has left for another airport.', p) : v.why === 'dismissed' ? tr('{name}, head of {dept}, was dismissed.', p) : tr('{name}, head of {dept}, has retired.', p)) + ' ' +
         tr('The team keeps working — only the head\'s skill is gone.')) + ' <button class="btn toggle" data-go="people">👥 ' + Text.esc(tr('Find a new head')) + '</button></p>';
+    }
+    // a search for a head that has found its two candidates (spec/people.md)
+    for (const d of Object.keys((w.people && w.people.search) || {})) {
+      if (w.people.search[d].cands) html += '<p class="warn">🔍 ' + Text.esc(tr('The search for a head of {dept} has found two candidates.', { dept: Text.dept(d) })) + ' <button class="btn toggle" data-go="people">👥 ' + Text.esc(tr('Departments')) + '</button></p>';
     }
     if (w.people && w.people.strike && w.people.strike.to > w.day) html += '<p class="warn">' + Text.esc(tr('Strike notice: {dept} from {d}', { dept: Text.dept(w.people.strike.dept), d: fmtDate(w.people.strike.from) })) + '</p>';
     html += '<div class="cards">';

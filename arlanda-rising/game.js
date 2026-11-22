@@ -503,6 +503,8 @@ const Game = {
     };
     GameEvents.on('retired', left);
     GameEvents.on('poached', left);
+    // a search for a head that found its two candidates in plan time (spec/people.md)
+    GameEvents.on('searchDone', (e) => { if (this.screen === 'play') this.banner(tr('The search for a head of {dept} has found two candidates.', { dept: Text.dept(e.dept) }) + ' ' + tr('Choose in Departments.'), 5500); });
     GameEvents.on('permitBroken', () => { if (this.screen === 'play') this.banner(tr('The environmental permit is broken this month: a fine.'), 4500); });
     document.querySelectorAll('.speeds button').forEach((b) => b.addEventListener('click', () => {
       Sfx.unlock();

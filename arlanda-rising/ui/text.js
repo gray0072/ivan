@@ -422,6 +422,39 @@ const Text = {
       acts: [{ data: 'data-back="' + d + '"', label: r && r.laidOff ? tr('Hire a team back') : tr('Hire a team as the fallback'), sum: sekBare(HIRE_COST * L1.staff) + ' · ' + tr('{n} days', { n: S.plan ? People.hireDays(d) : 0 }), main: true }] });
     return out;
   },
+  // a span of days as "3 years 2 months", "5 months" or "12 days" (a head's retirement, a search)
+  span(days) {
+    days = Math.max(0, Math.round(days));
+    if (days < 31) return days === 1 ? tr('1 day') : tr('{n} days', { n: days });
+    const months = Math.floor(days / 30.4), y = Math.floor(months / 12), mo = months % 12;
+    const ys = y === 1 ? tr('1 year') : tr('{n} years', { n: y }), ms = mo === 1 ? tr('1 month') : tr('{n} months', { n: mo });
+    return y ? (mo ? ys + ' ' + ms : ys) : ms;
+  },
+  // when a department's head retires (MANAGER_YEARS after starting)
+  retire(dept) {
+    const d = People.retireDay(dept);
+    if (d === null) return '';
+    return d <= S.day ? tr('Retires this month') : tr('Retires in {t} ({d})', { t: this.span(d - S.day), d: fmtDate(d) });
+  },
+  // the fallback readiness shown as "practice" (RU «Выучка», SV «Rutin») with its word
+  practiceWord(v) { return v >= PRACTICE_SHARP ? tr('sharp') : v >= PRACTICE_RUSTY ? tr('getting rusty') : tr('out of practice'); },
+  // a system's practice for the Ops Center and Departments: a bar with its percent and word, how fast it falls, the last
+  // drill and what it means if the system failed now (Systems.fallback: the rule of sim/tasks.js); `drill` adds the
+  // Drill button (data-drill) while it is below 100 %. '' for a domain without a system
+  practice(dom, drill) {
+    const r = S.sys && S.sys[dom], lv = S.domains[dom] || 0;
+    if (lv < 2 || !r || r.installAt) return '';
+    const v = r.readiness, f = Systems.fallback(dom);
+    const cls = v >= PRACTICE_SHARP ? '' : v >= PRACTICE_RUSTY ? 'mid' : 'low';
+    let h = '<div class="practice"><p class="kv"><b>🎯 ' + this.esc(tr('Practice')) + '</b> <span class="mbar small"><i class="' + cls + '" style="width:' + Math.round(v * 100) + '%"></i></span> <b>' + this.pct(v) + '</b> <span>' + this.esc(this.practiceWord(v)) + '</span></p>' +
+      '<small>' + this.esc(tr('How well the team still knows the manual way (the fallback readiness). Without a drill it falls {p} a month, to {min} at the least.', { p: this.pct(READINESS_DECAY), min: this.pct(READINESS_MIN) })) + ' ' +
+      this.esc(r.drilled != null ? tr('Last drill: {d}.', { d: fmtDate(r.drilled) }) : tr('No drill since the system went live ({d}).', { d: fmtDate(r.since) })) + '</small>';
+    if (!r.kept) h += '<small>' + this.esc(tr('No team beside the system: if it fails, the work comes to you — practice does not help.')) + '</small>';
+    else if (f) h += '<small>' + this.esc((lv >= 3 ? tr('If both systems fail (an outage):') : tr('If the system fails now:')) + ' ' +
+      tr('the team takes over at {s} of its speed and gets {q} of its choices right (after a drill: 100 % and {d}).', { s: this.pct(f.speed), q: this.pct(f.right), d: this.pct(f.drilled) })) + '</small>';
+    if (drill && v < 1) h += '<div class="ladActs"><button class="btn toggle" data-drill="' + dom + '">' + this.esc(tr('Drill')) + ' <small>' + sekBare(DRILL_COST) + '</small></button></div>';
+    return h + '</div>';
+  },
   // the head of a domain's department: its name, or "No head — find one" (the departments of people that can have one)
   headLine(d) {
     if (!DEPTS[d] || DEPTS[d].police || !People.staffed(d)) return '';

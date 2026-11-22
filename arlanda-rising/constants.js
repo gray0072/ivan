@@ -189,6 +189,16 @@ const MANAGER_POACH = 0.1;         // chance a month that an unhappy manager (mo
 const MANAGER_RAISE_MONTHS = 24;   // months between a manager's raise requests
 const MANAGER_YEARS = 14;          // years before a manager retires
 const HEAD_OFFER_DAYS = 1;         // days after a head left (in plan time) that the two successors are offered
+// dismissals and the search for a new head (spec/people.md): a team, a fallback team or an IT job let go is paid
+// LAYOFF_PAY_MONTHS of its wages a job (the notice of Swedish labour law, one to six months by the years served);
+// a head gets HEAD_PAY_MONTHS of salary (a director's contract usually gives six months' notice and some severance)
+const HEAD_PAY_MONTHS = 6;         // months of a head's salary paid when dismissed or replaced
+const HEAD_RETIRE_FREE_DAYS = 182; // a head this close to retiring leaves on the pension: no severance
+const HEAD_SEARCH_DAYS = 30;       // game days a search for a new head takes (the calendar's days: plan time, between missions)
+const HEAD_SEARCH_COST = 100000;   // SEK the recruiting firm's fee for a search
+const ONE_JOB_MORALE = 4;          // morale points the IT department loses when one of its people is let go (not a lay-off round)
+const PRACTICE_SHARP = 0.8;        // fallback readiness from which the team is shown "sharp" (the Ops Center, Departments)
+const PRACTICE_RUSTY = 0.5;        // … "getting rusty" from here, below it "out of practice"
 const WAGE_ROUND_MONTHS = 18;      // months between two wage rounds of a team
 const WAGE_DEMAND = 0.06;          // the union's demand in a mission's wage round (a raise of the wages)
 const WAGE_DRIFT = 0.015;          // the raise of a round settled between missions (no inflation in the game)
@@ -310,7 +320,7 @@ const REOPEN_DAYS = 21;            // days from the decision until it opens (pla
 const RENT_RELIEF = 0.7;           // share of the brands' rent let off while the relief runs
 const RENT_STAY = 0.5;             // share of the brands that stay through a crisis without relief (the rest close)
 const FURLOUGH_PAY = 0.25;         // share of a furloughed job's wage the airport still pays (the state pays the rest)
-const LAYOFF_PAY_MONTHS = 3;       // months of wages paid out to each job laid off (notice)
+const LAYOFF_PAY_MONTHS = 3;       // months of wages paid out to each job laid off (notice): the crisis's lay-offs and every team, fallback team or IT job dismissed
 const CUT_K = 1.4;                 // a team with this share of its jobs gone does (1 − share × CUT_K) of its work itself
 const CARGO_TONNES_FEE = 1400;     // SEK the airport earns per tonne of cargo loaded or unloaded (handling, the cargo apron)
 const CHARGE_MIN = 12;             // game minutes an electric aircraft charges at a stand with a charger

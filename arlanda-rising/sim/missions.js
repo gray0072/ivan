@@ -149,7 +149,8 @@ const Missions = {
     S.mission.status = 'running';
     S.mission.st = Goals.newStats();
     S.mission.acc = 0;
-    S.mission.hands = (stage.hands || m.hands || []).slice();
+    // the tasks of a domain whose team the player let go come to the tray (sim/people.js withHands)
+    S.mission.hands = People.withHands((stage.hands || m.hands || []).slice());
     // session 6: the traffic a crisis leaves in this stage
     if (stage.demand !== undefined) S.airport.demand = stage.demand;
     if (stage.mode === 'ops') Ops.begin(stage); else Plan.begin(stage);
@@ -226,4 +227,4 @@ const Missions = {
 };
 
 // the kinds of log entries the "Meanwhile…" card tells
-const MEANWHILE_NEWS = ['settled', 'strikeNotice', 'strikeOver', 'poached', 'retired', 'raiseAsk', 'teamReady', 'systemLive', 'routeCut', 'incentiveEnd'];
+const MEANWHILE_NEWS = ['settled', 'strikeNotice', 'strikeOver', 'poached', 'retired', 'raiseAsk', 'teamReady', 'systemLive', 'routeCut', 'incentiveEnd', 'searchDone'];

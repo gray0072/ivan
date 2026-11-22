@@ -74,6 +74,13 @@ const Actions = {
   drill(dom) { return Systems.drill(dom); },
   manager(id) { return People.hireManager(id); },
   raise(dept, give) { return People.raise(dept, give); },
+  // dismissals and the search for a head (spec/people.md): a team or a fallback team let go, a head dismissed, a search
+  // started, one of its candidates taken (the old head paid off) or the head kept
+  dismiss(dom) { return People.dismiss(dom); },
+  dismissHead(dept) { return People.dismissHead(dept); },
+  search(dept) { return People.search(dept); },
+  pickHead(dept, id) { return People.pickHead(dept, id); },
+  dropSearch(dept) { return People.dropSearch(dept); },
   // session 4: a brand in a unit (and closing one), a route incentive to court an airline or for one flying, an offer
   // of the Office's board
   brand(unitId, brandId) { return Terminal.place(unitId, brandId); },

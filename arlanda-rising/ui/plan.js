@@ -3,7 +3,8 @@
 // Arlanda Rising — plan time on the screen: the panel of the mission's master-plan projects (each stage with its
 // days and price: Start or Start fast, its progress, what it waits for; the project's options; a line when the owner's
 // grant or a partner pays — otherwise it is paid from the cash), the terminals' units let with a button to the Terminal
-// view, the crews at work, the fee level when the airport is open, the loans; and the decision card that stops the time
+// view, the crews at work, the teams and systems the mission's goals ask for (the rest of the staff in Departments and
+// the Ops Center, a button each), the fee level when the airport is open, the loans; and the decision card that stops the time
 // until the player picks one of its options (the pair of choices of SPEC.md "Offers come as choices"). Used by
 // game.js in a plan stage.
 
@@ -47,7 +48,7 @@ const PlanUI = (() => {
     const ids = S.mission.projects || [];
     const goals = Goals.all(Missions.stage().goal, S.mission.st), mg = Text.missionGoals();
     const k = JSON.stringify(goals) + mg + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
-      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + JSON.stringify(S.people && [S.people.vacant, S.people.managers]) + (S.people ? S.people.it : 0) + winterAhead() + Terminal.brands() + Terminal.units().length;
+      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + JSON.stringify(S.people && [S.people.vacant, S.people.managers, S.people.search]) + (S.people ? S.people.it : 0) + winterAhead() + Terminal.brands() + Terminal.units().length;
     box.hidden = false;
     if (k === key) return;
     key = k;
@@ -93,21 +94,48 @@ const PlanUI = (() => {
     box.innerHTML = html;
   }
 
-  // the teams and systems the mission lets the player add now (Text.ladder): hire a team (ready in two weeks), buy a
-  // system (straight from the hands too; from a team, keep it as the fallback or let it go), hire a team back beside a
-  // system; a department whose head has left, with a button to Departments; IT people
+  // what the mission's goals ask of the teams (every stage's, its own and its stars'): { doms: the domains a `level`
+  // or `manager` goal names (a `handsOff` goal — tasks done by teams and systems — names every domain), it: a level of
+  // 2 or more asked (systems need IT people) }
+  function asks() {
+    const m = Missions.def(), out = { doms: {}, it: false };
+    const all = [].concat(...(m.stages || []).map((s) => s.goal || []), m.goal || [], m.stars || []);
+    for (const g of all) {
+      if (g.k === 'level') { out.doms[g.dom] = true; if (g.min >= 2) out.it = true; }
+      else if (g.k === 'manager' && DOMAINS[g.dept]) out.doms[g.dept] = true;
+      else if (g.k === 'handsOff') for (const d of Object.keys(S.domains)) out.doms[d] = true;
+    }
+    return out;
+  }
+
+  // the teams and systems the mission asks for, which the player may add now (Text.ladder): hire a team (ready in two
+  // weeks), buy a system (straight from the hands too; from a team, keep it as the fallback or let it go), hire a team
+  // back beside a system; IT people when a goal asks for a system. Everything else about the teams — the other domains,
+  // the fallback teams, IT, dismissals, the heads — is in Departments and the Ops Center, a button each; a department
+  // whose head has left, or whose search for a head is done, has its own line with Departments
   function teams() {
-    let html = '';
+    let html = '', more = false;
+    const a = asks();
     for (const d of Object.keys(S.domains)) {
-      for (const st of Text.ladder(d)) html += ladderStep(d, st);
+      const steps = Text.ladder(d);
+      if (a.doms[d]) for (const st of steps) html += ladderStep(d, st);
+      else if (steps.length) more = true;
       const v = S.people && S.people.vacant && S.people.vacant[d];
       if (v && People.staffed(d) && !People.manager(d)) html += '<div class="stageRow"><div class="sn"><b>👔 ' + Text.esc(tr('No head — find one')) + '</b><small>' + Text.esc(Text.dept(d)) + '</small></div>' +
         '<div class="sr"><button class="tb small" data-people="1">👥 ' + Text.esc(tr('Departments')) + '</button></div></div>';
     }
+    for (const d of Object.keys((S.people && S.people.search) || {})) {
+      if (S.people.search[d].cands) html += '<div class="stageRow"><div class="sn"><b>🔍 ' + Text.esc(tr('Two candidates for head')) + '</b><small>' + Text.esc(Text.dept(d)) + '</small></div>' +
+        '<div class="sr"><button class="tb small" data-people="1">👥 ' + Text.esc(tr('Departments')) + '</button></div></div>';
+    }
     const need = Systems.itNeed();
-    if (need || (S.people && S.people.it)) {
+    if (a.it && (need || (S.people && S.people.it))) {
       html += '<div class="fin"><span>💻 ' + Text.esc(tr('IT people: {a} of {n} needed', { a: S.people ? S.people.it : 0, n: need })) + '</span>' +
-        '<button class="tb small" data-it="1">+1</button><button class="tb small" data-it="-1"' + (!S.people || !S.people.it ? ' disabled' : '') + '>−1</button></div>';
+        '<button class="tb small" data-it="1">+1<small>' + sekBare(HIRE_COST) + '</small></button></div>';
+    } else if (need || (S.people && S.people.it)) more = true;
+    if (more || (S.people && Object.keys(S.people.depts).some((d) => People.jobs(d) > 0))) {
+      html += '<div class="fin"><span>' + Text.esc(tr('Teams, fallback teams, IT and heads')) + '</span><button class="tb small" data-people="1">👥 ' + Text.esc(tr('Departments')) + '</button>' +
+        '<button class="tb small" data-tab="ops">🛠️ ' + Text.esc(tr('Ops Center')) + '</button></div>';
     }
     return html ? '<div class="pHead"><b>' + Text.esc(tr('Teams and systems')) + '</b></div>' + html : '';
   }
@@ -127,6 +155,7 @@ const PlanUI = (() => {
     Sfx.play('click');
     const pid = b.dataset.p, sid = b.dataset.s;
     if (b.dataset.people) { Game.openPanel('people'); return; }
+    if (b.dataset.tab) { Game.openPanel(b.dataset.tab); return; }
     if (b.dataset.up) Actions.upgrade(b.dataset.up, b.dataset.how);
     else if (b.dataset.sys) Actions.system(b.dataset.sys, b.dataset.how);
     else if (b.dataset.back) Actions.hireBack(b.dataset.back);

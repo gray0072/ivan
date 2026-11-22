@@ -9,7 +9,7 @@
 // mended after the system's fix time), a power cut (every system without backup power), the fallback readiness (how
 // well the staff still know the manual way: it fades every month without a drill, and a failure with low readiness
 // is far worse), and the systems' share of the summary loss. Each system's record is S.sys[domain]:
-// { since, readiness, kept, fails, upMin, downMin, installAt, to }. Used by sim/tasks.js, sim/ops.js, sim/summary.js,
+// { since, readiness, kept, fails, upMin, downMin, installAt, to, laidOff, drilled (the day of the last drill) }. Used by sim/tasks.js, sim/ops.js, sim/summary.js,
 // sim/finance.js and the Ops Center.
 
 const Systems = {
@@ -83,11 +83,8 @@ const Systems = {
     if (lv === 1) {
       r.kept = how !== 'layoff';
       r.laidOff = how === 'layoff';
-      if (how === 'layoff') {
-        People.moraleAll(-LAYOFF_MORALE);
-        S.meters.neighbours = clamp(S.meters.neighbours - 3, 0, 100);
-        if (S.people) for (const id of Object.keys(S.people.depts)) S.people.depts[id].union.mood = clamp(S.people.depts[id].union.mood - 15, 0, 100);
-      } else People.morale(dom, 6);
+      if (how === 'layoff') People.layoffHit();
+      else People.morale(dom, 6);
     }
     if (S.plan && L.days) r.installAt = S.day + L.days;
     else this.installed(dom);
@@ -215,8 +212,18 @@ const Systems = {
     if (r.readiness >= 1) return false;
     Finance.book('drills', -DRILL_COST);
     r.readiness = 1;
+    r.drilled = S.day;
     logEvent('drill', { dom });
     return true;
+  },
+  // what the team beside a system does when the system fails now (sim/tasks.js): each task takes × (2 − readiness) of
+  // its time — `speed` 1 / (2 − readiness) — and its share of right choices is × (0.5 + 0.5 × readiness); `drilled` the
+  // share right at full readiness. Null for a domain without a team level
+  fallback(dom) {
+    const L1 = this.def(dom, 1);
+    if (!L1 || L1.right === undefined) return null;
+    const r = this.readiness(dom), w = People.work(dom, L1);
+    return { readiness: r, speed: 1 / (2 - r), right: w.right * (0.5 + 0.5 * r), drilled: w.right };
   },
   // the share of a domain's summary loss left at its level: a team loses what its absence and strikes cost, a
   // system what its failures cost (worse with a weak fallback)

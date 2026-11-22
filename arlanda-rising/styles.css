@@ -488,6 +488,13 @@ ul.has { margin: 0; padding-left: 18px; }
 .kv { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
 .mbar.small { width: 70px; display: inline-block; vertical-align: middle; }
 .mgrBox { margin: 6px 0; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); line-height: 1.35; }
+/* a dismissal waiting for its second tap (Departments) */
+.btn.toggle.confirm { background: var(--bad); border-color: var(--bad); color: #fff; }
+/* the practice of a system (the fallback readiness): its bar and word, what it means (the Ops Center, Departments) */
+.practice { flex: 1 1 100%; margin: 6px 0; padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,0.05); line-height: 1.35; }
+.practice .kv { margin: 0 0 2px; flex-wrap: wrap; overflow-wrap: normal; }
+.practice .kv > * { flex: 0 0 auto; }
+.practice small { display: block; color: var(--dim); font-size: 11.5px; margin-top: 2px; }
 .warn { color: #f0c36a; }
 .ocard h3 small { font-weight: 400; opacity: 0.7; font-size: 12px; }
 .wideCard { margin-top: 10px; }

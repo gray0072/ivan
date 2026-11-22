@@ -76,6 +76,7 @@ const MissionCard = (() => {
       case 'retired': return tr('{name} has retired. Thank you!', { name: mg(e.id) }) + ' ' + tr('The team keeps working — only the head\'s skill is gone. Find a new head in Departments.');
       case 'raiseAsk': return tr('{name} asks for a raise.', { name: mg(e.id) });
       case 'teamReady': return tr('A new team works on {dom}.', { dom: Text.dom(e.dom) });
+      case 'searchDone': return tr('The search for a head of {dept} has found two candidates.', { dept: Text.dept(e.dept) }) + ' ' + tr('Choose in Departments.');
       case 'systemLive': return tr('{sys} is live.', { sys: Text.level(e.dom, S.domains[e.dom]) });
       // session 4
       case 'routeCut': return tr('{al} has moved a daily flight to {rival}.', { al: (AIRLINES[e.al] || {}).name || e.al, rival: tr(e.rival) });

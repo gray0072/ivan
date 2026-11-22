@@ -8,7 +8,10 @@
 // retiring). Session 7: a head leads a team (one hired for a department without a team brings the team), a head who
 // leaves marks the department vacant and in plan time offers two successors (the department's own heads, then ones made
 // of HEAD_NAMES and HEAD_STYLES: `mdef`, `candidates`); a team hired back beside a system as its fallback (`hireBack`);
-// no team is hired in ops time. S.people is created by the first mission that needs it; a world without it (chapter 1) is untouched.
+// no team is hired in ops time. Dismissals and the search for a head (spec/people.md): a team, a fallback team, IT people
+// and a head let go for their notice (`dismiss`, `hireIT(-n)`, `dismissHead`), a search that brings two candidates after
+// HEAD_SEARCH_DAYS while the head works on (`search`, `pickHead`, `dropSearch`).
+// S.people is created by the first mission that needs it; a world without it (chapter 1) is untouched.
 // The Staff meter is the departments' morale weighted by their jobs. Used by sim/tasks.js, sim/systems.js,
 // sim/finance.js (wages), the plan's decisions and the screens.
 
@@ -226,14 +229,106 @@ const People = {
     this.updateMeter();
     logEvent('teamReady', { dom });
   },
-  // more IT people
+  // more IT people, or fewer: one let go is paid its notice (LAYOFF_PAY_MONTHS of its wage) and IT's morale drops a
+  // little; the last one goes with the head of IT, if there is one (`itCutPrice`)
   hireIT(n) {
     if (!n) return false;
-    this.ensure().it = Math.max(0, S.people.it + n);
+    this.ensure();
+    if (n < 0) {
+      const k = Math.min(-n, S.people.it);
+      if (!k || S.ops) return false;
+      Finance.book('layoffs', -this.itCutPrice(k));
+      if (k >= S.people.it && this.manager('it')) { this.letHeadGo('it', 'dismissed'); delete S.people.vacant.it; }
+      S.people.it -= k;
+      this.morale('it', -ONE_JOB_MORALE * k);
+      this.updateMeter();
+      logEvent('itCut', { n: k });
+      return true;
+    }
+    S.people.it += n;
     this.dept('it');
-    if (n > 0) Finance.book('hiring', -HIRE_COST * n);
+    Finance.book('hiring', -HIRE_COST * n);
     this.updateMeter();
     return true;
+  },
+  // what letting k IT people go costs: their notice, and the head's when the last one goes
+  itCutPrice(k) {
+    const n = S.people ? S.people.it : 0;
+    k = Math.min(k || 1, n);
+    return this.severance('it', k) + (k >= n && this.manager('it') ? this.headPay('it') : 0);
+  },
+
+  // ---------- dismissals (spec/people.md) ----------
+  // a department's notice for `jobs` people: LAYOFF_PAY_MONTHS of their wages
+  severance(dept, jobs) {
+    const d = S.people && S.people.depts[dept];
+    return Math.round(jobs * (dept === 'it' ? IT_JOB : STAFF_MONTH) * (d ? d.wageX : 1) * LAYOFF_PAY_MONTHS);
+  },
+  // the team a domain has that the player may let go: 'team' (level 1: it does the work, the domain goes back to the
+  // hands), 'fallback' (kept beside a system: the system goes on, a failure then comes to the tray), or null
+  teamKind(dom) {
+    const lv = S.domains[dom] || 0, r = S.sys && S.sys[dom];
+    if (!DOMAINS[dom] || (DEPTS[dom] || {}).police) return null;
+    if (lv === 1) return 'team';
+    if (lv >= 2 && r && r.kept) return 'fallback';
+    return null;
+  },
+  // the jobs of that team (a fallback team is level 1's staff, less the jobs empty)
+  teamJobs(dom) {
+    const kind = this.teamKind(dom);
+    if (kind === 'team') return this.jobs(dom);
+    if (kind === 'fallback') return Math.round(((DOMAINS[dom].levels[1] || {}).staff || 0) * (1 - this.cut(dom)));
+    return 0;
+  },
+  // why the team cannot be let go now, or null: 'ops' (not in the middle of a shift), 'none', 'busy' (a system being
+  // put in, new people on their way)
+  dismissCannot(dom) {
+    if (S.ops) return 'ops';
+    if (!this.teamKind(dom)) return 'none';
+    if (this.coming(dom) || (S.sys && S.sys[dom] && S.sys[dom].installAt)) return 'busy';
+    return null;
+  },
+  // its notice, and for a team that does the work alone its head's too (a head leads a team: with none left, the head goes)
+  dismissPrice(dom) {
+    const kind = this.teamKind(dom);
+    if (!kind) return 0;
+    return this.severance(dom, this.teamJobs(dom)) + (kind === 'team' && this.manager(dom) ? this.headPay(dom) : 0);
+  },
+  // let the team go: its notice paid (the line `layoffs`), the lay-off's consequences (every team's morale, the unions,
+  // the neighbours). A team doing the work alone: the domain goes back to the hands (S.people.byHand: its tasks come to
+  // the tray even in a mission that does not put them there, `withHands`), its head goes with it. A fallback team:
+  // the system stays, with nobody to fall back on
+  dismiss(dom) {
+    if (this.dismissCannot(dom)) return false;
+    const kind = this.teamKind(dom);
+    Finance.book('layoffs', -this.dismissPrice(dom));
+    if (kind === 'team') {
+      if (this.manager(dom)) this.letHeadGo(dom, 'dismissed');
+      S.domains[dom] = 0;
+      (S.people.byHand = S.people.byHand || {})[dom] = true;
+      if (S.people.vacant) delete S.people.vacant[dom];
+      if (S.people.strike && S.people.strike.dept === dom) S.people.strike = null;
+    } else {
+      const r = S.sys[dom];
+      r.kept = false; r.laidOff = true;
+    }
+    this.layoffHit();
+    logEvent('teamDismissed', { dom, kind });
+    return true;
+  },
+  // what any lay-off does to the people (a system bought with its team let go, a team dismissed): every team's morale
+  // −LAYOFF_MORALE, the unions angrier, the neighbours unhappy
+  layoffHit() {
+    this.moraleAll(-LAYOFF_MORALE);
+    S.meters.neighbours = clamp(S.meters.neighbours - 3, 0, 100);
+    if (S.people) for (const id of Object.keys(S.people.depts)) S.people.depts[id].union.mood = clamp(S.people.depts[id].union.mood - 15, 0, 100);
+  },
+  // the task kinds of the domains whose team was let go, added to a stage's hands (sim/missions.js)
+  withHands(list) {
+    const b = S.people && S.people.byHand;
+    if (!b) return list;
+    for (const dom of Object.keys(b)) if (!(S.domains[dom] || 0) && DOMAINS[dom]) for (const k of DOMAINS[dom].tasks || []) if (list.indexOf(k) < 0) list.push(k);
+    return list;
   },
   train(id) {
     if (!this.has(id)) return false;
@@ -326,12 +421,67 @@ const People = {
   leave(dept, why, by) {
     const p = S.people, m = p.managers[dept];
     if (!m) return;
+    this.letHeadGo(dept, why);
+    logEvent(why, Object.assign({ id: m.id, dept }, by ? { by } : {}));
+    this.offerHeads();
+  },
+  // a head leaves the department (retired, poached, dismissed, replaced): never comes back; a search for a successor
+  // stops (the vacancy's candidates take over). Every reason but `replaced` leaves the department vacant — a dismissal
+  // marked as offered, since the player sees the candidates in Departments already
+  letHeadGo(dept, why) {
+    const p = S.people, m = p.managers[dept];
+    if (!m) return;
     delete p.managers[dept];
     p.asks = p.asks.filter((a) => a !== dept);
     (p.gone = p.gone || []).push(m.id);
-    (p.vacant = p.vacant || {})[dept] = { id: m.id, why, day: S.day, offered: false };
-    logEvent(why, Object.assign({ id: m.id, dept }, by ? { by } : {}));
-    this.offerHeads();
+    if (p.search) delete p.search[dept];
+    if (why !== 'replaced') (p.vacant = p.vacant || {})[dept] = { id: m.id, why, day: S.day, offered: why === 'dismissed' };
+  },
+  // the day a head retires (MANAGER_YEARS after starting, sim's month())
+  retireDay(dept) { const m = this.manager(dept); return m ? m.since + MANAGER_YEARS * 365 : null; },
+  // what letting a head go costs: HEAD_PAY_MONTHS of salary, nothing within HEAD_RETIRE_FREE_DAYS of the pension
+  headPay(dept) {
+    const m = this.manager(dept);
+    if (!m || this.retireDay(dept) - S.day <= HEAD_RETIRE_FREE_DAYS) return 0;
+    return Math.round(MANAGER_SALARY * m.salaryX * HEAD_PAY_MONTHS);
+  },
+  // dismiss a head (not in ops time): paid, the team works on without the head's perks, the department vacant with
+  // its two candidates in Departments ("No head — find one")
+  dismissHead(dept) {
+    if (S.ops || !this.manager(dept)) return false;
+    const id = this.manager(dept).id;
+    Finance.book('layoffs', -this.headPay(dept));
+    this.letHeadGo(dept, 'dismissed');
+    this.updateMeter();
+    logEvent('headDismissed', { id, dept });
+    return true;
+  },
+  // a search for a new head while the head keeps working: HEAD_SEARCH_COST, HEAD_SEARCH_DAYS of the calendar (plan
+  // days and the days skipped between missions; ops time does not move the days), then two candidates
+  // (S.people.search[dept] = { at, cands }); not started in ops time
+  searching(dept) { return (S.people && S.people.search && S.people.search[dept]) || null; },
+  search(dept) {
+    if (S.ops || !this.manager(dept) || this.searching(dept)) return false;
+    Finance.book('hiring', -HEAD_SEARCH_COST);
+    (S.people.search = S.people.search || {})[dept] = { at: S.day + HEAD_SEARCH_DAYS, cands: null };
+    logEvent('headSearch', { dept });
+    return true;
+  },
+  // a candidate of a finished search takes over (in ops time too, like hiring a head): the old head paid off
+  pickHead(dept, mid) {
+    const s = this.searching(dept);
+    if (!s || !s.cands || s.cands.indexOf(mid) < 0) return false;
+    const m = this.mdef(mid);
+    if (!m || Calendar.year() < m.from) return false;
+    if (this.manager(dept)) { Finance.book('layoffs', -this.headPay(dept)); this.letHeadGo(dept, 'replaced'); }
+    delete S.people.search[dept];
+    return this.hireManager(mid);
+  },
+  // keep the head: the search is dropped (its fee is spent)
+  dropSearch(dept) {
+    if (!this.searching(dept)) return false;
+    delete S.people.search[dept];
+    return true;
   },
   // in plan time: the successors of every vacant department not offered yet, as a decision (sim/offers.js `head`)
   offerHeads() {
@@ -407,6 +557,12 @@ const People = {
   day() {
     if (!S.people) return;
     for (const h of S.people.hiring.slice()) if (S.day >= h.at) { S.people.hiring = S.people.hiring.filter((x) => x !== h); if (h.rehire) this.rehired(h.dom); else if (h.back) this.backReady(h.dom); else this.hired(h.dom); }
+    // a search for a head that has run its days: its two candidates (a department that lost its head or its team meanwhile drops it)
+    for (const dept of Object.keys(S.people.search || {})) {
+      const s = S.people.search[dept];
+      if (!this.manager(dept)) { delete S.people.search[dept]; continue; }
+      if (!s.cands && S.day >= s.at) { s.cands = this.candidates(dept); logEvent('searchDone', { dept }); }
+    }
     this.strikeEnds();
   },
   // a month: morale drifts toward what the wages and the bosses give, fatigue fades, skill grows, the managers'
