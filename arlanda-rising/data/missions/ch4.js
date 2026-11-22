@@ -198,7 +198,7 @@ addMissions(4, [
     stars: [{ k: 'securityWait', max: 8 }, { k: 'brandsIn', min: 3e6 }]
   },
   {
-    name: 'Building the Tunnel', kind: 'build', date: '1995-05-02', requires: BUILT_1990,
+    name: 'Building the Tunnel', kind: 'build', date: '1995-05-12', requires: BUILT_1990,
     setup: { open: true, openSkies: true, units: true, lanes: 12, budget: 40e6, loanLimit: 2500e6, items: ITEMS_1990, desks: 36, airlines: ROUTES_1993, domains: TEAMS_1990, it: 3,
       terms: { SK: 't2' }, projects: ['arlandaExpress'], trainDeal: 'concession' },
     grants: ['arlandaExpress'],
@@ -371,7 +371,7 @@ addMissions(4, [
     stars: [{ k: 'airlines', min: 80 }, { k: 'airportDelay', max: 3.5 }]
   },
   {
-    name: 'Christmas Rush', kind: 'operate', date: '1998-12-01', requires: BUILT_1990.concat(['arlandaExpress', 'sorterHall']),
+    name: 'Christmas Rush', kind: 'operate', date: '1999-11-30', requires: BUILT_1990.concat(['arlandaExpress', 'sorterHall']),
     setup: { open: true, openSkies: true, units: true, lanes: 12, items: ITEMS_1990, desks: 36,
       airlines: Object.assign({}, ROUTES_1997, { NOVAIR: [{ type: 'A320', perDay: 2, load: 0.92, months: [6, 7, 8, 12] }] }),
       domains: Object.assign({}, TEAMS_1990, { baggage: 3 }), it: 6, terms: { SK: 't2' } },
@@ -398,7 +398,7 @@ addMissions(4, [
             { id: 'max', brand: { term: 't2', id: 'max' }, label: 'Max burgers' },
             { id: 'none', label: 'Neither' }
           ] }] },
-      { name: 'Snowy Saturday', mode: 'ops', date: '1998-12-19', from: '06:00', to: '09:00', weather: { temp: -6, wind: [30, 9], snow: [['06:20', '07:50', 3]] }, desks: 14,
+      { name: 'Snowy Saturday', mode: 'ops', date: '1999-12-18', from: '06:00', to: '09:00', weather: { temp: -6, wind: [30, 9], snow: [['06:20', '07:50', 3]] }, desks: 14,
         flights: [F4('PREMIAIR', 'A320', 4, '06:10', '07:40', 60, { base: 100, load: 0.97 }), F4('NOVAIR', 'A320', 3, '06:20', '07:30', 60, { base: 300, load: 0.97 }),
           F4('SK', 'MD87', 9, '06:15', '08:40', 40, { base: 500, load: 0.85 }), F4('SK', 'B737', 8, '06:20', '08:30', 40, { base: 600, load: 0.85 }),
           F4('SK', 'DC9', 4, '06:30', '08:20', 40, { base: 650, load: 0.85 })],
@@ -409,12 +409,13 @@ addMissions(4, [
           F4('SK', 'B767', 1, '15:40', '15:40', 95, { base: 900 })],
         goal: [{ k: 'onTime', p: 0.8 }] }
     ],
-    // the shops' takings over Christmas: BRIO, Max or units let by hand in the Terminal view pass it; doing nothing does not
-    goal: [{ k: 'brandsIn', min: 2e6 }],
-    stars: [{ k: 'passengers', min: 88 }, { k: 'brandsIn', min: 2.5e6 }]
+    // the shops' takings over Christmas 1999: BRIO, Max or units let by hand in the Terminal view pass it; doing nothing
+    // does not (Medium: nothing 2.6 MSEK, BRIO 3.0, Max 3.9)
+    goal: [{ k: 'brandsIn', min: 2.75e6 }],
+    stars: [{ k: 'passengers', min: 88 }, { k: 'brandsIn', min: 3.4e6 }]
   },
   {
-    name: 'Exam: Millennium Night', kind: 'exam', date: '1999-12-06', requires: BUILT_1999,
+    name: 'Exam: Millennium Night', kind: 'exam', date: '1999-12-19', requires: BUILT_1999,
     setup: { open: true, openSkies: true, units: true, lanes: 12, items: ITEMS_1990, desks: 36,
       airlines: Object.assign({}, ROUTES_1997, { NOVAIR: [{ type: 'A320', perDay: 2, load: 0.92, months: [6, 7, 8, 12] }] }),
       domains: Object.assign({}, TEAMS_1990, { baggage: 3 }), it: 6, terms: { SK: 't2' } },
@@ -435,7 +436,7 @@ addMissions(4, [
       { text: 'Arlanda had 17.1 million passengers in 1999.', src: 'SIKA, Luftfart 1999' }
     ],
     stages: [
-      { name: 'December', mode: 'plan', days: 20, goal: [],
+      { name: 'December', mode: 'plan', days: 12, goal: [],
         choices: [{ id: 'y2k', at: 3, default: 'trust', icon: '🕛', title: 'The year 2000 problem',
           text: 'The IT department can test every system, change the clocks forward and fix what breaks: weeks of work and overtime. Or you can trust the suppliers\' letters that all is well.',
           options: [

@@ -16,7 +16,7 @@
 // e.g. "/ivan/lift-logic/offline.<version>": every app on the shared origin keeps its own and
 // deletes only its own old ones.
 
-const VERSION = "bbfcfbffc481";
+const VERSION = "57ff5e077dbe";
 // Paths relative to this folder; './' is the page itself, ?v=N as the page links them.
 const FILES = [
   "./",
@@ -47,18 +47,18 @@ const FILES = [
   "data/domains.js?v=5",
   "data/events.js?v=2",
   "data/icons.js?v=11",
-  "data/lang-ru.js?v=21",
-  "data/lang-sv.js?v=21",
+  "data/lang-ru.js?v=22",
+  "data/lang-sv.js?v=22",
   "data/layout.js?v=15",
   "data/masterplan.js?v=10",
-  "data/missions/ch1.js?v=4",
+  "data/missions/ch1.js?v=5",
   "data/missions/ch2.js?v=4",
-  "data/missions/ch3.js?v=5",
-  "data/missions/ch4.js?v=6",
-  "data/missions/ch5.js?v=4",
-  "data/missions/ch6.js?v=5",
-  "data/missions/ch7.js?v=4",
-  "data/missions/ch8.js?v=5",
+  "data/missions/ch3.js?v=6",
+  "data/missions/ch4.js?v=7",
+  "data/missions/ch5.js?v=5",
+  "data/missions/ch6.js?v=6",
+  "data/missions/ch7.js?v=5",
+  "data/missions/ch8.js?v=6",
   "data/missions/missions.js?v=6",
   "data/people.js?v=3",
   "data/sites.js?v=3",
@@ -66,7 +66,7 @@ const FILES = [
   "data/strategies/ch2.js?v=3",
   "data/strategies/ch3.js?v=1",
   "data/strategies/ch4.js?v=2",
-  "data/strategies/ch5.js?v=1",
+  "data/strategies/ch5.js?v=2",
   "data/strategies/ch6.js?v=2",
   "data/strategies/ch7.js?v=1",
   "data/strategies/ch8.js?v=1",

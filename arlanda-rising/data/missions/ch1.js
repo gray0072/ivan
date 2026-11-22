@@ -83,12 +83,12 @@ addMissions(1, [
     stars: [{ k: 'dutyTasks', max: 0 }, { k: 'airportDelay', max: 1 }]
   },
   {
-    name: 'The Tower', kind: 'build', date: '1960-01-11', requires: BUILT_1959,
+    name: 'The Tower', kind: 'build', date: '1959-12-15', requires: BUILT_1959,
     setup: { budget: 52e6, projects: ['tower1'] },
     hands: ['stand'],
     brief: [
       'Without a control tower the controllers keep the aircraft far apart — one movement every six minutes. Arlanda needs its tower before the regular flights come.',
-      'It is January: work goes at half speed in the cold. Heated tents keep the crews going, or a fast pace makes up for the time — which is cheaper?',
+      'It is December: work goes at half speed in the cold. Heated tents keep the crews going, or a fast pace makes up for the time — which is cheaper?',
       'When the tower is ready, show what it can do: a morning of training flights twice as close.'
     ],
     aim: 'Build the control tower, then run a busy morning of training flights.',
@@ -101,7 +101,7 @@ addMissions(1, [
         goal: [{ k: 'project', id: 'tower1', stages: ['found', 'shaft'] }] },
       { name: 'The cab and the radio', mode: 'plan', days: 60, crews: 1, endEarly: true,
         goal: [{ k: 'project', id: 'tower1' }] },
-      { name: 'Cleared to land', mode: 'ops', date: '1960-05-16', from: '09:00', to: '12:00', weather: { temp: 12, wind: [190, 10] },
+      { name: 'Cleared to land', mode: 'ops', date: '1960-03-21', from: '09:00', to: '12:00', weather: { temp: 2, wind: [190, 10] },
         flights: [SK('CRVL', 11, '09:05', '11:35', 30, { training: true })],
         goal: [{ k: 'airportDelay', max: 3 }] }
     ],
@@ -109,10 +109,10 @@ addMissions(1, [
     stars: [{ k: 'spent', max: 44e6 }, { k: 'safety', min: 84 }]
   },
   {
-    name: 'The First Terminal', kind: 'build', date: '1960-04-04', requires: BUILT_1959.concat(['tower1']),
+    name: 'The First Terminal', kind: 'build', date: '1960-03-21', requires: BUILT_1959.concat(['tower1']),
     // the fire station with it: before it the building site's fire watch (FIRE_CAT_SITE) covered 1-2's and 1-3's sorties
     unlocks: ['desk', 'kiosk'],
-    setup: { budget: 76e6, projects: ['terminal1', 'fireStation'] },
+    setup: { budget: 80e6, projects: ['terminal1', 'fireStation'] },
     hands: ['stand', 'checkin'],
     brief: [
       'Arlanda began with very simple buildings. Ours has a hall, four check-in desks and a waiting room — and it must be ready by 26 June.',

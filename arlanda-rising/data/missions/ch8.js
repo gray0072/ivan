@@ -189,7 +189,7 @@ addMissions(8, [
             { id: 'yes', build: 'h2depot', label: 'Build it' },
             { id: 'no', label: 'Hydrogen is for later' }
           ] }] },
-      { name: 'The first hydrogen flights', mode: 'ops', date: '2035-10-08', from: '07:00', to: '10:00', weather: { temp: 7, wind: [210, 8] }, desks: 20, lanes: 8, booths: 3,
+      { name: 'The first hydrogen flights', mode: 'ops', date: '2035-10-11', from: '07:00', to: '10:00', weather: { temp: 7, wind: [210, 8] }, desks: 20, lanes: 8, booths: 3,
         flights: [F8('HYDRO', 'H2P', 2, '07:30', '08:50', 50, { base: 1 }), F8('ELECTRIC', 'EL30', 10, '07:05', '09:20', 35, { base: 101 })].concat(DAY_8('07:00', 100, 1)),
         goal: [{ k: 'lost', max: 0 }] }
     ],
@@ -292,7 +292,7 @@ addMissions(8, [
     stars: [{ k: 'airportDelay', max: 4 }, { k: 'passengers', min: 88 }]
   },
   {
-    name: 'Night Train or Night Flight', kind: 'choice', date: '2040-08-20', requires: BUILT_2036,
+    name: 'Night Train or Night Flight', kind: 'choice', date: '2040-08-06', requires: BUILT_2036,
     unlocks: ['nightTrain'],
     setup: S8({ items: ITEMS_2036, airlines: ROUTES_2040, chargers: 6, domains: Object.assign({}, TEAMS_2030, { turnaround: 2, border: 3 }) }),
     hands: [],
@@ -321,7 +321,7 @@ addMissions(8, [
     stars: [{ k: 'lastMonth', min: 70e6 }, { k: 'neighbours', min: 80 }]
   },
   {
-    name: 'Peak Day 2040', kind: 'operate', date: '2040-12-11', requires: BUILT_2036,
+    name: 'Peak Day 2040', kind: 'operate', date: '2040-12-05', requires: BUILT_2036,
     setup: S8({ items: ITEMS_2036, airlines: ROUTES_2040, chargers: 6, domains: Object.assign({}, TEAMS_2030, { turnaround: 2, border: 3 }) }),
     hands: HANDS_8.concat(['plough', 'deice']),
     brief: [

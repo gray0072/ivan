@@ -80,7 +80,7 @@ addMissions(7, [
     stars: [{ k: 'mothballed', min: 2 }, { k: 'brands', min: 10, keep: true }]
   },
   {
-    name: 'Furlough or Lay Off', kind: 'choice', date: '2020-04-14', requires: BUILT_2018,
+    name: 'Furlough or Lay Off', kind: 'choice', date: '2020-04-27', requires: BUILT_2018,
     setup: S7({ airlines: ROUTES_2019, demand: 0.06 }),
     hands: HANDS_7,
     brief: [
@@ -112,7 +112,7 @@ addMissions(7, [
     stars: [{ k: 'loss', max: 20e6 }, { k: 'staff', min: 60 }]
   },
   {
-    name: 'Cargo Saves the Day', kind: 'business', date: '2020-05-04', requires: BUILT_2018,
+    name: 'Cargo Saves the Day', kind: 'business', date: '2020-06-26', requires: BUILT_2018,
     unlocks: ['cargoStand'],
     setup: S7({ airlines: ROUTES_2019, demand: 0.07 }),
     hands: HANDS_7,
@@ -138,7 +138,7 @@ addMissions(7, [
             { id: 'apron', build: ['cargoStand', 'cargoStand'], airline: { code: 'DHL', routes: [{ type: 'B76F', perDay: 1, load: 0.85 }] }, airline2: { code: 'UPS', routes: [{ type: 'B76F', perDay: 1, load: 0.85 }] }, label: 'Two cargo stands' },
             { id: 'none', label: 'The stands we have will do' }
           ] }] },
-      { name: 'A night of freighters', mode: 'ops', date: '2020-06-08', from: '20:00', to: '23:00', weather: { temp: 14, wind: [200, 7] }, desks: 6, lanes: 2, booths: 1, calm: true,
+      { name: 'A night of freighters', mode: 'ops', date: '2020-07-26', from: '20:00', to: '23:00', weather: { temp: 14, wind: [200, 7] }, desks: 6, lanes: 2, booths: 1, calm: true,
         flights: [F7('QR', 'B77F', 1, '20:10', '20:10', 120, { base: 8170 }), F7('SK', 'A359', 1, '20:30', '20:30', 110, { base: 9990, cargo: 30 }),
           F7('DHL', 'B76F', 2, '20:20', '21:40', 90, { base: 1 }), F7('UPS', 'B76F', 2, '20:40', '22:00', 90, { base: 21 }),
           F7('DHL', 'B76F', 1, '21:00', '21:00', 90, { base: 31, when: ['cargo', 'apron'] }), F7('UPS', 'B76F', 1, '21:20', '21:20', 90, { base: 41, when: ['cargo', 'apron'] }),
@@ -214,7 +214,7 @@ addMissions(7, [
           F7('AY', 'A321', 2, '07:25', '09:25', 52, { base: 800 }), F7('LH', 'A320', 2, '07:30', '09:20', 50, { base: 3020 }),
           F7('BA', 'A320', 2, '07:40', '08:40', 50, { base: 770 })],
         goal: [{ k: 'lost', max: 0 }, { k: 'onTime', p: 0.8 }] },
-      { name: 'The empty slots', mode: 'plan', days: 30, demand: 0.7, goal: [],
+      { name: 'The empty slots', mode: 'plan', days: 21, demand: 0.7, goal: [],
         choices: [{ id: 'slots', at: 3, default: 'none', icon: '🛫', title: 'Who gets the morning slots?',
           text: 'The Aeroflot flights will not come back. Finnair would fly twice more a day to Helsinki for a tenth off its fees; Norwegian would start two new routes for a quarter off.',
           options: [
@@ -227,12 +227,12 @@ addMissions(7, [
     stars: [{ k: 'unannounced', max: 0 }, { k: 'airlines', min: 80 }]
   },
   {
-    name: 'Clearance Takes Weeks', kind: 'operate', date: '2022-04-04', requires: BUILT_2018,
+    name: 'Clearance Takes Weeks', kind: 'operate', date: '2022-03-21', requires: BUILT_2018,
     setup: S7({ airlines: ROUTES_2022, demand: 0.8, leavers: LEAVERS_2022, cut: { turnaround: 0.5, security: 0.45 } }),
     hands: HANDS_7,
     brief: [
       'Everybody wants to fly this spring, all at once. But the people who load the bags, de-ice the aircraft and screen the passengers must have a security clearance before their first day.',
-      'A clearance takes six weeks. Recruit today, and they start in the middle of May. Recruit next month, and they start in the summer.',
+      'A clearance takes six weeks. Recruit today, and they start at the beginning of May. Recruit next month, and they start in the summer.',
       'A busy Friday in May will show who planned in time.'
     ],
     aim: 'Fill the empty jobs early enough for the clearance, then run the busy Friday in May.',
@@ -250,7 +250,7 @@ addMissions(7, [
             { id: 'now', rehire: true, label: 'Recruit now' },
             { id: 'later', label: 'Wait and see' }
           ] }] },
-      { name: 'The Friday in May', mode: 'ops', date: '2022-05-20', from: '06:00', to: '09:00', weather: { temp: 12, wind: [200, 8] }, desks: 20, lanes: 14, booths: 3,
+      { name: 'The Friday in May', mode: 'ops', date: '2022-05-06', from: '06:00', to: '09:00', weather: { temp: 12, wind: [200, 8] }, desks: 20, lanes: 14, booths: 3,
         flights: [F7('SK', 'A20N', 10, '06:05', '08:20', 45, { base: 100, intl: false, load: 0.9 }), F7('SK', 'A321', 7, '06:10', '08:30', 52, { base: 300, load: 0.9 }),
           F7('DY', 'B738', 8, '06:05', '08:25', 46, { base: 400, load: 0.92 }), F7('LH', 'A320', 3, '06:30', '08:20', 50, { base: 3020, load: 0.88 }),
           F7('AY', 'A321', 3, '06:25', '08:25', 52, { base: 800, load: 0.88 }), F7('BA', 'A320', 2, '06:40', '07:40', 50, { base: 770, load: 0.9 }),
@@ -261,7 +261,7 @@ addMissions(7, [
     stars: [{ k: 'securityWait', max: 5 }, { k: 'laidOff', max: 0.02 }]
   },
   {
-    name: 'One Terminal', kind: 'build', date: '2022-04-25', requires: BUILT_2018,
+    name: 'One Terminal', kind: 'build', date: '2022-05-06', requires: BUILT_2018,
     setup: S7({ airlines: ROUTES_2022, demand: 0.85, leavers: LEAVERS_2022, projects: ['t4t5'] }),
     hands: HANDS_7,
     brief: [

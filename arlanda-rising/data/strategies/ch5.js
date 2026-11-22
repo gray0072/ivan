@@ -78,11 +78,13 @@ STRATEGIES['5-6'] = {
   ]
 };
 
-// Norwegian Arrives: 30 % off for Norwegian
+// Norwegian Arrives: 30 % off for Norwegian; a drill for the stand planning before the morning (on Hard its failure
+// would make the quick turns late)
 STRATEGIES['5-7'] = {
   tray: REACT_QUICK,
   choices: { norwegian: 'yes' },
-  moves: [{ stage: 1, at: '06:30', do: 'desks', n: 30 }, { stage: 1, at: '06:30', do: 'act', fn: 'lanes', args: [10] }]
+  moves: [{ stage: 0, at: 5, do: 'act', fn: 'drill', args: ['stands'] },
+    { stage: 1, at: '06:30', do: 'desks', n: 30 }, { stage: 1, at: '06:30', do: 'act', fn: 'lanes', args: [10] }]
 };
 
 // Remote De-icing: the trucks by hand (and one more), then the crew hired at once (its clearance) and the pads with tents,

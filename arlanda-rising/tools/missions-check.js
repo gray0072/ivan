@@ -19,7 +19,10 @@
 //   - a reference strategy buys a small build its mission has not opened yet, a small build is in no category of the
 //     buy menu (BUY_MENU) or in two, a mission unlocks what is not a small build or what another mission unlocks;
 //   - a mission saved and resumed in the middle of each stage (the autosave) ends differently from one
-//     played straight through.
+//     played straight through;
+//   - the reference plays a dated stage (a stage's `date`, the first stage the mission's `date`) more than
+//     SLIP_DAYS_MAX days after its date, at any difficulty: a date only moves the calendar forward, so the plan days of
+//     the mission or of the one before that run past it put "26 June" or Christmas on a later day.
 // The strategy of the mission before is tried too, as a warning when it already gets ★★★.
 //
 // --money prints, per mission and difficulty, the owner's budget, the cash, the debt and the loan room at its start
@@ -51,6 +54,7 @@ const only = args.filter((a) => !a.startsWith('--'));
 
 const out = vm.runInContext(`(() => {
   const ADD_GOALS = ['built', 'fireCat', 'chargers', 'estate', 'runways', 'brands'];
+  const SLIP_DAYS_MAX = 3;                   // days a dated stage may be played after its date (an endEarly stage's slack)
   // the buy menu's data: every small build in exactly one category, every kind a mission opens a small build named by
   // that mission only
   const menuOf = {}, setup = [];
@@ -83,9 +87,17 @@ const out = vm.runInContext(`(() => {
     let low = S.money;
     const ownerLoan = (S.mission.meanwhile && S.mission.meanwhile.ownerLoan) || 0;
     const stageMin = [];
+    // the days each dated stage is played after its date
+    const slips = [];
+    const dated = () => {
+      const k = S.mission.stage, date = md.stages[k].date || (k === 0 ? md.date : null);
+      const late = date ? S.day - Calendar.parse(date) : 0;
+      if (late > SLIP_DAYS_MAX) slips.push('stage ' + (k + 1) + ' dated ' + date + ' played ' + late + ' days late');
+    };
+    dated();
     for (;;) {
       const status = S.mission.status;
-      if (status === 'stageDone') { Missions.next(); stageSteps = 0; continue; }
+      if (status === 'stageDone') { Missions.next(); stageSteps = 0; dated(); continue; }
       if (status !== 'running') break;
       Strategy.act(r);
       if (S.mission.status !== 'running') continue;
@@ -106,7 +118,7 @@ const out = vm.runInContext(`(() => {
     const m = S.mission, tot = m.total;
     for (const res of m.results) if (res) stageMin.push(+Missions.minutes(res.st).toFixed(1));
     return {
-      status: m.status, stars: m.stars, medal: m.medal, cuts, over, early, low, ownerLoan, at0, at1: cash(), state: JSON.stringify(S),
+      status: m.status, stars: m.stars, medal: m.medal, cuts, over, early, slips, low, ownerLoan, at0, at1: cash(), state: JSON.stringify(S),
       failedStage: m.status === 'stageFailed' ? m.stage : null,
       failed: m.status === 'stageFailed' ? m.results[m.stage].goals.filter((g) => !g.ok).map((g) => g.goal.k + '=' + g.value) : [],
       judged: m.judged ? m.judged.stars.map((g) => (g.ok ? '✓ ' : '✗ ') + g.goal.k + '=' + g.value) : [],
@@ -149,6 +161,7 @@ const out = vm.runInContext(`(() => {
       else if (d !== 'hard' && res.stars < 3) r.problems.push(d + ': the reference gets ' + res.stars + ' stars (' + res.judged.join(', ') + ')');
       if (res.over.length) r.problems.push(d + ': starts past a limit (' + res.over.join(', ') + ')');
       if (res.early.length) r.problems.push(d + ': a goal is met at the start (' + res.early.join(', ') + ')');
+      if (res.slips.length) r.problems.push(d + ': the calendar slips (' + res.slips.join(', ') + ')');
       // the reference pays its way: its cash never goes below zero, and it never needs the owner's loan to start
       if (res.low < -1) r.problems.push(d + ': the cash of the reference goes below zero (' + (res.low / 1e6).toFixed(1) + ' MSEK)');
       if (res.ownerLoan) r.problems.push(d + ': the reference starts on a loan of the owner (' + (res.ownerLoan / 1e6).toFixed(1) + ' MSEK)');

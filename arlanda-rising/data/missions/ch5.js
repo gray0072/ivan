@@ -187,7 +187,7 @@ addMissions(5, [
     stars: [{ k: 'spent', max: 1350e6 }, { k: 'neighbours', min: 75 }]
   },
   {
-    name: 'Security After 2001', kind: 'operate', date: '2002-12-16', requires: BUILT_2002,
+    name: 'Security After 2001', kind: 'operate', date: '2002-12-23', requires: BUILT_2002,
     setup: { open: true, openSkies: true, minMoney: 300e6, units: true, lanes: 12, items: ITEMS_2000, desks: 40, airlines: ROUTES_2002, domains: TEAMS_2000, it: 6,
       terms: TERMS_2001, booths: 6, secRule: 1, opens: ['security'], unlock: { security: 1 } },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'booth', 'lane'],
@@ -205,7 +205,7 @@ addMissions(5, [
       { text: 'Regulation (EC) No 2320/2002 set common rules for aviation security in Europe. It came into force in January 2003, and its rule that every hold bag is screened applied from 31 December 2002.', src: 'Regulation (EC) No 2320/2002, article 13 and annex 5.2 (legislation.gov.uk)' }
     ],
     stages: [
-      { name: 'A December morning', mode: 'ops', date: '2002-12-16', from: '06:30', to: '09:30', weather: { temp: -3, wind: [200, 8] }, desks: 24, lanes: 4,
+      { name: 'A December morning', mode: 'ops', date: '2002-12-23', from: '06:30', to: '09:30', weather: { temp: -3, wind: [200, 8] }, desks: 24, lanes: 4,
         flights: [F5('SK', 'B736', 11, '06:35', '09:00', 40, { base: 100, intl: false }), F5('SK', 'MD87', 8, '06:40', '09:00', 45, { base: 300 }),
           F5('SK', 'A321', 3, '06:50', '08:40', 50, { base: 450 }), F5('BRAATHENS', 'B737', 4, '06:45', '08:50', 40, { base: 500 }),
           F5('LH', 'A320', 2, '07:10', '08:30', 45, { base: 3020 }), F5('AY', 'A320', 2, '07:15', '08:45', 45, { base: 800 }),
@@ -226,7 +226,7 @@ addMissions(5, [
               { id: 'goran', manager: 'goranFalk', label: 'Göran Falk' },
               { id: 'none', label: 'Nobody' }
             ] }] },
-      { name: 'Under the new rules', mode: 'ops', date: '2003-01-27', from: '06:30', to: '09:30', weather: { temp: -7, wind: [20, 7] }, desks: 24, lanes: 4,
+      { name: 'Under the new rules', mode: 'ops', date: '2003-02-06', from: '06:30', to: '09:30', weather: { temp: -7, wind: [20, 7] }, desks: 24, lanes: 4,
         flights: [F5('SK', 'B736', 11, '06:35', '09:00', 40, { base: 200, intl: false }), F5('SK', 'MD87', 8, '06:40', '09:00', 45, { base: 400 }),
           F5('SK', 'A321', 3, '06:50', '08:40', 50, { base: 460 }), F5('BRAATHENS', 'B737', 4, '06:45', '08:50', 40, { base: 600 }),
           F5('LH', 'A320', 2, '07:10', '08:30', 45, { base: 3030 }), F5('AY', 'A320', 2, '07:15', '08:45', 45, { base: 810 }),
@@ -237,7 +237,7 @@ addMissions(5, [
     stars: [{ k: 'securityWait', max: 4 }, { k: 'passengers', min: 85 }]
   },
   {
-    name: 'Taxiway Bridges', kind: 'build', date: '2003-02-03', requires: BUILT_2002.concat(['runway3']),
+    name: 'Taxiway Bridges', kind: 'build', date: '2003-02-06', requires: BUILT_2002.concat(['runway3']),
     setup: { open: true, openSkies: true, minMoney: 300e6, units: true, lanes: 12, items: ITEMS_2000, desks: 40, airlines: ROUTES_2002, domains: TEAMS_2003, it: 6,
       terms: TERMS_2001, projects: ['bridges'], booths: 6, secRule: 1 },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'booth', 'lane', 'plough'],

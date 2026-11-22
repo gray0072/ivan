@@ -247,7 +247,7 @@ addMissions(3, [
             { id: 'layoff', system: { dom: 'snow', how: 'layoff' }, label: 'Install it, let the team go' },
             { id: 'none', label: 'Not this winter' }
           ] }] },
-      { name: 'Snow at dawn', mode: 'ops', date: '1987-01-19', from: '06:00', to: '09:00', weather: { temp: -24, wind: [30, 9], snow: [['06:20', '08:40', 3.5]] }, desks: 12,
+      { name: 'Snow at dawn', mode: 'ops', date: '1987-01-22', from: '06:00', to: '09:00', weather: { temp: -24, wind: [30, 9], snow: [['06:20', '08:40', 3.5]] }, desks: 12,
         flights: [F3('LF', 'F28', 9, '06:05', '08:45', 35, { base: 100 }), F3('SK', 'DC9', 8, '06:15', '08:55', 40, { base: 600 }),
           F3('SK', 'DC10', 1, '07:10', '07:10', 70, { base: 950 })],
         goal: [{ k: 'lost', max: 0 }, { k: 'airportDelay', max: 5 }] },
@@ -283,7 +283,7 @@ addMissions(3, [
             { id: 'train', train: 'checkin', build: ['desk', 'desk', 'desk', 'desk'], label: 'Train the team, more desks' },
             { id: 'none', label: 'Neither' }
           ] }] },
-      { name: 'Morning peak', mode: 'ops', date: '1987-10-05', from: '06:00', to: '09:00', weather: { temp: 6, wind: [210, 9] }, desks: 6,
+      { name: 'Morning peak', mode: 'ops', date: '1987-10-07', from: '06:00', to: '09:00', weather: { temp: 6, wind: [210, 9] }, desks: 6,
         flights: [F3('LF', 'F28', 13, '06:05', '08:45', 35, { base: 100, load: 0.95 }), F3('SK', 'MD81', 11, '06:10', '08:55', 40, { base: 600, load: 0.95 }),
           F3('SK', 'MD81', 4, '06:30', '07:45', 0, { parked: true, base: 650, load: 0.95 }), F3('SK', 'DC10', 1, '07:30', '07:30', 75, { base: 950, load: 0.9 })],
         goal: [{ k: 'checkinWait', max: 5 }, { k: 'maxWait', max: 5 }] },

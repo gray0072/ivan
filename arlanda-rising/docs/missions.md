@@ -2,7 +2,7 @@
 
 For developers. What the 88 missions of the campaign ask of the player, what they cost, what they teach, and where the game should go now that the task tray is quiet for most of it. The rules themselves are in `SPEC.md` (linked by section); the missions' data is in `data/missions/ch1.js` … `ch8.js` (fields: the header of `data/missions/missions.js`), the reference solutions in `data/strategies/`.
 
-**Where the numbers come from.** The campaign played by the reference strategies at Medium, mission after mission with the airport carried over (`node arlanda-rising/tools/missions-check.js --verbose --money`): the minutes at ▶, the stars, the owner's budget, the cash, the debt and the loan room at each mission's start and end. The task counts (who did the work) and the "what if the player did less" variants were measured with throwaway scripts over the same sim (not in the repo). Numbers are as of the commit that adds this file; re-run the checker after any balance change.
+**Where the numbers come from.** The campaign played by the reference strategies at Medium, mission after mission with the airport carried over (`node arlanda-rising/tools/missions-check.js --verbose --money`): the minutes at ▶, the stars, the owner's budget, the cash, the debt and the loan room at each mission's start and end. The task counts (who did the work) and the "what if the player did less" variants were measured with throwaway scripts over the same sim (not in the repo). Numbers are as of the commit that adds this file; after the calendar fix (section 6) the money table, the stars on Hard and the rows of the missions it touched were measured again, the other rows' cash may differ by a few MSEK. Re-run the checker after any balance change.
 
 Units: MSEK; **bn** = 1 000 MSEK. "Cash" is `S.money`, "debt" `S.loans`, "room" `Finance.room()` (what can still be borrowed).
 
@@ -43,7 +43,7 @@ The design (SPEC "Idea", "Manual, people, systems: the automation ladder"): **ha
 | choice | a plan stage with a decision in pairs or threes, then an ops stage | the decision; both paths pass with other stars |
 | exam | three ops stages (or plan + two ops) with the chapter's events | everything of the chapter |
 
-**Stages** (`stages[]`): `ops` — a clock window of 2¼–3 hours, flights, weather, scripted `events` (≈ 3–4 min at ▶); `plan` — days at a day a second, crews, `choices` (time stops until one is picked), `endEarly` when its goal is met. Each stage start is a checkpoint: a failed stage is retried, not the mission (SPEC "Sessions"). A stage's `date` jumps the calendar forward only (`Missions.beginStage`), never back — see the calendar slips in section 6.
+**Stages** (`stages[]`): `ops` — a clock window of 2¼–3 hours, flights, weather, scripted `events` (≈ 3–4 min at ▶); `plan` — days at a day a second, crews, `choices` (time stops until one is picked), `endEarly` when its goal is met. Each stage start is a checkpoint: a failed stage is retried, not the mission (SPEC "Sessions"). A stage's `date` jumps the calendar forward only (`Missions.beginStage`), never back, so the plan days before a date (the mission's own, or the mission before's) must end before it: `tools/missions-check.js` fails when the reference plays a dated stage more than 3 days late (section 6).
 
 **Goals and stars** (SPEC "Stars", `sim/goals.js`): every stage has its own goals (all must pass); the mission's `goal` must pass for ★; the two `stars` goals add one star each (not ordered: either one gives ★★). Doing nothing must fail every mission; the reference must get ★★★ on Easy and Medium (`tools/missions-check.js`).
 
@@ -67,8 +67,8 @@ Columns: **Min** — minutes at ▶ (Medium reference). **Budget** — owner's b
 |---|---|---|---|---|---|---|---|---|
 | 1-1 | Clear the Forest (1958) | build | 5.5 | 95 · 95 · 30 | orders four clearing jobs for two crews | sell or burn the timber (sell); keep the tree belt (keep); borrow (20) | plan time, crews, winter pace, money against Neighbours | site cleared · own money ≥ 10 · Neighbours ≥ 75 |
 | 1-2 | First Wheels (1959) | operate | 6.0 | — · 29 · 18 | a stand for each training sortie (14 tray tasks) | which stand, before dusk | the tray, deadlines, stand sizes | delay ≤ 3 · nothing to the duty manager · delay ≤ 1 |
-| 1-3 | The Tower (1960) | build | 4.8 | 52 · 80 · 18 | builds the tower, then a denser sortie morning | heated tents or a fast pace; backup radio | pace against the price of options | tower · spent ≤ 44 · Safety ≥ 84 |
-| 1-4 | The First Terminal (1960) | build | 4.6 | 76 · 116 · 12 | the hall and the fire station (category 7), then desks and the waiting room; checks in the first DC-8 | a second crew (no); order of jobs; a kiosk | the fire category, desks, a deadline | on time ≥ 80 % · a kiosk · wait ≤ 10 |
+| 1-3 | The Tower (1959) | build | 4.8 | 52 · 81 · 18 | builds the tower, then a denser sortie morning | heated tents or a fast pace; backup radio | pace against the price of options | tower · spent ≤ 44 · Safety ≥ 84 |
+| 1-4 | The First Terminal (1960) | build | 4.6 | 80 · 124 · 12 | the hall and the fire station (category 7), then desks and the waiting room; checks in the first DC-8 | a second crew (no); order of jobs; a kiosk | the fire category, desks, a deadline | on time ≥ 80 % · a kiosk · wait ≤ 10 |
 | 1-5 | The First Jets (1960) | operate | 6.0 | — · 67 · 15 | stands (DC-8s only on 1–2) and desks (19 tasks) | desks open before the queue | stand codes, queues | — · on time ≥ 92 % · wait ≤ 9 |
 | 1-6 | The Fuel Truck (1960) | operate | 6.2 | — · 67 · 15 | fuels by hand with one truck (40 tasks) | buy a second truck (yes, 1.2) | vehicles are capacity; the buy menu | — · delay ≤ 1.5 · Airlines ≥ 85 |
 | 1-7 | First Snow (1960) | crisis | 6.1 | 4.5 · 70 · 15 | buys ploughs in 21 days, then clears snow by hand (27 tasks) | two or four ploughs (four, from savings) | invest before the event | 2 ploughs · no close call · on time ≥ 85 % |
@@ -122,8 +122,8 @@ Columns: **Min** — minutes at ▶ (Medium reference). **Budget** — owner's b
 | 4-7 | Bags by Machine (1997) | build | 8.2 | 20 · 3.39 bn · 2 500 | the belts fail; the sorting hall, the bar-code sorter, three IT people; it fails | keep the handlers; IT size | level 3; IT sizing | baggage level 3 · ≤ 30 bags lost · Passengers ≥ 90 |
 | 4-8 | The Low-Fare Question (1997) | choice | 4.0 | — · 3.37 bn · 2 500 | a low-fare airline or the fees for all | invite / no / later (invite) | low-cost crowds who shop | answered · brands ≥ 50 k · Airlines ≥ 72 |
 | 4-9 | Hub Wars (1998) | operate | 5.9 | — · 3.91 bn · 2 500 | a transfer wave; Copenhagen pulls SAS | incentive / fees / none (incentive) | rivals | SAS ≥ 70 · Airlines ≥ 80 · delay ≤ 3.5 |
-| 4-10 | Christmas Rush (1998) | operate | 7.5 | — · 4.03 bn · 2 500 | charters, snow, the shops' Christmas | BRIO / Max / units by hand (Max) | seasonal takings | brands ≥ 2 M · Passengers ≥ 88 · brands ≥ 2.5 M |
-| 4-11 | Exam: Millennium Night (1999) | exam | 7.7 | — · 4.34 bn · 2 500 | Y2K: untested systems stop at midnight | test (25) or trust (test) | testing against trust; the fallback | — · delay ≤ 3 · Passengers ≥ 85 |
+| 4-10 | Christmas Rush (1999) | operate | 7.5 | — · 4.03 bn · 2 500 | charters, snow, the shops' Christmas | BRIO / Max / units by hand (Max) | seasonal takings | brands ≥ 2.75 M · Passengers ≥ 88 · brands ≥ 3.4 M |
+| 4-11 | Exam: Millennium Night (1999) | exam | 7.6 | — · 4.34 bn · 2 500 | Y2K: untested systems stop at midnight | test (25) or trust (test) | testing against trust; the fallback | — · delay ≤ 3 · Passengers ≥ 85 |
 
 ### Chapter 5 — A New Millennium (2000–2009): capacity
 
@@ -135,7 +135,7 @@ Columns: **Min** — minutes at ▶ (Medium reference). **Budget** — owner's b
 | 5-4 | Runway Three (2002) | build | 1.9 | 100 · 5.09 bn · 1 500 | runway 3 before the winter | the grant; insulate Väsby or routes (insulate) | a megaproject and its neighbours | — · spent ≤ 1 350 · Neighbours ≥ 75 |
 | 5-5 | Security After 2001 (2002) | operate | 7.7 | — · 4.46 bn · 1 500 | lanes under the new rules; a team before its clearance | a team (yes); head Leila / Göran (Leila) | clearance lead time | — · security wait ≤ 4 · Passengers ≥ 85 |
 | 5-6 | Taxiway Bridges (2003) | build | 4.4 | — · 4.49 bn · 1 500 | two bridges; the first two-runway morning | the bridges' options | parallel runways | 3 runways · on time ≥ 90 % · delay ≤ 4 |
-| 5-7 | Norwegian Arrives (2003) | choice | 4.1 | — · 4.02 bn · 1 500 | Norwegian's terms; random events from now | 30 % / half / no (30 %) | low-cost growth | Norwegian 4 a day · brands ≥ 12.5 M · Airlines ≥ 92 |
+| 5-7 | Norwegian Arrives (2003) | choice | 4.1 | — · 4.02 bn · 1 500 | Norwegian's terms; random events from now | 30 % / half / no (30 %; a drill for the stand planning first) | low-cost growth | Norwegian 4 a day · brands ≥ 12.5 M · Airlines ≥ 92 |
 | 5-8 | Remote De-icing (2004) | build | 8.1 | — · 4.50 bn · 1 500 | trucks by hand in the frost (32), a crew, the pads | trucks, crew, pads | the de-icing ladder in one mission | de-icing level 2 · delay ≤ 4 · Passengers ≥ 85 |
 | 5-9 | Rent Is Steady (2006) | business | 3.1 | — · 4.68 bn · 1 500 | Cargo City and its offices | hotel wing (yes); a Sky City shop (O'Learys) | real estate | rents ≥ 5 M · ≥ 6 M a month · last month ≥ 44 |
 | 5-10 | Liquids in Bags (2006) | operate | 7.8 | — · 4.54 bn · 1 500 | the liquids morning; queue sensors and lanes for Christmas | sensors (keep the team); four lanes | the security system | — · security wait ≤ 5 · brands ≥ 150 k |
@@ -191,7 +191,7 @@ Columns: **Min** — minutes at ▶ (Medium reference). **Budget** — owner's b
 
 **Minutes:** chapter totals at ▶ 66 · 55 · 64 · 61 · 61 · 57 · 51 · 50 (≈ 7.8 h for the campaign at ▶, 5.3 min a mission on average; the exams 7.4–9.8, the pure plan missions 1.1–2.7).
 
-**Stars on Hard:** the reference gets ★★ in 1-1, 1-2, 1-7, 1-9, 3-11, 4-2, 5-2, 6-2, 6-3, 8-2 and ★ in 6-10; ★★★ everywhere else.
+**Stars on Hard:** the reference gets ★★ in 1-1, 1-2, 1-7, 1-9, 3-11, 4-2, 5-6, 8-1, 8-2; ★★★ everywhere else.
 
 ---
 
@@ -201,18 +201,18 @@ Columns: **Min** — minutes at ▶ (Medium reference). **Budget** — owner's b
 
 | After | Easy | Medium | Hard | Medium cash · debt |
 |---|---|---|---|---|
-| 1-4 First Terminal | 148 | 37 | −19 | 67 · 30 |
-| 1-11 (chapter 1) | 158 | 33 | −30 | 68 · 35 |
-| 2-1 Room for the Jets | 168 | 16 | −60 | 81 · 65 |
-| 2-11 (chapter 2) | 288 | 57 | −60 | 422 · 365 |
-| 3-11 (chapter 3) | 1 505 | 1 239 | 1 101 | 1 704 · 465 |
-| 4-11 (chapter 4) | 4 203 | 3 874 | 3 706 | 4 339 · 465 |
-| 5-11 (chapter 5) | 5 368 | 4 956 | 4 743 | 5 421 · 465 |
-| 6-11 (chapter 6) | 11 140 | 10 724 | 10 505 | 11 189 · 465 |
-| 7-11 (chapter 7) | 14 661 | 14 243 | 14 020 | 14 708 · 465 |
-| 8-11 (the end) | 29 845 | 28 671 | 28 066 | 29 136 · 465 |
+| 1-4 First Terminal | 157 | 43 | −14 | 73 · 30 |
+| 1-11 (chapter 1) | 160 | 33 | −30 | 68 · 35 |
+| 2-1 Room for the Jets | 171 | 16 | −61 | 81 · 65 |
+| 2-11 (chapter 2) | 291 | 58 | −60 | 423 · 365 |
+| 3-11 (chapter 3) | 1 507 | 1 240 | 1 101 | 1 705 · 465 |
+| 4-11 (chapter 4) | 4 195 | 3 864 | 3 696 | 4 329 · 465 |
+| 5-11 (chapter 5) | 5 362 | 4 948 | 4 734 | 5 413 · 465 |
+| 6-11 (chapter 6) | 11 134 | 10 716 | 10 496 | 11 181 · 465 |
+| 7-11 (chapter 7) | 14 664 | 14 244 | 14 020 | 14 709 · 465 |
+| 8-11 (the end) | 29 828 | 28 653 | 28 046 | 29 118 · 465 |
 
-- **Chapter 1 and the start of chapter 2 are tight**, as designed: on Hard the cash between missions is 2–10 MSEK and the loan room 2–5 MSEK through chapter 1, and 2-1 ends with 3.6 MSEK of cash; the budgets of 1-3 (52), 1-4 (76), 1-7 (4.5), 1-9 (10), 1-10 (12), 2-1 (55) are what keeps the reference above zero.
+- **Chapter 1 and the start of chapter 2 are tight**, as designed: on Hard the cash between missions is 2–10 MSEK and the loan room 2–5 MSEK through chapter 1, and 2-1 ends with 3.3 MSEK of cash; the budgets of 1-3 (52), 1-4 (80), 1-7 (4.5), 1-9 (10), 1-10 (12), 2-1 (55) are what keeps the reference above zero.
 - **From the middle of chapter 2 the money stops mattering.** The years between missions earn far more than any mission spends: +337 MSEK in 1976–1983 (before 3-1), +1.3 bn before 6-4, +1.5 bn before 7-1, **+6.7 bn in 2024–2030** (before 8-1). Within a mission the reference's net result is between −0.6 bn (5-4) and +0.27 bn (8-9); only 8-6 (−3.1 bn) is bigger.
 - **The difficulty's money (× 1.5 / × 0.75) is gone by chapter 3**: the three difficulties end chapter 3 within 0.4 bn of each other and the campaign within 6 %.
 - **Running costs are noise late on:** at the end the airport pays about 19 MSEK a month in wages, 3.1 in systems and 15.5 in upkeep, against about 90 MSEK a month earned between missions (2024–2030); a system's 60–600 kSEK a month (`data/domains.js`) or a team's wages never show in a decision.
@@ -254,7 +254,7 @@ The missions that set a loan room (`setup.loanLimit`, × the difficulty): **1-1*
 
 | # | Proposal | Size | Missions |
 |---|---|---|---|
-| E1 | **The owner takes the surplus.** Between missions the owner keeps a reserve (e.g. 6 months of running costs, or the chapter's budget) and takes the rest as the state's dividend, told on the "Meanwhile…" card; the chapter's **return target** (SPEC "The owner") becomes a number the dividend is measured against. Cash stays in the tens to hundreds of MSEK, so wages, licences and loans weigh again. | L | every mission's budget and money goals; `sim/missions.js`, `sim/summary.js`; the checker's thresholds |
+| E1 | **The owner takes the surplus.** Between missions the owner keeps a reserve (e.g. 6 months of running costs, or the chapter's budget) and takes the rest as the state's dividend, told on the "Meanwhile…" card; a chapter's **return target** (today there is none: profit is the goal of a few missions, SPEC "The owner") becomes a number the dividend is measured against. Cash stays in the tens to hundreds of MSEK, so wages, licences and loans weigh again. | L | every mission's budget and money goals; `sim/missions.js`, `sim/summary.js`; the checker's thresholds |
 | E2 | **Running cost as a star.** A goal kind `runningCost` (the month's wages + systems ≤ X) or `costPerTask` (a domain's cost per task done) as ★★/★★★ where the mission is about a level: 3-8, 4-7, 6-4, 6-10, 8-3. Keep vs let go then has a price both ways. | S | 3-8, 4-7, 6-4, 6-10, 8-3 |
 | E3 | **Pay the debt back.** The reference repays when the room allows; a ★ "debt below X" in one business mission per chapter (1-8, 3-9, 5-9, 6-9) and interest shown on the stage card. | S | 1-8, 3-9, 5-9, 6-9 |
 
@@ -283,7 +283,7 @@ The missions that set a loan room (`setup.loanLimit`, × the difficulty): **1-1*
 | # | Proposal | Size |
 |---|---|---|
 | U1 | **The stage card's automation summary.** Per domain: who did the work (you / team / system / duty manager), failures and who caught them, tasks that came to the tray and why (absent, strike, cut, holiday), the stage's cost of that domain, and one line of what to change ("Ramp: 12 of 20 away in July — temps next time?"). Today it shows only the totals (`ui/results.js` `work`). | M |
-| U2 | **The Ops Center as the main screen between missions.** The Office opens on it; each row gets what SPEC promises and the code lacks — tasks done, time saved, **cost per task** — plus the head, the readiness and the next step of the ladder with its payback at today's traffic. | M |
+| U2 | **The Ops Center as the main screen between missions.** The Office opens on it; each row gets what SPEC lists as planned — tasks done, time saved, **cost per task** — plus the head, the readiness and the next step of the ladder with its payback at today's traffic. | M |
 | U3 | **Alerts from the heads.** In plan time and on the "Meanwhile…" card, the heads speak: "IT: 3 of 5 people needed — failures will last longer", "Security: the union's round is due in May", "Ramp: half the team is on holiday in July". No head → the alert comes late or not at all: that is what a head is for. | M |
 | U4 | **A quiet tray means watching the machine.** In ops time with an empty tray, the side panel shows the teams' counters and the systems' state live (who opened desk 7, a failure and its fallback, a team short) instead of an empty tray. | S |
 | U5 | **Clean reference strategies.** Drop the `desks` / `lanes` / `booths` moves the teams make redundant, so 💡 3 (the reference's main moves) shows decisions, not clicks. | S |
@@ -296,20 +296,20 @@ U5 and E2 / S1 / S2 (small, measurable with the checker) → P5 (removes the lat
 
 ## 6. Open issues
 
-**Calendar slips.** A stage's `date` only jumps forward, so a mission that starts after its own date plays its days late (Medium reference):
+**Calendar slips — fixed, and guarded.** A stage's `date` only jumps forward, so plan days that ran past a date (the mission's own, or the mission before's) put the day on a later date: the reference played 1-4's "26 June 1960" on 14 Aug, 4-10's Christmas in March 1999, 7-8's "morning before Midsummer" on 1 July, 8-10 and 8-11 on 24 and 31 Dec. The dates the briefings tell as history stay; the game's own dates moved. `tools/missions-check.js` now fails when the reference plays a dated stage more than 3 days late, at any difficulty (today every dated stage is played on its day).
 
-| Mission | Planned | Played | Note |
-|---|---|---|---|
-| 1-4 The First Terminal | starts 4 Apr 1960; ops "26 June 1960" | starts 16 May (1-3 ends then); ops on **14 Aug 1960** | the aim says "by 26 June"; 1-5 is dated 15 Aug |
-| 4-10 Christmas Rush | 1 Dec 1998; ops 19 Dec | starts **4 Mar 1999** (4-9's 150-day stage); ops 22 Mar | Christmas in March |
-| 5-5 Security After 2001 | 16 Dec 2002; ops 27 Jan | 23 Dec; ops 6 Feb 2003 | 5-4's 115 days |
-| 6-10 A-CDM | "A morning in April", 3 Apr 2017 | 5 May | 6-9's two 60-day stages |
-| 7-3 Cargo Saves the Day | ops 8 Jun 2020 | 26 Jul | 7-2's 60 days |
-| 7-7 / 7-8 | T4 open 15 Jun; "The morning before Midsummer" 23 Jun 2022 | 26 Jun; **1 Jul** | after Midsummer |
-| 8-10 / 8-11 | 11 and 21 Dec 2040 | 24 Dec (Christmas Eve) and 31 Dec | 8-9's 120 days |
-| 3-7, 3-8, 4-5, 6-1, 8-5 | — | 1–10 days late | harmless |
+| Mission | Cause | Fix |
+|---|---|---|
+| 1-3 / 1-4 | 1-3 ran 11 Jan – 16 May 1960; 1-4's 56 + 40 plan days (the hall, the fire station, the desks) could not end by 26 June (history) | 1-3 starts 15 Dec 1959, the day after 1-2 (with the heated tents the tower is ready by 19 March), its sorties on 21 March (2 °C); 1-4 starts 21 March, so its 96 days end by 25 June. 1-4's budget 76 → 80 MSEK: the 50 days of summary now between 1-4 and 1-5 cost the manual airport about 3 MSEK on Hard, which failed 1-10 there |
+| 4-10 / 4-11 | 4-9's 150-day winter, after Copenhagen's station of 27 Sep 1998 (history), ends 4 Mar 1999 | 4-10 is Christmas 1999 (from 30 Nov, the snowy Saturday 18 Dec); 4-11 from 19 Dec with a 12-day plan stage (was 20) before 31 Dec. Christmas earns more than March: the goal is 2.75 MSEK of the shops' takings and ★★★ 3.4 (were 2 and 2.5; Medium: nothing 2.6, BRIO 3.0, Max 3.9) |
+| 5-5 | 5-4's 115 days end 23 Dec 2002; 5-5's own 45-day stage (the clearance's six weeks) ran past its 27 Jan | 5-5 from 23 Dec, its second morning 6 Feb 2003; 5-6 from 6 Feb (runway 3's opening on 17 April stays) |
+| 6-10 | 6-9 starts 5 Jan 2017 (history) and lasts 120 days | the first stage is "A morning in May", 5 May; A-CDM's 8 June (history) stays |
+| 7-2 / 7-3 | 7-1's 45 days and 7-2's 60 | 7-2 from 27 Apr 2020, 7-3 from 26 June, its night of freighters 26 July |
+| 7-6 / 7-7 / 7-8 | 7-5's 30 days and 7-6's 46 (the clearance) let 7-7 start only on 20 May; its tunnel takes 37 days at a fast pace, past Terminal 4's reopening on 15 June (history) | 7-5's slots stage 21 days (was 30); 7-6 from 21 March, its Friday 6 May (the brief: "they start at the beginning of May"); 7-7 from 6 May |
+| 8-9 / 8-10 | 8-9's 120 days from 20 Aug ended 18 Dec; 8-10's own 6 plan days ran past its 11 Dec | 8-9 from 6 Aug, 8-10 from 5 Dec |
+| 3-7, 3-8, 4-5, 6-1, 8-5 | plan days 1–10 days past the date | the date moved to the day they were played (no change in play) |
 
-Fix by shortening the plan stages of the mission before, or by moving the dates.
+The ripple: the random generator's state carries from mission to mission, so moving days changes later draws. On Hard 5-7's Norwegian morning fell to 78 % on time (the goal is 80 %): its reference now drills the stand planning first. Still possible: a player slower than the reference (a 60-day `endEarly` stage like 6-10's, 5-4's 115 days) can still play a later date — the check covers the reference only.
 
 **Budget oddities.**
 - The money balloons from chapter 3 (section 4): every money goal after 2-11 (3-9's last month, 7-2's "lose ≤ 20 MSEK", 8-6's "spent ≤ 3 300") is about the mission's own flow, never the cash; the owner still gives 100 MSEK for runway 3 (cash 5 bn) and 1.5 bn for the pier (cash 28 bn).
@@ -318,14 +318,8 @@ Fix by shortening the plan stages of the mission before, or by moving the dates.
 - The difficulty's money multiplier has no effect after chapter 2.
 
 **Missions whose lesson is unclear or not felt.**
-- **8-1 Electric Wings** — "the mobile charger by hand" (SPEC chapter 8 table): the ramp team (level 1 since 2-3) does the charging; the reference does no tray task. Either the charge task is the player's (`hands`) while the ramp team does not know chargers yet, or the text should say the team does it.
 - **8-11 Final Exam: Blackout** — the message "the airport survives on its people" holds through the teams' readiness, but the player does no tray task (the briefing mentions "your hands"); the exam could ask for one hand domain.
 - **7-2 Furlough or Lay Off** — 1.1 minutes, one decision whose money stake is invisible against 12.7 bn.
 - **Exams beaten by the previous mission's strategy** (checker warnings): 1-11, 4-11, 5-11, 6-11, 7-11 — the exam asks nothing the mission before did not; also 1-5, 2-2, 3-8.
 - **Three event-peak missions in chapter 6** (6-3, 6-7, 6-8) teach the same thing (a decision, then a watched afternoon); one of them could carry a people or system lesson (section 5).
 - Chapter 7's random cyber attacks and outages are absorbed by the teams; the drills of 7-10 matter only for its `readiness` goal.
-
-**Spec against code.**
-- SPEC "Screens" (Ops Center: "the tasks it did today and the time it saved") and "Manual, people, systems" ("the Ops Center shows the domain's cost per task done"): `ui/opscenter.js` shows level, uptime, the month's cost, readiness, the head and the ladder — no tasks, time saved or cost per task.
-- SPEC "The owner": "Each chapter the owner sets a return target" — in the sim only 6-1's `targetSet` flag exists.
-- SPEC "How long it lasts" assumes about 9 minutes of play per mission in chapters 2–8; measured at ▶ they average 5.2 (the campaign ≈ 7.8 h at ▶ before the Office and retries).
