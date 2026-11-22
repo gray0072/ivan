@@ -45,7 +45,7 @@ addMissions(4, [
     brief: [
       'A new decade, and more people fly every year. The domestic terminal is full, so a second one is going up next to it: Inrikes 2.',
       'A terminal is more than desks and gates. It has shop units, and real shops and cafés want them: each pays rent, and earns more the longer the passengers have to spend.',
-      'Build Domestic 2, fill its units in the Terminal view (T), then run the first morning there.'
+      'Build Domestic 2, let the terminals\' shop units to real shops and cafés in the Terminal view (🏪 in the plan, or T), then run the first morning there.'
     ],
     aim: 'Build Domestic 2, put real shops and cafés in the terminals, then run its first morning.',
     news: [

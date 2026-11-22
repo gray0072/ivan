@@ -344,7 +344,7 @@ addMissions(2, [
     hands: ['stand', 'checkin', 'fuel', 'bags'],
     brief: [
       'Runway 1 runs north and south. When an autumn gale blows from the west, the wind comes straight across it, and no pilot can land.',
-      'The plan of 1957 had a second runway, 2.5 kilometres long, toward the east and west. Build it now — the owner pays half if you ask.',
+      'The plan of 1957 had a second runway, 2.5 kilometres long, toward the east and west. Build it now — the owner pays half.',
       'Then wait for the first westerly gale.'
     ],
     aim: 'Build runway 2, then keep the traffic going in a westerly gale.',

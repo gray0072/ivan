@@ -7,7 +7,7 @@
 //     choices: { decision id: option id } — the rest take their `default`,
 //     moves: [{ stage, at, after, do, ... }] — `stage` the mission's stage (0 first), `at` a clock time in ops
 //            time or days into a plan stage, `after` [project, part] finished first; `do`: start (project, part, pace), pace, mod (project,
-//            mod), finance (project, how), buy (kind, n), desks (n), dir, fees (level), borrow / repay (sum),
+//            mod), buy (kind, n), desks (n), dir, fees (level), borrow / repay (sum),
 //            act (fn: any of sim/actions.js, args) }
 // A move is done once, as soon as it is due and works. The runner's own state is { done } (saved with the
 // mission in the resume test).
@@ -44,7 +44,6 @@ const Strategy = {
       case 'start': return Actions.start(mv.project, mv.part, mv.pace);
       case 'pace': return Actions.pace(mv.project, mv.part, mv.pace);
       case 'mod': return Actions.mod(mv.project, mv.mod);
-      case 'finance': return Actions.finance(mv.project, mv.how);
       case 'buy': { let ok = true; for (let n = 0; n < (mv.n || 1); n++) ok = Actions.buy(mv.kind) && ok; return ok; }
       case 'desks': Actions.desks(mv.n); return true;
       case 'dir': return Actions.dir(mv.dir);

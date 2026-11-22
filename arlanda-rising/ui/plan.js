@@ -1,8 +1,9 @@
 'use strict';
 
 // Arlanda Rising — plan time on the screen: the panel of the mission's master-plan projects (each stage with its
-// days and price: Start or Start fast, its progress, what it waits for; the project's options and how it is paid),
-// the crews at work, the fee level when the airport is open, the loans; and the decision card that stops the time
+// days and price: Start or Start fast, its progress, what it waits for; the project's options; a line when the owner's
+// grant or a partner pays — otherwise it is paid from the cash), the terminals' units let with a button to the Terminal
+// view, the crews at work, the fee level when the airport is open, the loans; and the decision card that stops the time
 // until the player picks one of its options (the pair of choices of SPEC.md "Offers come as choices"). Used by
 // game.js in a plan stage.
 
@@ -46,11 +47,16 @@ const PlanUI = (() => {
     const ids = S.mission.projects || [];
     const goals = Goals.all(Missions.stage().goal, S.mission.st), mg = Text.missionGoals();
     const k = JSON.stringify(goals) + mg + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
-      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + JSON.stringify(S.people && [S.people.vacant, S.people.managers]) + (S.people ? S.people.it : 0) + winterAhead();
+      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + JSON.stringify(S.people && [S.people.vacant, S.people.managers]) + (S.people ? S.people.it : 0) + winterAhead() + Terminal.brands() + Terminal.units().length;
     box.hidden = false;
     if (k === key) return;
     key = k;
-    let html = (goals.length || mg ? '<div class="pGoals">' + (goals.length ? '<b>' + Text.esc(tr(Missions.stage().name)) + '</b>' + Text.goalsHtml(goals) : '') + mg + '</div>' : '') + '<div class="pHead"><b>' + Text.esc(tr('Building')) + '</b><span>👷 ' + Text.esc(tr('Crews at work: {a} of {n}', { a: Construction.active(), n: S.plan.crews })) + '</span></div>';
+    let html = (goals.length || mg ? '<div class="pGoals">' + (goals.length ? '<b>' + Text.esc(tr(Missions.stage().name)) + '</b>' + Text.goalsHtml(goals) : '') + mg + '</div>' : '');
+    // the terminals' shop units: let to real brands in the Terminal view (a phone has no T key)
+    const units = Terminal.units();
+    if (units.length) html += '<div class="fin"><span>' + Text.esc(tr('{a} of {b} units let', { a: units.filter((u) => u.brand).length, b: units.length })) + '</span>' +
+      '<button class="tb small" data-tview="1">🏪 ' + Text.esc(tr('Terminal view')) + '</button></div>';
+    html += '<div class="pHead"><b>' + Text.esc(tr('Building')) + '</b><span>👷 ' + Text.esc(tr('Crews at work: {a} of {n}', { a: Construction.active(), n: S.plan.crews })) + '</span></div>';
     for (const pid of ids) {
       const p = Construction.state(pid), def = PROJECTS[pid];
       if (!p) continue;
@@ -68,9 +74,9 @@ const PlanUI = (() => {
             Text.esc(tr(md.name)) + '<small>' + sekBare(md.price) + '</small></button>';
         }).join('') + (note ? '<small class="modNote">' + Text.esc(note) + '</small>' : '') + '</div>';
       }
-      const grants = S.mission.grants || [];
-      html += '<div class="fin"><span>' + Text.esc(tr('Paid with')) + '</span>' + ['cash', 'loan'].concat(grants.indexOf(pid) >= 0 ? ['grant'] : []).map((h) =>
-        '<button class="tb small' + (p.finance === h ? ' on' : '') + '" data-fin="' + h + '" data-p="' + pid + '">' + Text.esc(tr({ cash: 'Cash', loan: 'A loan', grant: "The owner's grant" }[h])) + '</button>').join('') + '</div>';
+      // paid from the cash (loans are taken in Finance or below); the owner's grant and a partner apply by themselves
+      if (p.finance === 'grant') html += '<small class="ladNote">🏛️ ' + Text.esc(tr("The owner's grant pays half of it.")) + '</small>';
+      else if (p.finance === 'partner') html += '<small class="ladNote">🤝 ' + Text.esc(tr('A partner builds it with its own money')) + '</small>';
       html += '</div>';
     }
     html += teams();
@@ -128,7 +134,7 @@ const PlanUI = (() => {
     else if (b.dataset.start) Actions.start(pid, sid, b.dataset.start);
     else if (b.dataset.pace) Actions.pace(pid, sid, b.dataset.pace);
     else if (b.dataset.mod) Actions.mod(pid, b.dataset.mod);
-    else if (b.dataset.fin) Actions.finance(pid, b.dataset.fin);
+    else if (b.dataset.tview) { Game.openPanel('terminal'); return; }
     else if (b.dataset.fees) Actions.fees(b.dataset.fees);
     else if (b.dataset.loan === 'borrow') Actions.borrow(Finance.step());
     else if (b.dataset.loan === 'repay') Actions.repay(Finance.step());

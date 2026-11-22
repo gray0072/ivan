@@ -36,7 +36,7 @@ The design (SPEC "Idea", "Manual, people, systems: the automation ladder"): **ha
 
 | Kind | Typical stages | The player's work |
 |---|---|---|
-| build | plan (the project's stages, pace, options, financing), then an ops stage using it | order of stages, pace, mods, loan or grant |
+| build | plan (the project's stages, pace, options, financing), then an ops stage using it | order of stages, pace, mods, loans (the owner's grant pays by itself) |
 | operate | one or two ops stages, often a short plan stage first | the decision of the plan stage; the tray when the domain is by hand |
 | business | two or three plan stages (60–90 days), no ops | offers in a row; the goal is profit or the last month |
 | crisis | an ops stage with a scripted event (snow, strike, ash, cyber) | preparation in plan time, then riding it out |
@@ -90,7 +90,7 @@ Columns: **Min** — minutes at ▶ (Medium reference). **Budget** — owner's b
 | 2-7 | The Wage Round (1972) | choice | 4.0 | — · 279 · 60 | answers the union | accept, counter 4.5 % or 3 %, mediator, refuse (counter 4.5) | unions, morale, a strike's cost | — · no strike · Staff ≥ 62 |
 | 2-8 | The Bag Belt (1973) | build | 7.5 | — · 343 · 60 | bags by hand (15), the hall, the belts straight from the hands; a jam | belts (30); handlers hired back as the fallback (yes) | a system's price, its failure, the fallback | ≤ 12 / ≤ 6 bags lost · ≤ 6 · Passengers ≥ 70 |
 | 2-9 | Fog Morning (1974) | build | 4.2 | — · 380 · 60 | the ILS; a fog morning | low-visibility procedures (yes) | equipment against weather | ILS · nothing sent away · on time ≥ 70 % |
-| 2-10 | Crosswind (1975) | build | 5.8 | 60 · 431 · 300 | runway 2 with the grant and a loan (100) | spare the forest (yes); financing | a big project's financing; a second runway | runway 2 · on time ≥ 85 % · Neighbours ≥ 66 |
+| 2-10 | Crosswind (1975) | build | 5.8 | 60 · 431 · 300 | runway 2 with the grant (by itself) and a loan (100) | spare the forest (yes); financing | a big project's financing; a second runway | runway 2 · on time ≥ 85 % · Neighbours ≥ 66 |
 | 2-11 | Exam: The International Terminal (1976) | exam | 8.2 | 60 · 465 · 300 | the terminal on a 200 loan; an emergency, a jam, a gale | the loan; trucks | the chapter in one | — · delay ≤ 2 · Passengers ≥ 72 |
 
 ### Chapter 3 — Everyone Comes to Arlanda (1980s): systems

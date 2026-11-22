@@ -59,6 +59,8 @@ const Missions = {
       S.mission.partners.push('arlandaExpress');
       Construction.state('arlandaExpress').finance = 'partner';
     }
+    // the owner's grant pays its share of the projects the mission offers it for, without asking
+    Construction.grants();
     this.startWorld = JSON.stringify(S);
     this.beginStage(0);
   },

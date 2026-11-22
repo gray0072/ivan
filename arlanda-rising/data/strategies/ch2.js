@@ -93,12 +93,11 @@ STRATEGIES['2-9'] = {
   ]
 };
 
-// Crosswind: the owner's grant, runway 2 at a normal pace, the cranes spared
+// Crosswind: runway 2 at a normal pace (the owner's grant pays half by itself), the cranes spared
 STRATEGIES['2-10'] = {
   tray: REACT_QUICK,
   choices: { forest: 'spare' },
   moves: [
-    { stage: 0, at: 0, do: 'finance', project: 'runway2', how: 'grant' },
     { stage: 0, at: 0, do: 'borrow', sum: 100e6 },
     { stage: 0, at: 0, do: 'start', project: 'runway2', part: 'strip' },
     { stage: 0, after: ['runway2', 'strip'], do: 'start', project: 'runway2', part: 'pave' },

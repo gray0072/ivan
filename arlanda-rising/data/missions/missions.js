@@ -9,7 +9,7 @@
 //   setup          budget (SEK from the owner, × the difficulty), loanLimit (room for new loans on top of what is owed,
 //                  × the difficulty; the owner's limit by the airport's worth is always there — Finance.limit), open (traffic in summary),
 //                  projects (to build), items ({ kind: n } owned at least), desks, airlines ({ code: routes })
-//   grants         projects the owner's grant may pay for
+//   grants         projects the owner's grant pays GRANT_SHARE of, by itself (Construction.grants)
 //   hands          the kinds of tray tasks the player does (stand, fuel, checkin, plough); a stage may set its own
 //   unlocks        the small builds (data/buildings.js) this mission teaches: in the campaign the bar's buy menu shows
 //                  them locked (🔒 "Opens in mission 2-6") in the missions before it, and the sim refuses them there

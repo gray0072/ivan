@@ -89,7 +89,7 @@ const Plan = {
     if (o.temps) People.temps(o.temps);
     if (o.train) People.train(o.train);
     if (o.summer) People.summer(o.summer);
-    if (o.project) { Construction.open(o.project); if (S.mission.projects.indexOf(o.project) < 0) S.mission.projects.push(o.project); }
+    if (o.project) { Construction.open(o.project); if (S.mission.projects.indexOf(o.project) < 0) S.mission.projects.push(o.project); Construction.grants(); }
     if (o.unlock) for (const d of Object.keys(o.unlock)) Missions.unlock(d, o.unlock[d]);
     if (o.routesOff) { const al = S.airlines[o.routesOff]; if (al) { al.routes = []; Meters.updateAirlines(); } }
     // session 4: a brand in a terminal, a route incentive (to court a new airline, or for one flying), a terminal for an

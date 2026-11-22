@@ -3,9 +3,9 @@
 // Arlanda Rising — building the master plan's projects in plan time. The player starts each stage when its
 // stages before are done (at most S.plan.crews at once), at a normal or a fast pace (faster and dearer),
 // buys a project's mods (a backup radio; heated winter tents only while winter work lies ahead in the mission and the
-// project is not finished: `modCannot`) and picks how it is paid (cash, a loan, or
-// the owner's grant where the mission offers one). Work is slower in December–February. Every day of work
-// is paid as it is done; a finished stage or project changes the airport (sim/airport.js `complete`).
+// project is not finished: `modCannot`). A project is paid from the cash (the player borrows in Finance); the owner's
+// grant pays GRANT_SHARE of a project the mission offers it for, by itself (`grants`), and a partner builds the train of a
+// concession with its own money. Work is slower in December–February. Every day of work is paid as it is done; a finished stage or project changes the airport (sim/airport.js `complete`).
 // The state of each project is S.airport.projects[id].
 
 const Construction = {
@@ -87,22 +87,15 @@ const Construction = {
     if (m.safety) { S.airport.safetyBase += m.safety; S.meters.safety = Math.min(100, S.meters.safety + m.safety); }
     return true;
   },
-  finance(id, how) {
-    const p = this.state(id);
-    if (!p || ['cash', 'loan', 'grant', 'partner'].indexOf(how) < 0) return false;
-    if (how === 'grant' && !(S.mission && S.mission.grants && S.mission.grants.indexOf(id) >= 0)) return false;
-    // a partner builds it with its own money (a concession: the train's ticket income is the partner's)
-    if (how === 'partner' && !(S.mission && (S.mission.partners || []).indexOf(id) >= 0)) return false;
-    if (p.finance === 'partner' && how !== 'partner') return false;
-    p.finance = how;
-    return true;
+  // the owner's grant on every project the running mission offers it for (data/missions `grants`), once the project is
+  // open; it stays with the project after the mission, as a partner's deal does
+  grants() {
+    for (const id of (S.mission && S.mission.grants) || []) { const p = this.state(id); if (p && p.finance !== 'partner') p.finance = 'grant'; }
   },
   pay(p, sum) {
     if (p.finance === 'partner') return;
     p.spent += sum;
     if (S.mission && S.mission.st) S.mission.st.built += sum;
-    // a loan up to the owner's limit (Finance.limit); what it cannot cover is paid in cash
-    if (p.finance === 'loan') { const lent = Math.min(sum, Finance.room()); S.loans += lent; if (sum > lent) Finance.book('construction', -(sum - lent)); return; }
     Finance.book('construction', -(p.finance === 'grant' ? sum * (1 - GRANT_SHARE) : sum));
   },
   // one day of work on every stage that is on

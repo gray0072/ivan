@@ -168,7 +168,7 @@ addMissions(5, [
     aim: 'Finish runway 3 before the winter, without spending more than you must.',
     news: [
       { icon: '🛬', text: 'Runway 3: a parallel runway. Arrivals and departures can then use a runway each.' },
-      { icon: '🏛️', text: 'The owner\'s grant can pay half of it (choose it in the plan).' }
+      { icon: '🏛️', text: 'The owner\'s grant pays half of it.' }
     ],
     facts: [
       { text: 'Building runway 3 began on 10 November 1998. It is 2 500 metres long, parallel to runway 1, about two kilometres east of it.', src: SRC_SV5 + '; SkyVector ESSA' }

@@ -34,7 +34,7 @@ const Hints = (() => {
     { id: 'announce', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'announce'), text: () => tr('A flight is late. Tell its passengers — they wait at the gate without knowing why.') },
     // session 4
     { id: 'security', when: () => S.ops && Terminal.lanes() && Passengers.secWait() > 10, text: () => tr('The security queue is {n} minutes. Every minute there is a minute less in the shops — a lane in the bar below helps.', { n: Math.round(Passengers.secWait()) }) },
-    { id: 'units', when: () => S.plan && S.airport.units && S.airport.units.some((u) => !u.brand && u.term !== 'kerb'), text: () => tr('Empty shop units earn nothing. Press T to choose real brands for them.') },
+    { id: 'units', when: () => S.plan && S.airport.units && S.airport.units.some((u) => !u.brand && u.term !== 'kerb'), text: () => tr('Empty shop units earn nothing. Open the Terminal view (🏪 in the plan, or T) and tap a unit to let it to a real shop or café.') },
     { id: 'leaving', when: () => S.airport.rivals && Object.keys(S.airlines).some((c) => S.airlines[c].mood < LEAVE_MOOD + 5 && Airlines.perDay(c) > 0), text: () => tr('An airline is unhappy and could move flights to a rival airport. Look in Airlines (A).') },
     // session 5
     { id: 'border', when: () => S.ops && Terminal.borderOn() && Passengers.borderWait() > 8, text: () => tr('A long queue at the passport booths. Open another booth with + in the bar below.') },

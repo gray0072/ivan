@@ -66,7 +66,9 @@ const Text = {
       case 'lastMonth': return tr('The last month earns at least {m}', { m: sek(n) });
       // session 4
       case 'securityWait': return tr('Security wait: at most {n} min', { n: this.num(n, 1) });
-      case 'brands': return tr('At least {n} units with a brand', { n });
+      // any unit of any terminal, the kerb's desks and Sky City's too (Terminal.brands): let in the Terminal view, in a
+      // plan stage or the Office
+      case 'brands': return tr('Let at least {n} units to real shops or cafés (🏪 Terminal view)', { n });
       case 'brandsIn': return tr('The brands earn at least {m}', { m: sek(n) });
       case 'mood': return tr('{al}: mood at least {n}', { al: (AIRLINES[c.code] || {}).name || c.code, n });
       case 'perDay': return tr('{al}: at least {n} flights a day', { al: (AIRLINES[c.code] || {}).name || c.code, n });
@@ -102,6 +104,8 @@ const Text = {
       case 'laidOff': return this.pct(v);
       case 'readiness': return Math.round(v) + ' %';
       case 'perDay': return this.num(v, 1);
+      // the units let of those the goal asks for: 2/4
+      case 'brands': return this.num(v, 0) + '/' + c.min;
       default: return this.num(v, 0);
     }
   },

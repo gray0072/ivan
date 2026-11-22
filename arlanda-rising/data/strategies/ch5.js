@@ -42,11 +42,10 @@ STRATEGIES['5-3'] = {
   ]
 };
 
-// Runway Three: the owner's grant, the paving at a fast pace before the winter, quieter windows in Upplands Väsby
+// Runway Three: the paving at a fast pace (the owner's grant pays half by itself) before the winter, quieter windows in Upplands Väsby
 STRATEGIES['5-4'] = {
   choices: { vasby: 'insulate' },
   moves: [
-    { stage: 0, at: 0, do: 'finance', project: 'runway3', how: 'grant' },
     { stage: 0, at: 0, do: 'start', project: 'runway3', part: 'strip', pace: 'fast' },
     { stage: 0, after: ['runway3', 'strip'], do: 'start', project: 'runway3', part: 'pave' },
     { stage: 0, after: ['runway3', 'pave'], do: 'start', project: 'runway3', part: 'lights' }
