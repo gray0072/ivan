@@ -9,13 +9,17 @@
 // earns and its profit a month and payback at today's departing passengers (Invest: the sim's own income rules), with
 // the same at twice the passengers, since the profit grows with the traffic. What cannot be bought says why in plain
 // words (its limit, no room, what it needs: Airport.why); what a later mission opens, or a later year, is listed under
-// 🔒 Later with that mission's number and name. A buy takes a second tap (BUY_CONFIRM_MS); a card the money does not
-// cover says by how much, with a button to Finance's loans. The sheet does not stop the time (as the bar's − / + do not):
+// 🔒 Later with that mission's number and name. A buy is one tap on the green Buy button (nothing is lost: it can only be
+// sold where selling exists, which takes two taps); what is bought one by one in numbers (data/buildings.js `bulk`: desks,
+// lanes, booths, trucks…) has +5 and +10 beside it (BUY_BULK), each with its total and disabled past the limit or the money
+// (Actions.buyMany: so many single buys). Every limit is a line on the card, "3 of 6: one per stand" (Text.capLine), and
+// at the limit the reason in amber with its explanation under it. A card the money does not cover says by how much, with a
+// button to Finance's loans. The sheet does not stop the time (as the bar's − / + do not):
 // ⏸ or Space does. ✕, Esc, the category's button again or a tap outside close it. Used by ui/toolbar.js and game.js.
 
 const BuyMenu = (() => {
   const cats = document.getElementById('tcats'), sheet = document.getElementById('buySheet');
-  let open = null, key = '', armed = null, armedAt = 0, pressing = false, seen = {};
+  let open = null, key = '', pressing = false, seen = {};
 
   const cat = (id) => BUY_MENU.find((c) => c.id === id);
   const earns = (b, kind) => !!(b.shop || b.places || b.rent || kind === 'solar');
@@ -62,7 +66,7 @@ const BuyMenu = (() => {
 
   function card(kind, nw) {
     const b = BUILDINGS[kind], why = Airport.why(kind), cap = Airport.cap(kind), n = Airport.owned(kind), m = Invest.whatIf(kind);
-    const conf = armed === kind, off = !!why, tip = Text.buyTip(kind);
+    const off = !!why, tip = Text.buyTip(kind);
     let h = '<div class="bcard' + (off ? ' off' : '') + '"' + (tip ? ' title="' + Text.esc(tip) + '"' : '') + '><div class="bTop"><span class="bIco">' + b.icon + '</span><div class="bName"><span><b>' + Text.esc(tr(b.name)) + '</b>' +
       (cap ? ' <em>' + n + '/' + cap.max + '</em>' : n ? ' <em>×' + n + '</em>' : '') + (nw.indexOf(kind) >= 0 ? ' <span class="bNew">' + Text.esc(tr('New')) + '</span>' : '') +
       '</span><small>' + Text.esc(tr(b.about)) + '</small></div></div>';
@@ -71,12 +75,16 @@ const BuyMenu = (() => {
     // the limit, as a line while there is room (amber once it is reached), the cells a shop takes, the car parks' need
     // (a phone shows no tooltip: at the limit the explanation is a line of its own)
     if (why) h += '<p class="bWhy">' + Text.esc(why.why === 'needs' ? Text.needWhy(why.need) : Text.buyWhy(kind)) + '</p>' + (why.why === 'full' && tip ? '<p class="bNote">' + Text.esc(tip) + '</p>' : '');
-    else if (cap) h += '<p class="bNote">' + Text.esc(cap.why === 'hall' ? tr('Room for {n} more in the halls', { n: cap.max - n }) : Text.capWhy(cap)) + '</p>';
-    else if (b.cells) h += '<p class="bNote">' + Text.esc(tr('Takes {cells} in a terminal', { cells: Text.cells(b.cells) })) + '</p>';
+    else h += '<p class="bNote">' + Text.esc(Text.capLine(kind)) + '</p>';
     if (!why) {
       const short = b.price - S.money;
       if (short > 0) h += '<p class="bShort">' + Text.esc(tr('Not enough money: {m} short', { m: sek(short) })) + '</p>';
-      h += '<div class="bActs"><button class="tb buyBtn' + (conf ? ' confirm' : '') + '" data-buy="' + kind + '">' + Text.esc(conf ? tr('Tap again to buy') : tr('Buy') + ' · ' + sek(b.price)) + '</button>' +
+      // +5 / +10 for what is bought in numbers: shown while the limit leaves room for them, disabled when the money does not cover them
+      // (and up to the limit, +4, when fewer than the biggest are left: the last passport booths, the last fuel trucks)
+      const room = cap ? cap.max - n : Infinity, sizes = BUY_BULK.filter((k) => k <= room);
+      if (room > 1 && room < BUY_BULK[BUY_BULK.length - 1] && sizes.indexOf(room) < 0) sizes.push(room);
+      const bulk = b.bulk ? sizes.map((k) => '<button class="tb buyBtn bulk" data-buy="' + kind + '" data-n="' + k + '"' + (b.price * k > S.money ? ' disabled' : '') + '>+' + k + ' · ' + Text.esc(sekBare(b.price * k)) + '</button>').join('') : '';
+      h += '<div class="bActs"><button class="tb buyBtn" data-buy="' + kind + '">' + Text.esc(tr('Buy') + ' · ' + sek(b.price)) + '</button>' + bulk +
         (short > 0 ? '<button class="tb finBtn" data-fin="1">💰 ' + Text.esc(tr('Borrow in Finance')) + '</button>' : '') + '</div>';
     }
     return h + '</div>';
@@ -98,14 +106,15 @@ const BuyMenu = (() => {
     const locked = c.items.filter((k) => buyable.indexOf(k) < 0).sort((x, y) => opensAt(x) - opensAt(y));
     const pax = Invest.paxDay();
     // what changes a card: the money against each price, the counts, the day against the plan's end, the traffic
-    const k = [open, armed, I18N.lang, Settings.short() ? 1 : 0, !!S.ops, Calendar.year(), S.mission.id, paxRound(pax), S.airport.items.length, S.airport.stands.length, S.airport.desks,
+    const k = [open, I18N.lang, Settings.short() ? 1 : 0, !!S.ops, Calendar.year(), S.mission.id, paxRound(pax), S.airport.items.length, S.airport.stands.length, S.airport.desks,
       JSON.stringify((S.plan && S.plan.buys) || []), c.items.map((x) => (Airport.why(x) || {}).why + (S.money >= BUILDINGS[x].price ? '' : Math.round((BUILDINGS[x].price - S.money) / 1e5)) +
-        (S.plan && S.day + (BUILDINGS[x].days || 0) >= S.plan.end ? 'e' : '')).join(), Airport.places(true), Airport.parkingNeed(), S.airport.lanes, S.airport.booths].join('|');
+        (S.plan && S.day + (BUILDINGS[x].days || 0) >= S.plan.end ? 'e' : '')).join(), Airport.places(true), Airport.parkingNeed(), S.airport.lanes, S.airport.booths, Math.floor(S.money / 1e5)].join('|');
     sheet.hidden = false;
     if (k === key || pressing) return;
     key = k;
-    const focus = document.activeElement && sheet.contains(document.activeElement) ? document.activeElement.dataset.buy || document.activeElement.dataset.tab || null : null;
-    // the list keeps its place when a card changes under the finger (a buy armed, a price now covered)
+    const fe = document.activeElement && sheet.contains(document.activeElement) ? document.activeElement : null;
+    const focus = fe && (fe.dataset.buy ? '[data-buy="' + fe.dataset.buy + '"]' + (fe.dataset.n ? '[data-n="' + fe.dataset.n + '"]' : ':not([data-n])') : fe.dataset.tab ? '[data-tab="' + fe.dataset.tab + '"]' : null);
+    // the list keeps its place when a card changes under the finger (a buy made, a price now covered)
     const body = sheet.querySelector('.shBody'), top = body && sheet.dataset.cat === open ? body.scrollTop : 0;
     let h = '<div class="shHead"><div class="shTabs" role="tablist">' + BUY_MENU.map((x) => '<button class="shTab' + (x.id === open ? ' on' : '') + '" role="tab" aria-selected="' + (x.id === open) + '" data-tab="' + x.id + '">' + x.icon + ' ' + Text.esc(tr(x.name)) + '</button>').join('') +
       '</div><button class="x" aria-label="' + Text.esc(tr('Close')) + '">✕</button></div><div class="shBody">';
@@ -123,7 +132,7 @@ const BuyMenu = (() => {
     sheet.innerHTML = h + '</div>';
     sheet.dataset.cat = open;
     if (top) sheet.querySelector('.shBody').scrollTop = top;
-    if (focus) { const el = sheet.querySelector('[data-buy="' + focus + '"],[data-tab="' + focus + '"]'); if (el) el.focus({ preventScroll: true }); }
+    if (focus) { const el = sheet.querySelector(focus); if (el && !el.disabled) el.focus({ preventScroll: true }); }
   }
 
   function render() {
@@ -136,11 +145,11 @@ const BuyMenu = (() => {
   }
 
   function show(id) {
-    open = id; key = ''; armed = null;
+    open = id; key = '';
     if (S && S.mission) seen[seenKey(id)] = true;
     render();
   }
-  function close() { open = null; key = ''; armed = null; sheet.hidden = true; cats.dataset.k = ''; }
+  function close() { open = null; key = ''; sheet.hidden = true; cats.dataset.k = ''; }
   function toggle(id) { if (open === id) close(); else show(id); cats.dataset.k = ''; }
 
   cats.addEventListener('click', (e) => {
@@ -161,11 +170,13 @@ const BuyMenu = (() => {
     if (btn.dataset.fin) { Game.openPanel('finance'); return; }
     const kind = btn.dataset.buy;
     if (!kind) return;
-    if (armed === kind && performance.now() - armedAt < BUY_CONFIRM_MS) {
-      armed = null;
-      if (Actions.buy(kind)) { Game.banner(tr('Bought: {what}', { what: tr(BUILDINGS[kind].name) })); Sfx.play('coins'); }
-      Game.acted();
-    } else { armed = kind; armedAt = performance.now(); setTimeout(() => { if (armed === kind) { armed = null; key = ''; } }, BUY_CONFIRM_MS); }
+    // one tap buys: one, or the +5 / +10 of a bulk button (each a single buy of the sim, stopping at the limit)
+    const got = btn.dataset.n ? Actions.buyMany(kind, +btn.dataset.n) : Actions.buy(kind) ? 1 : 0;
+    if (got) {
+      Game.banner(got > 1 ? tr('Bought: {what} ×{n}', { what: tr(BUILDINGS[kind].name), n: got }) : tr('Bought: {what}', { what: tr(BUILDINGS[kind].name) }));
+      Sfx.play('coins');
+    } else Sfx.play('sad');
+    Game.acted();
     key = '';
   });
   // a tap anywhere else closes the sheet (not on the screens over the game: Finance opened from a card keeps it open)

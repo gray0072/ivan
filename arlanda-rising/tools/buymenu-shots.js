@@ -2,8 +2,9 @@
 // on a narrow phone held upright (360 × 780), a phone held upright (390 × 844), a phone on its side (844 × 390) and a
 // computer (1280 × 720) it plays 1-8 (Make It Pay, spring 1961) by its reference strategy into its first plan stage and
 // opens each category — Services with the passengers a day, the shop cells, the car parks and the cards' profit and
-// payback, Vehicles with the crash tender locked ("Opens in mission 2-6"), Build —, arms a café (its first tap) and shows
-// the sheet scrolled to its end; then 2-6 (Fire Category, 1971) in its plan stage — the crash tender new and open — and
+// payback, Vehicles with the crash tender locked ("Opens in mission 2-6"), Build —, buys a café (one tap) and shows
+// the sheet scrolled to its end, then buys check-in desks with +5 (the limit line "n of max: room for k more in the
+// check-in halls" before and after); then 2-6 (Fire Category, 1971) in its plan stage — the crash tender new and open — and
 // 2-5 (Jumbo!) in its ops stage, the bar's live part beside the three buttons. Each shot is followed by what overflows its
 // box or the screen (OVERFLOW <size> <shot>: …, none expected) and the cards' state (name, the reason it cannot be
 // bought). The language is English, or ARLANDA_LANG's (ru, sv).
@@ -77,10 +78,20 @@ module.exports = async (h) => {
       await look('2-' + c);
     }
     await press('#buySheet [data-tab="services"]');
-    await press('#buySheet [data-buy="cafe"]');
-    await look('3-cafe-armed');
+    await press('#buySheet [data-buy="cafe"]:not([data-n])');
+    h.log('café bought', await h.ev(`S.plan.buys.filter((b) => b.kind === 'cafe').length`));
+    await look('3-cafe-bought');
     await h.ev(`(() => { const b = document.querySelector('#buySheet .shBody'); b.scrollTop = b.scrollHeight; return 1; })()`);
     await look('4-services-end');
+    await press('#buySheet [data-tab="build"]');
+    const desks = `Airport.owned('desk') + '/' + Airport.cap('desk').max + ' · ' + [...document.querySelectorAll('#buySheet .bcard')].filter((c) => c.querySelector('[data-buy="desk"]')).map((c) => c.querySelector('.bNote').textContent + ' · ' + [...c.querySelectorAll('.bActs button')].map((b) => b.textContent + (b.disabled ? ' (off)' : '')).join(' | '))`;
+    // enough money for +5 (the café took most of 1-8's): a test of the buttons, not of the mission
+    await h.ev(`S.money = Math.max(S.money, 2e6); 1`);
+    await h.sleep(400);
+    h.log('desks', await h.ev(desks));
+    await press('#buySheet [data-buy="desk"][data-n="5"]');
+    h.log('desks +5', await h.ev(desks));
+    await look('4b-desks-bulk');
     await press('#buySheet .x');
     h.log('closed', await h.ev(`document.getElementById('buySheet').hidden`));
     h.log(name, await h.ev(run('2-6', 'S.plan && S.day >= S.plan.day0 + 1')));

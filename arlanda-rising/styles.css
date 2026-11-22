@@ -167,8 +167,9 @@ ul.shInfo li { padding: 1px 0; }
 .bShort { color: #ffb4a8; font-size: 12.5px; }
 .bActs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
 .bActs .tb { min-height: 38px; padding: 4px 14px; }
-.buyBtn { font-weight: 600; background: rgba(255,176,0,0.16); border-color: rgba(255,176,0,0.55); }
-.buyBtn.confirm { background: var(--ok); border-color: var(--ok); color: #10301a; }
+/* .tb.: the later .tb rule would win over a single class */
+.tb.buyBtn { font-weight: 600; background: var(--ok); border-color: var(--ok); color: #10301a; }
+.tb.buyBtn.bulk { background: rgba(94,224,122,0.16); border-color: rgba(94,224,122,0.6); color: inherit; }
 .bNone { color: var(--dim); margin: 6px 0; }
 .shLater { margin: 12px 0 4px; color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
 ul.later { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 3px 10px; font-size: 12.5px; }

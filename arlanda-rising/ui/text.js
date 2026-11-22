@@ -296,15 +296,47 @@ const Text = {
       case 'stand': return tr('Max: one per stand');
       case 'runway': return tr('Max: a convoy per runway');
       case 'hall': return tr('Max: the halls are full');
+      case 'checkpoint': return tr('Max: the security checkpoints are full');
+      case 'border': return tr('Max: the passport hall is full');
       case 'remote': return tr('Max: {n} remote stands', { n: cap.max });
     }
     return tr('Max: fire category {n}', { n: cap.n });
+  },
+  // the limit while there is room, as the buy menu's card says it: how many of how many, and why it stops there
+  // ("3 of 6: one per stand"); a thing with no limit says so; a shop the cells it takes and those free, a car park the
+  // places against those needed
+  capLine(kind) {
+    const b = BUILDINGS[kind] || {}, cap = Airport.cap(kind), n = Airport.owned(kind);
+    if (!cap) {
+      if (b.cells) return tr('Takes {cells} in a terminal', { cells: this.cells(b.cells) }) + ' · ' + tr('{free} of {max} free', { free: Airport.cellsMax() - Airport.cellsTaken(), max: Airport.cellsMax() });
+      if (b.places) return tr('Car parks') + ': ' + this.parkingLine();
+      return tr('No limit');
+    }
+    const of = tr('{n} of {max}', { n, max: cap.max }), more = cap.max - n;
+    let why;
+    switch (cap.why) {
+      case 'stand': why = tr('one per stand ({n} stands)', { n: cap.n }); break;
+      case 'runway': why = tr('a convoy of {c} per runway ({n} runways)', { c: PLOUGH_CONVOY, n: cap.n }); break;
+      case 'fire': why = tr('each raises the fire category by one, up to {top}', { top: FIRE_CAT_MAX }); break;
+      case 'hall': why = tr('room for {n} more in the check-in halls', { n: more }); break;
+      case 'checkpoint': why = tr('room for {n} more at the security checkpoints', { n: more }); break;
+      case 'border': why = tr('room for {n} more in the passport hall', { n: more }); break;
+      case 'remote': why = tr('their row has room for {n}', { n: cap.max }); break;
+      case 'charger': why = tr('one on each stand that fits'); break;
+      default:
+        if (cap.max === 1) return tr('One is enough');
+        why = kind === 'solar' ? tr('the green rating counts two') : kind === 'cargoStand' ? tr('the cargo apron has room for {n}', { n: cap.max }) : '';
+    }
+    return why ? of + ': ' + why : of;
   },
   capTip(kind, cap) {
     if (kind === 'fuelTruck') return tr('An aircraft takes one fuel truck at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
     if (kind === 'deicer') return tr('An aircraft takes one de-icing truck at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
     if (kind === 'plough') return tr('A convoy of {c} ploughs sweeps a runway; with a convoy for each runway they all sweep at once ({n} runways).', { c: PLOUGH_CONVOY, n: cap.n });
+    if (kind === 'mcharger') return tr('A mobile charger charges one aircraft at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
     if (kind === 'desk') return tr('The check-in halls of the terminals standing have room for {max} desks. A new terminal brings more room.', { max: cap.max });
+    if (kind === 'lane') return tr('The security checkpoints of the terminals standing have room for {max} lanes. A new terminal brings more room.', { max: cap.max });
+    if (kind === 'booth') return tr('The passport hall has room for {max} booths.', { max: cap.max });
     if (kind === 'solar') return tr('The green rating counts two solar parks at most.');
     if (kind === 'cargoStand') return tr('The cargo apron has room for {max} stands.', { max: cap.max });
     if (kind === 'charger') return tr('A charger goes on a stand near the terminal, up to size code D: {n} of them have none yet.', { n: Airport.chargeable().length });

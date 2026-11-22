@@ -50,6 +50,9 @@ const Actions = {
   },
   // an own shop sold back to free its cells in the terminal (by its item id, or the last bought of a kind)
   sell(what) { return Airport.sell(what); },
+  // the buy menu's +5 / +10: as many single buys, each checked and paid as one (Actions.buy); stops at the first refused
+  // (the limit reached); returns how many were bought
+  buyMany(kind, n) { let k = 0; while (k < n && this.buy(kind)) k++; return k; },
   start(project, stage, pace) { return !!S.plan && Construction.start(project, stage, pace); },
   pace(project, stage, pace) { return Construction.pace(project, stage, pace); },
   mod(project, mod) { return Construction.mod(project, mod); },

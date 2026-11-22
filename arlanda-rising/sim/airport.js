@@ -3,8 +3,8 @@
 // Arlanda Rising — the airport itself: what is built (S.airport.items), the runways and the stands, what
 // finishing a master-plan project does (`complete`), the small builds bought during a mission (`buy`), and
 // the numbers the rest of the sim asks for — runway separation, fuel trucks, ploughs, the most of a thing worth
-// having (`cap`: no more can be bought past it — a vehicle, the check-in desks the halls have room for, the remote
-// stands, a kind's own `max`), why a small build cannot be bought now (`why`: its year, a later mission, what it needs, its
+// having (`cap`: no more can be bought past it — a vehicle, the check-in desks the halls have room for, the security
+// lanes the checkpoints have room for, the passport booths, the remote stands, a kind's own `max`), why a small build cannot be bought now (`why`: its year, a later mission, what it needs, its
 // limit), the airport's own shops in the terminals' cells (bought into a terminal with room, sold back: `sell`) and their
 // share, the car parks' places against those the drivers need and what they take, the monthly running cost of
 // everything the airport owns.
@@ -128,10 +128,11 @@ const Airport = {
   },
   // the things past which one more cannot be bought: { max, why, n } (n what the limit counts: stands, runways, the top
   // fire category, the terminals' halls), or null for no limit — a fuel or a de-icing truck for each stand (an aircraft
-  // takes one at a time), a full plough convoy for each runway (the convoys sweep at the same time), crash tenders up to
-  // the top fire category, the check-in desks the halls of the terminals standing have room for (deskRoom), the remote
-  // stands their row has room for (REMOTE_STANDS_MAX), a charger for each stand near the terminal that fits one, and a
-  // kind's own `max` (data/buildings.js: one generator, two solar parks, five cargo stands…). ui/text.js capWhy and
+  // takes one at a time; a mobile charger the same), a full plough convoy for each runway (the convoys sweep at the same
+  // time), crash tenders up to the top fire category, the check-in desks the halls of the terminals standing have room for
+  // (deskRoom), the security lanes their checkpoints have room for (laneRoom), the passport booths the passport hall has
+  // room for (BOOTH_ROOM), the remote stands their row has room for (REMOTE_STANDS_MAX), a charger for each stand near the
+  // terminal that fits one, and a kind's own `max` (data/buildings.js: one generator, two solar parks, five cargo stands…). ui/text.js capWhy and
   // capTip say why.
   cap(kind) {
     const stands = S.airport.stands.length, runways = Math.max(1, S.airport.runways.length);
@@ -139,9 +140,12 @@ const Airport = {
     if (kind === 'charger') return { max: this.count('charger') + this.chargeable().length, why: 'charger', n: 0 };
     if (kind === 'fuelTruck') return { max: Math.max(1, stands * FUEL_TRUCKS_PER_STAND), why: 'stand', n: stands };
     if (kind === 'deicer') return { max: Math.max(1, stands * DEICERS_PER_STAND), why: 'stand', n: stands };
+    if (kind === 'mcharger') return { max: Math.max(1, stands), why: 'stand', n: stands };
     if (kind === 'plough') return { max: runways * PLOUGH_CONVOY, why: 'runway', n: runways };
     if (kind === 'crashTender') return { max: FIRE_CAT_MAX - FIRE_CAT_BASE, why: 'fire', n: FIRE_CAT_MAX };
     if (kind === 'desk') { const h = this.deskHalls(); return { max: this.deskRoom(), why: 'hall', n: h.length }; }
+    if (kind === 'lane') return { max: this.laneRoom(), why: 'checkpoint', n: this.laneTerms().length };
+    if (kind === 'booth') return { max: BOOTH_ROOM, why: 'border', n: BOOTH_ROOM };
     if (kind === 'stand') return { max: REMOTE_STANDS_MAX, why: 'remote', n: REMOTE_STANDS_MAX };
     return null;
   },
@@ -149,10 +153,13 @@ const Airport = {
   // it is torn down (2017), and the desks they have room for together
   deskHalls() { return TERMINAL_ORDER.filter((t) => TERMINALS[t].desks && Terminal.built(t === 't1' ? 'kerb' : t)); },
   deskRoom() { return this.deskHalls().reduce((s, t) => s + TERMINALS[t].desks, 0); },
-  // how many of a kind the airport has, with those bought in plan time and not delivered yet (the desks: every desk, the
-  // terminals' own too)
+  // the terminals standing with a security checkpoint (data/terminals.js `lanes`), and the lanes they have room for
+  laneTerms() { return TERMINAL_ORDER.filter((t) => TERMINALS[t].lanes && Terminal.built(t)); },
+  laneRoom() { return this.laneTerms().reduce((s, t) => s + TERMINALS[t].lanes, 0); },
+  // how many of a kind the airport has, with those bought in plan time and not delivered yet (the desks, the lanes and the
+  // booths: every one, those a project or a mission brought too)
   owned(kind) {
-    const n = kind === 'desk' ? S.airport.desks : this.count(kind);
+    const n = kind === 'desk' ? S.airport.desks : kind === 'lane' ? S.airport.lanes || 0 : kind === 'booth' ? S.airport.booths || 0 : this.count(kind);
     return n + ((S.plan && S.plan.buys) || []).filter((b) => b.kind === kind).length;
   },
   // nothing more of it can be bought: at its limit (cap), no terminal has the cells for a shop, or the car parks' places

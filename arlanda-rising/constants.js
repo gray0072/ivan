@@ -156,7 +156,8 @@ const KEY_PAN = 700;               // screen px per second the arrow keys pan
 const HINT_GAP = 25;               // real s at least between two of Kaj's hints
 const HINT_REPEAT = 3;             // times one hint is shown at most (Settings: Short shows each once)
 const BANNER_MS = 2600;            // ms a banner stays
-const BUY_CONFIRM_MS = 2500;       // ms a buy button waits for its second tap
+const SELL_CONFIRM_MS = 2500;      // ms a Sell button (a shop's, on its terminal's card) waits for its second tap; a buy takes one tap
+const BUY_BULK = [5, 10];          // the buy menu's bulk buttons (+5, +10; the rest up to the limit when fewer are left) on the cards of what is bought one by one (data/buildings.js `bulk`)
 const GUIDED_MISSIONS = ['1-1', '1-2', '1-3']; // missions with the guiding finger
 
 // ---------- people, unions and managers (session 3, sim/people.js) ----------
@@ -266,6 +267,7 @@ const SCHENGEN_DAY = '2001-03-25'; // Sweden's first day in the Schengen area: p
 const BOOTH_RATE = 2.2;            // passengers through one passport booth a game minute
 const BORDER_TASK_WAIT = 8;        // minutes of queue at the border that make the "open a booth" task
 const BOOTH_MONTH = 15000;         // SEK a month per booth: the airport pays the space, Polisen the officers
+const BOOTH_ROOM = 12;             // passport booths the passport hall has room for (Airport.cap): 6 come with it, 10 at most in the campaign
 const EGATE_X = 1.8;               // × a booth's passengers with the e-gates working
 const SEC_RULE_X = [1, 0.78, 0.68]; // × LANE_RATE by the rules of the day: before 2001, after 2001, liquids in bags (2006)
 const CT_X = 1.45;                 // × the lane's rate with CT scanners (liquids and laptops stay in the bag), from the 2001 rules

@@ -11,6 +11,7 @@
 //   icon     the sign before its name (the buy menu, the plan panel, the cards)
 //   about    what it does, in a line (the buy menu's card)
 //   max      the most worth having (Airport.cap): one more is refused
+//   bulk     bought one by one in numbers (desks, lanes, booths, trucks…): the buy menu's card has +5 and +10 too (BUY_BULK)
 //   needs    what must be there before it can be bought (Airport.needs): kerb (a terminal's check-in hall), intl (the
 //            international terminal), security (the security checkpoint), deice (de-icing as a domain), border
 //            (passport control), green (the green rating), cargo (Cargo City)
@@ -33,11 +34,11 @@ const BUILDINGS = {
   lights: { name: 'Runway lights', price: 0, staff: 2 },
   stand: { name: 'Remote stand', price: 4e6, staff: 0, small: true, days: 12, from: 1959, icon: '🅿️',
     about: 'A stand away from the terminal for an aircraft up to a Boeing 737: the passengers walk out to it.' },
-  fuelTruck: { name: 'Fuel truck', price: 1.2e6, staff: 2, small: true, days: 0, from: 1959, icon: '⛽',
+  fuelTruck: { name: 'Fuel truck', price: 1.2e6, staff: 2, small: true, days: 0, from: 1959, icon: '⛽', bulk: true,
     about: 'Fuels one aircraft at a time at its stand.' },
-  plough: { name: 'Snowplough', price: 1.6e6, staff: 2, small: true, days: 0, from: 1959, icon: '🚜',
+  plough: { name: 'Snowplough', price: 1.6e6, staff: 2, small: true, days: 0, from: 1959, icon: '🚜', bulk: true,
     about: 'Sweeps the snow off a runway, in a convoy with the others.' },
-  desk: { name: 'Check-in desk', price: 0.15e6, staff: 1, small: true, days: 2, from: 1960, icon: '🧳', needs: 'kerb',
+  desk: { name: 'Check-in desk', price: 0.15e6, staff: 1, small: true, days: 2, from: 1960, icon: '🧳', needs: 'kerb', bulk: true,
     about: 'Checks in the passengers. An open desk costs wages by the hour.' },
   kiosk: { name: 'Kiosk', price: 0.6e6, staff: 0, small: true, days: 10, from: 1960, shop: 0.5, cells: 1, icon: '🏪',
     about: 'A small shop: earns from every departing passenger with time to spare.' },
@@ -66,16 +67,16 @@ const BUILDINGS = {
   bagHall: { name: 'The baggage hall', price: 0, staff: 2 },
   computerRoom: { name: 'The computer room', price: 0, staff: 0 },
   // session 4: chapter 4
-  lane: { name: 'Security lane', price: 2.5e6, staff: 0, small: true, days: 10, from: 1970, lane: true, icon: '🛂', needs: 'security',
+  lane: { name: 'Security lane', price: 2.5e6, staff: 0, small: true, days: 10, from: 1970, lane: true, icon: '🛂', needs: 'security', bulk: true,
     about: 'More passengers through security at once. Each lane costs every month.' },
   terminal2: { name: 'Terminal 2', price: 0, staff: 30 },
   terminal3: { name: 'The regional terminal', price: 0, staff: 8 },
   railStation: { name: 'The Arlanda Express stations', price: 0, staff: 4 },
   sorterHall: { name: 'The sorting hall', price: 0, staff: 2 },
   // session 5: chapters 5 and 6 — `rent`: SEK a month the airport earns from it (real estate), `booth`: a passport booth
-  deicer: { name: 'De-icing truck', price: 2.5e6, staff: 2, small: true, days: 0, from: 1960, icon: '🧊', needs: 'deice',
+  deicer: { name: 'De-icing truck', price: 2.5e6, staff: 2, small: true, days: 0, from: 1960, icon: '🧊', needs: 'deice', bulk: true,
     about: 'De-ices one departure at a time when it freezes.' },
-  booth: { name: 'Passport booth', price: 1.5e6, staff: 0, small: true, days: 10, from: 2001, booth: true, icon: '🛃', needs: 'border',
+  booth: { name: 'Passport booth', price: 1.5e6, staff: 0, small: true, days: 10, from: 2001, booth: true, icon: '🛃', needs: 'border', bulk: true,
     about: 'Shorter queues at passport control.' },
   offices: { name: 'Office building', price: 90e6, staff: 0, small: true, days: 60, from: 2000, rent: 0.75e6, icon: '🏢',
     about: 'Companies rent its floors: the same rent every month.' },
@@ -107,9 +108,9 @@ const BUILDINGS = {
     // its places, nose east to Cargo City's halls (data/layout.js cargoApron); `max` is as many
     spots: [[905, 440], [905, 510], [905, 580], [905, 650], [905, 720]],
     about: 'A big stand by Cargo City, kept for the freighters.' },
-  charger: { name: 'Charging stand', price: 8e6, staff: 0, small: true, days: 14, from: 2028, icon: '🔋',
+  charger: { name: 'Charging stand', price: 8e6, staff: 0, small: true, days: 14, from: 2028, icon: '🔋', bulk: true,
     about: 'A stand near the terminal that charges electric aircraft by itself; a better green rating.' },
-  mcharger: { name: 'Mobile charger', price: 2e6, staff: 1, small: true, days: 0, from: 2028, icon: '🚐',
+  mcharger: { name: 'Mobile charger', price: 2e6, staff: 1, small: true, days: 0, from: 2028, icon: '🚐', bulk: true,
     about: 'Charges one electric aircraft at a time at its stand.' },
   h2depot: { name: 'Hydrogen depot', price: 90e6, staff: 3, small: true, days: 40, from: 2033, icon: '🧪', max: 1,
     about: 'Hydrogen for the aircraft that fly on it: without it they cannot come.' },

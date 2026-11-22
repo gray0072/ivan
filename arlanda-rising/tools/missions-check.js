@@ -10,8 +10,9 @@
 //   - the previous chapter's exam strategy gets ★★★ (each chapter needs its new ideas);
 //   - a Real Arlanda medal is out of the reference's reach on every difficulty;
 //   - a mission is longer than MISSION_MINUTES_MAX or a stage longer than STAGE_MINUTES_MAX at ▶;
-//   - a mission starts with more check-in desks than the halls have room for, or more remote stands than their row
-//     (Airport.cap: the limits the buy menu shows);
+//   - a mission starts with more check-in desks than the halls have room for, more security lanes than the checkpoints,
+//     more passport booths than the passport hall or more remote stands than their row (Airport.cap: the limits the buy
+//     menu shows);
 //   - a goal about something to add (built, fireCat, chargers, estate, runways, brands — not one marked `keep`) is
 //     already met when its mission starts: bought ahead, it would end its stage at once (data/missions `unlocks` keeps
 //     such things locked until their mission);
@@ -71,8 +72,8 @@ const out = vm.runInContext(`(() => {
   function play(id, d, world, strat, cutAt, def) {
     Missions.start(id, d, world, def);
     // what the mission starts with stays within the limits the player sees (Airport.cap): the desks the halls have
-    // room for, the remote stands
-    const over = ['desk', 'stand'].filter((k) => Airport.owned(k) > Airport.cap(k).max).map((k) => k + ' ' + Airport.owned(k) + '/' + Airport.cap(k).max);
+    // room for, the lanes the checkpoints have, the booths, the remote stands
+    const over = ['desk', 'lane', 'booth', 'stand'].filter((k) => Airport.owned(k) > Airport.cap(k).max).map((k) => k + ' ' + Airport.owned(k) + '/' + Airport.cap(k).max);
     // a goal about something to add — a build, the fire category, chargers, rent, runways, brands — is not met before the
     // mission starts (else what was bought ahead would end its stage at once); \`keep: true\` marks a goal to keep what is there
     const st0 = Goals.newStats(), md = Missions.def(), early = [];

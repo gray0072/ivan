@@ -67,10 +67,10 @@ const Toolbar = (() => {
         ['01', '19'].map((d) => '<button class="tb' + (p[1].slice(0, 2) === d ? ' on' : '') + '" data-act="dir" data-d="' + d + '">' + d + '<small>' + Text.esc(Text.dirOver(d)) + '</small></button>').join('') + '</div>';
       else if (p[0] === 'sec') html += '<div class="tgroup' + (p[1] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛂 ' + Text.esc(tr('Security {n} min · {l} lanes', { n: Math.round(p[1]), l: p[2] })) + '</span>' +
         '<button class="tb small" data-act="tview" title="' + Text.esc(tr('Terminal view (T)')) + '">🏪</button></div>';
-      else if (p[0] === 'lanes') html += '<div class="tgroup' + (p[3] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛂 ' + Text.esc(tr('Lanes')) + ' <b>' + p[1] + '/' + p[2] + '</b> · ' +
+      else if (p[0] === 'lanes') html += '<div class="tgroup' + (p[3] >= 10 ? ' warnGroup' : '') + '"><span class="tl" title="' + Text.esc(tr('Lanes open of those that can open now (each needs its screeners). More lanes are bought under Build, at the right of this bar, up to the room at the checkpoints.')) + '">🛂 ' + Text.esc(tr('Lanes')) + ' <b>' + p[1] + '/' + p[2] + '</b> · ' +
         Text.esc(tr('{n} min', { n: Math.round(p[3]) })) + runLine(p[4]) + '</span><button class="tb small" data-act="laneMinus"' + (p[1] <= 1 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="lanePlus"' +
         (p[1] >= p[2] ? ' disabled' : '') + '>+</button></div>';
-      else if (p[0] === 'booths') html += '<div class="tgroup' + (p[3] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛃 ' + Text.esc(tr('Booths')) + ' <b>' + p[1] + '/' + p[2] + '</b> · ' +
+      else if (p[0] === 'booths') html += '<div class="tgroup' + (p[3] >= 10 ? ' warnGroup' : '') + '"><span class="tl" title="' + Text.esc(tr('Booths open of those there are. More booths are bought under Build, at the right of this bar, up to the room in the passport hall.')) + '">🛃 ' + Text.esc(tr('Booths')) + ' <b>' + p[1] + '/' + p[2] + '</b> · ' +
         Text.esc(tr('{n} min', { n: Math.round(Math.min(99, p[3])) })) + runLine(p[4]) + '</span><button class="tb small" data-act="boothMinus"' + (p[1] <= 0 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="boothPlus"' +
         (p[1] >= p[2] ? ' disabled' : '') + '>+</button></div>';
       else if (p[0] === 'down') html += '<div class="tgroup warnGroup"><span class="tl">⚠️ ' + Text.esc(tr('{sys} is down: {n} min', { sys: Text.level(p[1], S.domains[p[1]]), n: p[2] })) + '</span></div>';

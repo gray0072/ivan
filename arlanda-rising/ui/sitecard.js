@@ -239,11 +239,11 @@ const SiteCard = (() => {
     if (!b) return;
     const id = +b.dataset.sell;
     Sfx.play('click');
-    if (armed === id && performance.now() - armedAt < BUY_CONFIRM_MS) {
+    if (armed === id && performance.now() - armedAt < SELL_CONFIRM_MS) {
       armed = null;
       const it = S.airport.items.find((x) => x.id === id), m = it ? Airport.sellPrice(it) : 0;
       if (it && Actions.sell(id)) { Game.banner(tr('Sold: {what}, +{m}', { what: tr(BUILDINGS[it.kind].name), m: sek(m) })); Sfx.play('coins'); }
-    } else { armed = id; armedAt = performance.now(); setTimeout(() => { if (armed === id) armed = null; }, BUY_CONFIRM_MS); }
+    } else { armed = id; armedAt = performance.now(); setTimeout(() => { if (armed === id) armed = null; }, SELL_CONFIRM_MS); }
     Game.acted();
     render();
   });

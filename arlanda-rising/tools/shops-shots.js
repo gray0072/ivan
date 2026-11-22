@@ -3,7 +3,7 @@
 // gives the airport two cafés and two kiosks (the first terminal's six cells full), and shoots the terminal with the roofs
 // on (an awning per shop, the Services sheet's cells), with the roofs off (the shops in their cells), its card (Shops: 6 / 6
 // cells, a Sell button each); then sells both kiosks by tapping Sell twice each, buys a café in their place from the
-// bar's Services (its Buy tapped twice) and shoots the card with the café being fitted, and the cells once it is open. Then 4-4 (Duty
+// bar's Services (its Buy tapped once) and shoots the card with the café being fitted, and the cells once it is open. Then 4-4 (Duty
 // Free, 1995) into its last stage: the international terminal cut away with its duty-free shop in its cells beside the
 // brands' units, and its card. Each line printed says what it checked; a card's title "hidden" is a failure.
 //
@@ -83,7 +83,7 @@ module.exports = async (h) => {
     await h.sleep(300);
     await h.ev(`BuyMenu.show('services'); 1`);
     await h.sleep(200);
-    await pressEl('#buySheet [data-buy="cafe"]'); await pressEl('#buySheet [data-buy="cafe"]');
+    await pressEl('#buySheet [data-buy="cafe"]:not([data-n])');
     await h.ev(`BuyMenu.close(); 1`);
     await h.sleep(500);
     h.log('café bought', await h.ev(cells), '· money', await h.ev(`Math.round(S.money / 1e5) / 10`));
