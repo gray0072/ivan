@@ -15,7 +15,7 @@ const METERS = [
 // the decisions a flag goal waits for, as shown (data/missions: `{ k: 'flag', id }`)
 const FLAG_NAMES = {
   trainChosen: 'Decide who builds the train', lowFareAnswered: 'Answer the low-fare question',
-  targetSet: 'Answer the owner\'s target', strandedHelped: 'Look after the stranded passengers',
+  targetSet: 'Answer the owner\'s target', kidsUnit: 'Open something for the children', y2kTested: 'Get every system ready for the year 2000', strandedHelped: 'Look after the stranded passengers',
   guestsPlanned: 'Plan the guests\' stands', jetsReady: 'Make room for the business jets',
   // session 6
   shopsAnswered: 'Answer the shops about the rent', staffAnswered: 'Decide what happens to the staff', slotsGiven: 'Give the empty slots to an airline',
@@ -152,9 +152,16 @@ const Text = {
   dept(id) { return tr((DEPTS[id] || {}).name || id); },
   dom(id) { return tr((DOMAINS[id] || {}).name || id); },
   level(d, lv) { const L = DOMAINS[d] && DOMAINS[d].levels[lv]; return L ? tr(L.name) : ''; },
-  manager(id) { const m = MANAGERS[id]; return m ? m.face + ' ' + m.name : id; },
+  manager(id) { const m = People.mdef(id); return m ? m.face + ' ' + m.name : id; },
   // a manager's two strengths and the flaw, as lines
-  managerLines(id) { const m = MANAGERS[id]; return m ? m.good.map((g) => '＋ ' + tr(g)).concat(['− ' + tr(m.bad)]) : []; },
+  managerLines(id) { const m = People.mdef(id); return m ? m.good.map((g) => '＋ ' + tr(g)).concat(['− ' + tr(m.bad)]) : []; },
+  // session 7: what a head needs: a department without a team gets one with the head (its price and days), as a line
+  headTeam(id) {
+    const m = People.mdef(id);
+    if (!m || !People.needsTeam(id)) return '';
+    const L = DOMAINS[m.dept] && DOMAINS[m.dept].levels[1];
+    return L ? tr('A head makes a team better. {dept} has no team yet: it is hired with the head — {m}, ready in {n} days.', { dept: this.dept(m.dept), m: sek(HIRE_COST * L.staff), n: People.hireDays(m.dept) }) : '';
+  },
   // "1 job", "6 jobs"
   jobs(n) { return n === 1 ? tr('1 job') : tr('{n} jobs', { n }); },
   // the cells of a terminal an own shop takes (data/buildings.js `cells`)
@@ -237,7 +244,11 @@ const Text = {
       out.push(a.routes.some((r) => r.months) ? tr('{n} flights a day in summer', { n }) : tr('{n} flights a day', { n }));
     }
     if (o.hire) out.push(tr('a team for {dom}', { dom: this.dom(o.hire) }) + ' · −' + sek(HIRE_COST * DOMAINS[o.hire].levels[1].staff) + ' · ' + tr('wages every month'));
-    if (o.manager) out.push(tr('salary {m} a month', { m: sek(MANAGER_SALARY * MANAGERS[o.manager].salary) }));
+    if (o.manager) {
+      out.push(tr('salary {m} a month', { m: sek(MANAGER_SALARY * People.mdef(o.manager).salary) }));
+      // a head for a department with no team brings the team (unless the option hires it already)
+      if (!o.hire && People.needsTeam(o.manager)) { const d = People.mdef(o.manager).dept; out.push(tr('a team for {dom}', { dom: this.dom(d) }) + ' · −' + sek(HIRE_COST * DOMAINS[d].levels[1].staff) + ' · ' + tr('wages every month')); }
+    }
     if (o.it) out.push(tr('+{n} IT people', { n: o.it }));
     if (o.system) {
       const lv = (S.domains[o.system.dom] || 0) + 1, L = DOMAINS[o.system.dom].levels[lv];
@@ -315,6 +326,55 @@ const Text = {
   buyGain(kind) { const g = Airport.parkingGain(kind); return g > 0 ? tr('+{m} a month', { m: sekBare(g) }) : ''; },
   // the runway direction when it is calm: what each one flies over the towns (sim/runways.js use)
   dirOver(d) { return d === '01' ? tr('Landings over Märsta') : Airport.runway('r3') ? tr('Take-offs over Upplands Väsby') : tr('Take-offs over Märsta'); },
+  // session 7: the next steps on a domain's ladder, for the plan panel and the Ops Center — a team to hire (from the
+  // hands), a system to buy (its price, running cost, jobs and days on the line; from a team the buttons say what happens to
+  // the team: kept as the fallback with its retraining, or let go with the wages it saves — never the system's price as the
+  // price of letting people go), a team to hire back beside a system with none, and what is on its way. Each step:
+  // { icon, title, sub, wait, acts: [{ data, label, sum, main }], notes: [] }; `data` the button's data attributes.
+  ladder(d) {
+    const out = [], lv = S.domains[d] || 0, unlock = (S.unlock || {})[d] || 0, r = S.sys && S.sys[d];
+    const L1 = DOMAINS[d].levels[1], hiring = S.people && S.people.hiring.find((h) => h.dom === d);
+    const why = { room: 'Needs the computer room', hall: 'Needs the baggage hall', pads: 'Needs the remote de-icing pads', sorter: 'Needs the sorting hall' };
+    const ready = (at) => tr('ready in {n} days', { n: Math.max(0, at - S.day) });
+    // a team from the hands
+    if (lv === 0 && unlock >= 1 && L1 && !(r && r.installAt)) {
+      const w = Systems.cannot(d, 1);
+      if (hiring) out.push({ icon: '👷', title: tr('Hire: {what}', { what: tr(L1.name) }), sub: this.jobs(L1.staff), wait: ready(hiring.at) });
+      else if (!w) out.push({ icon: '👷', title: tr('Hire: {what}', { what: tr(L1.name) }), sub: this.jobs(L1.staff) + ' · ' + tr('ready in {n} days', { n: S.plan ? People.hireDays(d) : 0 }) + ' · ' + tr('wages every month'),
+        acts: [{ data: 'data-up="' + d + '" data-to="1"', label: tr('Hire'), sum: sekBare(Systems.price(d, 'keep', 1)), main: true }] });
+    }
+    // a system: the next one (straight from the hands or a team to level 2)
+    const to = Systems.nextSystem(d), L = DOMAINS[d].levels[to];
+    if (L && unlock >= to && Calendar.year() >= L.from) {
+      const sub = sek(L.price) + ' · ' + tr('{m} a month', { m: sekBare(L.month || 0) }) + ' · ' + this.jobs(L.staff || 0) + (L.it ? ' · ' + tr('{n} IT people', { n: L.it }) : '') + (L.days ? ' · ' + tr('{n} days', { n: L.days }) : '');
+      const w = Systems.cannot(d, to), step = { icon: '⚙️', title: tr(L.name), sub, acts: [], notes: [] };
+      if (r && r.installAt) { step.sub = ''; step.wait = ready(r.installAt); out.push(step); }
+      else if (w && why[w]) { step.wait = tr(why[w]); out.push(step); }
+      else if (!w && lv === 1) {
+        const n = L1.staff;
+        step.notes.push(tr('Your team of {n} — what happens to it?', { n }));
+        step.acts.push({ data: 'data-sys="' + d + '" data-how="keep"', label: tr('Buy, keep the team as the fallback'), sum: '+' + sekBare(Systems.retrain(d)) + ' ' + tr('retraining'), main: true });
+        step.acts.push({ data: 'data-sys="' + d + '" data-how="layoff"', label: tr('Buy, let the team go'), sum: tr('saves {m} a month', { m: sekBare(Systems.teamWages(d)) }) });
+        step.notes.push(tr('Letting people go: every team\'s morale −{n}, the unions angrier (a strike likelier), the neighbours unhappy. A team can be hired back later.', { n: LAYOFF_MORALE }));
+        out.push(step);
+      } else if (!w) {
+        step.acts.push({ data: 'data-sys="' + d + '" data-how="keep"', label: tr('Buy'), sum: sekBare(L.price), main: true });
+        if (lv === 0 && L1 && L1.staff) step.notes.push(tr('It comes with its own operators. No team beside it: when it fails, the work comes to you — hire a team as the fallback, now or later.'));
+        out.push(step);
+      }
+    }
+    // a team beside a system with none (let go, or the system bought straight from the hands)
+    if (hiring && hiring.back) out.push({ icon: '👷', title: tr('A team as the fallback'), sub: this.jobs(L1.staff), wait: ready(hiring.at) });
+    else if (People.canHireBack(d)) out.push({ icon: '👷', title: tr('No team as the fallback'), sub: tr('When the system fails, the work comes to you.'),
+      acts: [{ data: 'data-back="' + d + '"', label: r && r.laidOff ? tr('Hire a team back') : tr('Hire a team as the fallback'), sum: sekBare(HIRE_COST * L1.staff) + ' · ' + tr('{n} days', { n: S.plan ? People.hireDays(d) : 0 }), main: true }] });
+    return out;
+  },
+  // the head of a domain's department: its name, or "No head — find one" (the departments of people that can have one)
+  headLine(d) {
+    if (!DEPTS[d] || DEPTS[d].police || !People.staffed(d)) return '';
+    const m = People.manager(d);
+    return m ? '👔 ' + this.manager(m.id) : '👔 ' + tr('No head — find one');
+  },
   // stars as HTML: the ones earned lit, the rest dim
   stars(n, of) { let s = ''; for (let i = 0; i < (of || 3); i++) s += '<span class="star' + (i < n ? ' on' : '') + '">★</span>'; return s; }
 };

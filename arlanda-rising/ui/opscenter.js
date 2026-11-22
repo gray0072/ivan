@@ -2,16 +2,19 @@
 
 // Arlanda Rising — the Ops Center (SPEC.md "Screens"): one row per domain the airport has — its level, who or what
 // does the work, the system's uptime and failures, the monthly cost (the team's wages and the licence), the fallback
-// readiness, and the next level with its price and running cost (a team to hire, a system to put in: keep the team
-// as the fallback or let it go), a drill; and the IT people and the backup power. From the Office (key O) every
-// button works at once; during play it is to look only. Used by game.js and ui/office.js.
+// readiness, the department's head (or "No head — find one", a button to People), and the next steps of its ladder
+// (Text.ladder: a team to hire, a system to buy with its price and running cost — straight from the hands too, and from
+// a team what happens to it: kept as the fallback or let go —, a team hired back beside a system), a drill; and the IT
+// people and the backup power. From the Office (key O) every button works at once; in plan time too (teams and systems
+// after their days); in ops time it is to look only. Used by game.js and ui/office.js.
 
 const OpsCenter = (() => {
   const $ = (id) => document.getElementById(id);
-  let back = null, editable = false;
+  let back = null, editable = false, people = null;
 
+  // opts.people: how People opens from here (the Office's own, or the panel in play)
   function show(opts) {
-    back = opts.back; editable = !!opts.edit;
+    back = opts.back; editable = !!opts.edit; people = opts.people || null;
     render();
     Screens.show('opsCenter');
   }
@@ -32,19 +35,19 @@ const OpsCenter = (() => {
       const jobs = People.jobs(d), wage = jobs * STAFF_MONTH * (People.has(d) ? S.people.depts[d].wageX : 1);
       const up = r && lv >= 2 && r.upMin + r.downMin > 0 ? Text.pct(r.upMin / (r.upMin + r.downMin)) + (r.fails ? ' · ' + (r.fails === 1 ? tr('1 failure') : tr('{n} failures', { n: r.fails })) : '') : '—';
       const ready = lv >= 2 ? Text.pct(r ? r.readiness : 1) : '—';
+      // the next steps of the ladder: what they cost on their line, the buttons when it can be changed here
       let act = '';
-      if (editable) {
-        const next = DOMAINS[d].levels[lv + 1], why = Systems.cannot(d), unlocked = ((S.unlock || {})[d] || 0) >= lv + 1;
-        if (next && !why && unlocked) {
-          if (lv === 0) act += '<button class="btn toggle" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire: {what}', { what: tr(next.name) })) + ' <small>' + sekBare(Systems.price(d)) + '</small></button>';
-          else act += '<button class="btn toggle" data-up="' + d + '" data-how="keep">' + Text.esc(tr('{what}, keep the team', { what: tr(next.name) })) + ' <small>' + sekBare(Systems.price(d, 'keep')) + '</small></button>' +
-            (lv === 1 ? '<button class="btn toggle" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('… let it go')) + ' <small>' + sekBare(Systems.price(d, 'layoff')) + '</small></button>' : '');
-        } else if (next && unlocked && why === 'room') act += '<small class="wait">' + Text.esc(tr('Needs the computer room')) + '</small>';
-        else if (next && unlocked && why === 'hall') act += '<small class="wait">' + Text.esc(tr('Needs the baggage hall')) + '</small>';
-        else if (next && unlocked && why === 'pads') act += '<small class="wait">' + Text.esc(tr('Needs the remote de-icing pads')) + '</small>';
-        if (lv >= 2 && r && r.readiness < 1) act += '<button class="btn toggle" data-drill="' + d + '">' + Text.esc(tr('Drill')) + ' <small>' + sekBare(DRILL_COST) + '</small></button>';
+      for (const st of Text.ladder(d)) {
+        const btns = editable ? (st.acts || []).map((a) => '<button class="btn toggle" ' + a.data + '>' + Text.esc(a.label) + ' <small>' + Text.esc(a.sum) + '</small></button>').join('') : '';
+        act += '<div class="lad"><small><b>' + Text.esc(st.title) + '</b>' + (st.sub ? ' · ' + Text.esc(st.sub) : '') + '</small>' + (st.wait ? '<small class="wait">' + Text.esc(st.wait) + '</small>' : '') +
+          (st.notes || []).slice(0, 1).map((n) => '<small class="ladNote">' + Text.esc(n) + '</small>').join('') + (btns ? '<div class="ladActs">' + btns + '</div>' : '') +
+          (st.notes || []).slice(1).map((n) => '<small class="ladNote">' + Text.esc(n) + '</small>').join('') + '</div>';
       }
-      html += '<tr><td><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.dom(d)) + '</b><small>' + Text.esc(who(d)) + '</small>' + (act ? '<div class="acts under">' + act + '</div>' : '') + '</td><td>' + Text.esc(tr(L.name)) + '</td><td>' + Text.esc(up) +
+      if (editable && lv >= 2 && r && r.readiness < 1) act += '<div class="ladActs"><button class="btn toggle" data-drill="' + d + '">' + Text.esc(tr('Drill')) + ' <small>' + sekBare(DRILL_COST) + '</small></button></div>';
+      // the department's head, or none yet: People has the candidates
+      const head = Text.headLine(d);
+      const headHtml = head ? '<small>' + Text.esc(head) + (people && !People.manager(d) ? ' <button class="btn toggle small" data-people="1">👥 ' + Text.esc(tr('People')) + '</button>' : '') + '</small>' : '';
+      html += '<tr><td><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.dom(d)) + '</b><small>' + Text.esc(who(d)) + '</small>' + headHtml + (act ? '<div class="acts under">' + act + '</div>' : '') + '</td><td>' + Text.esc(tr(L.name)) + '</td><td>' + Text.esc(up) +
         '</td><td>' + sekBare(wage + (lv >= 2 ? L.month || 0 : 0)) + '</td><td>' + Text.esc(ready) + '</td><td class="actCol">' + (act ? '<div class="acts">' + act + '</div>' : '') + '</td></tr>';
     }
     html += '</table>';
@@ -58,9 +61,12 @@ const OpsCenter = (() => {
 
   $('opsCenter').addEventListener('click', (e) => {
     const b = e.target.closest('button');
+    if (b && b.dataset.people && people) { Sfx.play('click'); people(); return; }
     if (!b || !editable) return;
     let done = false;
     if (b.dataset.up) done = Actions.upgrade(b.dataset.up, b.dataset.how);
+    else if (b.dataset.sys) done = Actions.system(b.dataset.sys, b.dataset.how);
+    else if (b.dataset.back) done = Actions.hireBack(b.dataset.back);
     else if (b.dataset.drill) done = Actions.drill(b.dataset.drill);
     if (!done) return;
     Sfx.play('chord');

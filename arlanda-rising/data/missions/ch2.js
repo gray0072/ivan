@@ -266,32 +266,33 @@ addMissions(2, [
       { name: 'April morning', mode: 'ops', date: '1972-04-10', from: '07:00', to: '10:00', weather: { temp: 6, wind: [200, 9] }, desks: 4,
         flights: [FL('SK', 'DC9', 8, '07:05', '09:35', 40, { base: 400 }), FL('SK', 'CRVL', 4, '07:15', '09:15', 40),
           FL('SK', 'DC8', 3, '07:30', '09:10', 65, { base: 950 }), FL('SK', 'B747', 1, '08:00', '08:00', 125, { base: 900, load: 0.65 })],
-        goal: [{ k: 'onTime', p: 0.75 }] }
+        goal: [{ k: 'onTime', p: 0.75 }, { k: 'airportDelay', max: 4 }] }
     ],
     goal: [],
     stars: [{ k: 'noStrike' }, { k: 'staff', min: 62 }]
   },
   {
     name: 'The Bag Belt', kind: 'build', date: '1973-05-07', requires: BUILT_1962.concat(['apron2', 'apron2.bigStand']),
-    setup: { open: true, items: Object.assign({ crashTender: 2 }, ITEMS_1971), desks: 6, airlines: ROUTES_1971, domains: TEAMS_1968,
+    setup: { open: true, minMoney: 50e6, items: Object.assign({ crashTender: 2 }, ITEMS_1971), desks: 6, airlines: ROUTES_1971, domains: TEAMS_1968,
       opens: ['baggage'], unlock: { baggage: 2 }, projects: ['bagHall'] },
     hands: ['stand', 'checkin', 'fuel', 'bags'],
     brief: [
       'Bags! Every aircraft brings a hundred suitcases, and so far you send every cart yourself. A cart sent wrong, and the bags fly to the wrong city.',
-      'A baggage hall under the terminal, with conveyor belts, would do it for you. First a team of handlers, then the machines.',
-      'Machines jam, though. Keep the handlers as a fallback — or save their wages.'
+      'A baggage hall under the terminal, with conveyor belts, would do it for you: build the hall first, then put in the belts. They come with their own operators.',
+      'Belts jam, though. A team of handlers beside them takes over when they stop — for wages every month. Without one, the bags come back to you.'
     ],
-    aim: 'Do the bags by hand for a morning, then put in the belts.',
+    aim: 'Do the bags by hand for a morning, build the hall and the belts, and decide who helps when they jam.',
     news: [
       { icon: '🛄', text: 'Bags: send the carts to every arrival; boarding waits for them.' },
-      { icon: '⚙️', text: 'The conveyor belts: a machine that does the bags — and sometimes jams.' }
+      { icon: '⚙️', text: 'The conveyor belts: a machine that does the bags — and sometimes jams.' },
+      { icon: '👷', text: 'Handlers as the fallback: hire them in the panel, before or after the belts.' }
     ],
     stages: [
       { name: 'Bags by hand', mode: 'ops', from: '07:00', to: '10:00', weather: { temp: 12, wind: [200, 8] }, desks: 4,
         flights: [FL('SK', 'DC9', 7, '07:05', '09:35', 40, { base: 400 }), FL('SK', 'CRVL', 3, '07:15', '09:05', 40),
           FL('SK', 'DC8', 2, '07:40', '08:50', 65, { base: 950 })],
         goal: [{ k: 'lostBags', max: 12 }] },
-      { name: 'The baggage hall', mode: 'plan', days: 60, crews: 2, endEarly: true, goal: [{ k: 'level', dom: 'baggage', min: 2 }] },
+      { name: 'The baggage hall', mode: 'plan', days: 70, crews: 2, endEarly: true, goal: [{ k: 'level', dom: 'baggage', min: 2 }] },
       { name: 'Summer afternoon', mode: 'ops', date: '1973-07-16', from: '15:00', to: '18:00', weather: { temp: 22, wind: [220, 9] }, desks: 4,
         events: [{ at: '16:10', do: 'fail', dom: 'baggage', min: 40 }],
         flights: [FL('SK', 'DC9', 8, '15:05', '17:35', 40, { base: 400 }), FL('SK', 'CRVL', 3, '15:20', '17:10', 40),

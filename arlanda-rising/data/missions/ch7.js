@@ -329,7 +329,7 @@ addMissions(7, [
         goal: [{ k: 'securityWait', max: 10 }] }
     ],
     goal: [],
-    stars: [{ k: 'securityWait', max: 5 }, { k: 'passengers', min: 85 }]
+    stars: [{ k: 'securityWait', max: 3 }, { k: 'passengers', min: 85 }]
   },
   {
     name: 'Cyber Morning', kind: 'crisis', date: '2023-10-09', requires: BUILT_2022,

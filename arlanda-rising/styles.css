@@ -154,6 +154,14 @@ ul.goals.plain li::before { content: '•'; color: var(--accent); }
 .sr { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .sr .done { color: var(--ok); }
 .sr .wait { color: var(--dim); font-size: 11.5px; max-width: 120px; text-align: right; }
+/* session 7: a step of a domain's ladder (the plan panel, the Ops Center): its line, what it waits for, its buttons
+   under it (the system's choice of what happens to the team), its notes */
+.lad { padding: 5px 0; }
+.ladHead { display: flex; flex-direction: column; min-width: 0; }
+.ladHead small, .lad .ladNote { color: var(--dim); font-size: 11.5px; }
+.lad .ladNote { display: block; margin-top: 2px; }
+.lad .wait { display: block; color: var(--dim); font-size: 11.5px; }
+.ladActs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .bar { width: 70px; height: 7px; border-radius: 4px; background: rgba(255,255,255,0.15); overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--accent); }
 .mods, .fin { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; }
@@ -416,6 +424,7 @@ table.ops td { padding: 6px; border-top: 1px solid var(--line); vertical-align: 
 table.ops td small { display: block; opacity: 0.7; font-size: 11.5px; }
 table.ops .acts { display: flex; flex-wrap: wrap; gap: 4px; }
 table.ops .acts.under { display: none; }
+table.ops .acts .lad { flex: 1 1 100%; padding: 2px 0; }
 table.ops .btn small, .ocard .btn small { opacity: 0.75; font-size: 11px; }
 .tgroup.warnGroup .tl { color: #f0c36a; }
 .opt .mgr { font-size: 12px; opacity: 0.85; line-height: 1.35; }

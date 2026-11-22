@@ -21,11 +21,15 @@ const Actions = {
     this.doneByHand('stand', f.id);
     return true;
   },
+  // the desks, lanes and booths the player opens or closes: with a team or a system running them, the player's choice
+  // holds for COUNTER_HOLD_MIN before they take over again (sim/passengers.js `runCounters`)
+  hold(k) { S.ops.hold = S.ops.hold || {}; S.ops.hold[k] = S.clock + COUNTER_HOLD_MIN; },
   desks(n) {
     if (!S.ops) return false;
     const was = S.ops.desksOpen;
     S.ops.desksOpen = clamp(Math.round(n), 0, S.airport.desks);
     if (S.ops.desksOpen > was) this.doneByHand('checkin', 'desks');
+    if (S.ops.desksOpen !== was) this.hold('desks');
     return S.ops.desksOpen !== was;
   },
   plough(surface) {
@@ -54,6 +58,10 @@ const Actions = {
   // session 3: people and systems (in plan time and between missions; overtime in ops time)
   hire(dom) { return People.hire(dom); },
   upgrade(dom, how) { return Systems.upgrade(dom, how); },
+  // session 7: a system bought straight from the hands or from a team (how: 'keep' / 'layoff' the team), a team hired
+  // back beside a system as its fallback
+  system(dom, how) { return Systems.upgrade(dom, how, Systems.nextSystem(dom)); },
+  hireBack(dom) { return People.hireBack(dom); },
   hireIT(n) { return People.hireIT(n); },
   train(dept) { return People.train(dept); },
   temps(dept) { return People.temps(dept); },
@@ -73,11 +81,13 @@ const Actions = {
   lanes(n) {
     if (!S.ops || !Terminal.openLane(n)) return false;
     this.doneByHand('lane', 'lanes');
+    this.hold('lanes');
     return true;
   },
   booths(n) {
     if (!S.ops || !Terminal.openBooth(n)) return false;
     this.doneByHand('booth', 'booths');
+    this.hold('booths');
     return true;
   },
   biofuel(share) { return Green.biofuel(share); },

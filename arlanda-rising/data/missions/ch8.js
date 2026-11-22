@@ -96,7 +96,7 @@ addMissions(8, [
             { id: 'yes', airline: { code: 'ELECTRIC', routes: [{ type: 'EL30', perDay: 6, load: 0.8 }] }, incentive: { code: 'ELECTRIC', share: 0.2 }, label: 'Welcome them' },
             { id: 'no', label: 'Not yet' }
           ] }] },
-      { name: 'An electric morning', mode: 'ops', date: '2031-06-09', from: '07:00', to: '10:00', weather: { temp: 17, wind: [200, 8] }, desks: 20, lanes: 8, booths: 3,
+      { name: 'An electric morning', mode: 'ops', date: '2031-06-09', from: '07:00', to: '10:00', weather: { temp: 17, wind: [200, 8] }, desks: 20, lanes: 8, booths: 3, calm: true,
         flights: [F8('ELECTRIC', 'EL30', 14, '07:05', '09:30', 35, { base: 41 })].concat(DAY_8('07:00', 40, 1)),
         goal: [{ k: 'lost', max: 0 }, { k: 'airportDelay', max: 6 }] }
     ],
@@ -283,7 +283,7 @@ addMissions(8, [
         flights: [F8('EK', 'B77W', 1, '13:10', '13:10', 120, { base: 156, load: 0.92 }), F8('QR', 'A359', 1, '13:30', '13:30', 100, { base: 167, load: 0.9 }),
           F8('SK', 'A359', 3, '13:20', '15:00', 110, { base: 900, ns: true, load: 0.92 }), F8('DHL', 'B76F', 1, '13:40', '13:40', 80, { base: 1 }),
           F8('ELECTRIC', 'EL30', 10, '13:05', '15:20', 35, { base: 141 })].concat(DAY_8('13:00', 140, 1.1)),
-        goal: [{ k: 'lost', max: 0 }, { k: 'onTime', p: 0.75 }, { k: 'passengers', min: 78 }] }
+        goal: [{ k: 'lost', max: 0 }, { k: 'onTime', p: 0.75 }, { k: 'passengers', min: 90 }] }
     ],
     goal: [],
     stars: [{ k: 'airportDelay', max: 4 }, { k: 'passengers', min: 88 }]

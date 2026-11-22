@@ -15,6 +15,8 @@ const Plan = {
     };
     // session 5: the sky closed for days (the ash cloud): no traffic in summary until then
     if (stage.skyClosed) S.airport.skyClosed = S.day + stage.skyClosed;
+    // session 7: a head who left since the last plan time: the two successors are offered
+    People.offerHeads();
   },
   // a decision made on the way (Free Play's offers): its whole definition is kept in the state
   offer(def, inDays) {

@@ -28,7 +28,14 @@ const Office = (() => {
     const asks = (w.people && w.people.asks) || [];
     for (const d of asks) {
       const m = w.people.managers[d];
-      if (m) html += '<p class="warn">' + Text.esc(tr('{name} asks for a raise — answer in People, or it counts as "not now".', { name: MANAGERS[m.id].name })) + '</p>';
+      if (m) html += '<p class="warn">' + Text.esc(tr('{name} asks for a raise — answer in People, or it counts as "not now".', { name: People.mdef(m.id).name })) + '</p>';
+    }
+    // session 7: a department whose head has left: the team works on, People has two candidates
+    for (const d of Object.keys((w.people && w.people.vacant) || {})) {
+      const v = w.people.vacant[d], m = People.mdef(v.id);
+      if (!People.staffed(d) || w.people.managers[d]) continue;
+      html += '<p class="warn">👔 ' + Text.esc((v.why === 'poached' ? tr('{name}, head of {dept}, has left for another airport.', { name: m ? m.name : '', dept: Text.dept(d) }) : tr('{name}, head of {dept}, has retired.', { name: m ? m.name : '', dept: Text.dept(d) })) + ' ' +
+        tr('The team keeps working — only the head\'s skill is gone.')) + ' <button class="btn toggle" data-go="people">👥 ' + Text.esc(tr('Find a new head')) + '</button></p>';
     }
     if (w.people && w.people.strike && w.people.strike.to > w.day) html += '<p class="warn">' + Text.esc(tr('Strike notice: {dept} from {d}', { dept: Text.dept(w.people.strike.dept), d: fmtDate(w.people.strike.from) })) + '</p>';
     html += '<div class="cards">';
@@ -109,7 +116,7 @@ const Office = (() => {
     else if (which === 'terminal') TermView.show({ back, edit: true });
     else if (which === 'airlines') AirlinesUI.show({ back, edit: true });
     else if (which === 'finance') FinanceUI.show({ back, tab });
-    else OpsCenter.show({ back, edit: true });
+    else OpsCenter.show({ back, edit: true, people: () => PeopleUI.show({ back: () => open('ops'), edit: true }) });
   }
   return { show, open };
 })();

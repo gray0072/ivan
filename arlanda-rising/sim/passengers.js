@@ -8,7 +8,8 @@
 // counted. The waits, the longest wait and the passengers through are counted as they pass; a long check-in queue
 // makes the "open a desk" task. Session 5: the flights outside Schengen queue a third time, at the border's passport
 // booths, after security; a long queue there makes the "open a booth" task, and with security a domain of its own, a
-// long security queue the "open a lane" task. Used by sim/ops.js, sim/turnaround.js (boarding waits for them).
+// long security queue the "open a lane" task. Session 7: a team or a system of the domain runs its counters itself —
+// opens them ahead of the queue from the departures due and closes the idle ones (`runCounters`). Used by sim/ops.js, sim/turnaround.js (boarding waits for them).
 
 const Passengers = {
   // minutes a passenger joining the queue now would wait
@@ -96,7 +97,9 @@ const Passengers = {
         if (c[1] < 1e-6) o.border.shift();
       }
     }
-    // a long queue: open a desk (session 5: a lane, a booth)
+    // session 7: a team or a system runs the counters itself
+    this.runCounters();
+    // a long queue: open a desk (session 5: a lane, a booth) — by hand, or the task a team short of people leaves
     if (this.wait() >= CHECKIN_TASK_WAIT && o.desksOpen < S.airport.desks && !Tasks.pending('checkin', 'desks')) Tasks.need('checkin', 'desks');
     if (Terminal.secDomain() && lanes && lanes < Terminal.lanesUp() && !Tasks.pending('lane', 'lanes')) {
       const at = Systems.working('security') >= 2 ? SEC_SENSOR_WAIT : SEC_TASK_WAIT;
@@ -126,5 +129,70 @@ const Passengers = {
     Finance.book('parking', x * PARKING_PER_PAX * Airport.parkingShare());
     Finance.book('rail', x * Terminal.trainIncome());
   },
-  flight(id) { return Flights.get(id); }
+  flight(id) { return Flights.get(id); },
+
+  // ---------- session 7: the counters run by a team or a system ----------
+  // the check-in desks, the security lanes (security a domain of its own) and the passport booths, each with its domain,
+  // how many are open and the most, the least, the passengers a counter serves a minute, the queues whose passengers
+  // will come to it, and whether only the flights outside Schengen count
+  counters() {
+    const o = S.ops, out = [];
+    if (S.airport.desks && S.domains.checkin !== undefined) out.push({ k: 'desks', dom: 'checkin', open: o.desksOpen, max: S.airport.desks, min: 0, rate: DESK_RATE * People.deskRate(), qs: [o.queue], ns: false });
+    if (Terminal.secDomain() && S.airport.lanes && o.lanesOpen !== undefined) out.push({ k: 'lanes', dom: 'security', open: Terminal.lanes(), max: Terminal.lanesUp(), min: 1, rate: Terminal.laneRate(), qs: [o.sec || [], o.queue], ns: false });
+    if (Terminal.borderOn() && S.domains.border !== undefined && o.boothsOpen !== undefined) out.push({ k: 'booths', dom: 'border', open: Terminal.booths(), max: S.airport.booths, min: 0, rate: Terminal.boothRate(), qs: [o.border || [], o.sec || [], o.queue], ns: true });
+    return out;
+  },
+  // who runs a kind of counter now: 'system', 'team' or null (the player)
+  runBy(k) {
+    const c = S.ops && this.counters().find((x) => x.k === k);
+    if (!c) return null;
+    const lv = Systems.working(c.dom);
+    return lv >= 2 ? 'system' : lv === 1 ? 'team' : null;
+  },
+  // game minutes the player's own choice still holds (0: the team or the system runs them)
+  held(k) { return S.ops && S.ops.hold && S.ops.hold[k] > S.clock ? S.ops.hold[k] - S.clock : 0; },
+  // passengers a minute coming to the terminal at minute t (from the flights' departures due), all or outside Schengen
+  inflow(t, ns) {
+    let r = 0;
+    for (const f of S.ops.flights) {
+      if (!f.booked || f.st === 'diverted' || f.st === 'cancelled' || f.st === 'gone' || f.st === 'taxiOut') continue;
+      if (ns && !Terminal.nonSchengen(f)) continue;
+      if (t >= f.std - PAX_ARRIVE_FIRST && t < f.std - PAX_ARRIVE_LAST) r += f.booked / (PAX_ARRIVE_FIRST - PAX_ARRIVE_LAST);
+    }
+    return r;
+  },
+  // a team looks every COUNTER_TEAM_EVERY minutes (sooner with skill and a quick head; a team short of people or a
+  // wrong guess misses a look) at the queue and the departures due in its look-ahead, and opens up to COUNTER_TEAM_STEP
+  // counters or closes one; a system looks every minute, further ahead, and sets what is needed at once. Needed: the
+  // backlog cleared within COUNTER_AIM_WAIT and the busiest minute of the look-ahead kept up with. The player's −/+
+  // holds for COUNTER_HOLD_MIN. Each change counts as a task done by the team or the system.
+  runCounters() {
+    const o = S.ops;
+    o.look = o.look || {};
+    for (const c of this.counters()) {
+      const lv = Systems.working(c.dom);
+      if (lv < 1 || this.held(c.k) || (o.look[c.k] || 0) > S.clock) continue;
+      const sys = lv >= 2;
+      let every = 1, look = COUNTER_LOOK_SYS, right = 1;
+      if (!sys) {
+        const w = People.work(c.dom, { delay: COUNTER_TEAM_EVERY, right: DOMAINS[c.dom].levels[1].right });
+        every = Math.max(1, w.delay); right = w.right; look = People.perk(c.dom, 'fast') > 0 ? COUNTER_LOOK_TEAM : 0;
+      }
+      o.look[c.k] = S.clock + every;
+      // the team's luck of this look, from its own hash (the world's random numbers stay as they were)
+      const roll = rngNext(hashOf('counters', S.seed, S.day, Math.round(S.clock * 4), c.k))[0];
+      if (!sys && (roll >= People.capacity(c.dom) || roll >= right)) continue;
+      let q = 0;
+      for (const list of c.qs) for (const x of list) if (!c.ns || Terminal.nonSchengen(this.flight(x[0]) || {})) q += x[1];
+      let peak = 0;
+      for (let t = S.clock; t <= S.clock + look; t += 5) peak = Math.max(peak, this.inflow(t, c.ns));
+      const want = clamp(Math.ceil((q / COUNTER_AIM_WAIT + peak) / c.rate - 0.15), Math.max(c.min, q + peak > 0.05 ? 1 : 0), c.max);
+      let n = c.open;
+      if (want > n) n = sys ? want : Math.min(want, n + COUNTER_TEAM_STEP);
+      else if (want < n) n = sys ? want : q < 1 ? Math.max(want, n - COUNTER_TEAM_STEP) : n;
+      if (n === c.open) continue;
+      if (c.k === 'desks') o.desksOpen = n; else if (c.k === 'lanes') Terminal.openLane(n); else Terminal.openBooth(n);
+      S.mission.st[sys ? 'tasksSys' : 'tasksPeople']++;
+    }
+  }
 };

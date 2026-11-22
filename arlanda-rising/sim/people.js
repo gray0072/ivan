@@ -5,7 +5,10 @@
 // fatigue, the temps), the share of a team's tasks that fall to the player's tray when it is short or on strike,
 // overtime, training, hiring (two weeks, or the clearance's weeks), the wage rounds (accept, counter, the mediator,
 // refuse — and the strike a week after the notice) and the managers (their perks and flaws, mood, raises, poaching,
-// retiring). S.people is created by the first mission that needs it; a world without it (chapter 1) is untouched.
+// retiring). Session 7: a head leads a team (one hired for a department without a team brings the team), a head who
+// leaves marks the department vacant and in plan time offers two successors (the department's own heads, then ones made
+// of HEAD_NAMES and HEAD_STYLES: `mdef`, `candidates`); a team hired back beside a system as its fallback (`hireBack`);
+// no team is hired in ops time. S.people is created by the first mission that needs it; a world without it (chapter 1) is untouched.
 // The Staff meter is the departments' morale weighted by their jobs. Used by sim/tasks.js, sim/systems.js,
 // sim/finance.js (wages), the plan's decisions and the screens.
 
@@ -23,8 +26,8 @@ const People = {
   has(id) { return !!(S.people && S.people.depts[id]); },
   // a manager's perk for a department (0 when none)
   perk(id, key) {
-    const m = S.people && S.people.managers[id];
-    const v = m && MANAGERS[m.id] && MANAGERS[m.id].perks[key];
+    const m = S.people && S.people.managers[id], def = m && this.mdef(m.id);
+    const v = def && def.perks[key];
     return v || 0;
   },
   manager(id) { return (S.people && S.people.managers[id]) || null; },
@@ -87,8 +90,7 @@ const People = {
     let full = (L && L[S.domains[id] || 0] && L[S.domains[id] || 0].staff) || 0;
     if ((S.domains[id] || 0) >= 2 && S.sys && S.sys[id] && S.sys[id].kept) full += L[1].staff || 0;
     Finance.book('hiring', -HIRE_COST * Math.max(1, Math.round(full * d.cut)));
-    const days = (DEPTS[id].clearance && Calendar.year() >= DEPTS[id].clearance) ? CLEARANCE_DAYS : HIRE_DAYS;
-    if (S.plan) S.people.hiring.push({ dom: id, at: S.day + days, rehire: true });
+    if (S.plan) S.people.hiring.push({ dom: id, at: S.day + this.hireDays(id), rehire: true });
     else this.rehired(id);
     logEvent('rehire', { dom: id });
     return true;
@@ -174,17 +176,48 @@ const People = {
   moraleAll(delta) { if (S.people) for (const id of Object.keys(S.people.depts)) this.morale(id, delta); this.updateMeter(); },
 
   // ---------- what the player does ----------
-  // hire a team for a domain (level 0 → 1): at once between missions, after HIRE_DAYS (or the clearance) in plan time
+  // hire a team for a domain (level 0 → 1): at once between missions, after HIRE_DAYS (or the clearance) in plan time;
+  // never in ops time (it would start the same minute), nor while a system is being put in (then it is hired as the
+  // system's fallback: hireBack)
   hire(dom) {
     const L = DOMAINS[dom] && DOMAINS[dom].levels[1];
-    if (!L || (S.domains[dom] || 0) > 0 || Calendar.year() < L.from) return false;
-    if (S.people && S.people.hiring.some((h) => h.dom === dom)) return false;
+    if (!L || S.ops || (S.domains[dom] || 0) > 0 || Calendar.year() < L.from) return false;
+    if (this.coming(dom) || (S.sys && S.sys[dom] && S.sys[dom].installAt)) return false;
     Finance.book('hiring', -HIRE_COST * L.staff);
-    const days = (DEPTS[dom].clearance && Calendar.year() >= DEPTS[dom].clearance) ? CLEARANCE_DAYS : HIRE_DAYS;
-    if (S.plan) this.ensure().hiring.push({ dom, at: S.day + days });
+    if (S.plan) this.ensure().hiring.push({ dom, at: S.day + this.hireDays(dom) });
     else this.hired(dom);
     logEvent('hire', { dom });
     return true;
+  },
+  // days from hiring to the first shift: two weeks, or the security clearance's six where the job needs one
+  hireDays(dom) { return (DEPTS[dom] && DEPTS[dom].clearance && Calendar.year() >= DEPTS[dom].clearance) ? CLEARANCE_DAYS : HIRE_DAYS; },
+  // new people on their way to a department (a team, the jobs filled again, a team hired back)
+  coming(dom) { return !!(S.people && S.people.hiring.some((h) => h.dom === dom)); },
+  // a team hired again beside a system whose team was let go (or bought straight from the hands): the fallback when the
+  // system fails — HIRE_COST a job, ready after the hiring days (or the clearance) in plan time, at once between missions
+  canHireBack(dom) {
+    const L = DOMAINS[dom] && DOMAINS[dom].levels[1], r = S.sys && S.sys[dom], lv = S.domains[dom] || 0;
+    if (!L || !L.staff || !r || r.kept || S.ops || Calendar.year() < L.from || this.coming(dom)) return false;
+    return lv >= 2 || (lv === 0 && !!r.installAt);
+  },
+  hireBack(dom) {
+    if (!this.canHireBack(dom)) return false;
+    Finance.book('hiring', -HIRE_COST * DOMAINS[dom].levels[1].staff);
+    if (S.plan) this.ensure().hiring.push({ dom, at: S.day + this.hireDays(dom), back: true });
+    else this.backReady(dom);
+    logEvent('hireBack', { dom });
+    return true;
+  },
+  // the team is there: the fallback of the system (it knows the manual way); while the system is still being put in, it
+  // does the work as a team of its own
+  backReady(dom) {
+    const r = Systems.rec(dom);
+    r.kept = true; r.readiness = 1;
+    S.domains[dom] = Math.max(1, S.domains[dom] || 0);
+    const d = this.dept(dom);
+    d.skill = Math.min(d.skill, SKILL_START + 10);
+    this.updateMeter();
+    logEvent('teamReady', { dom });
   },
   hired(dom) {
     S.domains[dom] = Math.max(1, S.domains[dom] || 0);
@@ -248,16 +281,67 @@ const People = {
   },
 
   // ---------- managers ----------
+  // a head's definition: one of MANAGERS, or a successor made of HEAD_NAMES and HEAD_STYLES ('next:<dept>:<n>')
+  _mdefs: {},
+  mdef(id) {
+    if (MANAGERS[id]) return MANAGERS[id];
+    if (this._mdefs[id]) return this._mdefs[id];
+    const m = /^next:(\w+):(\d+)$/.exec(id || '');
+    if (!m || !DEPTS[m[1]]) return null;
+    const dept = m[1], n = +m[2], di = Object.keys(DEPTS).indexOf(dept);
+    const who = HEAD_NAMES[(di * 5 + n) % HEAD_NAMES.length], st = HEAD_STYLES[(di + n) % HEAD_STYLES.length];
+    return (this._mdefs[id] = { name: who.name, face: who.face, dept, from: 0, salary: st.salary, perks: st.perks, good: st.good, bad: st.bad });
+  },
+  // the two candidates for a department's head: its own heads of MANAGERS first (from their year), then successors;
+  // nobody who has left the airport or leads a department now. `w` the world (S by default)
+  candidates(dept, year, w) {
+    w = w || S;
+    const p = w.people, y = year || Calendar.year(), gone = (p && p.gone) || [], busy = p ? Object.keys(p.managers).map((d) => p.managers[d].id) : [];
+    if (!DEPTS[dept] || DEPTS[dept].police) return [];
+    const free = (id) => gone.indexOf(id) < 0 && busy.indexOf(id) < 0;
+    const out = Object.keys(MANAGERS).filter((id) => MANAGERS[id].dept === dept && MANAGERS[id].from <= y && free(id)).slice(0, 2);
+    for (let n = 0; out.length < 2 && n < 60; n++) if (free('next:' + dept + ':' + n)) out.push('next:' + dept + ':' + n);
+    return out;
+  },
+  // a department that can have a head: one with a team or a system (or new people on their way), IT with its people
+  staffed(dept) { return dept === 'it' ? !!(S.people && S.people.it > 0) : (S.domains[dept] || 0) > 0 || this.coming(dept); },
+  // a head leads a team: for a department without one the team is hired with the head (its usual days and price);
+  // never in ops time, where the team would start the same minute
+  needsTeam(mid) { const m = this.mdef(mid); return !!m && m.dept !== 'it' && !this.staffed(m.dept); },
   hireManager(mid) {
-    const m = MANAGERS[mid];
+    const m = this.mdef(mid);
     if (!m || Calendar.year() < m.from) return false;
+    if (this.needsTeam(mid) && !this.hire(m.dept)) return false;
     this.ensure();
     this.dept(m.dept);
     S.people.managers[m.dept] = { id: mid, mood: 70, since: S.day, salaryX: m.salary, asked: S.day };
+    if (S.people.vacant) delete S.people.vacant[m.dept];
     this.morale(m.dept, this.perk(m.dept, 'morale'));
     this.updateMeter();
-    logEvent('manager', { id: mid });
+    logEvent('manager', { id: mid, dept: m.dept });
     return true;
+  },
+  // a head has left (retired, or poached by a rival airport): the team keeps working, only the head's perks go. The
+  // department is marked vacant (the Office and People say so) and in plan time its two successors are offered at once
+  leave(dept, why, by) {
+    const p = S.people, m = p.managers[dept];
+    if (!m) return;
+    delete p.managers[dept];
+    p.asks = p.asks.filter((a) => a !== dept);
+    (p.gone = p.gone || []).push(m.id);
+    (p.vacant = p.vacant || {})[dept] = { id: m.id, why, day: S.day, offered: false };
+    logEvent(why, Object.assign({ id: m.id, dept }, by ? { by } : {}));
+    this.offerHeads();
+  },
+  // in plan time: the successors of every vacant department not offered yet, as a decision (sim/offers.js `head`)
+  offerHeads() {
+    if (!S.plan || !S.mission || !S.people || !S.people.vacant) return;
+    for (const dept of Object.keys(S.people.vacant)) {
+      const v = S.people.vacant[dept];
+      if (v.offered || !this.staffed(dept) || this.candidates(dept).length < 2) continue;
+      v.offered = true;
+      Plan.offer(Offers.head(dept, v), HEAD_OFFER_DAYS);
+    }
   },
   // a manager's raise: given (mood up, salary up) or not (mood down)
   raise(dept, give) {
@@ -322,7 +406,7 @@ const People = {
   // ---------- each day and each month ----------
   day() {
     if (!S.people) return;
-    for (const h of S.people.hiring.slice()) if (S.day >= h.at) { S.people.hiring = S.people.hiring.filter((x) => x !== h); if (h.rehire) this.rehired(h.dom); else this.hired(h.dom); }
+    for (const h of S.people.hiring.slice()) if (S.day >= h.at) { S.people.hiring = S.people.hiring.filter((x) => x !== h); if (h.rehire) this.rehired(h.dom); else if (h.back) this.backReady(h.dom); else this.hired(h.dom); }
     this.strikeEnds();
   },
   // a month: morale drifts toward what the wages and the bosses give, fatigue fades, skill grows, the managers'
@@ -343,13 +427,13 @@ const People = {
       if (S.day >= d.union.next && !S.mission) this.wageRound(id, 'auto');
     }
     for (const id of Object.keys(p.managers)) {
-      const m = p.managers[id], def = MANAGERS[m.id];
+      const m = p.managers[id], def = this.mdef(m.id);
       let mood = 70;
       if (def.perks.newest && !Systems.newSince(365)) mood -= 30;
       m.mood = clamp(m.mood + (mood - m.mood) * 0.2, 0, 100);
       if (S.day - m.asked >= MANAGER_RAISE_MONTHS * 30.4 && p.asks.indexOf(id) < 0) { p.asks.push(id); m.asked = S.day; logEvent('raiseAsk', { id: m.id }); }
-      if (m.mood < 40 && rand() < MANAGER_POACH) { delete p.managers[id]; p.asks = p.asks.filter((a) => a !== id); logEvent('poached', { id: m.id, by: randPick(['Copenhagen', 'Oslo', 'Helsinki']) }); continue; }
-      if (S.day - m.since >= MANAGER_YEARS * 365) { delete p.managers[id]; logEvent('retired', { id: m.id }); }
+      if (m.mood < 40 && rand() < MANAGER_POACH) { this.leave(id, 'poached', randPick(['Copenhagen', 'Oslo', 'Helsinki'])); continue; }
+      if (S.day - m.since >= MANAGER_YEARS * 365) this.leave(id, 'retired');
     }
     this.updateMeter();
   },

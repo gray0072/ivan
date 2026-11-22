@@ -68,14 +68,15 @@ STRATEGIES['2-7'] = {
   moves: [{ stage: 1, at: '07:00', do: 'desks', n: 6 }]
 };
 
-// The Bag Belt: the bags by hand, then the hall, the handlers and the belts (the handlers kept)
+// The Bag Belt: the bags by hand, then the hall, the belts bought straight away and the handlers hired beside them as
+// the fallback for the jam
 STRATEGIES['2-8'] = {
   tray: REACT_QUICK,
   moves: [
     { stage: 0, at: '07:00', do: 'desks', n: 5 },
     { stage: 1, at: 0, do: 'start', project: 'bagHall', part: 'hall' },
-    { stage: 1, at: 0, do: 'act', fn: 'hire', args: ['baggage'] },
-    { stage: 1, after: ['bagHall', 'hall'], do: 'act', fn: 'upgrade', args: ['baggage', 'keep'] },
+    { stage: 1, after: ['bagHall', 'hall'], do: 'act', fn: 'system', args: ['baggage'] },
+    { stage: 1, after: ['bagHall', 'hall'], do: 'act', fn: 'hireBack', args: ['baggage'] },
     { stage: 2, at: '15:00', do: 'desks', n: 6 }
   ]
 };

@@ -72,7 +72,7 @@ addMissions(3, [
     hands: ['stand', 'checkin', 'fuel', 'bags'],
     brief: [
       'Between six and nine every weekday morning, half of Sweden flies to meetings. Every desk, stand and fuel truck is needed at once.',
-      'The desk scheduler opens desks when the queue is long — which is too late in a peak. A head of terminal service could help, or you can open them yourself.',
+      'The desk scheduler opens one desk at a time as the queue grows — too late for a peak. A head who sees the departures coming could help, or you can open desks yourself.',
       'Two peaks: the business morning, then the late morning.'
     ],
     aim: 'Get the business travellers through a morning peak with short queues.',
@@ -92,7 +92,7 @@ addMissions(3, [
       { name: 'Business peak', mode: 'ops', date: '1984-04-30', from: '06:00', to: '09:00', weather: { temp: 5, wind: [200, 8] }, desks: 4,
         flights: [F3('LF', 'F28', 11, '06:05', '08:45', 35, { base: 100, load: 0.85 }), F3('SK', 'DC9', 9, '06:15', '08:55', 40, { base: 600, load: 0.85 }),
           F3('SK', 'DC9', 3, '06:30', '07:30', 0, { parked: true, base: 650, load: 0.85 }), F3('LF', 'F28', 3, '06:20', '07:20', 0, { parked: true, base: 150, load: 0.85 })],
-        goal: [{ k: 'checkinWait', max: 6 }, { k: 'onTime', p: 0.8 }] },
+        goal: [{ k: 'maxWait', max: 7 }, { k: 'onTime', p: 0.8 }] },
       { name: 'Late morning', mode: 'ops', from: '09:00', to: '12:00', weather: { temp: 8, wind: [210, 9] }, desks: 4,
         flights: [F3('LF', 'F28', 8, '09:05', '11:35', 35, { base: 200 }), F3('SK', 'DC9', 6, '09:15', '11:25', 40, { base: 700 }),
           F3('SK', 'B747', 1, '09:40', '09:40', 125, { base: 900, load: 0.7 }), F3('AY', 'DC9', 1, '10:10', '10:10', 45, { base: 800 })],
@@ -220,7 +220,7 @@ addMissions(3, [
       { name: 'Wednesday', mode: 'ops', date: '1986-11-12', from: '07:00', to: '10:00', weather: { temp: 2, wind: [220, 9] }, desks: 12,
         flights: [F3('LF', 'F28', 9, '07:05', '09:35', 35, { base: 100 }), F3('SK', 'DC9', 8, '07:10', '09:40', 40, { base: 600 }),
           F3('SK', 'B747', 1, '07:50', '07:50', 125, { base: 900, load: 0.7 }), F3('AY', 'DC9', 1, '08:20', '08:20', 45, { base: 800 })],
-        goal: [{ k: 'onTime', p: 0.8 }] }
+        goal: [{ k: 'onTime', p: 0.8 }, { k: 'airportDelay', max: 4 }] }
     ],
     goal: [],
     stars: [{ k: 'noStrike' }, { k: 'airportDelay', max: 3 }]
@@ -265,7 +265,7 @@ addMissions(3, [
     setup: { open: true, items: ITEMS_1983, desks: 26, airlines: ROUTES_1988, domains: Object.assign({}, TEAMS_1976, { stands: 2, info: 2 }), it: 3, unlock: { checkin: 2 } },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce'],
     brief: [
-      'Check-in computers are here: they print boarding passes and open desks as the queue grows. Fast — and dear, with a licence every month.',
+      'Check-in computers are here: they print boarding passes and open desks before the queue builds. Fast — and dear, with a licence every month.',
       'Or train your desk team well and give it a few more desks: cheaper, and nothing to break.',
       'Both can work. Which costs less for the queues you get?'
     ],
@@ -286,12 +286,12 @@ addMissions(3, [
       { name: 'Morning peak', mode: 'ops', date: '1987-10-05', from: '06:00', to: '09:00', weather: { temp: 6, wind: [210, 9] }, desks: 6,
         flights: [F3('LF', 'F28', 13, '06:05', '08:45', 35, { base: 100, load: 0.95 }), F3('SK', 'MD81', 11, '06:10', '08:55', 40, { base: 600, load: 0.95 }),
           F3('SK', 'MD81', 4, '06:30', '07:45', 0, { parked: true, base: 650, load: 0.95 }), F3('SK', 'DC10', 1, '07:30', '07:30', 75, { base: 950, load: 0.9 })],
-        goal: [{ k: 'checkinWait', max: 5 }] },
+        goal: [{ k: 'checkinWait', max: 5 }, { k: 'maxWait', max: 5 }] },
       { name: 'Evening peak', mode: 'ops', from: '16:00', to: '19:00', weather: { temp: 9, wind: [220, 8] }, desks: 6,
         events: [{ at: '17:00', do: 'fail', dom: 'checkin', min: 40 }],
         flights: [F3('LF', 'F28', 13, '16:05', '18:45', 35, { base: 200, load: 0.95 }), F3('SK', 'MD81', 10, '16:10', '18:55', 40, { base: 700, load: 0.95 }),
           F3('SK', 'B747', 1, '16:40', '16:40', 125, { base: 900, load: 0.85 }), F3('STERLING', 'B727', 2, '17:00', '17:50', 55, { base: 500, load: 0.95 })],
-        goal: [{ k: 'checkinWait', max: 5 }] }
+        goal: [{ k: 'checkinWait', max: 5 }, { k: 'maxWait', max: 5 }] }
     ],
     goal: [],
     stars: [{ k: 'checkinWait', max: 2 }, { k: 'onTime', p: 0.9 }]

@@ -60,6 +60,14 @@ const DESK_COST_HOUR = 250;        // SEK per hour per open desk (the clerk)
 const PAX_ARRIVE_FIRST = 120;      // minutes before departure the first passengers come to the terminal
 const PAX_ARRIVE_LAST = 35;        // … the last ones
 const CHECKIN_TASK_WAIT = 10;      // minutes of queue that make the "open a desk" task
+// the counters (desks, security lanes, passport booths) run by a team or a system (sim/passengers.js `runCounters`)
+const COUNTER_AIM_WAIT = 3;        // minutes of queue a team or a system aims at: the backlog cleared in that time
+const COUNTER_TEAM_EVERY = 5;      // game minutes between a team's looks at the queue (× its skill and its head)
+const COUNTER_TEAM_STEP = 1;       // counters a team opens (or closes) at one look
+const COUNTER_LOOK_TEAM = 15;      // minutes ahead a team with a quick head (perk `fast`) reads the departures due; without
+                                   // one it goes by the queue and the passengers coming in now
+const COUNTER_LOOK_SYS = 25;       // … a system, which looks every game minute and opens what is needed at once
+const COUNTER_HOLD_MIN = 30;       // game minutes the player's own − / + holds before the team takes over again
 const CHECKIN_CLOSE = 40;          // minutes before departure the flight's check-in closes
 const SHOP_MINUTES_FULL = 40;      // minutes of free time airside for the full shop spend
 
@@ -179,6 +187,7 @@ const MANAGER_SALARY = 90000;      // SEK a month, a manager's base salary (× t
 const MANAGER_POACH = 0.1;         // chance a month that an unhappy manager (mood under 40) leaves for a rival airport
 const MANAGER_RAISE_MONTHS = 24;   // months between a manager's raise requests
 const MANAGER_YEARS = 14;          // years before a manager retires
+const HEAD_OFFER_DAYS = 1;         // days after a head left (in plan time) that the two successors are offered
 const WAGE_ROUND_MONTHS = 18;      // months between two wage rounds of a team
 const WAGE_DEMAND = 0.06;          // the union's demand in a mission's wage round (a raise of the wages)
 const WAGE_DRIFT = 0.015;          // the raise of a round settled between missions (no inflation in the game)

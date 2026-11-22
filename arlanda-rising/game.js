@@ -109,8 +109,14 @@ const Game = {
     if (this.speed) this.lastSpeed = this.speed;
     this.speed = 0;
     this.screen = 'panel';
-    if (which === 'people') PeopleUI.show({ back });
-    else if (which === 'ops') OpsCenter.show({ back });
+    this.panel(which, back, tab);
+  },
+  // session 7: People and the Ops Center during play: in plan time everything can be changed there (new people after
+  // their days), in ops time People hires a head at once and answers a raise; from the pause menu they go back to it
+  panel(which, back, tab) {
+    const people = () => PeopleUI.show({ back: () => this.panel('ops', back), edit: S.plan ? true : S.ops ? 'heads' : false });
+    if (which === 'people') PeopleUI.show({ back, edit: S.plan ? true : S.ops ? 'heads' : false });
+    else if (which === 'ops') OpsCenter.show({ back, edit: !!S.plan, people });
     else if (which === 'terminal') TermView.show({ back, edit: !!S.plan });
     else if (which === 'airlines') AirlinesUI.show({ back });
     else if (which === 'finance') FinanceUI.show({ back, tab });
@@ -209,6 +215,12 @@ const Game = {
     MissionCard.info(() => this.backToPause());
   },
   backToPause() { this.screen = 'pause'; Screens.pause(); },
+  // from the pause menu: People or the Ops Center (on a phone there is no P or O key); Back comes back to the menu
+  pausePanel(which) {
+    if (this.screen !== 'pause' || !S || !S.mission) return;
+    this.screen = 'panel';
+    this.panel(which, () => this.backToPause());
+  },
   resume() {
     Screens.hide();
     const live = this.screen === 'tview';
@@ -479,6 +491,15 @@ const Game = {
     // session 5: the line of a scripted or random event, a permit broken
     GameEvents.on('script', (e) => { if (e.text && this.screen === 'play') this.banner(tr(e.text), 5000); });
     GameEvents.on('randomEvent', (e) => { if (this.screen === 'play') { this.banner(tr(e.text), 5500); Sfx.play('alarm'); } });
+    // session 7: a head who leaves in plan time — said at once (the successors come as a decision the next day)
+    const left = (e) => {
+      if (this.screen !== 'play') return;
+      const m = People.mdef(e.id), name = m ? m.name : e.id, dept = Text.dept(e.dept);
+      this.banner((e.type === 'poached' ? tr('{name}, head of {dept}, has left for {by}.', { name, dept, by: e.by }) : tr('{name}, head of {dept}, has retired.', { name, dept })) + ' ' +
+        tr('The team keeps working — only the head\'s skill is gone. Two candidates will apply.'), 6500);
+    };
+    GameEvents.on('retired', left);
+    GameEvents.on('poached', left);
     GameEvents.on('permitBroken', () => { if (this.screen === 'play') this.banner(tr('The environmental permit is broken this month: a fine.'), 4500); });
     document.querySelectorAll('.speeds button').forEach((b) => b.addEventListener('click', () => {
       Sfx.unlock();

@@ -226,6 +226,8 @@ const Screens = (() => {
     col.appendChild(btn('📋 ' + tr('The mission') + (MISSION[md.id] ? ' ' + md.id : ''), 'secondary', () => Game.missionInfo()));
     col.appendChild(btn(tr('Retry stage'), 'secondary', () => Game.retryStage()));
     p.appendChild(col);
+    // session 7: the teams and their heads, also on a phone (no P or O key there)
+    p.appendChild(row(btn('👥 ' + tr('People'), 'secondary', () => Game.pausePanel('people')), btn('🛠️ ' + tr('Ops Center'), 'secondary', () => Game.pausePanel('ops'))));
     let d = S.difficulty;
     p.appendChild(diffPicker(d, (x) => { d = x; }));
     p.appendChild(row(btn(tr('Restart mission'), 'secondary', () => Game.restartMission(d))));

@@ -4,8 +4,13 @@
 // Arlanda Rising — one mission flight by flight, for balancing: plays the campaign with the reference strategies up to the
 // mission (at one difficulty), then the mission itself (or doing nothing with --idle), and prints at the end of each stage
 // its flights (planned and real times, stand, waits at check-in / security / the border, delay and the airport's part),
-// what happened (failures, random events, flights lost) and the stage's goals. Loads the same files as missions-check.js.
-// Usage: node arlanda-rising/tools/debug-mission.js <mission id> [easy|medium|hard] [--idle] [--flights]
+// what happened (failures, random events, flights lost) and the stage's goals; with --counters every quarter hour of an
+// ops stage the check-in desks, security lanes and passport booths open, their waits and who runs them (you, the team,
+// the system; "held" while the player's own − / + holds); --choices=id=option,… gives the idle run those decisions (to
+// see what a choice does alone); --strategy=id plays the mission with another mission's reference strategy. Loads the
+// same files as missions-check.js.
+// Usage: node arlanda-rising/tools/debug-mission.js <mission id> [easy|medium|hard] [--idle [--choices=id=option,…]]
+//        [--strategy=id] [--flights] [--counters]
 
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.resolve(__dirname, '..');
@@ -21,7 +26,8 @@ for (const f of list) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'
 const args = process.argv.slice(2);
 const [id, d = 'medium'] = args.filter((a) => !a.startsWith('--'));
 vm.runInContext(`(() => {
-  const ID = ${JSON.stringify(id)}, D = ${JSON.stringify(d)}, IDLE = ${args.includes('--idle')}, FLIGHTS = ${args.includes('--flights')};
+  const ID = ${JSON.stringify(id)}, D = ${JSON.stringify(d)}, IDLE = ${args.includes('--idle')}, FLIGHTS = ${args.includes('--flights')}, COUNTERS = ${args.includes('--counters')}, STRAT = ${JSON.stringify((args.find((a) => a.startsWith('--strategy=')) || '').slice(11))},
+    CHOICES = ${JSON.stringify(Object.fromEntries(((args.find((a) => a.startsWith('--choices=')) || '').slice(10) || '').split(',').filter(Boolean).map((kv) => kv.split('='))))};
   let target = false;
   const end = Missions.endStage.bind(Missions);
   Missions.endStage = function () {
@@ -46,7 +52,7 @@ vm.runInContext(`(() => {
   for (const m of MISSIONS) {
     target = m.id === ID;
     Missions.start(m.id, D, world);
-    const r = Strategy.runner(target && IDLE ? {} : STRATEGIES[m.id]);
+    const r = Strategy.runner(target && IDLE ? { choices: CHOICES } : STRATEGIES[target && STRAT ? STRAT : m.id]);
     for (let n = 0; n < 3e6; n++) {
       const st = S.mission.status;
       if (st === 'stageDone') { Missions.next(); continue; }
@@ -54,6 +60,14 @@ vm.runInContext(`(() => {
       Strategy.act(r);
       if (S.mission.status !== 'running') continue;
       Sim.step();
+      // --counters: every quarter hour of an ops stage the desks, lanes and booths open, the waits, who runs them
+      if (target && COUNTERS && S.ops && Math.abs(S.clock / 15 - Math.round(S.clock / 15)) < 1e-6) {
+        const by = (k) => (Passengers.runBy(k) || 'you') + (Passengers.held(k) ? ' (held)' : '');
+        console.log('    ' + fmtClock(S.clock) + ' desks ' + S.ops.desksOpen + '/' + S.airport.desks + ' wait ' + Passengers.wait().toFixed(1) + ' ' + by('desks') +
+          (Terminal.lanes() ? ' · lanes ' + Terminal.lanes() + '/' + Terminal.lanesUp() + ' wait ' + Passengers.secWait().toFixed(1) + ' ' + by('lanes') : '') +
+          (Terminal.borderOn() ? ' · booths ' + Terminal.booths() + '/' + S.airport.booths + ' wait ' + Math.min(99, Passengers.borderWait()).toFixed(1) + ' ' + by('booths') : '') +
+          ' · tray ' + S.ops.tasks.length);
+      }
     }
     if (target) { console.log('mission ' + S.mission.status + ' stars ' + S.mission.stars + ' ' + JSON.stringify(S.mission.judged && S.mission.judged.stars.map((g) => g.goal.k + '=' + g.value))); break; }
     world = Missions.world();

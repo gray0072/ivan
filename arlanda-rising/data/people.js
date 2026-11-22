@@ -80,3 +80,27 @@ const MANAGERS = {
     good: ['The screeners trust him: a strike is less likely.', 'Fewer sick days in his team.'],
     bad: 'Thorough: every lane is 10 % slower.' }
 };
+
+// The successors: when a department's own heads of MANAGERS have left (retired, poached) or there are none (baggage,
+// information, de-icing), the candidates are made of a name of HEAD_NAMES and a style of HEAD_STYLES (sim/people.js
+// `mdef`, ids 'next:<dept>:<n>'); two in a row never share a style. The styles use only the perks every team has.
+const HEAD_STYLES = [
+  { salary: 0.9, perks: { fast: 0.4, right: -0.04 },
+    good: ['Quick: the team does its work almost twice as fast.', 'Asks for a modest salary.'], bad: 'Hasty: a wrong choice now and then.' },
+  { salary: 1, perks: { right: 0.08, morale: 4, slow: 0.15 },
+    good: ['Careful: the team gets it right more often.', 'The team likes the calm pace.'], bad: 'Slow: the team takes 15 % longer.' },
+  { salary: 0.95, perks: { morale: 8, absence: 0.6, slow: 0.1 },
+    good: ["A calm boss: the team's morale is higher.", 'Fewer sick days in the team.'], bad: 'Takes it easy: the team is 10 % slower.' },
+  { salary: 1.4, perks: { fast: 0.5, right: 0.05 },
+    good: ['Sees the work coming: the team is twice as fast.', 'Makes the right choice more often.'], bad: 'Expensive: one of the highest salaries in the building.' },
+  { salary: 0.85, perks: { strike: 0.2, absence: 0.7, slow: 0.2 },
+    good: ['The union trusts this boss: a strike is less likely.', 'Fewer sick days in the team.'], bad: 'Takes time: the team is a fifth slower.' }
+];
+const HEAD_NAMES = [
+  { name: 'Ingrid Sjöberg', face: '👩‍💼' }, { name: 'Per Nyström', face: '👨‍💼' }, { name: 'Helena Dahl', face: '👩‍💼' },
+  { name: 'Mats Engström', face: '👨‍💼' }, { name: 'Sofia Lund', face: '👩‍💼' }, { name: 'Ahmed Karimi', face: '👨‍💼' },
+  { name: 'Elin Holmgren', face: '👩‍💼' }, { name: 'Johan Strand', face: '👨‍💼' }, { name: 'Nadia Eriksson', face: '👩‍💼' },
+  { name: 'Olle Bergman', face: '👨‍💼' }, { name: 'Kristina Ahl', face: '👩‍💼' }, { name: 'Tomas Viklund', face: '👨‍💼' },
+  { name: 'Linnea Forsberg', face: '👩‍💼' }, { name: 'Daniel Åkesson', face: '👨‍💼' }, { name: 'Amira Saleh', face: '👩‍💼' },
+  { name: 'Henrik Blom', face: '👨‍💼' }
+];

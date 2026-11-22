@@ -13,7 +13,7 @@ const Hints = (() => {
   const RULES = [
     { id: 'trayFull', when: () => S.ops && S.ops.tasks.length >= 4, text: () => tr('The tray is filling up! Tap the task with the smallest ring first.') },
     { id: 'duty', when: () => S.mission.st.tasksDuty > 0, text: () => tr('The duty manager did a task — late. Tap tasks before their ring runs out.') },
-    { id: 'queue', when: () => S.ops && Passengers.wait() > 12 && S.ops.desksOpen < S.airport.desks, text: () => tr('The check-in queue is {n} minutes. Open another desk in the bar below!', { n: Math.round(Passengers.wait()) }) },
+    { id: 'queue', when: () => S.ops && Passengers.wait() > 12 && S.ops.desksOpen < S.airport.desks && (!Passengers.runBy('desks') || People.capacity('checkin') < 1), text: () => tr('The check-in queue is {n} minutes. Open another desk in the bar below!', { n: Math.round(Passengers.wait()) }) },
     { id: 'snow', when: () => S.ops && Runways.main() && Runways.main().snow > 2.5 && !Runways.main().plough, text: () => tr('Snow on the runway! Send the ploughs before it reaches 6 mm.') },
     // the wind falls calm with the noisier direction in use: the choice in the bar below matters to Märsta
     { id: 'calm', when: () => S.ops && Runways.main() && Weather.now().wind < CALM_WIND && calmDir() && calmDir() !== Runways.direction(Runways.main()).slice(0, 2),
@@ -25,7 +25,10 @@ const Hints = (() => {
     { id: 'down', when: () => S.ops && Object.keys(S.domains).some((d) => Systems.down(d)), text: () => { const d = Object.keys(S.domains).find((x) => Systems.down(x)); return tr('{sys} is down! Its work goes to the team kept beside it — or to you.', { sys: Text.level(d, S.domains[d]) }); } },
     { id: 'short', when: () => S.ops && Object.keys(S.domains).some((d) => Systems.working(d) === 1 && People.capacity(d) < 0.8 && !People.striking(d)), text: () => tr('A team is short today. Overtime in the bar below brings everybody in — at a price.') },
     { id: 'strike', when: () => S.ops && S.ops.strike, text: () => tr('A strike: the team does only a sixth of its work. The rest is yours today.') },
-    { id: 'hire', when: () => S.plan && S.unlock && Object.keys(S.unlock).some((d) => (S.domains[d] || 0) === 0 && S.unlock[d] >= 1) && !(S.people && S.people.hiring.length), text: () => tr('You can hire a team in the panel. It needs two weeks before its first shift.') },
+    { id: 'hire', when: () => S.plan && S.unlock && Object.keys(S.unlock).some((d) => (S.domains[d] || 0) === 0 && S.unlock[d] >= 1) && !(S.people && S.people.hiring.length),
+      text: () => (Object.keys(S.unlock).some((d) => (S.domains[d] || 0) === 0 && S.unlock[d] >= 2) ? tr('In the panel you can hire a team, or buy the system straight away: it comes with its own operators.') : tr('You can hire a team in the panel. It needs two weeks before its first shift.')) },
+    // session 7: a team runs the desks — it opens them as the queue grows; a head who reads the departures opens them sooner
+    { id: 'teamDesks', when: () => S.ops && Passengers.runBy('desks') === 'team' && !Passengers.held('desks') && Passengers.wait() > 4, text: () => tr('{dept} runs the desks: it opens one more as the queue grows. A head who reads the departures opens them sooner — or press + yourself.', { dept: Text.dept('checkin') }) },
     { id: 'fire', when: () => S.ops && S.ops.flights.some((f) => !Flights.over(f) && !f.waiver && AIRCRAFT[f.type].cat > Airport.fireCat()), text: () => tr('An aircraft is coming that your fire service is too small for. It will be sent elsewhere.') },
     { id: 'bags', when: () => S.ops && S.ops.tasks.filter((k) => k.kind === 'bags').length >= 2, text: () => tr('Bags are waiting! Boarding cannot start before the carts have been.') },
     { id: 'announce', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'announce'), text: () => tr('A flight is late. Tell its passengers — they wait at the gate without knowing why.') },
@@ -35,7 +38,7 @@ const Hints = (() => {
     { id: 'leaving', when: () => S.airport.rivals && Object.keys(S.airlines).some((c) => S.airlines[c].mood < LEAVE_MOOD + 5 && Airlines.perDay(c) > 0), text: () => tr('An airline is unhappy and could move flights to a rival airport. Look in Airlines (A).') },
     // session 5
     { id: 'border', when: () => S.ops && Terminal.borderOn() && Passengers.borderWait() > 8, text: () => tr('A long queue at the passport booths. Open another booth with + in the bar below.') },
-    { id: 'lanes', when: () => S.ops && Terminal.secDomain() && Passengers.secWait() > 8 && Terminal.lanes() < Terminal.lanesUp(), text: () => tr('Closed lanes save wages, but the queue is growing. Open one more lane.') },
+    { id: 'lanes', when: () => S.ops && Terminal.secDomain() && Passengers.secWait() > 8 && Terminal.lanes() < Terminal.lanesUp() && !Passengers.runBy('lanes'), text: () => tr('Closed lanes save wages, but the queue is growing. Open one more lane.') },
     { id: 'deice', when: () => S.ops && S.ops.tasks.some((k) => k.kind === 'deice'), text: () => tr('Frost on the wings! No aircraft leaves without de-icing. A truck per aircraft — or pads by the runway one day?') },
     { id: 'parallel', when: () => S.ops && Airport.runway('r3') && S.ops.flights.some((f) => f.st === 'taxiOut'), text: () => tr('Two parallel runways: the landings use runway 1, the departures runway 3. The taxi over the bridges takes a few minutes more.') },
     { id: 'permit', when: () => S.plan && Green.on() && Green.permit() && Green.permit().broken, text: () => tr('The permit is broken: a fine every month. Raise the green rating or keep the flights under the cap.') },

@@ -130,8 +130,8 @@ addMissions(6, [
           F6('SK', 'A333', 1, '07:50', '07:50', 110, { base: 910, ns: true, load: 0.98 })],
         goal: [{ k: 'checkinWait', max: 6 }] }
     ],
-    goal: [{ k: 'passengers', min: 75 }],
-    stars: [{ k: 'flag', id: 'strandedHelped' }, { k: 'checkinWait', max: 3 }]
+    goal: [{ k: 'passengers', min: 75 }, { k: 'flag', id: 'strandedHelped' }],
+    stars: [{ k: 'checkinWait', max: 3 }, { k: 'passengers', min: 96 }]
   },
   {
     name: 'A Royal Wedding', kind: 'operate', date: '2010-05-17', requires: BUILT_2010,
@@ -241,7 +241,7 @@ addMissions(6, [
           F6('SK', 'B736', 8, '13:05', '15:20', 42, { base: 100, intl: false }), F6('SK', 'A321', 6, '13:10', '15:30', 52, { base: 300 }),
           F6('DY', 'B738', 8, '13:05', '15:25', 46, { base: 400 }), F6('LH', 'A320', 3, '13:30', '15:20', 50, { base: 3020 }),
           F6('AY', 'A320', 3, '13:25', '15:25', 50, { base: 800 }), F6('BA', 'A320', 2, '13:40', '14:40', 50, { base: 770 })],
-        goal: [{ k: 'onTime', p: 0.85 }] }
+        goal: [{ k: 'onTime', p: 0.8 }] }
     ],
     goal: [{ k: 'perDay', code: 'EK', min: 1 }],
     stars: [{ k: 'mood', code: 'EK', min: 78 }, { k: 'borderWait', max: 3 }]
@@ -458,7 +458,7 @@ addMissions(6, [
           F6('SK', 'B738', 6, '06:10', '08:25', 46, { base: 450, load: 0.92 }), F6('DY', 'B738', 10, '06:05', '08:25', 46, { base: 400, load: 0.95 }),
           F6('NOVAIR', 'A321', 2, '06:20', '07:00', 60, { base: 700, load: 0.97, ns: true }), F6('LH', 'A320', 3, '06:30', '08:20', 50, { base: 3020, load: 0.92 }),
           F6('AY', 'A321', 3, '06:25', '08:25', 52, { base: 800, load: 0.92 }), F6('BA', 'A320', 3, '06:40', '08:10', 50, { base: 770, load: 0.92 })],
-        goal: [{ k: 'lost', max: 0 }, { k: 'securityWait', max: 7 }, { k: 'checkinWait', max: 4 }] },
+        goal: [{ k: 'lost', max: 0 }, { k: 'securityWait', max: 7 }, { k: 'checkinWait', max: 4 }, { k: 'dutyTasks', max: 10 }] },
       { name: 'The record evening', mode: 'ops', date: '2018-07-06', from: '15:00', to: '17:45', weather: { temp: 24, wind: [230, 9] }, desks: 24, lanes: 8, booths: 3,
         flights: [F6('EK', 'B77W', 1, '15:10', '15:10', 120, { base: 156, load: 0.92 }), F6('QR', 'A319', 1, '15:30', '15:30', 90, { base: 167 }),
           F6('SK', 'A333', 1, '15:20', '15:20', 120, { base: 900, ns: true }), F6('SK', 'B736', 8, '15:05', '17:20', 42, { base: 200, intl: false, load: 0.92 }),
@@ -467,7 +467,7 @@ addMissions(6, [
         goal: [{ k: 'lost', max: 0 }, { k: 'borderWait', max: 6 }] }
     ],
     goal: [],
-    stars: [{ k: 'airportDelay', max: 3 }, { k: 'passengers', min: 85 }],
+    stars: [{ k: 'airportDelay', max: 3.5 }, { k: 'passengers', min: 85 }],
     paper: { head: 'ARLANDA\'S RECORD YEAR — AND A NEW WORD',
       text: 'Never have so many flown from Arlanda. But this year the Swedes also learnt a new word: flygskam, flight shame. "The more green our airport is, the better it can answer," says the director.' }
   }

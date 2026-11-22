@@ -39,11 +39,11 @@ const Offers = {
     // managers, by pairs, for a team without a head
     const depts = Object.keys(DEPTS).filter((d) => (d === 'it' ? w.people && w.people.it > 0 : (w.domains[d] || 0) > 0) && !(w.people && w.people.managers[d]));
     for (const d of depts) {
-      const cands = Object.keys(MANAGERS).filter((id) => MANAGERS[id].dept === d && MANAGERS[id].from <= year);
+      const cands = People.candidates(d, year, w);
       if (cands.length < 2) continue;
       out.push({ group: 'people', icon: '👔', title: 'A head for {dept}', text: 'Two candidates want the job. Each is good at two things and weak at one.',
         params: { dept: DEPTS[d].name }, default: 'none',
-        options: cands.slice(0, 2).map((id) => ({ id, manager: id, label: MANAGERS[id].name })).concat([{ id: 'none', label: 'Nobody' }]) });
+        options: cands.map((id) => ({ id, manager: id, label: People.mdef(id).name })).concat([{ id: 'none', label: 'Nobody' }]) });
     }
     // a team or a system for a domain
     for (const d of Object.keys(w.domains)) {
@@ -129,5 +129,15 @@ const Offers = {
     b.taken[i] = optionId;
     logEvent('offerTaken', { id: def.id, option: optionId });
     return true;
+  },
+  // session 7: the two successors of a head who has left (sim/people.js `offerHeads`), as a decision of plan time:
+  // `v` the vacancy { id, why }
+  head(dept, v) {
+    const left = People.mdef(v.id);
+    return { id: 'head:' + dept + ':' + S.day, group: 'people', icon: '👔', kind: 'manager', title: 'A new head for {dept}',
+      text: v.why === 'poached' ? '{name} has left for another airport. The team keeps working — only the head\'s skill is gone. Two candidates want the job.'
+        : '{name} has retired. The team keeps working — only the head\'s skill is gone. Two candidates want the job.',
+      params: { dept: DEPTS[dept].name, name: left ? left.name : '' }, default: 'none',
+      options: People.candidates(dept).map((id) => ({ id, manager: id, label: People.mdef(id).name })).concat([{ id: 'none', label: 'Nobody for now' }]) };
   }
 };

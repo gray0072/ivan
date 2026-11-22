@@ -112,7 +112,7 @@ addMissions(4, [
           F4('LF', 'F28', 10, '06:40', '09:05', 35, { base: 400, load: 0.85 }), F4('LF', 'B737', 4, '07:00', '08:40', 40, { base: 450, load: 0.85 }),
           F4('TRANSWEDE', 'MD87', 4, '06:50', '08:50', 35, { base: 200, load: 0.8, when: ['transwede', 'yes'] }),
           F4('SK', 'B767', 1, '07:50', '07:50', 90, { base: 900 }), F4('AY', 'MD87', 1, '08:20', '08:20', 45, { base: 800 })],
-        goal: [{ k: 'onTime', p: 0.8 }] }
+        goal: [{ k: 'onTime', p: 0.75 }] }
     ],
     goal: [{ k: 'perDay', code: 'TRANSWEDE', min: 4 }],
     stars: [{ k: 'onTime', p: 0.9 }, { k: 'airlines', min: 80 }]
@@ -178,7 +178,7 @@ addMissions(4, [
           F4('LH', 'B737', 3, '15:30', '17:10', 45, { base: 3020, load: 0.85 }), F4('AY', 'MD87', 2, '15:40', '17:20', 45, { base: 800, load: 0.85 }),
           F4('SK', 'B767', 1, '16:00', '16:00', 90, { base: 900 }), F4('SK', 'F28', 8, '15:15', '17:45', 35, { base: 500, load: 0.85 }),
           F4('SK', 'DC9', 8, '15:20', '17:40', 40, { base: 600, load: 0.85 }), F4('SK', 'MD87', 5, '15:25', '17:35', 45, { base: 150, intl: true, load: 0.85 })],
-        goal: [{ k: 'onTime', p: 0.7 }] },
+        goal: [{ k: 'onTime', p: 0.7 }, { k: 'dutyTasks', max: 5 }] },
       { name: 'Spring', mode: 'plan', days: 60, goal: [],
         choices: [{ id: 'dutyFree', at: 3, default: 'no', icon: '🛍️', title: 'A walk-through duty-free shop',
           text: 'Every international passenger would walk through it on the way to the gates. It needs the biggest unit — and passengers with time to spare.',
@@ -392,8 +392,8 @@ addMissions(4, [
         choices: [{ id: 'kids', at: 3, default: 'none', icon: '🧸', title: 'Something for the children',
           text: 'Two companies want a unit by the gates for the holidays.',
           options: [
-            { id: 'brio', brand: { term: 'intl', id: 'brio' }, label: 'BRIO toys' },
-            { id: 'max', brand: { term: 'intl', id: 'max' }, label: 'Max burgers' },
+            { id: 'brio', brand: { term: 'intl', id: 'brio' }, flag: 'kidsUnit', label: 'BRIO toys' },
+            { id: 'max', brand: { term: 'intl', id: 'max' }, flag: 'kidsUnit', label: 'Max burgers' },
             { id: 'none', label: 'Neither' }
           ] }] },
       { name: 'Snowy Saturday', mode: 'ops', date: '1998-12-19', from: '06:00', to: '09:00', weather: { temp: -6, wind: [30, 9], snow: [['06:20', '07:50', 3]] }, desks: 14,
@@ -407,7 +407,7 @@ addMissions(4, [
           F4('SK', 'B767', 1, '15:40', '15:40', 95, { base: 900 })],
         goal: [{ k: 'onTime', p: 0.8 }] }
     ],
-    goal: [],
+    goal: [{ k: 'flag', id: 'kidsUnit' }],
     stars: [{ k: 'passengers', min: 88 }, { k: 'brandsIn', min: 80000 }]
   },
   {
@@ -453,7 +453,7 @@ addMissions(4, [
           F4('SK', 'B737', 3, '24:10', '24:50', 45, { base: 500, load: 0.4 })],
         goal: [{ k: 'lost', max: 0 }, { k: 'airportDelay', max: 4 }] }
     ],
-    goal: [],
+    goal: [{ k: 'flag', id: 'y2kTested' }],
     stars: [{ k: 'airportDelay', max: 3 }, { k: 'passengers', min: 85 }],
     paper: { head: 'THE YEAR 2000 CAME — AND THE PLANES FLEW ON',
       text: 'Not a single clock stopped the airport at midnight. "Nothing happened, and that was the hard part," says the director, who spent the night in the tower with the IT people.' }

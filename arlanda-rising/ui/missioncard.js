@@ -63,13 +63,14 @@ const MissionCard = (() => {
 
   // a line of "Meanwhile…" about the people and the systems (sim/missions.js MEANWHILE_NEWS)
   function news(e) {
-    const mg = (id) => (MANAGERS[id] || {}).name || id;
+    const mg = (id) => (People.mdef(id) || {}).name || id;
     switch (e.type) {
       case 'settled': return tr('{dept}: a new wage deal, +{p}.', { dept: Text.dept(e.dept), p: Text.num(e.raise * 100, 1) + ' %' });
       case 'strikeNotice': return tr('{dept}: a strike notice for {d}.', { dept: Text.dept(e.dept), d: fmtDate(e.from) });
       case 'strikeOver': return tr('{dept}: the strike is over.', { dept: Text.dept(e.dept) });
-      case 'poached': return tr('{name} has left for {by}.', { name: mg(e.id), by: e.by });
-      case 'retired': return tr('{name} has retired. Thank you!', { name: mg(e.id) });
+      // session 7: what it means, and where the successors are
+      case 'poached': return tr('{name} has left for {by}.', { name: mg(e.id), by: e.by }) + ' ' + tr('The team keeps working — only the head\'s skill is gone. Find a new head in People.');
+      case 'retired': return tr('{name} has retired. Thank you!', { name: mg(e.id) }) + ' ' + tr('The team keeps working — only the head\'s skill is gone. Find a new head in People.');
       case 'raiseAsk': return tr('{name} asks for a raise.', { name: mg(e.id) });
       case 'teamReady': return tr('A new team works on {dom}.', { dom: Text.dom(e.dom) });
       case 'systemLive': return tr('{sys} is live.', { sys: Text.level(e.dom, S.domains[e.dom]) });

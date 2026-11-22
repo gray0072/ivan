@@ -46,7 +46,7 @@ const PlanUI = (() => {
     const ids = S.mission.projects || [];
     const goals = Goals.all(Missions.stage().goal, S.mission.st), mg = Text.missionGoals();
     const k = JSON.stringify(goals) + mg + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
-      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + (S.people ? S.people.it : 0) + winterAhead();
+      JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + JSON.stringify(S.people && [S.people.vacant, S.people.managers]) + (S.people ? S.people.it : 0) + winterAhead();
     box.hidden = false;
     if (k === key) return;
     key = k;
@@ -87,27 +87,16 @@ const PlanUI = (() => {
     box.innerHTML = html;
   }
 
-  // the teams and systems the mission lets the player add now: hire a team (ready in two weeks), put in a system
-  // (keep the team as the fallback, or let it go), IT people
+  // the teams and systems the mission lets the player add now (Text.ladder): hire a team (ready in two weeks), buy a
+  // system (straight from the hands too; from a team, keep it as the fallback or let it go), hire a team back beside a
+  // system; a department whose head has left, with a button to People; IT people
   function teams() {
-    const unlock = S.unlock || {};
     let html = '';
     for (const d of Object.keys(S.domains)) {
-      const lv = S.domains[d] || 0, next = lv + 1, L = DOMAINS[d].levels[next];
-      if (!L || (unlock[d] || 0) < next) continue;
-      const hiring = S.people && S.people.hiring.find((h) => h.dom === d), inst = S.sys && S.sys[d] && S.sys[d].installAt;
-      const why = Systems.cannot(d);
-      let right;
-      if (hiring || inst) right = '<span class="wait">' + Text.esc(tr('ready in {n} days', { n: (hiring ? hiring.at : inst) - S.day })) + '</span>';
-      else if (why === 'room') right = '<span class="wait">' + Text.esc(tr('Needs the computer room')) + '</span>';
-      else if (why === 'hall') right = '<span class="wait">' + Text.esc(tr('Needs the baggage hall')) + '</span>';
-      else if (why === 'pads') right = '<span class="wait">' + Text.esc(tr('Needs the remote de-icing pads')) + '</span>';
-      else if (why) right = '';
-      else if (next === 1) right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Hire')) + '<small>' + sekBare(Systems.price(d)) + '</small></button>';
-      else right = '<button class="tb startBtn" data-up="' + d + '" data-how="keep">' + Text.esc(tr('Keep the team')) + '<small>' + sekBare(Systems.price(d, 'keep')) + '</small></button>' +
-        '<button class="tb small" data-up="' + d + '" data-how="layoff">' + Text.esc(tr('Let it go')) + '<small>' + sekBare(Systems.price(d, 'layoff')) + '</small></button>';
-      html += '<div class="stageRow"><div class="sn"><b>' + DOMAINS[d].icon + ' ' + Text.esc(Text.level(d, next)) + '</b><small>' + Text.esc(Text.dom(d)) +
-        (L.staff ? ' · ' + Text.esc(Text.jobs(L.staff)) : '') + (L.month ? ' · ' + Text.esc(tr('{m} a month', { m: sekBare(L.month) })) : '') + (L.it ? ' · ' + Text.esc(tr('{n} IT people', { n: L.it })) : '') + '</small></div><div class="sr">' + right + '</div></div>';
+      for (const st of Text.ladder(d)) html += ladderStep(d, st);
+      const v = S.people && S.people.vacant && S.people.vacant[d];
+      if (v && People.staffed(d) && !People.manager(d)) html += '<div class="stageRow"><div class="sn"><b>👔 ' + Text.esc(tr('No head — find one')) + '</b><small>' + Text.esc(Text.dept(d)) + '</small></div>' +
+        '<div class="sr"><button class="tb small" data-people="1">👥 ' + Text.esc(tr('People')) + '</button></div></div>';
     }
     const need = Systems.itNeed();
     if (need || (S.people && S.people.it)) {
@@ -117,12 +106,24 @@ const PlanUI = (() => {
     return html ? '<div class="pHead"><b>' + Text.esc(tr('Teams and systems')) + '</b></div>' + html : '';
   }
 
+  // a step of a domain's ladder: its line (the domain, what, the price and running cost), then its buttons or what it
+  // waits for, then its notes
+  function ladderStep(d, st) {
+    const acts = (st.acts || []).map((a) => '<button class="tb' + (a.main ? ' startBtn' : ' small') + '" ' + a.data + '>' + Text.esc(a.label) + '<small>' + Text.esc(a.sum) + '</small></button>').join('');
+    return '<div class="lad"><div class="ladHead"><b>' + DOMAINS[d].icon + ' ' + Text.esc(st.title) + '</b><small>' + Text.esc(Text.dom(d) + (st.sub ? ' · ' + st.sub : '')) + '</small></div>' +
+      (st.wait ? '<small class="wait">' + Text.esc(st.wait) + '</small>' : '') + (st.notes || []).slice(0, 1).map((n) => '<small class="ladNote">' + Text.esc(n) + '</small>').join('') +
+      (acts ? '<div class="ladActs">' + acts + '</div>' : '') + (st.notes || []).slice(1).map((n) => '<small class="ladNote">' + Text.esc(n) + '</small>').join('') + '</div>';
+  }
+
   box.addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b || b.disabled) return;
     Sfx.play('click');
     const pid = b.dataset.p, sid = b.dataset.s;
+    if (b.dataset.people) { Game.openPanel('people'); return; }
     if (b.dataset.up) Actions.upgrade(b.dataset.up, b.dataset.how);
+    else if (b.dataset.sys) Actions.system(b.dataset.sys, b.dataset.how);
+    else if (b.dataset.back) Actions.hireBack(b.dataset.back);
     else if (b.dataset.it) Actions.hireIT(+b.dataset.it);
     else if (b.dataset.start) Actions.start(pid, sid, b.dataset.start);
     else if (b.dataset.pace) Actions.pace(pid, sid, b.dataset.pace);
@@ -150,6 +151,9 @@ const PlanUI = (() => {
       const u = S.people.depts[def.dept].union;
       extra = '<p class="fine">✊ ' + Text.esc(tr("The union's mood: {m} of 100", { m: Math.round(u.mood) })) + (People.manager(def.dept) ? ' · ' + Text.esc(Text.manager(People.manager(def.dept).id)) : '') + '</p>';
     }
+    // session 7: heads for a department with no team: the team comes with the head, and the card says so
+    const lead = def.options.find((o) => o.manager && !o.hire && People.needsTeam(o.manager));
+    if (lead) extra += '<p class="fine">👷 ' + Text.esc(Text.headTeam(lead.manager)) + '</p>';
     dec.innerHTML = '<div class="decIcon">' + (def.icon || '❓') + '</div><h2>' + Text.esc(tr(def.title || def.id, p)) + '</h2>' +
       '<p>' + Text.esc(tr(def.text || '', p)) + '</p>' + extra + '<div class="opts">' + def.options.map((o) => {
         const lines = o.manager ? '<span class="mgr">' + Text.managerLines(o.manager).map((l) => Text.esc(l)).join('<br>') + '</span>' : '';

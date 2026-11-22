@@ -1,13 +1,15 @@
 'use strict';
 
 // Arlanda Rising — the machines and systems of the automation ladder (SPEC.md "Manual, people, systems"): putting a
-// domain on its next level (a team hired is sim/people.js; a system is bought here, installed in its days in plan
-// time or at once between missions, with the old team kept as the fallback — retrained — or laid off), the IT
+// domain on its next level (a team hired is sim/people.js; a system is bought here — the next level of a system, or
+// the first system straight from the hands or from a team: it comes with its own operators —, installed in its days in
+// plan time or at once between missions, with the old team kept as the fallback — retrained — or laid off; a team can
+// be hired back beside it later, sim/people.js `hireBack`), the IT
 // people the systems need, failures in ops time (a mean time between failures, more often with too few IT people;
 // mended after the system's fix time), a power cut (every system without backup power), the fallback readiness (how
 // well the staff still know the manual way: it fades every month without a drill, and a failure with low readiness
 // is far worse), and the systems' share of the summary loss. Each system's record is S.sys[domain]:
-// { since, readiness, kept, fails, upMin, downMin, installAt }. Used by sim/tasks.js, sim/ops.js, sim/summary.js,
+// { since, readiness, kept, fails, upMin, downMin, installAt, to }. Used by sim/tasks.js, sim/ops.js, sim/summary.js,
 // sim/finance.js and the Ops Center.
 
 const Systems = {
@@ -30,40 +32,57 @@ const Systems = {
   },
   readiness(dom) { return S.sys && S.sys[dom] ? S.sys[dom].readiness : 1; },
 
-  // what stands in the way of the next level now, or null: 'top', 'year', 'room' (no computer room),
-  // 'hall' (no baggage hall), 'installing', 'money'
-  cannot(dom) {
-    const lv = this.level(dom), L = this.def(dom, lv + 1);
-    if (!L) return 'top';
+  // the system a domain can go to next: the level above a system, the first system (level 2) from the hands or a team
+  nextSystem(dom) { const lv = this.level(dom); return lv >= 2 ? lv + 1 : 2; },
+  // what stands in the way of level `to` (the next one by default; level 2 straight from the hands too) now, or null:
+  // 'top', 'year', 'ops' (nothing is hired or bought in ops time), 'room' (no computer room), 'hall' (no baggage hall),
+  // 'sorter', 'pads', 'installing' (a system being put in, new people on their way)
+  cannot(dom, to) {
+    const lv = this.level(dom);
+    if (to === undefined) to = lv + 1;
+    const L = this.def(dom, to);
+    if (!L || to <= lv || (to > lv + 1 && !(lv === 0 && to === 2))) return 'top';
     if (Calendar.year() < L.from) return 'year';
-    if (lv + 1 >= 2) {
-      if (S.sys && S.sys[dom] && S.sys[dom].installAt) return 'installing';
+    if (S.ops) return 'ops';
+    if (S.sys && S.sys[dom] && S.sys[dom].installAt) return 'installing';
+    if (to >= 2) {
       if ((L.it || 0) > 0 && !Airport.has('computerRoom')) return 'room';
       if (dom === 'baggage' && !Airport.has('bagHall')) return 'hall';
-      if (lv + 1 >= 3 && dom === 'baggage' && !Airport.has('sorterHall')) return 'sorter';
+      if (to >= 3 && dom === 'baggage' && !Airport.has('sorterHall')) return 'sorter';
       // session 5: the remote de-icing pads must be paved first
       if (dom === 'deice' && !Airport.has('deicePad')) return 'pads';
     }
-    if (S.people && S.people.hiring.some((h) => h.dom === dom)) return 'installing';
+    if (People.coming(dom)) return 'installing';
     return null;
   },
-  // the price of the next level: a system's own, plus the retraining of the team it keeps
-  price(dom, how) {
-    const lv = this.level(dom), L = this.def(dom, lv + 1);
-    if (!L) return 0;
-    if (lv + 1 === 1) return HIRE_COST * L.staff;
-    return L.price + (how === 'keep' && lv === 1 ? RETRAIN_COST * (this.def(dom, 1).staff || 0) : 0);
-  },
-  // the next level: a team (sim/people.js) or a system; how = 'keep' (retrain the team as the fallback) or 'layoff'
-  upgrade(dom, how) {
-    if (this.cannot(dom)) return false;
+  // the price of level `to`: a team's recruiting, or a system's own price plus the retraining of the team it keeps
+  price(dom, how, to) {
     const lv = this.level(dom);
-    if (lv === 0) return People.hire(dom);
-    const L = this.def(dom, lv + 1);
-    Finance.book('build', -this.price(dom, how));
+    if (to === undefined) to = lv + 1;
+    const L = this.def(dom, to);
+    if (!L) return 0;
+    if (to === 1) return HIRE_COST * L.staff;
+    return L.price + (how === 'keep' && lv === 1 ? this.retrain(dom) : 0);
+  },
+  // retraining the team a system replaces, to keep it as the fallback
+  retrain(dom) { return RETRAIN_COST * ((this.def(dom, 1) || {}).staff || 0); },
+  // the wages a month of the team below a system: what letting it go saves
+  teamWages(dom) { return ((this.def(dom, 1) || {}).staff || 0) * STAFF_MONTH * (People.has(dom) ? S.people.depts[dom].wageX : 1); },
+  // level `to` (the next by default): a team (sim/people.js) or a system — from a team how = 'keep' (retrain the team
+  // as the fallback) or 'layoff'; from the hands the system comes alone (a team can be hired as the fallback later)
+  upgrade(dom, how, to) {
+    const lv = this.level(dom);
+    if (to === undefined) to = lv + 1;
+    if (this.cannot(dom, to)) return false;
+    if (to === 1) return People.hire(dom);
+    const L = this.def(dom, to);
+    Finance.book('build', -this.price(dom, how, to));
     const r = this.rec(dom);
+    r.to = to;
+    if (lv === 0) r.kept = false;
     if (lv === 1) {
       r.kept = how !== 'layoff';
+      r.laidOff = how === 'layoff';
       if (how === 'layoff') {
         People.moraleAll(-LAYOFF_MORALE);
         S.meters.neighbours = clamp(S.meters.neighbours - 3, 0, 100);
@@ -80,7 +99,8 @@ const Systems = {
     r.installAt = null;
     r.since = S.day;
     r.readiness = r.kept ? 1 : READINESS_MIN;
-    S.domains[dom] = Math.min(DOMAINS[dom].levels.length - 1, this.level(dom) + 1);
+    S.domains[dom] = Math.min(DOMAINS[dom].levels.length - 1, Math.max(this.level(dom) + 1, r.to || 0));
+    r.to = null;
     People.dept(dom);
     People.updateMeter();
     logEvent('systemLive', { dom });

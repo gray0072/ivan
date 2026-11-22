@@ -1,7 +1,8 @@
 'use strict';
 
 // Arlanda Rising — the bar at the bottom of the game view: the check-in desks open of those there are (Open 2 of 4
-// desks, − / +), the ploughs to send when there is snow, the runway direction — the wind's (Runway 19 · the wind decides)
+// desks, − / +; session 7: under them who runs them — "Terminal service runs them", the system, or "Your call: 12 min"
+// while the player's own − / + holds; the same for the lanes and the booths), the ploughs to send when there is snow, the runway direction — the wind's (Runway 19 · the wind decides)
 // or, when it is calm, the player's: 01 lands over Märsta, 19 takes off over it, and which is quieter with the flights of
 // the next hour — and the small builds of the era (a remote stand, a fuel truck, a plough, a desk; in plan time with the
 // airport open also a kiosk, a café and car parks). Session 5: the security lanes and the passport booths open (− / +),
@@ -52,17 +53,30 @@ const Toolbar = (() => {
     return out.filter(ok);
   }
 
+  // who runs a kind of counter, as the small line under it: '' (the player), the team or the system, or the player's
+  // own choice holding for n more minutes
+  function runs(k) {
+    const by = Passengers.runBy(k);
+    if (!by) return '';
+    const held = Passengers.held(k);
+    if (held) return '✋ ' + tr('Your call: {n} min', { n: Math.ceil(held) });
+    const dom = { desks: 'checkin', lanes: 'security', booths: 'border' }[k];
+    if (by === 'system') return '⚙️ ' + tr('{sys} runs them', { sys: Text.level(dom, S.domains[dom]) });
+    return '👥 ' + tr('{dept} runs them', { dept: Text.dept(dom) });
+  }
+  const runLine = (t) => (t ? '<br><small>' + Text.esc(t) + '</small>' : '');
+
   function render() {
     if (!S || !S.mission || (!S.ops && !S.plan)) { box.hidden = true; key = ''; return; }
     const parts = [];
     if (S.ops) {
-      if (S.airport.desks > 0) parts.push(['desks', S.ops.desksOpen, S.airport.desks]);
+      if (S.airport.desks > 0) parts.push(['desks', S.ops.desksOpen, S.airport.desks, runs('desks')]);
       for (const id of Runways.surfaces()) {
         const s = Runways.surface(id);
         if (s.snow >= 0.8 || s.plough) parts.push(['plough', id, !!s.plough || S.ops.ploughQueue.indexOf(id) >= 0, Airport.ploughs() > 0]);
       }
-      if (Terminal.lanes()) parts.push(Terminal.secDomain() ? ['lanes', Terminal.lanes(), Terminal.lanesUp(), Passengers.secWait()] : ['sec', Passengers.secWait(), Terminal.lanes()]);
-      if (Terminal.borderOn()) parts.push(['booths', Terminal.booths(), S.airport.booths, Passengers.borderWait()]);
+      if (Terminal.lanes()) parts.push(Terminal.secDomain() ? ['lanes', Terminal.lanes(), Terminal.lanesUp(), Passengers.secWait(), runs('lanes')] : ['sec', Passengers.secWait(), Terminal.lanes()]);
+      if (Terminal.borderOn()) parts.push(['booths', Terminal.booths(), S.airport.booths, Passengers.borderWait(), runs('booths')]);
       const rw = Runways.main();
       if (rw) { const calm = Weather.now().wind < CALM_WIND; parts.push(['dir', Runways.direction(rw), calm, calm ? Runways.noiseAhead().dir : null]); }
       // the teams that are short or on strike today (overtime brings everybody in), the systems that are down
@@ -81,7 +95,7 @@ const Toolbar = (() => {
     for (const p of parts) {
       // the desks open of those there are ("Open 2 of 4 desks"), apart from the desks to buy (🧳 Check-in desk 4/12)
       if (p[0] === 'desks') html += '<div class="tgroup"><span class="tl" title="' + Text.esc(tr('Open desks check in the passengers and cost wages by the hour. To have more desks, buy them below.')) + '">🧳 ' +
-        Text.esc(tr('Open {open} of {n} desks', { open: '\u0001', n: p[2] })).replace('\u0001', '<b>' + p[1] + '</b>') + '</span>' +
+        Text.esc(tr('Open {open} of {n} desks', { open: '\u0001', n: p[2] })).replace('\u0001', '<b>' + p[1] + '</b>') + runLine(p[3]) + '</span>' +
         '<button class="tb small" data-act="deskMinus"' + (p[1] <= 0 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="deskPlus"' + (p[1] >= p[2] ? ' disabled' : '') + '>+</button></div>';
       else if (p[0] === 'plough') html += '<button class="tb' + (p[2] ? ' busy' : '') + '" data-act="plough" data-s="' + p[1] + '"' + (p[2] || !p[3] ? ' disabled' : '') + '>🚜 ' +
         Text.esc(p[2] ? tr('Ploughing') : tr('Plough')) + '<small>' + Text.esc(Text.surface(p[1])) + '</small></button>';
@@ -94,10 +108,10 @@ const Toolbar = (() => {
       else if (p[0] === 'sec') html += '<div class="tgroup' + (p[1] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛂 ' + Text.esc(tr('Security {n} min · {l} lanes', { n: Math.round(p[1]), l: p[2] })) + '</span>' +
         '<button class="tb small" data-act="tview" title="' + Text.esc(tr('Terminal view (T)')) + '">🏪</button></div>';
       else if (p[0] === 'lanes') html += '<div class="tgroup' + (p[3] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛂 ' + Text.esc(tr('Lanes')) + ' <b>' + p[1] + '/' + p[2] + '</b> · ' +
-        Text.esc(tr('{n} min', { n: Math.round(p[3]) })) + '</span><button class="tb small" data-act="laneMinus"' + (p[1] <= 1 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="lanePlus"' +
+        Text.esc(tr('{n} min', { n: Math.round(p[3]) })) + runLine(p[4]) + '</span><button class="tb small" data-act="laneMinus"' + (p[1] <= 1 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="lanePlus"' +
         (p[1] >= p[2] ? ' disabled' : '') + '>+</button></div>';
       else if (p[0] === 'booths') html += '<div class="tgroup' + (p[3] >= 10 ? ' warnGroup' : '') + '"><span class="tl">🛃 ' + Text.esc(tr('Booths')) + ' <b>' + p[1] + '/' + p[2] + '</b> · ' +
-        Text.esc(tr('{n} min', { n: Math.round(Math.min(99, p[3])) })) + '</span><button class="tb small" data-act="boothMinus"' + (p[1] <= 0 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="boothPlus"' +
+        Text.esc(tr('{n} min', { n: Math.round(Math.min(99, p[3])) })) + runLine(p[4]) + '</span><button class="tb small" data-act="boothMinus"' + (p[1] <= 0 ? ' disabled' : '') + '>−</button><button class="tb small" data-act="boothPlus"' +
         (p[1] >= p[2] ? ' disabled' : '') + '>+</button></div>';
       else if (p[0] === 'down') html += '<div class="tgroup warnGroup"><span class="tl">⚠️ ' + Text.esc(tr('{sys} is down: {n} min', { sys: Text.level(p[1], S.domains[p[1]]), n: p[2] })) + '</span></div>';
       else if (p[0] === 'short') html += '<div class="tgroup warnGroup"><span class="tl">' + (p[3] ? '✊ ' : '🤒 ') + Text.esc(p[3] ? tr('{dept} on strike', { dept: Text.dept(p[1]) }) : tr('{dept}: {p} at work', { dept: Text.dept(p[1]), p: Math.round(p[2] * 100) + ' %' })) + '</span>' +

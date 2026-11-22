@@ -83,7 +83,7 @@ const CHALLENGES = [
       airlines: { SK: [{ type: 'MD87', perDay: 16, load: 0.74 }, { type: 'B737', perDay: 14, load: 0.74 }, { type: 'DC9', perDay: 8, load: 0.72 }],
         BRAATHENS: [{ type: 'B737', perDay: 6, load: 0.72 }], PREMIAIR: [{ type: 'A320', perDay: 3, load: 0.9, months: [6, 7, 8, 12] }],
         LH: [{ type: 'B737', perDay: 5, load: 0.72 }], AY: [{ type: 'MD87', perDay: 5, load: 0.72 }] },
-      domains: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2 }, terms: { SK: 't2' },
+      domains: { stands: 2, turnaround: 1, checkin: 1, snow: 2, baggage: 3, info: 2 }, terms: { SK: 't2' },
       brands: [['intl', 'olearys'], ['intl', 'mcdonalds'], ['intl', 'pressbyran'], ['dom', 'max'], ['dom', 'pressbyran'], ['t2', 'espresso'], ['t2', 'pressbyran']] },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce'],
     aim: 'The busiest summer day of the century: six peaks from dawn to midnight.',
@@ -99,7 +99,7 @@ const CHALLENGES = [
         events: [{ at: '19:20', do: 'emergency' }], flights: CH_PEAK99('18:05', '20:40', 500), goal: [{ k: 'lost', max: 5 }] },
       { name: 'Last flights', mode: 'ops', from: '21:00', to: '24:00', desks: 12, weather: { temp: 15, wind: [210, 6] }, flights: CH_PEAK99('21:05', '23:00', 600), goal: [{ k: 'lost', max: 5 }] }
     ],
-    stars: [1000, 1200, 1350]
+    stars: [900, 1100, 1250]
   }
 ];
 const CHALLENGE = {};
