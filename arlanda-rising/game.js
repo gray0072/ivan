@@ -290,6 +290,13 @@ const Game = {
     if (Actions.stand(fid, stand.id)) { this.acted(); Sfx.play('click'); this.banner(tr('{no} → stand {s}', { no: f.no, s: stand.name })); } else this.banner(tr('Stand {s} is taken.', { s: stand.name }));
   },
   needsStand(f) { return S.ops && S.ops.tasks.some((k) => k.kind === 'stand' && k.target === f.id); },
+  // ⏭️ or N: the time jumps to the next task; the banner saying so shows only the first time on this device (Settings
+  // 'skipTold'), afterwards it would only cover the map
+  skip() {
+    if (!Sim.skip() || Settings.get('skipTold')) return;
+    Settings.set('skipTold', 1);
+    this.banner(tr('Skipped to the next task'));
+  },
 
   banner(text, ms) {
     const b = document.getElementById('banner');
@@ -375,7 +382,7 @@ const Game = {
     if (e.code === 'Space') { e.preventDefault(); if (this.speed) { this.lastSpeed = this.speed; this.speed = 0; } else this.speed = this.lastSpeed || 1; return; }
     const dig = /^Digit([1-4])$/.exec(e.code);
     if (dig) { this.speed = +dig[1] - 1; if (this.speed) this.lastSpeed = this.speed; return; }
-    if (e.code === 'KeyN') { if (Sim.skip()) this.banner(tr('Skipped to the next task')); return; }
+    if (e.code === 'KeyN') { this.skip(); return; }
     if (e.code === 'KeyQ' && S.ops && S.ops.tasks.length) { this.doTask(S.ops.tasks[0].id); return; }
     if (e.code === 'KeyR') { this.roofs(); return; }
   },
@@ -479,7 +486,7 @@ const Game = {
       this.speed = +b.dataset.speed;
       if (this.speed) this.lastSpeed = this.speed;
     }));
-    document.getElementById('skipBtn').addEventListener('click', () => { if (Sim.skip()) this.banner(tr('Skipped to the next task')); });
+    document.getElementById('skipBtn').addEventListener('click', () => this.skip());
     document.getElementById('pauseBtn').addEventListener('click', () => this.pauseMenu());
     document.getElementById('roofBtn').addEventListener('click', () => { Sfx.unlock(); if (this.screen === 'play') this.roofs(); });
     this.roofs(Settings.get('roofs') === 'off');

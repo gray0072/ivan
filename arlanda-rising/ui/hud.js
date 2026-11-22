@@ -1,11 +1,12 @@
 'use strict';
 
 // Arlanda Rising — the HUD over the map in a running stage: money (opens the money card), the date and clock, the
-// weather now (temperature, wind, snow, fog, the dark), the five meters, the speed buttons ⏸ ▶ ▶▶ ▶▶▶, Skip to the
+// weather now (temperature, wind, snow, fog, the dark; not on a phone held upright), the five meters, the speed buttons ⏸ ▶ ▶▶ ▶▶▶, Skip to the
 // next event, pause; and the stage's goals with their values right now. Refreshed a few times a second by
 // game.js.
 
-// a phone held upright: the money in the HUD without its currency, so the first row keeps its width
+// a phone held upright: the money in the HUD without its currency and no weather chip (styles.css), so the first row
+// keeps to one line
 const PHONE_UPRIGHT = window.matchMedia('(max-width: 600px) and (orientation: portrait)');
 
 const Hud = (() => {
@@ -51,8 +52,10 @@ const Hud = (() => {
       $('wx').textContent = parts.join(' · ');
       $('wxChip').hidden = false;
     } else if (S.plan) {
-      $('date').textContent = fmtDate(S.day);
-      $('wx').textContent = tr('Day {d} of {n}', { d: S.day - S.plan.day0 + 1, n: S.plan.end - S.plan.day0 });
+      const d = S.day - S.plan.day0 + 1, n = S.plan.end - S.plan.day0;
+      // on a phone held upright the weather chip is hidden: the stage's day goes beside the date, over its progress line
+      $('date').textContent = fmtDate(S.day) + (PHONE_UPRIGHT.matches ? ' · ' + d + '/' + n : '');
+      $('wx').textContent = tr('Day {d} of {n}', { d, n });
       $('wxChip').hidden = false;
     }
     for (const m of METERS) {

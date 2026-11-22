@@ -377,8 +377,13 @@ ul.has { margin: 0; padding-left: 18px; }
   #siteCard { max-height: 52vh; }
   .meter .mbar { width: 18px; }
 }
-/* a phone held upright: the money's chip keeps one width while the sum changes */
+/* a phone held upright: the money's chip keeps one width while the sum changes; no weather chip, so the first row stays
+   one line with a long month and the snow (in plan time its "Day d of n" goes beside the date, ui/hud.js), the date
+   without its calendar icon and the chips a little tighter, so the green rating's chip of chapter 6 still fits beside it
+   on a 360 px phone */
 @media (max-width: 600px) and (orientation: portrait) {
+  #wxChip, #dateChip .ico { display: none; }
+  #hud > .hudRow:first-child .chip { padding: 0 8px; }
   #money { display: inline-block; min-width: 4.6em; text-align: right; }
   .mwrap { flex-direction: column; align-items: flex-end; gap: 0; line-height: 1.05; }
   #trend { font-size: 10px; }
