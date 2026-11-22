@@ -283,9 +283,12 @@ const Text = {
     if (!out.length) out.push(tr('nothing changes'));
     return out.join(' · ');
   },
-  // a limit (Airport.cap): why it stops there, short (the build button at its limit) and in full (its tooltip)
+  // a limit (Airport.cap): why it stops there, short (the buy menu's card: its limit, and the reason at it) and in full
+  // (the card's tooltip, and a line on the card once it is reached)
   capWhy(cap) {
     switch (cap.why) {
+      case 'max': return cap.max === 1 ? tr('Max: one is enough') : tr('Max: {n}', { n: cap.max });
+      case 'charger': return tr('Max: every stand that fits has one');
       case 'stand': return tr('Max: one per stand');
       case 'runway': return tr('Max: a convoy per runway');
       case 'hall': return tr('Max: the halls are full');
@@ -298,6 +301,10 @@ const Text = {
     if (kind === 'deicer') return tr('An aircraft takes one de-icing truck at a time: one per stand is the most worth having ({n} stands).', { n: cap.n });
     if (kind === 'plough') return tr('A convoy of {c} ploughs sweeps a runway; with a convoy for each runway they all sweep at once ({n} runways).', { c: PLOUGH_CONVOY, n: cap.n });
     if (kind === 'desk') return tr('The check-in halls of the terminals standing have room for {max} desks. A new terminal brings more room.', { max: cap.max });
+    if (kind === 'solar') return tr('The green rating counts two solar parks at most.');
+    if (kind === 'cargoStand') return tr('The cargo apron has room for {max} stands.', { max: cap.max });
+    if (kind === 'charger') return tr('A charger goes on a stand near the terminal, up to size code D: {n} of them have none yet.', { n: Airport.chargeable().length });
+    if (cap.why === 'max') return tr('One is all the airport needs.');
     if (kind === 'stand') return tr('Their row beside the first apron has room for {max} aircraft up to a Boeing 737 or an A321, clear of the aprons of later years. The passengers walk out to them. The new aprons and piers bring stands of their own.', { max: cap.max });
     return tr('Each crash tender raises the fire category by one, from {base} up to {top}: {max} tenders are the most worth having.', { base: FIRE_CAT_BASE, top: FIRE_CAT_MAX, max: cap.max });
   },
@@ -310,8 +317,8 @@ const Text = {
     return tr('The drivers among today\'s passengers need about {need} places (the coaches and the train take some of them away); your car parks have {have}. Each place a driver takes earns parking fees, {m} a month now; a place more than the drivers need earns nothing.',
       { need: groupThousands(Airport.parkingNeed()), have: groupThousands(Airport.places(true)), m: sek(Airport.parkingMonth()) });
   },
-  // what a build button says about a thing that can be bought (data/buildings.js), for the bar and the menus: the
-  // explanation of its limit in full (a tooltip), why it cannot be bought now (short) or what it adds (short)
+  // what the buy menu's card says about a thing that can be bought (data/buildings.js): the explanation of its limit in
+  // full, why it cannot be bought now (short), what it needs first (Airport.needs)
   buyTip(kind) {
     const b = BUILDINGS[kind] || {}, cap = Airport.cap(kind);
     if (cap) return this.capTip(kind, cap);
@@ -323,7 +330,17 @@ const Text = {
     const b = BUILDINGS[kind] || {}, cap = Airport.cap(kind);
     return cap ? this.capWhy(cap) : b.cells ? tr('No room: needs {cells}', { cells: this.cells(b.cells) }) : tr('Enough: one more would earn nothing');
   },
-  buyGain(kind) { const g = Airport.parkingGain(kind); return g > 0 ? tr('+{m} a month', { m: sekBare(g) }) : ''; },
+  needWhy(need) {
+    switch (need) {
+      case 'kerb': return tr('Needs a terminal with a check-in hall');
+      case 'intl': return tr('Needs the international terminal');
+      case 'security': return tr('Needs a security checkpoint');
+      case 'deice': return tr('Needs de-icing at the airport');
+      case 'border': return tr('Needs passport control');
+      case 'green': return tr('Needs the green rating');
+    }
+    return tr('Needs Cargo City');
+  },
   // the runway direction when it is calm: what each one flies over the towns (sim/runways.js use)
   dirOver(d) { return d === '01' ? tr('Landings over Märsta') : Airport.runway('r3') ? tr('Take-offs over Upplands Väsby') : tr('Take-offs over Märsta'); },
   // session 7: the next steps on a domain's ladder, for the plan panel and the Ops Center — a team to hire (from the

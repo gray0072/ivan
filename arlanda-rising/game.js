@@ -2,7 +2,8 @@
 
 // Arlanda Rising — the main loop and the flow between the screens: the start screen over a slow flyover, the
 // campaign's timeline, the mission card, the card before each stage, play (the sim advanced at the chosen speed,
-// the HUD, the tray, the toolbar, the plan panel), the stage card, the results and the Office. It wires the map's
+// the HUD, the tray, the bar with the buy menu — 5, 6, 7 open its Services, Vehicles and Build, Esc closes it —, the
+// plan panel), the stage card, the results and the Office. It wires the map's
 // gestures (tap a task or an aircraft, drag one to a stand, pan, pinch), the keys and the cheats, keeps the running
 // mission saved (every AUTOSAVE_SECONDS, at each stage's end and when the page is hidden) and records the stars;
 // Free Play's rounds, the People screen and the Ops Center (keys P and O), and the cloud save's idle moments; session 4:
@@ -160,10 +161,10 @@ const Game = {
     this.hud(false);
   },
   // the play panels (the HUD stays) hidden behind a card
-  panels(on) { if (!on) for (const id of ['goalsBox', 'tray', 'toolbar', 'planPanel', 'decision', 'hint', 'finger', 'flightCard']) document.getElementById(id).hidden = true; },
+  panels(on) { if (!on) { for (const id of ['goalsBox', 'tray', 'toolbar', 'planPanel', 'decision', 'hint', 'finger', 'flightCard']) document.getElementById(id).hidden = true; BuyMenu.close(); } },
   hud(on) {
     document.getElementById('hud').hidden = !on;
-    if (!on) for (const id of ['goalsBox', 'tray', 'toolbar', 'planPanel', 'decision', 'hint', 'finger']) document.getElementById(id).hidden = true;
+    if (!on) { for (const id of ['goalsBox', 'tray', 'toolbar', 'planPanel', 'decision', 'hint', 'finger']) document.getElementById(id).hidden = true; BuyMenu.close(); }
   },
 
   startMission(id, diff) {
@@ -380,7 +381,8 @@ const Game = {
     if (e.shiftKey && this.cheat(e)) { e.preventDefault(); return; }
     const overlay = !!Screens.current;
     if (e.code === 'Escape') {
-      if (this.screen === 'play') this.pauseMenu();
+      if (this.screen === 'play' && BuyMenu.isOpen()) BuyMenu.close();
+      else if (this.screen === 'play') this.pauseMenu();
       else if (this.screen === 'pause') this.resume();
       else if (this.screen === 'info') this.backToPause();
       else if (this.screen === 'panel' || this.screen === 'tview') this.resume();
@@ -391,6 +393,12 @@ const Game = {
     if (PANEL_KEYS[e.code] && (this.screen === 'office' || this.screen === 'play')) { this.openPanel(PANEL_KEYS[e.code]); return; }
     if (overlay && (e.code === 'Enter' || e.code === 'Space' || e.code === 'NumpadEnter')) { if (Screens.pressDefault()) e.preventDefault(); return; }
     if (this.screen !== 'play' || !S || !S.mission) return;
+    // a button of the buy menu with the focus takes Space and Enter (not the pause)
+    const fb = document.activeElement;
+    if ((e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter') && fb && fb.tagName === 'BUTTON' && fb.closest('#buySheet, #tcats')) { e.preventDefault(); fb.click(); return; }
+    // 5, 6, 7: the buy menu's Services, Vehicles and Build (beside the speeds 1–4)
+    const bm = BUY_MENU.find((c) => c.key === e.code);
+    if (bm) { BuyMenu.toggle(bm.id); return; }
     if (e.code === 'Space') { e.preventDefault(); if (this.speed) { this.lastSpeed = this.speed; this.speed = 0; } else this.speed = this.lastSpeed || 1; return; }
     const dig = /^Digit([1-4])$/.exec(e.code);
     if (dig) { this.speed = +dig[1] - 1; if (this.speed) this.lastSpeed = this.speed; return; }

@@ -40,7 +40,10 @@ const MissionCard = (() => {
         '<p class="fine">' + Text.esc(tr('✓ is met at this moment; the stage and the mission are judged at their end.')) + ' ' +
         Text.esc(tr('Difficulty')) + ': ' + Text.esc(tr({ easy: 'Easy', medium: 'Medium', hard: 'Hard' }[S.difficulty] || 'Medium')) + '.</p>';
     }
-    if (m.news) html += '<div class="news"><p class="label">' + Text.esc(tr('New in this mission')) + '</p>' + m.news.map((n) => '<p>' + n.icon + ' ' + Text.esc(tr(n.text)) + '</p>').join('') + '</div>';
+    // what the mission opens in the bar's buy menu (data/missions `unlocks`), by its category
+    const opens = BUY_MENU.map((c) => [c, (m.unlocks || []).filter((k) => c.items.indexOf(k) >= 0)]).filter((x) => x[1].length)
+      .map((x) => '<p>🔓 ' + Text.esc(tr('New under {cat}: {what}', { cat: x[0].icon + ' ' + tr(x[0].name), what: x[1].map((k) => BUILDINGS[k].icon + ' ' + tr(BUILDINGS[k].name)).join(', ') })) + '</p>');
+    if (m.news || opens.length) html += '<div class="news"><p class="label">' + Text.esc(tr('New in this mission')) + '</p>' + (m.news || []).map((n) => '<p>' + n.icon + ' ' + Text.esc(tr(n.text)) + '</p>').join('') + opens.join('') + '</div>';
     return html;
   }
 

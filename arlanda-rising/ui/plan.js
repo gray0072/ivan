@@ -74,7 +74,7 @@ const PlanUI = (() => {
       html += '</div>';
     }
     html += teams();
-    for (const b of S.plan.buys) html += '<div class="buyRow">' + BUILD_ICONS[b.kind] + ' ' + Text.esc(tr(BUILDINGS[b.kind].name)) + ' — ' + Text.esc(tr('ready in {n} days', { n: b.done - S.day })) + '</div>';
+    for (const b of S.plan.buys) html += '<div class="buyRow">' + BUILDINGS[b.kind].icon + ' ' + Text.esc(tr(BUILDINGS[b.kind].name)) + ' — ' + Text.esc(tr('ready in {n} days', { n: b.done - S.day })) + '</div>';
     if (S.airport.open) {
       html += '<div class="fin"><span>' + Text.esc(tr('Fees')) + '</span>' + ['low', 'normal', 'high'].map((f) =>
         '<button class="tb small' + (S.airport.fees === f ? ' on' : '') + '" data-fees="' + f + '">' + Text.esc(tr({ low: 'Low', normal: 'Normal', high: 'High' }[f])) + '</button>').join('') + '</div>';

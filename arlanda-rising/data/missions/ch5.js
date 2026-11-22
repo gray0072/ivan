@@ -50,6 +50,7 @@ const ROUTES_2008 = Object.assign({}, ROUTES_2004, {
 addMissions(5, [
   {
     name: 'Schengen', kind: 'build', date: '2001-01-15', requires: BUILT_2000,
+    unlocks: ['booth'],
     setup: { open: true, openSkies: true, units: true, lanes: 12, budget: 60e6, minMoney: 400e6, loanLimit: 400e6, items: ITEMS_2000, desks: 40,
       airlines: ROUTES_2001, domains: TEAMS_2000, it: 6, terms: TERMS_2001, projects: ['schengen'], opens: ['border'], unlock: { border: 1 } },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'booth'],
@@ -306,6 +307,7 @@ addMissions(5, [
   },
   {
     name: 'Remote De-icing', kind: 'build', date: '2004-11-29', requires: BUILT_2003,
+    unlocks: ['deicer'],
     setup: { open: true, openSkies: true, minMoney: 300e6, units: true, lanes: 12, items: Object.assign({}, ITEMS_2000, { deicer: 3 }), desks: 40, airlines: ROUTES_2004,
       domains: TEAMS_2003, it: 6, terms: TERMS_2001, booths: 6, secRule: 1, events: true, projects: ['deicePads'], opens: ['deice'], unlock: { deice: 2 } },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'booth', 'lane', 'deice'],
@@ -343,6 +345,7 @@ addMissions(5, [
   },
   {
     name: 'Rent Is Steady', kind: 'business', date: '2006-02-06', requires: BUILT_2005,
+    unlocks: ['offices', 'hotelExt'],
     setup: { open: true, openSkies: true, minMoney: 300e6, units: true, lanes: 12, items: Object.assign({}, ITEMS_2000, { deicer: 3 }), desks: 40, airlines: ROUTES_2004,
       domains: TEAMS_2005, it: 7, terms: TERMS_2001, booths: 6, secRule: 1, events: true, projects: ['cargoCity'] },
     hands: [],

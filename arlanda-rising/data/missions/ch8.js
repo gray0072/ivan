@@ -42,6 +42,7 @@ const DAY_8 = (from, base, k) => {
 addMissions(8, [
   {
     name: 'Electric Wings', kind: 'operate', date: '2030-09-02', requires: BUILT_2030,
+    unlocks: ['mcharger'],
     setup: S8({ airlines: ROUTES_2030 }),
     hands: HANDS_8,
     brief: [
@@ -76,16 +77,17 @@ addMissions(8, [
   },
   {
     name: 'Charging Stands', kind: 'build', date: '2031-04-07', requires: BUILT_2030,
+    unlocks: ['charger'],
     setup: S8({ airlines: ROUTES_2030 }),
     hands: HANDS_8,
     brief: [
       'The electric flights are full every day, and the airline wants to fly twice as often — if the airport can charge its aircraft fast.',
-      'Charging stands are bought in the toolbar: each one turns a stand near the terminal into a charging stand. They also raise the green rating.',
+      'Charging stands are bought under Build, in the bar below: each one turns a stand near the terminal into a charging stand. They also raise the green rating.',
       'Have at least four by the summer, then run a morning of electric flights.'
     ],
     aim: 'Build at least four charging stands, then run a morning with twice the electric flights.',
     news: [
-      { icon: '🔌', text: 'Charging stands in the toolbar: each one also raises the green rating a little.' }
+      { icon: '🔌', text: 'Charging stands under Build, in the bar below: each one also raises the green rating a little.' }
     ],
     facts: [],
     stages: [
@@ -166,6 +168,7 @@ addMissions(8, [
   },
   {
     name: 'Hydrogen Morning', kind: 'build', date: '2035-08-27', requires: BUILT_2030,
+    unlocks: ['h2depot'],
     setup: S8({ airlines: ROUTES_2035, chargers: 4, domains: Object.assign({}, TEAMS_2030, { turnaround: 2 }) }),
     hands: HANDS_8,
     brief: [
@@ -290,6 +293,7 @@ addMissions(8, [
   },
   {
     name: 'Night Train or Night Flight', kind: 'choice', date: '2040-08-20', requires: BUILT_2036,
+    unlocks: ['nightTrain'],
     setup: S8({ items: ITEMS_2036, airlines: ROUTES_2040, chargers: 6, domains: Object.assign({}, TEAMS_2030, { turnaround: 2, border: 3 }) }),
     hands: [],
     brief: [

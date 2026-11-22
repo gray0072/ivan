@@ -11,7 +11,12 @@
 //   - a Real Arlanda medal is out of the reference's reach on every difficulty;
 //   - a mission is longer than MISSION_MINUTES_MAX or a stage longer than STAGE_MINUTES_MAX at ▶;
 //   - a mission starts with more check-in desks than the halls have room for, or more remote stands than their row
-//     (Airport.cap: the limits the build buttons show);
+//     (Airport.cap: the limits the buy menu shows);
+//   - a goal about something to add (built, fireCat, chargers, estate, runways, brands — not one marked `keep`) is
+//     already met when its mission starts: bought ahead, it would end its stage at once (data/missions `unlocks` keeps
+//     such things locked until their mission);
+//   - a reference strategy buys a small build its mission has not opened yet, a small build is in no category of the
+//     buy menu (BUY_MENU) or in two, a mission unlocks what is not a small build or what another mission unlocks;
 //   - a mission saved and resumed in the middle of each stage (the autosave) ends differently from one
 //     played straight through.
 // The strategy of the mission before is tried too, as a warning when it already gets ★★★.
@@ -40,6 +45,18 @@ const verbose = args.includes('--verbose');
 const only = args.filter((a) => !a.startsWith('--'));
 
 const out = vm.runInContext(`(() => {
+  const ADD_GOALS = ['built', 'fireCat', 'chargers', 'estate', 'runways', 'brands'];
+  // the buy menu's data: every small build in exactly one category, every kind a mission opens a small build named by
+  // that mission only
+  const menuOf = {}, setup = [];
+  for (const c of BUY_MENU) for (const k of c.items) { if (menuOf[k]) setup.push(k + ' is in two categories of BUY_MENU'); menuOf[k] = c.id; }
+  for (const k of Object.keys(BUILDINGS)) if (BUILDINGS[k].small && !menuOf[k]) setup.push(k + ' is in no category of BUY_MENU');
+  const opener = {};
+  for (const m of MISSIONS) for (const k of m.unlocks || []) {
+    if (!BUILDINGS[k] || !BUILDINGS[k].small) setup.push(m.id + ' unlocks ' + k + ', not a small build');
+    if (opener[k]) setup.push(k + ' is unlocked by ' + opener[k] + ' and ' + m.id);
+    opener[k] = m.id;
+  }
   // plays a mission from a world with a strategy; cutAt: [steps…] after which the game is saved, thrown away
   // and resumed from the save (the autosave's test)
   function play(id, d, world, strat, cutAt, def) {
@@ -47,6 +64,12 @@ const out = vm.runInContext(`(() => {
     // what the mission starts with stays within the limits the player sees (Airport.cap): the desks the halls have
     // room for, the remote stands
     const over = ['desk', 'stand'].filter((k) => Airport.owned(k) > Airport.cap(k).max).map((k) => k + ' ' + Airport.owned(k) + '/' + Airport.cap(k).max);
+    // a goal about something to add — a build, the fire category, chargers, rent, runways, brands — is not met before the
+    // mission starts (else what was bought ahead would end its stage at once); \`keep: true\` marks a goal to keep what is there
+    const st0 = Goals.newStats(), md = Missions.def(), early = [];
+    const ahead = (g, where) => { if (ADD_GOALS.indexOf(g.k) >= 0 && !g.keep) { const c = Goals.check(g, st0); if (c.ok) early.push(where + ' ' + g.k + (g.kind ? ' ' + g.kind : '') + '=' + c.value); } };
+    md.stages.forEach((s, k) => (s.goal || []).forEach((g) => ahead(g, 'stage ' + (k + 1))));
+    (md.goal || []).concat(md.stars || []).forEach((g) => ahead(g, 'mission'));
     let r = Strategy.runner(strat), steps = 0, stageSteps = 0, cuts = 0;
     const stageMin = [];
     for (;;) {
@@ -71,7 +94,7 @@ const out = vm.runInContext(`(() => {
     const m = S.mission, tot = m.total;
     for (const res of m.results) if (res) stageMin.push(+Missions.minutes(res.st).toFixed(1));
     return {
-      status: m.status, stars: m.stars, medal: m.medal, cuts, over, state: JSON.stringify(S),
+      status: m.status, stars: m.stars, medal: m.medal, cuts, over, early, state: JSON.stringify(S),
       failedStage: m.status === 'stageFailed' ? m.stage : null,
       failed: m.status === 'stageFailed' ? m.results[m.stage].goals.filter((g) => !g.ok).map((g) => g.goal.k + '=' + g.value) : [],
       judged: m.judged ? m.judged.stars.map((g) => (g.ok ? '✓ ' : '✗ ') + g.goal.k + '=' + g.value) : [],
@@ -113,6 +136,12 @@ const out = vm.runInContext(`(() => {
       if (res.status !== 'done') r.problems.push(d + ': the reference fails' + (res.failedStage !== null ? ' stage ' + (res.failedStage + 1) + ' (' + res.failed.join(', ') + ')' : ''));
       else if (d !== 'hard' && res.stars < 3) r.problems.push(d + ': the reference gets ' + res.stars + ' stars (' + res.judged.join(', ') + ')');
       if (res.over.length) r.problems.push(d + ': starts past a limit (' + res.over.join(', ') + ')');
+      if (res.early.length) r.problems.push(d + ': a goal is met at the start (' + res.early.join(', ') + ')');
+    }
+    // the reference buys nothing its mission has not opened yet (it would be refused)
+    for (const mv of STRATEGIES[m.id].moves || []) {
+      const at = mv.do === 'buy' && Missions.unlockAt(mv.kind);
+      if (at && MISSIONS.indexOf(MISSION[at]) > i) r.problems.push('the reference buys ' + mv.kind + ', opened only in ' + at);
     }
     const md = r.diffs.medium;
     if (md.minutes > MISSION_MINUTES_MAX) r.problems.push('takes ' + md.minutes + ' min at ▶ (max ' + MISSION_MINUTES_MAX + ')');
@@ -164,6 +193,7 @@ const out = vm.runInContext(`(() => {
     if (resumed.state !== r.diffs.medium.state) r.problems.push('a resumed challenge ends differently');
     for (const d of DIFFICULTY_ORDER) { delete r.diffs[d].state; delete r.diffs[d].world; }
   }
+  if (setup.length) report.unshift({ id: 'data', name: 'the buy menu', problems: setup, warnings: [], diffs: {} });
   return JSON.stringify(report);
 })()`, ctx);
 

@@ -107,6 +107,7 @@ addMissions(1, [
   },
   {
     name: 'The First Terminal', kind: 'build', date: '1960-04-04', requires: BUILT_1959.concat(['tower1']),
+    unlocks: ['desk', 'kiosk'],
     setup: { budget: 40e6, projects: ['terminal1'] },
     hands: ['stand', 'checkin'],
     brief: [
@@ -167,6 +168,7 @@ addMissions(1, [
   },
   {
     name: 'The Fuel Truck', kind: 'operate', date: '1960-10-10', requires: BUILT_1959.concat(['tower1', 'terminal1']),
+    unlocks: ['fuelTruck'],
     setup: { open: true, items: { fuelTruck: 1 } },
     hands: ['stand', 'checkin', 'fuel'],
     brief: [
@@ -177,7 +179,7 @@ addMissions(1, [
     aim: 'Fuel every aircraft in time: no departures late because of the fuel.',
     news: [
       { icon: '⛽', text: 'Fuel by hand: send the truck when the passengers are off.' },
-      { icon: '🛒', text: 'Buy a second truck from the toolbar.' }
+      { icon: '🛒', text: 'Buy a second truck: Vehicles, in the bar below.' }
     ],
     stages: [
       { name: 'Morning', mode: 'ops', from: '07:00', to: '10:00', weather: { temp: 8, wind: [240, 12] }, desks: 2,
@@ -192,6 +194,7 @@ addMissions(1, [
   },
   {
     name: 'First Snow', kind: 'crisis', date: '1960-12-05', requires: BUILT_1959.concat(['tower1', 'terminal1']),
+    unlocks: ['plough'],
     setup: { open: true, items: { fuelTruck: 2, plough: 2 } },
     hands: ['stand', 'checkin', 'plough'],
     brief: [
@@ -217,6 +220,7 @@ addMissions(1, [
   },
   {
     name: 'Make It Pay', kind: 'business', date: '1961-03-06', requires: BUILT_1959.concat(['tower1', 'terminal1']),
+    unlocks: ['cafe', 'parkingSmall', 'parkingBig'],
     setup: { open: true, items: { fuelTruck: 2, plough: 2 }, airlines: { SK: [{ type: 'CRVL', perDay: 11, load: 0.65 }, { type: 'DC8', perDay: 2, load: 0.7 }] } },
     brief: [
       'Arlanda is open, but it loses money: the runway, the tower and the people cost more every month than the fees bring in.',
@@ -277,6 +281,7 @@ addMissions(1, [
   },
   {
     name: 'Opening Day', kind: 'operate', date: '1962-04-01', requires: BUILT_1959.concat(['tower1', 'terminal1', 'lights1']),
+    unlocks: ['stand'],
     setup: { open: true, items: { fuelTruck: 2, plough: 2 }, desks: 4 },
     hands: ['stand', 'checkin', 'fuel'],
     brief: [
@@ -287,7 +292,7 @@ addMissions(1, [
     aim: 'Run the opening day on time, with the ceremony on stand 1.',
     news: [
       { icon: '👑', text: 'The ceremony closes stand 1 from 11 to 13.' },
-      { icon: '🅿️', text: 'A remote stand can be built at once from the toolbar.' }
+      { icon: '🅿️', text: 'A remote stand: Build, in the bar below. In ops time it is there at once.' }
     ],
     facts: [
       { text: 'King Gustaf VI Adolf officially opened Arlanda on 1 April 1962.', src: SRC_EN },

@@ -94,7 +94,7 @@ const FlightCard = (() => {
   function steps(f) {
     const t = Sim.clockNow(), S5 = Turnaround.steps(f, t), C = Traffic.STEP_COL;
     const by = S5.fuel.by, fuelName = by === 'h2' ? tr('Hydrogen') : by === 'stand' || by === 'mobile' || by === 'electric' ? tr('Charge') : tr('Fuel');
-    const names = { off: tr('Passengers off'), svc: tr('Services'), fuel: fuelName, board: tr('Boarding'), deice: tr('De-icing') };
+    const names = { off: tr('Passengers off'), svc: tr('Servicing'), fuel: fuelName, board: tr('Boarding'), deice: tr('De-icing') };
     // the bar, as over the aircraft (render/traffic.js gantt)
     const cell = (s, col, cls) => '<span' + (cls ? ' class="' + cls + '"' : '') + (s.st === 'wait' ? ' style="background:' + C.wait + '"' : '') + '>' +
       (s.st === 'coming' ? '<i class="pale" style="width:' + pct(s.drive) + '%;background:' + col + '"></i>' : '') +

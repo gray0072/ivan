@@ -13,6 +13,19 @@ const Missions = {
 
   // the mission's definition: from the list, or the one Free Play made (kept in the state)
   def() { return S.mission.def || MISSION[S.mission.id]; },
+  // the campaign's mission that opens a small build (data/missions `unlocks`), or null when its year is enough
+  unlockAt(kind) {
+    if (!this._unlocks) { this._unlocks = {}; for (const m of MISSIONS) for (const k of m.unlocks || []) this._unlocks[k] = m.id; }
+    return this._unlocks[kind] || null;
+  },
+  // the mission that still has to start before a small build can be bought: in the campaign one later than the running
+  // mission (an earlier mission replayed has what it had then); Free Play and the Challenge Days (their own `def`) lock
+  // nothing
+  lockedBy(kind) {
+    const at = this.unlockAt(kind);
+    if (!at || !S.mission || S.mission.def || !MISSION[S.mission.id]) return null;
+    return MISSIONS.indexOf(MISSION[at]) > MISSIONS.indexOf(MISSION[S.mission.id]) ? at : null;
+  },
   stage() { return this.def().stages[S.mission.stage]; },
 
   // `world`: the campaign's airport to go on from (null: a new campaign, the forest of 1958)

@@ -298,6 +298,7 @@ addMissions(3, [
   },
   {
     name: 'Payback', kind: 'business', date: '1988-03-07', requires: BUILT_1983.concat(['computerRoom']),
+    unlocks: ['dutyFree'],
     setup: { open: true, items: ITEMS_1983, desks: 26, airlines: ROUTES_1988, domains: Object.assign({}, TEAMS_1976, { stands: 2, info: 2 }), it: 3 },
     brief: [
       'The owner wants to know what each krona brings back. Some investments pay back in months, some in decades.',
@@ -337,6 +338,7 @@ addMissions(3, [
   },
   {
     name: 'Flygbussarna', kind: 'choice', date: '1989-04-03', requires: BUILT_1983.concat(['computerRoom']),
+    unlocks: ['busStop'],
     setup: { open: true, items: ITEMS_1983, desks: 26, airlines: ROUTES_1988, domains: Object.assign({}, TEAMS_1976, { stands: 2, info: 2 }), it: 3 },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce'],
     brief: [
@@ -370,6 +372,7 @@ addMissions(3, [
   },
   {
     name: 'Exam: Domestic Rush', kind: 'exam', date: '1989-12-18', requires: BUILT_1983.concat(['computerRoom', 'terminal3']),
+    unlocks: ['generator'],
     setup: { open: true, items: ITEMS_1983, desks: 26, airlines: ROUTES_1988, domains: Object.assign({}, TEAMS_1976, { stands: 2, info: 2 }), it: 3 },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'plough'],
     brief: [

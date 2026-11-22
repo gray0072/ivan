@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest?v=1">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=1">
 <meta name="theme-color" content="#203445">
-<link rel="stylesheet" href="styles.css?v=16">
+<link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
 <canvas id="map"></canvas>
@@ -41,7 +41,8 @@
 <div id="goalsBox" hidden></div>
 <div id="tray" hidden></div>
 <div id="planPanel" hidden></div>
-<div id="toolbar" hidden></div>
+<div id="toolbar" hidden><div id="tlive"></div><div id="tcats"></div></div>
+<div id="buySheet" role="dialog" hidden></div>
 <div id="flightCard" class="card" hidden></div>
 <div id="siteCard" class="card" hidden></div>
 <div id="decision" class="card" hidden></div>
@@ -70,12 +71,12 @@
   <div id="challenges" class="panel wide" hidden></div>
 </div>
 
-<script src="data/icons.js?v=9"></script>
+<script src="data/icons.js?v=10"></script>
 <script src="core/icons.js?v=1"></script>
 <script src="constants.js?v=14"></script>
 <script src="data/aircraft.js?v=5"></script>
 <script src="data/airlines.js?v=5"></script>
-<script src="data/buildings.js?v=9"></script>
+<script src="data/buildings.js?v=10"></script>
 <script src="data/terminals.js?v=6"></script>
 <script src="data/brands.js?v=1"></script>
 <script src="data/events.js?v=2"></script>
@@ -84,15 +85,15 @@
 <script src="data/sites.js?v=3"></script>
 <script src="data/domains.js?v=5"></script>
 <script src="data/people.js?v=3"></script>
-<script src="data/missions/missions.js?v=5"></script>
-<script src="data/missions/ch1.js?v=2"></script>
-<script src="data/missions/ch2.js?v=2"></script>
-<script src="data/missions/ch3.js?v=3"></script>
-<script src="data/missions/ch4.js?v=4"></script>
-<script src="data/missions/ch5.js?v=2"></script>
-<script src="data/missions/ch6.js?v=3"></script>
-<script src="data/missions/ch7.js?v=3"></script>
-<script src="data/missions/ch8.js?v=4"></script>
+<script src="data/missions/missions.js?v=6"></script>
+<script src="data/missions/ch1.js?v=3"></script>
+<script src="data/missions/ch2.js?v=3"></script>
+<script src="data/missions/ch3.js?v=4"></script>
+<script src="data/missions/ch4.js?v=5"></script>
+<script src="data/missions/ch5.js?v=3"></script>
+<script src="data/missions/ch6.js?v=4"></script>
+<script src="data/missions/ch7.js?v=4"></script>
+<script src="data/missions/ch8.js?v=5"></script>
 <script src="data/challenges.js?v=3"></script>
 <script src="data/strategies/strategies.js?v=1"></script>
 <script src="data/strategies/ch1.js?v=2"></script>
@@ -103,8 +104,8 @@
 <script src="data/strategies/ch6.js?v=2"></script>
 <script src="data/strategies/ch7.js?v=1"></script>
 <script src="data/strategies/ch8.js?v=1"></script>
-<script src="data/lang-ru.js?v=19"></script>
-<script src="data/lang-sv.js?v=19"></script>
+<script src="data/lang-ru.js?v=20"></script>
+<script src="data/lang-sv.js?v=20"></script>
 <script src="core/utils.js?v=2"></script>
 <script src="core/events.js?v=1"></script>
 <script src="core/storage.js?v=2"></script>
@@ -126,7 +127,7 @@
 <script src="sim/airlines.js?v=1"></script>
 <script src="sim/people.js?v=4"></script>
 <script src="sim/systems.js?v=5"></script>
-<script src="sim/airport.js?v=11"></script>
+<script src="sim/airport.js?v=12"></script>
 <script src="sim/fleet.js?v=2"></script>
 <script src="sim/stands.js?v=2"></script>
 <script src="sim/schedule.js?v=4"></script>
@@ -139,15 +140,15 @@
 <script src="sim/summary.js?v=6"></script>
 <script src="sim/plan.js?v=8"></script>
 <script src="sim/ops.js?v=6"></script>
-<script src="sim/goals.js?v=5"></script>
-<script src="sim/missions.js?v=8"></script>
-<script src="sim/actions.js?v=7"></script>
+<script src="sim/goals.js?v=6"></script>
+<script src="sim/missions.js?v=9"></script>
+<script src="sim/actions.js?v=8"></script>
 <script src="sim/sim.js?v=2"></script>
 <script src="sim/strategy.js?v=2"></script>
 <script src="sim/cheats.js?v=3"></script>
 <script src="sim/freeplay.js?v=5"></script>
 <script src="sim/offers.js?v=4"></script>
-<script src="sim/invest.js?v=4"></script>
+<script src="sim/invest.js?v=5"></script>
 <script src="sim/challenges.js?v=1"></script>
 <script src="sim/events.js?v=2"></script>
 <script src="sim/green.js?v=3"></script>
@@ -167,16 +168,17 @@
 <script src="render/sky.js?v=1"></script>
 <script src="render/map.js?v=12"></script>
 <script src="render/terminal.js?v=7"></script>
-<script src="ui/text.js?v=12"></script>
-<script src="ui/screens.js?v=5"></script>
+<script src="ui/text.js?v=13"></script>
+<script src="ui/screens.js?v=6"></script>
 <script src="ui/hud.js?v=5"></script>
 <script src="ui/tray.js?v=1"></script>
-<script src="ui/toolbar.js?v=11"></script>
-<script src="ui/plan.js?v=9"></script>
-<script src="ui/cards.js?v=3"></script>
-<script src="ui/sitecard.js?v=6"></script>
+<script src="ui/buymenu.js?v=1"></script>
+<script src="ui/toolbar.js?v=12"></script>
+<script src="ui/plan.js?v=10"></script>
+<script src="ui/cards.js?v=4"></script>
+<script src="ui/sitecard.js?v=7"></script>
 <script src="ui/timeline.js?v=1"></script>
-<script src="ui/missioncard.js?v=5"></script>
+<script src="ui/missioncard.js?v=6"></script>
 <script src="ui/results.js?v=4"></script>
 <script src="ui/office.js?v=11"></script>
 <script src="ui/people.js?v=4"></script>
@@ -188,6 +190,6 @@
 <script src="ui/challenges.js?v=1"></script>
 <script src="ui/hints.js?v=7"></script>
 <script src="ui/sounds.js?v=1"></script>
-<script src="game.js?v=10"></script>
+<script src="game.js?v=11"></script>
 </body>
 </html>

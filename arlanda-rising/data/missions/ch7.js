@@ -77,7 +77,7 @@ addMissions(7, [
             ] }] }
     ],
     goal: [{ k: 'flag', id: 'shopsAnswered' }],
-    stars: [{ k: 'mothballed', min: 2 }, { k: 'brands', min: 10 }]
+    stars: [{ k: 'mothballed', min: 2 }, { k: 'brands', min: 10, keep: true }]
   },
   {
     name: 'Furlough or Lay Off', kind: 'choice', date: '2020-04-14', requires: BUILT_2018,
@@ -113,6 +113,7 @@ addMissions(7, [
   },
   {
     name: 'Cargo Saves the Day', kind: 'business', date: '2020-05-04', requires: BUILT_2018,
+    unlocks: ['cargoStand'],
     setup: S7({ airlines: ROUTES_2019, demand: 0.07 }),
     hands: HANDS_7,
     brief: [
@@ -298,7 +299,7 @@ addMissions(7, [
     hands: HANDS_7,
     brief: [
       'Midsummer week, and every flight is full. The security company has lost many of its screeners this spring, and families come hours early to be sure.',
-      'A second security company could send screeners who are cleared already. Seasonal temps could fill in for the ones on holiday. Overtime in the toolbar helps for a day.',
+      'A second security company could send screeners who are cleared already. Seasonal temps could fill in for the ones on holiday. Overtime in the bar below helps for a day.',
       'Then the morning before Midsummer Eve, and the afternoon.'
     ],
     aim: 'Keep the security queues short on the busiest days of the summer of 2022.',
@@ -333,6 +334,7 @@ addMissions(7, [
   },
   {
     name: 'Cyber Morning', kind: 'crisis', date: '2023-10-09', requires: BUILT_2022,
+    unlocks: ['cyberCentre'],
     setup: S7({ airlines: ROUTES_2022, demand: 0.95, leavers: LEAVERS_2022, cyber: true }),
     hands: HANDS_7,
     brief: [

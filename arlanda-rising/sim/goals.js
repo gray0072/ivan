@@ -19,7 +19,9 @@
 //   session 6: loss (max SEK the stage lost: costs above income), cargo (min SEK from freight in the stage), mothballed (min
 //   terminals closed), laidOff (max share of the jobs gone), readiness (min fallback readiness of the systems, %),
 //   chargers (min charging stands), joined (Terminals 4 and 5 joined airside).
-// A mission's ★ is every stage passed and its own `goal`; ★★ and ★★★ one each of its two `stars`.
+// A mission's ★ is every stage passed and its own `goal`; ★★ and ★★★ one each of its two `stars`. A goal about something
+// to add (built, fireCat, chargers, estate, runways, brands) is never met when its mission starts (tools/missions-check.js);
+// `keep: true` marks one that asks to keep what is there (7-1: the brands through the pandemic).
 // Used by sim/missions.js, the stage card and the results.
 
 const Goals = {

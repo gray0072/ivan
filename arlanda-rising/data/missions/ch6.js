@@ -248,6 +248,7 @@ addMissions(6, [
   },
   {
     name: 'The Permit', kind: 'business', date: '2013-11-25', requires: BUILT_2010,
+    unlocks: ['solar', 'evehicles'],
     setup: { open: true, openSkies: true, minMoney: 300e6, units: true, lanes: 16, items: ITEMS_2010, desks: 40, airlines: ROUTES_2013, domains: Object.assign({}, TEAMS_2010, { checkin: 3 }), it: 9,
       terms: TERMS_2010, booths: 8, secRule: 2, owner: 'Swedavia', green: true, permit: { perDay: 110, green: 62, from: '2014-01-15' } },
     hands: [],

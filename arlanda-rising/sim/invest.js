@@ -5,18 +5,22 @@
 // shares, the brands' rent and spend, the systems' running costs against the work they save. For each thing the
 // airport owns — and, as a what-if, for a thing before it is bought — `card` gives its price, what it earns and costs
 // a month, the payback in months (null when it never pays back at today's traffic) and its net present value over
-// NPV_YEARS at NPV_RATE. Estimates, not the books: the Finance screen shows both. Used by ui/finance.js, the toolbar's
-// and the decisions' "pays back in …".
+// NPV_YEARS at NPV_RATE; `at` works one out at a multiple of today's passengers. Estimates, not the books: the Finance
+// screen shows both. Used by ui/finance.js, the buy menu's cards (ui/buymenu.js) and the decisions' "pays back in …".
 
 const Invest = {
+  // the traffic a what-if is worked out at, as a share of today's (`at`)
+  k: 1,
   // departing passengers a day (the last days in summary; a guess from the routes when none were flown yet)
   paxDay() {
     const t = S.traffic || [];
-    if (t.length) return t.reduce((s, d) => s + d.pax, 0) / t.length;
+    if (t.length) return t.reduce((s, d) => s + d.pax, 0) / t.length * this.k;
     let p = 0;
     for (const code of Object.keys(S.airlines)) for (const r of S.airlines[code].routes || []) p += r.perDay * AIRCRAFT[r.type].seats * (r.load || 0.7);
-    return S.airport.open ? p : 0;
+    return S.airport.open ? p * this.k : 0;
   },
+  // a what-if at k times today's passengers (the buy menu's "×2 passengers": the car parks' need grows with them too)
+  at(k, fn) { const was = this.k; this.k = k; try { return fn(); } finally { this.k = was; } },
   share(key) { const t = S.traffic || []; const p = t.reduce((s, d) => s + d.pax, 0); return p ? t.reduce((s, d) => s + (d[key] || 0), 0) / p : 0.5; },
   // the passengers of one terminal a day: its share of the flights' passengers
   termPax(term) {
@@ -39,7 +43,7 @@ const Invest = {
     // session 5: a solar park saves a share of the energy bill (chapter 6)
     if (kind === 'solar' && Green.on()) inn += ENERGY_MONTH * 1.25 * ENERGY_SAVE.solar;
     if (b.places) inn += own ? Airport.parkingMonth() * b.places / Math.max(1, Airport.places()) : Airport.parkingGain(kind);
-    const out = (b.staff || 0) * STAFF_MONTH + (b.price || 0) * UPKEEP_YEAR / 12 + (kind === 'lane' ? LANE_MONTH : 0);
+    const out = (b.staff || 0) * STAFF_MONTH + (b.price || 0) * UPKEEP_YEAR / 12 + (kind === 'lane' ? LANE_MONTH : 0) + (kind === 'booth' ? BOOTH_MONTH : 0);
     return { in: inn, out };
   },
   // a brand in a unit

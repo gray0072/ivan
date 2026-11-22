@@ -38,6 +38,7 @@ const ROUTES_1997 = {
 addMissions(4, [
   {
     name: 'Domestic 2', kind: 'build', date: '1990-03-05', requires: BUILT_1989,
+    unlocks: ['lane'],
     setup: { open: true, openSkies: true, units: true, lanes: 10, budget: 60e6, minMoney: 300e6, loanLimit: 250e6, items: ITEMS_1990, desks: 26, airlines: ROUTES_1990,
       domains: TEAMS_1990, it: 3, projects: ['terminal2'] },
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce'],

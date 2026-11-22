@@ -209,6 +209,7 @@ addMissions(2, [
   },
   {
     name: 'Fire Category', kind: 'operate', date: '1971-10-04', requires: BUILT_1962.concat(['apron2', 'apron2.bigStand']),
+    unlocks: ['crashTender'],
     setup: { open: true, items: ITEMS_1971, desks: 6, airlines: ROUTES_1971, domains: TEAMS_1968 },
     hands: ['stand', 'checkin', 'fuel'],
     brief: [
@@ -369,6 +370,7 @@ addMissions(2, [
   },
   {
     name: 'Exam: The International Terminal', kind: 'exam', date: '1976-03-01',
+    unlocks: ['restaurant'],
     requires: BUILT_1962.concat(['apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2']),
     setup: { open: true, budget: 60e6, loanLimit: 300e6, items: Object.assign({ crashTender: 2 }, ITEMS_1971), desks: 6, airlines: ROUTES_1976,
       domains: Object.assign({ baggage: 2 }, TEAMS_1968, { snow: 1 }), projects: ['intlTerminal'] },

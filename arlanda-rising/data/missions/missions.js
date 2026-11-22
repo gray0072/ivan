@@ -11,6 +11,11 @@
 //                  projects (to build), items ({ kind: n } owned at least), desks, airlines ({ code: routes })
 //   grants         projects the owner's grant may pay for
 //   hands          the kinds of tray tasks the player does (stand, fuel, checkin, plough); a stage may set its own
+//   unlocks        the small builds (data/buildings.js) this mission teaches: in the campaign the bar's buy menu shows
+//                  them locked (🔒 "Opens in mission 2-6") in the missions before it, and the sim refuses them there
+//                  (Missions.unlockAt, Airport.why); a kind no mission names is there from its year. Free Play and
+//                  the Challenge Days have everything of their year. A goal about such a thing (built, fireCat, chargers,
+//                  estate…) is then never met before its mission starts: tools/missions-check.js checks it
 //   brief          two or three of Astrid's speech bubbles; aim: the one line of its aim; news: [{ icon, text }] what is new
 //   stages         [{ name, mode: 'ops' | 'plan', … }]:
 //                  ops: from, to (clock), flights (sim/schedule.js), weather (sim/weather.js), desks (open at the

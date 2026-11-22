@@ -165,7 +165,7 @@ const SiteCard = (() => {
     const max = Airport.cellsMax(term), taken = Airport.cellsTaken(term), list = Airport.shopsIn(term), sell = Airport.canSell();
     let h = '</table><h4>' + Text.esc(tr('Shops: {n} / {max} cells', { n: taken, max })) + '</h4><table class="cells">';
     for (const s of list) {
-      const name = BUILD_ICONS[s.kind] + ' ' + Text.esc(tr(BUILDINGS[s.kind].name)), size = Text.esc(Text.cells(s.cells));
+      const name = BUILDINGS[s.kind].icon + ' ' + Text.esc(tr(BUILDINGS[s.kind].name)), size = Text.esc(Text.cells(s.cells));
       let act = '';
       if (s.buy) act = '<small>' + Text.esc(tr('ready in {n} days', { n: s.buy.done - S.day })) + '</small>';
       else if (sell) {

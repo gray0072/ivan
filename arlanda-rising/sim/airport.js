@@ -4,7 +4,8 @@
 // finishing a master-plan project does (`complete`), the small builds bought during a mission (`buy`), and
 // the numbers the rest of the sim asks for — runway separation, fuel trucks, ploughs, the most of a thing worth
 // having (`cap`: no more can be bought past it — a vehicle, the check-in desks the halls have room for, the remote
-// stands), the airport's own shops in the terminals' cells (bought into a terminal with room, sold back: `sell`) and their
+// stands, a kind's own `max`), why a small build cannot be bought now (`why`: its year, a later mission, what it needs, its
+// limit), the airport's own shops in the terminals' cells (bought into a terminal with room, sold back: `sell`) and their
 // share, the car parks' places against those the drivers need and what they take, the monthly running cost of
 // everything the airport owns.
 
@@ -129,9 +130,13 @@ const Airport = {
   // fire category, the terminals' halls), or null for no limit — a fuel or a de-icing truck for each stand (an aircraft
   // takes one at a time), a full plough convoy for each runway (the convoys sweep at the same time), crash tenders up to
   // the top fire category, the check-in desks the halls of the terminals standing have room for (deskRoom), the remote
-  // stands their row has room for (REMOTE_STANDS_MAX). ui/text.js capWhy and capTip say why.
+  // stands their row has room for (REMOTE_STANDS_MAX), a charger for each stand near the terminal that fits one, and a
+  // kind's own `max` (data/buildings.js: one generator, two solar parks, five cargo stands…). ui/text.js capWhy and
+  // capTip say why.
   cap(kind) {
     const stands = S.airport.stands.length, runways = Math.max(1, S.airport.runways.length);
+    if ((BUILDINGS[kind] || {}).max) return { max: BUILDINGS[kind].max, why: 'max', n: BUILDINGS[kind].max };
+    if (kind === 'charger') return { max: this.count('charger') + this.chargeable().length, why: 'charger', n: 0 };
     if (kind === 'fuelTruck') return { max: Math.max(1, stands * FUEL_TRUCKS_PER_STAND), why: 'stand', n: stands };
     if (kind === 'deicer') return { max: Math.max(1, stands * DEICERS_PER_STAND), why: 'stand', n: stands };
     if (kind === 'plough') return { max: runways * PLOUGH_CONVOY, why: 'runway', n: runways };
@@ -268,7 +273,33 @@ const Airport = {
     logEvent('built', { what: effect, project });
   },
 
-  // a small build from the toolbar: paid now; in ops time there at once, in plan time after its days
+  // the stands a charger can go on, the best first: near the terminal, up to size code D, not the cargo apron's
+  chargeable() {
+    return S.airport.stands.filter((s) => !s.charge && !s.cargo && SIZE_CODES.indexOf(s.code) <= 3)
+      .sort((x, y) => (y.contact - x.contact) || (x.dist - y.dist) || (x.id < y.id ? -1 : 1));
+  },
+  // what a small build needs standing before it can be bought (data/buildings.js `needs`): null, or the need not met
+  needs(kind) {
+    const n = (BUILDINGS[kind] || {}).needs;
+    const met = !n || (n === 'kerb' ? Terminal.built('kerb') : n === 'intl' ? this.has('intlTerminal') : n === 'security' ? (S.airport.lanes || 0) > 0 :
+      n === 'deice' ? S.domains.deice !== undefined : n === 'border' ? !!S.airport.schengen : n === 'green' ? Green.on() : n === 'cargo' ? this.has('cargoCity') : true);
+    return met ? null : n;
+  },
+  // why the player cannot buy a small build now (the buy menu shows it, Actions.buy refuses it): null when it can be
+  // bought, else { why: 'year' (not before `from`), 'locked' (a later mission opens it: `mission`), 'needs' (`need`), 'full'
+  // (Airport.full: a limit, no cells, enough places) }. Money is not a reason: a buy may take the money below zero.
+  why(kind) {
+    const b = BUILDINGS[kind];
+    if (!b || !b.small) return { why: 'none' };
+    if (b.from && Calendar.year() < b.from) return { why: 'year', year: b.from };
+    const at = Missions.lockedBy(kind);
+    if (at) return { why: 'locked', mission: at };
+    const need = this.needs(kind);
+    if (need) return { why: 'needs', need };
+    if (this.full(kind)) return { why: 'full' };
+    return null;
+  },
+  // a small build (the buy menu, a decision's option): paid now; in ops time there at once, in plan time after its days
   buy(kind) {
     const b = BUILDINGS[kind];
     if (!b || !b.small) return false;
@@ -296,8 +327,7 @@ const Airport = {
       const st = this.addStand({ name: 'K' + (n + 1), code: 'E', contact: false, dist: 5, at: [at[0] - Math.floor(n / spots.length) * 4, at[1] + Math.floor(n / spots.length) * 35] });
       st.cargo = true; st.pad = true;
     } else if (kind === 'charger') {
-      const st = S.airport.stands.filter((s) => !s.charge && !s.cargo && SIZE_CODES.indexOf(s.code) <= 3)
-        .sort((x, y) => (y.contact - x.contact) || (x.dist - y.dist) || (x.id < y.id ? -1 : 1))[0];
+      const st = this.chargeable()[0];
       if (st) st.charge = true;
     } else if (kind === 'mcharger' && S.ops && S.ops.chargers) S.ops.chargers.push(0);
     this.addItem(kind, term ? { term } : null);

@@ -39,8 +39,10 @@ const Actions = {
   },
   dir(d) { if (['01', '19'].indexOf(d) < 0) return false; S.airport.prefDir = d; return true; },
   fees(level) { if (!FEE_LEVELS[level]) return false; S.airport.fees = level; return true; },
+  // a small build of the buy menu: refused when its year has not come, a later mission opens it, what it needs is not
+  // there or it is at its limit (Airport.why); a decision's option builds through Airport.buy, past the locks
   buy(kind) {
-    if (!Airport.buy(kind)) return false;
+    if (Airport.why(kind) || !Airport.buy(kind)) return false;
     // a vehicle bought in ops time joins at once
     if (S.ops && kind === 'fuelTruck') S.ops.trucks.push(0);
     if (S.ops && kind === 'deicer' && S.ops.deicers) S.ops.deicers.push(0);
