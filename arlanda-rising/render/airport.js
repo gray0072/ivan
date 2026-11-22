@@ -591,7 +591,10 @@ const AirportArt = (() => {
       sites.push({ key: 'tower1', box: [T1.x - T1.base / 2, T1.y - T1.base / 2, T1.x + T1.base / 2, T1.y + T1.base / 2], h: T1.h });
       add(T1.x + 5, T1.y - 5, (c) => tower(c, sc));
     }
-    if (sc.items.fireStation) site('fireStation', LAYOUT.fireStation.box, LAYOUT.fireStation.h, 1, (c) => fireStation(c, sc), '#e8e3d8');
+    // the fire station (built in 1-4 with the first terminal): its walls going up, then the station with its red doors
+    const FS = LAYOUT.fireStation, qFS = sc.items.fireStation ? 1 : sc.p('fireStation', 'station');
+    if (qFS >= 1) site('fireStation', FS.box, FS.h, 1, (c) => fireStation(c, sc), '#e8e3d8');
+    else if (qFS > 0) site('fireStation', FS.box, FS.h, qFS, (c) => block(c, sc, FS.box, FS.h, qFS, '#e8e3d8'));
     // session 3: the international terminal — its hall on the landside and its pier along the gates
     const I = LAYOUT.intlTerminal.box, fI = sc.p('intlTerminal', 'frame');
     const qI = sc.items.intlTerminal ? 1 : fI > 0 ? Math.min(fI, 0.5) + sc.p('intlTerminal', 'hall') * 0.5 : 0;
@@ -691,7 +694,7 @@ const AirportArt = (() => {
       if (!Object.values(p.stages).some((s) => s.on && !s.done)) continue;
       const pl = PROJECTS[id] && PROJECTS[id].plot;
       const pos = id === 'tower1' ? [LAYOUT.tower1.x + 18, LAYOUT.tower1.y + 6, 42] : id === 'terminal1' ? [T.box[2] + 12, T.box[3] - 20, 28, T.box[1]] :
-        pl && ['intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'terminal3', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2', 't4t5', 'pier2040'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34, pl.y] :
+        pl && ['fireStation', 'intlTerminal', 'domTerminal', 'bagHall', 'computerRoom', 'terminal2', 'terminal3', 'sorterHall', 'schengen', 'pierF', 'skyCity', 'cargoCity', 'gateF', 'tower2', 't4t5', 'pier2040'].indexOf(id) >= 0 ? [pl.x + pl.w + 10, pl.y + pl.h / 2, 34, pl.y] :
         id === 'runway3' ? [LAYOUT.runway3.from[0] + 120, LAYOUT.runway3.from[1] + 1200, 30] : id === 'bridges' ? [LAYOUT.bridges[0][0], LAYOUT.bridges[0][1] + 40, 30] :
         id === 'arlandaExpress' ? [LAYOUT.rail.south[0] + 30, LAYOUT.rail.south[1], 30] : null;
       if (pos) add(pos[0], pos[3] !== undefined ? Math.min(pos[1], pos[3]) : pos[1], (c) => crane(c, pos[0], pos[1], pos[2], sc.anim));

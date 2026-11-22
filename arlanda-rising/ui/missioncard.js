@@ -100,6 +100,11 @@ const MissionCard = (() => {
         (mw.ownerLoan ? ' ' + Text.esc(tr('The owner lent you {m} to start with.', { m: sek(mw.ownerLoan) })) : '') + '</p>' +
         (mw.news || []).map((e) => '<p>• ' + Text.esc(news(e)) + '</p>').join('') + '</div>';
     }
+    // what the owner bought at the mission's start that the buy menu sells (Missions.setup `gave`): told, never silent
+    const gave = Object.keys(S.mission.gave || {});
+    if (i === 0 && gave.length && !S.mission.def) {
+      html += '<div class="meanwhile"><p>🛒 ' + Text.esc(tr('The owner bought for the airport: {list}.', { list: gave.map((k) => S.mission.gave[k] + ' × ' + tr(Terminal.itemName(k))).join(', ') })) + '</p></div>';
+    }
     if (st.mode === 'ops' && S.ops) {
       const notes = [];
       if (S.ops.strike) notes.push('✊ ' + tr('{dept} is on strike today.', { dept: Text.dept(S.ops.strike) }));

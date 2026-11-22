@@ -174,8 +174,11 @@ const Airport = {
       Finance.book('sold', it.price || BUILDINGS.stand.price);
     }
   },
-  // the fire service's category: the first fire station's, and one more for each crash tender bought
-  fireCat() { return this.has('fireStation') ? Math.min(FIRE_CAT_MAX, FIRE_CAT_BASE + this.count('crashTender')) : 0; },
+  // the fire service's category: the first fire station's, and one more for each crash tender bought; before the station
+  // stands, the building site's fire watch by the runway (FIRE_CAT_SITE: the training flights of 1959–60)
+  fireCat() { return this.has('fireStation') ? Math.min(FIRE_CAT_MAX, FIRE_CAT_BASE + this.count('crashTender')) : this.siteFireWatch() ? FIRE_CAT_SITE : 0; },
+  // the building site's fire watch: a runway and no fire station yet
+  siteFireWatch() { return !this.has('fireStation') && S.airport.runways.length > 0; },
   addStand(def) {
     const st = { id: 's' + nextId(), name: def.name, code: def.code, contact: !!def.contact, dist: def.dist, occ: null, res: null };
     if (def.at) st.at = def.at.slice();
@@ -194,8 +197,9 @@ const Airport = {
         a.runways.push({ id: 'r1', name: '01/19', dirs: ['01', '19'], hdg: [10, 190], len: p.len || 3300,
           lit: false, approach: false, snow: 0, plough: null, busyUntil: 0 });
         this.addItem('runway', { price });
-        this.addItem('fireStation');
         break;
+      // the first fire station with its crash tenders (built in 1-4; a world of an older version has it from the runway)
+      case 'fireStation': if (!this.has('fireStation')) this.addItem('fireStation', { price }); break;
       case 'apron1':
         for (const s of p.stands) this.addStand(s);
         this.addItem('apron', { price });

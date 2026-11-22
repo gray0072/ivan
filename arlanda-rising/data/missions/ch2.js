@@ -9,10 +9,12 @@
 
 const SRC_SV2 = 'sv.wikipedia Arlanda (Historia)';
 // everything chapter 1 built, for a mission started without the campaign (a cheat's jump)
-const BUILT_1962 = ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1'];
-const ITEMS_1962 = { fuelTruck: 2, plough: 4 };
-// the jumbo's era: a 747 keeps a fuel truck busy for over an hour
-const ITEMS_1971 = { fuelTruck: 4, plough: 4 };
+const BUILT_1962 = ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1'];
+// the vehicles chapter 1 asked the player to have (1-6's fuel truck, 1-7's two ploughs): what a mission started without
+// the campaign (a cheat's jump) is topped up to — never more, so nothing the player buys appears by itself
+const ITEMS_1962 = { fuelTruck: 1, plough: 2 };
+// the jumbo's era: a 747 keeps a fuel truck busy for over an hour — more trucks are the player's to buy
+const ITEMS_1971 = ITEMS_1962;
 
 // a series of flights for an ops stage
 const FL = (al, type, n, from, to, turn, extra) => Object.assign({ al, type, n, from, to, turn, load: 0.72 }, extra || {});
@@ -185,7 +187,8 @@ addMissions(2, [
     aim: 'Build the jumbo stand, then handle the first 747 day.',
     news: [
       { icon: '✈️', text: 'The Boeing 747: size code E, 400 seats, a long turnaround.' },
-      { icon: '🅿️', text: 'Stand 5: the first stand for the biggest jets.' }
+      { icon: '🅿️', text: 'Stand 5: the first stand for the biggest jets.' },
+      { icon: '⛽', text: 'A 747 keeps a fuel truck busy for over an hour: more trucks under Vehicles, in the bar below.' }
     ],
     facts: [
       { text: 'SAS put its first Boeing 747-283B into service in 1971.', src: 'airhistory.net SE-DDL; worldairlinenews.com' }

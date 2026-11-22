@@ -381,9 +381,10 @@ addMissions(4, [
       'Children with suitcases and an hour to wait. A café, a toy shop or a burger by the gate makes that hour better — and earns more than on any other week.',
       'Snow is forecast for Saturday morning. Get ready.'
     ],
-    aim: 'Get the Christmas charters away through the snow, with happy families.',
+    aim: 'Get the Christmas charters away through the snow, and let the shops earn from the families\' hour of waiting.',
     news: [
-      { icon: '🎄', text: 'Families: in summer and at Christmas the children\'s favourites earn twice as much.' }
+      { icon: '🎄', text: 'Families: in summer and at Christmas the children\'s favourites earn twice as much.' },
+      { icon: '🛍️', text: 'The shops\' takings count: a unit let to a brand in the Terminal view earns too.' }
     ],
     facts: [
       { text: 'Novair began flying in November 1997 for the tour operator Apollo; Premiair was formed in 1994 from Scanair and Conair.', src: 'en.wikipedia Novair; en.wikipedia Sunclass Airlines' }
@@ -391,10 +392,10 @@ addMissions(4, [
     stages: [
       { name: 'Getting ready', mode: 'plan', days: 18, goal: [],
         choices: [{ id: 'kids', at: 3, default: 'none', icon: '🧸', title: 'Something for the children',
-          text: 'Two companies want a unit by the gates for the holidays.',
+          text: 'Two companies want a place for the holidays. BRIO would open a toy kiosk by the international gates, where the charter families wait. Max would take a whole unit in Terminal 2: more takings, a dearer fit-out.',
           options: [
-            { id: 'brio', brand: { term: 'intl', id: 'brio' }, flag: 'kidsUnit', label: 'BRIO toys' },
-            { id: 'max', brand: { term: 'intl', id: 'max' }, flag: 'kidsUnit', label: 'Max burgers' },
+            { id: 'brio', brand: { term: 'intl', id: 'brio' }, label: 'BRIO toys' },
+            { id: 'max', brand: { term: 't2', id: 'max' }, label: 'Max burgers' },
             { id: 'none', label: 'Neither' }
           ] }] },
       { name: 'Snowy Saturday', mode: 'ops', date: '1998-12-19', from: '06:00', to: '09:00', weather: { temp: -6, wind: [30, 9], snow: [['06:20', '07:50', 3]] }, desks: 14,
@@ -408,8 +409,9 @@ addMissions(4, [
           F4('SK', 'B767', 1, '15:40', '15:40', 95, { base: 900 })],
         goal: [{ k: 'onTime', p: 0.8 }] }
     ],
-    goal: [{ k: 'flag', id: 'kidsUnit' }],
-    stars: [{ k: 'passengers', min: 88 }, { k: 'brandsIn', min: 80000 }]
+    // the shops' takings over Christmas: BRIO, Max or units let by hand in the Terminal view pass it; doing nothing does not
+    goal: [{ k: 'brandsIn', min: 2e6 }],
+    stars: [{ k: 'passengers', min: 88 }, { k: 'brandsIn', min: 2.5e6 }]
   },
   {
     name: 'Exam: Millennium Night', kind: 'exam', date: '1999-12-06', requires: BUILT_1999,
@@ -419,13 +421,14 @@ addMissions(4, [
     hands: ['stand', 'checkin', 'fuel', 'bags', 'announce', 'plough'],
     brief: [
       'The year 2000 is coming, and nobody is quite sure what old computers will do when their clocks jump from 99 to 00.',
-      'The trains have run to the terminals since 24 November. Every system you own has a clock inside. Test them now — or trust the suppliers.',
+      'The trains have run to the terminals since 24 November. Every system you own has a clock inside. Test them now — or trust the suppliers, and be ready to do the work by hand.',
       'Then the last afternoon of the century, and the night itself. Everything you learnt in this chapter.'
     ],
-    aim: 'Prepare every system for the year 2000, then run New Year\'s Eve and the night.',
+    aim: 'Get ready for the year 2000, then run New Year\'s Eve and the night without leaving the work to the duty manager.',
     news: [
       { icon: '🎓', text: 'The exam: everything of the chapter.' },
-      { icon: '🕛', text: 'Millennium night: a system not tested may stop at midnight.' }
+      { icon: '🕛', text: 'Millennium night: a system not tested may stop at midnight.' },
+      { icon: '🥂', text: 'New Year\'s Eve: half of each team is at home. If a system stops, its work comes to your tray.' }
     ],
     facts: [
       { text: 'Nothing went wrong at midnight: no aircraft was in Swedish airspace, the head of the civil aviation administration and his team waited at Arlanda, and at about two o\'clock two aircraft checked the landing aids. They were fine.', src: 'SIKA / LFV, Luftfart 2000' },
@@ -446,15 +449,18 @@ addMissions(4, [
           F4('LH', 'B737', 2, '14:10', '15:00', 45, { base: 3020 }), F4('AY', 'MD87', 1, '14:40', '14:40', 45, { base: 800 })],
         goal: [{ k: 'lost', max: 0 }, { k: 'checkinWait', max: 4 }] },
       { name: 'Midnight', mode: 'ops', from: '22:00', to: '25:00', weather: { temp: -10, wind: [10, 5] }, desks: 8,
+        sick: { stands: 0.5, checkin: 0.5, baggage: 0.5, info: 0.5 },
         events: [{ at: '24:00', do: 'fail', dom: 'stands', min: 90, unless: 'y2kTested' }, { at: '24:00', do: 'fail', dom: 'checkin', min: 90, unless: 'y2kTested' },
           { at: '24:00', do: 'fail', dom: 'info', min: 90, unless: 'y2kTested' }, { at: '24:00', do: 'fail', dom: 'baggage', min: 90, unless: 'y2kTested' },
           { at: '24:10', do: 'emergency' }],
         flights: [F4('SK', 'MD87', 6, '22:05', '23:30', 40, { base: 100 }), F4('SK', 'B737', 5, '22:10', '23:25', 40, { base: 200 }),
           F4('NOVAIR', 'A320', 2, '23:40', '24:10', 70, { base: 300, load: 0.6 }), F4('PREMIAIR', 'A320', 3, '24:00', '24:40', 60, { base: 400, load: 0.5 }),
           F4('SK', 'B737', 3, '24:10', '24:50', 45, { base: 500, load: 0.4 })],
-        goal: [{ k: 'lost', max: 0 }, { k: 'airportDelay', max: 4 }] }
+        goal: [{ k: 'lost', max: 0 }, { k: 'airportDelay', max: 4 }, { k: 'dutyTasks', max: 2 }] }
     ],
-    goal: [{ k: 'flag', id: 'y2kTested' }],
+    // no decision is the goal: tested systems run through midnight; untested ones stop, and the thin night shift leaves
+    // their work to the player's hands — the duty manager may do two tasks at most
+    goal: [],
     stars: [{ k: 'airportDelay', max: 3 }, { k: 'passengers', min: 85 }],
     paper: { head: 'THE YEAR 2000 CAME — AND THE PLANES FLEW ON',
       text: 'Not a single clock stopped the airport at midnight. "Nothing happened, and that was the hard part," says the director, who spent the night in the tower with the IT people.' }

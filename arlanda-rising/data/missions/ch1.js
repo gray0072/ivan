@@ -9,6 +9,8 @@
 const SRC_SV = 'sv.wikipedia Arlanda (Historia)';
 const SRC_EN = 'en.wikipedia Stockholm Arlanda Airport (History)';
 const BUILT_1959 = ['site', 'runway1', 'apron1'];
+// … and from the first terminal's opening on (1-4): the tower, the terminal and the fire station built with it
+const BUILT_1960 = BUILT_1959.concat(['tower1', 'terminal1', 'fireStation']);
 
 // a series of SAS flights for an ops stage
 const SK = (type, n, from, to, turn, extra) => Object.assign({ al: 'SK', type, n, from, to, turn, load: 0.7 }, extra || {});
@@ -65,7 +67,8 @@ addMissions(1, [
     news: [
       { icon: '🛬', text: 'The task tray: tap a task to do the obvious thing, or drag it to a stand.' },
       { icon: '🅿️', text: 'Stands: a big aircraft needs a big stand.' },
-      { icon: '🌙', text: 'The dark: without lights the runway closes at dusk.' }
+      { icon: '🌙', text: 'The dark: without lights the runway closes at dusk.' },
+      { icon: '🚒', text: 'Fire cover: until the airport has its fire station, the building site\'s fire watch stands by the runway — enough for the training flights.' }
     ],
     facts: [{ text: 'Arlanda was first used on 14 December 1959, for school flying only; the first landing was an SAS Caravelle from Bromma, on runway 1.', src: SRC_SV }],
     stages: [
@@ -81,7 +84,7 @@ addMissions(1, [
   },
   {
     name: 'The Tower', kind: 'build', date: '1960-01-11', requires: BUILT_1959,
-    setup: { budget: 45e6, projects: ['tower1'] },
+    setup: { budget: 52e6, projects: ['tower1'] },
     hands: ['stand'],
     brief: [
       'Without a control tower the controllers keep the aircraft far apart — one movement every six minutes. Arlanda needs its tower before the regular flights come.',
@@ -107,17 +110,20 @@ addMissions(1, [
   },
   {
     name: 'The First Terminal', kind: 'build', date: '1960-04-04', requires: BUILT_1959.concat(['tower1']),
+    // the fire station with it: before it the building site's fire watch (FIRE_CAT_SITE) covered 1-2's and 1-3's sorties
     unlocks: ['desk', 'kiosk'],
-    setup: { budget: 40e6, projects: ['terminal1'] },
+    setup: { budget: 76e6, projects: ['terminal1', 'fireStation'] },
     hands: ['stand', 'checkin'],
     brief: [
       'Arlanda began with very simple buildings. Ours has a hall, four check-in desks and a waiting room — and it must be ready by 26 June.',
-      'One building firm, one crew. Work out the order, and how to fit in a kiosk for the waiting passengers.',
+      'Before the first passengers come, the airport needs a fire station of its own: if an aircraft lands in trouble, the crash tenders must reach it within minutes. The building site\'s fire watch was enough for the training flights, not for airliners full of people.',
       'On 26 June 1960 the first regular flight leaves Arlanda: an SAS DC-8 to New York. Your desks check in its passengers!'
     ],
-    aim: 'Open the terminal by 26 June, then check in the first passengers.',
+    aim: 'Build the fire station and open the terminal by 26 June, then check in the first passengers.',
     news: [
       { icon: '🏢', text: 'The first terminal: a hall, check-in desks and a waiting room.' },
+      { icon: '🚒', text: 'The fire station: its crash tenders give fire category 7, enough for a DC-8.' },
+      { icon: '👷', text: 'One building firm, one crew: work out the order, and how to fit in a kiosk.' },
       { icon: '🧳', text: 'Check-in: open desks before the queue grows.' }
     ],
     facts: [
@@ -125,10 +131,10 @@ addMissions(1, [
       { text: 'The first regular flight was an SAS DC-8 to New York on 26 June 1960.', src: SRC_SV }
     ],
     stages: [
-      { name: 'The hall', mode: 'plan', days: 42, crews: 1, endEarly: true,
-        goal: [{ k: 'project', id: 'terminal1', stages: ['hall'] }],
+      { name: 'The hall and the fire station', mode: 'plan', days: 56, crews: 1, endEarly: true,
+        goal: [{ k: 'project', id: 'terminal1', stages: ['hall'] }, { k: 'project', id: 'fireStation' }],
         choices: [{ id: 'secondCrew', at: 3, default: 'one', icon: '👷', title: 'A second crew?',
-          text: 'Another building firm could send a second crew to work beside the first, so two parts of the terminal go up at once.',
+          text: 'Another building firm could send a second crew to work beside the first, so two buildings go up at once.',
           options: [{ id: 'hire', money: -3e6, crews: 1, label: 'Hire a second crew' }, { id: 'one', label: 'One crew is enough' }] }] },
       { name: 'Desks and the waiting room', mode: 'plan', days: 40, crews: 1, endEarly: false,
         goal: [{ k: 'project', id: 'terminal1' }] },
@@ -143,7 +149,7 @@ addMissions(1, [
     stars: [{ k: 'built', kind: 'kiosk' }, { k: 'checkinWait', max: 10 }]
   },
   {
-    name: 'The First Jets', kind: 'operate', date: '1960-08-15', requires: BUILT_1959.concat(['tower1', 'terminal1']),
+    name: 'The First Jets', kind: 'operate', date: '1960-08-15', requires: BUILT_1960,
     setup: { open: true, desks: 4, airlines: { SK: [{ type: 'CRVL', perDay: 10, load: 0.65 }, { type: 'DC8', perDay: 2, load: 0.7 }] } },
     hands: ['stand', 'checkin'],
     brief: [
@@ -167,7 +173,7 @@ addMissions(1, [
     stars: [{ k: 'onTime', p: 0.92 }, { k: 'checkinWait', max: 9 }]
   },
   {
-    name: 'The Fuel Truck', kind: 'operate', date: '1960-10-10', requires: BUILT_1959.concat(['tower1', 'terminal1']),
+    name: 'The Fuel Truck', kind: 'operate', date: '1960-10-10', requires: BUILT_1960,
     unlocks: ['fuelTruck'],
     setup: { open: true, items: { fuelTruck: 1 } },
     hands: ['stand', 'checkin', 'fuel'],
@@ -193,22 +199,26 @@ addMissions(1, [
     stars: [{ k: 'airportDelay', max: 1.5 }, { k: 'airlines', min: 85 }]
   },
   {
-    name: 'First Snow', kind: 'crisis', date: '1960-12-05', requires: BUILT_1959.concat(['tower1', 'terminal1']),
+    // the ploughs are bought in the first stage, before the snow (at least two: the owner's money covers them, a full
+    // convoy of four takes a loan or savings); later missions top them up to these two only (a cheat's jump)
+    name: 'First Snow', kind: 'crisis', date: '1960-11-14', requires: BUILT_1960,
     unlocks: ['plough'],
-    setup: { open: true, items: { fuelTruck: 2, plough: 2 } },
+    setup: { open: true, budget: 4.5e6, items: { fuelTruck: 1 } },
     hands: ['stand', 'checkin', 'plough'],
     brief: [
-      'The first real snow on your runway! Above 3 mm the braking gets poor; at 6 mm the runway has to close.',
-      'Send the ploughs in time — while they sweep, nothing can land. Two ploughs are slow; a full convoy has four.',
-      'And it gets dark early: the runway has no lights yet.'
+      'Winter is coming, and the airport has not a single snowplough. Above 3 mm of snow the braking gets poor; at 6 mm the runway has to close.',
+      'Buy ploughs before the first snow. Two are slow; a full convoy has four. The owner pays for two — more take a loan or your own money.',
+      'Then send them in time: while they sweep, nothing can land. And it gets dark early — the runway has no lights yet.'
     ],
-    aim: 'Keep the runway clear and open through two snowfalls.',
+    aim: 'Buy the ploughs before the snow, then keep the runway clear and open through two snowfalls.',
     news: [
+      { icon: '🛒', text: 'Ploughs: Vehicles, in the bar below. At least two before the snow.' },
       { icon: '❄️', text: 'Snow: it builds up on the runway and the apron.' },
       { icon: '🚜', text: 'Ploughs: send the convoy; while it sweeps, the runway is closed.' }
     ],
     stages: [
-      { name: 'Snow at dawn', mode: 'ops', from: '07:00', to: '10:00', weather: { temp: -4, wind: [20, 8], snow: [['07:20', '09:20', 2.6]] }, desks: 2,
+      { name: 'Before the snow', mode: 'plan', days: 21, endEarly: true, goal: [{ k: 'built', kind: 'plough', n: 2 }] },
+      { name: 'Snow at dawn', mode: 'ops', date: '1960-12-05', from: '07:00', to: '10:00', weather: { temp: -4, wind: [20, 8], snow: [['07:20', '09:20', 2.6]] }, desks: 2,
         flights: [SK('CRVL', 5, '07:20', '09:20', 40), SK('DC8', 1, '08:00', '08:00', 65, { base: 900 })],
         goal: [{ k: 'lost', max: 0 }, { k: 'airportDelay', max: 6 }] },
       { name: 'Snow at noon', mode: 'ops', from: '11:30', to: '14:30', weather: { temp: -6, wind: [30, 10], snow: [['11:40', '13:40', 3.2]], showers: 1 }, desks: 2,
@@ -219,9 +229,9 @@ addMissions(1, [
     stars: [{ k: 'closeCalls', max: 0 }, { k: 'onTime', p: 0.85 }]
   },
   {
-    name: 'Make It Pay', kind: 'business', date: '1961-03-06', requires: BUILT_1959.concat(['tower1', 'terminal1']),
+    name: 'Make It Pay', kind: 'business', date: '1961-03-06', requires: BUILT_1960,
     unlocks: ['cafe', 'parkingSmall', 'parkingBig'],
-    setup: { open: true, items: { fuelTruck: 2, plough: 2 }, airlines: { SK: [{ type: 'CRVL', perDay: 11, load: 0.65 }, { type: 'DC8', perDay: 2, load: 0.7 }] } },
+    setup: { open: true, items: { fuelTruck: 1, plough: 2 }, airlines: { SK: [{ type: 'CRVL', perDay: 11, load: 0.65 }, { type: 'DC8', perDay: 2, load: 0.7 }] } },
     brief: [
       'Arlanda is open, but it loses money: the runway, the tower and the people cost more every month than the fees bring in.',
       'Fees, a café, a car park, a new airline — every choice has a price. Raise the fees and SAS grumbles; build a car park and it pays back only slowly.',
@@ -253,8 +263,8 @@ addMissions(1, [
     stars: [{ k: 'profit', min: 6e6 }, { k: 'airlines', min: 65 }]
   },
   {
-    name: 'Night Lights', kind: 'operate', date: '1961-11-13', requires: BUILT_1959.concat(['tower1', 'terminal1']),
-    setup: { open: true, projects: ['lights1'], budget: 10e6, items: { fuelTruck: 2, plough: 2 } },
+    name: 'Night Lights', kind: 'operate', date: '1961-11-13', requires: BUILT_1960,
+    setup: { open: true, projects: ['lights1'], budget: 10e6, items: { fuelTruck: 1, plough: 2 } },
     hands: ['stand', 'checkin', 'fuel'],
     brief: [
       'Winter evenings are dark, and a runway without lights is closed in the dark. Lay the cables and the edge lights first.',
@@ -280,9 +290,9 @@ addMissions(1, [
     stars: [{ k: 'lost', max: 0 }, { k: 'neighbours', min: 62 }]
   },
   {
-    name: 'Opening Day', kind: 'operate', date: '1962-04-01', requires: BUILT_1959.concat(['tower1', 'terminal1', 'lights1']),
+    name: 'Opening Day', kind: 'operate', date: '1962-04-01', requires: BUILT_1960.concat(['lights1']),
     unlocks: ['stand'],
-    setup: { open: true, items: { fuelTruck: 2, plough: 2 }, desks: 4 },
+    setup: { open: true, budget: 12e6, items: { fuelTruck: 1, plough: 2 }, desks: 4 },
     hands: ['stand', 'checkin', 'fuel'],
     brief: [
       '1 April 1962: King Gustaf VI Adolf opens Arlanda, and from today all the international flights leave from here, not Bromma.',
@@ -311,8 +321,8 @@ addMissions(1, [
     stars: [{ k: 'airportDelay', max: 2 }, { k: 'passengers', min: 72 }]
   },
   {
-    name: 'Exam: The First Winter', kind: 'exam', date: '1963-01-21', requires: BUILT_1959.concat(['tower1', 'terminal1', 'lights1']),
-    setup: { open: true, items: { fuelTruck: 2, plough: 2 }, desks: 4 },
+    name: 'Exam: The First Winter', kind: 'exam', date: '1963-01-21', requires: BUILT_1960.concat(['lights1']),
+    setup: { open: true, items: { fuelTruck: 1, plough: 2 }, desks: 4 },
     hands: ['stand', 'checkin', 'fuel', 'plough'],
     brief: [
       'Your first winter as an open airport. Everything you learnt this chapter, in one long day.',

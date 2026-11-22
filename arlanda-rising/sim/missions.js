@@ -45,12 +45,12 @@ const Missions = {
     if (meanwhile) meanwhile.news = S.log.slice(log0).filter((e) => MEANWHILE_NEWS.indexOf(e.type) >= 0).slice(-6);
     People.settleAsks();
     for (const p of m.requires || []) { const [pid, sid] = p.split('.'); if (sid) Construction.ownerStage(pid, sid); else Construction.ownerBuilds(pid); }
-    this.setup(m.setup || {});
+    const gave = this.setup(m.setup || {});
     // a campaign that comes in below zero gets the owner's loan, so it never gets stuck
     if (S.money < 0) { const gap = -S.money; S.loans += gap; Finance.book('owner loan', gap); S.debtMonths = 0; if (meanwhile) meanwhile.ownerLoan = gap; }
     S.mission = { id, stage: -1, status: 'running', results: [], hands: [], st: null, total: Goals.newStats(),
       money0: S.money, choices: {}, grants: m.grants || [], partners: m.partners || [], meanwhile, acc: 0, stars: 0, medal: false, judged: null,
-      projects: ((m.setup || {}).projects || []).slice() };
+      projects: ((m.setup || {}).projects || []).slice(), gave };
     if (def) S.mission.def = def;
     // a Challenge Day starts from the owner's airport of its year: no "Meanwhile…" of the decades before
     if (m.challenge) S.mission.meanwhile = null;
@@ -72,7 +72,10 @@ const Missions = {
     if (u.loanLimit !== undefined) S.loanLimit = S.loans + u.loanLimit * diff().money;
     if (u.open !== undefined) S.airport.open = u.open;
     for (const p of u.projects || []) Construction.open(p);
-    for (const kind of Object.keys(u.items || {})) while (Airport.count(kind) < u.items[kind]) Airport.addItem(kind);
+    // the owner's vehicles and small builds: a world with fewer gets them (a chapter's years between, a cheat's jump);
+    // what the buy menu sells is told on the mission's first stage card (`gave`: { kind: n }, returned)
+    const gave = {};
+    for (const kind of Object.keys(u.items || {})) while (Airport.count(kind) < u.items[kind]) { Airport.addItem(kind); if ((BUILDINGS[kind] || {}).small) gave[kind] = (gave[kind] || 0) + 1; }
     if (u.desks) S.airport.desks = Math.max(S.airport.desks, u.desks);
     // session 4: from chapter 4 (openSkies) the routes the player won stay, and the flights moved to rivals stay away
     if (u.openSkies) S.airport.openSkies = true;
@@ -128,6 +131,7 @@ const Missions = {
     if (u.chargers) while (Airport.chargers() < u.chargers && Airport.buyFree('charger')) { /* the owner's chargers */ }
     if (u.pierDesign && !S.airport.pierDesign) S.airport.pierDesign = u.pierDesign;
     People.updateMeter();
+    return gave;
   },
   // a level the Office may buy from now on
   unlock(d, lv) {

@@ -108,19 +108,21 @@ addMissions(6, [
           F6('AY', 'A320', 2, '19:10', '20:30', 50, { base: 800 }), F6('BA', 'A320', 2, '19:20', '20:10', 50, { base: 770 }),
           F6('SK', 'CRJ9', 4, '18:40', '20:40', 35, { base: 600, intl: false })],
         goal: [{ k: 'onTime', p: 0.7 }] },
-      { name: 'Days without flights', mode: 'plan', days: 5, skyClosed: 5, goal: [],
+      // the stranded passengers' mood when the sky opens: camp beds, hotels, or the cafés open all night (the cheapest way
+      // that keeps them above the line, from a terminal they liked before) — letting them sleep on the floor does not
+      { name: 'Days without flights', mode: 'plan', days: 5, skyClosed: 5, goal: [{ k: 'passengers', min: 80 }],
         choices: [
           { id: 'stranded', at: 0, default: 'none', icon: '🛏️', title: 'Thousands are stranded',
             text: 'Travellers are sleeping on the floors. Camp beds and food in the terminal? Hotel rooms for everyone who cannot go home? Or let the airlines sort it out?',
             options: [
-              { id: 'cots', stranded: 6e6, flag: 'strandedHelped', meters: { passengers: 8 }, label: 'Camp beds and food' },
-              { id: 'hotels', stranded: 22e6, flag: 'strandedHelped', meters: { passengers: 14, airlines: 3 }, label: 'Hotel rooms and buses' },
-              { id: 'none', meters: { passengers: -12 }, label: 'It is the airlines\' job' }
+              { id: 'cots', stranded: 6e6, meters: { passengers: 8 }, label: 'Camp beds and food' },
+              { id: 'hotels', stranded: 22e6, meters: { passengers: 14, airlines: 3 }, label: 'Hotel rooms and buses' },
+              { id: 'none', meters: { passengers: -15 }, label: 'It is the airlines\' job' }
             ] },
           { id: 'shops', at: 2, default: 'closed', icon: '🏪', title: 'The shops at night',
             text: 'The cafés could stay open all night for the people waiting. The staff would be paid overtime.',
             options: [
-              { id: 'open', money: -2e6, meters: { passengers: 4 }, label: 'Open all night' },
+              { id: 'open', money: -2e6, meters: { passengers: 6 }, label: 'Open all night' },
               { id: 'closed', label: 'The usual hours' }
             ] }] },
       { name: 'The sky opens', mode: 'ops', date: '2010-04-21', from: '07:00', to: '10:00', weather: { temp: 7, wind: [200, 6] }, desks: 16, lanes: 6, booths: 2,
@@ -130,7 +132,7 @@ addMissions(6, [
           F6('SK', 'A333', 1, '07:50', '07:50', 110, { base: 910, ns: true, load: 0.98 })],
         goal: [{ k: 'checkinWait', max: 6 }] }
     ],
-    goal: [{ k: 'passengers', min: 75 }, { k: 'flag', id: 'strandedHelped' }],
+    goal: [{ k: 'passengers', min: 75 }],
     stars: [{ k: 'checkinWait', max: 3 }, { k: 'passengers', min: 96 }]
   },
   {

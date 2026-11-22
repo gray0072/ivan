@@ -15,6 +15,7 @@
 //   - a goal about something to add (built, fireCat, chargers, estate, runways, brands — not one marked `keep`) is
 //     already met when its mission starts: bought ahead, it would end its stage at once (data/missions `unlocks` keeps
 //     such things locked until their mission);
+//   - the reference's cash goes below zero in a mission, or it starts one on the owner's loan (at any difficulty);
 //   - a reference strategy buys a small build its mission has not opened yet, a small build is in no category of the
 //     buy menu (BUY_MENU) or in two, a mission unlocks what is not a small build or what another mission unlocks;
 //   - a mission saved and resumed in the middle of each stage (the autosave) ends differently from one
@@ -71,6 +72,9 @@ const out = vm.runInContext(`(() => {
     md.stages.forEach((s, k) => (s.goal || []).forEach((g) => ahead(g, 'stage ' + (k + 1))));
     (md.goal || []).concat(md.stars || []).forEach((g) => ahead(g, 'mission'));
     let r = Strategy.runner(strat), steps = 0, stageSteps = 0, cuts = 0;
+    // the lowest cash in the mission, and the owner's loan a campaign that came in below zero got at its start
+    let low = S.money;
+    const ownerLoan = (S.mission.meanwhile && S.mission.meanwhile.ownerLoan) || 0;
     const stageMin = [];
     for (;;) {
       const status = S.mission.status;
@@ -81,6 +85,7 @@ const out = vm.runInContext(`(() => {
       if (!Sim.playing()) throw new Error(id + ': a decision without a default waits');
       Sim.step();
       steps++; stageSteps++;
+      if (S.money < low) low = S.money;
       if (cutAt && cutAt[S.mission.stage] === stageSteps && S.mission.status === 'running') {
         const snap = JSON.stringify({ save: Missions.save(), r });
         S = null; Missions.checkpoint = null; Missions.startWorld = null;
@@ -94,7 +99,7 @@ const out = vm.runInContext(`(() => {
     const m = S.mission, tot = m.total;
     for (const res of m.results) if (res) stageMin.push(+Missions.minutes(res.st).toFixed(1));
     return {
-      status: m.status, stars: m.stars, medal: m.medal, cuts, over, early, state: JSON.stringify(S),
+      status: m.status, stars: m.stars, medal: m.medal, cuts, over, early, low, ownerLoan, state: JSON.stringify(S),
       failedStage: m.status === 'stageFailed' ? m.stage : null,
       failed: m.status === 'stageFailed' ? m.results[m.stage].goals.filter((g) => !g.ok).map((g) => g.goal.k + '=' + g.value) : [],
       judged: m.judged ? m.judged.stars.map((g) => (g.ok ? '✓ ' : '✗ ') + g.goal.k + '=' + g.value) : [],
@@ -137,6 +142,9 @@ const out = vm.runInContext(`(() => {
       else if (d !== 'hard' && res.stars < 3) r.problems.push(d + ': the reference gets ' + res.stars + ' stars (' + res.judged.join(', ') + ')');
       if (res.over.length) r.problems.push(d + ': starts past a limit (' + res.over.join(', ') + ')');
       if (res.early.length) r.problems.push(d + ': a goal is met at the start (' + res.early.join(', ') + ')');
+      // the reference pays its way: its cash never goes below zero, and it never needs the owner's loan to start
+      if (res.low < -1) r.problems.push(d + ': the cash of the reference goes below zero (' + (res.low / 1e6).toFixed(1) + ' MSEK)');
+      if (res.ownerLoan) r.problems.push(d + ': the reference starts on a loan of the owner (' + (res.ownerLoan / 1e6).toFixed(1) + ' MSEK)');
     }
     // the reference buys nothing its mission has not opened yet (it would be refused)
     for (const mv of STRATEGIES[m.id].moves || []) {

@@ -67,7 +67,7 @@ const MapView = (() => {
   // what the airside fence goes round (render/fence.js): what stands or is being built — the runways, the taxiways, the
   // aprons, the remote stands, the de-icing pads, the buildings on the terminal line and the piers
   // the buildings on the terminal line built by a project of their own name: the stage that raises them
-  const HALLS = { domTerminal: 'hall', bagHall: 'hall', terminal2: 'hall', terminal3: 'hall', sorterHall: 'hall', cargoCity: 'halls', computerRoom: 'room' };
+  const HALLS = { fireStation: 'station', domTerminal: 'hall', bagHall: 'hall', terminal2: 'hall', terminal3: 'hall', sorterHall: 'hall', cargoCity: 'halls', computerRoom: 'room' };
   function fenceSpec(a, items, p) {
     const aprons = {};
     for (const [key, pid, sid, item] of AirportArt.APRONS) aprons[key] = !!(item && items[item]) || p(pid, sid) > 0;
@@ -132,7 +132,7 @@ const MapView = (() => {
     const plot = (b) => pads.push([b[0] - PAD, b[1] - PAD, b[2] + PAD, b[3] + PAD]);
     // the service ground west of the aprons, from the strip's clearing to the apron: round the ploughs' rows and the
     // crash tenders' bays, and round the fire station and the fuel trucks' yard once the jet apron is begun
-    if (items.plough || items.fireStation) pads.push(LAYOUT.clear.ploughs);
+    if (items.plough || items.fireStation || p('fireStation', 'station') > 0) pads.push(LAYOUT.clear.ploughs);
     if (p('apron2', 'pave') > 0) pads.push(LAYOUT.clear.yard);
     const started = (pid) => { const pr = a.projects[pid]; return !!pr && Object.keys(pr.stages).some((s) => pr.stages[s].p > 0); };
     for (const k in items) {

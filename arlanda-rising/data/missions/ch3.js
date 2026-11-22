@@ -8,7 +8,7 @@
 
 const SRC_SV3 = 'sv.wikipedia Arlanda (Historia)';
 // everything the first two chapters built, for a mission started without the campaign (a cheat's jump)
-const BUILT_1976 = ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal'];
+const BUILT_1976 = ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal'];
 const BUILT_1983 = BUILT_1976.concat(['domTerminal']);
 const ITEMS_1983 = { fuelTruck: 5, plough: 5, crashTender: 2 };
 const TEAMS_1976 = { stands: 1, turnaround: 1, checkin: 1, snow: 1, baggage: 2 };

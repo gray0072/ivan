@@ -168,6 +168,7 @@ const Analytics = (() => {
       if (tot.emergencies) rows.push([tr('Emergency landings'), String(tot.emergencies), null]);
     }
     if (Airport.has('fireStation')) rows.push([tr('Fire category {n}', { n: Airport.fireCat() }), '', null]);
+    else if (Airport.siteFireWatch()) rows.push([tr('Fire category {n}: the building site\'s fire watch, until the fire station stands', { n: Airport.fireCat() }), '', null]);
     if (S.ops) {
       const poor = S.airport.runways.filter((r) => Runways.braking(r) === 'poor').length;
       if (poor) rows.push([tr('Runways with poor braking action'), String(poor), null]);

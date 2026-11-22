@@ -303,7 +303,7 @@ addMissions(5, [
         goal: [{ k: 'onTime', p: 0.8 }] }
     ],
     goal: [{ k: 'perDay', code: 'DY', min: 4 }],
-    stars: [{ k: 'brandsIn', min: 13.6e6 }, { k: 'airlines', min: 92 }]
+    stars: [{ k: 'brandsIn', min: 12.5e6 }, { k: 'airlines', min: 92 }]
   },
   {
     name: 'Remote De-icing', kind: 'build', date: '2004-11-29', requires: BUILT_2003,

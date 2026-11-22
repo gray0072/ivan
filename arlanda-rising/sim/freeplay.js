@@ -10,18 +10,18 @@
 const FREE_OPENS_FIRST = null;
 const FREE_ERAS = [
   { id: '1963', name: 'The open airport, 1963', date: '1963-04-01', opens: FREE_OPENS_FIRST,
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1'],
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1'],
     setup: { open: true, budget: 40e6, loanLimit: 80e6, items: { fuelTruck: 2, plough: 4 }, desks: 4,
       airlines: { SK: [{ type: 'CRVL', perDay: 11, load: 0.68 }, { type: 'DC8', perDay: 2, load: 0.72 }] },
       unlock: { stands: 1, turnaround: 1, checkin: 1, snow: 1 } } },
   { id: '1976', name: 'The jet age, 1976', date: '1976-09-06', opens: '2-11',
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal'],
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal'],
     setup: { open: true, budget: 60e6, loanLimit: 150e6, items: { fuelTruck: 4, plough: 4, crashTender: 2 }, desks: 18,
       airlines: { SK: [{ type: 'DC9', perDay: 14, load: 0.7 }, { type: 'DC8', perDay: 3, load: 0.72 }, { type: 'B747', perDay: 2, load: 0.68 }],
         LH: [{ type: 'B727', perDay: 2, load: 0.7 }], AY: [{ type: 'DC9', perDay: 2, load: 0.7 }] },
       domains: { stands: 1, turnaround: 1, checkin: 1, snow: 1, baggage: 2 }, unlock: { stands: 1, turnaround: 1, checkin: 1, snow: 1, baggage: 2 } } },
   { id: '1989', name: 'Everyone flies, 1990', date: '1990-03-05', opens: '3-11',
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3'],
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3'],
     setup: { open: true, budget: 80e6, loanLimit: 200e6, items: { fuelTruck: 5, plough: 5, crashTender: 2 }, desks: 26, it: 3,
       airlines: { SK: [{ type: 'DC9', perDay: 18, load: 0.72 }, { type: 'MD81', perDay: 6, load: 0.72 }, { type: 'B747', perDay: 2, load: 0.7 }],
         LF: [{ type: 'F28', perDay: 30, load: 0.74 }], LH: [{ type: 'B727', perDay: 4, load: 0.7 }], AY: [{ type: 'DC9', perDay: 4, load: 0.7 }] },
@@ -29,7 +29,7 @@ const FREE_ERAS = [
       unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 2, info: 2 } } },
   // session 4: the open skies of 2000, with the shops' units, the security lanes, the train and the rivals
   { id: '1999', name: 'Open skies, 2000', date: '2000-02-07', opens: '4-11',
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3', 'terminal2', 'arlandaExpress', 'sorterHall'],
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3', 'terminal2', 'arlandaExpress', 'sorterHall'],
     setup: { open: true, openSkies: true, units: true, lanes: 8, budget: 100e6, loanLimit: 400e6, items: { fuelTruck: 6, plough: 6, crashTender: 2, generator: 1 }, desks: 36, it: 6,
       airlines: { SK: [{ type: 'MD87', perDay: 16, load: 0.74 }, { type: 'B737', perDay: 14, load: 0.74 }, { type: 'DC9', perDay: 8, load: 0.72 }],
         BRAATHENS: [{ type: 'B737', perDay: 6, load: 0.72 }], LH: [{ type: 'B737', perDay: 5, load: 0.72 }], AY: [{ type: 'MD87', perDay: 5, load: 0.72 }] },
@@ -38,7 +38,7 @@ const FREE_ERAS = [
   // session 5: the airport of 2009 — Schengen and the border, two parallel runways, the de-icing pads, Sky City and
   // Cargo City, the security rules of 2006
   { id: '2009', name: 'A new millennium, 2009', date: '2009-04-06', opens: '5-11',
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3', 'terminal2', 'arlandaExpress', 'sorterHall',
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3', 'terminal2', 'arlandaExpress', 'sorterHall',
       'skyCity', 'skyCity.hotel', 'schengen', 'schengen.t2', 'tower2', 'pierF', 'pierF.bridges', 'runway3', 'bridges', 'deicePads', 'cargoCity'],
     setup: { open: true, openSkies: true, units: true, lanes: 14, budget: 150e6, loanLimit: 800e6, items: { fuelTruck: 6, plough: 7, crashTender: 3, generator: 1, deicer: 3 }, desks: 40, it: 8,
       airlines: { SK: [{ type: 'B736', perDay: 16, load: 0.74 }, { type: 'A321', perDay: 6, load: 0.76 }, { type: 'CRJ9', perDay: 6, load: 0.72 }, { type: 'A343', perDay: 2, load: 0.8 }],
@@ -49,7 +49,7 @@ const FREE_ERAS = [
       unlock: { stands: 2, turnaround: 1, checkin: 2, snow: 2, baggage: 3, info: 2, border: 1, security: 2, deice: 3 } } },
   // session 6: the airport after the storm years — Terminals 4 and 5 as one, the A380 gate, the freighters, cyber attacks
   { id: '2024', name: 'After the storm, 2024', date: '2024-09-02', opens: '7-11',
-    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3', 'terminal2', 'arlandaExpress', 'sorterHall',
+    requires: ['site', 'runway1', 'apron1', 'tower1', 'terminal1', 'fireStation', 'lights1', 'apron2', 'apron2.bigStand', 'bagHall', 'ils1', 'runway2', 'intlTerminal', 'domTerminal', 'computerRoom', 'terminal3', 'terminal2', 'arlandaExpress', 'sorterHall',
       'skyCity', 'skyCity.hotel', 'schengen', 'schengen.t2', 'tower2', 'pierF', 'pierF.bridges', 'runway3', 'bridges', 'deicePads', 'cargoCity', 'aquifer', 'gateF', 'oldHall', 't4t5'],
     setup: { open: true, openSkies: true, units: true, lanes: 20, budget: 300e6, loanLimit: 1500e6, items: { fuelTruck: 6, plough: 7, crashTender: 3, generator: 1, deicer: 4 }, desks: 40, it: 11,
       airlines: { SK: [{ type: 'A20N', perDay: 14, load: 0.8 }, { type: 'A321', perDay: 8, load: 0.8 }, { type: 'CRJ9', perDay: 8, load: 0.76 }, { type: 'A359', perDay: 1, load: 0.85 }],

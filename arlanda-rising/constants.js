@@ -211,6 +211,8 @@ const CROSSWIND_MAX = 20;          // kt of crosswind a runway takes; more and t
 const FOG_VIS_ILS = 120;           // m: the landing minimum with an instrument landing system
 const LVP_SEP_X = 1.6;             // × the separation in low visibility (under FOG_VIS_APPROACH, with the ILS)
 const FIRE_CAT_BASE = 7;           // the fire service's category with the first fire station; + 1 per crash tender
+const FIRE_CAT_SITE = 6;           // … before it stands (1959–60, built in 1-4): the building site's fire watch by the runway,
+                                   // enough for the training flights' Caravelles, not for a DC-8
 const FIRE_CAT_MAX = 10;           // so FIRE_CAT_MAX − FIRE_CAT_BASE crash tenders are the most worth having
 const EMERGENCY_CLOSE = 12;        // game minutes the runway stays closed after an emergency landing
 const EMERGENCY_CLOSE_LOW = 25;    // … when the fire category is too low for the aircraft

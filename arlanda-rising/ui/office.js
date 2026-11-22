@@ -58,7 +58,8 @@ const Office = (() => {
     html += '<div class="ocard"><h3>🛫 ' + Text.esc(tr('Your airport')) + '</h3><ul class="has">' +
       Object.keys(has).map((k) => '<li>' + Text.esc(tr(Terminal.itemName(k))) + (has[k] > 1 ? ' × ' + has[k] : '') + '</li>').join('') +
       '<li>' + Text.esc(tr('Stands: {n}', { n: w.airport.stands.length })) + '</li><li>' + Text.esc(tr('Check-in desks: {n}', { n: w.airport.desks })) + '</li>' +
-      (has.fireStation ? '<li>' + Text.esc(tr('Fire category {n}', { n: Airport.fireCat() })) + '</li>' : '') + '</ul></div>';
+      (has.fireStation ? '<li>' + Text.esc(tr('Fire category {n}', { n: Airport.fireCat() })) + '</li>' :
+        Airport.siteFireWatch() ? '<li>' + Text.esc(tr('Fire category {n}: the building site\'s fire watch, until the fire station stands', { n: Airport.fireCat() })) + '</li>' : '') + '</ul></div>';
     html += '<div class="ocard"><h3>📈 ' + Text.esc(tr('The meters')) + '</h3><ul class="has">' + METERS.map((x) => '<li>' + x.icon + ' ' + Text.esc(Text.meterName(x.k)) + ': <b>' +
       (x.k === 'passengers' ? Text.paxStars(w.meters[x.k]) + '★' : Math.round(w.meters[x.k])) + '</b></li>').join('') + '</ul>' +
       // their history and what moves them: the analytics tabs of Finance (ui/analytics.js)

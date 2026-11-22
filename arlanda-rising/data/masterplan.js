@@ -76,6 +76,16 @@ const PROJECTS = {
     src: 'sv.wikipedia Arlanda: "at first very primitive buildings were used"',
     check: 'what the first buildings were and where they stood'
   },
+  // the airport's own fire and rescue service, built with the first terminal (1-4): an airport has its fire service before
+  // the passengers come. The station's price takes in its first crash tenders and their crews, so it gives category 7
+  // by itself (FIRE_CAT_BASE; each crash tender bought later adds one); before it the building site's fire watch covers
+  // the training flights (FIRE_CAT_SITE). The plot is data/layout.js fireStation's box.
+  fireStation: {
+    name: 'The fire station', year: 1960, plot: { x: 482, y: 1470, w: 50, h: 30 },
+    stages: { station: { name: 'The station and its crash tenders', days: 20, price: 10e6 } },
+    effect: 'fireStation',
+    check: 'when and where Arlanda\'s first fire station was built'
+  },
   lights1: {
     name: 'Runway lights', year: 1961, plot: { x: 0, y: 0, w: 596, h: 3236 },
     stages: {

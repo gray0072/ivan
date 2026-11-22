@@ -15,7 +15,7 @@ const METERS = [
 // the decisions a flag goal waits for, as shown (data/missions: `{ k: 'flag', id }`)
 const FLAG_NAMES = {
   trainChosen: 'Decide who builds the train', lowFareAnswered: 'Answer the low-fare question',
-  targetSet: 'Answer the owner\'s target', kidsUnit: 'Open something for the children', y2kTested: 'Get every system ready for the year 2000', strandedHelped: 'Look after the stranded passengers',
+  targetSet: 'Answer the owner\'s target',
   guestsPlanned: 'Plan the guests\' stands', jetsReady: 'Make room for the business jets',
   // session 6
   shopsAnswered: 'Answer the shops about the rent', staffAnswered: 'Decide what happens to the staff', slotsGiven: 'Give the empty slots to an airline',
@@ -53,7 +53,7 @@ const Text = {
         return tr('Build: {what}', { what });
       }
       case 'flag': return tr(FLAG_NAMES[c.id] || c.id);
-      case 'built': return tr('Build: {what}', { what: tr(BUILDINGS[c.kind].name) });
+      case 'built': return (c.n || 1) > 1 ? tr('At least {n}: {what}', { n: c.n, what: tr(BUILDINGS[c.kind].name) }) : tr('Build: {what}', { what: tr(BUILDINGS[c.kind].name) });
       case 'level': return tr('{dom}: {level}', { dom: tr(DOMAINS[c.dom].name), level: tr(DOMAINS[c.dom].levels[c.min].name) });
       case 'manager': return tr('A head of {dept}', { dept: tr(DEPTS[c.dept].name) });
       case 'noStrike': return tr('No strike');

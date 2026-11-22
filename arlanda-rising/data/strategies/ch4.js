@@ -98,10 +98,10 @@ STRATEGIES['4-9'] = {
   moves: [{ stage: 0, at: '06:30', do: 'desks', n: 30 }]
 };
 
-// Christmas Rush: BRIO by the gates, the desks open
+// Christmas Rush: Max in Terminal 2 for the takings, the desks open
 STRATEGIES['4-10'] = {
   tray: REACT_QUICK,
-  choices: { kids: 'brio' },
+  choices: { kids: 'max' },
   moves: [{ stage: 1, at: '06:00', do: 'desks', n: 30 }, { stage: 2, at: '15:00', do: 'desks', n: 30 }]
 };
 

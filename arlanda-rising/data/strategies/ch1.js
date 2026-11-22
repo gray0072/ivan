@@ -36,12 +36,14 @@ STRATEGIES['1-3'] = {
   ]
 };
 
-// The First Terminal: one crew; the hall, then the waiting room at a fast pace, the desks and the kiosk
+// The First Terminal: one crew; the hall, then the fire station, then the waiting room at a fast pace, the desks and
+// the kiosk
 STRATEGIES['1-4'] = {
   tray: REACT_QUICK,
   choices: { secondCrew: 'one' },
   moves: [
     { stage: 0, at: 0, do: 'start', project: 'terminal1', part: 'hall' },
+    { stage: 0, after: ['terminal1', 'hall'], do: 'start', project: 'fireStation', part: 'station' },
     { stage: 1, at: 0, do: 'start', project: 'terminal1', part: 'waiting', pace: 'fast' },
     { stage: 1, after: ['terminal1', 'waiting'], do: 'start', project: 'terminal1', part: 'desks' },
     { stage: 1, after: ['terminal1', 'desks'], do: 'start', project: 'terminal1', part: 'kiosk' },
@@ -58,13 +60,13 @@ STRATEGIES['1-5'] = {
 // The Fuel Truck: a second truck at once
 STRATEGIES['1-6'] = { tray: REACT_QUICK, moves: [{ stage: 0, at: '07:00', do: 'buy', kind: 'fuelTruck' }] };
 
-// First Snow: two more ploughs for a full convoy
-STRATEGIES['1-7'] = { tray: REACT_QUICK, moves: [{ stage: 0, at: '07:00', do: 'buy', kind: 'plough', n: 2 }] };
+// First Snow: a full convoy of four ploughs before the snow
+STRATEGIES['1-7'] = { tray: REACT_QUICK, moves: [{ stage: 0, at: 0, do: 'buy', kind: 'plough', n: 4 }] };
 
 // Make It Pay: higher fees for a while, a café, the charters; no car park (it pays back only in years)
 STRATEGIES['1-8'] = {
   choices: { cafe: 'cafe', charter: 'yes', parking: 'no' },
-  moves: [{ stage: 0, at: 0, do: 'fees', level: 'high' }, { stage: 2, at: 0, do: 'fees', level: 'normal' }]
+  moves: [{ stage: 0, at: 0, do: 'borrow', sum: 5e6 }, { stage: 0, at: 0, do: 'fees', level: 'high' }, { stage: 2, at: 0, do: 'fees', level: 'normal' }]
 };
 
 // Night Lights: edge and approach lights at once; at night the calm wind lets runway 01 be used

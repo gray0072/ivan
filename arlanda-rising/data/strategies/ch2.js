@@ -40,13 +40,14 @@ STRATEGIES['2-4'] = {
   moves: [{ stage: 1, at: '07:00', do: 'desks', n: 4 }]
 };
 
-// Jumbo!: the big stand, the discount, two more desks
+// Jumbo!: the big stand, the discount, two more desks and two more fuel trucks
 STRATEGIES['2-5'] = {
   tray: REACT_QUICK,
   choices: { jumboFee: 'yes' },
   moves: [
     { stage: 0, at: 0, do: 'start', project: 'apron2', part: 'bigStand' },
     { stage: 0, at: 0, do: 'buy', kind: 'desk', n: 2 },
+    { stage: 0, at: 0, do: 'buy', kind: 'fuelTruck', n: 2 },
     { stage: 1, at: '10:00', do: 'desks', n: 8 }
   ]
 };

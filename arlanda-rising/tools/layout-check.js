@@ -233,7 +233,7 @@ for (const k of ['terminal1', 'intlTerminal', 'domTerminal', 'terminal2', 'termi
 // must cross no road or railway away from the bridges, no runway, taxiway, apron or building of its own era, and a run
 // that is not a closed loop ends at a wall (render/fence.js: a hand short of it), never in the open; a key with a minus
 // goes (the first terminal torn down in 2017: the fence closes across its plot)
-const ERAS = [['1960', 'runway1 apron1 terminal1 tower1'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fireStation fuelYard'],
+const ERAS = [['1960', 'runway1 apron1 terminal1 tower1 fireStation'], ['1976', 'apron2 taxi2 runway2 intlTerminal bagHall computerRoom sorterHall fuelYard'],
   ['1990', 'apron3 apron4 domTerminal terminal2 terminal3'], ['2003', 'apron5 pierF runway3 taxi3 deice0 deice1 cargoCity cargoApron'],
   ['2018', '-terminal1 oldHall'], ['2040 satellite', 'apron6 apron7 pier2040 pierArm satApron h2depot']];
 const eraKeys = [];
