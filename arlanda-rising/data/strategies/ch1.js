@@ -26,7 +26,7 @@ STRATEGIES['1-2'] = { tray: REACT_QUICK };
 STRATEGIES['1-3'] = {
   tray: REACT_QUICK,
   moves: [
-    { stage: 0, at: 0, do: 'borrow', sum: 15e6 },
+    { stage: 0, at: 0, do: 'borrow', sum: 10e6 },
     { stage: 0, at: 0, do: 'mod', project: 'tower1', mod: 'tents' },
     { stage: 0, at: 0, do: 'start', project: 'tower1', part: 'found' },
     { stage: 0, after: ['tower1', 'found'], do: 'start', project: 'tower1', part: 'shaft' },
@@ -41,7 +41,6 @@ STRATEGIES['1-4'] = {
   tray: REACT_QUICK,
   choices: { secondCrew: 'one' },
   moves: [
-    { stage: 0, at: 0, do: 'borrow', sum: 15e6 },
     { stage: 0, at: 0, do: 'start', project: 'terminal1', part: 'hall' },
     { stage: 1, at: 0, do: 'start', project: 'terminal1', part: 'waiting', pace: 'fast' },
     { stage: 1, after: ['terminal1', 'waiting'], do: 'start', project: 'terminal1', part: 'desks' },

@@ -1,15 +1,13 @@
 'use strict';
 
 // Arlanda Rising — the Office between missions (and between Free Play's rounds), with time stopped: the airport on the
-// map behind, the money and the loans (borrow or repay here), the last months' books, what the airport has, the five
+// map behind, the money and the loans (borrow or repay here: FinanceUI's loans card), the last months' books, what the airport has, the five
 // meters, the People screen and the Ops Center (hire, train, put in systems, drills — at once, on the airport that
 // carries over), what waits for an answer (a manager's raise), the terminals to mothball and open again (session 6), and
 // the next mission or round a tap away. Used by
 // game.js; it works on the world of Game.holder() (the campaign's or Free Play's), which is S while it is open.
 
 const Office = (() => {
-  const LOAN_STEP = 5e6;
-
   function show() {
     const p = document.getElementById('office'), h = Game.holder();
     if (!h || !h.world) { if (Campaign.data && Campaign.data.next) Game.openMission(Campaign.data.next); else Game.toMenu(); return; }
@@ -35,11 +33,8 @@ const Office = (() => {
     if (w.people && w.people.strike && w.people.strike.to > w.day) html += '<p class="warn">' + Text.esc(tr('Strike notice: {dept} from {d}', { dept: Text.dept(w.people.strike.dept), d: fmtDate(w.people.strike.from) })) + '</p>';
     html += '<div class="cards">';
     // money
-    const room = Math.max(0, (w.loanLimit || 0) - w.loans);
     html += '<div class="ocard"><h3>💰 ' + Text.esc(tr('Money')) + '</h3><p class="big' + (w.money < 0 ? ' neg' : '') + '">' + sek(w.money) + '</p>' +
-      '<p>' + Text.esc(tr('Loans: {m}', { m: sek(w.loans) })) + ' · ' + Text.esc(tr('{r} a year', { r: Math.round(LOAN_RATE * 100) + ' %' })) + '</p>' +
-      '<div class="btnRow small"><button class="btn toggle" data-loan="borrow"' + (room <= 0 ? ' disabled' : '') + '>+' + sek(LOAN_STEP) + '</button>' +
-      '<button class="btn toggle" data-loan="repay"' + (w.loans <= 0 || w.money <= 0 ? ' disabled' : '') + '>−' + sek(LOAN_STEP) + '</button></div></div>';
+      '<p class="fine">' + Text.esc(tr('Your own: {m}', { m: sek(w.money - w.loans) })) + '</p></div>' + FinanceUI.loanCard();
     // the books
     const hist = (w.finance.history || []).slice(-6);
     if (hist.length) {
@@ -92,12 +87,7 @@ const Office = (() => {
     if (nm) html += '<p class="label">' + Text.esc(tr('Next: {name} · ~{n} min', { name: tr(nm.name), n: Text.minutes(nm) })) + '</p>';
     if (h.free) html += '<p class="label">' + Text.esc(tr('Round {n} comes next.', { n: h.round })) + '</p>';
     p.innerHTML = html;
-    p.querySelectorAll('[data-loan]').forEach((b) => b.addEventListener('click', () => {
-      Sfx.play('click');
-      if (b.dataset.loan === 'borrow') Finance.borrow(LOAN_STEP); else Finance.repay(LOAN_STEP);
-      Game.keepWorld();
-      show();
-    }));
+    p.querySelectorAll('[data-loan]').forEach((b) => b.addEventListener('click', () => { if (FinanceUI.loan(b.dataset.loan)) show(); }));
     p.querySelectorAll('[data-term]').forEach((b) => b.addEventListener('click', () => {
       if (!(b.dataset.term === 'reopen' ? Actions.reopen(b.dataset.t) : Actions.mothball(b.dataset.t))) return;
       Sfx.play('click');
@@ -118,7 +108,7 @@ const Office = (() => {
     if (which === 'people') PeopleUI.show({ back, edit: true });
     else if (which === 'terminal') TermView.show({ back, edit: true });
     else if (which === 'airlines') AirlinesUI.show({ back, edit: true });
-    else if (which === 'finance') FinanceUI.show({ back, edit: true, tab });
+    else if (which === 'finance') FinanceUI.show({ back, tab });
     else OpsCenter.show({ back, edit: true });
   }
   return { show, open };

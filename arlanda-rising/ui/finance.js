@@ -1,7 +1,8 @@
 'use strict';
 
-// Arlanda Rising — the Finance screen (SPEC.md "Screens", key F, or the money in the HUD): the money and the loans (borrow
-// or repay in the Office), the month so far and the last month closed by line, a chart of the money month by month with
+// Arlanda Rising — the Finance screen (SPEC.md "Screens", key F, or the money in the HUD): the loans at its top (what is
+// owed, the owner's limit and the room left, the interest; Borrow and Repay wherever it is opened — ops time, plan time,
+// the Office — with the reason when one cannot be pressed; the same card in the Office), the money, the month so far and the last month closed by line, a chart of the money month by month with
 // each month's result, every investment the airport owns with what it earns and costs a month and its payback from the
 // airport's own traffic (sim/invest.js) — and, under Details (closed by default, its state remembered), the net present
 // value and the what-if of the small builds before they are bought. Tabs at the top lead to the analytics of the five
@@ -10,8 +11,7 @@
 
 const FinanceUI = (() => {
   const $ = (id) => document.getElementById(id);
-  let back = null, editable = false;
-  const LOAN_STEP = 5e6;
+  let back = null;
   // the lines of the books as shown
   const LINES = { fees: 'Fees (in summary)', landing: 'Landing fees', passenger: 'Passenger fees', stands: 'Stand time', shops: 'Shops and cafés',
     parking: 'Car parks', rail: 'The train', rent: 'Rent from the brands', deals: 'Deals', owner: 'From the owner', 'owner loan': "The owner's loan",
@@ -26,7 +26,7 @@ const FinanceUI = (() => {
   // the tab shown: the money, or one of the analytics' (ui/analytics.js)
   let tab = 'finance';
   function show(opts) {
-    back = opts.back; editable = !!opts.edit;
+    back = opts.back;
     tab = opts.tab && Analytics.has(opts.tab) ? opts.tab : 'finance';
     render();
     Screens.show('finance');
@@ -53,6 +53,31 @@ const FinanceUI = (() => {
     return Text.esc(n === 1 ? tr('1 month') : n <= 24 ? tr('{n} months', { n }) : tr('{n} years', { n: Text.num(n / 12, 1) }));
   }
 
+  // the loans' card (here at the top, and in the Office): what is owed, the owner's limit (sim/finance.js) and the room
+  // left, the interest a month and a year, Borrow / Repay a step with the reason under one that cannot be pressed
+  const WHY = { limit: () => tr('Limit reached'), debt: () => tr('No debt'), cash: () => tr('No money to repay') };
+  function loanCard() {
+    const step = Finance.step(), num = (label, v, cls) => '<div><small>' + Text.esc(label) + '</small><b' + (cls ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>';
+    const btn = (what, label) => {
+      const why = Finance.cannot(what);
+      return '<span class="loanBtn"><button class="btn toggle" data-loan="' + what + '"' + (why ? ' disabled' : '') + '>' + Text.esc(label) + '</button>' +
+        (why ? '<small>' + Text.esc(WHY[why]()) + '</small>' : '') + '</span>';
+    };
+    return '<div class="ocard loanCard"><h3>🏦 ' + Text.esc(tr('Loans')) + '</h3><div class="loanNums">' +
+      num(tr('Owed now'), sek(S.loans), 'big') + num(tr("The owner's limit"), sek(Finance.limit())) + num(tr('Room left'), sek(Finance.room())) +
+      num(tr('Interest'), Text.esc(tr('{m} a month', { m: sek(S.loans * LOAN_RATE / 12) })) + ' <small>' + Text.esc(tr('{r} a year', { r: Math.round(LOAN_RATE * 100) + ' %' })) + '</small>') + '</div>' +
+      '<div class="btnRow small loanBtns">' + btn('borrow', tr('Borrow {m}', { m: '+' + sek(step) })) + btn('repay', tr('Repay {m}', { m: '−' + sek(step) })) + '</div>' +
+      '<p class="fine">' + Text.esc(tr('The interest is paid every month, and the goals count your money less what you owe. {n} months in a row below zero and the owner replaces you.', { n: DEBT_MONTHS[S.difficulty] || DEBT_MONTHS.medium })) + '</p></div>';
+  }
+  // a press of Borrow or Repay, from Finance or the Office
+  function loan(what) {
+    if (Finance.cannot(what)) return false;
+    Sfx.play('click');
+    if (what === 'borrow') Finance.borrow(Finance.step()); else Finance.repay(Finance.step());
+    if (S.mission) Game.acted(); else Game.keepWorld();
+    return true;
+  }
+
   function render() {
     const p = $('finance');
     if (tab !== 'finance') {
@@ -62,13 +87,9 @@ const FinanceUI = (() => {
       return;
     }
     const details = Settings.get('finDetails') === 'open';
-    const room = Math.max(0, (S.loanLimit || 0) - S.loans);
-    let html = Analytics.tabsHtml(tab) + '<h1>📊 ' + Text.esc(tr('Finance')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p><div class="cards">';
+    let html = Analytics.tabsHtml(tab) + '<h1>📊 ' + Text.esc(tr('Finance')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p>' + loanCard() + '<div class="cards">';
     html += '<div class="ocard"><h3>💰 ' + Text.esc(tr('Money')) + '</h3><p class="big' + (S.money < 0 ? ' neg' : '') + '">' + sek(S.money) + '</p>' +
-      '<p>' + Text.esc(tr('Loans: {m}', { m: sek(S.loans) })) + ' · ' + Text.esc(tr('{r} a year', { r: Math.round(LOAN_RATE * 100) + ' %' })) + '</p>' +
-      '<p class="fine">' + Text.esc(tr('The owner allows {k} more.', { k: sek(room) })) + '</p>' +
-      (editable ? '<div class="btnRow small"><button class="btn toggle" data-loan="borrow"' + (room <= 0 ? ' disabled' : '') + '>+' + sek(LOAN_STEP) + '</button>' +
-        '<button class="btn toggle" data-loan="repay"' + (S.loans <= 0 || S.money <= 0 ? ' disabled' : '') + '>−' + sek(LOAN_STEP) + '</button></div>' : '') + '</div>';
+      '<p class="fine">' + Text.esc(tr('Your own: {m}', { m: sek(S.money - S.loans) })) + '</p></div>';
     html += '<div class="ocard"><h3>🗓️ ' + Text.esc(tr('This month so far')) + '</h3>' + books(S.finance.cur) + '</div>';
     const last = S.finance.history[S.finance.history.length - 1];
     if (last) html += '<div class="ocard"><h3>📒 ' + Text.esc(tr('The last month')) + ' <small>' + (last.month % 12 + 1) + '/' + Math.floor(last.month / 12) + '</small></h3>' + books(last) + '</div>';
@@ -136,13 +157,8 @@ const FinanceUI = (() => {
     if (b.dataset.tab) { Sfx.play('click'); tab = b.dataset.tab; render(); $('finance').scrollTop = 0; return; }
     if (b.dataset.range) { Sfx.play('click'); Settings.set('statsRange', b.dataset.range); render(); return; }
     if (b.dataset.details) { Sfx.play('click'); Settings.set('finDetails', Settings.get('finDetails') === 'open' ? 'closed' : 'open'); render(); return; }
-    if (b.dataset.loan && editable) {
-      Sfx.play('click');
-      if (b.dataset.loan === 'borrow') Finance.borrow(LOAN_STEP); else Finance.repay(LOAN_STEP);
-      Game.keepWorld();
-      render();
-    }
+    if (b.dataset.loan && loan(b.dataset.loan)) render();
   });
 
-  return { show, render };
+  return { show, render, loanCard, loan };
 })();

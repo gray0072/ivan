@@ -101,7 +101,8 @@ const Construction = {
     if (p.finance === 'partner') return;
     p.spent += sum;
     if (S.mission && S.mission.st) S.mission.st.built += sum;
-    if (p.finance === 'loan') { S.loans += sum; return; }
+    // a loan up to the owner's limit (Finance.limit); what it cannot cover is paid in cash
+    if (p.finance === 'loan') { const lent = Math.min(sum, Finance.room()); S.loans += lent; if (sum > lent) Finance.book('construction', -(sum - lent)); return; }
     Finance.book('construction', -(p.finance === 'grant' ? sum * (1 - GRANT_SHARE) : sum));
   },
   // one day of work on every stage that is on

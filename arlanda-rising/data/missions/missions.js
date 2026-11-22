@@ -6,7 +6,8 @@
 //   date           its first day ("1962-04-01"); the calendar jumps there, the time between run in summary
 //   requires       the master-plan projects that stand at its start (the owner builds those still missing —
 //                  after a cheat's jump, or the ones history built between missions)
-//   setup          budget (SEK from the owner, × the difficulty), loanLimit, open (traffic in summary),
+//   setup          budget (SEK from the owner, × the difficulty), loanLimit (room for new loans on top of what is owed,
+//                  × the difficulty; the owner's limit by the airport's worth is always there — Finance.limit), open (traffic in summary),
 //                  projects (to build), items ({ kind: n } owned at least), desks, airlines ({ code: routes })
 //   grants         projects the owner's grant may pay for
 //   hands          the kinds of tray tasks the player does (stand, fuel, checkin, plough); a stage may set its own

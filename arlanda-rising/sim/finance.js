@@ -2,7 +2,8 @@
 
 // Arlanda Rising — the money: every income and cost booked by its line (the month's profit and loss in
 // Finance), the running costs of what the airport owns prorated to the minute or the day, the month's
-// close (the books kept for the charts, the months in debt counted), loans and their interest. Every sum
+// close (the books kept for the charts, the months in debt counted), loans (the owner's limit, borrowing and
+// repaying) and their interest. Every sum
 // is SEK. Used by every sim/ file that earns or spends.
 
 const Finance = {
@@ -51,9 +52,27 @@ const Finance = {
     // the month's point of the analytics' history (sim/stats.js: read by nothing in the sim)
     Stats.month();
   },
+  // the most the airport may owe: always LOAN_VALUE_SHARE of what it owns (at least LOAN_MIN, × the difficulty's money),
+  // so it grows with the airport — or the limit a mission set at its start (S.loanLimit: its setup's room on top of what
+  // was owed then) when bigger
+  limit() {
+    let worth = 0;
+    for (const it of S.airport.items) worth += it.price || 0;
+    return Math.max(S.loanLimit || 0, Math.max(LOAN_MIN, worth * LOAN_VALUE_SHARE) * diff().money);
+  },
+  room() { return Math.max(0, this.limit() - S.loans); },
+  // one press of Borrow or Repay: about a LOAN_STEPS-th of the limit, rounded to 1, 2 or 5 of its power of ten, at least LOAN_STEP
+  step() {
+    const x = this.limit() / LOAN_STEPS, p = Math.pow(10, Math.floor(Math.log10(Math.max(1, x))));
+    return Math.max(LOAN_STEP, [5, 2, 1].map((k) => k * p).find((v) => v <= x) || p);
+  },
+  // why Borrow or Repay cannot be pressed now: 'limit', 'debt' (none), 'cash' (none to repay with), or '' when it can
+  cannot(what) {
+    if (what === 'borrow') return this.room() > 0 ? '' : 'limit';
+    return S.loans <= 0 ? 'debt' : S.money <= 0 ? 'cash' : '';
+  },
   borrow(amount) {
-    const room = Math.max(0, (S.loanLimit || 0) - S.loans);
-    amount = Math.min(amount, room);
+    amount = Math.min(amount, this.room());
     if (amount <= 0) return 0;
     S.loans += amount;
     this.book('loans', amount);

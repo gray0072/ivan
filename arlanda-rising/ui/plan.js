@@ -10,7 +10,6 @@ const PlanUI = (() => {
   const box = document.getElementById('planPanel');
   const dec = document.getElementById('decision');
   let key = '', decKey = '';
-  const LOAN_STEP = 5e6;
   // whether winter work lies ahead (Construction.winterAhead), worked out once a game day: the tents come and go with it
   let winterDay = '', winter = false;
   function winterAhead() {
@@ -80,10 +79,11 @@ const PlanUI = (() => {
       html += '<div class="fin"><span>' + Text.esc(tr('Fees')) + '</span>' + ['low', 'normal', 'high'].map((f) =>
         '<button class="tb small' + (S.airport.fees === f ? ' on' : '') + '" data-fees="' + f + '">' + Text.esc(tr({ low: 'Low', normal: 'Normal', high: 'High' }[f])) + '</button>').join('') + '</div>';
     }
-    const room = Math.max(0, (S.loanLimit || 0) - S.loans);
+    // the loans in short (all of it at the top of Finance): Borrow / Repay a step of the owner's limit (sim/finance.js)
+    const step = Finance.step();
     html += '<div class="fin"><span>' + Text.esc(tr('Loans: {m}', { m: sek(S.loans) })) + '</span>' +
-      '<button class="tb small" data-loan="borrow"' + (room <= 0 ? ' disabled' : '') + '>+' + sekBare(Math.min(LOAN_STEP, room) || LOAN_STEP) + '</button>' +
-      '<button class="tb small" data-loan="repay"' + (S.loans <= 0 || S.money <= 0 ? ' disabled' : '') + '>−' + sekBare(Math.min(LOAN_STEP, S.loans) || LOAN_STEP) + '</button></div>';
+      '<button class="tb small" data-loan="borrow"' + (Finance.cannot('borrow') ? ' disabled' : '') + '>+' + sekBare(Math.min(step, Finance.room()) || step) + '</button>' +
+      '<button class="tb small" data-loan="repay"' + (Finance.cannot('repay') ? ' disabled' : '') + '>−' + sekBare(Math.min(step, S.loans) || step) + '</button></div>';
     box.innerHTML = html;
   }
 
@@ -129,8 +129,8 @@ const PlanUI = (() => {
     else if (b.dataset.mod) Actions.mod(pid, b.dataset.mod);
     else if (b.dataset.fin) Actions.finance(pid, b.dataset.fin);
     else if (b.dataset.fees) Actions.fees(b.dataset.fees);
-    else if (b.dataset.loan === 'borrow') Actions.borrow(LOAN_STEP);
-    else if (b.dataset.loan === 'repay') Actions.repay(LOAN_STEP);
+    else if (b.dataset.loan === 'borrow') Actions.borrow(Finance.step());
+    else if (b.dataset.loan === 'repay') Actions.repay(Finance.step());
     Game.acted();
     key = '';
   });

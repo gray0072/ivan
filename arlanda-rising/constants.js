@@ -96,6 +96,14 @@ const DELAY_PENALTY_MIN = 120;     // SEK per minute of airport-caused delay bey
 const FEE_LEVELS = { low: 0.8, normal: 1, high: 1.25 }; // × every fee
 const FEE_MOOD = { low: 3, normal: 0, high: -4 };       // airline mood points per month
 const LOAN_RATE = 0.04;            // a year
+// the owner's loan limit that is always there: the most the airport may owe is a share of what it owns (the price of
+// its buildings, runways and vehicles), at least LOAN_MIN, × the difficulty's money — in 1960 (1-6, worth ~570 MSEK)
+// about 46 MSEK, 15 beyond 1-1's loan; it grows with the airport, and a mission's own limit (setup.loanLimit: room on
+// top of what is owed at its start) wins when bigger (Finance.limit)
+const LOAN_VALUE_SHARE = 0.08;
+const LOAN_MIN = 20e6;             // SEK, the bare forest of 1958
+const LOAN_STEP = 5e6;             // SEK at least per press of Borrow / Repay
+const LOAN_STEPS = 10;             // … a bigger limit takes bigger presses: about a tenth of it (Finance.step)
 const DEBT_MONTHS = { easy: 6, medium: 4, hard: 3 }; // months below zero before the owner replaces you
 const STAFF_MONTH = 45000;         // SEK per full-time job a month, everything included
 const UPKEEP_YEAR = 0.02;          // share of a building's price a year
