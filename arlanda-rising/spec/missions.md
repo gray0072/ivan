@@ -1,6 +1,6 @@
 # Arlanda Rising — the missions: structure, budgets, what the player learns
 
-For developers. What the 88 missions of the campaign ask of the player, what they cost, what they teach, and where the game should go now that the task tray is quiet for most of it. The rules themselves are in `SPEC.md` (linked by section); the missions' data is in `data/missions/ch1.js` … `ch8.js` (fields: the header of `data/missions/missions.js`), the reference solutions in `data/strategies/`.
+For developers. What the 88 missions of the campaign ask of the player, what they cost, what they teach, and where the game should go now that the task tray is quiet for most of it. The rules themselves are in [SPEC.md](../SPEC.md) and the other files of `spec/` ("SPEC" below means them, linked by section); the missions' data is in `data/missions/ch1.js` … `ch8.js` (fields: the header of `data/missions/missions.js`), the reference solutions in `data/strategies/`.
 
 **Where the numbers come from.** The campaign played by the reference strategies at Medium, mission after mission with the airport carried over (`node arlanda-rising/tools/missions-check.js --verbose --money`): the minutes at ▶, the stars, the owner's budget, the cash, the debt and the loan room at each mission's start and end. The task counts (who did the work) and the "what if the player did less" variants were measured with throwaway scripts over the same sim (not in the repo). Numbers are as of the commit that adds this file; after the calendar fix (section 6) the money table, the stars on Hard and the rows of the missions it touched were measured again, the other rows' cash may differ by a few MSEK. Re-run the checker after any balance change.
 
@@ -49,7 +49,7 @@ The design (SPEC "Idea", "Manual, people, systems: the automation ladder"): **ha
 
 **Hands** (`hands`): the kinds of tray task the mission lets the player do; a domain with a team or system does its own.
 
-**Unlocks** (SPEC "What the campaign opens"): a small build is opened by the mission that teaches it (`unlocks`) and locked before it; a goal about adding something is never met at a mission's start.
+**Unlocks** ("What the campaign opens" in [chapters.md](chapters.md)): a small build is opened by the mission that teaches it (`unlocks`) and locked before it; a goal about adding something is never met at a mission's start.
 
 **Budget, owner, loans** (SPEC "The owner"): `setup.budget` (× the difficulty's money: Easy 1.5, Medium 1, Hard 0.75) is booked at the start; `setup.minMoney` tops the cash up (matters only after a cheat's jump: from 5-2 on every mission has 300 MSEK, the reference has billions); `setup.loanLimit` sets the room on top of the debt (it stays the limit until a later mission sets another, or the airport's worth — 8 % of it, at least 20 MSEK — is bigger). Money goals count cash less debt. Below zero for `DEBT_MONTHS` (6 / 4 / 3) months fails the stage. A campaign that starts a mission below zero gets the owner's loan (never needed by the reference).
 

@@ -26,7 +26,7 @@
 // The strategy of the mission before is tried too, as a warning when it already gets ★★★.
 //
 // --money prints, per mission and difficulty, the owner's budget, the cash, the debt and the loan room at its start
-// and end, and its lowest cash (the budgets table of docs/missions.md).
+// and end, and its lowest cash (the budgets table of spec/missions.md).
 //
 // Usage: node arlanda-rising/tools/missions-check.js [mission id…] [--verbose] [--money]
 
