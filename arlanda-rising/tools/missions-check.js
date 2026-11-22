@@ -22,7 +22,10 @@
 //     played straight through.
 // The strategy of the mission before is tried too, as a warning when it already gets ★★★.
 //
-// Usage: node arlanda-rising/tools/missions-check.js [mission id…] [--verbose]
+// --money prints, per mission and difficulty, the owner's budget, the cash, the debt and the loan room at its start
+// and end, and its lowest cash (the budgets table of docs/missions.md).
+//
+// Usage: node arlanda-rising/tools/missions-check.js [mission id…] [--verbose] [--money]
 
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const root = path.resolve(__dirname, '..');
@@ -43,6 +46,7 @@ const chapterFiles = (dir) => fs.readdirSync(path.join(root, dir)).filter((f) =>
 
 const args = process.argv.slice(2);
 const verbose = args.includes('--verbose');
+const moneyTable = args.includes('--money');
 const only = args.filter((a) => !a.startsWith('--'));
 
 const out = vm.runInContext(`(() => {
@@ -71,6 +75,9 @@ const out = vm.runInContext(`(() => {
     const ahead = (g, where) => { if (ADD_GOALS.indexOf(g.k) >= 0 && !g.keep) { const c = Goals.check(g, st0); if (c.ok) early.push(where + ' ' + g.k + (g.kind ? ' ' + g.kind : '') + '=' + c.value); } };
     md.stages.forEach((s, k) => (s.goal || []).forEach((g) => ahead(g, 'stage ' + (k + 1))));
     (md.goal || []).concat(md.stars || []).forEach((g) => ahead(g, 'mission'));
+    // the money at the start: the owner's budget is in it already
+    const cash = () => ({ cash: S.money, debt: S.loans, room: Finance.room() });
+    const at0 = Object.assign(cash(), { budget: ((md.setup || {}).budget || 0) * diff().money });
     let r = Strategy.runner(strat), steps = 0, stageSteps = 0, cuts = 0;
     // the lowest cash in the mission, and the owner's loan a campaign that came in below zero got at its start
     let low = S.money;
@@ -99,7 +106,7 @@ const out = vm.runInContext(`(() => {
     const m = S.mission, tot = m.total;
     for (const res of m.results) if (res) stageMin.push(+Missions.minutes(res.st).toFixed(1));
     return {
-      status: m.status, stars: m.stars, medal: m.medal, cuts, over, early, low, ownerLoan, state: JSON.stringify(S),
+      status: m.status, stars: m.stars, medal: m.medal, cuts, over, early, low, ownerLoan, at0, at1: cash(), state: JSON.stringify(S),
       failedStage: m.status === 'stageFailed' ? m.stage : null,
       failed: m.status === 'stageFailed' ? m.results[m.stage].goals.filter((g) => !g.ok).map((g) => g.goal.k + '=' + g.value) : [],
       judged: m.judged ? m.judged.stars.map((g) => (g.ok ? '✓ ' : '✗ ') + g.goal.k + '=' + g.value) : [],
@@ -219,6 +226,14 @@ for (const r of JSON.parse(out)) {
         `  [${x.money} MSEK, on time ${x.onTime}%, delay ${x.delay}, wait ${x.wait}, lost ${x.lost}, ${x.meters}]`);
     }
     if (r.idleWhy) console.log('      idle fails ' + r.idleWhy);
+  }
+  if (moneyTable && m) {
+    const M = (x) => (x / 1e6).toFixed(1);
+    for (const d of ['easy', 'medium', 'hard']) {
+      const x = r.diffs[d], a = x.at0, b = x.at1;
+      console.log('      money ' + d.padEnd(7) + 'owner +' + M(a.budget) + ' · start cash ' + M(a.cash) + ' debt ' + M(a.debt) + ' room ' + M(a.room) +
+        ' → end cash ' + M(b.cash) + ' debt ' + M(b.debt) + ' room ' + M(b.room) + ' · lowest cash ' + M(x.low) + ' (MSEK)');
+    }
   }
   for (const w of r.warnings) console.log('   ? ' + w);
   for (const p of r.problems) { console.log('   ! ' + p); bad++; }
