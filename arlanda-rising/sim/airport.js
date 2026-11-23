@@ -319,7 +319,8 @@ const Airport = {
     Finance.book('build', -b.price);
     // a shop keeps its cells in its terminal while it is fitted
     const term = b.cells ? this.roomFor(kind) : undefined;
-    if (S.plan && b.days > 0) S.plan.buys.push(term ? { kind, done: S.day + b.days, term } : { kind, done: S.day + b.days });
+    // (Free Play keeps its plan state in the day too: what it buys in the day is there at once, at night at dawn)
+    if (S.plan && !S.ops && b.days > 0) S.plan.buys.push(term ? { kind, done: S.day + b.days, term } : { kind, done: S.day + b.days });
     else this.finishBuy(kind, term);
     return true;
   },

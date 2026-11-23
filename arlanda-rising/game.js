@@ -6,13 +6,14 @@
 // plan panel), the stage card, the results and the Office. It wires the map's
 // gestures (tap a task or an aircraft, drag one to a stand, pan, pinch), the keys and the cheats, keeps the running
 // mission saved (every AUTOSAVE_SECONDS, at each stage's end and when the page is hidden) and records the stars;
-// Free Play's rounds, Departments and the Ops Center (keys P and O: tabs of Finance's bar), and the cloud save's idle moments; session 4:
+// Free Play (sim/free.js: one game from the forest on, saved apart from the missions in FreeSave), Departments and the Ops
+// Center (keys P and O: tabs of Finance's bar), and the cloud save's idle moments; session 4:
 // the Terminal view (T: live in an ops stage, the stage runs on behind it), the Airlines screen (A), Finance (F, or the
 // money in the HUD) and the Challenge Days; the roofs on or off (R or the 🏠 button: the buildings cut away with their
 // insides) and the card of a building, a fuel truck or a plough tapped on the map.
 
 const Game = {
-  screen: 'menu',     // menu, timeline, card, office, free, challenges, intro, play, tview, pause, info, panel, stageCard, results
+  screen: 'menu',     // menu, timeline, card, office, challenges, intro, play, tview, pause, info, panel, stageCard, results
   speed: 0, lastSpeed: 1,
   run: null,          // { id, campaign, difficulty } of the mission being played
   pick: null,         // a flight whose stand the player is choosing on the map
@@ -30,20 +31,14 @@ const Game = {
   },
   showWorld() {
     if (Campaign.exists() && Campaign.data.world) S = JSON.parse(JSON.stringify(Campaign.data.world));
-    else if (FreeSave.exists()) S = JSON.parse(JSON.stringify(FreeSave.data.world));
+    else if (FreeSave.exists()) { S = JSON.parse(JSON.stringify(FreeSave.data.state)); S.mission = null; S.ops = null; S.plan = null; }
     else S = this.demoWorld();
   },
-  // the airport the Office works on: the campaign's, or Free Play's; changes made there are kept at once
-  freeOffice: false,
-  holder() {
-    if (this.freeOffice && FreeSave.exists()) return { free: true, world: FreeSave.data.world, round: FreeSave.data.round };
-    if (Campaign.data) return { free: false, world: Campaign.data.world };
-    return null;
-  },
+  // the airport the Office works on: the campaign's; changes made there are kept at once
+  holder() { return Campaign.data ? { world: Campaign.data.world } : null; },
   keepWorld() {
-    const h = this.holder();
-    if (!h || !S || S.mission) return;
-    if (h.free) { FreeSave.data.world = S; FreeSave.save(); } else { Campaign.data.world = S; Campaign.save(); }
+    if (!this.holder() || !S || S.mission) return;
+    Campaign.data.world = S; Campaign.save();
   },
 
   // ---------- the flow ----------
@@ -64,40 +59,50 @@ const Game = {
     Timeline.show();
     Cloud.idleNow();
   },
-  toOffice(free) {
+  toOffice() {
     this.leaveMission();
-    this.freeOffice = !!free;
-    if (!free && !Campaign.exists()) { this.toTimeline(); return; }
+    if (!Campaign.exists()) { this.toTimeline(); return; }
     this.screen = 'office';
     Office.show();
     MapView.frame('build');
     Cloud.idleNow();
   },
   // ---------- Free Play ----------
-  toFree() {
-    if (S && S.mission && this.run) this.save();
-    this.leaveMission();
-    this.screen = 'free';
-    this.showWorld();
-    Screens.freePlay();
-    Cloud.idleNow();
-  },
-  startFree(era, diff) {
-    const go = () => { Settings.setDifficulty(diff); FreeSave.data = FreePlay.start(era, diff); FreeSave.save(); S = null; this.toOffice(true); };
-    if (FreeSave.exists()) Screens.confirm(tr('Start a new Free Play?'), tr('The airport of your Free Play starts again. Your campaign stays as it is.'), tr('Yes, start again'), go, () => this.toFree());
+  // a new game from the forest at the difficulty picked on the start screen (asked first when one is saved)
+  newFree() {
+    const go = () => {
+      enterFullscreen();
+      this.leaveMission();
+      const d = Settings.difficulty(), now = Date.now();
+      Free.start(d, { seed: now });
+      this.run = { id: 'free', free: true, campaign: false, difficulty: d, startedAt: now };
+      this.actions = 0;
+      Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close(); SiteCard.close();
+      this.save();
+      this.hud(true);
+      MapView.frame('site');
+      this.play();
+      this.banner(tr('Free Play: the forest of 1958. Build what history asks for in the panel — the years run on by themselves.'), 8000);
+    };
+    if (FreeSave.exists()) Screens.confirm(tr('Start a new Free Play?'), tr('Your Free Play airport starts again from the forest of 1958. Your campaign stays as it is.'), tr('Yes, start again'), go, () => this.toMenu());
     else go();
   },
-  freeRound() {
-    const fp = FreeSave.data;
-    if (!fp) { this.toFree(); return; }
+  // the saved game at that very moment, paused
+  continueFree() {
+    if (!FreeSave.exists()) { this.toMenu(); return; }
     enterFullscreen();
     this.leaveMission();
-    Missions.start('free', fp.difficulty, fp.world, FreePlay.round(fp));
-    this.run = { id: 'free', free: true, campaign: false, difficulty: fp.difficulty };
+    Missions.resume({ state: FreeSave.data.state });
+    this.run = { id: 'free', free: true, campaign: false, difficulty: S.difficulty, startedAt: FreeSave.data.startedAt };
     this.actions = 0;
     Hints.reset(); Tray.reset(); PlanUI.reset(); Toolbar.reset(); FlightCard.close(); SiteCard.close();
-    this.save();
-    this.intro();
+    this.hud(true);
+    Screens.hide();
+    this.screen = 'play';
+    this.speed = 0;
+    this.lastSpeed = 1;
+    MapView.frame(S.ops && S.ops.flights.length ? 'ops' : 'build');
+    this.banner(tr('Paused. Press ▶ to go on.'), 4000);
   },
   // the Ops Center, Finance and Departments (one screen with tabs, ui/analytics.js InfoTabs), the Terminal view and
   // Airlines: from the Office to work in, during play to look at (the game pauses) — the Terminal view in an ops stage
@@ -248,6 +253,7 @@ const Game = {
   },
   save() {
     if (!S || !S.mission || !this.run) return;
+    if (this.run.free) { FreeSave.write(this.run, S); return; }
     if (S.mission.status === 'done' || S.mission.status === 'failed') return;
     Autosave.write({ run: this.run, data: Missions.save() });
   },
@@ -262,16 +268,6 @@ const Game = {
       this.speed = 0;
       this.panels(false);
       ChallengesUI.results({ newBest });
-      return;
-    }
-    if (this.run.free) {
-      const pass = S.mission.status === 'done';
-      if (pass && FreeSave.data) { FreePlay.passed(FreeSave.data, Missions.world()); FreeSave.save(); }
-      Autosave.clear();
-      this.screen = 'results';
-      this.speed = 0;
-      this.panels(false);
-      Results.mission({ free: true });
       return;
     }
     const id = this.run.id, pass = S.mission.status === 'done', stars = S.mission.stars;
@@ -381,7 +377,7 @@ const Game = {
       else if (this.screen === 'pause') this.resume();
       else if (this.screen === 'info') this.backToPause();
       else if (this.screen === 'panel' || this.screen === 'tview') this.resume();
-      else if (this.screen === 'timeline' || this.screen === 'office' || this.screen === 'card' || this.screen === 'free' || this.screen === 'challenges') this.toMenu();
+      else if (this.screen === 'timeline' || this.screen === 'office' || this.screen === 'card' || this.screen === 'challenges') this.toMenu();
       return;
     }
     const PANEL_KEYS = { KeyP: 'people', KeyO: 'ops', KeyT: 'terminal', KeyA: 'airlines', KeyF: 'finance' };
@@ -421,10 +417,11 @@ const Game = {
       if (e.code === 'KeyM' && Cheats.money()) text = tr('Cheat: +100 MSEK');
       else if (e.code === 'KeyS' && Cheats.snowstorm()) text = tr('Cheat: a snowstorm');
       else if (e.code === 'KeyA' && Cheats.domainsUp()) text = tr('Cheat: every domain one level up');
-      else if (e.code === 'KeyW' && Cheats.winStage()) text = tr('Cheat: the stage is won');
-      else if (e.code === 'KeyD' && Cheats.endStage()) text = tr('Cheat: skipped to the end of the stage');
+      else if (e.code === 'KeyW' && !S.free && Cheats.winStage()) text = tr('Cheat: the stage is won');
+      else if (e.code === 'KeyD' && !S.free && Cheats.endStage()) text = tr('Cheat: skipped to the end of the stage');
       else if (e.code === 'KeyK') { const d = Cheats.strike(); text = d ? tr('Cheat: {dept} on strike', { dept: Text.dept(d) }) : tr('Cheat: no team to strike yet'); }
       else if (e.code === 'KeyF') { const d = Cheats.failure(); text = d ? tr('Cheat: {sys} has failed', { sys: Text.level(d, S.domains[d]) }) : tr('Cheat: no system to fail now'); }
+      else if (e.code === 'KeyH' && S.free) { const m = Free.cheatNext(); if (m) Cheats.mark(); text = m ? tr('Cheat: the history reaches {name}', { name: tr(m.name) }) : tr('Cheat: the history has no milestone left'); }
       else if (e.code === 'KeyE') { const id = Cheats.event(); text = id ? tr('Cheat: a random event') : tr('Cheat: no event in plan time'); }
     }
     if (!text) return false;
@@ -486,7 +483,6 @@ const Game = {
       if (this.screen === 'menu') Screens.menu();
       else if (this.screen === 'timeline') Timeline.show();
       else if (this.screen === 'office') Office.show();
-      else if (this.screen === 'free') Screens.freePlay();
       else if (this.screen === 'challenges') ChallengesUI.show();
       Tray.reset(); Toolbar.reset(); PlanUI.reset();
     });
@@ -505,6 +501,9 @@ const Game = {
     GameEvents.on('poached', left);
     // a search for a head that found its two candidates in plan time (spec/people.md)
     GameEvents.on('searchDone', (e) => { if (this.screen === 'play') this.banner(tr('The search for a head of {dept} has found two candidates.', { dept: Text.dept(e.dept) }) + ' ' + tr('Choose in Departments.'), 5500); });
+    // Free Play: a milestone of the history reached, a project the owner built
+    GameEvents.on('history', (e) => { if (this.screen === 'play' && MISSION[e.id]) this.banner('📜 ' + tr('{year}: {name}', { year: e.year, name: tr(MISSION[e.id].name) }), 6000); });
+    GameEvents.on('ownerBuilt', (e) => { if (this.screen === 'play' && PROJECTS[e.project]) this.banner('🏛️ ' + tr('The owner has built: {name}', { name: tr(PROJECTS[e.project].name) }), 5000); });
     GameEvents.on('permitBroken', () => { if (this.screen === 'play') this.banner(tr('The environmental permit is broken this month: a fine.'), 4500); });
     document.querySelectorAll('.speeds button').forEach((b) => b.addEventListener('click', () => {
       Sfx.unlock();
@@ -525,17 +524,16 @@ const Game = {
     window.addEventListener('pagehide', () => this.save());
     // the cloud save (core/cloud.js): merges only on the screens with no mission in memory; a save from another
     // device redraws the screen that shows it
-    Cloud.idle = () => ['menu', 'timeline', 'office', 'free', 'challenges'].indexOf(this.screen) >= 0;
+    Cloud.idle = () => ['menu', 'timeline', 'office', 'challenges'].indexOf(this.screen) >= 0;
     Cloud.onChange = (changed) => {
       if (changed) { Progress.load(); Campaign.load(); FreeSave.load(); ChallengeSave.load(); }
       if (this.screen === 'menu') Screens.menu();
       else if (changed && this.screen === 'timeline') Timeline.show();
       else if (changed && this.screen === 'office') Office.show();
-      else if (changed && this.screen === 'free') Screens.freePlay();
       else if (changed && this.screen === 'challenges') ChallengesUI.show();
     };
     Cloud.init();
-    AppUpdate.watch(() => this.screen === 'menu' || this.screen === 'timeline' || this.screen === 'office' || this.screen === 'free' || this.screen === 'challenges');
+    AppUpdate.watch(() => this.screen === 'menu' || this.screen === 'timeline' || this.screen === 'office' || this.screen === 'challenges');
     this.toMenu();
     requestAnimationFrame((t) => this.frame(t));
   }

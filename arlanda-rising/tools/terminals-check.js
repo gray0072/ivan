@@ -12,7 +12,7 @@
 //   - the first terminal stands until 2017 and is gone from the exam of 2018 on: its item is gone, the kerb and the
 //     check-in desks' button stay, its shops move to the other terminals' free cells (one with no room is sold back),
 //     its brands' units close;
-//   - Free Play's 2024 airport and the Challenge Days have Terminal 3 (and the first terminal gone in 2024).
+//   - the Challenge Days from 1989 on have Terminal 3.
 // Prints a line for each check and exits 1 when one fails.
 //
 // Usage: node arlanda-rising/tools/terminals-check.js   (a few seconds)
@@ -94,10 +94,7 @@ const out = vm.runInContext(`(() => {
   ok(!Terminal.mothballed('t3'), '2030 (8-1): Terminal 3 open again as ' + Terminal.name('t3'));
   ok(Terminal.of('ELECTRIC', false, 'EL30') === 't3', '2030: the electric commuters go through ' + Terminal.name('t3'));
 
-  // Free Play 2024 and the Challenge Days
-  const fp = FREE_ERAS.find((e) => e.id === '2024');
-  ok(fp.requires.indexOf('terminal3') >= 0 && fp.requires.indexOf('oldHall') >= 0 && (fp.setup.mothball || []).indexOf('t3') >= 0, 'Free Play 2024: Terminal 3 (closed until October), the first terminal gone');
-  for (const e of FREE_ERAS) if (e.date >= '1990') ok(e.requires.indexOf('terminal3') >= 0, 'Free Play ' + e.id + ': Terminal 3');
+  // the Challenge Days
   for (const c of CHALLENGES) if (c.date >= '1989-08') ok(c.requires.indexOf('terminal3') >= 0, 'Challenge ' + c.id + ' (' + c.date + '): Terminal 3');
   return { lines, bad };
 })()`, ctx);

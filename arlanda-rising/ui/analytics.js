@@ -237,8 +237,8 @@ const Analytics = (() => {
   }
   function label(row) {
     const d = Calendar.date(row[STAT.day]);
-    if (range() === 'months') return d.m + '/' + d.y;
-    return d.d + '/' + d.m + '/' + String(d.y).slice(2) + (row[STAT.min] >= 0 ? ' ' + fmtClock(row[STAT.min]) : '');
+    if (range() === 'months') return d.m + '/' + Calendar.yearOf(row[STAT.day]);
+    return d.d + '/' + d.m + '/' + String(Calendar.yearOf(row[STAT.day])).slice(2) + (row[STAT.min] >= 0 ? ' ' + fmtClock(row[STAT.min]) : '');
   }
   function draw(cv, tab) {
     const c = CHART[tab], hist = rows(tab);

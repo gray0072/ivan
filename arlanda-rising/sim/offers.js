@@ -4,8 +4,7 @@
 // offered to an airport now, by group — an airline that wants more slots, a shop or a car park, a manager pair, a team
 // or a system, a wage round, a crash tender, and from chapter 4 a real brand that wants a unit and an airline that
 // would start a route here for a route incentive — each as a decision ({ group, icon, title, text, params, default,
-// options }: sim/plan.js applies an option). Free Play's rounds draw two of different groups (sim/freeplay.js); from
-// chapter 4 the Office shows a board of two between missions (`board`, kept in S.board until the calendar moves),
+// options }: sim/plan.js applies an option). From chapter 4 the Office shows a board of two between missions (`board`, kept in S.board until the calendar moves),
 // whose options are taken at once. A param whose name starts with 'sek' is a sum, written by the screen in its language. Deterministic: made from the world's seed and its day.
 
 const Offers = {

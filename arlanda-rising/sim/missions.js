@@ -23,6 +23,8 @@ const Missions = {
   // nothing
   lockedBy(kind) {
     const at = this.unlockAt(kind);
+    // Free Play: a mission the history has not reached yet (sim/free.js)
+    if (at && S && S.free) return Free.reached(at) ? null : at;
     if (!at || !S.mission || S.mission.def || !MISSION[S.mission.id]) return null;
     return MISSIONS.indexOf(MISSION[at]) > MISSIONS.indexOf(MISSION[S.mission.id]) ? at : null;
   },

@@ -2,7 +2,7 @@
 
 // Arlanda Rising — the overlay screens and what they share: showing one panel at a time, the difficulty picker
 // (start screen, mission card, pause, results — pre-selected), the Sound On / Off switch, and the start screen,
-// the pause menu (with the running mission's card, ui/missioncard.js), the settings, the confirm dialog, the cloud save's account row and the Free Play screen. The
+// the pause menu (with the running mission's card, ui/missioncard.js), the settings, the confirm dialog, the cloud save's account row. The
 // other screens have their own files (timeline, missioncard, results, office, people, opscenter). Buttons call
 // game.js; Space / Enter press the panel's default button.
 
@@ -85,24 +85,33 @@ const Screens = (() => {
     p.innerHTML = '<div class="langPick" role="group" aria-label="Language"></div>' +
       '<div class="title"><img class="logoIcon" src="icon.svg?v=1" alt=""><h1>Arlanda Rising</h1></div>' +
       '<p class="tagline">' + Text.esc(tr('Run Stockholm Arlanda, from the forest of 1958 to the airport of tomorrow.')) + '</p>';
+    // what can be continued, each by its own button: the mission in progress (a campaign mission, one replayed, a Challenge
+    // Day), the campaign (its next mission), Free Play; the first of them is the big default
     const saved = Autosave.read();
     const m = saved && saved.run && MISSION[saved.run.id];
-    const free = saved && saved.run && (saved.run.free || saved.run.challenge) && saved.data && saved.data.state && saved.data.state.mission;
-    if ((m || free) && saved.data && saved.data.state && saved.data.state.mission) {
-      const st = saved.data.state.mission, def = free ? st.def : m;
-      p.appendChild(row(btn(tr('Continue mission'), 'default big', () => Game.continueMission())));
-      const name = saved.run.challenge ? tr('Challenge Days') + ' · ' + tr(def.name) : free ? tr('Free Play') + ' · ' + tr('round {n}', { n: def.round }) : tr(m.name);
+    const chal = saved && saved.run && saved.run.challenge && saved.data && saved.data.state && saved.data.state.mission;
+    let first = true;
+    const big = () => { const c = first ? 'default big' : ''; first = false; return c; };
+    if ((m || chal) && saved.data && saved.data.state && saved.data.state.mission) {
+      const st = saved.data.state.mission, def = chal ? st.def : m;
+      p.appendChild(row(btn(tr(chal ? 'Continue the Challenge Day' : 'Continue mission'), big(), () => Game.continueMission())));
+      const name = chal ? tr('Challenge Days') + ' · ' + tr(def.name) : tr(m.name);
       p.appendChild(el('p', 'saveInfo', Text.esc(tr('{name} — stage {i} of {n}', { name, i: st.stage + 1, n: def.stages.length })) +
         (saved.from ? ' · ' + Text.esc(tr('saved on another device at {t}', { t: new Date(saved.savedAt).toLocaleTimeString(I18N.lang, { hour: '2-digit', minute: '2-digit' }) })) : '')));
     }
     if (Campaign.exists()) {
       const nm = Campaign.nextMission();
-      p.appendChild(row(btn(tr('Continue'), m || free ? '' : 'default big', () => Game.toTimeline())));
+      p.appendChild(row(btn(tr('Continue campaign'), big(), () => Game.toTimeline())));
       const last = MISSIONS[MISSIONS.length - 1];
       p.appendChild(el('p', 'saveInfo', Text.esc(nm ? tr('Chapter {n}: {name} · next: {mission}', { n: nm.chapter, name: tr(CHAPTERS[nm.chapter - 1].name), mission: tr(nm.name) }) : tr('Chapter {n} is done — more chapters are coming.', { n: last.chapter }))));
     }
-    p.appendChild(row(btn(tr('New Campaign'), Campaign.exists() || m || free ? 'secondary' : 'default big', () => Game.askNewCampaign()),
-      FreePlay.any() || FreeSave.exists() ? btn(tr('Free Play'), 'secondary', () => Game.toFree()) : null,
+    if (FreeSave.exists()) {
+      const fs = FreeSave.data;
+      p.appendChild(row(btn(tr('Continue Free Play'), big(), () => Game.continueFree())));
+      p.appendChild(el('p', 'saveInfo', Text.esc(tr('{year} · month {n} of your airport · {money}', { year: fs.year, n: fs.month, money: sek(fs.money) }))));
+    }
+    p.appendChild(row(btn(tr('New Campaign'), first ? 'default big' : 'secondary', () => Game.askNewCampaign()),
+      btn(tr('New Free Play'), 'secondary', () => Game.newFree()),
       Challenges.any() ? btn(tr('Challenge Days'), 'secondary', () => Game.toChallenges()) : null));
     p.appendChild(diffPicker(Settings.difficulty(), (d) => Settings.setDifficulty(d)));
     p.appendChild(soundRow());
@@ -153,31 +162,6 @@ const Screens = (() => {
     else { Cloud.signOut(); renderAccount(); }
   });
 
-  // ---------- Free Play: go on with the airport, or start one from an era the campaign has opened ----------
-  function freePlay() {
-    const p = $('freePlay');
-    p.innerHTML = '<h1>🛫 ' + Text.esc(tr('Free Play')) + '</h1><p class="fine">' + Text.esc(tr('An endless airport: offers to answer, peaks to fly, no stars and no frame. Every round is a month of business and a busy peak.')) + '</p>';
-    const fp = FreeSave.data;
-    if (FreeSave.exists()) {
-      const era = FREE_ERAS.find((x) => x.id === fp.era);
-      p.appendChild(row(btn(tr('Continue Free Play'), 'default big', () => Game.toOffice(true))));
-      p.appendChild(el('p', 'saveInfo', Text.esc(tr('{era} · round {n} · {date}', { era: tr(era ? era.name : ''), n: fp.round, date: fmtDate(fp.world.day) }))));
-    }
-    p.appendChild(el('p', 'label', Text.esc(tr('Start from'))));
-    let d = Settings.difficulty();
-    const eras = el('div', 'btnCol');
-    for (const era of FREE_ERAS) {
-      const ok = FreePlay.open(era.id);
-      const b = btn((ok ? '' : '🔒 ') + tr(era.name), FreeSave.exists() ? 'secondary' : 'default', () => { if (ok) Game.startFree(era.id, d); });
-      b.disabled = !ok;
-      eras.appendChild(b);
-    }
-    p.appendChild(eras);
-    p.appendChild(diffPicker(d, (x) => { d = x; }));
-    p.appendChild(row(btn(tr('Back'), 'secondary', () => Game.toMenu())));
-    show('freePlay');
-  }
-
   function help() {
     const p = $('help');
     p.innerHTML = '<h1>' + Text.esc(tr('How to play')) + '</h1>' + [
@@ -187,7 +171,8 @@ const Screens = (() => {
       'The bar at the bottom opens check-in desks, sends the ploughs and picks the runway direction when the wind is calm. Its three buttons buy small things in any mission: Services (shops, car parks, rent), Vehicles (trucks, ploughs, crash tenders), Build (stands, desks, lanes and more) — each card with its price, its days and, for what earns, its profit and payback at today\'s traffic. What a later mission teaches stays locked until then.',
       'Mouse: click and drag, the wheel zooms, right drag or the arrow keys move the map. Keys: Space pause, 1–4 speed, 5–7 Services, Vehicles, Build, N skip to the next task, Q do the oldest task, Esc pause menu.',
       'From chapter 4 on, the Terminal view (T) shows the queues and the shop units: put real shops and cafés there — each pays rent and earns more when the queues are short. Airlines (A) shows every airline\'s mood and temper, the Offers board and route incentives; Finance (F) the books, the payback of every investment and, under Details, its net present value. Challenge Days open after chapter 3.',
-      'From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.',
+      'From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in.',
+      'Free Play is the other way through the same history: one airport from the forest of 1958 on, with no missions and no stages. Each month one day is flown flight by flight, and the night runs the rest of the month in a few seconds. The clock slows down when something needs you and hurries when nothing does. Build what history asks for in the panel — the next milestone and what it needs are at its top — and the years run on: new airlines, aircraft and rules come as they came at the real Arlanda.',
       'The Ops Center, Finance, Departments and the meters are tabs of one screen: tap the money or a meter at the top, then pick a tab.',
       'Phone and tablet: the game goes fullscreen. Drag with one finger to move the map, pinch with two to zoom, tap a task or drag it to a stand, hold a finger on an aircraft to see its card.'
     ].map((t) => '<p>' + Text.esc(tr(t)) + '</p>').join('');
@@ -220,6 +205,7 @@ const Screens = (() => {
   function pause() {
     const p = $('pause');
     p.innerHTML = '<h1>⏸ ' + Text.esc(tr('Paused')) + '</h1>';
+    if (S && S.free) { freePause(p); return; }
     const col = el('div', 'btnCol');
     col.appendChild(btn(tr('Continue'), 'default', () => Game.resume()));
     // the mission's card with where it stands now (ui/missioncard.js): looking changes nothing
@@ -233,6 +219,21 @@ const Screens = (() => {
     p.appendChild(soundRow());
     p.appendChild(row(btn(tr('Settings'), 'secondary', () => settings('pause')), btn(tr('Main Menu'), 'secondary', () => Game.toMenu())));
     p.appendChild(el('p', 'fine', Text.esc(tr('The mission is saved: Main Menu keeps it, and Continue mission goes on from here.'))));
+    show('pause');
+  }
+
+  // Free Play's pause menu: Auto pace (how fast the clock hurries when nothing needs the player), the sound, the settings
+  function freePause(p) {
+    p.appendChild(row(btn(tr('Continue'), 'default', () => Game.resume())));
+    const wrap = el('div', 'setRow', '<span>' + Text.esc(tr('Auto pace')) + '</span>');
+    for (const [v, name] of [['gentle', 'Gentle'], ['normal', 'Normal'], ['off', 'Off']]) {
+      wrap.appendChild(btn(tr(name), 'toggle' + (S.free.auto === v ? ' on' : ''), () => { S.free.auto = v; pause(); }));
+    }
+    p.appendChild(wrap);
+    p.appendChild(el('p', 'fine', Text.esc(tr('Normal: the clock hurries when nothing needs you. Gentle: half as fast. Off: always at the pace of the missions.'))));
+    p.appendChild(soundRow());
+    p.appendChild(row(btn(tr('Settings'), 'secondary', () => settings('pause')), btn(tr('Main Menu'), 'secondary', () => Game.toMenu())));
+    p.appendChild(el('p', 'fine', Text.esc(tr('Free Play is saved all the time: Continue Free Play on the start screen goes on from here.'))));
     show('pause');
   }
 
@@ -254,5 +255,5 @@ const Screens = (() => {
     return false;
   }
 
-  return { show, hide, menu, pause, settings, confirm, diffPicker, soundRow, btn, row, el, pressDefault, renderAccount, freePlay, get current() { return current; } };
+  return { show, hide, menu, pause, settings, confirm, diffPicker, soundRow, btn, row, el, pressDefault, renderAccount, get current() { return current; } };
 })();

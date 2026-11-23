@@ -20,7 +20,7 @@ function files() {
     'sim/state.js', 'sim/calendar.js', 'sim/weather.js', 'sim/finance.js', 'sim/meters.js', 'sim/terminal.js', 'sim/airlines.js', 'sim/people.js', 'sim/systems.js', 'sim/airport.js', 'sim/stands.js',
     'sim/fleet.js', 'sim/schedule.js', 'sim/runways.js', 'sim/passengers.js', 'sim/turnaround.js', 'sim/flights.js', 'sim/tasks.js',
     'sim/construction.js', 'sim/summary.js', 'sim/plan.js', 'sim/ops.js', 'sim/goals.js', 'sim/missions.js', 'sim/actions.js',
-    'sim/sim.js', 'sim/strategy.js', 'sim/cheats.js', 'sim/freeplay.js', 'sim/freepace.js', 'sim/free.js', 'sim/offers.js', 'sim/invest.js',
+    'sim/sim.js', 'sim/strategy.js', 'sim/cheats.js', 'sim/freepace.js', 'sim/free.js', 'sim/offers.js', 'sim/invest.js',
     'sim/events.js', 'sim/green.js', 'sim/stats.js', 'data/challenges.js', 'sim/challenges.js'];
 }
 

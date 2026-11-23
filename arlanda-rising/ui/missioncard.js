@@ -14,12 +14,12 @@ const MissionCard = (() => {
   const $ = (id) => document.getElementById(id);
 
   // the card's text, shared by the card before a mission and the info of the one being played (`live`: its stage, the
-  // goals' values so far); a Free Play round and a Challenge Day show what they have (no chapter, briefing or news)
+  // goals' values so far); a Challenge Day shows what it has (no chapter, briefing or news)
   function body(m, live) {
     const day = Calendar.parse(m.date), d = Calendar.date(day);
     const tot = live ? Missions.liveTotal() : null, cur = live ? S.mission.stage : -1;
     const chap = m.chapter ? tr('Chapter {n}: {name}', { n: m.chapter, name: tr(CHAPTERS[m.chapter - 1].name) }) + ' · ' + (live ? m.id : m.n + '/11')
-      : m.challenge ? tr('Challenge Days') : m.free ? tr('Free Play') + ' · ' + tr('round {n}', { n: m.round }) : '';
+      : m.challenge ? tr('Challenge Days') : '';
     // the stars' goals: before the mission as they read, during it with their value so far (✓ met at this moment)
     const starGoals = live ? Goals.all(m.stars, tot).map((r, i) => '<li class="' + (r.ok ? 'ok' : 'no') + '"><span class="mark">' + Text.stars(i + 2) + '</span><span class="g">' +
       Text.esc(Text.goal(r.goal)) + '</span><b>' + Text.esc(Text.value(r)) + '</b></li>').join('')

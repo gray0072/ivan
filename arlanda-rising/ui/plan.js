@@ -6,12 +6,18 @@
 // view, the crews at work, the teams and systems the mission's goals ask for (the rest of the staff in Departments and
 // the Ops Center, a button each), the fee level when the airport is open, the loans; and the decision card that stops the time
 // until the player picks one of its options (the pair of choices of SPEC.md "Offers come as choices"). Used by
-// game.js in a plan stage.
+// game.js in a plan stage — and all the time in Free Play, where its top is the history's next milestone (its year, name
+// and what it needs built), its projects are those not finished, and it folds to that top line (on a phone it starts
+// folded in the day, so the map stays free).
 
 const PlanUI = (() => {
   const box = document.getElementById('planPanel');
   const dec = document.getElementById('decision');
   let key = '', decKey = '';
+  // Free Play: the panel folded to its top line (null: as the screen suits — folded on a phone in the day)
+  let folded = null;
+  const NARROW = window.matchMedia('(max-width: 600px), (max-height: 500px)');
+  const isFolded = () => (folded === null ? NARROW.matches && !!S.ops : folded);
   // whether winter work lies ahead (Construction.winterAhead), worked out once a game day: the tents come and go with it
   let winterDay = '', winter = false;
   function winterAhead() {
@@ -47,12 +53,21 @@ const PlanUI = (() => {
     if (!S || !S.plan || !S.mission) { box.hidden = true; key = ''; return; }
     const ids = S.mission.projects || [];
     const goals = Goals.all(Missions.stage().goal, S.mission.st), mg = Text.missionGoals();
-    const k = JSON.stringify(goals) + mg + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
+    const fold = !!S.free && isFolded(), hist = S.free ? Text.history() : null;
+    const k = (hist ? JSON.stringify(hist) + fold : '') + JSON.stringify(goals) + mg + JSON.stringify(S.airport.projects) + S.plan.crews + Math.round(S.money / 1e5) + S.loans + S.airport.fees + I18N.lang + Settings.short() + JSON.stringify(S.plan.buys) +
       JSON.stringify(S.domains) + JSON.stringify(S.people && S.people.hiring) + JSON.stringify(S.sys) + JSON.stringify(S.people && [S.people.vacant, S.people.managers, S.people.search]) + (S.people ? S.people.it : 0) + winterAhead() + Terminal.brands() + Terminal.units().length;
     box.hidden = false;
     if (k === key) return;
     key = k;
-    let html = (goals.length || mg ? '<div class="pGoals">' + (goals.length ? '<b>' + Text.esc(tr(Missions.stage().name)) + '</b>' + Text.goalsHtml(goals) : '') + mg + '</div>' : '');
+    // Free Play: the history's next milestone, and the fold
+    if (S.free) {
+      let top = '<div class="pGoals hist"><button class="tb small pFold" data-fold="1">' + (fold ? '▸' : '▾') + '</button><b>📜 ' + Text.esc(String(hist.year)) +
+        (hist.name ? (hist.when > hist.year ? ' → ' + Text.esc(hist.when + ': ' + hist.name) : ': ' + Text.esc(hist.name)) : '') + '</b><small>' + Text.esc(hist.text) + '</small></div>';
+      if (fold) { box.innerHTML = top; box.classList.add('folded'); return; }
+      box.classList.remove('folded');
+      box.dataset.top = top;
+    }
+    let html = (S.free ? box.dataset.top : '') + (goals.length || mg ? '<div class="pGoals">' + (goals.length ? '<b>' + Text.esc(tr(Missions.stage().name)) + '</b>' + Text.goalsHtml(goals) : '') + mg + '</div>' : '');
     // the terminals' shop units: let to real brands in the Terminal view (a phone has no T key)
     const units = Terminal.units();
     if (units.length) html += '<div class="fin"><span>' + Text.esc(tr('{a} of {b} units let', { a: units.filter((u) => u.brand).length, b: units.length })) + '</span>' +
@@ -60,7 +75,7 @@ const PlanUI = (() => {
     html += '<div class="pHead"><b>' + Text.esc(tr('Building')) + '</b><span>👷 ' + Text.esc(tr('Crews at work: {a} of {n}', { a: Construction.active(), n: S.plan.crews })) + '</span></div>';
     for (const pid of ids) {
       const p = Construction.state(pid), def = PROJECTS[pid];
-      if (!p) continue;
+      if (!p || (S.free && p.done)) continue;
       html += '<div class="proj"><h3>' + Text.esc(tr(def.name)) + (p.done ? ' <span class="done">✓</span>' : '') + '</h3>';
       for (const sid of Object.keys(def.stages)) html += stageRow(pid, sid, def.stages[sid], p.stages[sid]);
       // the options: one bought shows ✓; heated tents (a mod that only keeps the work at full speed in winter) are
@@ -154,6 +169,7 @@ const PlanUI = (() => {
     if (!b || b.disabled) return;
     Sfx.play('click');
     const pid = b.dataset.p, sid = b.dataset.s;
+    if (b.dataset.fold) { folded = !isFolded(); key = ''; render(); return; }
     if (b.dataset.people) { Game.openPanel('people'); return; }
     if (b.dataset.tab) { Game.openPanel(b.dataset.tab); return; }
     if (b.dataset.up) Actions.upgrade(b.dataset.up, b.dataset.how);
@@ -205,5 +221,5 @@ const PlanUI = (() => {
     dec.hidden = true; decKey = '';
   });
 
-  return { render, decision, reset() { key = ''; decKey = ''; dec.hidden = true; } };
+  return { render, decision, reset() { key = ''; decKey = ''; dec.hidden = true; folded = null; } };
 })();

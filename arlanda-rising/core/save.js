@@ -60,8 +60,9 @@ const Save = {
     let mis = this.later(lm, rm);
     if (!fits(mis)) mis = [lm, rm].filter(fits).sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))[0] || null;
     if (mis && mis === rm && rm !== lm && !mis.cleared) mis = Object.assign({}, mis, { from: 'cloud' });
-    // Free Play: a newer one wins, then the copy saved last
-    const fp = this.later(Store.json(KEYS.freeplay, null), remote.freeplay || null, 'startedAt');
+    // Free Play: a newer one wins, then the copy saved last; an old round-based one (not v2) is dropped
+    const v2 = (x) => (x && x.v === 2 && x.state ? x : null);
+    const fp = this.later(v2(Store.json(KEYS.freeplay, null)), v2(remote.freeplay), 'startedAt');
     // the Challenge Days' bests: the larger of each
     const lch = Store.json(KEYS.challenges, null), rch = remote.challenges || null;
     const ch = lch && rch ? ChallengeSave.merge(lch, rch) : lch || rch;

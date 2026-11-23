@@ -51,7 +51,7 @@ const MapView = (() => {
     const t = S.ops ? Sim.clockNow() : 12 * 60;   // between the sim's steps, so that what moves moves smoothly
     const sun = Calendar.sunElevation(S.day, t);
     return {
-      season: season(d.m, w ? w.temp : null), year: d.y, t, anim, sun,
+      season: season(d.m, w ? w.temp : null), year: Calendar.year(), t, anim, sun,
       dark: Sky.darkness(S.day, t), vis: w ? w.vis : 10000, snowfall: w ? w.snow : 0,
       siteDone: ready, strip: ready ? 1 : p('site', 'strip'), drain: ready ? 1 : p('site', 'drain'),
       apronClear: ready ? 1 : p('site', 'apron'), road: roadP, roadPts, landsidePts: landside ? LAYOUT.landside : null,

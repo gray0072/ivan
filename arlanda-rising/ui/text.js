@@ -27,6 +27,22 @@ const Text = {
   meterName(k) { const m = METERS.find((x) => x.k === k); return m ? tr(m.name) : k; },
   // the Passengers meter as 1–5 stars
   paxStars(v) { return (1 + v / 25).toFixed(1); },
+  // Free Play: why the clock runs at its pace now (FreePace.mode)
+  paceWhy(md) {
+    return { tray: tr('Slow: your tray has {n} tasks', { n: md.n }), soon: tr('Slow: a task for your hands is coming'), snow: tr('Slow: snow while the ploughs are yours'),
+      incident: tr('Slow: something is wrong'), watch: tr('Slow: you are watching'), off: tr('Auto pace is off'), cruise: tr('Fast: nothing needs you'), idle: tr('Fast: no traffic today') }[md.why] || '';
+  },
+  // Free Play: the next milestone of the history — its year and name, and what it needs built (the plan panel's top)
+  history() {
+    const m = Free.pending();
+    if (!m) return { year: Calendar.year(), text: tr('The history has reached 2040: the airport is yours.') };
+    const miss = Free.missing(m).filter((r) => !Free.owners(r.split('.')[0])).map((r) => {
+      const [p, s] = r.split('.');
+      return s ? tr(PROJECTS[p].name) + ': ' + tr(PROJECTS[p].stages[s].name) : tr(PROJECTS[p].name);
+    });
+    return { year: Calendar.year(), name: tr(m.name), when: Calendar.date(Calendar.parse(m.date)).y,
+      text: miss.length ? tr('Needs: {list}', { list: miss.join(', ') }) : tr('Comes in {y}', { y: Calendar.date(Calendar.parse(m.date)).y }) };
+  },
   num(v, d) { const r = Math.round(v * Math.pow(10, d || 0)) / Math.pow(10, d || 0); return I18N.lang === 'en' ? String(r) : String(r).replace('.', ','); },
 
   goal(c) {

@@ -13,7 +13,17 @@ const Calendar = {
   },
   // "1962-04-01" → a day number
   parse(s) { const p = String(s).split('-').map(Number); return this.dayOf(p[0], p[1], p[2] || 1); },
-  year() { return this.date(S.day).y; },
+  // the year of the world: in Free Play the history's year (it runs faster than the months, sim/free.js), else the date's
+  year() { return S && S.free ? this.yearOf(S.day) : this.date(S.day).y; },
+  // a month of the books ("3/1962"): its year as the history had it then in Free Play
+  monthLabel(key) { const y = Math.floor(key / 12), m = key % 12 + 1; return m + '/' + this.yearOf(this.dayOf(y, m, FREE_DAY_OF_MONTH)); },
+  // the year a day shows: in Free Play the history's year then (S.free.years: [day, year] from the day it began)
+  yearOf(day) {
+    if (!S || !S.free || !S.free.years || !S.free.years.length) return this.date(day).y;
+    let y = S.free.years[0][1];
+    for (const e of S.free.years) if (e[0] <= day) y = e[1]; else break;
+    return y;
+  },
   month() { return this.date(S.day).m; },
   // a month key for the books: 1962 * 12 + 3
   monthKey(day) { const d = this.date(day); return d.y * 12 + d.m - 1; },

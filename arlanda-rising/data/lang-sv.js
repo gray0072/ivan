@@ -427,7 +427,37 @@ const TEXT_SV = {
   "{n} flights a day in summer": "{n} flyg om dagen på sommaren",
   "{n} months have passed since your last mission.": "{n} månader har gått sedan ditt förra uppdrag.",
   "{r} a year": "{r} per år",
-  "{surface}: {mm} mm of snow — send the ploughs": "{surface}: {mm} mm snö — skicka plogarna"
+  "{surface}: {mm} mm of snow — send the ploughs": "{surface}: {mm} mm snö — skicka plogarna",
+  // Free Play from the forest (sim/free.js)
+  "Free Play: the forest of 1958. Build what history asks for in the panel — the years run on by themselves.": "Fritt spel: skogen 1958. Bygg det historien kräver i panelen – åren går av sig själva.",
+  "Your Free Play airport starts again from the forest of 1958. Your campaign stays as it is.": "Flygplatsen i ditt fria spel börjar om från skogen 1958. Din kampanj blir kvar som den är.",
+  "Paused. Press ▶ to go on.": "Pausat. Tryck ▶ för att fortsätta.",
+  "Cheat: the history reaches {name}": "Fusk: historien når {name}",
+  "Cheat: the history has no milestone left": "Fusk: historien har inga milstolpar kvar",
+  "{year}: {name}": "{year}: {name}",
+  "The owner has built: {name}": "Ägaren har byggt: {name}",
+  "Comes with the history: {y}, {name}": "Kommer med historien: {y}, {name}",
+  "Night: the month in summary": "Natt: månaden i sammandrag",
+  "Continue campaign": "Fortsätt kampanjen",
+  "Continue the Challenge Day": "Fortsätt utmaningsdagen",
+  "{year} · month {n} of your airport · {money}": "{year} · månad {n} för din flygplats · {money}",
+  "New Free Play": "Nytt fritt spel",
+  "Auto pace": "Automatiskt tempo",
+  "Gentle": "Lugnt",
+  "Normal: the clock hurries when nothing needs you. Gentle: half as fast. Off: always at the pace of the missions.": "Normalt: klockan skyndar när inget behöver dig. Lugnt: hälften så fort. Av: alltid i uppdragens takt.",
+  "Free Play is saved all the time: Continue Free Play on the start screen goes on from here.": "Fritt spel sparas hela tiden: Fortsätt fritt spel på startskärmen går vidare härifrån.",
+  "Slow: your tray has {n} tasks": "Långsamt: {n} uppgifter i korgen",
+  "Slow: a task for your hands is coming": "Långsamt: en uppgift åt dig är på väg",
+  "Slow: snow while the ploughs are yours": "Långsamt: snö, och plogarna är dina",
+  "Slow: something is wrong": "Långsamt: något är fel",
+  "Slow: you are watching": "Långsamt: du tittar på",
+  "Auto pace is off": "Automatiskt tempo är av",
+  "Fast: nothing needs you": "Snabbt: inget behöver dig",
+  "Fast: no traffic today": "Snabbt: ingen trafik i dag",
+  "The history has reached 2040: the airport is yours.": "Historien har nått 2040: flygplatsen är din.",
+  "Needs: {list}": "Behöver: {list}",
+  "Comes in {y}": "Kommer {y}",
+  "Free Play is the other way through the same history: one airport from the forest of 1958 on, with no missions and no stages. Each month one day is flown flight by flight, and the night runs the rest of the month in a few seconds. The clock slows down when something needs you and hurries when nothing does. Build what history asks for in the panel — the next milestone and what it needs are at its top — and the years run on: new airlines, aircraft and rules come as they came at the real Arlanda.": "Fritt spel är den andra vägen genom samma historia: en flygplats från skogen 1958 och framåt, utan uppdrag och etapper. Varje månad flygs en dag flight för flight, och natten kör resten av månaden på några sekunder. Klockan saktar in när något behöver dig och skyndar när inget gör det. Bygg det historien kräver i panelen – nästa milstolpe och vad den behöver står överst – så går åren vidare: nya flygbolag, flygplan och regler kommer som de kom till det riktiga Arlanda."
 };
 
 // session 3: chapters 2 and 3, the people and the systems, Free Play, the cloud save
@@ -802,11 +832,7 @@ Object.assign(TEXT_SV, {
   "An old union man: a strike is less likely.": "En gammal fackman: en strejk är mindre trolig.",
   "Fewer sick days in his team.": "Färre sjukdagar i hans lag.",
   "Takes his time: his teams are a quarter slower.": "Tar god tid på sig: hans lag är en fjärdedel långsammare.",
-  "The open airport, 1963": "Den öppna flygplatsen, 1963",
-  "The jet age, 1976": "Jeteran, 1976",
-  "Everyone flies, 1990": "Alla flyger, 1990",
   "Start a new Free Play?": "Starta ett nytt fritt spel?",
-  "The airport of your Free Play starts again. Your campaign stays as it is.": "Flygplatsen i ditt fria spel börjar om. Din kampanj förblir som den är.",
   "Yes, start again": "Ja, börja om",
   "Cheat: chapter {n}, the first mission": "Fusk: kapitel {n}, det första uppdraget",
   "Cheat: {dept} on strike": "Fusk: {dept} strejkar",
@@ -838,8 +864,6 @@ Object.assign(TEXT_SV, {
   "{name} asks for a raise — answer in Departments, or it counts as \"not now\".": "{name} ber om löneförhöjning – svara under Avdelningar, annars räknas det som ”inte nu”.",
   "Strike notice: {dept} from {d}": "Strejkvarsel: {dept} från {d}",
   "Fire category {n}": "Brandkategori {n}",
-  "Round {n} comes next.": "Omgång {n} står på tur.",
-  "Next round": "Nästa omgång",
   "You, by hand": "Du, för hand",
   "A team": "Ett lag",
   "A system, with the team as the fallback": "Ett system, med laget som reserv",
@@ -886,13 +910,8 @@ Object.assign(TEXT_SV, {
   "Your teams did {a} tasks, your systems {b}.": "Dina lag gjorde {a} uppgifter, dina system {b}.",
   "{n} failures.": "{n} fel.",
   "{n} tasks came to you because a team was short.": "{n} uppgifter kom till dig för att ett lag var kort.",
-  "Round {n} done!": "Omgång {n} klar!",
-  "Round {n} missed": "Omgång {n} missad",
   "Free Play": "Fritt spel",
-  "Money in the round: {a} in, {b} out.": "Pengar under omgången: {a} in, {b} ut.",
   "That was the last mission of chapter {n}. {next} comes in a later version of the game.": "Det var det sista uppdraget i kapitel {n}. {next} kommer i en senare version av spelet.",
-  "Free Play is open: an endless airport, from the start screen.": "Fritt spel är öppet: en ändlös flygplats, från startskärmen.",
-  "round {n}": "omgång {n}",
   "saved on another device at {t}": "sparat på en annan enhet kl. {t}",
   "Chapter {n} is done — more chapters are coming.": "Kapitel {n} är klart – fler kapitel kommer.",
   "Sign in with Google": "Logga in med Google",
@@ -908,10 +927,7 @@ Object.assign(TEXT_SV, {
   "Playing with the progress on this device — it syncs once the network is back": "Spelar med framstegen på den här enheten – synkas när nätet är tillbaka",
   "Signed out — sign in again to sync": "Utloggad – logga in igen för att synka",
   "Sign out": "Logga ut",
-  "An endless airport: offers to answer, peaks to fly, no stars and no frame. Every round is a month of business and a busy peak.": "En ändlös flygplats: erbjudanden att svara på, toppar att flyga, inga stjärnor och ingen ram. Varje omgång är en månads affärer och en hektisk topp.",
   "Continue Free Play": "Fortsätt fritt spel",
-  "{era} · round {n} · {date}": "{era} · omgång {n} · {date}",
-  "Start from": "Börja från",
   "{dom}: {level}": "{dom}: {level}",
   "A head of {dept}": "En chef för {dept}",
   "No strike": "Ingen strejk",
@@ -943,9 +959,6 @@ Object.assign(TEXT_SV, {
   "Everybody in, at overtime pay": "Alla in, mot övertidsersättning",
   "Overtime": "Övertid",
   "Overtime: everybody in for {dept}": "Övertid: alla in för {dept}",
-  "Setting up": "Förberedelser",
-  "Keep your airport running: answer the offers, then fly a peak on time.": "Håll din flygplats igång: svara på erbjudandena, flyg sedan en topp i tid.",
-  "A month of business": "En månads affärer",
   "An airline asks for slots": "Ett flygbolag ber om tider",
   "{al} would like {n} more flights a day with its {type}.": "{al} vill ha {n} flyg till om dagen med sin {type}.",
   "More, with a discount": "Fler, med rabatt",
@@ -966,7 +979,7 @@ Object.assign(TEXT_SV, {
   "A crash tender": "En räddningsbil",
   "The fire chief wants another crash tender: the fire category goes up by one.": "Räddningschefen vill ha ännu en räddningsbil: brandkategorin stiger med ett.",
   "Buy it": "Köp den",
-  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.": "Från kapitel 2 tar lag, chefer och system hela sorters arbete ur dina händer – mot löner och licenser varje månad. I Ops Center (O) och under Avdelningar (P) anställer, utbildar och övar du – på kontoret och mitt i ett uppdrag också; när ett lag är kort tar Övertid i fältet nedanför in alla. Fritt spel öppnar efter kapitel 2."
+  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in.": "Från kapitel 2 tar lag, chefer och system hela sorters arbete ur dina händer – mot löner och licenser varje månad. I Ops Center (O) och under Avdelningar (P) anställer, utbildar och övar du – på kontoret och mitt i ett uppdrag också; när ett lag är kort tar Övertid i fältet nedanför in alla."
 });
 
 // session 4: the terminals, brands, airlines, Finance, chapter 4 and the Challenge Days
@@ -1195,7 +1208,6 @@ Object.assign(TEXT_SV, {
   "Bags lost": "Borttappade väskor",
   "Minutes of delay the airport caused": "Förseningsminuter som flygplatsen orsakade",
   "Minutes of waiting in the queues": "Väntminuter i köerna",
-  "Open skies, 2000": "Öppna himlar, 2000",
   "From chapter 4 on, the Terminal view (T) shows the queues and the shop units: put real shops and cafés there — each pays rent and earns more when the queues are short. Airlines (A) shows every airline's mood and temper, the Offers board and route incentives; Finance (F) the books, the payback of every investment and, under Details, its net present value. Challenge Days open after chapter 3.": "Från kapitel 4 visar Terminalvyn (T) köerna och butikslokalerna: sätt in riktiga butiker och kaféer där – var och en betalar hyra och tjänar mer när köerna är korta. Flygbolag (A) visar varje flygbolags humör och lynne, erbjudandetavlan och ruttrabatterna; Ekonomi (F) bokföringen, återbetalningstiden för varje investering och, under Detaljer, dess nuvärde. Utmaningsdagarna öppnas efter kapitel 3.",
   "{brand} wants a unit": "{brand} vill ha en lokal",
   "{brand} would like to open in {term}. It pays {sekRent} a month in rent, and a share of what the passengers spend.": "{brand} vill öppna i {term}. Det betalar {sekRent} i månaden i hyra, och en del av det resenärerna handlar för.",
@@ -1706,7 +1718,6 @@ Object.assign(TEXT_SV, {
   "De-icing fluid": "Avisningsvätska",
   "Stranded passengers": "Strandsatta resenärer",
   "Green and real estate": "Miljö och fastigheter",
-  "A new millennium, 2009": "Ett nytt millennium, 2009"
 });
 
 // ---------- session 6: chapters 7 and 8 ----------
@@ -2066,7 +2077,6 @@ Object.assign(TEXT_SV, {
   "every system's readiness back to 100 %": "varje systems beredskap tillbaka till 100 %",
   "{n} gates": "{n} gater",
   "a charger at every gate": "en laddare vid varje gate",
-  "After the storm, 2024": "Efter stormen, 2024",
   "This mission so far: income less costs {m}": "Uppdraget hittills: intäkter minus kostnader {m}",
   "Stage {a} of {n}": "Etapp {a} av {n}",
   "Until {t}: {d} left": "Till {t}: {d} kvar",

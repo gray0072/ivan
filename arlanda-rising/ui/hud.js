@@ -2,8 +2,9 @@
 
 // Arlanda Rising — the HUD over the map in a running stage: money (opens the money card), the date and clock, the
 // weather now (temperature, wind, snow, fog, the dark; not on a phone held upright), the five meters, the speed buttons ⏸ ▶ ▶▶ ▶▶▶, Skip to the
-// next event, pause; and the stage's goals with their values right now. Refreshed a few times a second by
-// game.js.
+// next event, pause; and the stage's goals with their values right now. In Free Play the night says so, and the played day
+// shows the pace the clock runs at (🐢 slow while something needs the player, 🐇 hurrying when nothing does: sim/freepace.js).
+// Refreshed a few times a second by game.js.
 
 // a phone held upright: the money in the HUD without its currency and no weather chip (styles.css), so the first row
 // keeps to one line
@@ -49,7 +50,16 @@ const Hud = (() => {
       if (w.snow > 0) parts.push('❄️ ' + Text.num(w.snow, 1) + ' ' + tr('mm/h'));
       if (w.vis < 3000) parts.push('🌫️ ' + w.vis + ' ' + tr('m'));
       if (w.dark) parts.push('🌙');
+      let tip = '';
+      if (S.free) { const md = FreePace.mode(); parts.push(md.pace === 'attention' ? '🐢' : '🐇'); tip = Text.paceWhy(md); }
       $('wx').textContent = parts.join(' · ');
+      $('wxChip').title = tip;
+      $('wxChip').hidden = false;
+    } else if (S.plan && S.free) {
+      // Free Play's night: the rest of the month in summary
+      $('date').textContent = fmtDate(S.day) + ' · 🌙';
+      $('wx').textContent = tr('Night: the month in summary');
+      $('wxChip').title = '';
       $('wxChip').hidden = false;
     } else if (S.plan) {
       const d = S.day - S.plan.day0 + 1, n = S.plan.end - S.plan.day0;

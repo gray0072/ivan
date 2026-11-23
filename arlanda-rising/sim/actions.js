@@ -46,6 +46,8 @@ const Actions = {
     // a vehicle bought in ops time joins at once
     if (S.ops && kind === 'fuelTruck') S.ops.trucks.push(0);
     if (S.ops && kind === 'deicer' && S.ops.deicers) S.ops.deicers.push(0);
+    // Free Play: the first fuel truck, plough, lane… puts its tasks in the player's hands at once (sim/free.js hands)
+    if (S.free && S.ops) S.mission.hands = People.withHands(Free.hands());
     return true;
   },
   // an own shop sold back to free its cells in the terminal (by its item id, or the last bought of a kind)

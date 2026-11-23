@@ -1,11 +1,11 @@
 'use strict';
 
-// Arlanda Rising — the Office between missions (and between Free Play's rounds), with time stopped: the airport on the
+// Arlanda Rising — the Office between missions, with time stopped: the airport on the
 // map behind, the money and the loans (borrow or repay here: FinanceUI's loans card), the last months' books, what the airport has, the five
 // meters, the Ops Center and Departments (hire, train, put in systems, drills — at once, on the airport that
 // carries over), what waits for an answer (a manager's raise), the terminals to mothball and open again (session 6), and
-// the next mission or round a tap away. Used by
-// game.js; it works on the world of Game.holder() (the campaign's or Free Play's), which is S while it is open.
+// the next mission a tap away. Used by
+// game.js; it works on the world of Game.holder() (the campaign's), which is S while it is open.
 
 const Office = (() => {
   function show() {
@@ -13,8 +13,8 @@ const Office = (() => {
     if (!h || !h.world) { if (Campaign.data && Campaign.data.next) Game.openMission(Campaign.data.next); else Game.toMenu(); return; }
     const w = h.world;
     S = w;
-    const nm = h.free ? null : Campaign.nextMission();
-    let html = '<h1>🏢 ' + Text.esc(tr(h.free ? 'Free Play' : 'The Office')) + '</h1><p class="when">' + Text.esc(fmtDate(w.day)) + ' · ' +
+    const nm = Campaign.nextMission();
+    let html = '<h1>🏢 ' + Text.esc(tr('The Office')) + '</h1><p class="when">' + Text.esc(fmtDate(w.day)) + ' · ' +
       Text.esc(w.owner === 'Swedavia' ? tr('Owner: Swedavia') : tr('Owner: Luftfartsverket (LFV)')) + '</p>';
     // the Ops Center, Finance and Departments are tabs of one screen (ui/analytics.js InfoTabs), each with its button
     html += '<div class="btnRow"><button class="btn secondary" data-go="ops">🛠️ ' + Text.esc(tr('Ops Center')) + '</button>' +
@@ -99,7 +99,6 @@ const Office = (() => {
     }
     html += '</div>';
     if (nm) html += '<p class="label">' + Text.esc(tr('Next: {name} · ~{n} min', { name: tr(nm.name), n: Text.minutes(nm) })) + '</p>';
-    if (h.free) html += '<p class="label">' + Text.esc(tr('Round {n} comes next.', { n: h.round })) + '</p>';
     p.innerHTML = html;
     p.querySelectorAll('[data-loan]').forEach((b) => b.addEventListener('click', () => { if (FinanceUI.loan(b.dataset.loan)) show(); }));
     p.querySelectorAll('[data-term]').forEach((b) => b.addEventListener('click', () => {
@@ -110,9 +109,8 @@ const Office = (() => {
     }));
     p.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => { Sfx.play('click'); open(b.dataset.go, b.dataset.tab); }));
     p.appendChild(Screens.row(
-      Screens.btn(tr(h.free ? 'Main Menu' : 'Timeline'), 'secondary', () => (h.free ? Game.toMenu() : Game.toTimeline())),
-      nm ? Screens.btn(tr('Next mission'), 'default big', () => Game.openMission(nm.id)) : null,
-      h.free ? Screens.btn(tr('Next round'), 'default big', () => Game.freeRound()) : null
+      Screens.btn(tr('Timeline'), 'secondary', () => Game.toTimeline()),
+      nm ? Screens.btn(tr('Next mission'), 'default big', () => Game.openMission(nm.id)) : null
     ));
     Screens.show('office');
   }

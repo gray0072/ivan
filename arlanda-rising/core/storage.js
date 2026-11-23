@@ -10,7 +10,7 @@ const KEYS = {
   mission: 'arlandaRising.mission.v1',
   snapshots: 'arlandaRising.snapshots.v1',
   progress: 'arlandaRising.progress.v1',
-  freeplay: 'arlandaRising.freeplay.v1',
+  freeplay: 'arlandaRising.freeplay.v2',
   challenges: 'arlandaRising.challenges.v1',
   settings: 'arlandaRising.settings.v1',
   difficulty: 'arlandaRising.difficulty',

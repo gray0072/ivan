@@ -7,7 +7,7 @@
 //     without a mission), its difficulty, the next mission and the missions passed in it;
 //   the snapshots (arlandaRising.snapshots.v1): the world each mission started from, so a mission can be
 //     replayed for stars without touching the campaign;
-//   FreeSave (arlandaRising.freeplay.v1): the Free Play airport.
+//   FreeSave (arlandaRising.freeplay.v2): the running Free Play game.
 // A cheated run saves nothing here. Used by game.js and the screens.
 
 const Progress = {
@@ -68,11 +68,21 @@ const Campaign = {
   nextMission() { return this.data && this.data.next ? MISSION[this.data.next] : null; }
 };
 
-// Free Play (arlandaRising.freeplay.v1): { era, difficulty, round, world, startedAt, savedAt } — the endless airport
-// carried over from round to round (sim/freeplay.js). A round being played is in the mission autosave like any other.
+// Free Play (arlandaRising.freeplay.v2): { v: 2, startedAt, savedAt, difficulty, month, year, money, state } — the running
+// game at the moment it was saved (sim/free.js; S with S.free in it), written every AUTOSAVE_SECONDS of play, when the page
+// is hidden and on leaving it; the start screen's line reads month, year and money without parsing the game. An old
+// round-based Free Play (v1) is dropped.
 const FreeSave = {
   data: null,
-  load() { this.data = Store.json(KEYS.freeplay, null); },
-  save() { if (this.data) { this.data.savedAt = Date.now(); Store.setJson(KEYS.freeplay, this.data); } },
-  exists() { return !!(this.data && this.data.world); }
+  load() {
+    const d = Store.json(KEYS.freeplay, null);
+    this.data = d && d.v === 2 && d.state ? d : null;
+    Store.remove('arlandaRising.freeplay.v1');
+  },
+  write(run, state) {
+    this.data = { v: 2, startedAt: run.startedAt || Date.now(), savedAt: Date.now(), difficulty: state.difficulty, month: state.free.month,
+      year: Math.floor(state.free.year), money: Math.round(state.money), state };
+    Store.setJson(KEYS.freeplay, this.data);
+  },
+  exists() { return !!this.data; }
 };

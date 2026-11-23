@@ -76,5 +76,6 @@ function tr(s, params) {
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 function fmtDate(day, withYear = true) {
   const d = Calendar.date(day);
-  return d.d + ' ' + tr(MONTHS[d.m - 1]) + (withYear ? ' ' + d.y : '');
+  // Free Play shows the history's year (sim/calendar.js yearOf)
+  return d.d + ' ' + tr(MONTHS[d.m - 1]) + (withYear ? ' ' + Calendar.yearOf(day) : '');
 }

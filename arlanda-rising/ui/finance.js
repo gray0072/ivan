@@ -92,7 +92,7 @@ const FinanceUI = (() => {
       '<p class="fine">' + Text.esc(tr('Your own: {m}', { m: sek(S.money - S.loans) })) + '</p></div>';
     html += '<div class="ocard"><h3>🗓️ ' + Text.esc(tr('This month so far')) + '</h3>' + books(S.finance.cur) + '</div>';
     const last = S.finance.history[S.finance.history.length - 1];
-    if (last) html += '<div class="ocard"><h3>📒 ' + Text.esc(tr('The last month')) + ' <small>' + (last.month % 12 + 1) + '/' + Math.floor(last.month / 12) + '</small></h3>' + books(last) + '</div>';
+    if (last) html += '<div class="ocard"><h3>📒 ' + Text.esc(tr('The last month')) + ' <small>' + Calendar.monthLabel(last.month) + '</small></h3>' + books(last) + '</div>';
     html += '</div><p class="label">' + Text.esc(tr('Money, month by month')) + '</p><div class="cvWrap"><canvas id="cashChart"></canvas></div>';
     // the investments
     const list = Invest.list();
@@ -147,8 +147,8 @@ const FinanceUI = (() => {
     c.fillText(moneyBare(hi), 58, Y(hi) + 4); c.fillText(moneyBare(lo), 58, Y(lo));
     c.textAlign = 'left';
     const first = hist[0].month, lastM = hist[hist.length - 1].month;
-    c.fillText((first % 12 + 1) + '/' + Math.floor(first / 12), 62, h - 4);
-    c.textAlign = 'right'; c.fillText((lastM % 12 + 1) + '/' + Math.floor(lastM / 12), w - 10, h - 4);
+    c.fillText(Calendar.monthLabel(first), 62, h - 4);
+    c.textAlign = 'right'; c.fillText(Calendar.monthLabel(lastM), w - 10, h - 4);
   }
 
   $('finance').addEventListener('click', (e) => {

@@ -427,7 +427,37 @@ const TEXT_RU = {
   "{n} flights a day in summer": "{n} рейса в день летом",
   "{n} months have passed since your last mission.": "С прошлой миссии прошло месяцев: {n}.",
   "{r} a year": "{r} в год",
-  "{surface}: {mm} mm of snow — send the ploughs": "{surface}: {mm} мм снега — пошли снегоочистители"
+  "{surface}: {mm} mm of snow — send the ploughs": "{surface}: {mm} мм снега — пошли снегоочистители",
+  // Free Play from the forest (sim/free.js)
+  "Free Play: the forest of 1958. Build what history asks for in the panel — the years run on by themselves.": "Свободная игра: лес 1958 года. Строй в панели то, что требует история, — годы идут сами.",
+  "Your Free Play airport starts again from the forest of 1958. Your campaign stays as it is.": "Аэропорт свободной игры начнётся заново, с леса 1958 года. Кампания останется как есть.",
+  "Paused. Press ▶ to go on.": "Пауза. Нажми ▶, чтобы продолжить.",
+  "Cheat: the history reaches {name}": "Чит: история дошла до «{name}»",
+  "Cheat: the history has no milestone left": "Чит: у истории больше нет вех",
+  "{year}: {name}": "{year}: {name}",
+  "The owner has built: {name}": "Владелец построил: {name}",
+  "Comes with the history: {y}, {name}": "Придёт с историей: {y}, «{name}»",
+  "Night: the month in summary": "Ночь: месяц в сводке",
+  "Continue campaign": "Продолжить кампанию",
+  "Continue the Challenge Day": "Продолжить день-испытание",
+  "{year} · month {n} of your airport · {money}": "{year} · месяц {n} твоего аэропорта · {money}",
+  "New Free Play": "Новая свободная игра",
+  "Auto pace": "Автотемп",
+  "Gentle": "Мягко",
+  "Normal: the clock hurries when nothing needs you. Gentle: half as fast. Off: always at the pace of the missions.": "Обычно: часы спешат, когда ты не нужен. Мягко: вдвое медленнее. Выкл: всегда в темпе миссий.",
+  "Free Play is saved all the time: Continue Free Play on the start screen goes on from here.": "Свободная игра сохраняется всё время: «Продолжить свободную игру» на стартовом экране продолжит с этого места.",
+  "Slow: your tray has {n} tasks": "Медленно: в лотке задач — {n}",
+  "Slow: a task for your hands is coming": "Медленно: скоро будет задача для тебя",
+  "Slow: snow while the ploughs are yours": "Медленно: снег, а снегоочистители на тебе",
+  "Slow: something is wrong": "Медленно: что-то случилось",
+  "Slow: you are watching": "Медленно: ты наблюдаешь",
+  "Auto pace is off": "Автотемп выключен",
+  "Fast: nothing needs you": "Быстро: ты сейчас не нужен",
+  "Fast: no traffic today": "Быстро: сегодня нет рейсов",
+  "The history has reached 2040: the airport is yours.": "История дошла до 2040 года: аэропорт твой.",
+  "Needs: {list}": "Нужно: {list}",
+  "Comes in {y}": "Наступит в {y}",
+  "Free Play is the other way through the same history: one airport from the forest of 1958 on, with no missions and no stages. Each month one day is flown flight by flight, and the night runs the rest of the month in a few seconds. The clock slows down when something needs you and hurries when nothing does. Build what history asks for in the panel — the next milestone and what it needs are at its top — and the years run on: new airlines, aircraft and rules come as they came at the real Arlanda.": "Свободная игра — второй путь через ту же историю: один аэропорт от леса 1958 года, без миссий и этапов. Каждый месяц один день летает рейс за рейсом, а ночь за несколько секунд прокручивает остаток месяца. Часы замедляются, когда ты нужен, и спешат, когда нет. Строй в панели то, что требует история, — следующая веха и что для неё нужно стоят наверху панели, — и годы идут дальше: новые авиакомпании, самолёты и правила приходят так же, как в настоящую Арланду."
 };
 
 // session 3: chapters 2 and 3, the people and the systems, Free Play, the cloud save
@@ -802,11 +832,7 @@ Object.assign(TEXT_RU, {
   "An old union man: a strike is less likely.": "Старый профсоюзный боец: забастовка менее вероятна.",
   "Fewer sick days in his team.": "В его команде меньше больничных.",
   "Takes his time: his teams are a quarter slower.": "Не спешит: его бригады на четверть медленнее.",
-  "The open airport, 1963": "Открытый аэропорт, 1963",
-  "The jet age, 1976": "Эпоха реактивных, 1976",
-  "Everyone flies, 1990": "Летают все, 1990",
   "Start a new Free Play?": "Начать новую свободную игру?",
-  "The airport of your Free Play starts again. Your campaign stays as it is.": "Аэропорт свободной игры начнётся заново. Кампания останется как есть.",
   "Yes, start again": "Да, начать заново",
   "Cheat: chapter {n}, the first mission": "Чит: глава {n}, первая миссия",
   "Cheat: {dept} on strike": "Чит: забастовка — {dept}",
@@ -838,8 +864,6 @@ Object.assign(TEXT_RU, {
   "{name} asks for a raise — answer in Departments, or it counts as \"not now\".": "{name} просит прибавку — ответь в разделе «Службы», иначе это будет «не сейчас».",
   "Strike notice: {dept} from {d}": "Объявлена забастовка: {dept} с {d}",
   "Fire category {n}": "Пожарная категория {n}",
-  "Round {n} comes next.": "Следующий — раунд {n}.",
-  "Next round": "Следующий раунд",
   "You, by hand": "Ты, вручную",
   "A team": "Команда",
   "A system, with the team as the fallback": "Система, команда — запасной вариант",
@@ -886,13 +910,8 @@ Object.assign(TEXT_RU, {
   "Your teams did {a} tasks, your systems {b}.": "Твои команды сделали задач: {a}, системы: {b}.",
   "{n} failures.": "Отказов: {n}.",
   "{n} tasks came to you because a team was short.": "Задач пришло к тебе из-за нехватки людей: {n}.",
-  "Round {n} done!": "Раунд {n} пройден!",
-  "Round {n} missed": "Раунд {n} не удался",
   "Free Play": "Свободная игра",
-  "Money in the round: {a} in, {b} out.": "Деньги за раунд: приход {a}, расход {b}.",
   "That was the last mission of chapter {n}. {next} comes in a later version of the game.": "Это была последняя миссия главы {n}. «{next}» появится в следующей версии игры.",
-  "Free Play is open: an endless airport, from the start screen.": "Открыта свободная игра: бесконечный аэропорт, на стартовом экране.",
-  "round {n}": "раунд {n}",
   "saved on another device at {t}": "сохранено на другом устройстве в {t}",
   "Chapter {n} is done — more chapters are coming.": "Глава {n} пройдена — новые главы будут позже.",
   "Sign in with Google": "Войти через Google",
@@ -908,10 +927,7 @@ Object.assign(TEXT_RU, {
   "Playing with the progress on this device — it syncs once the network is back": "Играем с прогрессом на этом устройстве — синхронизируется, когда вернётся сеть",
   "Signed out — sign in again to sync": "Выполнен выход — войди снова для синхронизации",
   "Sign out": "Выйти",
-  "An endless airport: offers to answer, peaks to fly, no stars and no frame. Every round is a month of business and a busy peak.": "Бесконечный аэропорт: предложения, на которые надо ответить, пики, которые надо пролететь, без звёзд и без рамок. Каждый раунд — месяц дел и напряжённый пик.",
   "Continue Free Play": "Продолжить свободную игру",
-  "{era} · round {n} · {date}": "{era} · раунд {n} · {date}",
-  "Start from": "Начать с",
   "{dom}: {level}": "{dom}: {level}",
   "A head of {dept}": "Руководитель: {dept}",
   "No strike": "Без забастовки",
@@ -943,9 +959,6 @@ Object.assign(TEXT_RU, {
   "Everybody in, at overtime pay": "Все на работу — по сверхурочной ставке",
   "Overtime": "Сверхурочные",
   "Overtime: everybody in for {dept}": "Сверхурочные: все на работу — {dept}",
-  "Setting up": "Подготовка",
-  "Keep your airport running: answer the offers, then fly a peak on time.": "Аэропорт должен работать: ответь на предложения, потом проведи пик по расписанию.",
-  "A month of business": "Месяц дел",
   "An airline asks for slots": "Авиакомпания просит слоты",
   "{al} would like {n} more flights a day with its {type}.": "{al} хочет ещё {n} рейса(ов) в день на своих {type}.",
   "More, with a discount": "Больше, со скидкой",
@@ -966,7 +979,7 @@ Object.assign(TEXT_RU, {
   "A crash tender": "Пожарная машина",
   "The fire chief wants another crash tender: the fire category goes up by one.": "Начальник пожарной службы хочет ещё одну пожарную машину: категория вырастет на единицу.",
   "Buy it": "Купить",
-  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in. Free Play opens after chapter 2.": "Со второй главы команды, руководители и системы забирают у тебя целые виды работы — за зарплату и лицензии каждый месяц. В Ops Center (O) и в разделе «Службы» (P) их нанимают, обучают и проводят учения — в Офисе и прямо во время миссии; когда в команде не хватает людей, кнопка «Сверхурочные» на панели внизу собирает всех. После второй главы открывается свободная игра."
+  "From chapter 2 on, teams, managers and systems take whole kinds of work off your hands — for wages and licences every month. The Ops Center (O) and Departments (P) hire them, train them and hold drills — in the Office, and during a mission too; when a team is short, Overtime in the bar below brings everybody in.": "Со второй главы команды, руководители и системы забирают у тебя целые виды работы — за зарплату и лицензии каждый месяц. В Ops Center (O) и в разделе «Службы» (P) их нанимают, обучают и проводят учения — в Офисе и прямо во время миссии; когда в команде не хватает людей, кнопка «Сверхурочные» на панели внизу собирает всех."
 });
 
 // session 4: the terminals, brands, airlines, Finance, chapter 4 and the Challenge Days
@@ -1195,7 +1208,6 @@ Object.assign(TEXT_RU, {
   "Bags lost": "Потеряно багажа",
   "Minutes of delay the airport caused": "Минуты задержки по вине аэропорта",
   "Minutes of waiting in the queues": "Минуты ожидания в очередях",
-  "Open skies, 2000": "Открытое небо, 2000",
   "From chapter 4 on, the Terminal view (T) shows the queues and the shop units: put real shops and cafés there — each pays rent and earns more when the queues are short. Airlines (A) shows every airline's mood and temper, the Offers board and route incentives; Finance (F) the books, the payback of every investment and, under Details, its net present value. Challenge Days open after chapter 3.": "С главы 4 «Вид терминала» (T) показывает очереди и торговые помещения: размести там настоящие магазины и кафе — каждый платит аренду и зарабатывает больше, когда очереди короткие. «Авиакомпании» (A) показывают настроение и характер каждой авиакомпании, доску предложений и скидки за маршрут; «Финансы» (F) — бухгалтерию, окупаемость каждого вложения и, в «Подробностях», его чистую приведённую стоимость (NPV). Дни-испытания открываются после главы 3.",
   "{brand} wants a unit": "{brand} хочет помещение",
   "{brand} would like to open in {term}. It pays {sekRent} a month in rent, and a share of what the passengers spend.": "{brand} хочет открыться здесь: {term}. Платит {sekRent} аренды в месяц и долю от того, что тратят пассажиры.",
@@ -1706,7 +1718,6 @@ Object.assign(TEXT_RU, {
   "De-icing fluid": "Жидкость антиобледенения",
   "Stranded passengers": "Застрявшие пассажиры",
   "Green and real estate": "Экология и недвижимость",
-  "A new millennium, 2009": "Новое тысячелетие, 2009"
 });
 
 // ---------- session 6: chapters 7 and 8 ----------
@@ -2066,7 +2077,6 @@ Object.assign(TEXT_RU, {
   "every system's readiness back to 100 %": "готовность каждой системы снова 100 %",
   "{n} gates": "{n} выходов",
   "a charger at every gate": "зарядка у каждого выхода",
-  "After the storm, 2024": "После бури, 2024",
   "This mission so far: income less costs {m}": "Миссия пока: доходы минус расходы {m}",
   "Stage {a} of {n}": "Этап {a} из {n}",
   "Until {t}: {d} left": "До {t}: осталось {d}",

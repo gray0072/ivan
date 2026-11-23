@@ -8,7 +8,7 @@
 // Signed in, the campaign, the progress, the running mission and Free Play are merged with the account's copy and
 // sent back (core/save.js), so a child plays on the phone and goes on at the computer with the same airport. Every
 // sync reads the account's copy first; a merge happens only at an idle moment (the start screen, the timeline, the
-// Office, Free Play's screen) — never under a running stage. While a stage runs, an upload is deferred: the copy's
+// Office, the Challenge Days) — never under a running stage or a running Free Play. While a stage runs, an upload is deferred: the copy's
 // updated_at is read again, and the save goes up only if nobody changed it since this device last read or wrote it;
 // otherwise it waits for the next idle moment to merge first. The mission snapshots for replays go in their own
 // column, only at idle moments. A sync runs on the sign-in, at start, on every return to the foreground or the

@@ -45,23 +45,7 @@ const Results = (() => {
       '<h2>' + Text.esc(tr(m.paper.head)) + '</h2><p>' + Text.esc(tr(m.paper.text)) + '</p></div>';
   }
 
-  // a round of Free Play: no stars, the round's goal, the work, the next round
-  function free() {
-    const m = Missions.def(), tot = S.mission.total, p = $('results'), pass = S.mission.status === 'done';
-    let html = '<h1>' + Text.esc(pass ? tr('Round {n} done!', { n: m.round }) : tr('Round {n} missed', { n: m.round })) + '</h1><p class="chap">' + Text.esc(tr('Free Play')) + '</p>';
-    html += '<div class="meterRow">' + METERS.map((x) => '<span>' + x.icon + ' ' + (x.k === 'passengers' ? Text.paxStars(S.meters[x.k]) + '★' : Math.round(S.meters[x.k])) + '</span>').join('') + '</div>';
-    html += work(tot) + '<p class="work">' + Text.esc(tr('Money in the round: {a} in, {b} out.', { a: sek(tot.income), b: sek(tot.cost) })) + '</p>';
-    p.innerHTML = html;
-    p.appendChild(Screens.row(
-      Screens.btn(tr('Office'), 'secondary', () => Game.toOffice(true)),
-      Screens.btn(tr('Next round'), 'default big', () => Game.freeRound())
-    ));
-    Screens.show('results');
-    Sfx.play(pass ? 'chord' : 'sad');
-  }
-
   function mission(info) {
-    if (info.free) { free(); return; }
     const m = Missions.def(), j = S.mission.judged, stars = S.mission.stars, tot = S.mission.total, p = $('results');
     const pass = S.mission.status === 'done';
     const lines = LINES[pass ? stars : 0];
@@ -80,7 +64,6 @@ const Results = (() => {
     // session 6: the final exam is the last mission of the game
     else if (pass && !nx && m.chapter >= CHAPTERS.length) html += '<p class="fine">🎉 ' + Text.esc(tr('You have played the whole campaign: from a pine forest in 1958 to your own Arlanda of 2040. Free Play and the Challenge Days go on.')) + '</p>';
     else if (pass && !nx) html += '<p class="fine">' + Text.esc(tr('That was the last mission of chapter {n}. {next} comes in a later version of the game.', { n: m.chapter, next: tr((CHAPTERS[m.chapter] || {}).name || '') })) + '</p>';
-    if (pass && m.id === FREE_OPENS && !info.replayed) html += '<p class="fine">🛫 ' + Text.esc(tr('Free Play is open: an endless airport, from the start screen.')) + '</p>';
     if (pass && CHALLENGES.some((c) => c.opens === m.id)) html += '<p class="fine">🏆 ' + Text.esc(tr('A Challenge Day is open: a longer day with a score, from the start screen.')) + '</p>';
     p.innerHTML = html;
     let d = S.difficulty;

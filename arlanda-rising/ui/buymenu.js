@@ -94,7 +94,9 @@ const BuyMenu = (() => {
   // year; in the order they open
   function later(kind) {
     const b = BUILDINGS[kind], at = Missions.lockedBy(kind);
-    const t = at ? tr('Opens in mission {id}: {name}', { id: at, name: tr(MISSION[at].name) }) : tr('From {y}', { y: b.from });
+    // Free Play: the history's milestone that brings it (its year and name)
+    const t = at && S.free ? tr('Comes with the history: {y}, {name}', { y: Calendar.date(Calendar.parse(MISSION[at].date)).y, name: tr(MISSION[at].name) })
+      : at ? tr('Opens in mission {id}: {name}', { id: at, name: tr(MISSION[at].name) }) : tr('From {y}', { y: b.from });
     return '<li>🔒 ' + b.icon + ' <b>' + Text.esc(tr(b.name)) + '</b> <small>' + Text.esc(t) + '</small></li>';
   }
   const opensAt = (kind) => { const at = Missions.lockedBy(kind); return at ? Calendar.parse(MISSION[at].date) : Calendar.parse(BUILDINGS[kind].from + '-01-01'); };
