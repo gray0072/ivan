@@ -404,6 +404,7 @@ arlanda-rising/
 │                their years in Sweden), missions/ch4.js, strategies/ch4.js, challenges.js (the Challenge Days);
 │                session 5: events.js (the random events), missions/ch5.js, ch6.js, strategies/ch5.js, ch6.js;
 │                session 6: missions/ch7.js, ch8.js, strategies/ch7.js, ch8.js; sites.js (the buildings' and vehicles' cards);
+│                freeplay.js (Free Play's era presets, the played day's waves by airline kind, the month's climate);
 │                planned: archive.js, album.js, hints.js
 ├── core/        utils.js (math, the generator kept in the save, clock times, money()), events.js (the bus), storage.js (the keys
 │                and the mission autosave), i18n.js (tr(), the language switcher, dates), settings.js (hints, quality, sums, the
@@ -419,7 +420,9 @@ arlanda-rising/
 │                (traffic in summary, the skipped time), plan (plan time, decisions), ops (ops time), goals (counters, goals,
 │                stars), missions (start, stages, checkpoints, results, save / resume), actions (everything the player can do),
 │                sim (the clock), strategy (a player made of a reference strategy), cheats, people (departments, absence,
-│                hiring, overtime, unions, managers), systems (levels, failures, IT, readiness, drills), freeplay (eras, rounds),
+│                hiring, overtime, unions, managers), systems (levels, failures, IT, readiness, drills), freeplay (rounds, until
+│                the non-stop Free Play replaces them), free (the non-stop Free Play: the played day and the night), freepace
+│                (its adaptive pace),
 │                terminal (units, brands, security lanes, the train), airlines (fees, incentives, courting, rivals), offers
 │                (the Offers board), invest (payback and NPV), challenges (the score, the bests), events (scripted and
 │                random events, the ash cloud), green (the green rating, energy, biofuel, the permit), fleet (what each fuel
@@ -442,7 +445,8 @@ arlanda-rising/
 │                hints.js (Kaj, the finger), sounds.js, terminalview.js (the Terminal view), finance.js (Finance and its
 │                chart), analytics.js (Finance's tabs for the meters and the green rating; the tab bar the Ops Center, Finance and Departments share, InfoTabs), airlines.js (Airlines, the Offers board), challenges.js (the Challenge Days and their results);
 │                planned: archive, album
-├── tools/       missions-check.js, debug-mission.js (one mission flight by flight), turnaround-check.js (the turnaround's bar and card against the sim), terminals-check.js (the terminals through the years), layout-check.js (the map's geometry,
+├── tools/       sim-files.js (the game's logic files for every Node checker, one list), missions-check.js, freeplay-bot.js (the non-stop
+│                Free Play played month by month: real time by pace, determinism, resume), debug-mission.js (one mission flight by flight), turnaround-check.js (the turnaround's bar and card against the sim), terminals-check.js (the terminals through the years), layout-check.js (the map's geometry,
 │                and the plan docs/layout.svg), map-shots.js (the map in its eras, for tools/cdp.js), screens-shots.js (the text screens at four sizes, with an overflow check), inside-shots.js (the roofs off and the cards at four sizes), shops-shots.js (the own shops in the terminals' cells, sold and bought, from the roofs and the card), buymenu-shots.js (the buy menu at four sizes, with an overflow check), people-shots.js (Departments, the Ops Center's practice and the plan panel's teams on a phone and a computer: dismissals, a head's search and its candidates), showcase-slides.js (the slides of docs/showcase.gif for tools/showcase.js)
 ├── README.md, README_RU.md, README_SV.md (with the not-affiliated note, how to install)
 ├── icon.svg, icon-maskable.svg, icon-192.png, icon-512.png, icon-maskable-512.png, apple-touch-icon.png (tools/pwa-icons.sh)

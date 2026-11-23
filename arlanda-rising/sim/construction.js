@@ -52,6 +52,8 @@ const Construction = {
   // whether a day of plan time from now to the mission's end falls in December–February: the rest of this plan stage,
   // then the stages after it on their dates (an ops stage takes no plan days)
   winterAhead() {
+    // Free Play's calendar has no end: a winter always lies ahead
+    if (S && S.free) return true;
     if (!S.mission || !S.plan) return false;
     const stages = Missions.def().stages;
     let day = S.day, end = S.plan.end;
@@ -108,7 +110,8 @@ const Construction = {
         const s = p.stages[sid];
         if (!s.on || s.done) continue;
         const sd = def.stages[sid], pace = PACE[s.pace];
-        const step = Math.min(1 - s.p, 1 / ((sd.days + s.extra) * pace.time) * (winter && !noWinter ? WINTER_WORK : 1));
+        // Free Play builds by its own scale of days (FREE_BUILD_X)
+        const step = Math.min(1 - s.p, 1 / ((sd.days + s.extra) * pace.time * (S.free ? FREE_BUILD_X : 1)) * (winter && !noWinter ? WINTER_WORK : 1));
         s.p += step;
         // session 6: a design's own price (× p.k, the player's pier)
         this.pay(p, sd.price * pace.cost * step * (p.k || 1));

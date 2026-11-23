@@ -37,8 +37,12 @@ const Ops = {
     S.ops.weather = Weather.make(stage.weather, from, to);
     S.ops.flights = Schedule.make(stage);
     Events.begin(stage);
-    // the aircraft parked overnight stand on the best stands that fit
-    for (const f of S.ops.flights) if (f.st === 'parked') Turnaround.park(f, Stands.best(f));
+    // the aircraft parked overnight stand on the best stands that fit (in Free Play on the stand they stood on last night)
+    for (const f of S.ops.flights) {
+      if (f.st !== 'parked') continue;
+      const kept = f.parkAt && Airport.stand(f.parkAt);
+      Turnaround.park(f, kept && !kept.occ && !kept.closed && Stands.fits(kept, f.type) ? kept : Stands.best(f));
+    }
     // the passengers who came before the stage began are through check-in already
     for (const f of S.ops.flights) {
       const share = clamp((from - (f.std - PAX_ARRIVE_FIRST)) / (PAX_ARRIVE_FIRST - PAX_ARRIVE_LAST), 0, 1);

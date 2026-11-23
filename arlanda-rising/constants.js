@@ -339,3 +339,22 @@ const CYBER_SPREAD = 4;            // systems a cyber attack takes down at most 
 const GREEN_PTS_6 = { charger: 1.5, nightTrain: 6, h2: 4, greenPier: 6 }; // green rating points: each charging stand (up to 6), the night train, the hydrogen depot, the green pier
 const BLACKOUT_LANE_X = 0.75;      // × a security lane's passengers in a blackout (the bags searched by hand)
 const LEAVERS_2022 = 0.3;          // share of the furloughed staff who found other work in the long pause (half of it of those kept on)
+
+// ---------- Free Play from the forest (spec/freeplay.md): the time core ----------
+const FREE_DAY_OF_MONTH = 15;      // the day of each month flown flight by flight (the played day); the night runs the rest in summary
+const FREE_DAY_FROM = 5 * 60;      // game minutes: the played day begins at 05:00 …
+const FREE_DAY_TO = 23 * 60 + 30;  // … and its night at 23:30 (once every flight is gone, OPS_OVERTIME later at the latest)
+const FREE_LAST_DEP = 23 * 60;     // game minutes: the latest planned departure of a played day (a later turnaround lands earlier)
+const FREE_NIGHTSTOP_FROM = 21 * 60; // game minutes: a based airline's arrivals from here stay the night (FREE_NIGHTSTOP_KINDS)
+const FREE_MORNING_DEP = [6 * 60, 8 * 60 + 30]; // game minutes: the aircraft parked overnight leave between these
+const FREE_JITTER_MIN = 12;        // ± game minutes a played day's arrival moves from its place in the wave
+const FREE_DESKS_DAWN = 2;         // check-in desks open at the played day's start (all of them with a team or a system)
+const FREE_CREWS = 2;              // construction crews of the free airport (as a plan stage)
+const FREE_BUILD_X = 1.0;          // × the days of a project's stages in Free Play (the missions keep their own)
+const FREE_CRUISE_HOUR_SECONDS = 6;   // real s per game hour at ▶ when nothing needs the player (Auto pace: Normal)
+const FREE_GENTLE_HOUR_SECONDS = 12;  // … with Auto pace: Gentle (Off: always OPS_HOUR_SECONDS, the attention pace)
+const FREE_NIGHT_SECONDS = 8;      // real s at ▶ of a whole night (23:30 → the next month's played day at 05:00)
+const FREE_IDLE_DAY_SECONDS = 7;   // real s at ▶ of a played day with no traffic at all (with its night ≈ 15 s a month)
+const FREE_LOOKAHEAD_MIN = 15;     // game minutes ahead a task for the player's hands keeps the attention pace
+const FREE_PACE_EASE = 1.5;        // real s the clock takes to ease from one pace to another (the map never jerks)
+const FREE_STEPS_FRAME_MAX = 400;  // sim steps in one frame at most (a slow phone at ▶▶▶ cruise lags instead of freezing)

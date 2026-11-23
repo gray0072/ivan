@@ -17,22 +17,8 @@
 //
 // Usage: node arlanda-rising/tools/terminals-check.js   (a few seconds)
 
-const fs = require('fs'), path = require('path'), vm = require('vm');
-const root = path.resolve(__dirname, '..');
-const ctx = { console, Math, JSON, Object, Array, Number, String, Set, Map, Error, Date, isNaN, isFinite, parseInt, parseFloat };
-vm.createContext(ctx);
-const load = (f) => vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
-const chapterFiles = (dir) => fs.readdirSync(path.join(root, dir)).filter((f) => /^ch\d+\.js$/.test(f))
-  .sort((a, b) => parseInt(a.slice(2), 10) - parseInt(b.slice(2), 10)).map((f) => dir + '/' + f);
-['constants.js', 'data/aircraft.js', 'data/airlines.js', 'data/buildings.js', 'data/masterplan.js', 'data/domains.js', 'data/people.js',
-  'data/terminals.js', 'data/brands.js', 'data/events.js',
-  'data/missions/missions.js', ...chapterFiles('data/missions'), 'data/strategies/strategies.js', ...chapterFiles('data/strategies'),
-  'core/utils.js', 'core/events.js', 'core/storage.js',
-  'sim/state.js', 'sim/calendar.js', 'sim/weather.js', 'sim/finance.js', 'sim/meters.js', 'sim/terminal.js', 'sim/airlines.js', 'sim/people.js', 'sim/systems.js', 'sim/airport.js', 'sim/stands.js',
-  'sim/fleet.js', 'sim/schedule.js', 'sim/runways.js', 'sim/passengers.js', 'sim/turnaround.js', 'sim/flights.js', 'sim/tasks.js',
-  'sim/construction.js', 'sim/summary.js', 'sim/plan.js', 'sim/ops.js', 'sim/goals.js', 'sim/missions.js', 'sim/actions.js',
-  'sim/sim.js', 'sim/strategy.js', 'sim/cheats.js', 'sim/offers.js', 'sim/invest.js', 'sim/events.js', 'sim/green.js', 'sim/stats.js',
-  'data/challenges.js', 'sim/challenges.js', 'sim/freeplay.js'].forEach(load);
+const vm = require('vm');
+const ctx = require('./sim-files').context();
 
 const out = vm.runInContext(`(() => {
   const lines = [];

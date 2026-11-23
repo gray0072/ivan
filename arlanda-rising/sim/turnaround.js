@@ -32,6 +32,8 @@ const Turnaround = {
     f.st = 'turn';
     const off = t + (f.paxArr * DEBOARD_PER_PAX + 1) * k;
     f.tr = { off, svc: off + AIRCRAFT[f.type].svc * k * this.svcK(), fuel: 'wait', fuelEnd: null, board: null, ready: null };
+    // Free Play: an aircraft that stays the night is fuelled in the morning, before it leaves (sim/free.js)
+    if (f.nightstop) { f.tr.fuel = 'done'; f.tr.fuelEnd = t; }
     // the bags by hand or by the baggage team: the carts must be sent before the services can finish
     if (f.paxArr > 0 && (S.mission.hands.indexOf('bags') >= 0 || (S.domains.baggage || 0) > 0)) { f.tr.bags = 'asked'; Tasks.need('bags', f.id); }
     // with everything on time here it could leave at: from its real arrival time, by the nearest stand

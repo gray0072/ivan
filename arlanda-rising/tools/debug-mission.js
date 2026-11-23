@@ -12,17 +12,8 @@
 // Usage: node arlanda-rising/tools/debug-mission.js <mission id> [easy|medium|hard] [--idle [--choices=id=option,…]]
 //        [--strategy=id] [--flights] [--counters]
 
-const fs = require('fs'), path = require('path'), vm = require('vm');
-const root = path.resolve(__dirname, '..');
-const src = fs.readFileSync(path.join(__dirname, 'missions-check.js'), 'utf8');
-const chapters = (d) => fs.readdirSync(path.join(root, d)).filter((f) => /^ch\d+\.js$/.test(f))
-  .sort((a, b) => parseInt(a.slice(2), 10) - parseInt(b.slice(2), 10)).map((f) => d + '/' + f);
-const listSrc = src.slice(src.indexOf("['constants.js'"), src.indexOf('].forEach(load);') + 1)
-  .replace(/\.\.\.chapterFiles\('([^']+)'\)/g, (m, d) => chapters(d).map((f) => JSON.stringify(f)).join(', '));
-const list = vm.runInNewContext(listSrc);
-const ctx = { console, Math, JSON, Object, Array, Number, String, Set, Map, Error, Date, isNaN, isFinite, parseInt, parseFloat };
-vm.createContext(ctx);
-for (const f of list) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+const vm = require('vm');
+const ctx = require('./sim-files').context();
 const args = process.argv.slice(2);
 const [id, d = 'medium'] = args.filter((a) => !a.startsWith('--'));
 vm.runInContext(`(() => {

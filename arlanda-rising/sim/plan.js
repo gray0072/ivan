@@ -34,10 +34,17 @@ const Plan = {
     for (const c of p.choices) {
       if (!c.done && S.day >= c.day) { p.pending = c.id; logEvent('decision', { id: c.id }); return; }
     }
+    this.dayCore();
+  },
+  // a day of plan time without its decisions — also Free Play's night (sim/free.js), which runs it for each day of the
+  // month and for the played day itself with `o`: { traffic: false } (its flights were flown one by one) and `minutes`
+  // (the running costs of the hours not flown)
+  dayCore(o) {
+    const p = S.plan;
     Construction.day();
     p.buys = p.buys.filter((b) => { if (S.day >= b.done) { Airport.finishBuy(b.kind, b.term); return false; } return true; });
-    Summary.day();
-    Finance.running(1440);
+    if (!o || o.traffic !== false) Summary.day();
+    Finance.running(o && o.minutes !== undefined ? o.minutes : 1440);
     S.day++;
     People.day();
     Systems.day();

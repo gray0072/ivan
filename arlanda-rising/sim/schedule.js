@@ -44,6 +44,10 @@ const Schedule = {
     if (line.cargo) { f.cargoT = line.cargo; f.booked = 0; f.paxArr = 0; }
     // session 5: an aircraft that stays for days (a guest's): it lands and keeps its stand; its departure is not this stage's
     if (line.stay) f.stay = true;
+    // Free Play: an aircraft of a based airline that stays the night (fuelled in the morning), and the stand an aircraft
+    // parked overnight stood on (`parkAt`)
+    if (line.nightstop) f.nightstop = true;
+    if (line.parkAt) f.parkAt = line.parkAt;
     if (line.parked) {
       f.std = at;
       f.st = 'parked';
