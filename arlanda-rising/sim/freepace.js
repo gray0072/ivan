@@ -2,8 +2,8 @@
 
 // Arlanda Rising — the pace of Free Play (spec/freeplay.md "Adaptive pace"): which pace the clock runs at and why, and the
 // real seconds the next sim step takes at ▶. Attention — the missions' OPS_HOUR_SECONDS a game hour — while the player
-// has something to do: a task in the tray, a task for their hands due within FREE_LOOKAHEAD_MIN, snow while the ploughs
-// are theirs, an emergency or a system down with no one beside it, 👁️ Watch held, or Auto pace Off; cruise (Normal or
+// has something to do: a task in the tray, a task for their hands due within FREE_LOOKAHEAD_MIN, a snowfall about to
+// begin while the ploughs are theirs, an emergency or a system down with no one beside it, 👁️ Watch held, or Auto pace Off; cruise (Normal or
 // Gentle) when nothing needs them; the night, FREE_NIGHT_SECONDS for all of it; a played day with no traffic at all,
 // FREE_IDLE_DAY_SECONDS. The sim steps the same whatever the pace (OPS_STEP_MIN in the day, a day at night), so the pace
 // never changes a result: it only maps real seconds to steps (sim/free.js `advance`, through Sim.advance), and
@@ -46,11 +46,8 @@ const FreePace = {
         if (ann && !f.ann && f.booked > 0 && f.std + ANNOUNCE_LEAD <= look) return 'soon';
       }
     }
-    // snow lying or about to fall while the ploughs are the player's
-    if (this.hand('plough')) {
-      if (S.airport.runways.some((r) => r.snow >= 1) || S.airport.apron.snow >= 1) return 'snow';
-      if (S.ops.weather.snow.some((p) => p[0] <= look && p[1] > t)) return 'snow';
-    }
+    // a snowfall about to begin while the ploughs are the player's (once it lies, the plough tasks in the tray keep the pace)
+    if (this.hand('plough') && S.ops.weather.snow.some((p) => p[0] > t && p[0] <= look)) return 'snow';
     // a system down with nobody beside it: its tasks come to the tray
     if (S.ops.down && Object.keys(S.ops.down).some((d) => Systems.working(d) === 0)) return 'incident';
     return null;

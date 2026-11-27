@@ -37,7 +37,7 @@ const Free = {
     const seed = hashOf('free', o.seed !== undefined ? o.seed : 'arlanda') >>> 0;
     S.seed = seed; S.rng = seed;
     S.mission.projects = [];
-    S.free = { v: 2, month: 0, auto: o.auto || 'normal', watch: false, nightDays: 0, overnight: [], last: null,
+    S.free = { v: 2, month: 0, auto: o.auto || 'normal', watch: false, nightDays: 0, overnight: [], last: null, hand: {}, sample: {},
       year: this.dateYear(MISSIONS[0].date), years: [[S.day, Calendar.date(S.day).y]], next: 0 };
     S.plan.crews = FREE_CREWS + (S.mission.crews || 0);
     this.history(0);
@@ -63,7 +63,7 @@ const Free = {
       if (Ops.ended()) this.dusk();
       return;
     }
-    if (S.day < S.plan.end) Plan.dayCore();
+    if (S.day < S.plan.end) Plan.dayCore({ moneyX: this.moneyX() });
     if (S.day >= S.plan.end) this.dawn();
   },
   // real seconds at a speed become steps by the pace (sim/freepace.js): S.mission.acc is the part of the next step run
@@ -94,6 +94,7 @@ const Free = {
     });
     S.free.last = { month: S.free.month, day: S.day, arr: st.arr, dep: st.dep, onTime: st.onTime, lost: st.diverted + st.cancelled,
       tasks: st.tasksPlayer, duty: st.tasksDuty, people: st.tasksPeople, minutes: Math.round(flown), income: Math.round(st.income), cost: Math.round(st.cost) };
+    this.sampleDay();
     Goals.add(S.mission.total, st);
     S.ops = null;
     S.mission.stage = 0;
@@ -101,7 +102,7 @@ const Free = {
     S.mission.acc = 0;
     S.plan.day0 = S.day;
     S.clock = FREE_DAY_TO;
-    Plan.dayCore({ traffic: false, minutes: Math.max(0, 1440 - flown) });
+    Plan.dayCore({ traffic: false, minutes: Math.max(0, 1440 - flown), moneyX: this.moneyX() });
     this.night();
     logEvent('freeDusk', { month: S.free.month });
   },
@@ -123,6 +124,31 @@ const Free = {
     logEvent('freeDawn', { month: S.free.month });
   },
 
+  // × the money of a night's day — its traffic in summary and its running costs: the history's months a played month
+  // stands for at its chapter's pace (`rate`), × FREE_MONEY_X, at least 1 — so the airport earns over the history's years
+  // what the campaign's airport earned between its missions, and the projects keep their prices; 1 before the airport
+  // opens (the forest years earn nothing, and their costs are the owner's budget's)
+  moneyX() { return S.airport.open ? Math.max(1, Math.round(this.rate() * 12 * FREE_MONEY_X * 100) / 100) : 1; },
+
+  // ---------- the played day as a sample of the month ----------
+  // a tray task of the player's hands done (`ok`) or left to the duty manager, counted by its domain for the day
+  handTask(kind, ok) {
+    const d = TASK_DOMAIN[kind];
+    if (!d) return;
+    const h = S.free.hand = S.free.hand || {}, c = h[d] = h[d] || [0, 0];
+    c[ok ? 0 : 1]++;
+  },
+  // at dusk: the share of each hand domain's tasks the player did becomes the month's sample (a domain with fewer than
+  // FREE_SAMPLE_MIN tasks keeps the last one), and the count starts again
+  sampleDay() {
+    const sm = S.free.sample = S.free.sample || {};
+    for (const [d, c] of Object.entries(S.free.hand || {})) if (c[0] + c[1] >= FREE_SAMPLE_MIN) sm[d] = Math.round(c[0] / (c[0] + c[1]) * 100) / 100;
+    S.free.hand = {};
+  },
+  // the share of a hand domain's loss in summary (sim/summary.js) the night counts: all of it with no tray work, less by
+  // FREE_DAY_WEIGHT × the share of its tasks the player did in the played day
+  manualShare(d) { return 1 - FREE_DAY_WEIGHT * ((S.free.sample || {})[d] || 0); },
+
   // ---------- the history ----------
   // "1965-05-03" → 1965.34: a date as a year with its part gone
   dateYear(s) { const p = String(s).split('-').map(Number); return p[0] + ((p[1] || 1) - 1) / 12 + ((p[2] || 1) - 1) / 365; },
@@ -134,9 +160,10 @@ const Free = {
   missing(m) {
     return (m.requires || []).filter((r) => { const [p, s] = r.split('.'); return s ? !Construction.stageDone(p, s) : !Construction.done(p); });
   },
-  // the year a played month moves the history on: its chapter's years over its months
+  // the year a played month moves the history on: its chapter's years over its months — the chapter of the milestone
+  // reached last, whose years run to the next chapter's first milestone
   rate() {
-    const m = this.pending() || MISSIONS[MISSIONS.length - 1], c = m.chapter;
+    const m = MISSIONS[Math.max(0, S.free.next - 1)], c = m.chapter;
     const first = (ch) => { const x = MISSIONS.find((y) => y.chapter === ch); return x ? this.dateYear(x.date) : null; };
     const a = first(c), b = first(c + 1) || this.dateYear(MISSIONS[MISSIONS.length - 1].date) + 1;
     return (b - a) / (FREE_CHAPTER_MONTHS[c - 1] || 8);
@@ -163,6 +190,12 @@ const Free = {
     const y = Math.floor(f.year + 1e-9);
     if (f.years[f.years.length - 1][1] !== y) f.years.push([S.day, y]);
     if (f.years.length > 400) f.years.splice(1, f.years.length - 400);
+    // the ladder: a level of a domain the airport has opens in its year (data/domains.js `from`), as the history's own
+    // milestones open them — a team in 1963, the first systems from 1980 (what else it needs, Systems.cannot says)
+    for (const d of Object.keys(S.domains)) {
+      const L = (DOMAINS[d] || {}).levels || [];
+      for (let lv = 1; lv < L.length; lv++) if (L[lv].from && y >= L[lv].from && ((S.unlock || {})[d] || 0) < lv) Missions.unlock(d, lv);
+    }
     // the projects the next milestone needs: open for building
     const next = this.pending();
     if (next) for (const r of next.requires || []) { const p = r.split('.')[0]; if (!this.owners(p)) this.open(p); }

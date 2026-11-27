@@ -36,6 +36,19 @@ const MapView = (() => {
     return 'summer';
   }
 
+  // the time of day the map is drawn at: in ops time the sim's clock between its steps (what moves moves smoothly); Free
+  // Play's night runs on from the played day's end through midnight to the next dawn at FREE_DAY_FROM as its days pass
+  // (S.mission.acc the part of the next day), so the dusk, the night and the dawn follow on without a jump; a mission's
+  // plan time is drawn at noon
+  function clockNow() {
+    if (S.ops) return Sim.clockNow();
+    if (!S.free || !S.plan) return 12 * 60;
+    const last = S.free.last, from = last && last.minutes != null ? FREE_DAY_FROM + last.minutes : FREE_DAY_TO;
+    const n = Math.max(1, S.free.nightDays || 0), d0 = S.plan.end - n;
+    const q = clamp((S.day - d0 + clamp(S.mission.acc || 0, 0, 1)) / n, 0, 1);
+    return (from + q * (FREE_DAY_FROM + 1440 - from)) % 1440;
+  }
+
   // what the map shows, read from S
   function scene() {
     const a = S.airport, d = Calendar.date(S.day);
@@ -48,11 +61,12 @@ const MapView = (() => {
     // the road in to the first terminal's kerb; the landside road along the terminals from the international terminal's year
     const roadPts = polyPart(LAYOUT.road, roadP);
     const landside = items.intlTerminal || p('intlTerminal', 'frame') > 0;
-    const t = S.ops ? Sim.clockNow() : 12 * 60;   // between the sim's steps, so that what moves moves smoothly
-    const sun = Calendar.sunElevation(S.day, t);
+    const t = clockNow();
+    const sun = Calendar.sunElevation(S.day, t), dark = Sky.darkness(S.day, t);
     return {
       season: season(d.m, w ? w.temp : null), year: Calendar.year(), t, anim, sun,
-      dark: Sky.darkness(S.day, t), vis: w ? w.vis : 10000, snowfall: w ? w.snow : 0,
+      // veil: how dark the night's veil over the map is (Free Play's never deeper than FREE_DARK_MAX; the lamps go by `dark`)
+      dark, veil: S.free ? Math.min(dark, FREE_DARK_MAX) : dark, vis: w ? w.vis : 10000, snowfall: w ? w.snow : 0,
       siteDone: ready, strip: ready ? 1 : p('site', 'strip'), drain: ready ? 1 : p('site', 'drain'),
       apronClear: ready ? 1 : p('site', 'apron'), road: roadP, roadPts, landsidePts: landside ? LAYOUT.landside : null,
       siteWork: !!a.projects.site && !items.terminal && !a.t1Gone,
@@ -240,5 +254,5 @@ const MapView = (() => {
 
   window.addEventListener('resize', resize);
   resize();
-  return { draw, hit, frame, resize, view, canvas: cv };
+  return { draw, hit, frame, resize, view, canvas: cv, clockNow };
 })();

@@ -12,7 +12,7 @@ const Actions = {
   doneByHand(kind, target) {
     const n = S.ops.tasks.length;
     S.ops.tasks = S.ops.tasks.filter((k) => !(k.kind === kind && k.target === target));
-    if (S.ops.tasks.length < n) S.mission.st.tasksPlayer++;
+    if (S.ops.tasks.length < n) { S.mission.st.tasksPlayer++; if (S.free) Free.handTask(kind, true); }
   },
   stand(flightId, standId) {
     const f = S.ops && Flights.get(flightId), st = Airport.stand(standId);
@@ -61,7 +61,7 @@ const Actions = {
   choose(option) { return Plan.choose(option); },
   borrow(amount) { return Finance.borrow(amount) > 0; },
   repay(amount) { return Finance.repay(amount) > 0; },
-  // session 3: people and systems (in plan time and between missions; overtime in ops time)
+  // session 3: people and systems (in plan time and between missions, and in Free Play's played day; overtime in ops time)
   hire(dom) { return People.hire(dom); },
   upgrade(dom, how) { return Systems.upgrade(dom, how); },
   // session 7: a system bought straight from the hands or from a team (how: 'keep' / 'layoff' the team), a team hired
@@ -108,7 +108,7 @@ const Actions = {
   // mobile charger sent to an electric aircraft
   mothball(term) { return !S.ops && Terminal.mothball(term); },
   reopen(term) { return !S.ops && Terminal.reopen(term); },
-  rehire(dept) { return !S.ops && (dept ? People.rehire(dept) : People.rehireAll()); },
+  rehire(dept) { return !People.shift() && (dept ? People.rehire(dept) : People.rehireAll()); },
   drillAll() { return Systems.drillAll(); },
   charge(flightId) {
     const f = S.ops && Flights.get(flightId);

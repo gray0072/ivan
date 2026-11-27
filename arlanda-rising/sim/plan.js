@@ -43,8 +43,11 @@ const Plan = {
     const p = S.plan;
     Construction.day();
     p.buys = p.buys.filter((b) => { if (S.day >= b.done) { Airport.finishBuy(b.kind, b.term); return false; } return true; });
+    // Free Play's night: the money of the history's months a day of it stands for (1 in the missions)
+    Finance.x = (o && o.moneyX) || 1;
     if (!o || o.traffic !== false) Summary.day();
     Finance.running(o && o.minutes !== undefined ? o.minutes : 1440);
+    Finance.x = 1;
     S.day++;
     People.day();
     Systems.day();

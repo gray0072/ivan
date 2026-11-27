@@ -7,9 +7,13 @@
 // is SEK. Used by every sim/ file that earns or spends.
 
 const Finance = {
+  // × every sum booked: 1, but in Free Play's night the traffic and the running costs of the history's months the night
+  // stands for (Plan.dayCore `moneyX`, sim/free.js `moneyX`)
+  x: 1,
   // + income, − cost, under a line of the books ('fees', 'shops', 'wages', 'construction', …)
   book(line, amount) {
     if (!amount) return;
+    if (this.x !== 1) amount *= this.x;
     S.money += amount;
     const c = S.finance.cur;
     if (amount > 0) c.in[line] = (c.in[line] || 0) + amount;

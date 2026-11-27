@@ -8,7 +8,8 @@
 // a team what happens to it: kept as the fallback or let go —, a team hired back beside a system), a drill; and the IT
 // people and the backup power. The first tab of the bar it shares with Finance and Departments (ui/analytics.js
 // InfoTabs). From the Office (key O) every button works at once; in plan time too (teams and systems after their days);
-// in ops time it is to look only. Opened through InfoTabs (game.js, ui/office.js).
+// in ops time it is to look only (Free Play's played day: everything works, ready after its nights). Opened through
+// InfoTabs (game.js, ui/office.js).
 
 const OpsCenter = (() => {
   const $ = (id) => document.getElementById(id);
@@ -29,7 +30,7 @@ const OpsCenter = (() => {
 
   function render() {
     const p = $('opsCenter');
-    let html = Analytics.tabsHtml('ops') + '<h1>🛠️ ' + Text.esc(tr('Ops Center')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p><table class="ops"><tr><th></th><th>' + Text.esc(tr('Level')) +
+    let html = Analytics.tabsHtml('ops') + '<h1>🛠️ ' + Text.esc(tr('Ops Center')) + '</h1><p class="when">' + Text.esc(fmtNow()) + '</p><table class="ops"><tr><th></th><th>' + Text.esc(tr('Level')) +
       '</th><th>' + Text.esc(tr('Uptime')) + '</th><th>' + Text.esc(tr('A month')) + '</th><th>' + Text.esc(tr('Practice')) + '</th><th class="actCol"></th></tr>';
     for (const d of Object.keys(S.domains)) {
       const lv = S.domains[d] || 0, L = DOMAINS[d].levels[lv], r = S.sys && S.sys[d];

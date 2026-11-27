@@ -2,8 +2,9 @@
 
 // Arlanda Rising — the HUD over the map in a running stage: money (opens the money card), the date and clock, the
 // weather now (temperature, wind, snow, fog, the dark; not on a phone held upright), the five meters, the speed buttons ⏸ ▶ ▶▶ ▶▶▶, Skip to the
-// next event, pause; and the stage's goals with their values right now. In Free Play the night says so, and the played day
-// shows the pace the clock runs at (🐢 slow while something needs the player, 🐇 hurrying when nothing does: sim/freepace.js).
+// next event, pause; and the stage's goals with their values right now. In Free Play the date is the month and the
+// history's year with no clock, the night says so, and the played day shows the pace the clock runs at (🐢 slow while
+// something needs the player, 🐇 hurrying when nothing does: sim/freepace.js).
 // Refreshed a few times a second by game.js.
 
 // a phone held upright: the money in the HUD without its currency and no weather chip (styles.css), so the first row
@@ -45,19 +46,27 @@ const Hud = (() => {
     const prog = S.ops ? (S.clock - S.ops.from) / (S.ops.to - S.ops.from) : S.plan ? (S.day - S.plan.day0) / (S.plan.end - S.plan.day0) : 0;
     $('dateChip').querySelector('.prog i').style.width = Math.round(clamp(prog, 0, 1) * 100) + '%';
     if (S.ops) {
-      $('date').textContent = fmtDate(S.day) + ' · ' + fmtClock(S.clock);
       const w = Weather.now(), parts = [Math.round(w.temp) + '°', wind(w)];
       if (w.snow > 0) parts.push('❄️ ' + Text.num(w.snow, 1) + ' ' + tr('mm/h'));
       if (w.vis < 3000) parts.push('🌫️ ' + w.vis + ' ' + tr('m'));
       if (w.dark) parts.push('🌙');
       let tip = '';
-      if (S.free) { const md = FreePace.mode(); parts.push(md.pace === 'attention' ? '🐢' : '🐇'); tip = Text.paceWhy(md); }
+      if (S.free) {
+        // Free Play: the month and the history's year, no clock (a played day stands for a month); on a phone held
+        // upright, with no weather chip, the dark and the pace go beside it
+        const md = FreePace.mode(), pace = md.pace === 'attention' ? '🐢' : '🐇';
+        parts.push(pace);
+        tip = Text.paceWhy(md);
+        $('date').textContent = fmtMonth(S.day) + (PHONE_UPRIGHT.matches ? ' · ' + (w.dark ? '🌙 ' : '') + pace : '');
+        $('dateChip').title = tip;
+      } else { $('date').textContent = fmtDate(S.day) + ' · ' + fmtClock(S.clock); $('dateChip').title = ''; }
       $('wx').textContent = parts.join(' · ');
       $('wxChip').title = tip;
       $('wxChip').hidden = false;
     } else if (S.plan && S.free) {
       // Free Play's night: the rest of the month in summary
-      $('date').textContent = fmtDate(S.day) + ' · 🌙';
+      $('date').textContent = fmtMonth(S.day) + ' · 🌙';
+      $('dateChip').title = tr('Night: the month in summary');
       $('wx').textContent = tr('Night: the month in summary');
       $('wxChip').title = '';
       $('wxChip').hidden = false;

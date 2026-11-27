@@ -46,6 +46,7 @@ const Tasks = {
     logEvent('task', { kind, target });
   },
   toDuty(task) {
+    if (S.free) Free.handTask(task.kind, false);
     S.ops.later.push({ kind: task.kind, target: task.target, at: Math.max(S.clock, task.due) + DUTY_LATE[task.kind], by: 'duty', right: MANUAL_SUMMARY_EFF });
   },
   // a flight that left: its tasks go
@@ -129,6 +130,7 @@ const Tasks = {
     if (!ok) return false;
     S.ops.tasks = S.ops.tasks.filter((x) => x !== k);
     S.mission.st.tasksPlayer++;
+    if (S.free) Free.handTask(k.kind, true);
     logEvent('taskDone', { kind: k.kind });
     return true;
   }

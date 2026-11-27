@@ -79,3 +79,24 @@ function fmtDate(day, withYear = true) {
   // Free Play shows the history's year (sim/calendar.js yearOf)
   return d.d + ' ' + tr(MONTHS[d.m - 1]) + (withYear ? ' ' + Calendar.yearOf(day) : '');
 }
+// a month and its year on their own: "May 1962" (the month named as itself, not "15 May"; Free Play: the history's year)
+function fmtMonth(day) {
+  // the history's year is indicative (it waits at a milestone while the months run on): ≈ before it
+  const y = (S && S.free ? '≈' : '') + Calendar.yearOf(day);
+  switch (Calendar.date(day).m) {
+    case 1: return tr('January {y}', { y });
+    case 2: return tr('February {y}', { y });
+    case 3: return tr('March {y}', { y });
+    case 4: return tr('April {y}', { y });
+    case 5: return tr('May {y}', { y });
+    case 6: return tr('June {y}', { y });
+    case 7: return tr('July {y}', { y });
+    case 8: return tr('August {y}', { y });
+    case 9: return tr('September {y}', { y });
+    case 10: return tr('October {y}', { y });
+    case 11: return tr('November {y}', { y });
+    default: return tr('December {y}', { y });
+  }
+}
+// today as the screens' headers show it: the date, or in Free Play — where a played day stands for a month — the month
+function fmtNow() { return S && S.free ? fmtMonth(S.day) : fmtDate(S.day); }

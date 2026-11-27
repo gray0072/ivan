@@ -381,7 +381,7 @@ const Interiors = (() => {
   function office(put, c, sc, key, b, soc) {
     const [x0, y0, x1, y1] = b;
     if (Z < 0.45) return;
-    const hr = (S.ops ? sc.t : 12 * 60) / 60, busy = soc ? 0.8 : hr >= 8 && hr < 17 ? 0.85 : 0.12;
+    const hr = sc.t / 60, busy = soc ? 0.8 : hr >= 8 && hr < 17 ? 0.85 : 0.12;
     if (soc) put(x0 + 1, y1 - 1, (c) => { for (let i = 0; i < 3; i++) Iso.poly(c, [[x0 + 3 + i * 7, y1 - TW - 0.05, 1.2], [x0 + 9 + i * 7, y1 - TW - 0.05, 1.2], [x0 + 9 + i * 7, y1 - TW - 0.05, 3.6], [x0 + 3 + i * 7, y1 - TW - 0.05, 3.6]], i === 1 ? '#c0392b' : '#1d6fa5'); });
     let k = 0;
     for (let x = x0 + 2.5; x + 2 < x1 - 1; x += 4) for (let y = y0 + 2.5; y + 1.5 < y1 - (soc ? 4 : 1.5); y += 3.2, k++) {
@@ -521,7 +521,7 @@ const Interiors = (() => {
     }
     c.stroke();
     if (Z >= 0.45) {
-      const hr = (S.ops ? sc.t : 12 * 60) / 60, night = hr < 6 || hr >= 23;
+      const hr = sc.t / 60, night = hr < 6 || hr >= 23;
       const n = night ? 2 : clamp((old ? 1 : 2) + S.airport.runways.length, 2, 8);
       const items = [], put = (x, y, fn) => items.push({ d: depthOf(x, y), fn });
       // the consoles round the windows, two places on each side: the place's console and the controller's chair

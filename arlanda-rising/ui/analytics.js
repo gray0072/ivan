@@ -285,7 +285,7 @@ const Analytics = (() => {
   function html(tab) {
     const t = STATS_TABS.find((x) => x.k === tab);
     const body = { passengers, airlines, neighbours, staff, safety, green }[tab](t);
-    return '<h1>' + t.icon + ' ' + esc(tr(t.name)) + '</h1><p class="when">' + esc(fmtDate(S.day)) + (S.ops ? ' · ' + fmtClock(S.clock) : '') + '</p>' + body + chartHtml(tab);
+    return '<h1>' + t.icon + ' ' + esc(tr(t.name)) + '</h1><p class="when">' + esc(fmtNow()) + (S.ops && !S.free ? ' · ' + fmtClock(S.clock) : '') + '</p>' + body + chartHtml(tab);
   }
   // an analytics page of Finance there is now (not the Ops Center or Departments)
   function has(tab) { return tabs().some((t) => t.k === tab && !t.screen); }

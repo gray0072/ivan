@@ -404,18 +404,18 @@ const Text = {
     const out = [], lv = S.domains[d] || 0, unlock = (S.unlock || {})[d] || 0, r = S.sys && S.sys[d];
     const L1 = DOMAINS[d].levels[1], hiring = S.people && S.people.hiring.find((h) => h.dom === d);
     const why = { room: 'Needs the computer room', hall: 'Needs the baggage hall', pads: 'Needs the remote de-icing pads', sorter: 'Needs the sorting hall' };
-    const ready = (at) => tr('ready in {n} days', { n: Math.max(0, at - S.day) });
+    const ready = (at) => this.readyIn(Math.max(0, at - S.day));
     // a team from the hands
     if (lv === 0 && unlock >= 1 && L1 && !(r && r.installAt)) {
       const w = Systems.cannot(d, 1);
       if (hiring) out.push({ icon: '👷', title: tr('Hire: {what}', { what: tr(L1.name) }), sub: this.jobs(L1.staff), wait: ready(hiring.at) });
-      else if (!w) out.push({ icon: '👷', title: tr('Hire: {what}', { what: tr(L1.name) }), sub: this.jobs(L1.staff) + ' · ' + tr('ready in {n} days', { n: S.plan ? People.hireDays(d) : 0 }) + ' · ' + tr('wages every month'),
+      else if (!w) out.push({ icon: '👷', title: tr('Hire: {what}', { what: tr(L1.name) }), sub: this.jobs(L1.staff) + ' · ' + this.readyIn(S.plan ? People.hireDays(d) : 0) + ' · ' + tr('wages every month'),
         acts: [{ data: 'data-up="' + d + '" data-to="1"', label: tr('Hire'), sum: sekBare(Systems.price(d, 'keep', 1)), main: true }] });
     }
     // a system: the next one (straight from the hands or a team to level 2)
     const to = Systems.nextSystem(d), L = DOMAINS[d].levels[to];
     if (L && unlock >= to && Calendar.year() >= L.from) {
-      const sub = sek(L.price) + ' · ' + tr('{m} a month', { m: sekBare(L.month || 0) }) + ' · ' + this.jobs(L.staff || 0) + (L.it ? ' · ' + tr('{n} IT people', { n: L.it }) : '') + (L.days ? ' · ' + tr('{n} days', { n: L.days }) : '');
+      const sub = sek(L.price) + ' · ' + tr('{m} a month', { m: sekBare(L.month || 0) }) + ' · ' + this.jobs(L.staff || 0) + (L.it ? ' · ' + tr('{n} IT people', { n: L.it }) : '') + (L.days ? ' · ' + this.days(L.days) : '');
       const w = Systems.cannot(d, to), step = { icon: '⚙️', title: tr(L.name), sub, acts: [], notes: [] };
       if (r && r.installAt) { step.sub = ''; step.wait = ready(r.installAt); out.push(step); }
       else if (w && why[w]) { step.wait = tr(why[w]); out.push(step); }
@@ -435,8 +435,21 @@ const Text = {
     // a team beside a system with none (let go, or the system bought straight from the hands)
     if (hiring && hiring.back) out.push({ icon: '👷', title: tr('A team as the fallback'), sub: this.jobs(L1.staff), wait: ready(hiring.at) });
     else if (People.canHireBack(d)) out.push({ icon: '👷', title: tr('No team as the fallback'), sub: tr('When the system fails, the work comes to you.'),
-      acts: [{ data: 'data-back="' + d + '"', label: r && r.laidOff ? tr('Hire a team back') : tr('Hire a team as the fallback'), sum: sekBare(HIRE_COST * L1.staff) + ' · ' + tr('{n} days', { n: S.plan ? People.hireDays(d) : 0 }), main: true }] });
+      acts: [{ data: 'data-back="' + d + '"', label: r && r.laidOff ? tr('Hire a team back') : tr('Hire a team as the fallback'), sum: sekBare(HIRE_COST * L1.staff) + ' · ' + this.days(S.plan ? People.hireDays(d) : 0), main: true }] });
     return out;
+  },
+  // how long a piece of work of `days` takes (hiring, a system put in): "14 days" — in Free Play, where the days pass at
+  // night, the nights until the dawn it is done by (Free.nights): "1 night", "3 nights"
+  days(days) {
+    if (!S.free) return tr('{n} days', { n: days });
+    const n = Free.nights(Math.max(0, days));
+    return n === 1 ? tr('1 night') : tr('{n} nights', { n });
+  },
+  // … and when it is ready: "ready in 14 days" — Free Play "ready tomorrow" (the next played day), "ready in 3 nights"
+  readyIn(days) {
+    if (!S.free) return tr('ready in {n} days', { n: days });
+    const n = Free.nights(Math.max(0, days));
+    return n === 1 ? tr('ready tomorrow') : tr('ready in {n} nights', { n });
   },
   // a span of days as "3 years 2 months", "5 months" or "12 days" (a head's retirement, a search)
   span(days) {

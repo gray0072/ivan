@@ -87,7 +87,7 @@ const FinanceUI = (() => {
       return;
     }
     const details = Settings.get('finDetails') === 'open';
-    let html = Analytics.tabsHtml(tab) + '<h1>📊 ' + Text.esc(tr('Finance')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + '</p>' + loanCard() + '<div class="cards">';
+    let html = Analytics.tabsHtml(tab) + '<h1>📊 ' + Text.esc(tr('Finance')) + '</h1><p class="when">' + Text.esc(fmtNow()) + '</p>' + loanCard() + '<div class="cards">';
     html += '<div class="ocard"><h3>💰 ' + Text.esc(tr('Money')) + '</h3><p class="big' + (S.money < 0 ? ' neg' : '') + '">' + sek(S.money) + '</p>' +
       '<p class="fine">' + Text.esc(tr('Your own: {m}', { m: sek(S.money - S.loans) })) + '</p></div>';
     html += '<div class="ocard"><h3>🗓️ ' + Text.esc(tr('This month so far')) + '</h3>' + books(S.finance.cur) + '</div>';

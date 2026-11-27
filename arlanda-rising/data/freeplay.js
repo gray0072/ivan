@@ -10,7 +10,7 @@
 
 // played months the years of each chapter take at least (index 0 = chapter 1): the history's year runs from a chapter's
 // first mission to the next chapter's first at this pace — and waits for what the next milestone needs built
-const FREE_CHAPTER_MONTHS = [18, 10, 8, 9, 10, 8, 6, 8];
+const FREE_CHAPTER_MONTHS = [11, 7, 6, 7, 8, 7, 5, 7];
 
 // the fields of a mission's setup (data/missions) that Free Play applies when the history reaches that mission: the
 // owner's budget and loan room, the airport opened, the airlines' routes of the year, the levels the Office may buy and

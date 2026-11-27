@@ -13,6 +13,7 @@
 // the Office (key P) on the campaign's or Free Play's airport, where every button works at once (time is stopped), in
 // plan time (the same, new people after their days), and in ops time (P, or a tab of Finance: the money or a meter in
 // the HUD), where a head can be hired (or a found candidate taken) at once and a raise answered (the game pauses).
+// Free Play's played day is plan time too: everything works, and what takes days says the nights (Text.days, readyIn).
 // Opened through InfoTabs (game.js, ui/office.js).
 
 const PeopleUI = (() => {
@@ -44,7 +45,7 @@ const PeopleUI = (() => {
   function render() {
     const p = $('people');
     const pp = S.people;
-    let html = Analytics.tabsHtml('people') + '<h1>👥 ' + esc(tr('Departments')) + '</h1><p class="when">' + esc(fmtDate(S.day)) + ' · 👷 ' + esc(Text.meterName('staff')) + ': <b>' + Math.round(S.meters.staff) + '</b></p>';
+    let html = Analytics.tabsHtml('people') + '<h1>👥 ' + esc(tr('Departments')) + '</h1><p class="when">' + esc(fmtNow()) + ' · 👷 ' + esc(Text.meterName('staff')) + ': <b>' + Math.round(S.meters.staff) + '</b></p>';
     if (!pp || !Object.keys(pp.depts).some((d) => People.jobs(d) > 0)) {
       html += '<p class="fine">' + esc(tr('No teams yet: every task is done by hand. Teams come with chapter 2.')) + '</p>';
     } else {
@@ -64,7 +65,7 @@ const PeopleUI = (() => {
         // session 6: furlough, jobs gone, new people on their way
         if (People.furloughed(id)) html += '<p>🏠 ' + esc(tr('{p} on furlough until {d}', { p: Text.pct(People.furloughed(id)), d: fmtDate(d.furlough.until) })) + '</p>';
         const rh = pp.hiring.find((h) => h.dom === id && h.rehire);
-        if (People.cut(id) > 0) html += '<p class="warn">' + esc(tr('{p} of the jobs are empty', { p: Text.pct(People.cut(id)) })) + (rh ? ' · ' + esc(tr('new people start {d}', { d: fmtDate(rh.at) })) : '') + '</p>' +
+        if (People.cut(id) > 0) html += '<p class="warn">' + esc(tr('{p} of the jobs are empty', { p: Text.pct(People.cut(id)) })) + (rh ? ' · ' + esc(newPeople(rh.at)) : '') + '</p>' +
           (can('rehire') && !rh ? '<div class="btnRow small"><button class="btn toggle" data-rehire="' + id + '">📝 ' + esc(tr('Recruit')) + '</button></div>' : '');
         if (id !== 'it' && DOMAINS[id]) html += work(id) + Text.practice(id, can('drill'));
         if (m) html += head(id, m);
@@ -94,6 +95,13 @@ const PeopleUI = (() => {
     p.appendChild(Screens.row(Screens.btn(tr('Back'), 'default', () => back())));
   }
 
+  // when the jobs filled again start: the day — in Free Play the nights to the dawn they start by (Free.nights)
+  function newPeople(at) {
+    if (!S.free) return tr('new people start {d}', { d: fmtDate(at) });
+    const n = Free.nights(Math.max(0, at - S.day));
+    return n === 1 ? tr('new people start tomorrow') : tr('new people start in {n} nights', { n });
+  }
+
   // who does a domain's work: the team (Dismiss: the work back to the hands), the fallback team beside a system
   // (Dismiss: a failure then comes to the tray), or no fallback (Hire a team as the fallback)
   function work(id) {
@@ -115,11 +123,11 @@ const PeopleUI = (() => {
           '<p class="fine">' + esc(tr('Then a failure brings the work to you.') + ' ' + layoff) + '</p>';
       }
     } else if (lv >= 2 && L1 && L1.staff) {
-      if (hiring) h += '<p>👷 ' + esc(tr('A team as the fallback') + ' · ' + tr('ready in {n} days', { n: Math.max(0, hiring.at - S.day) })) + '</p>';
+      if (hiring) h += '<p>👷 ' + esc(tr('A team as the fallback') + ' · ' + Text.readyIn(Math.max(0, hiring.at - S.day))) + '</p>';
       else {
         h += '<p class="warn">👷 ' + esc(tr('No team as the fallback') + ' — ' + tr('When the system fails, the work comes to you.')) + '</p>';
         if (can('hire') && People.canHireBack(id)) h += '<div class="btnRow small"><button class="btn toggle" data-back="' + id + '">' + esc(r && r.laidOff ? tr('Hire a team back') : tr('Hire a team as the fallback')) +
-          ' <small>' + sekBare(HIRE_COST * L1.staff) + ' · ' + esc(tr('{n} days', { n: S.plan ? People.hireDays(id) : 0 })) + '</small></button></div>';
+          ' <small>' + sekBare(HIRE_COST * L1.staff) + ' · ' + esc(Text.days(S.plan ? People.hireDays(id) : 0)) + '</small></button></div>';
       }
     }
     return h;
@@ -134,8 +142,8 @@ const PeopleUI = (() => {
     for (const d of list) {
       const L1 = DOMAINS[d].levels[1], hiring = S.people && S.people.hiring.find((x) => x.dom === d);
       h += '<p>' + DOMAINS[d].icon + ' <b>' + esc(Text.dom(d)) + '</b> · ' + esc(tr('Hire: {what}', { what: tr(L1.name) }) + ' · ' + Text.jobs(L1.staff)) +
-        (hiring ? ' · ' + esc(tr('ready in {n} days', { n: Math.max(0, hiring.at - S.day) })) :
-          can('hire') && !Systems.cannot(d, 1) ? ' <button class="btn toggle" data-up="' + d + '">' + esc(tr('Hire')) + ' <small>' + sekBare(Systems.price(d, 'keep', 1)) + ' · ' + esc(tr('{n} days', { n: S.plan ? People.hireDays(d) : 0 })) + '</small></button>' : '') + '</p>';
+        (hiring ? ' · ' + esc(Text.readyIn(Math.max(0, hiring.at - S.day))) :
+          can('hire') && !Systems.cannot(d, 1) ? ' <button class="btn toggle" data-up="' + d + '">' + esc(tr('Hire')) + ' <small>' + sekBare(Systems.price(d, 'keep', 1)) + ' · ' + esc(Text.days(S.plan ? People.hireDays(d) : 0)) + '</small></button>' : '') + '</p>';
     }
     return h + '<p class="fine">' + esc(tr('A team does these tasks for wages every month; systems are bought in the Ops Center.')) + '</p></div>';
   }
@@ -160,14 +168,17 @@ const PeopleUI = (() => {
       }
       if (can('mgr')) h += '<div class="btnRow small"><button class="btn toggle" data-keep="' + id + '">' + esc(tr('Keep {name}', { name: def.name })) + '</button></div>';
     } else if (s) {
-      h += '<p>🔍 ' + esc(tr('A search is on: two candidates in {t} ({d}). {name} keeps working.', { t: Text.span(s.at - S.day), d: fmtDate(s.at), name: def.name })) + '</p>' +
-        '<p class="fine">' + esc(tr('The days run in plan time and between missions; a stage of a day stops them.')) + '</p>' +
+      // Free Play: the nights to the dawn the candidates come by (the days run at night)
+      const nn = S.free ? Free.nights(Math.max(0, s.at - S.day)) : 0;
+      h += '<p>🔍 ' + esc(!S.free ? tr('A search is on: two candidates in {t} ({d}). {name} keeps working.', { t: Text.span(s.at - S.day), d: fmtDate(s.at), name: def.name }) :
+        nn === 1 ? tr('A search is on: two candidates tomorrow. {name} keeps working.', { name: def.name }) : tr('A search is on: two candidates in {n} nights. {name} keeps working.', { n: nn, name: def.name })) + '</p>' +
+        (S.free ? '' : '<p class="fine">' + esc(tr('The days run in plan time and between missions; a stage of a day stops them.')) + '</p>') +
         (can('dismiss') ? '<div class="btnRow small"><button class="btn toggle" data-keep="' + id + '">' + esc(tr('Keep {name}, drop the search', { name: def.name })) + '</button></div>' : '');
     } else if (can('dismiss')) {
       h += '<div class="btnRow small">' + danger('head:' + id, tr('Dismiss'), pay) +
-        '<button class="btn toggle" data-search="' + id + '">🔍 ' + esc(tr('Find a replacement')) + ' <small>' + sekBare(HEAD_SEARCH_COST) + ' · ' + esc(Text.span(HEAD_SEARCH_DAYS)) + '</small></button></div>' +
+        '<button class="btn toggle" data-search="' + id + '">🔍 ' + esc(tr('Find a replacement')) + ' <small>' + sekBare(HEAD_SEARCH_COST) + ' · ' + esc(S.free ? Text.days(HEAD_SEARCH_DAYS) : Text.span(HEAD_SEARCH_DAYS)) + '</small></button></div>' +
         '<p class="fine">' + esc((pay ? tr('Dismissing pays {n} months of salary; the team works on without a head.', { n: HEAD_PAY_MONTHS }) : tr('Close to retiring: leaves on the pension, no severance.')) + ' ' +
-          tr('A search takes {t}; {name} works on meanwhile.', { t: Text.span(HEAD_SEARCH_DAYS), name: def.name })) + '</p>';
+          tr('A search takes {t}; {name} works on meanwhile.', { t: S.free ? Text.days(HEAD_SEARCH_DAYS) : Text.span(HEAD_SEARCH_DAYS), name: def.name })) + '</p>';
     }
     return h;
   }

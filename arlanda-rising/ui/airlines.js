@@ -48,7 +48,7 @@ const AirlinesUI = (() => {
 
   function render() {
     const p = $('airlines'), y = Calendar.year();
-    let html = '<h1>✈️ ' + Text.esc(tr('Airlines')) + '</h1><p class="when">' + Text.esc(fmtDate(S.day)) + ' · ✈️ ' + Text.esc(Text.meterName('airlines')) + ': <b>' + Math.round(S.meters.airlines) + '</b>' +
+    let html = '<h1>✈️ ' + Text.esc(tr('Airlines')) + '</h1><p class="when">' + Text.esc(fmtNow()) + ' · ✈️ ' + Text.esc(Text.meterName('airlines')) + ': <b>' + Math.round(S.meters.airlines) + '</b>' +
       (S.airport.fees && S.airport.fees !== 'normal' ? ' · ' + Text.esc(tr(S.airport.fees === 'low' ? 'Fees: lower' : 'Fees: higher')) : '') + '</p>';
     html += board();
     const codes = Object.keys(AIRLINES).filter((c) => Airlines.perDay(c) > 0 || (S.airport.openSkies && Airlines.inEra(c) && Airlines.courtRoute(c)));

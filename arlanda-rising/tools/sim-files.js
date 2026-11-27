@@ -3,6 +3,8 @@
 // Arlanda Rising — the game's logic for the Node tools: the files of constants.js, data/ and sim/ (no DOM) in the order
 // index.html loads them, one list for every checker (tools/missions-check.js, freeplay-bot.js, debug-mission.js,
 // turnaround-check.js, terminals-check.js), and a vm context with them loaded.
+// `context(overrides)` may replace top-level constants for a trial without editing the files: { NAME: 'source', … } turns
+// the line `const NAME = …;` of whichever file declares it into `const NAME = source;` (tools/freeplay-bot.js --set).
 // Usage: const { files, context } = require('./sim-files'); const ctx = context(); vm.runInContext('…', ctx)
 
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -24,10 +26,19 @@ function files() {
     'sim/events.js', 'sim/green.js', 'sim/stats.js', 'data/challenges.js', 'sim/challenges.js'];
 }
 
-function context() {
+function context(overrides) {
   const ctx = { console, Math, JSON, Object, Array, Number, String, Set, Map, Error, Date, isNaN, isFinite, parseInt, parseFloat };
   vm.createContext(ctx);
-  for (const f of files()) vm.runInContext(fs.readFileSync(path.join(root, f), 'utf8'), ctx, { filename: f });
+  const left = new Set(Object.keys(overrides || {}));
+  for (const f of files()) {
+    let src = fs.readFileSync(path.join(root, f), 'utf8');
+    for (const k of left) {
+      const re = new RegExp('^const ' + k + ' = [^;]*;', 'm');
+      if (re.test(src)) { src = src.replace(re, () => 'const ' + k + ' = ' + overrides[k] + ';'); left.delete(k); }
+    }
+    vm.runInContext(src, ctx, { filename: f });
+  }
+  if (left.size) throw new Error('no such constant: ' + [...left].join(', '));
   return ctx;
 }
 

@@ -3,8 +3,8 @@
 // Arlanda Rising — light and weather over the map: the dark by the real sun at 59.65° N (blue winter afternoons,
 // white nights at midsummer), the warm light of dawn and dusk, fog, falling snow, and then the lamps that the
 // other files collected (runway and approach lights, sodium floodlights on the apron, lit windows, the aircraft's
-// navigation lights and beacons, the vehicles' amber beacons) glowing through the dark. Drawn last by
-// render/map.js, before the labels.
+// navigation lights and beacons, the vehicles' amber beacons) glowing through the dark. Free Play has one
+// late-spring sun every month (sim/calendar.js) and a softer veil. Drawn last by render/map.js, before the labels.
 
 const Sky = (() => {
   // 0 in daylight, 1 in the deep night, from the sun's elevation
@@ -19,8 +19,9 @@ const Sky = (() => {
       c.fillStyle = 'rgba(255,150,70,' + (0.13 * (1 - Math.abs(el - 1.5) / 7.5)) + ')';
       c.fillRect(0, 0, W, H);
     }
-    if (sc.dark > 0) {
-      c.fillStyle = 'rgba(8,16,42,' + (sc.dark * 0.7) + ')';
+    // the night's veil (Free Play's softer, sc.veil ≤ FREE_DARK_MAX: render/map.js)
+    if (sc.veil > 0) {
+      c.fillStyle = 'rgba(8,16,42,' + (sc.veil * 0.7) + ')';
       c.fillRect(0, 0, W, H);
     }
     // fog

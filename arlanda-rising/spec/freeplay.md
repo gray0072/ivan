@@ -1,14 +1,14 @@
 # Arlanda Rising — Free Play from the forest: design and plan
 
-For developers and agents. The design of a **non-stop Free Play**: one airport from the pine forest of 1958 to the Arlanda of 2040, with no missions and no stages, its time running all the way, its pace set by what the player has to do. It **replaces** today's Free Play (rounds of a month of offers and a peak, `sim/freeplay.js`); its eras stay as start points. The decisions below were proposed on 2026-11-22 and agreed with the user the same day (section 15); once a step of the plan (section 14) builds a part, that part's rules move into `SPEC.md` (or the file of `spec/` for its area) in the same change, and this file keeps the plan and the reasons.
+For developers and agents. The design of a **non-stop Free Play**: one airport from the pine forest of 1958 to the Arlanda of 2040, with no missions and no stages, its time running all the way, its pace set by what the player has to do. It **replaced** the round-based Free Play (rounds of a month of offers and a peak; removed with its code, screens and saves on 2026-11-23). The decisions below were proposed on 2026-11-22 and agreed with the user the same day (section 15), and changed where section 16 says (2026-11-27); once a step of the plan (section 14) builds a part, that part's rules move into `SPEC.md` (or the file of `spec/` for its area) in the same change, and this file keeps the plan and the reasons.
 
 Words used here: **played day** — the one day of each month the game flies flight by flight; **night** — the jump to the next month's played day; **era** — one of eight tiers of the airport's history (the campaign's chapters); **attention / cruise pace** — how fast the clock runs when the player has something to do or not.
 
-**Where it stands (2026-11-23).** Free Play is this design, playable: the old rounds are gone (code, screens, saves) and the start screen has the two ways — the missions (the campaign) and Free Play, from the forest only, continuous. Built: the time core (step 1), the history from the forest (a simpler stand-in for steps 2–3, below), the browser (most of step 5) and the save (part of step 7). The rules as built are in [sim.md](sim.md) "Free Play", the screens in [ui.md](ui.md), the bot in [testing.md](testing.md).
+**Where it stands (2026-11-27).** Free Play is this design, playable: the start screen has the two ways — the missions (the campaign) and Free Play, from the forest only, continuous. Built: the time core (step 1), the history from the forest (a simpler stand-in for steps 2–3, below), the director bot and the first balance (step 4, section 11 and `docs/freeplay-balance.md`: the reference from the forest to 2040 in about 196 real minutes at ▶), the played day as a sample of the month (3.2), the browser (most of step 5) and the save (part of step 7). The rules as built are in [sim.md](sim.md) "Free Play", the screens in [ui.md](ui.md), the bot in [testing.md](testing.md).
 
 - **The history instead of eras, gates and a market (for now).** The campaign's 88 missions are Free Play's milestones, in order: the history's year runs at its chapter's pace (`FREE_CHAPTER_MONTHS`, the months of section 4's table) but waits at a milestone whose `requires` are not built; a milestone reached applies the history part of its setup (`FREE_HISTORY_KEYS`: the owner's budget, the airlines' routes of the year, the rules of the time, the levels the Office may buy…) and opens its projects. So the traffic, the airlines, the aircraft types and the rules come exactly as in the campaign, and every milestone tells what it needs. The dependency graph of 5.2, the market of 6.1 and the airlines' offers of 6.2 can later replace the routes of the missions' setups without changing the rest. The projects no mission gives the player (runway 1, the first apron, Terminal 3, Sky City, the aquifer, the old hall) the owner builds when the history reaches them, as in the campaign. The calendar's months run one a played month; its year shown is the history's (`Calendar.year` / `yearOf`).
-- **Built in the browser:** **New Free Play** / **Continue Free Play** on the start screen (and **Continue mission** / **Continue campaign** named for what they continue), the plan panel open day and night with the next milestone at its top (folded to it on a phone), the night in the HUD, the pace sign 🐢 / 🐇 with why on hover, Auto pace in the pause menu, the banners of the history and of the owner's buildings, the cheat Shift+H (the next milestone at once), the autosave (`arlandaRising.freeplay.v2`, synced by the cloud save).
-- **Not yet:** ½ speed, auto-slow and 👁️ Watch's button; the played day as a sample of the month (3.2); the inbox and any decision at night (a head's successors are chosen in Departments); the Development screen, the era card, the night report; checkpoints, bankruptcy and the owner's warnings; the owner's asks; the player's pier design (the finger is built); the finale and the endless play after 2040 (the history stops at its last milestone, the year keeps its pace); the director bot's profiles and the balance (step 4) — the reference builder hires no team, so its hand era is slow.
+- **Built in the browser:** **New Free Play** / **Continue Free Play** on the start screen (and **Continue mission** / **Continue campaign** named for what they continue), the plan panel open day and night with the next milestone at its top (folded to it on a phone), the HUD with the month and the history's year but no clock (section 16), the light of one late-spring day every month and the night drawn as a night without a jump, teams and systems hired and bought in the day too, the pace sign 🐢 / 🐇 with why on hover, Auto pace in the pause menu, the banners of the history and of the owner's buildings, the cheat Shift+H (the next milestone at once), the autosave (`arlandaRising.freeplay.v2`, synced by the cloud save).
+- **Not yet:** ½ speed, auto-slow and 👁️ Watch's button; the inbox and any decision at night (a head's successors are chosen in Departments); the Development screen, the era card, the night report; checkpoints, bankruptcy and the owner's warnings; the owner's asks; the player's pier design (the finger is built); the finale and the endless play after 2040 (the history stops at its last milestone, the year keeps its pace); the bot's `greedy` profile, `--graph` and `--ablation` (they need step 2's graph), the decisions per month (none to take yet).
 
 ---
 
@@ -66,10 +66,10 @@ The sim always steps by `OPS_STEP_MIN` in the day and by days at night; **pace o
 
 | Pace | When | Real seconds per game hour at ▶ |
 |---|---|---|
-| **Attention** | a task is in the tray; a task for the player's hands is due within `FREE_LOOKAHEAD_MIN` (15 game min); an incident in a domain the player works (snow on a runway with ploughs by hand, a failure with no team, an emergency); the player holds 👁️ *Watch* | `OPS_HOUR_SECONDS` (60) — the missions' pace, so deadlines feel the same |
+| **Attention** | a task is in the tray; a task for the player's hands is due within `FREE_LOOKAHEAD_MIN` (15 game min); an incident in a domain the player works (a snowfall about to begin with ploughs by hand — the snow lying keeps it only through the plough tasks in the tray —, a failure with no team, an emergency); the player holds 👁️ *Watch* | `OPS_HOUR_SECONDS` (60) — the missions' pace, so deadlines feel the same |
 | **Cruise** | nothing needs the player | `FREE_CRUISE_HOUR_SECONDS` (start 6) |
 | **Night** | 23:30 → 05:00 and the month's summary | `FREE_NIGHT_SECONDS` (start 8) in all |
-| **Idle month** | no traffic at all (the forest, the building years) | the day collapses: `FREE_IDLE_DAY_SECONDS` (start 15) for the whole month |
+| **Idle month** | no traffic at all (the forest, the building years) | the day collapses: `FREE_IDLE_DAY_SECONDS` (7; with its night ≈ 15 s a month) |
 
 - The pace eases over `FREE_PACE_EASE` (1.5 s) so the aircraft never jerk; a small 🐢 / 🐇 sign by the speeds says which pace runs and why on hover/tap (*Your tray has 2 tasks*).
 - **Speeds ½ · 1 · 2 · 4** multiply it; **½** is new (also offered in missions: it changes nothing in the sim). **Auto-slow** (setting, on by default on Easy): with `FREE_SLOW_TRAY` (3) tasks waiting the speed drops to ½ until the tray is down to one.
@@ -86,12 +86,12 @@ The sim always steps by `OPS_STEP_MIN` in the day and by days at night; **pace o
 
 - The **day** has the real shape of an airport: a morning wave 06–09, a quieter midday, an evening wave 16–19, cargo and late charters at night once those airlines come. The waves are where the player is busy; midday is where they plan (at cruise).
 - The **night** is short (~8 s): the lamps, the cranes in time-lapse, the month's numbers counting up. It is also the **night report** — a card in the corner (not blocking): money of the month (income, costs, result), the meters' change, what was finished, who arrived, what is due next month (a wage round, a head's raise, a strike notice, a contract), with links. Dawn = an autosave and a checkpoint (section 9).
-- **Darkness is a mechanic, not a nuisance**: before the runway lights no movement in civil darkness (so December is hard in era 1); night movements pay (cargo, charters) but cost the Neighbours (`NOISE_NIGHT_X`); June's white nights; heavy snow at night means ploughing before the morning wave.
+- **Darkness is a mechanic, not a nuisance** — but not the calendar's (changed 2026-11-27, section 16): every month has the light of one late-spring day (`FREE_SUN_DOY`), so the waves fly in daylight and only the late evening is dark; before the runway lights no movement in civil darkness (the late arrivals); night movements pay (cargo, charters) but cost the Neighbours (`NOISE_NIGHT_X`). The night between played days is drawn as a night, its clock running from dusk to dawn, the veil never darker than `FREE_DARK_MAX`.
 - **Stop at dawn** (setting, off by default) for those who like a turn-based rhythm; **Stop when something important happened** (on by default): the night report opens and the game waits only when the month brought a decision with a deadline tomorrow, a strike notice, an airline about to leave or money below zero.
 
 ### 3.6 What the HUD shows
 
-- The **month** and the time of day (*March · 07:42*), the weather.
+- The **month** and the history's year as an indication (*March ≈1962*), no time of day (section 16), the weather.
 - The **era chip**: *✈️ The Jet Age · ≈1971* — the indicative year, never a full date. Tap: the era's card (what it is about, its projects done / left, what opens the next era, the Real Arlanda comparison).
 - The pace sign, the speeds ½ · 1 · 2 · 4, Skip (as now: to the next task).
 - An **inbox** badge with the number of open offers and the nearest deadline.
@@ -119,7 +119,7 @@ A person's first pass: **5–7 h** (reading, exploring, pauses, half speed, a ba
 | 8 Arlanda 2040 | 2025–2040 | 20 | 8 |
 | **All** | | **≈ 180** | **≈ 77 (≈ 6½ years of seasons)** |
 
-The bot's report (section 11) is the source of truth; the plan's step 4 tunes `FREE_*` and the era gates until the reference lands in these bands (±40 % per era, 2.5–3.5 h in all).
+The bot's report (section 11) is the source of truth; the plan's step 4 tunes `FREE_*` and the era gates until the reference lands in these bands (±40 % per era, 2.5–3.5 h in all). *Measured 2026-11-27* (`docs/freeplay-balance.md`): 196 min in 74 played months — an era counted from the milestone that opens its chapter; the chapters' months `FREE_CHAPTER_MONTHS` are 11, 7, 6, 7, 8, 7, 5, 7, the history waiting for what is not built yet on top of them.
 
 ---
 
@@ -140,7 +140,7 @@ There are no stages, but there is a direction: **eight eras**, the campaign's ch
 | 7 Storm Years | t4t5 | — | cargo stand, security operations centre | drills, fallback tested, cyber | DHL, UPS; airlines leave with the demand (history) | the pandemic, closed skies, the summer of queues, the IT outage (history) |
 | 8 Arlanda 2040 | pier2040 (the player's design) | — | mobile charger, charging stand, hydrogen depot, night train platform | robots, self-driving ploughs, biometric boarding | electric commuters, hydrogen prototypes | heat, the busiest day, the blackout (the finale) |
 
-The table is the first proposal; step 2 checks it against `data/masterplan.js`, `data/domains.js` and the eras of today's Free Play (`FREE_ERAS`, whose `requires`, `domains` and `unlock` already say what each era's airport had).
+The table is the first proposal; step 2 checks it against `data/masterplan.js`, `data/domains.js` and the missions' setups (what each milestone's airport had: `items`, `domains`, `unlock`). Built so far (2026-11-27): the ladder's levels open by their year (`from`), the rest by the history's milestones.
 
 ### 5.2 One dependency graph, one evaluator
 
@@ -181,7 +181,7 @@ Missions script their airlines' routes (`setup.airlines`). Free Play needs traff
 
 ### 6.4 The owner: budget, loans, grants, asks
 
-- **Start**: the owner's budget of the era started from (the old eras' `setup.budget`) × the difficulty's money.
+- **Start**: the first milestone's budget (`setup.budget`) × the difficulty's money; each milestone reached brings its own, as in the campaign. *As built (2026-11-27)*: the night books the money of the history's months it stands for (`Free.moneyX`, section 16), so the airport earns over the years what the campaign's earned between its missions.
 - **Loans** as now: `Finance.limit()` (8 % of what the airport owns, the era preset's `loanLimit` while bigger), interest every month.
 - **Grants**: the owner pays a share of the **core** master-plan projects (`FREE_GRANT` by difficulty, start Easy 50 %, Medium 30 %, Hard 15 %), the state's projects (runway 3, the train with its concession choice) more — a lever to keep the pace within the targets.
 - **The owner's asks** (rolling goals, replacing the missions' guidance): 2–4 per era in `data/freeplay.js`, one or two shown at a time — *Fly the first DC-8 to New York*, *Fire category 9 before the jumbo comes*, *No airline below 50 for six months*, *Keep the permit's caps*. Each uses `sim/goals.js` conditions and pays a grant and an Archive card; the historical ones carry their real date (*Real Arlanda: 26 June 1960*) as flavour. They are suggestions, never required.
@@ -199,7 +199,7 @@ Missions script their airlines' routes (`setup.airlines`). Free Play needs traff
 
 ## 8. Screens
 
-- **Start screen**: **Free Play** opens a small dialog: *From the forest (1958)* or *From an era* (the old era presets, each open once the campaign or an earlier Free Play reached it), the difficulty, **Historical events** On / Off (the pandemic, the ash cloud, closed skies, the IT outage in their eras), Auto pace. *Continue Free Play* when one exists (its era, month and money).
+- **Start screen**: **New Free Play** starts from the forest (1958) at the difficulty picked there (agreed 2026-11-23: no *From an era*); planned: **Historical events** On / Off (the pandemic, the ash cloud, closed skies, the IT outage in their eras). *Continue Free Play* when one exists (its year, month and money).
 - **Game view**: the HUD of 3.6; the bar, the buy menu, the tray as now; the plan panel (projects, pace, mods, financing) open in the day too.
 - **Development** (new, key **D**): the dependency graph by era (section 5.2): what is available now with price, nights and payback, what is locked and its first reason, the bottlenecks of the market (6.1), the next era's gate with its progress, the owner's asks. On a phone a list by era with filters (*Available*, *Locked*, *Built*).
 - **Inbox** (new): offers and decisions with their deadlines and defaults, the decision card as now.
@@ -231,8 +231,8 @@ Cash below zero for `DEBT_MONTHS` played months in a row (6 / 4 / 3 by difficult
 
 ### 9.3 Keys, cloud, old saves
 
-- `arlandaRising.freeplay.v2` — the running game (its autosave); `arlandaRising.freeplay.cp.v1` — the checkpoints. The cloud syncs `freeplay.v2` like the campaign (the copy saved last wins, unknown fields kept) and the newest era start; dawns and milestones stay on the device (size).
-- An old `freeplay.v1` (rounds) is **migrated**: its world goes on as a free game at its next dawn, its era from what it has built.
+- `arlandaRising.freeplay.v2` — the running game (its autosave, built); `arlandaRising.freeplay.cp.v1` — the checkpoints (planned). The cloud syncs `freeplay.v2` like the campaign (the copy saved last wins, unknown fields kept) and the newest era start; dawns and milestones stay on the device (size).
+- An old `freeplay.v1` (rounds) is dropped, not migrated (agreed 2026-11-23).
 
 ### 9.4 Determinism
 
@@ -279,7 +279,7 @@ Runs in Node with the same `vm` loading as `tools/missions-check.js` (no DOM), p
 - a save and resume in the middle of a day or a night ends differently;
 - the stored saves pass the budget of 9.1, or a played day takes more than `FREE_DAY_MS_MAX` of computing.
 
-Usage (planned): `node arlanda-rising/tools/freeplay-bot.js [--difficulty d] [--profile p] [--until era] [--graph] [--ablation] [--report]`.
+*As built (2026-11-27)*: `tools/freeplay-bot.js` and `tools/freeplay-policy.js` with the profiles `reference`, `hands`, `notray` and `idle` (no `greedy` yet), the human hands model (5 tasks a real minute after 3 s), the report by era and `docs/freeplay-balance.md`, `--from <milestone>` and `--stages` (each chapter's first milestone, 4 months: every stage of the game in a few seconds), `--set` (constants replaced for a trial: how the balance is tuned), `--check` (determinism and resume); the fail criteria above that need no step 2 or 3 (the time bands, the busiest minute, the hand era's load, the owner's patience). The reference equips the airport like the campaign's airport of each milestone and hires a team for a domain with 10 or more tray tasks a played day. Usage and every column: [testing.md](testing.md).
 
 ---
 
@@ -296,7 +296,7 @@ Usage (planned): `node arlanda-rising/tools/freeplay-bot.js [--difficulty d] [--
 | Decisions | the decision card, `Plan.choose`, `Offers.make` | `sim/inbox.js`: decisions with a deadline and a default that do not stop time |
 | Locks | `Airport.why`, `Airport.needs`, `Missions.lockedBy` | `sim/needs.js` (section 5.2), consulted when `S.free` |
 | Traffic growth | `Airlines`, `Meters`, `Summary.demand` | `sim/market.js` (section 6) |
-| Eras, asks, gates | `Goals`, the eras of `FREE_ERAS` (as start presets) | `data/freeplay.js` (eras, gates, asks, the market curve, waves, start presets), `sim/free.js` (lifecycle, day/night loop, eras, checkpoints' data; step 1 built it beside the rounds' `sim/freeplay.js`, which step 7 removes) |
+| Eras, asks, gates | `Goals`, the missions as the history's milestones | `data/freeplay.js` (the chapters' months, the history's fields, waves, climate; later eras, gates, asks, the market curve), `sim/free.js` (lifecycle, day/night loop, the history, checkpoints' data; the rounds' `sim/freeplay.js` was removed on 2026-11-23) |
 | Constants | — | `FREE_*` in `constants.js`, each with its unit |
 | UI | HUD, bar, buy menu, tray, plan panel, cards, the Ops Center, Finance, Departments, Airlines | `ui/development.js`, `ui/inbox.js`, `ui/nightreport.js`, `ui/checkpoints.js`; HUD and `game.js` read `S.free` |
 | Tests | the `vm` loader of `missions-check.js` | `tools/freeplay-bot.js`, `tools/freeplay-policy.js`; the loader's file list shared (one list, not two: `tools/sim-files.js`, step 1) |
@@ -322,7 +322,7 @@ Usage (planned): `node arlanda-rising/tools/freeplay-bot.js [--difficulty d] [--
 9. **Exploits**: buying and selling back shops, borrowing to the limit before a gate, fees at the top then down, pausing a crisis — check with the `greedy` profile; pausing is allowed.
 10. **The finale and after**: 2040's gate shows the finale (the busiest day, then the blackout if Historical events are on) and the record; then **endless** play with the market growing slowly and random events.
 11. **Cheats** for testing (keyboard only, marked cheated): next era (its core projects built by the owner), skip a month, finish the projects, +money, the next event.
-12. **When the mode opens** (agreed): *From the forest* is open from the start (it is the brisk way through the history; the start screen recommends the campaign to a newcomer); *From an era* is opened by the campaign or by reaching that era in Free Play.
+12. **When the mode opens** (agreed): *From the forest* is open from the start (it is the brisk way through the history; the start screen recommends the campaign to a newcomer); no *From an era* (2026-11-23).
 13. **Spoilers of the campaign**: the eras use the campaign's history and newspapers; acceptable (Free Play is the second way), the campaign keeps its missions and story.
 14. **The showcase, screenshot, READMEs** in three languages describe the mode at the end.
 
@@ -340,12 +340,13 @@ Each step ends in a working state, committed, with `SPEC.md` brought up to date 
 **Step 3 — Market, airlines, shops, inbox, asks.** `sim/market.js` (demand curve, appeal, capacity, bottlenecks), airline candidates and growth, brand offers, `sim/inbox.js` (deadlines, defaults, no time stop), the owner's asks with grants, careers scaled (`FREE_PEOPLE_X`), event rates per month. *Done when* traffic grows from era 1 to era 5 without scripted routes and the inbox is answered by defaults without stopping.
 
 **Step 4 — The director bot and the first balance.** `tools/freeplay-policy.js` with the hands model and the profiles; the full report and `docs/freeplay-balance.md`; the fail criteria; the first tuning of `FREE_*`, gates, grants and the market so the reference lands near 3 h with the eras in their bands. *Done when* the reference reaches 2040 at the three difficulties and `idle` / `hands` fail where they should.
+*Done (2026-11-27)*, before steps 2–3: the reference reaches 2040 at Easy, Medium and Hard in about 196 min at ▶ with every era in its band and no month in debt; `idle` goes broke in the forest; `hands` reaches 2040 too (the history waits only for buildings) but takes about 970 min, so automation is needed for the time, not for the money. What the tuning found and changed is section 16. Left for later: `greedy`, `--graph`, `--ablation`, the decisions per month.
 
 **Step 5 — Playable in the browser.** The start dialog, `Game` driving Free Play (pace, ½ speed, auto-slow, Watch, pause on big screens), the HUD (month, era chip, pace sign, inbox badge, the owner's ask), the night report, autosave and dawns, Stop at dawn; texts in three languages. *Done when* a game from the forest plays on a phone and a computer through era 1 (`tools/cdp.js` shots), resumes after a reload.
 
 **Step 6 — Plan and explore.** The Development screen (graph, reasons, bottlenecks, the gate's progress), the inbox screen, the era change (Astrid, the paper, Real Arlanda, 🏅), Kaj's hints for Free Play (*SAS wants more flights — no Code C stand free at 07:00*). *Done when* `screens-shots.js` (or a free variant) shows them without overflow in EN and RU.
 
-**Step 7 — Checkpoints, bankruptcy, saves.** Dawns, milestones, era starts; the checkpoints screen; the owner's warnings and the replacement; the storage budget and compression; `freeplay.v2` in the cloud save and the merge; the migration of `freeplay.v1`; the old rounds' code and screens removed. *Done when* a forced bankruptcy goes on from a checkpoint, a `freeplay.v1` save is migrated, `cloud-mock.js` passes.
+**Step 7 — Checkpoints, bankruptcy, saves.** Dawns, milestones, era starts; the checkpoints screen; the owner's warnings and the replacement; the storage budget and compression. Already done: `freeplay.v2` in the cloud save and the merge, the old rounds' code, screens and saves removed (no migration). *Done when* a forced bankruptcy goes on from a checkpoint and `cloud-mock.js` passes.
 
 **Step 8 — The map in any order, history and the end.** The random-order layout and render check and its fixes; razing and joining as projects; historical events by era (On / Off); the finale and endless play; the cheats. *Done when* 50 random orders pass and the finale plays headless.
 
@@ -363,5 +364,19 @@ Each step ends in a working state, committed, with `SPEC.md` brought up to date 
 1. **Opening**: *From the forest* is available from the start, not only after chapter 2.
 2. **Auto pace default**: *Normal* (cruise 6 s a game hour).
 3. **Historical crises** (the pandemic, closed skies, the IT outage): **Historical events** on by default.
-4. **Old Free Play** (rounds): removed; its saves migrated (step 7).
+4. **Old Free Play** (rounds): removed; its saves dropped, not migrated (changed on 2026-11-23, above).
 5. **The target**: shortest pass ≈ 3 h at ▶ (2.5–3.5 h accepted).
+
+---
+
+## 16. Changed with the user (2026-11-27)
+
+The user played it and found two things: the light blinked at every change of day and night, and the building and the flying ran on scales too far apart (a hand day of ten minutes, a terminal taking four of them). Asked: unlink the light and the dark from the calendar, perhaps show no time at all; bring the scales together, less realism; balance it for a person, with a bot and scripts that measure every stage.
+
+1. **The light**: every month has the sun of 15 May (`FREE_SUN_DOY`); the night between played days is drawn as a night running from dusk to dawn (it was drawn as noon: the blink); the veil at most `FREE_DARK_MAX`. **No clock** in the HUD and the screens' headers: the month and the history's year as an indication (*May ≈1962*).
+2. **The building**: `FREE_BUILD_X` 1.0 → 0.4 — a stage takes nights, a terminal two or three.
+3. **The money**: the night books the traffic and the running costs of the history's months it stands for (`Free.moneyX`: the chapter's months a played month × `FREE_MONEY_X` 0.7, 1 before the airport opens). Without it the airport earned a month a played month against prices made for years, and the history waited dozens of months for money (runway 3, Terminals 4 and 5).
+4. **The history's pace**: a played month moves the year by the chapter of the milestone reached last (it used the next one's, so the years between two chapters crawled); `FREE_CHAPTER_MONTHS` 18, 10, 8, 9, 10, 8, 6, 8 → 11, 7, 6, 7, 8, 7, 5, 7.
+5. **The ladder by the year**: the screens offer a team only once its level is unlocked, and Free Play unlocked it only at the milestone that teaches it (1968): five more months by hand than the era table above; now a level opens in its `from` year (the teams in 1963). Teams and systems are hired and bought in the played day too (they were refused in ops time, i.e. almost always).
+6. **The snow**: a snowy day kept the slow pace all day while the snow lay, for three plough tasks; now only the snowfall's start does, and the tray the rest.
+7. **The played day counts** (3.2): `FREE_DAY_WEIGHT` 0.5.

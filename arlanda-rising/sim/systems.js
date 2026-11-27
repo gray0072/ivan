@@ -35,7 +35,8 @@ const Systems = {
   // the system a domain can go to next: the level above a system, the first system (level 2) from the hands or a team
   nextSystem(dom) { const lv = this.level(dom); return lv >= 2 ? lv + 1 : 2; },
   // what stands in the way of level `to` (the next one by default; level 2 straight from the hands too) now, or null:
-  // 'top', 'year', 'ops' (nothing is hired or bought in ops time), 'room' (no computer room), 'hall' (no baggage hall),
+  // 'top', 'year', 'ops' (nothing is hired or bought in a mission's ops time; Free Play's played day may), 'room' (no
+  // computer room), 'hall' (no baggage hall),
   // 'sorter', 'pads', 'installing' (a system being put in, new people on their way)
   cannot(dom, to) {
     const lv = this.level(dom);
@@ -43,7 +44,7 @@ const Systems = {
     const L = this.def(dom, to);
     if (!L || to <= lv || (to > lv + 1 && !(lv === 0 && to === 2))) return 'top';
     if (Calendar.year() < L.from) return 'year';
-    if (S.ops) return 'ops';
+    if (People.shift()) return 'ops';
     if (S.sys && S.sys[dom] && S.sys[dom].installAt) return 'installing';
     if (to >= 2) {
       if ((L.it || 0) > 0 && !Airport.has('computerRoom')) return 'room';

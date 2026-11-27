@@ -2,8 +2,8 @@
 
 // Arlanda Rising — the calendar and the sun. Days are counted from 1 January EPOCH_YEAR (S.day), the time of day
 // in minutes (S.clock, Swedish standard time). The sun's height follows the real latitude (59.65° N) and
-// the date: dark winter afternoons, white nights round midsummer. Used by the weather, the runways (no
-// movements in the dark without lights), the noise and the screens.
+// the date: dark winter afternoons, white nights round midsummer (Free Play: one late-spring day's sun all
+// year). Used by the weather, the runways (no movements in the dark without lights), the noise and the screens.
 
 const Calendar = {
   dayOf(y, m, d) { return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(EPOCH_YEAR, 0, 1)) / 864e5); },
@@ -28,10 +28,15 @@ const Calendar = {
   // a month key for the books: 1962 * 12 + 3
   monthKey(day) { const d = this.date(day); return d.y * 12 + d.m - 1; },
   winter(day) { const m = this.date(day).m; return m === 12 || m <= 2; },
-  // the sun's elevation in degrees at a day and minute (standard time, UTC+1; the equation of time left out)
+  // the sun's elevation in degrees at a day and minute (standard time, UTC+1; the equation of time left out). Free Play
+  // has one sun every month, FREE_SUN_DOY's: its light and dark do not follow the calendar (the runways, the weather's
+  // dark, the hints and the map all ask here)
   sunElevation(day, min) {
-    const d = this.date(day);
-    const n = Math.round((Date.UTC(d.y, d.m - 1, d.d) - Date.UTC(d.y, 0, 1)) / 864e5) + 1;
+    let n = FREE_SUN_DOY;
+    if (!(S && S.free)) {
+      const d = this.date(day);
+      n = Math.round((Date.UTC(d.y, d.m - 1, d.d) - Date.UTC(d.y, 0, 1)) / 864e5) + 1;
+    }
     const decl = 23.44 * Math.sin(2 * Math.PI * (284 + n) / 365) * Math.PI / 180;
     const lat = LATITUDE * Math.PI / 180;
     const solar = (min / 60 - 1) + 17.92 / 15;          // UTC+1 → local solar time at 17.92° E

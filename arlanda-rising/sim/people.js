@@ -179,12 +179,16 @@ const People = {
   moraleAll(delta) { if (S.people) for (const id of Object.keys(S.people.depts)) this.morale(id, delta); this.updateMeter(); },
 
   // ---------- what the player does ----------
+  // a mission's ops time: no team is hired, let go or recruited, no head dismissed or searched for, no system bought.
+  // Free Play's played day is not: its plan state runs beside it (sim/free.js), so what is hired there comes after its
+  // days, at a dawn, and a system is put in over its days
+  shift() { return !!S.ops && !S.free; },
   // hire a team for a domain (level 0 → 1): at once between missions, after HIRE_DAYS (or the clearance) in plan time;
-  // never in ops time (it would start the same minute), nor while a system is being put in (then it is hired as the
-  // system's fallback: hireBack)
+  // never in a mission's ops time (it would start the same minute), nor while a system is being put in (then it is
+  // hired as the system's fallback: hireBack)
   hire(dom) {
     const L = DOMAINS[dom] && DOMAINS[dom].levels[1];
-    if (!L || S.ops || (S.domains[dom] || 0) > 0 || Calendar.year() < L.from) return false;
+    if (!L || this.shift() || (S.domains[dom] || 0) > 0 || Calendar.year() < L.from) return false;
     if (this.coming(dom) || (S.sys && S.sys[dom] && S.sys[dom].installAt)) return false;
     Finance.book('hiring', -HIRE_COST * L.staff);
     if (S.plan) this.ensure().hiring.push({ dom, at: S.day + this.hireDays(dom) });
@@ -200,7 +204,7 @@ const People = {
   // system fails — HIRE_COST a job, ready after the hiring days (or the clearance) in plan time, at once between missions
   canHireBack(dom) {
     const L = DOMAINS[dom] && DOMAINS[dom].levels[1], r = S.sys && S.sys[dom], lv = S.domains[dom] || 0;
-    if (!L || !L.staff || !r || r.kept || S.ops || Calendar.year() < L.from || this.coming(dom)) return false;
+    if (!L || !L.staff || !r || r.kept || this.shift() || Calendar.year() < L.from || this.coming(dom)) return false;
     return lv >= 2 || (lv === 0 && !!r.installAt);
   },
   hireBack(dom) {
@@ -236,7 +240,7 @@ const People = {
     this.ensure();
     if (n < 0) {
       const k = Math.min(-n, S.people.it);
-      if (!k || S.ops) return false;
+      if (!k || this.shift()) return false;
       Finance.book('layoffs', -this.itCutPrice(k));
       if (k >= S.people.it && this.manager('it')) { this.letHeadGo('it', 'dismissed'); delete S.people.vacant.it; }
       S.people.it -= k;
@@ -283,7 +287,7 @@ const People = {
   // why the team cannot be let go now, or null: 'ops' (not in the middle of a shift), 'none', 'busy' (a system being
   // put in, new people on their way)
   dismissCannot(dom) {
-    if (S.ops) return 'ops';
+    if (this.shift()) return 'ops';
     if (!this.teamKind(dom)) return 'none';
     if (this.coming(dom) || (S.sys && S.sys[dom] && S.sys[dom].installAt)) return 'busy';
     return null;
@@ -448,7 +452,7 @@ const People = {
   // dismiss a head (not in ops time): paid, the team works on without the head's perks, the department vacant with
   // its two candidates in Departments ("No head — find one")
   dismissHead(dept) {
-    if (S.ops || !this.manager(dept)) return false;
+    if (this.shift() || !this.manager(dept)) return false;
     const id = this.manager(dept).id;
     Finance.book('layoffs', -this.headPay(dept));
     this.letHeadGo(dept, 'dismissed');
@@ -461,7 +465,7 @@ const People = {
   // (S.people.search[dept] = { at, cands }); not started in ops time
   searching(dept) { return (S.people && S.people.search && S.people.search[dept]) || null; },
   search(dept) {
-    if (S.ops || !this.manager(dept) || this.searching(dept)) return false;
+    if (this.shift() || !this.manager(dept) || this.searching(dept)) return false;
     Finance.book('hiring', -HEAD_SEARCH_COST);
     (S.people.search = S.people.search || {})[dept] = { at: S.day + HEAD_SEARCH_DAYS, cands: null };
     logEvent('headSearch', { dept });

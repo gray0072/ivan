@@ -21,7 +21,8 @@ const Summary = {
       // strikes or failures cost (sim/systems.js)
       if (S.domains[d] === undefined) continue;
       if ((d === 'snow' || d === 'deice') && !Calendar.winter(S.day)) continue;
-      const share = S.domains[d] > 0 ? Systems.summaryLoss(d) : 1;
+      // Free Play: a hand domain worked well in the played day loses less over its month (sim/free.js `manualShare`)
+      const share = S.domains[d] > 0 ? Systems.summaryLoss(d) : S.free ? Free.manualShare(d) : 1;
       if (share > 0) loss += SUMMARY_LOSS[d] * (1 - MANUAL_SUMMARY_EFF) / 0.4 * share;
     }
     const keep = 1 - loss;
